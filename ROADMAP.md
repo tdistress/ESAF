@@ -1,78 +1,62 @@
 # ESAF Roadmap
 
 **Status:** Working Draft  
-**Version:** 0.1-alpha  
-
----
+**Version:** 0.1-alpha
 
 ## Phase 0 — Foundation
 
-- Repository structure
-- README
-- Project Charter
-- Governance Guide
-- Editorial Style Guide
-- Roadmap
-- Glossary
-- Enterprise AI Lifecycle
-- Control taxonomy
+- Repository and publication structure
+- Project charter and governance model
+- Editorial style and terminology
+- Contribution and security processes
+- Enterprise AI lifecycle and control taxonomy
 
 ## Phase 1 — Enterprise Standard
 
 - ESAF-1000
-- Enterprise AI Operating Model
-- Enterprise AI Lifecycle
-- Protect AI
-- Utilize AI
-- Govern AI
+- Enterprise AI operating model
+- Enterprise AI lifecycle
+- Protect AI, Utilize AI, and Govern AI
 
 ## Phase 2 — Control Catalog
 
 - ESAF-1100
-- Control families
-- Control objectives
-- Control statements
-- Evidence requirements
-- Assessment procedures
+- Control families and objectives
+- Normative control statements
+- Evidence and assessment procedures
+- Lifecycle and ownership metadata
 
 ## Phase 3 — Reference Architecture
 
 - ESAF-1200
-- Enterprise AI Gateway
-- RAG architecture
-- Agentic AI architecture
-- Private LLM architecture
-- Enterprise copilot architecture
-- AI observability
+- Enterprise AI platform and gateway
+- Retrieval-augmented generation
+- Agentic AI and MCP integrations
+- Private model deployments
+- Enterprise copilots and observability
 
 ## Phase 4 — Standards Crosswalk
 
-- ESAF-1600
-- NIST AI RMF
-- ISO/IEC 42001
-- PCI DSS
+- NIST AI RMF and NIST CSF 2.0
+- ISO/IEC 42001 and ISO/IEC 27001
+- PCI DSS 4.0.1
 - HITRUST CSF
-- UK Cyber Essentials
-- SOC 2
-- CIS Controls
-- OWASP
-- MITRE ATLAS
+- UK Cyber Essentials and Cyber Essentials Plus
+- SOC 2, CIS Controls, OWASP, and MITRE ATLAS
 
 ## Phase 5 — Industry Profiles
 
 - Healthcare
-- Financial Services
-- Critical Infrastructure
-- Retail
-- Government
-- Manufacturing
-- Media and Publishing
-- United Kingdom
+- Financial services and payments
+- Critical infrastructure and operational technology
+- Retail, government, manufacturing, and media
+- United Kingdom and European Union
 
 ## Phase 6 — Assessment Toolkit
 
-- Maturity model
-- Assessment workbook
-- Audit checklist
-- Policy templates
-- Evidence templates
+- Enterprise maturity model
+- Assessment workbook and audit checklist
+- Policy, evidence, and governance templates
+
+Release criteria and milestone details are maintained in [`project/RELEASE_PLAN.md`](project/RELEASE_PLAN.md) and [`project/MILESTONES.md`](project/MILESTONES.md).
+

@@ -2,93 +2,67 @@
 
 **Document ID:** ESAF-0002  
 **Status:** Working Draft  
-**Version:** 0.1-alpha  
-
----
+**Version:** 0.1-alpha
 
 ## 1. Purpose
 
-This document defines how ESAF is governed, reviewed, versioned, maintained, and published.
+This document defines how ESAF is governed, reviewed, versioned, maintained, and published. ESAF is maintained as a living standards project.
 
-ESAF shall be maintained as a living standards project.
-
----
-
-## 2. Governance Bodies
+## 2. Governance bodies
 
 ### 2.1 Steering Committee
 
-Responsible for strategic direction, major releases, scope changes, and publication approval.
+Sets strategic direction, approves scope and major releases, and resolves material governance matters.
 
 ### 2.2 Editorial Board
 
-Responsible for terminology, style, numbering, structure, and publication consistency.
+Maintains terminology, normative language, numbering, structure, references, and publication consistency.
 
 ### 2.3 Technical Review Board
 
-Responsible for architecture, security, engineering, control design, and technical accuracy.
+Reviews architecture, security, engineering, control design, implementation feasibility, and technical accuracy.
 
 ### 2.4 Compliance Review Board
 
-Responsible for mappings to external standards including NIST, ISO, PCI DSS, HITRUST, UK Cyber Essentials, SOC 2, HIPAA, GDPR, OWASP, MITRE, and CIS Controls.
+Reviews mappings to external standards, including NIST, ISO, PCI DSS, HITRUST, UK Cyber Essentials, SOC 2, HIPAA, GDPR, OWASP, MITRE, and CIS Controls.
 
----
+Initially, one maintainer may perform more than one role. Conflicts of interest and dissenting technical views shall be recorded in the decision log.
 
-## 3. Publication Lifecycle
+## 3. Publication lifecycle
 
 ```text
-Proposed
-    ↓
-Draft
-    ↓
-Technical Review
-    ↓
-Editorial Review
-    ↓
-Approved
-    ↓
-Published
-    ↓
-Revised
-    ↓
-Deprecated
-    ↓
-Retired
+Proposed -> Draft -> Technical Review -> Editorial Review
+         -> Approved -> Published -> Revised -> Deprecated -> Retired
 ```
 
----
+## 4. Decision process
 
-## 4. Versioning
+Changes enter through an issue or pull request. Normative changes require technical and editorial review. Major structural changes require Steering Committee approval. Decisions that affect scope, taxonomy, numbering, or compatibility shall be recorded in [`project/DECISION_LOG.md`](project/DECISION_LOG.md).
 
-ESAF follows semantic versioning.
+## 5. Versioning
 
-| Version Type | Meaning |
-|--------------|---------|
-| Major | Structural or normative changes |
-| Minor | New guidance, controls, mappings, or profiles |
-| Patch | Editorial fixes or clarifications |
+ESAF uses semantic versioning:
 
----
+| Version type | Meaning |
+|---|---|
+| Major | Breaking structural or normative changes |
+| Minor | New controls, guidance, mappings, architectures, or profiles |
+| Patch | Editorial corrections, clarifications, and errata |
 
-## 5. Release Stages
+## 6. Release stages
 
 | Stage | Description |
-|-------|-------------|
+|---|---|
 | 0.1-alpha | Foundation draft |
-| 0.5-beta | Internal review draft |
+| 0.5-beta | Integrated review draft |
 | 0.9-rc | Release candidate |
-| 1.0 | First official release |
+| 1.0 | First stable release |
 
----
+## 7. Exceptions
 
-## 6. Exception Handling
+Exceptions to ESAF requirements shall document the requirement or control ID, business justification, risk assessment, compensating controls, approval authority, expiration date, and review schedule.
 
-Exceptions to ESAF requirements shall document:
+## 8. Intellectual property and conduct
 
-- Requirement or control ID
-- Business justification
-- Risk assessment
-- Compensating controls
-- Approval authority
-- Expiration date
-- Review schedule
+Contributions are made under the repository license and contribution terms. Participants shall follow the [Code of Conduct](CODE_OF_CONDUCT.md).
+

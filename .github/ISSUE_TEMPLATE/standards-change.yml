@@ -1,0 +1,27 @@
+name: Standards change
+description: Propose a change to ESAF normative or informative content.
+title: "[STD] "
+labels: ["draft"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or opportunity
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+    validations:
+      required: true
+  - type: textarea
+    id: impact
+    attributes:
+      label: Impact
+      description: Identify affected publications, controls, lifecycle stages, and mappings.
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Supporting evidence or references
+

@@ -1,0 +1,22 @@
+# Operating-system metadata
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.tmp
+
+# Generated publications and build output
+site/
+dist/
+build/
+*.pdf
+*.docx
+
+# Local environments
+.venv/
+node_modules/
+

@@ -1,0 +1,22 @@
+name: Editorial correction
+description: Report a typo, broken link, unclear wording, or formatting problem.
+title: "[DOC] "
+labels: ["documentation"]
+body:
+  - type: input
+    id: location
+    attributes:
+      label: File or section
+    validations:
+      required: true
+  - type: textarea
+    id: issue
+    attributes:
+      label: Issue
+    validations:
+      required: true
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested correction
+
