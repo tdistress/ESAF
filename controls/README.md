@@ -9,3 +9,9 @@ This directory contains the control architecture and, after approval, individual
 - Family directories contain approved controls for that family.
 
 No example or template is an approved control. Approved controls will be identified by catalog status and release version.
+
+## Current control tranches
+
+| Tranche | Families | Base controls | Status |
+|---|---|---:|---|
+| Foundational governance and risk | [GOV](GOV/README.md), [STR](STR/README.md), [RSK](RSK/README.md) | 14 | Draft |

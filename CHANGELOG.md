@@ -10,6 +10,7 @@ All notable changes to ESAF are documented in this file.
 - Defined objectives for all sixteen control families.
 - Added the canonical control authoring template and machine-validatable metadata schema.
 - Defined control inheritance, organization-defined parameters, and external mapping semantics.
+- Added the first fourteen normative base-control drafts across the GOV, STR, and RSK families.
 
 ### Changed
 
