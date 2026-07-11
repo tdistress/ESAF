@@ -60,7 +60,16 @@ REQUIRED_TEMPLATE_HEADINGS = (
 PATTERN_STATES = {"proposed", "draft", "approved", "published", "deprecated", "retired"}
 MARKDOWN_LINK = re.compile(r"(?<!!)\[[^\]]+\]\(([^)]+)\)")
 CONTROL_FAMILY = re.compile(r"`([A-Z]{3})`")
-PATTERN_ROW = re.compile(r"^\|\s*(ARC-P[1-9][0-9]{2})\s*\|.*?\|\s*([A-Za-z]+)\s*\|\s*$", re.MULTILINE)
+PATTERN_ROW = re.compile(
+    r"^\|\s*(?:\[)?(ARC-P[1-9][0-9]{2})(?:\]\([^)]+\))?\s*\|.*?\|\s*([A-Za-z]+)\s*\|\s*$",
+    re.MULTILINE,
+)
+PATTERN_METADATA = {
+    "Pattern ID": re.compile(r"^\*\*Pattern ID:\*\*\s*(ARC-P[1-9][0-9]{2})\s*$", re.MULTILINE),
+    "Status": re.compile(r"^\*\*Status:\*\*\s*([A-Za-z]+)\s*$", re.MULTILINE),
+    "Version": re.compile(r"^\*\*Version:\*\*\s*([0-9]+\.[0-9]+\.[0-9]+)\s*$", re.MULTILINE),
+}
+CONTROL_ID = re.compile(r"`([A-Z]{3}-[1-9][0-9]{2})`")
 PLACEHOLDER = re.compile(r"\b(?:TBD|TODO|FIXME)\b", re.IGNORECASE)
 
 
@@ -109,16 +118,50 @@ def validate(root: Path = ROOT) -> list[str]:
     registry_path = root / "architectures/patterns/README.md"
     if registry_path.exists():
         registry = registry_path.read_text(encoding="utf-8")
+        rows = PATTERN_ROW.findall(registry)
+        row_ids = [identifier for identifier, _state in rows]
         for identifier in RESERVED_PATTERNS:
-            count = len(re.findall(rf"\b{re.escape(identifier)}\b", registry))
+            count = row_ids.count(identifier)
             if count != 1:
                 errors.append(f"architectures/patterns/README.md: {identifier} occurs {count} times; expected 1")
-        registered = re.findall(r"\bARC-P[1-9][0-9]{2}\b", registry)
-        for identifier in sorted(set(registered) - set(RESERVED_PATTERNS)):
+        for identifier in sorted(set(row_ids) - set(RESERVED_PATTERNS)):
             errors.append(f"architectures/patterns/README.md: unreserved pattern identifier {identifier}")
-        for identifier, state in PATTERN_ROW.findall(registry):
+        for identifier, state in rows:
             if state.lower() not in PATTERN_STATES:
                 errors.append(f"architectures/patterns/README.md: {identifier} has invalid state {state!r}")
+
+        for pattern_path in sorted((root / "architectures/patterns").glob("ARC-P[1-9][0-9][0-9].md")):
+            relative = pattern_path.relative_to(root).as_posix()
+            text = pattern_path.read_text(encoding="utf-8")
+            filename_id = pattern_path.stem
+            metadata: dict[str, str] = {}
+            for field, expression in PATTERN_METADATA.items():
+                match = expression.search(text)
+                if not match:
+                    errors.append(f"{relative}: missing or invalid {field} metadata")
+                else:
+                    metadata[field] = match.group(1)
+            pattern_id = metadata.get("Pattern ID")
+            if pattern_id and pattern_id != filename_id:
+                errors.append(f"{relative}: Pattern ID {pattern_id} does not match filename {filename_id}")
+            status = metadata.get("Status", "").lower()
+            if status and status not in PATTERN_STATES:
+                errors.append(f"{relative}: invalid pattern status {metadata['Status']!r}")
+            for heading in REQUIRED_TEMPLATE_HEADINGS:
+                if not re.search(rf"^## {re.escape(heading)}\s*$", text, re.MULTILINE):
+                    errors.append(f"{relative}: missing heading '## {heading}'")
+            for control_id in sorted(set(CONTROL_ID.findall(text))):
+                family = control_id.split("-", 1)[0]
+                if not (root / "controls" / family / f"{control_id}.md").is_file():
+                    errors.append(f"{relative}: unresolved control reference {control_id}")
+            if f"[{filename_id}]({filename_id}.md)" not in registry:
+                errors.append(f"architectures/patterns/README.md: {filename_id} record is not linked as '{filename_id}.md'")
+            registry_state = next((state for identifier, state in rows if identifier == filename_id), "")
+            if status and registry_state and status != registry_state.lower():
+                errors.append(
+                    f"architectures/patterns/README.md: {filename_id} registry state {registry_state!r} "
+                    f"does not match record status {metadata['Status']!r}"
+                )
 
     families = valid_control_families(root)
     for path in architecture_markdown(root):

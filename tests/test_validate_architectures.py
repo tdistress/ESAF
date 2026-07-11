@@ -57,6 +57,7 @@ class ArchitectureValidationTests(unittest.TestCase):
 
     def create_valid_foundation(self) -> None:
         self.write("controls/schema/control.schema.json", '{"properties":{"family":{"enum":["ARC","IAM"]}}}')
+        self.write("controls/IAM/IAM-100.md", "# IAM-100 AI Identity Governance\n")
         linked_files = {
             "architectures/README.md": "# Reference Architecture\n\n[Standard](ESAF-1200.md)\n",
             "architectures/ESAF-1200.md": "# ESAF-1200\n\nArchitecture method using `ARC` and `IAM`.\n",
@@ -76,6 +77,28 @@ class ArchitectureValidationTests(unittest.TestCase):
         registry = ["# Pattern Registry", "", "| ID | Pattern | Status |", "|---|---|---|"]
         registry.extend(f"| {identifier} | {title} | Proposed |" for identifier, title in PATTERNS)
         self.write("architectures/patterns/README.md", "\n".join(registry) + "\n")
+
+    def create_valid_pattern(self) -> None:
+        pattern = [
+            "# ARC-P100 Enterprise AI Platform and Gateway",
+            "",
+            "**Pattern ID:** ARC-P100",
+            "",
+            "**Status:** Draft",
+            "",
+            "**Version:** 0.1.0",
+            "",
+        ]
+        for heading in REQUIRED_TEMPLATE_HEADINGS:
+            pattern.extend([f"## {heading}", "", "Required content.", ""])
+        pattern.extend(["Required control: `IAM-100`.", ""])
+        self.write("architectures/patterns/ARC-P100.md", "\n".join(pattern))
+        registry = self.root / "architectures/patterns/README.md"
+        text = registry.read_text(encoding="utf-8")
+        registry.write_text(
+            text.replace("| ARC-P100 | Enterprise AI platform and gateway | Proposed |", "| [ARC-P100](ARC-P100.md) | Enterprise AI platform and gateway | Draft |"),
+            encoding="utf-8",
+        )
 
     def test_valid_foundation_has_no_errors(self) -> None:
         self.create_valid_foundation()
@@ -115,6 +138,55 @@ class ArchitectureValidationTests(unittest.TestCase):
         errors = validate(self.root)
 
         self.assertIn("architectures/README.md: broken local link 'NOT-HERE.md'", errors)
+
+    def test_valid_pattern_record_has_no_errors(self) -> None:
+        self.create_valid_foundation()
+        self.create_valid_pattern()
+
+        self.assertEqual(validate(self.root), [])
+
+    def test_pattern_missing_required_heading_is_reported(self) -> None:
+        self.create_valid_foundation()
+        self.create_valid_pattern()
+        path = self.root / "architectures/patterns/ARC-P100.md"
+        path.write_text(path.read_text(encoding="utf-8").replace("## Anti-patterns\n", ""), encoding="utf-8")
+
+        errors = validate(self.root)
+
+        self.assertIn("architectures/patterns/ARC-P100.md: missing heading '## Anti-patterns'", errors)
+
+    def test_unresolved_control_reference_is_reported(self) -> None:
+        self.create_valid_foundation()
+        self.create_valid_pattern()
+        path = self.root / "architectures/patterns/ARC-P100.md"
+        path.write_text(path.read_text(encoding="utf-8") + "Unknown control: `IAM-999`.\n", encoding="utf-8")
+
+        errors = validate(self.root)
+
+        self.assertIn("architectures/patterns/ARC-P100.md: unresolved control reference IAM-999", errors)
+
+    def test_pattern_metadata_must_match_filename(self) -> None:
+        self.create_valid_foundation()
+        self.create_valid_pattern()
+        path = self.root / "architectures/patterns/ARC-P100.md"
+        path.write_text(path.read_text(encoding="utf-8").replace("**Pattern ID:** ARC-P100", "**Pattern ID:** ARC-P110"), encoding="utf-8")
+
+        errors = validate(self.root)
+
+        self.assertIn("architectures/patterns/ARC-P100.md: Pattern ID ARC-P110 does not match filename ARC-P100", errors)
+
+    def test_pattern_file_requires_registry_link(self) -> None:
+        self.create_valid_foundation()
+        self.create_valid_pattern()
+        registry = self.root / "architectures/patterns/README.md"
+        registry.write_text(
+            registry.read_text(encoding="utf-8").replace("[ARC-P100](ARC-P100.md)", "ARC-P100"),
+            encoding="utf-8",
+        )
+
+        errors = validate(self.root)
+
+        self.assertIn("architectures/patterns/README.md: ARC-P100 record is not linked as 'ARC-P100.md'", errors)
 
 
 if __name__ == "__main__":
