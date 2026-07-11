@@ -1,15 +1,7 @@
 # ESAF-1600 Standards Crosswalk
 
-Planned mappings:
+Crosswalks provide traceability between ESAF controls and external requirements. A mapping does not establish certification, compliance, equivalence, or legal sufficiency.
 
-- NIST AI RMF
-- ISO/IEC 42001
-- PCI DSS
-- HITRUST CSF
-- UK Cyber Essentials
-- SOC 2
-- ISO/IEC 27001
-- NIST CSF
-- CIS Controls
-- OWASP
-- MITRE ATLAS
+Priority mappings include NIST AI RMF, ISO/IEC 42001, PCI DSS, HITRUST CSF, UK Cyber Essentials, NIST CSF, ISO/IEC 27001, CIS Controls, OWASP guidance, and MITRE ATLAS.
+
+Each mapping shall identify the external source version, mapping rationale, direction, strength, reviewer, and review date.

@@ -1,89 +1,84 @@
 # Enterprise Secure AI Framework (ESAF)
 
-> **An Enterprise Standard for the Secure Governance, Architecture, and Operation of Artificial Intelligence**
+> An open enterprise standard for the secure governance, architecture, adoption, and operation of artificial intelligence.
 
 ![Status](https://img.shields.io/badge/status-Working%20Draft-blue)
 ![Version](https://img.shields.io/badge/version-0.1--alpha-orange)
-![License](https://img.shields.io/badge/license-Apache%202.0-green)
-
----
 
 ## Vision
 
-Artificial Intelligence is rapidly becoming foundational to every modern enterprise.
+Artificial intelligence is becoming foundational to modern enterprises, but organizations still lack a single vendor-neutral standard connecting governance, cybersecurity, architecture, risk, operations, assurance, and business adoption.
 
-Organizations are deploying AI across productivity, software engineering, cybersecurity, operations, analytics, customer engagement, healthcare, financial services, media, and critical infrastructure. Yet most organizations lack a comprehensive, vendor-neutral standard for governing, securing, operating, and assessing AI at enterprise scale.
+ESAF is designed to fill that gap. Its design philosophy is simple: build a framework organizations can implement, not merely read.
 
-The **Enterprise Secure AI Framework (ESAF)** is an open, vendor-neutral enterprise standard designed to fill that gap.
+## Core pillars
 
-ESAF provides a complete operating model for enterprise AI by integrating governance, architecture, cybersecurity, risk management, operations, compliance, and continuous improvement into a single, coherent framework.
+- **Protect AI** secures AI systems, models, infrastructure, identities, data, applications, and autonomous agents.
+- **Utilize AI** enables responsible, secure, and measurable enterprise adoption.
+- **Govern AI** establishes oversight, accountability, risk management, compliance, and continuous assurance.
 
----
-
-## Why ESAF?
-
-Existing standards solve pieces of the AI governance challenge.
-
-| Standard / Framework | Primary Focus |
-|----------------------|---------------|
-| NIST AI RMF | AI Risk Management |
-| ISO/IEC 42001 | AI Management Systems |
-| NIST Cybersecurity Framework | Cybersecurity Governance |
-| ISO/IEC 27001 | Information Security |
-| PCI DSS | Payment Security |
-| HITRUST CSF | Healthcare Assurance |
-| OWASP Top 10 for LLM Applications | AI Application Security |
-| MITRE ATLAS | Adversarial AI |
-| CIS Controls | Cybersecurity Best Practices |
-
-**ESAF complements these standards by providing the enterprise operating model that connects them together.**
-
----
-
-## Mission
-
-Provide organizations with a practical, implementation-focused standard for securely adopting, governing, operating, and continuously improving Artificial Intelligence across the enterprise.
-
----
-
-## Core Pillars
-
-### Protect AI
-
-Secure AI systems, models, infrastructure, identities, data, applications, and autonomous agents.
-
-### Utilize AI
-
-Enable responsible, secure, and measurable AI adoption throughout the enterprise.
-
-### Govern AI
-
-Establish executive oversight, enterprise risk management, accountability, compliance, and continuous governance.
-
----
-
-## Framework Components
+## Enterprise AI lifecycle
 
 ```text
-ESAF
-│
-├── ESAF-1000 Enterprise Standard
-├── ESAF-1100 Control Catalog
-├── ESAF-1200 Reference Architecture
-├── ESAF-1300 Governance Manual
-├── ESAF-1400 Implementation Guide
-├── ESAF-1500 Assessment Guide
-├── ESAF-1600 Standards Crosswalk
-├── ESAF-1700 Enterprise AI Data Model
-└── ESAF-1800 Industry Profiles
+Strategy -> Ideation -> Business Case -> Risk Classification
+-> Architecture -> Data Readiness -> Model Selection -> Development
+-> Validation -> Approval -> Deployment -> Operations -> Monitoring
+-> Continuous Improvement -> Retirement
 ```
 
----
+Every requirement, control, architecture, assessment, and governance artifact will map to one or more lifecycle stages.
 
-## Repository Status
+## Publication set
 
-> **Working Draft**
+| ID | Publication | Repository location |
+|---|---|---|
+| ESAF-1000 | Enterprise Standard | `framework/` |
+| ESAF-1100 | Control Catalog | `controls/` |
+| ESAF-1200 | Reference Architecture | `architectures/` |
+| ESAF-1300 | Governance Manual | `governance/` |
+| ESAF-1400 | Implementation Guide | `implementation/` |
+| ESAF-1500 | Assessment Guide | `assessment/` |
+| ESAF-1600 | Standards Crosswalk | `crosswalks/` |
+| ESAF-1700 | Enterprise AI Data Model | `data-model/` |
+| ESAF-1800 | Industry Profiles | `profiles/` |
 
-ESAF is currently under active development.
+## Standards alignment
 
-Content, controls, reference architectures, and implementation guidance are subject to change prior to Version 1.0.
+ESAF is intended to complement and map to recognized sources including NIST AI RMF, NIST CSF 2.0, NIST SP 800-53, ISO/IEC 42001, ISO/IEC 27001, ISO/IEC 23894, CIS Controls, OWASP guidance, MITRE ATLAS, PCI DSS, HITRUST CSF, SOC 2, UK Cyber Essentials, HIPAA, GDPR, and DORA.
+
+Mappings indicate alignment and traceability; they do not by themselves establish compliance or certification.
+
+## Repository map
+
+```text
+.github/          GitHub contribution and review configuration
+framework/        ESAF-1000 normative enterprise standard
+controls/         ESAF-1100 control catalog
+architectures/    ESAF-1200 reference architectures
+governance/       ESAF-1300 governance manual
+implementation/   ESAF-1400 implementation guide
+assessment/       ESAF-1500 assessment guide
+crosswalks/       ESAF-1600 standards mappings
+data-model/       ESAF-1700 canonical governance data model
+profiles/         ESAF-1800 industry and jurisdiction profiles
+templates/        Reusable governance and implementation artifacts
+examples/         Non-normative worked examples
+diagrams/         Editable figure sources and exports
+docs/             Documentation-site entry points
+tools/            Validation, publication, and assessment tooling
+project/          Management of the ESAF initiative itself
+```
+
+## Project status
+
+ESAF is a **working draft**. Content may change before Version 1.0 and shall not be represented as an approved certification scheme.
+
+See [the roadmap](ROADMAP.md), [project charter](PROJECT_CHARTER.md), [governance model](GOVERNANCE.md), [style guide](STYLE_GUIDE.md), and [contribution guide](CONTRIBUTING.md).
+
+## Contributing
+
+Contributions from enterprise architecture, AI engineering, cybersecurity, governance, risk, compliance, privacy, law, operations, audit, academia, and regulated industries are welcome. Open an issue before proposing significant normative or structural changes.
+
+## License
+
+Licensing is not yet finalized. See [LICENSE](LICENSE) before using or redistributing project content.
