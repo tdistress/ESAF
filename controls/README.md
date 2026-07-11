@@ -15,3 +15,4 @@ No example or template is an approved control. Approved controls will be identif
 | Tranche | Families | Base controls | Status |
 |---|---|---:|---|
 | Foundational governance and risk | [GOV](GOV/README.md), [STR](STR/README.md), [RSK](RSK/README.md) | 14 | Draft |
+| Identity and data protection | [IAM](IAM/README.md), [DAT](DAT/README.md) | 13 | Draft |
