@@ -20,3 +20,4 @@ No example or template is an approved control. Approved controls will be identif
 | Infrastructure and agentic AI | [INF](INF/README.md), [AGT](AGT/README.md) | 13 | Draft |
 | Operations and monitoring | [OPS](OPS/README.md), [MON](MON/README.md) | 12 | Draft |
 | Compliance and assurance | [CMP](CMP/README.md), [AUD](AUD/README.md) | 10 | Draft |
+| Workforce and architecture | [EDU](EDU/README.md), [ARC](ARC/README.md) | 11 | Draft |

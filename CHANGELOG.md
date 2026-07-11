@@ -16,6 +16,7 @@ All notable changes to ESAF are documented in this file.
 - Added thirteen normative base-control drafts across the INF and AGT families.
 - Added twelve normative base-control drafts across the OPS and MON families.
 - Added ten normative base-control drafts across the CMP and AUD families.
+- Added eleven normative base-control drafts across the EDU and ARC families, completing initial coverage of all sixteen families.
 
 ### Changed
 
