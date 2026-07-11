@@ -1,78 +1,45 @@
 # ESAF Roadmap
 
 **Status:** Working Draft  
-**Version:** 0.1-alpha  
+**Version:** 0.1-alpha
 
----
+## Phase 0 - Foundation
 
-## Phase 0 — Foundation
+- Stable repository structure and contribution workflow
+- Project charter, governance, style, terminology, and release conventions
+- Enterprise AI lifecycle and control taxonomy decisions
 
-- Repository structure
-- README
-- Project Charter
-- Governance Guide
-- Editorial Style Guide
-- Roadmap
-- Glossary
-- Enterprise AI Lifecycle
-- Control taxonomy
+## Phase 1 - Enterprise Standard
 
-## Phase 1 — Enterprise Standard
+- ESAF-1000 management system and operating model
+- Protect AI, Utilize AI, and Govern AI normative requirements
+- Lifecycle gates, governance artifacts, roles, and decision rights
 
-- ESAF-1000
-- Enterprise AI Operating Model
-- Enterprise AI Lifecycle
-- Protect AI
-- Utilize AI
-- Govern AI
+## Phase 2 - Control Catalog
 
-## Phase 2 — Control Catalog
+- Sixteen control families and their objectives
+- Normative controls, enhancements, evidence, assessment procedures, and metrics
+- Risk-tiered baseline profiles
 
-- ESAF-1100
-- Control families
-- Control objectives
-- Control statements
-- Evidence requirements
-- Assessment procedures
+## Phase 3 - Reference Architecture
 
-## Phase 3 — Reference Architecture
+- Enterprise AI platform and gateway
+- RAG, agentic AI, private model, enterprise copilot, and observability patterns
+- Trust boundaries, security overlays, and implementation decision records
 
-- ESAF-1200
-- Enterprise AI Gateway
-- RAG architecture
-- Agentic AI architecture
-- Private LLM architecture
-- Enterprise copilot architecture
-- AI observability
+## Phase 4 - Standards Crosswalk
 
-## Phase 4 — Standards Crosswalk
+- NIST AI RMF, NIST CSF, NIST SP 800-53, ISO/IEC 42001, and ISO/IEC 27001
+- PCI DSS, HITRUST CSF, UK Cyber Essentials, SOC 2, and CIS Controls
+- OWASP AI guidance, MITRE ATLAS, privacy, and sector obligations
 
-- ESAF-1600
-- NIST AI RMF
-- ISO/IEC 42001
-- PCI DSS
-- HITRUST CSF
-- UK Cyber Essentials
-- SOC 2
-- CIS Controls
-- OWASP
-- MITRE ATLAS
+## Phase 5 - Industry Profiles
 
-## Phase 5 — Industry Profiles
+- Healthcare, financial services, critical infrastructure, retail, government, manufacturing, media, UK, and EU profiles
 
-- Healthcare
-- Financial Services
-- Critical Infrastructure
-- Retail
-- Government
-- Manufacturing
-- Media and Publishing
-- United Kingdom
+## Phase 6 - Assessment Toolkit
 
-## Phase 6 — Assessment Toolkit
+- Capability and control maturity models
+- Assessment workbook, evidence catalog, audit checklist, and governance templates
 
-- Maturity model
-- Assessment workbook
-- Audit checklist
-- Policy templates
-- Evidence templates
+Release criteria and milestone definitions are maintained in `project/`.

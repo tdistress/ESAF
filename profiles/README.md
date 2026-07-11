@@ -1,12 +1,5 @@
 # ESAF-1800 Industry Profiles
 
-Planned profiles:
+Profiles tailor the core ESAF baseline without changing its control meanings. Each profile will define scope, additional risks, control selections, overlays, evidence, and external mappings.
 
-- Healthcare
-- Financial Services
-- Critical Infrastructure
-- Retail
-- Government
-- Manufacturing
-- Media and Publishing
-- United Kingdom
+Planned profiles include healthcare, financial services, critical infrastructure, retail, government, manufacturing, media and publishing, the United Kingdom, and the European Union.

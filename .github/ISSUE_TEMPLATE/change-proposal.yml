@@ -1,0 +1,36 @@
+name: ESAF change proposal
+description: Propose a normative, architectural, mapping, profile, or editorial change.
+title: "[Proposal]: "
+labels: ["draft"]
+body:
+  - type: dropdown
+    id: type
+    attributes:
+      label: Change type
+      options:
+        - Framework
+        - Control
+        - Architecture
+        - Governance
+        - Crosswalk
+        - Industry profile
+        - Assessment
+        - Editorial
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or opportunity
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed change
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Supporting evidence and references

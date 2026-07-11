@@ -1,13 +1,13 @@
-# ESAF-1200 Reference Architectures
+# ESAF-1200 Reference Architecture
 
-This directory will contain reference architectures for secure enterprise AI adoption.
+Reference architectures define vendor-neutral patterns, trust boundaries, required control points, design decisions, and operational evidence.
 
-Planned architectures:
+Initial patterns:
 
-- Enterprise AI Platform
-- Enterprise AI Gateway
-- Retrieval-Augmented Generation
-- Agentic AI
-- Private LLM
-- Enterprise Copilot
-- AI Observability
+- Enterprise AI platform and gateway
+- Enterprise copilot
+- Retrieval-augmented generation
+- Agentic and multi-agent AI
+- Private model deployment
+- AI integration services
+- AI observability
