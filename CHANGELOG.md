@@ -17,6 +17,8 @@ All notable changes to ESAF are documented in this file.
 - Added twelve normative base-control drafts across the OPS and MON families.
 - Added ten normative base-control drafts across the CMP and AUD families.
 - Added eleven normative base-control drafts across the EDU and ARC families, completing initial coverage of all sixteen families.
+- Added deterministic control validation and generated human- and machine-readable catalogs.
+- Added continuous integration checks for control schema, structure, linkage, coverage, indexing, and generated-output drift.
 
 ### Changed
 
