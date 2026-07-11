@@ -13,6 +13,7 @@ All notable changes to ESAF are documented in this file.
 - Added the first fourteen normative base-control drafts across the GOV, STR, and RSK families.
 - Added thirteen normative base-control drafts across the IAM and DAT families.
 - Added eighteen normative base-control drafts across the MOD, APP, and API families.
+- Added thirteen normative base-control drafts across the INF and AGT families.
 
 ### Changed
 
