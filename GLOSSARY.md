@@ -44,3 +44,23 @@ An AI architecture that retrieves relevant enterprise information and supplies i
 ## Enterprise AI Lifecycle
 
 The standard lifecycle through which AI capabilities progress from strategy through retirement.
+
+## Accountable Owner
+
+The individual with authority and responsibility for an AI capability's approved purpose, outcomes, risk, resources, and lifecycle decisions.
+
+## AI Management System
+
+The interacting policies, processes, roles, controls, evidence, and governance used to direct and control an organization's AI capabilities.
+
+## Human Oversight
+
+Meaningful human authority to understand, supervise, challenge, approve, intervene in, or stop AI behavior according to risk.
+
+## Material Change
+
+A change that could alter an AI capability's intended purpose, risk classification, affected population, data use, model behavior, autonomy, architecture, supplier, obligations, or control effectiveness.
+
+## Residual Risk
+
+Risk remaining after selected treatments and controls are applied.
