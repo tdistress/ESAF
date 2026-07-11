@@ -11,6 +11,8 @@ All notable changes to ESAF are documented in this file.
 - Added pattern selection, tailoring, overlay, and architecture decision methods.
 - Added the canonical architecture pattern template and seven-pattern registry.
 - Added deterministic architecture validation, unit tests, and continuous integration enforcement.
+- Added ARC-P100, defining centrally governed and federated enterprise AI platform and gateway enforcement.
+- Extended architecture validation to enforce pattern metadata, registry linkage, required sections, and control-reference integrity.
 
 ### Changed
 
