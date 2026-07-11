@@ -43,14 +43,15 @@ This guide defines editorial, numbering, formatting, and terminology conventions
 
 ## 4. Control Numbering
 
-Control IDs shall use a family prefix and three-digit number.
+Control objectives shall use a family prefix and two-digit number. Base controls shall use a family prefix and three-digit number allocated in increments of ten.
 
 Example:
 
 ```text
+IAM-01 Identity Governance
 IAM-100 Enterprise Authentication
-DAT-200 Data Classification
-AGT-300 Agent Authorization
+IAM-110 Machine Identity
+IAM-120 Privileged Access
 ```
 
 Control enhancements shall use parenthetical numbering.
@@ -64,20 +65,29 @@ IAM-100(2) Adaptive Authentication
 
 ## 5. Control Template
 
-Each control shall include:
+Each control shall include schema-valid YAML metadata and the following content:
 
 - Control ID
 - Title
+- Family
 - Objective
+- Status and version
 - Requirement
 - Intent
+- Applicability
 - Implementation Guidance
+- Organization-defined parameters, when used
 - Evidence
 - Assessment Procedures
 - Metrics
-- Lifecycle Phase
+- Lifecycle stages and pillars
 - Control Owner
+- Baseline selections
+- Related controls
 - Framework Crosswalk
+- Change history
+
+The authoritative authoring template is `controls/CONTROL_TEMPLATE.md`. The metadata schema is `controls/schema/control.schema.json`.
 
 ---
 

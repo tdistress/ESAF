@@ -1,24 +1,11 @@
 # ESAF-1100 Control Catalog
 
-ESAF controls use a family prefix, three-digit identifier, and optional enhancements. Every control will define its objective, normative requirement, intent, implementation guidance, evidence, assessment procedure, metrics, lifecycle stages, owner, and mappings.
+This directory contains the control architecture and, after approval, individual control records.
 
-| Family | Scope |
-|---|---|
-| GOV | Governance |
-| STR | Strategy |
-| RSK | Risk management |
-| IAM | Identity and access management |
-| DAT | Data protection and governance |
-| MOD | Model security and management |
-| APP | AI application security |
-| API | AI platforms and integrations |
-| INF | Infrastructure security |
-| AGT | Autonomous and agentic AI |
-| OPS | Operations and resilience |
-| MON | Monitoring and detection |
-| CMP | Compliance and obligations |
-| AUD | Audit and assurance |
-| EDU | Workforce and competency |
-| ARC | Architecture |
+- [`ESAF-1100.md`](ESAF-1100.md) defines the normative control architecture.
+- [`OBJECTIVES.md`](OBJECTIVES.md) defines family-level control objectives.
+- [`CONTROL_TEMPLATE.md`](CONTROL_TEMPLATE.md) is the authoring template.
+- [`schema/control.schema.json`](schema/control.schema.json) validates machine-readable control metadata.
+- Family directories contain approved controls for that family.
 
-Family directories are intentionally initialized with a README and should not contain controls until their objectives and numbering are approved.
+No example or template is an approved control. Approved controls will be identified by catalog status and release version.

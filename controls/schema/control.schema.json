@@ -1,0 +1,148 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/tdistress/ESAF/main/controls/schema/control.schema.json",
+  "title": "ESAF control metadata",
+  "description": "Schema for metadata extracted from an ESAF control Markdown record.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "title",
+    "family",
+    "objective",
+    "status",
+    "version",
+    "pillars",
+    "lifecycle_stages",
+    "owner_role",
+    "baselines"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}-[1-9][0-9]{2}$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 120
+    },
+    "family": {
+      "enum": ["GOV", "STR", "RSK", "IAM", "DAT", "MOD", "APP", "API", "INF", "AGT", "OPS", "MON", "CMP", "AUD", "EDU", "ARC"]
+    },
+    "objective": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}-[0-9]{2}$"
+    },
+    "status": {
+      "enum": ["proposed", "draft", "approved", "published", "deprecated", "retired"]
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "pillars": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": ["protect", "utilize", "govern"]
+      }
+    },
+    "lifecycle_stages": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "strategy",
+          "ideation",
+          "business_case",
+          "risk_classification",
+          "architecture",
+          "data_readiness",
+          "model_selection",
+          "development",
+          "validation",
+          "approval",
+          "deployment",
+          "operations",
+          "monitoring",
+          "continuous_improvement",
+          "retirement"
+        ]
+      }
+    },
+    "owner_role": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 120
+    },
+    "baselines": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": ["E0", "E1", "E2", "E3", "E4"]
+      }
+    },
+    "parameters": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    },
+    "related_controls": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Z]{3}-[1-9][0-9]{2}(\\([1-9][0-9]*\\))?$"
+      }
+    },
+    "supersedes": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Z]{3}-[1-9][0-9]{2}$"
+      }
+    }
+  },
+  "oneOf": [
+    { "$ref": "#/$defs/GOV" },
+    { "$ref": "#/$defs/STR" },
+    { "$ref": "#/$defs/RSK" },
+    { "$ref": "#/$defs/IAM" },
+    { "$ref": "#/$defs/DAT" },
+    { "$ref": "#/$defs/MOD" },
+    { "$ref": "#/$defs/APP" },
+    { "$ref": "#/$defs/API" },
+    { "$ref": "#/$defs/INF" },
+    { "$ref": "#/$defs/AGT" },
+    { "$ref": "#/$defs/OPS" },
+    { "$ref": "#/$defs/MON" },
+    { "$ref": "#/$defs/CMP" },
+    { "$ref": "#/$defs/AUD" },
+    { "$ref": "#/$defs/EDU" },
+    { "$ref": "#/$defs/ARC" }
+  ],
+  "$defs": {
+    "GOV": { "properties": { "family": { "const": "GOV" }, "id": { "pattern": "^GOV-[1-9][0-9]{2}$" }, "objective": { "pattern": "^GOV-[0-9]{2}$" } } },
+    "STR": { "properties": { "family": { "const": "STR" }, "id": { "pattern": "^STR-[1-9][0-9]{2}$" }, "objective": { "pattern": "^STR-[0-9]{2}$" } } },
+    "RSK": { "properties": { "family": { "const": "RSK" }, "id": { "pattern": "^RSK-[1-9][0-9]{2}$" }, "objective": { "pattern": "^RSK-[0-9]{2}$" } } },
+    "IAM": { "properties": { "family": { "const": "IAM" }, "id": { "pattern": "^IAM-[1-9][0-9]{2}$" }, "objective": { "pattern": "^IAM-[0-9]{2}$" } } },
+    "DAT": { "properties": { "family": { "const": "DAT" }, "id": { "pattern": "^DAT-[1-9][0-9]{2}$" }, "objective": { "pattern": "^DAT-[0-9]{2}$" } } },
+    "MOD": { "properties": { "family": { "const": "MOD" }, "id": { "pattern": "^MOD-[1-9][0-9]{2}$" }, "objective": { "pattern": "^MOD-[0-9]{2}$" } } },
+    "APP": { "properties": { "family": { "const": "APP" }, "id": { "pattern": "^APP-[1-9][0-9]{2}$" }, "objective": { "pattern": "^APP-[0-9]{2}$" } } },
+    "API": { "properties": { "family": { "const": "API" }, "id": { "pattern": "^API-[1-9][0-9]{2}$" }, "objective": { "pattern": "^API-[0-9]{2}$" } } },
+    "INF": { "properties": { "family": { "const": "INF" }, "id": { "pattern": "^INF-[1-9][0-9]{2}$" }, "objective": { "pattern": "^INF-[0-9]{2}$" } } },
+    "AGT": { "properties": { "family": { "const": "AGT" }, "id": { "pattern": "^AGT-[1-9][0-9]{2}$" }, "objective": { "pattern": "^AGT-[0-9]{2}$" } } },
+    "OPS": { "properties": { "family": { "const": "OPS" }, "id": { "pattern": "^OPS-[1-9][0-9]{2}$" }, "objective": { "pattern": "^OPS-[0-9]{2}$" } } },
+    "MON": { "properties": { "family": { "const": "MON" }, "id": { "pattern": "^MON-[1-9][0-9]{2}$" }, "objective": { "pattern": "^MON-[0-9]{2}$" } } },
+    "CMP": { "properties": { "family": { "const": "CMP" }, "id": { "pattern": "^CMP-[1-9][0-9]{2}$" }, "objective": { "pattern": "^CMP-[0-9]{2}$" } } },
+    "AUD": { "properties": { "family": { "const": "AUD" }, "id": { "pattern": "^AUD-[1-9][0-9]{2}$" }, "objective": { "pattern": "^AUD-[0-9]{2}$" } } },
+    "EDU": { "properties": { "family": { "const": "EDU" }, "id": { "pattern": "^EDU-[1-9][0-9]{2}$" }, "objective": { "pattern": "^EDU-[0-9]{2}$" } } },
+    "ARC": { "properties": { "family": { "const": "ARC" }, "id": { "pattern": "^ARC-[1-9][0-9]{2}$" }, "objective": { "pattern": "^ARC-[0-9]{2}$" } } }
+  }
+}

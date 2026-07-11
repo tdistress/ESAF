@@ -2,6 +2,19 @@
 
 All notable changes to ESAF are documented in this file.
 
+## 0.3-alpha - Unreleased
+
+### Added
+
+- Defined the ESAF-1100 control architecture, identifiers, lifecycle, baselines, assessment methods, and evidence model.
+- Defined objectives for all sixteen control families.
+- Added the canonical control authoring template and machine-validatable metadata schema.
+- Defined control inheritance, organization-defined parameters, and external mapping semantics.
+
+### Changed
+
+- Updated the editorial style guide with approved control-numbering and metadata conventions.
+
 ## 0.2-alpha - Unreleased
 
 ### Added
