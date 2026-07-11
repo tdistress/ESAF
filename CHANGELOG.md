@@ -2,6 +2,20 @@
 
 All notable changes to ESAF are documented in this file.
 
+## 0.4-alpha - Unreleased
+
+### Added
+
+- Defined the normative ESAF-1200 architecture method.
+- Added ten architecture principles and eight reusable logical trust zones.
+- Added pattern selection, tailoring, overlay, and architecture decision methods.
+- Added the canonical architecture pattern template and seven-pattern registry.
+- Added deterministic architecture validation, unit tests, and continuous integration enforcement.
+
+### Changed
+
+- Advanced release metadata to the Reference Architecture Foundation stage.
+
 ## 0.3-alpha - Unreleased
 
 ### Added

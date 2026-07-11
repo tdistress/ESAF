@@ -1,6 +1,6 @@
 # ESAF-1200 Reference Architecture Foundation Design
 
-**Status:** Draft for review
+**Status:** Approved
 
 **Milestone:** Phase 3 - Reference Architecture
 
