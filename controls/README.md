@@ -6,6 +6,8 @@ This directory contains the control architecture and, after approval, individual
 - [`OBJECTIVES.md`](OBJECTIVES.md) defines family-level control objectives.
 - [`CONTROL_TEMPLATE.md`](CONTROL_TEMPLATE.md) is the authoring template.
 - [`schema/control.schema.json`](schema/control.schema.json) validates machine-readable control metadata.
+- [`CATALOG.md`](CATALOG.md) is the generated human-readable catalog and coverage summary.
+- [`catalog.json`](catalog.json) is the generated machine-readable catalog.
 - Family directories contain approved controls for that family.
 
 No example or template is an approved control. Approved controls will be identified by catalog status and release version.

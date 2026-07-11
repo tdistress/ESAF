@@ -11,3 +11,4 @@
 | DEC-0007 | 2026-07-11 | Base control numbers increment by ten; published identifiers are never reused. | Accepted |
 | DEC-0008 | 2026-07-11 | Control metadata is YAML front matter validated against a versioned JSON Schema. | Accepted |
 | DEC-0009 | 2026-07-11 | External mappings use explicit relationship, direction, source version, rationale, reviewer, and review date metadata. | Accepted |
+| DEC-0010 | 2026-07-11 | Control Markdown records are authoritative; human- and machine-readable catalogs are deterministically generated and verified in continuous integration. | Accepted |

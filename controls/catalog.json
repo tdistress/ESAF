@@ -1,0 +1,2615 @@
+{
+  "schema_version": "1.0.0",
+  "generated_from": "controls/<family>/<control-id>.md",
+  "control_count": 91,
+  "objective_count": 91,
+  "families": {
+    "GOV": 5,
+    "STR": 4,
+    "RSK": 5,
+    "IAM": 6,
+    "DAT": 7,
+    "MOD": 6,
+    "APP": 6,
+    "API": 6,
+    "INF": 6,
+    "AGT": 7,
+    "OPS": 6,
+    "MON": 6,
+    "CMP": 5,
+    "AUD": 5,
+    "EDU": 5,
+    "ARC": 6
+  },
+  "baseline_coverage": {
+    "E0": 80,
+    "E1": 89,
+    "E2": 90,
+    "E3": 90,
+    "E4": 90
+  },
+  "pillar_coverage": {
+    "govern": 64,
+    "protect": 74,
+    "utilize": 39
+  },
+  "lifecycle_coverage": {
+    "approval": 48,
+    "architecture": 43,
+    "business_case": 8,
+    "continuous_improvement": 20,
+    "data_readiness": 11,
+    "deployment": 59,
+    "development": 38,
+    "ideation": 15,
+    "model_selection": 8,
+    "monitoring": 44,
+    "operations": 84,
+    "retirement": 37,
+    "risk_classification": 8,
+    "strategy": 14,
+    "validation": 51
+  },
+  "controls": [
+    {
+      "id": "GOV-100",
+      "title": "Enterprise AI Governance Authority",
+      "family": "GOV",
+      "objective": "GOV-01",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "govern"
+      ],
+      "lifecycle_stages": [
+        "strategy",
+        "approval",
+        "operations",
+        "continuous_improvement"
+      ],
+      "owner_role": "Executive Leadership",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "GOV/GOV-100.md"
+    },
+    {
+      "id": "GOV-110",
+      "title": "Enterprise AI Policy",
+      "family": "GOV",
+      "objective": "GOV-02",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "govern",
+        "protect",
+        "utilize"
+      ],
+      "lifecycle_stages": [
+        "strategy",
+        "ideation",
+        "operations",
+        "continuous_improvement"
+      ],
+      "owner_role": "AI Governance Council",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "GOV/GOV-110.md"
+    },
+    {
+      "id": "GOV-120",
+      "title": "AI Portfolio Oversight",
+      "family": "GOV",
+      "objective": "GOV-03",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "govern",
+        "utilize"
+      ],
+      "lifecycle_stages": [
+        "strategy",
+        "business_case",
+        "approval",
+        "operations",
+        "monitoring",
+        "retirement"
+      ],
+      "owner_role": "Executive AI Steering Authority",
+      "baselines": [
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "GOV/GOV-120.md"
+    },
+    {
+      "id": "GOV-130",
+      "title": "AI Capability Accountability",
+      "family": "GOV",
+      "objective": "GOV-04",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "govern"
+      ],
+      "lifecycle_stages": [
+        "ideation",
+        "business_case",
+        "approval",
+        "operations",
+        "retirement"
+      ],
+      "owner_role": "AI Governance Council",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "GOV/GOV-130.md"
+    },
+    {
+      "id": "GOV-140",
+      "title": "AI Exception Governance",
+      "family": "GOV",
+      "objective": "GOV-05",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "govern"
+      ],
+      "lifecycle_stages": [
+        "risk_classification",
+        "approval",
+        "operations",
+        "monitoring",
+        "continuous_improvement"
+      ],
+      "owner_role": "Enterprise Risk Management",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "GOV/GOV-140.md"
+    },
+    {
+      "id": "STR-100",
+      "title": "Enterprise AI Strategy Alignment",
+      "family": "STR",
+      "objective": "STR-01",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "utilize",
+        "govern"
+      ],
+      "lifecycle_stages": [
+        "strategy",
+        "ideation",
+        "business_case",
+        "continuous_improvement"
+      ],
+      "owner_role": "Executive AI Steering Authority",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "STR/STR-100.md"
+    },
+    {
+      "id": "STR-110",
+      "title": "AI Value Realization",
+      "family": "STR",
+      "objective": "STR-02",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "utilize",
+        "govern"
+      ],
+      "lifecycle_stages": [
+        "business_case",
+        "validation",
+        "operations",
+        "monitoring",
+        "continuous_improvement",
+        "retirement"
+      ],
+      "owner_role": "AI Capability Business Owner",
+      "baselines": [
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "STR/STR-110.md"
+    },
+    {
+      "id": "STR-120",
+      "title": "Controlled AI Experimentation",
+      "family": "STR",
+      "objective": "STR-03",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "utilize",
+        "govern",
+        "protect"
+      ],
+      "lifecycle_stages": [
+        "ideation",
+        "risk_classification",
+        "architecture",
+        "data_readiness",
+        "development",
+        "validation"
+      ],
+      "owner_role": "AI Innovation Program Owner",
+      "baselines": [
+        "E0"
+      ],
+      "path": "STR/STR-120.md"
+    },
+    {
+      "id": "STR-130",
+      "title": "AI Resource Planning",
+      "family": "STR",
+      "objective": "STR-04",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "utilize",
+        "govern"
+      ],
+      "lifecycle_stages": [
+        "strategy",
+        "business_case",
+        "approval",
+        "operations",
+        "continuous_improvement"
+      ],
+      "owner_role": "Executive AI Steering Authority",
+      "baselines": [
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "STR/STR-130.md"
+    },
+    {
+      "id": "RSK-100",
+      "title": "Enterprise AI Risk Methodology",
+      "family": "RSK",
+      "objective": "RSK-01",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "govern",
+        "protect",
+        "utilize"
+      ],
+      "lifecycle_stages": [
+        "strategy",
+        "risk_classification",
+        "validation",
+        "approval",
+        "operations",
+        "monitoring",
+        "continuous_improvement"
+      ],
+      "owner_role": "Enterprise Risk Management",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "RSK/RSK-100.md"
+    },
+    {
+      "id": "RSK-110",
+      "title": "AI Capability Risk Classification",
+      "family": "RSK",
+      "objective": "RSK-02",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "govern",
+        "protect"
+      ],
+      "lifecycle_stages": [
+        "ideation",
+        "risk_classification",
+        "architecture",
+        "approval",
+        "operations"
+      ],
+      "owner_role": "Enterprise Risk Management",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "RSK/RSK-110.md"
+    },
+    {
+      "id": "RSK-120",
+      "title": "AI Risk Treatment and Acceptance",
+      "family": "RSK",
+      "objective": "RSK-03",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "govern",
+        "protect"
+      ],
+      "lifecycle_stages": [
+        "risk_classification",
+        "architecture",
+        "validation",
+        "approval",
+        "operations",
+        "monitoring"
+      ],
+      "owner_role": "Enterprise Risk Management",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "RSK/RSK-120.md"
+    },
+    {
+      "id": "RSK-130",
+      "title": "AI Impact Assessment",
+      "family": "RSK",
+      "objective": "RSK-04",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "govern",
+        "utilize"
+      ],
+      "lifecycle_stages": [
+        "ideation",
+        "risk_classification",
+        "data_readiness",
+        "validation",
+        "approval",
+        "monitoring"
+      ],
+      "owner_role": "AI Capability Business Owner",
+      "baselines": [
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "RSK/RSK-130.md"
+    },
+    {
+      "id": "RSK-140",
+      "title": "Material Change Risk Review",
+      "family": "RSK",
+      "objective": "RSK-05",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "govern",
+        "protect",
+        "utilize"
+      ],
+      "lifecycle_stages": [
+        "development",
+        "validation",
+        "approval",
+        "deployment",
+        "operations",
+        "monitoring",
+        "continuous_improvement"
+      ],
+      "owner_role": "AI Capability Technical Owner",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "RSK/RSK-140.md"
+    },
+    {
+      "id": "IAM-100",
+      "title": "AI Identity Governance",
+      "family": "IAM",
+      "objective": "IAM-01",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect",
+        "govern"
+      ],
+      "lifecycle_stages": [
+        "architecture",
+        "development",
+        "approval",
+        "deployment",
+        "operations",
+        "retirement"
+      ],
+      "owner_role": "Identity and Access Management",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "IAM/IAM-100.md"
+    },
+    {
+      "id": "IAM-110",
+      "title": "AI Authentication",
+      "family": "IAM",
+      "objective": "IAM-02",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect"
+      ],
+      "lifecycle_stages": [
+        "architecture",
+        "development",
+        "validation",
+        "deployment",
+        "operations"
+      ],
+      "owner_role": "Identity and Access Management",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "IAM/IAM-110.md"
+    },
+    {
+      "id": "IAM-120",
+      "title": "AI Authorization and Least Privilege",
+      "family": "IAM",
+      "objective": "IAM-03",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect",
+        "govern"
+      ],
+      "lifecycle_stages": [
+        "architecture",
+        "development",
+        "approval",
+        "deployment",
+        "operations"
+      ],
+      "owner_role": "AI Capability Technical Owner",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "IAM/IAM-120.md"
+    },
+    {
+      "id": "IAM-130",
+      "title": "Privileged AI Access",
+      "family": "IAM",
+      "objective": "IAM-04",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect"
+      ],
+      "lifecycle_stages": [
+        "architecture",
+        "deployment",
+        "operations",
+        "monitoring",
+        "retirement"
+      ],
+      "owner_role": "Identity and Access Management",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "IAM/IAM-130.md"
+    },
+    {
+      "id": "IAM-140",
+      "title": "AI Secrets Management",
+      "family": "IAM",
+      "objective": "IAM-05",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect"
+      ],
+      "lifecycle_stages": [
+        "architecture",
+        "development",
+        "validation",
+        "deployment",
+        "operations",
+        "retirement"
+      ],
+      "owner_role": "AI Capability Technical Owner",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "IAM/IAM-140.md"
+    },
+    {
+      "id": "IAM-150",
+      "title": "AI Access Review and Revocation",
+      "family": "IAM",
+      "objective": "IAM-06",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect",
+        "govern"
+      ],
+      "lifecycle_stages": [
+        "approval",
+        "operations",
+        "monitoring",
+        "retirement"
+      ],
+      "owner_role": "Identity and Access Management",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "IAM/IAM-150.md"
+    },
+    {
+      "id": "DAT-100",
+      "title": "AI Data Authority and Purpose",
+      "family": "DAT",
+      "objective": "DAT-01",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect",
+        "govern"
+      ],
+      "lifecycle_stages": [
+        "ideation",
+        "data_readiness",
+        "development",
+        "approval",
+        "operations",
+        "retirement"
+      ],
+      "owner_role": "Data Owner",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "DAT/DAT-100.md"
+    },
+    {
+      "id": "DAT-110",
+      "title": "AI Data Classification and Handling",
+      "family": "DAT",
+      "objective": "DAT-02",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect"
+      ],
+      "lifecycle_stages": [
+        "data_readiness",
+        "architecture",
+        "development",
+        "deployment",
+        "operations",
+        "retirement"
+      ],
+      "owner_role": "Data Owner",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "DAT/DAT-110.md"
+    },
+    {
+      "id": "DAT-120",
+      "title": "AI Data Quality and Suitability",
+      "family": "DAT",
+      "objective": "DAT-03",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect",
+        "utilize"
+      ],
+      "lifecycle_stages": [
+        "data_readiness",
+        "model_selection",
+        "development",
+        "validation",
+        "monitoring"
+      ],
+      "owner_role": "Data Owner",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "DAT/DAT-120.md"
+    },
+    {
+      "id": "DAT-130",
+      "title": "AI Data Lineage and Provenance",
+      "family": "DAT",
+      "objective": "DAT-04",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect",
+        "govern"
+      ],
+      "lifecycle_stages": [
+        "data_readiness",
+        "development",
+        "validation",
+        "deployment",
+        "operations",
+        "retirement"
+      ],
+      "owner_role": "Data Governance",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "DAT/DAT-130.md"
+    },
+    {
+      "id": "DAT-140",
+      "title": "AI Privacy and Data Rights",
+      "family": "DAT",
+      "objective": "DAT-05",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect",
+        "govern"
+      ],
+      "lifecycle_stages": [
+        "ideation",
+        "data_readiness",
+        "architecture",
+        "validation",
+        "approval",
+        "operations",
+        "retirement"
+      ],
+      "owner_role": "Privacy Office",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "DAT/DAT-140.md"
+    },
+    {
+      "id": "DAT-150",
+      "title": "Retrieval, Embedding, and Vector Data Protection",
+      "family": "DAT",
+      "objective": "DAT-06",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect"
+      ],
+      "lifecycle_stages": [
+        "architecture",
+        "data_readiness",
+        "development",
+        "validation",
+        "deployment",
+        "operations",
+        "retirement"
+      ],
+      "owner_role": "AI Capability Technical Owner",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "DAT/DAT-150.md"
+    },
+    {
+      "id": "DAT-160",
+      "title": "AI Output and Feedback Governance",
+      "family": "DAT",
+      "objective": "DAT-07",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect",
+        "utilize",
+        "govern"
+      ],
+      "lifecycle_stages": [
+        "development",
+        "validation",
+        "deployment",
+        "operations",
+        "monitoring",
+        "retirement"
+      ],
+      "owner_role": "AI Capability Business Owner",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "DAT/DAT-160.md"
+    },
+    {
+      "id": "MOD-100",
+      "title": "Model Governance and Registry",
+      "family": "MOD",
+      "objective": "MOD-01",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect",
+        "govern"
+      ],
+      "lifecycle_stages": [
+        "model_selection",
+        "development",
+        "validation",
+        "approval",
+        "deployment",
+        "operations",
+        "retirement"
+      ],
+      "owner_role": "Model Owner",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "MOD/MOD-100.md"
+    },
+    {
+      "id": "MOD-110",
+      "title": "Model Provenance and Supply Chain",
+      "family": "MOD",
+      "objective": "MOD-02",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect",
+        "govern"
+      ],
+      "lifecycle_stages": [
+        "model_selection",
+        "development",
+        "validation",
+        "approval",
+        "deployment",
+        "operations"
+      ],
+      "owner_role": "Model Owner",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "MOD/MOD-110.md"
+    },
+    {
+      "id": "MOD-120",
+      "title": "Model Validation",
+      "family": "MOD",
+      "objective": "MOD-03",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect",
+        "utilize",
+        "govern"
+      ],
+      "lifecycle_stages": [
+        "model_selection",
+        "validation",
+        "approval",
+        "deployment",
+        "monitoring"
+      ],
+      "owner_role": "Model Validation Lead",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "MOD/MOD-120.md"
+    },
+    {
+      "id": "MOD-130",
+      "title": "Model Change and Version Control",
+      "family": "MOD",
+      "objective": "MOD-04",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect",
+        "govern"
+      ],
+      "lifecycle_stages": [
+        "development",
+        "validation",
+        "approval",
+        "deployment",
+        "operations",
+        "monitoring"
+      ],
+      "owner_role": "Model Owner",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "MOD/MOD-130.md"
+    },
+    {
+      "id": "MOD-140",
+      "title": "Model Protection and Integrity",
+      "family": "MOD",
+      "objective": "MOD-05",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect"
+      ],
+      "lifecycle_stages": [
+        "development",
+        "deployment",
+        "operations",
+        "monitoring",
+        "retirement"
+      ],
+      "owner_role": "Model Owner",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "MOD/MOD-140.md"
+    },
+    {
+      "id": "MOD-150",
+      "title": "Model Retirement",
+      "family": "MOD",
+      "objective": "MOD-06",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect",
+        "govern"
+      ],
+      "lifecycle_stages": [
+        "operations",
+        "monitoring",
+        "retirement"
+      ],
+      "owner_role": "Model Owner",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "MOD/MOD-150.md"
+    },
+    {
+      "id": "APP-100",
+      "title": "Secure AI Application Design",
+      "family": "APP",
+      "objective": "APP-01",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect"
+      ],
+      "lifecycle_stages": [
+        "ideation",
+        "architecture",
+        "development",
+        "validation",
+        "approval"
+      ],
+      "owner_role": "Application Owner",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "APP/APP-100.md"
+    },
+    {
+      "id": "APP-110",
+      "title": "Input and Context Protection",
+      "family": "APP",
+      "objective": "APP-02",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect"
+      ],
+      "lifecycle_stages": [
+        "architecture",
+        "development",
+        "validation",
+        "deployment",
+        "operations"
+      ],
+      "owner_role": "Application Owner",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "APP/APP-110.md"
+    },
+    {
+      "id": "APP-120",
+      "title": "Output Validation and Safe Consumption",
+      "family": "APP",
+      "objective": "APP-03",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect",
+        "utilize"
+      ],
+      "lifecycle_stages": [
+        "development",
+        "validation",
+        "deployment",
+        "operations",
+        "monitoring"
+      ],
+      "owner_role": "Application Owner",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "APP/APP-120.md"
+    },
+    {
+      "id": "APP-130",
+      "title": "Session, Tenant, and Memory Isolation",
+      "family": "APP",
+      "objective": "APP-04",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect"
+      ],
+      "lifecycle_stages": [
+        "architecture",
+        "development",
+        "validation",
+        "deployment",
+        "operations"
+      ],
+      "owner_role": "Application Owner",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "APP/APP-130.md"
+    },
+    {
+      "id": "APP-140",
+      "title": "AI Software Assurance",
+      "family": "APP",
+      "objective": "APP-05",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect",
+        "utilize"
+      ],
+      "lifecycle_stages": [
+        "architecture",
+        "development",
+        "validation",
+        "approval",
+        "deployment",
+        "operations"
+      ],
+      "owner_role": "Application Engineering",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "APP/APP-140.md"
+    },
+    {
+      "id": "APP-150",
+      "title": "AI Abuse and Resource Protection",
+      "family": "APP",
+      "objective": "APP-06",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect"
+      ],
+      "lifecycle_stages": [
+        "architecture",
+        "validation",
+        "deployment",
+        "operations",
+        "monitoring"
+      ],
+      "owner_role": "Application Owner",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "APP/APP-150.md"
+    },
+    {
+      "id": "API-100",
+      "title": "Enterprise AI Gateway",
+      "family": "API",
+      "objective": "API-01",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect",
+        "govern",
+        "utilize"
+      ],
+      "lifecycle_stages": [
+        "architecture",
+        "development",
+        "deployment",
+        "operations",
+        "monitoring"
+      ],
+      "owner_role": "AI Platform Owner",
+      "baselines": [
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "API/API-100.md"
+    },
+    {
+      "id": "API-110",
+      "title": "AI API Security",
+      "family": "API",
+      "objective": "API-02",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect"
+      ],
+      "lifecycle_stages": [
+        "architecture",
+        "development",
+        "validation",
+        "deployment",
+        "operations"
+      ],
+      "owner_role": "API Owner",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "API/API-110.md"
+    },
+    {
+      "id": "API-120",
+      "title": "AI Tool and Plugin Governance",
+      "family": "API",
+      "objective": "API-03",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect",
+        "govern"
+      ],
+      "lifecycle_stages": [
+        "ideation",
+        "architecture",
+        "validation",
+        "approval",
+        "deployment",
+        "operations",
+        "retirement"
+      ],
+      "owner_role": "AI Platform Owner",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "API/API-120.md"
+    },
+    {
+      "id": "API-130",
+      "title": "MCP and Orchestration Security",
+      "family": "API",
+      "objective": "API-04",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect"
+      ],
+      "lifecycle_stages": [
+        "architecture",
+        "development",
+        "validation",
+        "deployment",
+        "operations",
+        "monitoring"
+      ],
+      "owner_role": "AI Platform Owner",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "API/API-130.md"
+    },
+    {
+      "id": "API-140",
+      "title": "External AI Service Integration",
+      "family": "API",
+      "objective": "API-05",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect",
+        "govern",
+        "utilize"
+      ],
+      "lifecycle_stages": [
+        "business_case",
+        "architecture",
+        "model_selection",
+        "approval",
+        "deployment",
+        "operations",
+        "retirement"
+      ],
+      "owner_role": "AI Capability Technical Owner",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "API/API-140.md"
+    },
+    {
+      "id": "API-150",
+      "title": "AI Interoperability and Portability",
+      "family": "API",
+      "objective": "API-06",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "utilize",
+        "protect",
+        "govern"
+      ],
+      "lifecycle_stages": [
+        "strategy",
+        "architecture",
+        "development",
+        "deployment",
+        "operations",
+        "retirement"
+      ],
+      "owner_role": "Enterprise Architecture",
+      "baselines": [
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "API/API-150.md"
+    },
+    {
+      "id": "INF-100",
+      "title": "Approved AI Hosting",
+      "family": "INF",
+      "objective": "INF-01",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect",
+        "govern"
+      ],
+      "lifecycle_stages": [
+        "architecture",
+        "approval",
+        "deployment",
+        "operations",
+        "retirement"
+      ],
+      "owner_role": "AI Platform Owner",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "INF/INF-100.md"
+    },
+    {
+      "id": "INF-110",
+      "title": "AI Infrastructure Hardening",
+      "family": "INF",
+      "objective": "INF-02",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect"
+      ],
+      "lifecycle_stages": [
+        "architecture",
+        "development",
+        "validation",
+        "deployment",
+        "operations"
+      ],
+      "owner_role": "Platform Engineering",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "INF/INF-110.md"
+    },
+    {
+      "id": "INF-120",
+      "title": "AI Infrastructure Vulnerability Management",
+      "family": "INF",
+      "objective": "INF-03",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect"
+      ],
+      "lifecycle_stages": [
+        "development",
+        "validation",
+        "deployment",
+        "operations",
+        "monitoring",
+        "retirement"
+      ],
+      "owner_role": "Vulnerability Management",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "INF/INF-120.md"
+    },
+    {
+      "id": "INF-130",
+      "title": "AI Infrastructure Configuration and Change",
+      "family": "INF",
+      "objective": "INF-04",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect",
+        "govern"
+      ],
+      "lifecycle_stages": [
+        "architecture",
+        "development",
+        "validation",
+        "deployment",
+        "operations",
+        "retirement"
+      ],
+      "owner_role": "Platform Engineering",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "INF/INF-130.md"
+    },
+    {
+      "id": "INF-140",
+      "title": "AI Cryptographic Protection",
+      "family": "INF",
+      "objective": "INF-05",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect"
+      ],
+      "lifecycle_stages": [
+        "architecture",
+        "development",
+        "deployment",
+        "operations",
+        "retirement"
+      ],
+      "owner_role": "Cryptographic Services",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "INF/INF-140.md"
+    },
+    {
+      "id": "INF-150",
+      "title": "AI Capacity and Resource Safeguards",
+      "family": "INF",
+      "objective": "INF-06",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect",
+        "utilize"
+      ],
+      "lifecycle_stages": [
+        "architecture",
+        "validation",
+        "deployment",
+        "operations",
+        "monitoring"
+      ],
+      "owner_role": "AI Platform Owner",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "INF/INF-150.md"
+    },
+    {
+      "id": "AGT-100",
+      "title": "Agent Accountability and Identity",
+      "family": "AGT",
+      "objective": "AGT-01",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect",
+        "govern"
+      ],
+      "lifecycle_stages": [
+        "ideation",
+        "architecture",
+        "approval",
+        "deployment",
+        "operations",
+        "retirement"
+      ],
+      "owner_role": "Agent Owner",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "AGT/AGT-100.md"
+    },
+    {
+      "id": "AGT-110",
+      "title": "Agent Permission and Delegation Boundaries",
+      "family": "AGT",
+      "objective": "AGT-02",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect"
+      ],
+      "lifecycle_stages": [
+        "architecture",
+        "development",
+        "validation",
+        "approval",
+        "deployment",
+        "operations"
+      ],
+      "owner_role": "Agent Owner",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "AGT/AGT-110.md"
+    },
+    {
+      "id": "AGT-120",
+      "title": "Agent Human Oversight",
+      "family": "AGT",
+      "objective": "AGT-03",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "govern",
+        "protect",
+        "utilize"
+      ],
+      "lifecycle_stages": [
+        "risk_classification",
+        "architecture",
+        "validation",
+        "approval",
+        "operations",
+        "monitoring"
+      ],
+      "owner_role": "Agent Owner",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "AGT/AGT-120.md"
+    },
+    {
+      "id": "AGT-130",
+      "title": "Agent Memory and State Governance",
+      "family": "AGT",
+      "objective": "AGT-04",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect",
+        "govern"
+      ],
+      "lifecycle_stages": [
+        "architecture",
+        "development",
+        "validation",
+        "deployment",
+        "operations",
+        "retirement"
+      ],
+      "owner_role": "Agent Owner",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "AGT/AGT-130.md"
+    },
+    {
+      "id": "AGT-140",
+      "title": "Agent Action Traceability",
+      "family": "AGT",
+      "objective": "AGT-05",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect",
+        "govern"
+      ],
+      "lifecycle_stages": [
+        "validation",
+        "deployment",
+        "operations",
+        "monitoring",
+        "continuous_improvement"
+      ],
+      "owner_role": "Agent Owner",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "AGT/AGT-140.md"
+    },
+    {
+      "id": "AGT-150",
+      "title": "Agent Intervention and Recovery",
+      "family": "AGT",
+      "objective": "AGT-06",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect",
+        "utilize"
+      ],
+      "lifecycle_stages": [
+        "architecture",
+        "validation",
+        "approval",
+        "deployment",
+        "operations",
+        "monitoring"
+      ],
+      "owner_role": "Agent Owner",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "AGT/AGT-150.md"
+    },
+    {
+      "id": "AGT-160",
+      "title": "Multi-Agent Control",
+      "family": "AGT",
+      "objective": "AGT-07",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect",
+        "govern"
+      ],
+      "lifecycle_stages": [
+        "architecture",
+        "development",
+        "validation",
+        "approval",
+        "deployment",
+        "operations",
+        "monitoring"
+      ],
+      "owner_role": "Agent Owner",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "AGT/AGT-160.md"
+    },
+    {
+      "id": "OPS-100",
+      "title": "AI Service Ownership and Objectives",
+      "family": "OPS",
+      "objective": "OPS-01",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "utilize",
+        "govern"
+      ],
+      "lifecycle_stages": [
+        "approval",
+        "deployment",
+        "operations",
+        "monitoring",
+        "retirement"
+      ],
+      "owner_role": "AI Capability Technical Owner",
+      "baselines": [
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "OPS/OPS-100.md"
+    },
+    {
+      "id": "OPS-110",
+      "title": "AI Change and Release Management",
+      "family": "OPS",
+      "objective": "OPS-02",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "utilize",
+        "protect",
+        "govern"
+      ],
+      "lifecycle_stages": [
+        "development",
+        "validation",
+        "approval",
+        "deployment",
+        "operations",
+        "continuous_improvement"
+      ],
+      "owner_role": "AI Capability Technical Owner",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "OPS/OPS-110.md"
+    },
+    {
+      "id": "OPS-120",
+      "title": "AI Incident Management",
+      "family": "OPS",
+      "objective": "OPS-03",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect",
+        "govern",
+        "utilize"
+      ],
+      "lifecycle_stages": [
+        "deployment",
+        "operations",
+        "monitoring",
+        "continuous_improvement"
+      ],
+      "owner_role": "Incident Response",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "OPS/OPS-120.md"
+    },
+    {
+      "id": "OPS-130",
+      "title": "AI Continuity and Recovery",
+      "family": "OPS",
+      "objective": "OPS-04",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect",
+        "utilize"
+      ],
+      "lifecycle_stages": [
+        "architecture",
+        "validation",
+        "approval",
+        "deployment",
+        "operations",
+        "monitoring"
+      ],
+      "owner_role": "Business Continuity",
+      "baselines": [
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "OPS/OPS-130.md"
+    },
+    {
+      "id": "OPS-140",
+      "title": "AI Capacity and Performance Management",
+      "family": "OPS",
+      "objective": "OPS-05",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "utilize",
+        "protect"
+      ],
+      "lifecycle_stages": [
+        "validation",
+        "deployment",
+        "operations",
+        "monitoring",
+        "continuous_improvement"
+      ],
+      "owner_role": "AI Service Owner",
+      "baselines": [
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "OPS/OPS-140.md"
+    },
+    {
+      "id": "OPS-150",
+      "title": "AI Capability Retirement",
+      "family": "OPS",
+      "objective": "OPS-06",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "utilize",
+        "protect",
+        "govern"
+      ],
+      "lifecycle_stages": [
+        "operations",
+        "monitoring",
+        "retirement"
+      ],
+      "owner_role": "AI Capability Business Owner",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "OPS/OPS-150.md"
+    },
+    {
+      "id": "MON-100",
+      "title": "AI Telemetry",
+      "family": "MON",
+      "objective": "MON-01",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect",
+        "govern",
+        "utilize"
+      ],
+      "lifecycle_stages": [
+        "validation",
+        "deployment",
+        "operations",
+        "monitoring",
+        "continuous_improvement"
+      ],
+      "owner_role": "AI Service Owner",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "MON/MON-100.md"
+    },
+    {
+      "id": "MON-110",
+      "title": "AI Security Detection",
+      "family": "MON",
+      "objective": "MON-02",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect"
+      ],
+      "lifecycle_stages": [
+        "validation",
+        "deployment",
+        "operations",
+        "monitoring"
+      ],
+      "owner_role": "Security Operations",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "MON/MON-110.md"
+    },
+    {
+      "id": "MON-120",
+      "title": "AI Behavior and Drift Monitoring",
+      "family": "MON",
+      "objective": "MON-03",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect",
+        "utilize",
+        "govern"
+      ],
+      "lifecycle_stages": [
+        "validation",
+        "deployment",
+        "operations",
+        "monitoring",
+        "continuous_improvement"
+      ],
+      "owner_role": "Model Owner",
+      "baselines": [
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "MON/MON-120.md"
+    },
+    {
+      "id": "MON-130",
+      "title": "Agent Monitoring",
+      "family": "MON",
+      "objective": "MON-04",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect",
+        "govern"
+      ],
+      "lifecycle_stages": [
+        "validation",
+        "deployment",
+        "operations",
+        "monitoring"
+      ],
+      "owner_role": "Agent Owner",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "MON/MON-130.md"
+    },
+    {
+      "id": "MON-140",
+      "title": "AI Alert Response",
+      "family": "MON",
+      "objective": "MON-05",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect",
+        "govern"
+      ],
+      "lifecycle_stages": [
+        "deployment",
+        "operations",
+        "monitoring",
+        "continuous_improvement"
+      ],
+      "owner_role": "Security Operations",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "MON/MON-140.md"
+    },
+    {
+      "id": "MON-150",
+      "title": "AI Audit Trails",
+      "family": "MON",
+      "objective": "MON-06",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "govern",
+        "protect"
+      ],
+      "lifecycle_stages": [
+        "approval",
+        "deployment",
+        "operations",
+        "monitoring",
+        "retirement"
+      ],
+      "owner_role": "AI Service Owner",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "MON/MON-150.md"
+    },
+    {
+      "id": "CMP-100",
+      "title": "AI Obligation Management",
+      "family": "CMP",
+      "objective": "CMP-01",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "govern"
+      ],
+      "lifecycle_stages": [
+        "strategy",
+        "ideation",
+        "risk_classification",
+        "approval",
+        "operations",
+        "monitoring",
+        "retirement"
+      ],
+      "owner_role": "Compliance",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "CMP/CMP-100.md"
+    },
+    {
+      "id": "CMP-110",
+      "title": "AI Records, Notices, and Reporting",
+      "family": "CMP",
+      "objective": "CMP-02",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "govern"
+      ],
+      "lifecycle_stages": [
+        "approval",
+        "deployment",
+        "operations",
+        "monitoring",
+        "retirement"
+      ],
+      "owner_role": "Compliance",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "CMP/CMP-110.md"
+    },
+    {
+      "id": "CMP-120",
+      "title": "Third-Party AI Compliance",
+      "family": "CMP",
+      "objective": "CMP-03",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "govern",
+        "protect"
+      ],
+      "lifecycle_stages": [
+        "business_case",
+        "architecture",
+        "model_selection",
+        "approval",
+        "operations",
+        "retirement"
+      ],
+      "owner_role": "Third-Party Risk Management",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "CMP/CMP-120.md"
+    },
+    {
+      "id": "CMP-130",
+      "title": "AI Jurisdiction, Residency, and Transfer",
+      "family": "CMP",
+      "objective": "CMP-04",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "govern",
+        "protect"
+      ],
+      "lifecycle_stages": [
+        "ideation",
+        "architecture",
+        "data_readiness",
+        "approval",
+        "operations",
+        "retirement"
+      ],
+      "owner_role": "Privacy Office",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "CMP/CMP-130.md"
+    },
+    {
+      "id": "CMP-140",
+      "title": "AI Intellectual Property and Licensing",
+      "family": "CMP",
+      "objective": "CMP-05",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "govern",
+        "protect",
+        "utilize"
+      ],
+      "lifecycle_stages": [
+        "ideation",
+        "data_readiness",
+        "model_selection",
+        "development",
+        "approval",
+        "operations",
+        "retirement"
+      ],
+      "owner_role": "Legal",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "CMP/CMP-140.md"
+    },
+    {
+      "id": "AUD-100",
+      "title": "AI Assessment Program",
+      "family": "AUD",
+      "objective": "AUD-01",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "govern"
+      ],
+      "lifecycle_stages": [
+        "validation",
+        "approval",
+        "operations",
+        "monitoring",
+        "continuous_improvement"
+      ],
+      "owner_role": "Internal Audit",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "AUD/AUD-100.md"
+    },
+    {
+      "id": "AUD-110",
+      "title": "AI Assessor Competence and Independence",
+      "family": "AUD",
+      "objective": "AUD-02",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "govern"
+      ],
+      "lifecycle_stages": [
+        "validation",
+        "approval",
+        "operations",
+        "monitoring"
+      ],
+      "owner_role": "Internal Audit",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "AUD/AUD-110.md"
+    },
+    {
+      "id": "AUD-120",
+      "title": "AI Assessment Evidence",
+      "family": "AUD",
+      "objective": "AUD-03",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "govern"
+      ],
+      "lifecycle_stages": [
+        "validation",
+        "approval",
+        "operations",
+        "monitoring",
+        "retirement"
+      ],
+      "owner_role": "Assurance",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "AUD/AUD-120.md"
+    },
+    {
+      "id": "AUD-130",
+      "title": "AI Findings and Remediation",
+      "family": "AUD",
+      "objective": "AUD-04",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "govern",
+        "protect"
+      ],
+      "lifecycle_stages": [
+        "validation",
+        "approval",
+        "operations",
+        "monitoring",
+        "continuous_improvement"
+      ],
+      "owner_role": "Assurance",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "AUD/AUD-130.md"
+    },
+    {
+      "id": "AUD-140",
+      "title": "AI Management Review and Assurance Reporting",
+      "family": "AUD",
+      "objective": "AUD-05",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "govern",
+        "utilize"
+      ],
+      "lifecycle_stages": [
+        "strategy",
+        "operations",
+        "monitoring",
+        "continuous_improvement"
+      ],
+      "owner_role": "Executive Leadership",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "AUD/AUD-140.md"
+    },
+    {
+      "id": "EDU-100",
+      "title": "Enterprise AI Literacy",
+      "family": "EDU",
+      "objective": "EDU-01",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "utilize",
+        "govern",
+        "protect"
+      ],
+      "lifecycle_stages": [
+        "strategy",
+        "deployment",
+        "operations",
+        "continuous_improvement"
+      ],
+      "owner_role": "Learning and Development",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "EDU/EDU-100.md"
+    },
+    {
+      "id": "EDU-110",
+      "title": "Role-Based AI Competency",
+      "family": "EDU",
+      "objective": "EDU-02",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "utilize",
+        "govern"
+      ],
+      "lifecycle_stages": [
+        "strategy",
+        "development",
+        "validation",
+        "approval",
+        "operations"
+      ],
+      "owner_role": "Learning and Development",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "EDU/EDU-110.md"
+    },
+    {
+      "id": "EDU-120",
+      "title": "AI Acceptable-Use Education",
+      "family": "EDU",
+      "objective": "EDU-03",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "utilize",
+        "protect",
+        "govern"
+      ],
+      "lifecycle_stages": [
+        "deployment",
+        "operations",
+        "monitoring"
+      ],
+      "owner_role": "AI Governance Council",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "EDU/EDU-120.md"
+    },
+    {
+      "id": "EDU-130",
+      "title": "Secure AI Development Training",
+      "family": "EDU",
+      "objective": "EDU-04",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect",
+        "utilize"
+      ],
+      "lifecycle_stages": [
+        "architecture",
+        "development",
+        "validation",
+        "deployment",
+        "operations"
+      ],
+      "owner_role": "Application Security",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "EDU/EDU-130.md"
+    },
+    {
+      "id": "EDU-140",
+      "title": "AI Governance and Executive Education",
+      "family": "EDU",
+      "objective": "EDU-05",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "govern",
+        "utilize"
+      ],
+      "lifecycle_stages": [
+        "strategy",
+        "approval",
+        "operations",
+        "continuous_improvement"
+      ],
+      "owner_role": "AI Governance Council",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "EDU/EDU-140.md"
+    },
+    {
+      "id": "ARC-100",
+      "title": "AI Architecture Governance",
+      "family": "ARC",
+      "objective": "ARC-01",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect",
+        "govern",
+        "utilize"
+      ],
+      "lifecycle_stages": [
+        "ideation",
+        "architecture",
+        "approval",
+        "deployment",
+        "operations",
+        "retirement"
+      ],
+      "owner_role": "Enterprise Architecture",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "ARC/ARC-100.md"
+    },
+    {
+      "id": "ARC-110",
+      "title": "AI Trust Boundaries and Data Flows",
+      "family": "ARC",
+      "objective": "ARC-02",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect"
+      ],
+      "lifecycle_stages": [
+        "architecture",
+        "data_readiness",
+        "development",
+        "validation",
+        "deployment",
+        "operations"
+      ],
+      "owner_role": "Solution Architecture",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "ARC/ARC-110.md"
+    },
+    {
+      "id": "ARC-120",
+      "title": "AI Reference Architecture Patterns",
+      "family": "ARC",
+      "objective": "ARC-03",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect",
+        "utilize",
+        "govern"
+      ],
+      "lifecycle_stages": [
+        "strategy",
+        "architecture",
+        "development",
+        "approval",
+        "deployment"
+      ],
+      "owner_role": "Enterprise Architecture",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "ARC/ARC-120.md"
+    },
+    {
+      "id": "ARC-130",
+      "title": "AI Resilience and Failure Design",
+      "family": "ARC",
+      "objective": "ARC-04",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect",
+        "utilize"
+      ],
+      "lifecycle_stages": [
+        "architecture",
+        "validation",
+        "approval",
+        "deployment",
+        "operations"
+      ],
+      "owner_role": "Solution Architecture",
+      "baselines": [
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "ARC/ARC-130.md"
+    },
+    {
+      "id": "ARC-140",
+      "title": "AI Shared Responsibility Architecture",
+      "family": "ARC",
+      "objective": "ARC-05",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect",
+        "govern"
+      ],
+      "lifecycle_stages": [
+        "business_case",
+        "architecture",
+        "approval",
+        "deployment",
+        "operations",
+        "retirement"
+      ],
+      "owner_role": "Enterprise Architecture",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "ARC/ARC-140.md"
+    },
+    {
+      "id": "ARC-150",
+      "title": "AI Technology Lifecycle Architecture",
+      "family": "ARC",
+      "objective": "ARC-06",
+      "status": "draft",
+      "version": "0.1.0",
+      "pillars": [
+        "protect",
+        "utilize",
+        "govern"
+      ],
+      "lifecycle_stages": [
+        "strategy",
+        "architecture",
+        "model_selection",
+        "deployment",
+        "operations",
+        "retirement"
+      ],
+      "owner_role": "Enterprise Architecture",
+      "baselines": [
+        "E0",
+        "E1",
+        "E2",
+        "E3",
+        "E4"
+      ],
+      "path": "ARC/ARC-150.md"
+    }
+  ]
+}
