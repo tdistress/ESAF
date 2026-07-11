@@ -18,3 +18,4 @@ No example or template is an approved control. Approved controls will be identif
 | Identity and data protection | [IAM](IAM/README.md), [DAT](DAT/README.md) | 13 | Draft |
 | Model, application, and integration security | [MOD](MOD/README.md), [APP](APP/README.md), [API](API/README.md) | 18 | Draft |
 | Infrastructure and agentic AI | [INF](INF/README.md), [AGT](AGT/README.md) | 13 | Draft |
+| Operations and monitoring | [OPS](OPS/README.md), [MON](MON/README.md) | 12 | Draft |
