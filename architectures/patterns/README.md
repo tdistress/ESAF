@@ -4,7 +4,7 @@ Pattern records are delivered through independently reviewed changes using [`../
 
 | ID | Pattern | Status |
 |---|---|---|
-| ARC-P100 | Enterprise AI platform and gateway | Proposed |
+| [ARC-P100](ARC-P100.md) | Enterprise AI platform and gateway | Draft |
 | ARC-P110 | Enterprise copilot | Proposed |
 | ARC-P120 | Retrieval-augmented generation | Proposed |
 | ARC-P130 | Agentic and multi-agent AI | Proposed |
