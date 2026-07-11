@@ -22,11 +22,11 @@ The validator enforces metadata schema conformance, identifier and family consis
 
 ## Architecture validation
 
-Validate the ESAF-1200 foundation, pattern registry, pattern template, links, control-family references, placeholders, and text encoding:
+Validate the ESAF-1200 foundation, pattern registry, pattern metadata and structure, links, control references, placeholders, and text encoding:
 
 ```shell
 python -m unittest discover -s tests -v
 python tools/validate_architectures.py
 ```
 
-Architecture validation intentionally checks structural rules only. Technical reviewers remain responsible for the correctness of architecture decisions, diagrams, control allocation, and implementation guidance.
+Architecture validation requires linked pattern records to match registry status, contain the complete pattern contract, and reference existing ESAF controls. It intentionally checks structural rules only. Technical reviewers remain responsible for the correctness of architecture decisions, diagrams, control allocation, and implementation guidance.

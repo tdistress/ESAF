@@ -13,3 +13,4 @@
 | DEC-0009 | 2026-07-11 | External mappings use explicit relationship, direction, source version, rationale, reviewer, and review date metadata. | Accepted |
 | DEC-0010 | 2026-07-11 | Control Markdown records are authoritative; human- and machine-readable catalogs are deterministically generated and verified in continuous integration. | Accepted |
 | DEC-0011 | 2026-07-11 | ESAF-1200 uses a breadth-first, vendor-neutral architecture method with eight logical trust zones and separately reviewed patterns identified as ARC-P###. | Accepted |
+| DEC-0012 | 2026-07-11 | ARC-P100 uses centralized governance with federated enforcement and separates management, request, evidence, and provider flows. | Accepted |
