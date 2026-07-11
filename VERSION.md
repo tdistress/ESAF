@@ -1,7 +1,7 @@
 # ESAF Version
 
-Current Version: **0.2-alpha**
+Current Version: **0.3-alpha**
 
 Status: **Working Draft**
 
-Release Stage: **Enterprise Standard Draft**
+Release Stage: **Control Catalog Architecture**
