@@ -1,6 +1,7 @@
 # ESAF Roadmap
 
-**Status:** Working Draft  
+**Status:** Working Draft
+
 **Version:** 0.1-alpha
 
 ## Phase 0 - Foundation
@@ -23,6 +24,7 @@
 
 ## Phase 3 - Reference Architecture
 
+- Architecture method, principles, trust zones, selection, pattern contract, overlays, and decision records
 - Enterprise AI platform and gateway
 - RAG, agentic AI, private model, enterprise copilot, and observability patterns
 - Trust boundaries, security overlays, and implementation decision records
