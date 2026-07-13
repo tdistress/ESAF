@@ -152,9 +152,9 @@ Capture modes are:
 3. **Redacted excerpt:** narrowly approved diagnostic content.
 4. **Exceptional protected full content:** segregated content-evidence vault capture under explicit authorization.
 
-Derived signals, including embeddings, stable hashes and rare features, are classified and tested for re-identification and linkability. Purpose and tenant isolation, scoped or keyed transforms, retention, correction, deletion, and legal hold extend to derived stores. Sampling cannot omit denials, incidents, gaps, material decisions, or consequential outcomes.
+Derived signals, including embeddings, stable hashes and rare features, are classified and tested for re-identification and linkability. Purpose and tenant isolation, scoped or keyed transforms, retention, correction, deletion, and legal hold extend to derived stores. Sampling cannot omit denials, incidents, gaps, material decisions, consequential outcomes, or required Tier 3 and Tier 4 outcome records.
 
-Actionable alerts use a governed contract containing severity and confidence; affected tenant, capability, and tier; trace and protected-evidence references; detector and rule identity and version; observed and expected condition; a privacy-safe summary and recommended containment; accountable owner, routing destination, escalation path, and response objective; suppression state and authorizing identity; and incident, change, risk, or exception linkage. Suppression, tuning, closure, and severity changes are attributable, authorized, time-bounded where applicable, and reviewable. Tier 3 and Tier 4 evidence gaps, contradictory target outcomes, integrity failures, and containment failures trigger immediate escalation. Alert payloads reference protected evidence rather than copying sensitive source content.
+Actionable alerts use a governed contract containing severity and confidence; affected tenant, capability, and tier; trace and protected-evidence references; detector and rule identity and version; observed and expected condition; a privacy-safe summary and recommended containment; accountable owner, routing destination, escalation path, and response objective; suppression state and authorizing identity; and incident, change, risk, or exception linkage. Suppression, tuning, closure, and severity changes are attributable, authorized, time-bounded where applicable, and reviewable. Tier 3 and Tier 4 evidence gaps, contradictory target outcomes, integrity failures, and containment failures trigger immediate escalation. Alert payloads reference protected evidence rather than copying sensitive source content. Alerts, cases, tickets, email, and chat shall not duplicate raw or sensitive source content.
 
 ## Trust boundaries
 
@@ -278,6 +278,8 @@ Negative testing covers missing, late, duplicate, out-of-order, replayed and spo
 - `ARC-P130` supplies agent identity, lineage, delegation, tool, action, transaction, outcome, and containment evidence.
 - `ARC-P140` supplies private model, runtime, infrastructure, adaptation, and deployment evidence.
 - `ARC-P150` supplies reusable service, API, integration, target, and provider-boundary evidence.
+
+Source patterns remain responsible for their event semantics and preventive enforcement. Target systems remain authoritative for transaction state. Capability owners remain accountable for business outcomes. ARC-P160 produces evidence and assurance; it does not authorize access or action and does not transfer catalog accountability.
 
 ## Change history
 
