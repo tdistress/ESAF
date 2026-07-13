@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import re
+import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
@@ -11,6 +12,7 @@ from urllib.parse import unquote, urlsplit
 import yaml
 
 from tools.crosswalks.io import parse_front_matter
+from tools.crosswalks.digests import event_digest, snapshot_digest
 from tools.crosswalks.manifest import build_control_manifest, render_manifest
 from tools.crosswalks.schemas import load_schemas, schema_errors
 
@@ -30,9 +32,9 @@ def snapshot_directories(root: Path) -> list[Path]:
 
 def validate(root: Path, baseline_ref: str | None = None) -> ValidationResult:
     """Validate all crosswalk mapping snapshots below ``root``."""
-    del baseline_ref  # Lifecycle comparison is added by a later implementation task.
     errors: list[str] = []
     mapping_sets: list[dict[str, object]] = []
+    lifecycle_records: list[dict[str, object]] = []
     seen_mapping_set_ids: set[str] = set()
     schema_root = root if (root / "crosswalks" / "schema").exists() else Path(__file__).parents[2]
     validators = load_schemas(schema_root)
@@ -52,7 +54,143 @@ def validate(root: Path, baseline_ref: str | None = None) -> ValidationResult:
         )
         errors.extend(snapshot_errors)
         mapping_sets.append(model)
-    return ValidationResult(sorted(set(errors)), mapping_sets, [])
+    lifecycle_errors, lifecycle_records = _load_lifecycle_records(root, validators)
+    errors.extend(lifecycle_errors)
+    errors.extend(validate_lifecycle(lifecycle_records))
+    errors.extend(_validate_lifecycle_links(root, mapping_sets, lifecycle_records))
+    result = ValidationResult(sorted(set(errors)), mapping_sets, lifecycle_records)
+    if baseline_ref is not None:
+        result.errors.extend(validate_baseline(root, baseline_ref, result))
+        result.errors = sorted(set(result.errors))
+    return result
+
+
+def validate_lifecycle(records: list[dict[str, object]]) -> list[str]:
+    """Validate lifecycle state order, identifiers, and digest chains."""
+    errors: list[str] = []
+    expected_states = ("approved", "published", "deprecated", "retired")
+    seen_mapping_sets: set[str] = set()
+    for model in records:
+        record = model.get("metadata", model)
+        path = str(model.get("path", "lifecycle record"))
+        if not isinstance(record, dict):
+            continue
+        mapping_set_id = record.get("mapping_set_id")
+        if isinstance(mapping_set_id, str):
+            if mapping_set_id in seen_mapping_sets:
+                errors.append(
+                    f"{path}: duplicate lifecycle record for mapping set {mapping_set_id}"
+                )
+            seen_mapping_sets.add(mapping_set_id)
+        events = record.get("events")
+        if not isinstance(events, list):
+            continue
+        states = [event.get("state") for event in events if isinstance(event, dict)]
+        if states != list(expected_states[: len(states)]):
+            errors.append(f"{path}: invalid lifecycle transition")
+        seen_event_ids: set[object] = set()
+        previous = "0" * 64
+        for event in events:
+            if not isinstance(event, dict):
+                continue
+            event_id = event.get("event_id")
+            if event_id in seen_event_ids:
+                errors.append(f"{path}: duplicate lifecycle event {event_id}")
+            seen_event_ids.add(event_id)
+            if event.get("previous_event_digest") != previous:
+                errors.append(f"{path}: invalid previous lifecycle event digest")
+            canonical = {
+                field: value
+                for field, value in event.items()
+                if field != "event_digest" and isinstance(value, str)
+            }
+            calculated = event_digest(canonical)
+            if event.get("event_digest") != calculated:
+                errors.append(f"{path}: lifecycle event digest mismatch")
+            previous = str(event.get("event_digest", ""))
+            if (
+                event.get("state") == "deprecated"
+                and not event.get("successor_id")
+                and not event.get("reason")
+            ):
+                errors.append(
+                    f"{path}: deprecated lifecycle requires successor or explanation"
+                )
+    return errors
+
+
+def validate_baseline(
+    root: Path, baseline_ref: str, current: ValidationResult
+) -> list[str]:
+    """Compare protected candidate content with an immutable Git baseline."""
+    protected = any(
+        isinstance(model.get("metadata"), dict)
+        and model["metadata"].get("status") == "approved"  # type: ignore[index]
+        for model in current.mapping_sets
+    ) or bool(current.lifecycle_records)
+    commit = _resolve_commit(root, baseline_ref)
+    if commit is None:
+        return (
+            ["trusted baseline is unavailable for protected crosswalk content"]
+            if protected
+            else []
+        )
+
+    errors: list[str] = []
+    baseline_paths = _git_tree_paths(root, commit, "crosswalks/mappings")
+    for readme in (path for path in baseline_paths if path.endswith("/README.md")):
+        metadata = _front_matter_bytes(_git_show(root, commit, readme))
+        if not isinstance(metadata, dict) or metadata.get("status") != "approved":
+            continue
+        directory = readme.rsplit("/", 1)[0]
+        baseline_files = sorted(
+            path for path in baseline_paths if path.startswith(directory + "/")
+        )
+        candidate = root / directory
+        candidate_files = (
+            sorted(
+                path.relative_to(root).as_posix()
+                for path in candidate.rglob("*")
+                if path.is_file() and not path.is_symlink()
+            )
+            if candidate.exists()
+            else []
+        )
+        differs = baseline_files != candidate_files
+        if not differs:
+            for path in baseline_files:
+                try:
+                    if (root / path).read_bytes() != _git_show(root, commit, path):
+                        differs = True
+                        break
+                except OSError:
+                    differs = True
+                    break
+        if differs:
+            errors.append(f"{directory}: approved snapshot differs from trusted baseline")
+
+    current_lifecycle = {
+        model.get("metadata", {}).get("mapping_set_id"): model.get("metadata", {})
+        for model in current.lifecycle_records
+        if isinstance(model.get("metadata"), dict)
+    }
+    for path in _git_tree_paths(root, commit, "crosswalks/registry"):
+        if not path.endswith(".md"):
+            continue
+        baseline = _front_matter_bytes(_git_show(root, commit, path))
+        if not isinstance(baseline, dict):
+            continue
+        mapping_set_id = baseline.get("mapping_set_id")
+        candidate = current_lifecycle.get(mapping_set_id)
+        baseline_events = baseline.get("events")
+        candidate_events = candidate.get("events") if isinstance(candidate, dict) else None
+        if (
+            not isinstance(baseline_events, list)
+            or not isinstance(candidate_events, list)
+            or candidate_events[: len(baseline_events)] != baseline_events
+        ):
+            errors.append(f"{path}: baseline lifecycle events are not an exact prefix")
+    return errors
 
 
 def load_snapshot_model(
@@ -76,6 +214,152 @@ def load_snapshot_model(
             }
         )
     return _snapshot_model(root, snapshot, metadata, inventory, manifest, provisions)
+
+
+def _load_lifecycle_records(
+    root: Path, validators: dict[str, object]
+) -> tuple[list[str], list[dict[str, object]]]:
+    errors: list[str] = []
+    records: list[dict[str, object]] = []
+    registry = root / "crosswalks" / "registry"
+    if not registry.exists():
+        return errors, records
+    try:
+        entries = sorted(registry.iterdir(), key=lambda path: path.name)
+    except OSError as error:
+        return [f"crosswalks/registry: cannot inspect lifecycle registry: {error}"], records
+    for path in entries:
+        relative = path.relative_to(root).as_posix()
+        if path.name == ".gitkeep" and path.is_file() and not path.is_symlink():
+            continue
+        if path.is_symlink() or not path.is_file() or path.suffix != ".md":
+            errors.append(f"{relative}: unexpected lifecycle registry entry")
+            continue
+        try:
+            metadata, body = parse_front_matter(path)
+        except yaml.YAMLError as error:
+            errors.append(f"{relative}: invalid YAML: {error}")
+            continue
+        except (OSError, UnicodeError, ValueError) as error:
+            errors.append(f"{relative}: {error}")
+            continue
+        errors.extend(
+            schema_errors(
+                validators["lifecycle-record"], metadata, relative  # type: ignore[arg-type]
+            )
+        )
+        mapping_set_id = metadata.get("mapping_set_id")
+        if isinstance(mapping_set_id, str) and path.name != f"{mapping_set_id}.md":
+            errors.append(f"{relative}: lifecycle filename disagrees with mapping-set id")
+        records.append({"path": relative, "metadata": metadata, "body": body})
+    return errors, records
+
+
+def _validate_lifecycle_links(
+    root: Path,
+    mapping_sets: list[dict[str, object]],
+    lifecycle_records: list[dict[str, object]],
+) -> list[str]:
+    errors: list[str] = []
+    snapshots = {
+        model.get("metadata", {}).get("mapping_set_id"): model
+        for model in mapping_sets
+        if isinstance(model.get("metadata"), dict)
+    }
+    active: dict[tuple[object, object, object, object], str] = {}
+    for lifecycle_model in lifecycle_records:
+        lifecycle = lifecycle_model.get("metadata")
+        relative = str(lifecycle_model.get("path", "lifecycle record"))
+        if not isinstance(lifecycle, dict):
+            continue
+        mapping_set_id = lifecycle.get("mapping_set_id")
+        snapshot_model = snapshots.get(mapping_set_id)
+        if not isinstance(snapshot_model, dict):
+            errors.append(f"{relative}: lifecycle record has no mapping-set snapshot")
+            continue
+        metadata = snapshot_model.get("metadata")
+        readme_path = snapshot_model.get("path")
+        if not isinstance(metadata, dict) or not isinstance(readme_path, str):
+            continue
+        snapshot = (root / readme_path).parent
+        try:
+            digest = snapshot_digest(root, snapshot)
+        except ValueError as error:
+            errors.append(f"{relative}: cannot compute lifecycle snapshot digest: {error}")
+        else:
+            if lifecycle.get("snapshot_digest") != digest:
+                errors.append(f"{relative}: lifecycle snapshot digest mismatch")
+        events = lifecycle.get("events")
+        states = (
+            [event.get("state") for event in events if isinstance(event, dict)]
+            if isinstance(events, list)
+            else []
+        )
+        if "published" in states and metadata.get("status") != "approved":
+            errors.append(f"{relative}: published lifecycle requires approved snapshot")
+        if states and states[-1] == "published":
+            authority = metadata.get("authority")
+            publication = metadata.get("publication")
+            source_version = metadata.get("source_version")
+            esaf_release = metadata.get("esaf_release")
+            key = (
+                authority.get("id") if isinstance(authority, dict) else None,
+                publication.get("id") if isinstance(publication, dict) else None,
+                source_version.get("id") if isinstance(source_version, dict) else None,
+                esaf_release.get("id") if isinstance(esaf_release, dict) else None,
+            )
+            prior = active.get(key)
+            if prior is not None and prior != mapping_set_id:
+                errors.append(
+                    f"{relative}: multiple active published mapping sets for {key}"
+                )
+            active[key] = str(mapping_set_id)
+    return errors
+
+
+def _resolve_commit(root: Path, reference: str) -> str | None:
+    completed = subprocess.run(
+        ["git", "-C", str(root), "rev-parse", "--verify", "--quiet", f"{reference}^{{commit}}"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    return completed.stdout.strip() if completed.returncode == 0 else None
+
+
+def _git_tree_paths(root: Path, commit: str, prefix: str) -> list[str]:
+    completed = subprocess.run(
+        ["git", "-C", str(root), "ls-tree", "-r", "--name-only", "-z", commit, "--", prefix],
+        check=True,
+        capture_output=True,
+    )
+    return sorted(
+        path.decode("utf-8")
+        for path in completed.stdout.split(b"\0")
+        if path
+    )
+
+
+def _git_show(root: Path, commit: str, path: str) -> bytes:
+    return subprocess.run(
+        ["git", "-C", str(root), "show", f"{commit}:{path}"],
+        check=True,
+        capture_output=True,
+    ).stdout
+
+
+def _front_matter_bytes(raw: bytes) -> dict[str, object] | None:
+    if raw.startswith(b"\xef\xbb\xbf") or b"\r" in raw:
+        return None
+    try:
+        text = raw.decode("utf-8")
+        if not text.startswith("---\n"):
+            return None
+        parts = text.split("---\n", 2)
+        value = yaml.safe_load(parts[1])
+    except (UnicodeError, yaml.YAMLError, IndexError):
+        return None
+    return value if isinstance(value, dict) else None
 
 
 def _validate_snapshot(

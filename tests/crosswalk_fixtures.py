@@ -10,10 +10,28 @@ from pathlib import Path
 
 import yaml
 
+from tools.crosswalks.digests import event_digest, snapshot_digest
 from tools.crosswalks.io import parse_front_matter
 
 
 MAPPING_SET_ID = "nist--ai-rmf--1.0--esaf-0.4-alpha--1.0.0"
+
+
+def valid_event(**overrides: str) -> dict[str, str]:
+    """Return a lifecycle event before its event digest is attached."""
+    event = {
+        "event_id": "approved-1",
+        "state": "approved",
+        "date": "2026-07-13",
+        "actor": "approver-1",
+        "reason": "Approved after independent review.",
+        "predecessor_id": "",
+        "successor_id": "",
+        "approval_reference": "APR-001",
+        "previous_event_digest": "0" * 64,
+    }
+    event.update(overrides)
+    return event
 
 
 class CrosswalkFixture:
@@ -109,6 +127,7 @@ class CrosswalkFixture:
 
     def reset_crosswalks(self) -> None:
         shutil.rmtree(self.root / "crosswalks" / "mappings", ignore_errors=True)
+        shutil.rmtree(self.root / "crosswalks" / "registry", ignore_errors=True)
 
     def write_front_matter(
         self, relative: str, metadata: dict[str, object], body: str
@@ -211,6 +230,171 @@ class CrosswalkFixture:
                 disposition=disposition,
             )
         return snapshot
+
+    def create_approved_snapshot_with_lifecycle(self, final_state: str) -> Path:
+        """Create an approved snapshot and a valid lifecycle chain."""
+        snapshot = self.create_valid_snapshot(status="approved", complete=True)
+        states = ("approved", "published", "deprecated", "retired")
+        events: list[dict[str, str]] = []
+        for state in states[: states.index(final_state) + 1]:
+            previous = events[-1]["event_digest"] if events else "0" * 64
+            event = valid_event(
+                event_id=f"{state}-1",
+                state=state,
+                reason=f"Mapping set {state}.",
+                previous_event_digest=previous,
+                approval_reference="APR-001" if state == "approved" else "",
+                successor_id=(
+                    "nist--ai-rmf--1.0--esaf-0.4-alpha--1.0.1"
+                    if state == "deprecated"
+                    else ""
+                ),
+            )
+            self._omit_empty_optional_event_fields(event)
+            event["event_digest"] = event_digest(event)
+            events.append(event)
+        self._write_lifecycle(MAPPING_SET_ID, snapshot_digest(self.root, snapshot), events)
+        return snapshot
+
+    def commit_approved_snapshot(self) -> str:
+        self.create_valid_snapshot(status="approved", complete=True)
+        self._git("add", "crosswalks")
+        self._git("commit", "--quiet", "-m", "Approved snapshot baseline")
+        return self._git("rev-parse", "HEAD")
+
+    def commit_approved_snapshot_with_lifecycle(self) -> str:
+        self.create_approved_snapshot_with_lifecycle("approved")
+        self._git("add", "crosswalks")
+        self._git("commit", "--quiet", "-m", "Approved lifecycle baseline")
+        return self._git("rev-parse", "HEAD")
+
+    def mutate_approved_record(self) -> None:
+        path = self._record()
+        path.write_bytes(path.read_bytes() + b"\nApproved content was rewritten.\n")
+
+    def rewrite_snapshot_and_registry_digest(self) -> None:
+        self.mutate_approved_record()
+        lifecycle = self._lifecycle()
+        lifecycle["snapshot_digest"] = snapshot_digest(self.root, self._snapshot())
+        self._write_lifecycle_metadata(lifecycle)
+
+    def rewrite_prior_event_and_rehash_chain(self) -> None:
+        lifecycle = self._lifecycle()
+        events = lifecycle["events"]
+        events[0]["reason"] = "Rewritten approval reason."
+        events[0]["event_digest"] = event_digest(events[0])
+        self._write_lifecycle_metadata(lifecycle)
+
+    def reorder_lifecycle_events(self) -> None:
+        self._append_lifecycle_state("published")
+        lifecycle = self._lifecycle()
+        lifecycle["events"] = list(reversed(lifecycle["events"]))
+        self._write_lifecycle_metadata(lifecycle)
+
+    def duplicate_lifecycle_event(self) -> None:
+        lifecycle = self._lifecycle()
+        duplicate = dict(lifecycle["events"][0])
+        duplicate["previous_event_digest"] = lifecycle["events"][-1]["event_digest"]
+        duplicate["event_digest"] = event_digest(duplicate)
+        lifecycle["events"].append(duplicate)
+        self._write_lifecycle_metadata(lifecycle)
+
+    def skip_published_transition(self) -> None:
+        self._append_lifecycle_state(
+            "deprecated",
+            successor_id="nist--ai-rmf--1.0--esaf-0.4-alpha--1.0.1",
+        )
+
+    def publish_unapproved_snapshot(self) -> None:
+        self._mutate_mapping_set(lambda value: value.__setitem__("status", "reviewed"))
+        self._append_lifecycle_state("published")
+
+    def publish_second_active_version(self) -> None:
+        self._append_lifecycle_state("published")
+        source = self._snapshot()
+        target = source.parent / "1.0.1"
+        shutil.copytree(source, target)
+        second_id = "nist--ai-rmf--1.0--esaf-0.4-alpha--1.0.1"
+        for name in ("README.md", "PROVISION_INVENTORY.md", "ext-1.md"):
+            path = target / name
+            metadata, body = parse_front_matter(path)
+            metadata["mapping_set_id"] = second_id
+            if name == "README.md":
+                metadata["mapping_set_version"] = "1.0.1"
+            self.write_front_matter(path.relative_to(self.root).as_posix(), metadata, body)
+        events: list[dict[str, str]] = []
+        for state in ("approved", "published"):
+            event = valid_event(
+                event_id=f"{state}-2",
+                state=state,
+                reason=f"Second mapping set {state}.",
+                approval_reference="APR-002" if state == "approved" else "",
+                previous_event_digest=(events[-1]["event_digest"] if events else "0" * 64),
+            )
+            self._omit_empty_optional_event_fields(event)
+            event["event_digest"] = event_digest(event)
+            events.append(event)
+        self._write_lifecycle(second_id, snapshot_digest(self.root, target), events)
+
+    def deprecate_without_successor_or_explanation(self) -> None:
+        self._append_lifecycle_state("published")
+        self._append_lifecycle_state("deprecated", reason="", successor_id="")
+
+    def set_stale_snapshot_digest(self) -> None:
+        lifecycle = self._lifecycle()
+        lifecycle["snapshot_digest"] = "0" * 64
+        self._write_lifecycle_metadata(lifecycle)
+
+    def _append_lifecycle_state(self, state: str, **overrides: str) -> None:
+        lifecycle = self._lifecycle()
+        events = lifecycle["events"]
+        values = {
+            "event_id": f"{state}-{len(events) + 1}",
+            "state": state,
+            "reason": f"Mapping set {state}.",
+            "approval_reference": "",
+            "previous_event_digest": events[-1]["event_digest"],
+        }
+        values.update(overrides)
+        event = valid_event(**values)
+        self._omit_empty_optional_event_fields(event)
+        event["event_digest"] = event_digest(event)
+        events.append(event)
+        self._write_lifecycle_metadata(lifecycle)
+
+    def _write_lifecycle(
+        self, mapping_set_id: str, digest: str, events: list[dict[str, str]]
+    ) -> None:
+        self.write_front_matter(
+            f"crosswalks/registry/{mapping_set_id}.md",
+            {
+                "schema_version": "1.0.0",
+                "mapping_set_id": mapping_set_id,
+                "snapshot_digest": digest,
+                "events": events,
+            },
+            "# Lifecycle record\n",
+        )
+
+    @staticmethod
+    def _omit_empty_optional_event_fields(event: dict[str, str]) -> None:
+        for field in ("predecessor_id", "successor_id", "approval_reference"):
+            if not event.get(field):
+                event.pop(field, None)
+
+    def _lifecycle(self) -> dict[str, object]:
+        metadata, _ = parse_front_matter(
+            self.root / "crosswalks" / "registry" / f"{MAPPING_SET_ID}.md"
+        )
+        return metadata
+
+    def _write_lifecycle_metadata(self, metadata: dict[str, object]) -> None:
+        mapping_set_id = str(metadata["mapping_set_id"])
+        self.write_front_matter(
+            f"crosswalks/registry/{mapping_set_id}.md",
+            metadata,
+            "# Lifecycle record\n",
+        )
 
     def add_record(
         self,

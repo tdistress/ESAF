@@ -5,7 +5,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from tests.crosswalk_fixtures import CrosswalkFixture
+from tests.crosswalk_fixtures import CrosswalkFixture, valid_event
+from tools.crosswalks.digests import event_bytes, event_digest
 from tools.crosswalks.io import parse_front_matter
 from tools.crosswalks.manifest import build_control_manifest, git_bytes, render_manifest
 from tools.crosswalks.validation import validate, validate_record
@@ -23,6 +24,87 @@ class CrosswalkValidationTests(unittest.TestCase):
     def test_valid_incomplete_draft_is_accepted(self) -> None:
         self.fixture.create_valid_snapshot(status="draft", complete=False)
         self.assertEqual(validate(self.root).errors, [])
+
+    def test_event_digest_uses_fixed_length_prefixed_utf8(self) -> None:
+        event = valid_event(
+            event_id="evt-001",
+            state="approved",
+            date="2026-07-13",
+            actor="reviewer-1",
+            reason="Cafe\u0301",
+            predecessor_id="",
+            successor_id="",
+            approval_reference="APR-001",
+            previous_event_digest="0" * 64,
+        )
+        expected = (
+            b"event_id:7:evt-001\n"
+            b"state:8:approved\n"
+            b"date:10:2026-07-13\n"
+            b"actor:10:reviewer-1\n"
+            b"reason:5:Caf\xc3\xa9\n"
+            b"predecessor_id:0:\n"
+            b"successor_id:0:\n"
+            b"approval_reference:7:APR-001\n"
+            b"previous_event_digest:64:"
+            + (b"0" * 64)
+            + b"\n"
+        )
+        self.assertEqual(event_bytes(event), expected)
+        self.assertEqual(
+            event_digest(event),
+            "dce6853af1e45395304b66d057807375f8c0d61e7393a725f4776e9fba00b811",
+        )
+
+    def test_approved_snapshot_mutation_against_baseline_is_rejected(self) -> None:
+        baseline = self.fixture.commit_approved_snapshot()
+        self.fixture.mutate_approved_record()
+        errors = validate(self.root, baseline_ref=baseline).errors
+        self.assertIn("approved snapshot differs from trusted baseline", "\n".join(errors))
+
+    def test_positive_lifecycle_states_are_accepted(self) -> None:
+        for state in ("approved", "published", "deprecated", "retired"):
+            with self.subTest(state=state):
+                self.fixture.reset_crosswalks()
+                self.fixture.create_approved_snapshot_with_lifecycle(final_state=state)
+                self.assertEqual(validate(self.root).errors, [])
+
+    def test_empty_registry_placeholder_is_accepted(self) -> None:
+        registry = self.root / "crosswalks" / "registry"
+        registry.mkdir(parents=True)
+        (registry / ".gitkeep").write_bytes(b"")
+        self.assertEqual(validate(self.root).errors, [])
+
+    def test_lifecycle_and_baseline_mutation_matrix(self) -> None:
+        cases = (
+            (
+                "rewrite_snapshot_and_registry_digest",
+                "approved snapshot differs from trusted baseline",
+            ),
+            (
+                "rewrite_prior_event_and_rehash_chain",
+                "baseline lifecycle events are not an exact prefix",
+            ),
+            ("reorder_lifecycle_events", "invalid lifecycle transition"),
+            ("duplicate_lifecycle_event", "duplicate lifecycle event"),
+            ("skip_published_transition", "invalid lifecycle transition"),
+            ("publish_unapproved_snapshot", "published lifecycle requires approved snapshot"),
+            ("publish_second_active_version", "multiple active published mapping sets"),
+            (
+                "deprecate_without_successor_or_explanation",
+                "deprecated lifecycle requires successor or explanation",
+            ),
+            ("set_stale_snapshot_digest", "lifecycle snapshot digest mismatch"),
+        )
+        for mutation, expected in cases:
+            with self.subTest(mutation=mutation):
+                self.fixture.reset_repository()
+                baseline = self.fixture.commit_approved_snapshot_with_lifecycle()
+                getattr(self.fixture, mutation)()
+                self.assertIn(
+                    expected,
+                    "\n".join(validate(self.root, baseline_ref=baseline).errors),
+                )
 
     def test_incomplete_reviewed_snapshot_is_rejected(self) -> None:
         self.fixture.create_valid_snapshot(status="reviewed", complete=False)
