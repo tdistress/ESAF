@@ -45,7 +45,7 @@ An external mapping contribution shall follow [ESAF-1600](crosswalks/ESAF-1600.m
 - the permitted and prohibited elements, including any restrictions on titles, identifiers, paraphrases, or derivative analysis;
 - attestations that the mapper, rights reviewer, and technical reviewer had authorized source access;
 - mapper and reviewer qualifications, dates, and findings dispositions; and
-- an intellectual-property attestation confirming that no restricted or unlicensed source text is included and that contributed summaries and analysis are original and within the recorded rights.
+- an intellectual-property attestation confirming that no restricted or licensed external requirement text is included and that contributed summaries and analysis are original and within the recorded rights.
 
 The mapper and reviewer shall be different people. The rights reviewer shall also be different from the mapper. Restricted or licensed requirement text shall not be committed; use identifier-only records with a rights-based omission rationale when a summary is not permitted.
 

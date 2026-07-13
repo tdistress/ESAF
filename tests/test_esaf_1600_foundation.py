@@ -24,6 +24,29 @@ CANONICAL_EXTERNAL_MAPPING_LINK = (
     "Authoritative external mappings are maintained in the "
     "[ESAF-1600 generated catalog](../../crosswalks/CATALOG.md)."
 )
+README_LINK_TARGETS = {
+    "ESAF-1600.md",
+    "MAPPING_SET_TEMPLATE.md",
+    "PROVISION_INVENTORY_TEMPLATE.md",
+    "CROSSWALK_TEMPLATE.md",
+    "LIFECYCLE_RECORD_TEMPLATE.md",
+    "CATALOG.md",
+    "catalog.json",
+    "../tools/README.md",
+}
+ESAF_1600_DECISIONS = (
+    "Provision Markdown is the authoritative crosswalk source.",
+    "Generated crosswalk catalogs are deterministic derivative outputs.",
+    "Relationship, direction, coverage, and confidence are independent dimensions.",
+    "Negative dispositions are explicit records.",
+    "Independent review is required before approval.",
+    "Approved mapping snapshots are immutable and version-bound, while draft snapshots remain mutable working sets.",
+    "Lifecycle changes use an external append-only registry.",
+    "Assessment completeness is bounded by an authoritative provision inventory.",
+    "Historical mappings resolve against a release-pinned ESAF control manifest.",
+    "ESAF-1600 supersedes the prior ESAF-1100 mapping taxonomy.",
+    "Restricted external requirement text is excluded and publication rights are recorded.",
+)
 
 
 def control_record_paths(root: Path) -> list[Path]:
@@ -57,6 +80,23 @@ class Esaf1600FoundationTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.validators = load_schemas(ROOT)
+
+    def assert_planned_landing_page(self, text: str) -> None:
+        statuses = re.findall(r"(?m)^\*\*Status:\*\*\s*(\S.*?)\s*$", text)
+        self.assertEqual(statuses, ["Planned"])
+        self.assertNotRegex(
+            text,
+            r"(?im)^\*\*Status:\*\*\s*(?:Approved|Reviewed|Published)\s*$",
+        )
+        self.assertEqual(len(re.findall(r"(?m)^# ", text)), 1)
+        self.assertNotRegex(text, r"(?m)^---\s*$")
+        self.assertNotRegex(text, r"(?m)^\|")
+        blocks = re.split(r"\n{2,}", text.strip())
+        self.assertEqual(len(blocks), 4)
+        self.assertEqual(blocks[1], "**Status:** Planned")
+        self.assertTrue(blocks[2].startswith("This crosswalk will map"))
+        self.assertTrue(blocks[3].startswith("No substantive mapping is approved."))
+        self.assertIn("[ESAF-1600](ESAF-1600.md)", blocks[3])
 
     def test_required_foundation_files_exist(self) -> None:
         missing = [relative for relative in REQUIRED_CROSSWALK_FILES if not (ROOT / relative).is_file()]
@@ -259,20 +299,20 @@ class Esaf1600FoundationTests(unittest.TestCase):
         )
 
     def test_crosswalk_readme_documents_taxonomy_and_operational_links(self) -> None:
-        text = (ROOT / "crosswalks/README.md").read_text(encoding="utf-8")
+        path = ROOT / "crosswalks/README.md"
+        text = path.read_text(encoding="utf-8")
         for dimension in ("relationship", "direction", "coverage", "confidence"):
             self.assertIn(dimension, text)
         self.assertNotIn("strength", text.lower())
-        for target in (
-            "ESAF-1600.md",
-            "MAPPING_SET_TEMPLATE.md",
-            "PROVISION_INVENTORY_TEMPLATE.md",
-            "CROSSWALK_TEMPLATE.md",
-            "LIFECYCLE_RECORD_TEMPLATE.md",
-            "CATALOG.md",
-            "catalog.json",
-        ):
-            self.assertIn(f"]({target})", text)
+        local_targets = {
+            target.split("#", 1)[0]
+            for target in re.findall(r"\[[^\]]+\]\(([^)]+)\)", text)
+            if "://" not in target and not target.startswith("#")
+        }
+        self.assertEqual(local_targets, README_LINK_TARGETS)
+        for target in local_targets:
+            with self.subTest(target=target):
+                self.assertTrue((path.parent / target).resolve().is_file())
         self.assertIn("python tools/validate_crosswalks.py --write", text)
         self.assertIn("python tools/validate_crosswalks.py --check", text)
 
@@ -280,9 +320,20 @@ class Esaf1600FoundationTests(unittest.TestCase):
         for name in ("pci-dss.md", "hitrust-csf.md", "uk-cyber-essentials.md"):
             text = (ROOT / "crosswalks" / name).read_text(encoding="utf-8")
             with self.subTest(name=name):
-                self.assertIn("**Status:** Planned", text)
-                self.assertIn("[ESAF-1600](ESAF-1600.md)", text)
-                self.assertIn("No substantive mapping is approved", text)
+                self.assert_planned_landing_page(text)
+
+    def test_landing_page_contract_rejects_status_and_mapping_content_mutations(self) -> None:
+        text = (ROOT / "crosswalks/pci-dss.md").read_text(encoding="utf-8")
+        mutations = (
+            text.replace("**Status:** Planned", "**Status:** Approved"),
+            text.replace("**Status:** Planned", "**Status:** Planned\n\n**Status:** Reviewed"),
+            text + "\n| External provision | ESAF control |\n|---|---|\n| 1.1 | IAM-100 |\n",
+            text + "\n## Approved mappings\n\nNo rows yet.\n",
+        )
+        for mutation in mutations:
+            with self.subTest(mutation=mutation[-80:]):
+                with self.assertRaises(AssertionError):
+                    self.assert_planned_landing_page(mutation)
 
     def test_contributing_requires_rights_provenance(self) -> None:
         text = (ROOT / "CONTRIBUTING.md").read_text(encoding="utf-8")
@@ -295,25 +346,34 @@ class Esaf1600FoundationTests(unittest.TestCase):
             "intellectual-property attestation",
         ):
             self.assertIn(phrase, text)
+        self.assertIn("no restricted or licensed external requirement text", text)
+        self.assertNotIn("restricted or unlicensed", text)
 
     def test_decision_log_records_esaf_1600_decisions_without_renumbering(self) -> None:
         text = (ROOT / "project/DECISION_LOG.md").read_text(encoding="utf-8")
-        ids = re.findall(r"^\| (DEC-\d{4}) \|", text, flags=re.MULTILINE)
-        self.assertEqual(ids[-11:], [f"DEC-{number:04d}" for number in range(15, 26)])
-        for decision in (
-            "Provision Markdown is the authoritative crosswalk source",
-            "Generated crosswalk catalogs are deterministic derivative outputs",
-            "Relationship, direction, coverage, and confidence are independent dimensions",
-            "Negative dispositions are explicit records",
-            "Independent review is required before approval",
-            "Approved mapping snapshots are immutable and version-bound",
-            "Lifecycle changes use an external append-only registry",
-            "Assessment completeness is bounded by an authoritative provision inventory",
-            "Historical mappings resolve against a release-pinned ESAF control manifest",
-            "ESAF-1600 supersedes the prior ESAF-1100 mapping taxonomy",
-            "Restricted external requirement text is excluded and publication rights are recorded",
-        ):
-            self.assertIn(decision, text)
+        decision_lines = [line for line in text.splitlines() if line.startswith("| DEC-")]
+        row_pattern = re.compile(
+            r"^\| (DEC-\d{4}) \| (\d{4}-\d{2}-\d{2}) \| (.+) \| ([A-Za-z]+) \|$"
+        )
+        rows = []
+        for line in decision_lines:
+            match = row_pattern.fullmatch(line)
+            self.assertIsNotNone(match, f"malformed decision row: {line}")
+            rows.append(match.groups())
+
+        ids = [row[0] for row in rows]
+        expected_ids = [f"DEC-{number:04d}" for number in range(1, 26)]
+        self.assertEqual(ids, expected_ids)
+        self.assertEqual(len(ids), len(set(ids)))
+
+        esaf_rows = rows[14:25]
+        self.assertEqual(
+            [(row[0], row[2], row[3]) for row in esaf_rows],
+            [
+                (f"DEC-{number:04d}", decision, "Accepted")
+                for number, decision in zip(range(15, 26), ESAF_1600_DECISIONS)
+            ],
+        )
 
     def test_tools_readme_documents_crosswalk_validation_modes(self) -> None:
         text = (ROOT / "tools/README.md").read_text(encoding="utf-8")
