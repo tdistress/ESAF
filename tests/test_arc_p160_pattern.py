@@ -153,6 +153,136 @@ class ArcP160PatternTests(unittest.TestCase):
         for plane in expected_planes:
             self.assertIn(plane, rendered_source)
 
+    def assert_control_points_complete(self, text: str) -> None:
+        control_points = section(text, "Control points and overlays")
+        table_lines = [
+            line for line in control_points.splitlines() if line.startswith("|")
+        ]
+        self.assertGreaterEqual(len(table_lines), 2)
+        self.assertEqual(
+            [
+                "CP",
+                "Control point",
+                "Required outcome",
+                "Primary implementation and evidence owners",
+            ],
+            [cell.strip() for cell in table_lines[0].strip("|").split("|")],
+        )
+        self.assertTrue(all(re.fullmatch(r"[-: ]+", cell) for cell in table_lines[1].strip("|").split("|")))
+
+        rows = [
+            [cell.strip() for cell in line.strip("|").split("|")]
+            for line in table_lines[2:]
+        ]
+        self.assertEqual(15, len(rows))
+        self.assertTrue(all(len(row) == 4 for row in rows))
+        self.assertEqual([f"CP{number}" for number in range(1, 16)], [row[0] for row in rows])
+        for row in rows:
+            self.assertTrue(row[1], f"{row[0]} has no control-point name")
+            self.assertTrue(row[2], f"{row[0]} has no required outcome")
+            self.assertTrue(row[3], f"{row[0]} has no implementation/evidence owner")
+
+    def assert_related_pattern_evidence_relationships(self, text: str) -> None:
+        related = section(text, "Related patterns")
+        relationships = {
+            "ARC-P100": "supplies shared gateway, model, provider, policy, identity, routing, and enforcement evidence.",
+            "ARC-P110": "supplies human-facing copilot interaction, feedback, and oversight signals.",
+            "ARC-P120": "supplies retrieval, context, grounding, citation, corpus, and semantic-memory evidence.",
+            "ARC-P130": "supplies agent identity, lineage, delegation, tool, action, transaction, outcome, and containment evidence.",
+            "ARC-P140": "supplies private model, runtime, infrastructure, adaptation, and deployment evidence.",
+            "ARC-P150": "supplies reusable service, API, integration, target, and provider-boundary evidence.",
+        }
+        bullets = dict(re.findall(r"^- `([^`]+)` (.+)$", related, re.MULTILINE))
+        self.assertEqual(relationships, bullets)
+
+    def assert_sensitive_telemetry_contract_complete(self, text: str) -> None:
+        purpose = section(text, "Purpose").lower()
+        flows = section(text, "Data and instruction flows").lower()
+        trust = section(text, "Trust boundaries").lower()
+        evidence = section(text, "Evidence and assessment").lower()
+        anti_patterns = section(text, "Anti-patterns").lower()
+
+        for item in ("input", "context", "retrieval", "output", "tool", "action"):
+            self.assertIn(item, purpose)
+        for item in ("agent", "retrieval", "tool", "classified content references"):
+            self.assertIn(item, flows)
+        self.assertIn("logging only final prompts and responses", anti_patterns)
+        self.assertIn("embeddings, stable hashes and rare features", flows)
+        self.assertIn(
+            "purpose and tenant isolation, scoped or keyed transforms, retention, correction, deletion, and legal hold extend to derived stores",
+            flows,
+        )
+
+        tenant_surfaces = (
+            "encryption and key-management policy",
+            "indexes, search, and query authorization",
+            "dashboards and joins",
+            "caches",
+            "exports",
+            "evaluation datasets and detector or evaluator training data",
+            "alert routing",
+            "incident attachments",
+            "backup and restore",
+            "tenant migration",
+            "support or break-glass access",
+            "timing",
+            "high-cardinality",
+        )
+        self.assertIn("tenant identity shall be bound at the source and independently validated at ingestion", trust)
+        for surface in tenant_surfaces:
+            self.assertIn(surface, trust)
+
+        for requirement in (
+            "every external-provider integration shall maintain a governed gap register",
+            "available and missing fields",
+            "compensating enterprise-boundary evidence for each material gap",
+            "provider evidence remains externally asserted unless independently corroborated",
+            "the affected tier, action, or provider use is prohibited rather than represented as observable",
+        ):
+            self.assertIn(requirement, trust)
+        self.assertIn("per-provider integration gap registers", evidence)
+
+        self.assertIn(
+            "treating application logs, dashboards, provider consoles, aggregates, transport success, or model self-evaluation as authoritative evidence",
+            anti_patterns,
+        )
+        self.assertIn("ground-truth provenance", evidence)
+
+    def assert_resilience_contract_complete(self, text: str) -> None:
+        actors = section(text, "Actors and identities").lower()
+        flows = section(text, "Data and instruction flows").lower()
+        trust = section(text, "Trust boundaries").lower()
+        components = section(text, "Components and responsibilities").lower()
+        failures = section(text, "Failure modes and abuse cases").lower()
+        evidence = section(text, "Evidence and assessment").lower()
+
+        for requirement in (
+            "spoofed source",
+            "correlation collision",
+            "replay",
+            "schema drift",
+            "telemetry injection",
+            "clock regression",
+            "late, duplicate, missing, or out-of-order event",
+            "signing key compromise",
+            "privileged evidence alteration",
+            "alert poisoning",
+            "provider export delay, incompleteness, changed semantics, or outage",
+            "suppression abuse",
+            "containment abuse",
+        ):
+            self.assertIn(requirement, failures)
+        self.assertIn("clock quality and uncertainty", flows)
+        self.assertIn("record conflicts", components)
+        self.assertIn("schema and integrity validation", trust)
+        self.assertIn("compromise response", actors)
+        for requirement in (
+            "routing and backpressure failure",
+            "provider outage",
+            "evidence integrity failure",
+        ):
+            self.assertIn(requirement, evidence)
+
     def assert_figures_pair_with_mermaid_blocks(self, text: str) -> None:
         architecture = section(text, "Architecture views")
         expected = [str(number) for number in range(1, 5)]
@@ -221,14 +351,28 @@ class ArcP160PatternTests(unittest.TestCase):
         self.assertEqual(91, len(catalog))
 
     def test_architecture_structure_and_relationships_are_complete(self) -> None:
-        text = self.text()
-        lower = text.lower()
-        ids = re.findall(r"^\| (CP\d+) \|", text, re.MULTILINE)
-        self.assertEqual([f"CP{number}" for number in range(1, 16)], ids)
-        self.assertIn("implementation and evidence owners", lower)
+        self.assert_control_points_complete(self.text())
+        self.assert_related_pattern_evidence_relationships(self.text())
 
-        for pattern_id in ("ARC-P100", "ARC-P110", "ARC-P120", "ARC-P130", "ARC-P140", "ARC-P150"):
-            self.assertIn(f"`{pattern_id}`", section(text, "Related patterns"))
+    def test_control_point_completeness_rejects_blank_outcome_or_owner(self) -> None:
+        text = self.text()
+        mutants = {
+            "blank outcome": re.sub(r"^(\| CP7 \|[^|]+\|)[^|]+(\|[^|]+\|)$", r"\1 \2", text, count=1, flags=re.MULTILINE),
+            "blank owner": re.sub(r"^(\| CP7 \|[^|]+\|[^|]+\|)[^|]+\|$", r"\1 |", text, count=1, flags=re.MULTILINE),
+        }
+        for name, mutant in mutants.items():
+            with self.subTest(mutant=name):
+                with self.assertRaises(AssertionError):
+                    self.assert_control_points_complete(mutant)
+
+    def test_related_pattern_relationships_reject_semantic_erasure(self) -> None:
+        mutant = self.text().replace(
+            "`ARC-P120` supplies retrieval, context, grounding, citation, corpus, and semantic-memory evidence.",
+            "`ARC-P120` is mentioned here.",
+            1,
+        )
+        with self.assertRaises(AssertionError):
+            self.assert_related_pattern_evidence_relationships(mutant)
 
     def test_observability_preserves_enforcement_and_accountability_boundaries(self) -> None:
         text = self.text()
@@ -266,39 +410,43 @@ class ArcP160PatternTests(unittest.TestCase):
                 self.assertIn(requirement, text)
 
     def test_tenant_provider_and_ground_truth_boundaries_are_explicit(self) -> None:
-        text = self.text().lower()
-        for requirement in (
-            "tenant identity shall be bound at the source and independently validated at ingestion",
-            "cross-tenant support or break-glass access requires dual authorization",
-            "provider evidence remains externally asserted unless independently corroborated",
-            "the affected tier, action, or provider use is prohibited rather than represented as observable",
-            "operational dashboards and aggregates remain traceable conveniences, never authoritative evidence",
-            "model self-evaluation as authoritative evidence",
-        ):
-            with self.subTest(requirement=requirement):
-                self.assertIn(requirement, text)
+        self.assert_sensitive_telemetry_contract_complete(self.text())
+
+    def test_sensitive_telemetry_contract_rejects_polarity_inversion_and_removal(self) -> None:
+        text = self.text()
+        mutants = {
+            "affirmative self-evaluation": text.replace(
+                "Treating application logs, dashboards, provider consoles, aggregates, transport success, or model self-evaluation as authoritative evidence.",
+                "Treating model self-evaluation as authoritative evidence is approved.",
+                1,
+            ),
+            "removed lifecycle duty": text.replace(", correction, deletion, and legal hold extend to derived stores", " extend to derived stores", 1),
+            "removed tenant surface": text.replace("; tenant migration;", ";", 1),
+            "removed provider gap register": text.replace("a governed gap register", "an informal note", 1),
+            "removed governed ground truth": text.replace("ground-truth provenance", "label provenance", 1),
+        }
+        for name, mutant in mutants.items():
+            with self.subTest(mutant=name):
+                with self.assertRaises(AssertionError):
+                    self.assert_sensitive_telemetry_contract_complete(mutant)
 
     def test_failure_and_abuse_treatment_is_complete(self) -> None:
-        text = self.text().lower()
-        for requirement in (
-            "spoofed source",
-            "correlation collision",
-            "replay",
-            "schema drift",
-            "telemetry injection",
-            "clock regression",
-            "late, duplicate, missing, or out-of-order event",
-            "signing key compromise",
-            "privileged evidence alteration",
-            "provider export delay",
-            "alert poisoning",
-            "suppression abuse",
-            "containment abuse",
-            "evidence integrity failure",
-            "routing and backpressure failure",
-        ):
-            with self.subTest(requirement=requirement):
-                self.assertIn(requirement, text)
+        self.assert_resilience_contract_complete(self.text())
+
+    def test_resilience_contract_rejects_missing_failure_treatments(self) -> None:
+        text = self.text()
+        mutants = {
+            "conflicting telemetry": text.replace("record conflicts", "record findings", 1),
+            "corrupted telemetry": text.replace("schema and integrity validation", "schema validation", 1),
+            "clock uncertainty": text.replace("clock quality and uncertainty", "clock quality", 1),
+            "source compromise": text.replace("Spoofed source", "Unknown source", 1),
+            "signing-key compromise": text.replace("compromise response", "incident response", 1),
+            "provider outage": text.replace("changed semantics, or outage", "changed semantics", 1),
+        }
+        for name, mutant in mutants.items():
+            with self.subTest(mutant=name):
+                with self.assertRaises(AssertionError):
+                    self.assert_resilience_contract_complete(mutant)
 
     def test_tier_three_and_four_safe_stop_is_explicit(self) -> None:
         text = self.text()
