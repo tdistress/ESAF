@@ -12,6 +12,8 @@
 |---|---|
 | Owner | Enterprise Architecture |
 | Required reviewers | Security Architecture, Privacy, Data Governance, AI Engineering, Operations, Model Validation, Assurance |
+| Approval date | Not approved (Draft) |
+| Review date | Before approval; then at the organization-defined architecture review interval |
 | Pillars | Protect AI, Utilize AI, Govern AI |
 | Lifecycle stages | Architecture, Development, Validation, Approval, Deployment, Operations, Monitoring, Retirement |
 | Capability tiers | Tier 0 through Tier 4 |
@@ -152,6 +154,8 @@ Capture modes are:
 
 Derived signals, including embeddings, stable hashes and rare features, are classified and tested for re-identification and linkability. Purpose and tenant isolation, scoped or keyed transforms, retention, correction, deletion, and legal hold extend to derived stores. Sampling cannot omit denials, incidents, gaps, material decisions, or consequential outcomes.
 
+Actionable alerts use a governed contract containing severity and confidence; affected tenant, capability, and tier; trace and protected-evidence references; detector and rule identity and version; observed and expected condition; a privacy-safe summary and recommended containment; accountable owner, routing destination, escalation path, and response objective; suppression state and authorizing identity; and incident, change, risk, or exception linkage. Suppression, tuning, closure, and severity changes are attributable, authorized, time-bounded where applicable, and reviewable. Tier 3 and Tier 4 evidence gaps, contradictory target outcomes, integrity failures, and containment failures trigger immediate escalation. Alert payloads reference protected evidence rather than copying sensitive source content.
+
 ## Trust boundaries
 
 Sources may occur in Z0 through Z6; governance, collection control, evidence, detection, response, and assurance reside logically in Z7. Each crossing records identity, authorization, classification, schema and integrity validation, encryption, tenant binding, correlation, delivery, timeout, capacity, provider responsibility, and failure behavior. Z7 evidence access never provides an unmonitored path back into workloads or targets. External provider services remain Z0 regardless of contract.
@@ -241,13 +245,13 @@ Negative testing covers missing, late, duplicate, out-of-order, replayed and spo
 
 ## Variants and alternatives
 
-- **Central assurance fabric:** shared services where residency and tenant obligations permit.
-- **Federated regional fabric:** regional evidence under common schemas and aggregated assurance.
-- **High-assurance enclave:** isolated evidence, evaluation, detection, keys, and administration for Tier 4 or regulated use.
-- **Provider-assisted:** provider signals supplement, but do not replace, enterprise boundary telemetry.
-- **Edge or disconnected:** signed local journal with bounded offline operation and verified reconciliation.
-- **Privacy-maximized:** metadata and derived signals by default, with exceptional protected content.
-- **Research:** broader approved diagnostics in isolated non-production environments, never silently promoted.
+- **Central assurance fabric:** prefer shared services where residency, latency, and tenant obligations permit; it simplifies governance and correlation but concentrates capacity and administrative risk. Use a federated fabric when regional control or isolation is material.
+- **Federated regional fabric:** use regional evidence under common schemas when residency, latency, or blast-radius constraints outweigh central simplicity; cross-region correlation and assurance aggregation require explicit gap handling. Prefer central services when those constraints do not apply.
+- **High-assurance enclave:** use isolated evidence, evaluation, detection, keys, and administration for Tier 4, regulated, or unusually sensitive workloads; accept greater cost and operational separation. Prefer central or federated services for lower-risk workloads when shared administration is acceptable.
+- **Provider-assisted:** use provider signals to improve provider-internal visibility where export semantics and gaps are documented; external assertions never replace enterprise boundary evidence. Prefer enterprise-only collection when provider evidence adds no material assurance or cannot meet privacy and portability requirements.
+- **Edge or disconnected:** use a signed local journal where connectivity cannot be assured; bounded offline capacity, delayed detection, key custody, and reconciliation are explicit trade-offs. Prefer connected central or federated collection when required evidence delay cannot tolerate disconnection.
+- **Privacy-maximized:** default to metadata and derived signals where content risk exceeds diagnostic value; reduced forensic detail is accepted and exceptional protected content requires approval. Prefer ordinary risk-tiered capture where approved excerpts are necessary and proportionate.
+- **Research and experimentation:** allow broader approved diagnostics only in isolated non-production environments to investigate behavior; evidence and configurations are not silently promoted. Use another execution pattern and production capture policy before deployment or consequential use.
 
 ## Anti-patterns
 
