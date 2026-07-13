@@ -1,6 +1,6 @@
 # ESAF-1600 Standards Crosswalk Methodology Design
 
-**Status:** Proposed
+**Status:** Approved
 
 **Date:** 2026-07-13
 
