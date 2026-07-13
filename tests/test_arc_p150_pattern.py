@@ -143,6 +143,12 @@ class ArcP150PatternTests(unittest.TestCase):
             "residual-access",
         ):
             self.assertIn(requirement, text)
+        for requirement in (
+            "non-consequential inference or retrieval",
+            "data failure",
+        ):
+            with self.subTest(requirement=requirement):
+                self.assertIn(requirement, text)
 
 
 if __name__ == "__main__":
