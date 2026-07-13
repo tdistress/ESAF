@@ -1,6 +1,7 @@
 import json
 import re
 import unittest
+from copy import deepcopy
 from pathlib import Path
 from unittest.mock import patch
 
@@ -417,35 +418,23 @@ class Esaf1600FoundationTests(unittest.TestCase):
         self.assertIn("python tools/validate_crosswalks.py --check --baseline-ref", text)
         self.assertIn("full Git history", text)
 
-    def test_ci_fetches_history_and_runs_crosswalk_validation(self) -> None:
-        workflow_path = ROOT / ".github/workflows/catalog-validation.yml"
-        workflow = yaml.load(
-            workflow_path.read_text(encoding="utf-8"),
-            Loader=yaml.BaseLoader,
-        )
-        self.assertIsInstance(workflow, dict)
-
+    def assert_ci_workflow_contract(self, workflow: dict[str, object]) -> None:
         triggers = workflow["on"]
         self.assertEqual(set(triggers), {"pull_request", "push", "workflow_dispatch"})
-        required_paths = {
-            "crosswalks/**",
-            "tools/crosswalks/**",
-            "tools/validate_crosswalks.py",
-        }
-        retained_paths = {
+        expected_paths = [
             ".github/workflows/catalog-validation.yml",
             "architectures/**",
             "controls/**",
+            "crosswalks/**",
             "tests/**",
+            "tools/crosswalks/**",
             "tools/validate_architectures.py",
             "tools/validate_controls.py",
+            "tools/validate_crosswalks.py",
             "requirements-dev.txt",
-        }
+        ]
         for event in ("pull_request", "push"):
-            with self.subTest(event=event):
-                paths = triggers[event]["paths"]
-                self.assertTrue(required_paths <= set(paths))
-                self.assertTrue(retained_paths <= set(paths))
+            self.assertEqual(triggers[event]["paths"], expected_paths)
         self.assertEqual(triggers["push"]["branches"], ["main"])
 
         steps = workflow["jobs"]["validate"]["steps"]
@@ -487,6 +476,73 @@ class Esaf1600FoundationTests(unittest.TestCase):
         active_runs = [step.get("run") for step in steps]
         self.assertEqual(active_runs.count("python tools/validate_architectures.py"), 1)
         self.assertEqual(active_runs.count("python tools/validate_controls.py --check"), 1)
+        crosswalk_runs = [
+            (step["run"], step.get("if", ""))
+            for step in steps
+            if "validate_crosswalks.py" in step.get("run", "")
+        ]
+        self.assertEqual(
+            crosswalk_runs,
+            [
+                ("python tools/validate_crosswalks.py --check", ""),
+                (
+                    "python tools/validate_crosswalks.py --check --baseline-ref "
+                    '"${{ github.event.pull_request.base.sha }}"',
+                    "github.event_name == 'pull_request'",
+                ),
+                (
+                    "python tools/validate_crosswalks.py --check --baseline-ref "
+                    '"${{ github.event.before }}"',
+                    "github.event_name == 'push' && "
+                    "github.event.before != '0000000000000000000000000000000000000000'",
+                ),
+            ],
+        )
+
+    def test_ci_fetches_history_and_runs_crosswalk_validation(self) -> None:
+        workflow_path = ROOT / ".github/workflows/catalog-validation.yml"
+        workflow = yaml.load(
+            workflow_path.read_text(encoding="utf-8"),
+            Loader=yaml.BaseLoader,
+        )
+        self.assertIsInstance(workflow, dict)
+        self.assert_ci_workflow_contract(workflow)
+
+    def test_ci_contract_rejects_duplicate_steps_and_path_entries(self) -> None:
+        workflow_path = ROOT / ".github/workflows/catalog-validation.yml"
+        workflow = yaml.load(
+            workflow_path.read_text(encoding="utf-8"),
+            Loader=yaml.BaseLoader,
+        )
+        self.assertIsInstance(workflow, dict)
+
+        mutations = []
+        steps = workflow["jobs"]["validate"]["steps"]
+        for name in (
+            "Validate crosswalk catalog",
+            "Validate crosswalk history on pull request",
+            "Validate crosswalk history on protected-branch push",
+        ):
+            mutation = deepcopy(workflow)
+            original = next(step for step in steps if step["name"] == name)
+            duplicate = deepcopy(original)
+            duplicate["name"] = f"Duplicate {name}"
+            mutation["jobs"]["validate"]["steps"].append(duplicate)
+            mutations.append((f"duplicate step: {name}", mutation))
+
+        for event in ("pull_request", "push"):
+            duplicate_path = deepcopy(workflow)
+            duplicate_path["on"][event]["paths"].append("crosswalks/**")
+            mutations.append((f"duplicate path: {event}", duplicate_path))
+
+            extra_path = deepcopy(workflow)
+            extra_path["on"][event]["paths"].append("docs/**")
+            mutations.append((f"extra path: {event}", extra_path))
+
+        for name, mutation in mutations:
+            with self.subTest(mutation=name):
+                with self.assertRaises(AssertionError):
+                    self.assert_ci_workflow_contract(mutation)
 
 
 if __name__ == "__main__":
