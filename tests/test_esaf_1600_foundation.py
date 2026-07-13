@@ -417,6 +417,77 @@ class Esaf1600FoundationTests(unittest.TestCase):
         self.assertIn("python tools/validate_crosswalks.py --check --baseline-ref", text)
         self.assertIn("full Git history", text)
 
+    def test_ci_fetches_history_and_runs_crosswalk_validation(self) -> None:
+        workflow_path = ROOT / ".github/workflows/catalog-validation.yml"
+        workflow = yaml.load(
+            workflow_path.read_text(encoding="utf-8"),
+            Loader=yaml.BaseLoader,
+        )
+        self.assertIsInstance(workflow, dict)
+
+        triggers = workflow["on"]
+        self.assertEqual(set(triggers), {"pull_request", "push", "workflow_dispatch"})
+        required_paths = {
+            "crosswalks/**",
+            "tools/crosswalks/**",
+            "tools/validate_crosswalks.py",
+        }
+        retained_paths = {
+            ".github/workflows/catalog-validation.yml",
+            "architectures/**",
+            "controls/**",
+            "tests/**",
+            "tools/validate_architectures.py",
+            "tools/validate_controls.py",
+            "requirements-dev.txt",
+        }
+        for event in ("pull_request", "push"):
+            with self.subTest(event=event):
+                paths = triggers[event]["paths"]
+                self.assertTrue(required_paths <= set(paths))
+                self.assertTrue(retained_paths <= set(paths))
+        self.assertEqual(triggers["push"]["branches"], ["main"])
+
+        steps = workflow["jobs"]["validate"]["steps"]
+
+        def unique_step(name: str) -> dict[str, object]:
+            matches = [step for step in steps if step.get("name") == name]
+            self.assertEqual(len(matches), 1, f"expected one active {name!r} step")
+            return matches[0]
+
+        checkout = unique_step("Check out repository")
+        self.assertEqual(checkout["uses"], "actions/checkout@v5")
+        self.assertIn("with", checkout)
+        self.assertEqual(checkout["with"]["fetch-depth"], "0")
+
+        current = unique_step("Validate crosswalk catalog")
+        self.assertEqual(current, {
+            "name": "Validate crosswalk catalog",
+            "run": "python tools/validate_crosswalks.py --check",
+        })
+
+        pull_request = unique_step("Validate crosswalk history on pull request")
+        self.assertEqual(pull_request["if"], "github.event_name == 'pull_request'")
+        self.assertEqual(
+            pull_request["run"],
+            'python tools/validate_crosswalks.py --check --baseline-ref "${{ github.event.pull_request.base.sha }}"',
+        )
+
+        push = unique_step("Validate crosswalk history on protected-branch push")
+        self.assertEqual(
+            push["if"],
+            "github.event_name == 'push' && "
+            "github.event.before != '0000000000000000000000000000000000000000'",
+        )
+        self.assertEqual(
+            push["run"],
+            'python tools/validate_crosswalks.py --check --baseline-ref "${{ github.event.before }}"',
+        )
+
+        active_runs = [step.get("run") for step in steps]
+        self.assertEqual(active_runs.count("python tools/validate_architectures.py"), 1)
+        self.assertEqual(active_runs.count("python tools/validate_controls.py --check"), 1)
+
 
 if __name__ == "__main__":
     unittest.main()
