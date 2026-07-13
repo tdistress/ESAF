@@ -38,7 +38,7 @@
 
 - [ ] **Step 1: Record the clean baseline**
 
-Run the following command with a 180-second outer shell timeout so a stalled renderer fails the publication gate instead of blocking the workflow indefinitely:
+Run:
 
 ```powershell
 $env:PYTHONDONTWRITEBYTECODE = '1'
@@ -560,7 +560,7 @@ Expected: one commit containing only the three resilience and recovery tests unl
 
 - [ ] **Step 1: Render all four Mermaid figures with the pinned CLI**
 
-Run:
+Run the following command with a 180-second outer shell timeout so a stalled renderer fails the publication gate instead of blocking the workflow indefinitely:
 
 ```powershell
 $env:PATH = 'C:\Users\phrea\.cache\codex-runtimes\codex-primary-runtime\dependencies\node\bin;' + $env:PATH
