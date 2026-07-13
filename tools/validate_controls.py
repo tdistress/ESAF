@@ -23,6 +23,7 @@ CONTROL_ID = re.compile(r"^[A-Z]{3}-[1-9][0-9]{2}$")
 OBJECTIVE_ID = re.compile(r"\*\*([A-Z]{3}-[0-9]{2})\s")
 RELATED_ID = re.compile(r"`([A-Z]{3}-[1-9][0-9]{2})(?:\([1-9][0-9]*\))?`")
 ASSESSMENT = re.compile(r"^- \*\*([A-Z]{3}-[1-9][0-9]{2})-A[1-9][0-9]* - (Examine|Interview|Test|Observe):\*\*", re.MULTILINE)
+EXTERNAL_MAPPING_HEADING = re.compile(r"^## External mappings$", re.MULTILINE)
 REQUIRED_SECTIONS = (
     "Requirement",
     "Intent",
@@ -181,8 +182,13 @@ def validate() -> tuple[list[str], list[dict], dict[str, str], list[str]]:
         for heading in REQUIRED_SECTIONS:
             if not section(body, heading):
                 errors.append(f"{relative}: missing or empty section '## {heading}'")
-        external = section(body, "External mappings")
-        if external != EXPECTED_EXTERNAL_MAPPING:
+        external_heading_count = len(EXTERNAL_MAPPING_HEADING.findall(body))
+        if external_heading_count != 1:
+            errors.append(
+                f"{relative}: expected exactly one '## External mappings' heading; "
+                f"found {external_heading_count}"
+            )
+        elif section(body, "External mappings") != EXPECTED_EXTERNAL_MAPPING:
             errors.append(f"{relative}: External mappings must delegate to ESAF-1600")
         requirement = section(body, "Requirement")
         if len(re.findall(r"\bshall\b", requirement, flags=re.IGNORECASE)) != 1:

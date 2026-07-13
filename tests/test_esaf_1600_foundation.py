@@ -2,6 +2,7 @@ import json
 import re
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 import yaml
 
@@ -91,6 +92,30 @@ class Esaf1600FoundationTests(unittest.TestCase):
         new_prefix, new_section, new_suffix = split_external_mapping(after)
         self.assertEqual((new_prefix, new_suffix), (prefix, suffix))
         self.assertEqual(new_section, CANONICAL_EXTERNAL_MAPPING_LINK)
+
+    def test_control_validator_rejects_duplicate_external_mapping_sections(self) -> None:
+        from tools import validate_controls
+
+        original_parse_control = validate_controls.parse_control
+
+        def parse_with_duplicate(path: Path) -> tuple[dict, str]:
+            metadata, body = original_parse_control(path)
+            if path.name == "GOV-100.md":
+                body += (
+                    "\n## External mappings\n\n"
+                    "| Authority | Publication | Provision |\n"
+                    "|---|---|---|\n"
+                    "| Example | Example Standard | EX-1 |\n"
+                )
+            return metadata, body
+
+        with patch.object(validate_controls, "parse_control", side_effect=parse_with_duplicate):
+            errors, _records, _objectives, _families = validate_controls.validate()
+
+        self.assertIn(
+            "controls/GOV/GOV-100.md: expected exactly one '## External mappings' heading; found 2",
+            errors,
+        )
 
     def test_methodology_contains_required_normative_sections(self) -> None:
         text = (ROOT / "crosswalks/ESAF-1600.md").read_text(encoding="utf-8")
