@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from tests.crosswalk_fixtures import CrosswalkFixture, valid_event
+from tests.crosswalk_fixtures import MAPPING_SET_ID, CrosswalkFixture, valid_event
 from tools.crosswalks.digests import event_bytes, event_digest
 from tools.crosswalks.io import parse_front_matter
 from tools.crosswalks.manifest import build_control_manifest, git_bytes, render_manifest
@@ -128,6 +128,30 @@ class CrosswalkValidationTests(unittest.TestCase):
             "trusted baseline lifecycle metadata is malformed",
             "\n".join(errors),
         )
+
+    def test_unparseable_baseline_lifecycle_metadata_fails_closed(self) -> None:
+        baseline = self.fixture.commit_malformed_lifecycle_yaml()
+        errors = validate(self.root, baseline_ref=baseline).errors
+        self.assertEqual(errors, sorted(set(errors)))
+        self.assertIn(
+            "crosswalks/registry/"
+            + MAPPING_SET_ID
+            + ".md: trusted baseline lifecycle metadata is malformed",
+            "\n".join(errors),
+        )
+
+    def test_unparseable_baseline_snapshot_metadata_fails_closed(self) -> None:
+        for mutation in ("invalid_utf8", "bom", "crlf", "missing_front_matter"):
+            with self.subTest(mutation=mutation):
+                self.fixture.reset_repository()
+                baseline = self.fixture.commit_malformed_snapshot_readme(mutation)
+                errors = validate(self.root, baseline_ref=baseline).errors
+                self.assertEqual(errors, sorted(set(errors)))
+                self.assertIn(
+                    "crosswalks/mappings/nist/1.0/0.4-alpha/1.0.0/README.md: "
+                    "trusted baseline snapshot metadata is malformed",
+                    "\n".join(errors),
+                )
 
     def test_incomplete_reviewed_snapshot_is_rejected(self) -> None:
         self.fixture.create_valid_snapshot(status="reviewed", complete=False)

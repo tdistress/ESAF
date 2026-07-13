@@ -285,6 +285,43 @@ class CrosswalkFixture:
         self._git("commit", "--quiet", "-m", "Malformed lifecycle baseline")
         return self._git("rev-parse", "HEAD")
 
+    def commit_malformed_lifecycle_yaml(self) -> str:
+        self.create_approved_snapshot_with_lifecycle("approved")
+        lifecycle = self.root / "crosswalks" / "registry" / f"{MAPPING_SET_ID}.md"
+        lifecycle.write_bytes(b"---\nmapping_set_id: [\n---\n# Broken lifecycle\n")
+        self._git("add", "crosswalks")
+        self._git("commit", "--quiet", "-m", "Unparseable lifecycle baseline")
+        return self._git("rev-parse", "HEAD")
+
+    def commit_malformed_snapshot_readme(self, mutation: str) -> str:
+        snapshot = self.create_approved_snapshot_with_lifecycle("approved")
+        readme = snapshot / "README.md"
+        raw = readme.read_bytes()
+        mutations = {
+            "invalid_utf8": b"\xff",
+            "bom": b"\xef\xbb\xbf" + raw,
+            "crlf": raw.replace(b"\n", b"\r\n"),
+            "missing_front_matter": b"# Missing front matter\n",
+        }
+        malformed = mutations[mutation]
+        readme.write_bytes(malformed)
+        self._git("add", "crosswalks")
+        blob = subprocess.run(
+            ["git", "-C", str(self.root), "hash-object", "-w", "--stdin"],
+            input=malformed,
+            check=True,
+            capture_output=True,
+        ).stdout.decode("ascii").strip()
+        self._git(
+            "update-index",
+            "--cacheinfo",
+            "100644",
+            blob,
+            readme.relative_to(self.root).as_posix(),
+        )
+        self._git("commit", "--quiet", "-m", f"Malformed snapshot baseline {mutation}")
+        return self._git("rev-parse", "HEAD")
+
     def mutate_approved_record(self) -> None:
         path = self._record()
         path.write_bytes(path.read_bytes() + b"\nApproved content was rewritten.\n")

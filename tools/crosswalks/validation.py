@@ -141,7 +141,17 @@ def validate_baseline(
     baseline_paths = _git_tree_paths(root, commit, "crosswalks/mappings")
     for readme in (path for path in baseline_paths if path.endswith("/README.md")):
         metadata = _front_matter_bytes(_git_show(root, commit, readme))
-        if not isinstance(metadata, dict) or metadata.get("status") != "approved":
+        status = metadata.get("status") if isinstance(metadata, dict) else None
+        if not isinstance(status, str) or status not in {
+            "draft",
+            "reviewed",
+            "approved",
+        }:
+            errors.append(
+                f"{readme}: trusted baseline snapshot metadata is malformed"
+            )
+            continue
+        if status != "approved":
             continue
         directory = readme.rsplit("/", 1)[0]
         baseline_files = sorted(
@@ -183,6 +193,9 @@ def validate_baseline(
             continue
         baseline = _front_matter_bytes(_git_show(root, commit, path))
         if not isinstance(baseline, dict):
+            errors.append(
+                f"{path}: trusted baseline lifecycle metadata is malformed"
+            )
             continue
         mapping_set_id = baseline.get("mapping_set_id")
         if not isinstance(mapping_set_id, str):
@@ -191,12 +204,17 @@ def validate_baseline(
                 "mapping_set_id must be a string"
             )
             continue
-        candidate = current_lifecycle.get(mapping_set_id)
         baseline_events = baseline.get("events")
+        if not isinstance(baseline_events, list):
+            errors.append(
+                f"{path}: trusted baseline lifecycle metadata is malformed: "
+                "events must be an array"
+            )
+            continue
+        candidate = current_lifecycle.get(mapping_set_id)
         candidate_events = candidate.get("events") if isinstance(candidate, dict) else None
         if (
-            not isinstance(baseline_events, list)
-            or not isinstance(candidate_events, list)
+            not isinstance(candidate_events, list)
             or candidate_events[: len(baseline_events)] != baseline_events
         ):
             errors.append(f"{path}: baseline lifecycle events are not an exact prefix")
