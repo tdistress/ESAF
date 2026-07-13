@@ -400,6 +400,8 @@ def _front_matter_bytes(raw: bytes) -> dict[str, object] | None:
         if not text.startswith("---\n"):
             return None
         parts = text.split("---\n", 2)
+        if len(parts) != 3:
+            return None
         value = yaml.safe_load(parts[1])
     except (UnicodeError, yaml.YAMLError, IndexError):
         return None

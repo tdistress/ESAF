@@ -293,6 +293,28 @@ class CrosswalkFixture:
         self._git("commit", "--quiet", "-m", "Unparseable lifecycle baseline")
         return self._git("rev-parse", "HEAD")
 
+    def commit_lifecycle_missing_closing_delimiter(self) -> str:
+        self.create_approved_snapshot_with_lifecycle("approved")
+        lifecycle = self.root / "crosswalks" / "registry" / f"{MAPPING_SET_ID}.md"
+        valid = lifecycle.read_bytes()
+        lifecycle.write_bytes(self._without_closing_delimiter(valid))
+        self._git("add", "crosswalks")
+        self._git("commit", "--quiet", "-m", "Unclosed lifecycle baseline")
+        baseline = self._git("rev-parse", "HEAD")
+        lifecycle.write_bytes(valid)
+        return baseline
+
+    def commit_snapshot_readme_missing_closing_delimiter(self) -> str:
+        snapshot = self.create_approved_snapshot_with_lifecycle("approved")
+        readme = snapshot / "README.md"
+        valid = readme.read_bytes()
+        readme.write_bytes(self._without_closing_delimiter(valid))
+        self._git("add", "crosswalks")
+        self._git("commit", "--quiet", "-m", "Unclosed snapshot baseline")
+        baseline = self._git("rev-parse", "HEAD")
+        readme.write_bytes(valid)
+        return baseline
+
     def commit_malformed_snapshot_readme(self, mutation: str) -> str:
         snapshot = self.create_approved_snapshot_with_lifecycle("approved")
         readme = snapshot / "README.md"
@@ -321,6 +343,14 @@ class CrosswalkFixture:
         )
         self._git("commit", "--quiet", "-m", f"Malformed snapshot baseline {mutation}")
         return self._git("rev-parse", "HEAD")
+
+    @staticmethod
+    def _without_closing_delimiter(raw: bytes) -> bytes:
+        delimiter = b"---\n"
+        closing = raw.find(delimiter, len(delimiter))
+        if closing < 0:
+            raise ValueError("fixture front matter has no closing delimiter")
+        return raw[:closing] + raw[closing + len(delimiter) :]
 
     def mutate_approved_record(self) -> None:
         path = self._record()
