@@ -374,6 +374,15 @@ class CrosswalkFixture:
             newline="\n",
         )
 
+    def break_inventory_local_link(self) -> None:
+        self._append_inventory_body("\n[Missing](missing-inventory.md)\n")
+
+    def add_inventory_drafting_marker(self) -> None:
+        self._append_inventory_body("\nTODO: resolve inventory wording\n")
+
+    def write_inventory_encoding_corruption_signature(self) -> None:
+        self._append_inventory_body("\nPossible corruption: cafÃ©\n")
+
     def _set_finding(self, severity: str, status: str) -> None:
         finding: dict[str, object] = {
             "finding_id": "finding-1",
@@ -403,6 +412,13 @@ class CrosswalkFixture:
         metadata, body = parse_front_matter(path)
         mutation(metadata)  # type: ignore[operator]
         self.write_front_matter(path.relative_to(self.root).as_posix(), metadata, body)
+
+    def _append_inventory_body(self, addition: str) -> None:
+        path = self._snapshot() / "PROVISION_INVENTORY.md"
+        metadata, body = parse_front_matter(path)
+        self.write_front_matter(
+            path.relative_to(self.root).as_posix(), metadata, body + addition
+        )
 
     def _snapshot(self) -> Path:
         if self.snapshot is None:

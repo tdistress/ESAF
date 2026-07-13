@@ -108,6 +108,22 @@ class CrosswalkValidationTests(unittest.TestCase):
         self.assertTrue(errors[0].startswith("crosswalks/mappings/"))
         self.assertNotIn(self.root.as_posix(), errors[0])
 
+    def test_reviewed_inventory_body_mutation_matrix(self) -> None:
+        cases = (
+            ("break_inventory_local_link", "broken local link"),
+            ("add_inventory_drafting_marker", "unresolved drafting marker"),
+            (
+                "write_inventory_encoding_corruption_signature",
+                "possible text-encoding corruption",
+            ),
+        )
+        for mutation, expected in cases:
+            with self.subTest(mutation=mutation):
+                self.fixture.reset_crosswalks()
+                self.fixture.create_valid_snapshot(status="approved", complete=True)
+                getattr(self.fixture, mutation)()
+                self.assertIn(expected, "\n".join(validate(self.root).errors))
+
     def test_identifier_only_context_is_accepted_when_identifiers_are_permitted(self) -> None:
         snapshot = self.fixture.create_valid_snapshot(status="draft", complete=True)
         mapping_path = snapshot / "README.md"

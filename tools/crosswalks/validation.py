@@ -123,8 +123,11 @@ def _validate_snapshot(
         else:
             errors.append(f"{relative}/{entry.name}: unexpected snapshot entry")
 
-    inventory = _read_front_matter(
+    inventory_document = _read_front_matter(
         snapshot / "PROVISION_INVENTORY.md", relative, "provision inventory", errors
+    )
+    inventory, inventory_body = (
+        inventory_document if inventory_document is not None else (None, "")
     )
     manifest = _read_json(snapshot / "ESAF_CONTROL_MANIFEST.json", relative, errors)
     if inventory is not None:
@@ -133,6 +136,14 @@ def _validate_snapshot(
                 validators["provision-inventory"],  # type: ignore[arg-type]
                 inventory,
                 f"{relative}/PROVISION_INVENTORY.md",
+            )
+        )
+        errors.extend(
+            _validate_reviewed_text(
+                snapshot / "PROVISION_INVENTORY.md",
+                mapping_set.get("status"),
+                f"{relative}/PROVISION_INVENTORY.md",
+                inventory_body,
             )
         )
     if manifest is not None:
@@ -155,12 +166,12 @@ def _validate_snapshot(
         else set()
     )
     for path in record_paths:
-        record = _read_front_matter(path, relative, "provision record", errors)
-        if record is None:
+        record_document = _read_front_matter(path, relative, "provision record", errors)
+        if record_document is None:
             continue
+        record, body = record_document
         records.append(record)
         record_relative = path.relative_to(root).as_posix()
-        _, body = parse_front_matter(path)
         provisions.append({"path": record_relative, "metadata": record, "body": body})
         errors.extend(
             schema_errors(validators["mapping-record"], record, record_relative)  # type: ignore[arg-type]
@@ -398,13 +409,16 @@ _DRAFTING_MARKER = re.compile(r"(?im)(?:^|\b)(?:TODO|TBD|FIXME|PLACEHOLDER)(?:\b
 _CORRUPTION_SIGNATURES = ("Ã", "Â", "â€", "â€™", "ï»¿", "�")
 
 
-def _validate_reviewed_text(path: Path, status: object, relative: str) -> list[str]:
+def _validate_reviewed_text(
+    path: Path, status: object, relative: str, text: str | None = None
+) -> list[str]:
     if not isinstance(status, str) or status not in {"reviewed", "approved"}:
         return []
-    try:
-        text = path.read_text(encoding="utf-8")
-    except (OSError, UnicodeError):
-        return []
+    if text is None:
+        try:
+            text = path.read_text(encoding="utf-8")
+        except (OSError, UnicodeError):
+            return []
     errors: list[str] = []
     if any(signature in text for signature in _CORRUPTION_SIGNATURES):
         errors.append(f"{relative}: possible text-encoding corruption")
@@ -464,13 +478,12 @@ def _snapshot_path(mapping_set: dict[str, object]) -> str | None:
 
 def _read_front_matter(
     path: Path, relative: str, label: str, errors: list[str]
-) -> dict[str, object] | None:
+) -> tuple[dict[str, object], str] | None:
     if not path.is_file():
         errors.append(f"{relative}: missing {label} {path.name}")
         return None
     try:
-        metadata, _ = parse_front_matter(path)
-        return metadata
+        return parse_front_matter(path)
     except yaml.YAMLError as error:
         errors.append(f"{relative}/{path.name}: invalid YAML: {error}")
         return None
