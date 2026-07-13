@@ -95,11 +95,11 @@ def valid_mapping_set(status: str = "draft") -> dict[str, object]:
     return value
 
 
-def valid_inventory() -> dict[str, object]:
+def valid_inventory(scope_type: str = "complete_publication") -> dict[str, object]:
     return {
         "schema_version": "1.0.0",
         "mapping_set_id": MAPPING_SET_ID,
-        "scope_type": "complete_publication",
+        "scope_type": scope_type,
         "scope_statement": "All normative requirements.",
         "source_basis": "Official publication structure.",
         "expected_count": 1,
@@ -130,6 +130,38 @@ def valid_record(
         value["negative_rationale"] = "No direct outcome relationship was identified."
     if status == "reviewed":
         value["reviewer"] = reviewer()
+    return value
+
+
+def valid_identifier_only_record() -> dict[str, object]:
+    value = valid_record()
+    value["context"] = {
+        "mode": "identifier_only",
+        "omission_rationale": "Publication rights prohibit a summary.",
+    }
+    return value
+
+
+def finding(status: str = "resolved") -> dict[str, object]:
+    value: dict[str, object] = {
+        "finding_id": "finding-1",
+        "affected_record_ids": ["gv-1-1"],
+        "severity": "Minor",
+        "status": status,
+        "description": "A review finding.",
+        "disposition": "The finding was dispositioned.",
+    }
+    if status in {"resolved", "accepted"}:
+        value["resolver_or_acceptor"] = "approver-1"
+        value["disposition_date"] = "2026-07-13"
+    if status == "accepted":
+        value["acceptance_rationale"] = "Within approved tolerance."
+    return value
+
+
+def valid_mapping_set_with_finding(status: str = "resolved") -> dict[str, object]:
+    value = valid_mapping_set("approved")
+    value["findings"] = [finding(status)]
     return value
 
 
@@ -193,6 +225,68 @@ def object_paths(value: object, prefix: str = "") -> list[str]:
     return paths
 
 
+def path_exists(value: object, path: str) -> bool:
+    try:
+        get_path(value, path)
+        return True
+    except (IndexError, KeyError, TypeError):
+        return False
+
+
+def get_path(value: object, path: str) -> object:
+    target = value
+    for part in path.split(".") if path else ():
+        target = target[int(part)] if part.isdigit() else target[part]  # type: ignore[index]
+    return target
+
+
+def set_path_copy(value: dict[str, object], path: str, replacement: object) -> dict[str, object]:
+    result = copy.deepcopy(value)
+    target: object = result
+    parts = path.split(".")
+    for part in parts[:-1]:
+        target = target[int(part)] if part.isdigit() else target[part]  # type: ignore[index]
+    final = parts[-1]
+    if final.isdigit():
+        target[int(final)] = replacement  # type: ignore[index]
+    else:
+        target[final] = replacement  # type: ignore[index]
+    return result
+
+
+def constrained_array_paths(document: dict[str, object]) -> list[tuple[str, bool, bool]]:
+    found: set[tuple[str, bool, bool]] = set()
+
+    def resolve(reference: str) -> object:
+        target: object = document
+        for part in reference.removeprefix("#/").split("/"):
+            target = target[part.replace("~1", "/").replace("~0", "~")]  # type: ignore[index]
+        return target
+
+    def walk(node: object, path: str) -> None:
+        if not isinstance(node, dict):
+            return
+        if "$ref" in node:
+            walk(resolve(node["$ref"]), path)  # type: ignore[arg-type]
+        if node.get("type") == "array" and ("minItems" in node or "uniqueItems" in node):
+            found.add((path, bool(node.get("minItems")), bool(node.get("uniqueItems"))))
+        properties = node.get("properties", {})
+        if isinstance(properties, dict):
+            for name, child in properties.items():
+                walk(child, f"{path}.{name}" if path else name)
+        if "items" in node:
+            walk(node["items"], f"{path}.0")
+        for keyword in ("allOf", "anyOf", "oneOf"):
+            for child in node.get(keyword, []):  # type: ignore[union-attr]
+                walk(child, path)
+        for keyword in ("if", "then", "else"):
+            if keyword in node:
+                walk(node[keyword], path)
+
+    walk(document, "")
+    return sorted(found)
+
+
 REQUIRED_PATHS = {
     "mapping-set": (
         "schema_version", "mapping_set_id", "authority", "authority.id", "authority.name",
@@ -234,6 +328,10 @@ class CrosswalkSchemaTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.repo = Path(__file__).resolve().parents[1]
         cls.validators = load_schemas(cls.repo)
+        cls.schema_documents = {
+            path.name.removesuffix(".schema.json"): json.loads(path.read_text(encoding="utf-8"))
+            for path in (cls.repo / "crosswalks" / "schema").glob("*.schema.json")
+        }
 
     def setUp(self) -> None:
         self.temporary = tempfile.TemporaryDirectory()
@@ -278,7 +376,9 @@ class CrosswalkSchemaTests(unittest.TestCase):
             ("mapping-set", valid_mapping_set("draft")),
             ("mapping-set", valid_mapping_set("reviewed")),
             ("mapping-set", valid_mapping_set("approved")),
+            ("mapping-set", valid_mapping_set_with_finding("resolved")),
             ("provision-inventory", valid_inventory()),
+            ("provision-inventory", valid_inventory("declared_subset")),
             ("mapping-record", valid_record()),
             ("mapping-record", valid_record("reviewed", "mapped", "clause")),
             ("mapping-record", valid_record("reviewed", "no_direct_mapping")),
@@ -289,6 +389,16 @@ class CrosswalkSchemaTests(unittest.TestCase):
         for schema, value in variants:
             with self.subTest(schema=schema, status=value.get("status")):
                 self.assert_valid(schema, value)
+
+    def test_manifest_path_rejects_parent_traversal(self) -> None:
+        manifest = valid_manifest()
+        manifest["controls"][0]["path"] = "../GOV-100.md"  # type: ignore[index]
+        self.assert_invalid("esaf-control-manifest", manifest, "does not match")
+
+    def test_finding_may_have_no_affected_record_ids(self) -> None:
+        value = valid_mapping_set_with_finding("resolved")
+        value["findings"][0]["affected_record_ids"] = []  # type: ignore[index]
+        self.assert_valid("mapping-set", value)
 
     def test_every_required_property_boundary(self) -> None:
         variants = {
@@ -310,6 +420,12 @@ class CrosswalkSchemaTests(unittest.TestCase):
             ("mapping-set", valid_mapping_set("reviewed"), "reviewer.date"),
             ("mapping-set", valid_mapping_set("reviewed"), "reviewer.authorized_source_access"),
             ("mapping-set", valid_mapping_set("reviewed"), "reviewer.findings_disposition"),
+            ("mapping-set", valid_mapping_set("approved"), "reviewer"),
+            ("mapping-set", valid_mapping_set("approved"), "reviewer.id"),
+            ("mapping-set", valid_mapping_set("approved"), "reviewer.qualification"),
+            ("mapping-set", valid_mapping_set("approved"), "reviewer.date"),
+            ("mapping-set", valid_mapping_set("approved"), "reviewer.authorized_source_access"),
+            ("mapping-set", valid_mapping_set("approved"), "reviewer.findings_disposition"),
             ("mapping-set", valid_mapping_set("approved"), "approver"),
             ("mapping-set", valid_mapping_set("approved"), "approver.id"),
             ("mapping-set", valid_mapping_set("approved"), "approver.date"),
@@ -320,7 +436,10 @@ class CrosswalkSchemaTests(unittest.TestCase):
             ("mapping-record", valid_record("reviewed"), "reviewer.authorized_source_access"),
             ("mapping-record", valid_record("reviewed"), "reviewer.findings_disposition"),
             ("mapping-record", valid_record(), "context.summary"),
+            ("mapping-record", valid_identifier_only_record(), "context.omission_rationale"),
             ("mapping-record", valid_record(granularity="clause"), "granularity_exception"),
+            ("mapping-record", valid_record(disposition="no_direct_mapping"), "negative_rationale"),
+            ("mapping-record", valid_record(disposition="out_of_scope"), "negative_rationale"),
         )
         for schema, value, path in conditional:
             with self.subTest(schema=schema, path=path):
@@ -331,40 +450,81 @@ class CrosswalkSchemaTests(unittest.TestCase):
             with self.subTest(schema="mapping-record", path=f"relationships.0.{field}"):
                 self.assert_invalid("mapping-record", delete_path(record, f"relationships.0.{field}"))
 
+        resolved = valid_mapping_set_with_finding("resolved")
+        for field in finding("resolved"):
+            with self.subTest(schema="mapping-set", path=f"findings.0.{field}"):
+                self.assert_invalid("mapping-set", delete_path(resolved, f"findings.0.{field}"))
+
     def test_every_enum_accepts_declared_values_and_rejects_unknown(self) -> None:
         cases = (
             ("mapping-set", "status", ("draft", "reviewed", "approved")),
             ("mapping-set", "source.access_class", ("public", "restricted", "licensed")),
+            ("mapping-set", "publication_rights.permitted_elements.0", ("identifiers", "titles", "structural_inventory", "paraphrases", "derivative_mapping_analysis", "official_links")),
+            ("mapping-set", "publication_rights.prohibited_elements.0", ("identifiers", "titles", "structural_inventory", "paraphrases", "derivative_mapping_analysis", "official_links")),
             ("mapping-set", "scope.type", ("complete_publication", "declared_subset")),
             ("mapping-set", "scope.default_granularity", ("requirement", "clause", "domain")),
+            ("mapping-record", "status", ("draft", "reviewed")),
+            ("mapping-record", "granularity", ("requirement", "clause", "domain")),
+            ("mapping-record", "context.mode", ("paraphrase", "identifier_only")),
+            ("mapping-record", "disposition", ("mapped", "no_direct_mapping", "out_of_scope")),
             ("mapping-record", "relationships.0.relationship", ("supports", "partially_supports", "complements", "prerequisite", "informs")),
             ("mapping-record", "relationships.0.direction", ("esaf_to_external", "external_to_esaf")),
             ("mapping-record", "relationships.0.coverage", ("substantial", "partial", "narrow", "contextual")),
             ("mapping-record", "relationships.0.confidence", ("high", "medium", "low")),
+            ("mapping-set", "findings.0.severity", ("Critical", "Important", "Minor")),
+            ("mapping-set", "findings.0.status", ("open", "resolved", "accepted")),
             ("lifecycle-record", "events.0.state", ("approved", "published", "deprecated", "retired")),
             ("esaf-control-manifest", "controls.0.status", ("proposed", "draft", "approved", "published", "deprecated", "retired")),
         )
-        factories = {
-            "mapping-set": valid_mapping_set,
-            "mapping-record": valid_record,
-            "lifecycle-record": valid_lifecycle,
-            "esaf-control-manifest": valid_manifest,
-        }
+        def instance_for(schema: str, path: str, enum_value: str) -> dict[str, object]:
+            if schema == "mapping-set" and path == "status":
+                return valid_mapping_set(enum_value)
+            if path.startswith("publication_rights."):
+                value = valid_mapping_set()
+                array_name = path.split(".")[1]
+                value["publication_rights"][array_name] = [enum_value]  # type: ignore[index]
+                return value
+            if path.startswith("findings.0."):
+                value = valid_mapping_set_with_finding(enum_value if path.endswith("status") else "resolved")
+                value["findings"][0][path.split(".")[-1]] = enum_value  # type: ignore[index]
+                return value
+            if schema == "mapping-record" and path == "status":
+                return valid_record(status=enum_value)
+            if schema == "mapping-record" and path == "granularity":
+                return valid_record(granularity=enum_value)
+            if schema == "mapping-record" and path == "context.mode":
+                return valid_identifier_only_record() if enum_value == "identifier_only" else valid_record()
+            if schema == "mapping-record" and path == "disposition":
+                return valid_record(disposition=enum_value)
+            return {
+                "mapping-set": valid_mapping_set,
+                "mapping-record": valid_record,
+                "lifecycle-record": valid_lifecycle,
+                "esaf-control-manifest": valid_manifest,
+            }[schema]()
+
         for schema, path, values in cases:
             for enum_value in values:
-                value = (
-                    valid_mapping_set(enum_value)
-                    if schema == "mapping-set" and path == "status"
-                    else factories[schema]()
-                )
+                value = instance_for(schema, path, enum_value)
                 target: object = value
                 parts = path.split(".")
                 for part in parts[:-1]:
                     target = target[int(part)] if part.isdigit() else target[part]  # type: ignore[index]
-                target[parts[-1]] = enum_value  # type: ignore[index]
+                if parts[-1].isdigit():
+                    target[int(parts[-1])] = enum_value  # type: ignore[index]
+                else:
+                    target[parts[-1]] = enum_value  # type: ignore[index]
                 with self.subTest(schema=schema, path=path, value=enum_value):
                     self.assert_valid(schema, value)
-            target[parts[-1]] = "not-a-declared-value"  # type: ignore[index]
+            value = instance_for(schema, path, values[0])
+            target = value
+            parts = path.split(".")
+            for part in parts[:-1]:
+                target = target[int(part)] if part.isdigit() else target[part]  # type: ignore[index]
+            if parts[-1].isdigit():
+                target[int(parts[-1])] = "not-a-declared-value"  # type: ignore[index]
+            else:
+                target[parts[-1]] = "not-a-declared-value"  # type: ignore[index]
             self.assert_invalid(schema, value)
 
     def test_mapping_schema_rejects_prohibited_relationship(self) -> None:
@@ -374,8 +534,9 @@ class CrosswalkSchemaTests(unittest.TestCase):
 
     def test_schemas_reject_additional_properties_at_every_object_boundary(self) -> None:
         variants = (
-            ("mapping-set", valid_mapping_set("approved")),
+            ("mapping-set", valid_mapping_set_with_finding("resolved")),
             ("provision-inventory", valid_inventory()),
+            ("provision-inventory", valid_inventory("declared_subset")),
             ("mapping-record", valid_record("reviewed")),
             ("lifecycle-record", valid_lifecycle()),
             ("esaf-control-manifest", valid_manifest()),
@@ -390,6 +551,32 @@ class CrosswalkSchemaTests(unittest.TestCase):
                 target["unexpected"] = True  # type: ignore[index]
                 with self.subTest(schema=schema, path=path or "metadata"):
                     self.assert_invalid(schema, value, "unexpected")
+
+    def test_every_array_constraint_is_exercised(self) -> None:
+        variants = (
+            ("mapping-set", valid_mapping_set_with_finding("resolved")),
+            ("provision-inventory", valid_inventory()),
+            ("mapping-record", valid_record()),
+            ("mapping-record", valid_record("reviewed", "mapped", "clause")),
+            ("mapping-record", valid_record("reviewed", "no_direct_mapping")),
+            ("mapping-record", valid_record("reviewed", "out_of_scope", "domain")),
+            ("lifecycle-record", valid_lifecycle()),
+            ("esaf-control-manifest", valid_manifest()),
+        )
+        for schema, document in self.schema_documents.items():
+            for path, min_items, unique_items in constrained_array_paths(document):
+                candidates = [value for name, value in variants if name == schema and path_exists(value, path)]
+                self.assertTrue(candidates, f"no valid {schema} fixture contains constrained array {path}")
+                instance = candidates[0]
+                if min_items:
+                    with self.subTest(schema=schema, path=path, constraint="minItems"):
+                        self.assert_invalid(schema, set_path_copy(instance, path, []))
+                if unique_items:
+                    current = get_path(instance, path)
+                    self.assertIsInstance(current, list)
+                    self.assertTrue(current, f"fixture array is empty at {schema}:{path}")
+                    with self.subTest(schema=schema, path=path, constraint="uniqueItems"):
+                        self.assert_invalid(schema, set_path_copy(instance, path, [current[0], current[0]]))  # type: ignore[index]
 
     def test_state_and_disposition_conditionals(self) -> None:
         cases: list[tuple[str, dict[str, object], str]] = []

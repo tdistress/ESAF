@@ -17,7 +17,7 @@
       "properties": {
         "id": {"type": "string", "pattern": "^[A-Z]{3}-[0-9]{3}$"}, "version": {"$ref": "#/$defs/semver"},
         "status": {"enum": ["proposed", "draft", "approved", "published", "deprecated", "retired"]},
-        "path": {"type": "string", "pattern": "^(?:[A-Za-z0-9._-]+/)*[A-Za-z0-9._-]+\\.md$"}, "record_sha256": {"$ref": "#/$defs/sha256"}
+        "path": {"type": "string", "pattern": "^([A-Z]{3})/\\1-[0-9]{3}\\.md$"}, "record_sha256": {"$ref": "#/$defs/sha256"}
       }
     }
   }
