@@ -230,6 +230,17 @@ class ArcP160PatternTests(unittest.TestCase):
         for pattern_id in ("ARC-P100", "ARC-P110", "ARC-P120", "ARC-P130", "ARC-P140", "ARC-P150"):
             self.assertIn(f"`{pattern_id}`", section(text, "Related patterns"))
 
+    def test_observability_preserves_enforcement_and_accountability_boundaries(self) -> None:
+        text = self.text()
+        for requirement in (
+            "Source patterns remain responsible for their event semantics and preventive enforcement.",
+            "Target systems remain authoritative for transaction state.",
+            "Capability owners remain accountable for business outcomes.",
+            "ARC-P160 produces evidence and assurance; it does not authorize access or action and does not transfer catalog accountability.",
+        ):
+            with self.subTest(requirement=requirement):
+                self.assertIn(requirement, text)
+
     def test_capture_modes_and_six_logical_planes_are_preserved(self) -> None:
         self.assert_capture_modes_and_planes_preserved(self.text())
 

@@ -279,6 +279,8 @@ Negative testing covers missing, late, duplicate, out-of-order, replayed and spo
 - `ARC-P140` supplies private model, runtime, infrastructure, adaptation, and deployment evidence.
 - `ARC-P150` supplies reusable service, API, integration, target, and provider-boundary evidence.
 
+Source patterns remain responsible for their event semantics and preventive enforcement. Target systems remain authoritative for transaction state. Capability owners remain accountable for business outcomes. ARC-P160 produces evidence and assurance; it does not authorize access or action and does not transfer catalog accountability.
+
 ## Change history
 
 | Pattern version | ESAF release | Date | Change |
