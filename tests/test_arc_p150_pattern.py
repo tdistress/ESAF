@@ -126,6 +126,24 @@ class ArcP150PatternTests(unittest.TestCase):
         ):
             self.assertIn(requirement, text)
 
+    def test_trust_degraded_operation_and_failure_treatment_are_explicit(self) -> None:
+        text = self.text().lower()
+        for requirement in (
+            "configuration-signing trust",
+            "callback-signing trust",
+            "trusted time",
+            "anti-rollback",
+            "maximum isolation window",
+            "more restrictive state",
+            "out-of-band",
+            "failure-and-abuse treatment record",
+            "affected boundary and state machines",
+            "reconciliation source",
+            "tier applicability",
+            "residual-access",
+        ):
+            self.assertIn(requirement, text)
+
 
 if __name__ == "__main__":
     unittest.main()
