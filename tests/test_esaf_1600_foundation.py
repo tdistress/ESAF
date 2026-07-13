@@ -47,6 +47,32 @@ ESAF_1600_DECISIONS = (
     "ESAF-1600 supersedes the prior ESAF-1100 mapping taxonomy.",
     "Restricted external requirement text is excluded and publication rights are recorded.",
 )
+PLANNED_LANDING_PAGE_CONTENT = {
+    "pci-dss.md": """# PCI DSS Crosswalk
+
+**Status:** Planned
+
+This crosswalk will map applicable ESAF controls to a versioned PCI DSS release. Payment-account-data scope and compliance conclusions remain the responsibility of the adopting organization and its qualified assessor.
+
+No substantive mapping is approved. Future mapping work shall follow [ESAF-1600](ESAF-1600.md) and identify the exact approved source version before any mapping-set snapshot is created.
+""",
+    "hitrust-csf.md": """# HITRUST CSF Crosswalk
+
+**Status:** Planned
+
+This crosswalk will map applicable ESAF controls to a licensed, versioned HITRUST CSF release. Public project content shall not reproduce proprietary source material beyond permitted citation and identifiers.
+
+No substantive mapping is approved. Future mapping work shall follow [ESAF-1600](ESAF-1600.md) and identify the exact approved source version and publication-rights boundary before any mapping-set snapshot is created.
+""",
+    "uk-cyber-essentials.md": """# UK Cyber Essentials Crosswalk
+
+**Status:** Planned
+
+This crosswalk will map applicable ESAF controls to a versioned UK Cyber Essentials and Cyber Essentials Plus scheme specification, with clear separation between foundational cyber hygiene and AI-specific controls.
+
+No substantive mapping is approved. Future mapping work shall follow [ESAF-1600](ESAF-1600.md) and identify the exact approved source version before any mapping-set snapshot is created.
+""",
+}
 
 
 def control_record_paths(root: Path) -> list[Path]:
@@ -76,27 +102,29 @@ def extract_yaml_blocks(path: Path) -> list[dict[str, object]]:
     return documents
 
 
+def normalize_markdown_contract(text: str) -> str:
+    normalized = text.replace("\r\n", "\n").replace("\r", "\n")
+    normalized = "\n".join(line.rstrip() for line in normalized.split("\n")).strip("\n")
+    return re.sub(r"\n{2,}", "\n\n", normalized)
+
+
 class Esaf1600FoundationTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.validators = load_schemas(ROOT)
 
-    def assert_planned_landing_page(self, text: str) -> None:
+    def assert_planned_landing_page(self, name: str, text: str) -> None:
         statuses = re.findall(r"(?m)^\*\*Status:\*\*\s*(\S.*?)\s*$", text)
         self.assertEqual(statuses, ["Planned"])
         self.assertNotRegex(
             text,
             r"(?im)^\*\*Status:\*\*\s*(?:Approved|Reviewed|Published)\s*$",
         )
-        self.assertEqual(len(re.findall(r"(?m)^# ", text)), 1)
-        self.assertNotRegex(text, r"(?m)^---\s*$")
-        self.assertNotRegex(text, r"(?m)^\|")
-        blocks = re.split(r"\n{2,}", text.strip())
-        self.assertEqual(len(blocks), 4)
-        self.assertEqual(blocks[1], "**Status:** Planned")
-        self.assertTrue(blocks[2].startswith("This crosswalk will map"))
-        self.assertTrue(blocks[3].startswith("No substantive mapping is approved."))
-        self.assertIn("[ESAF-1600](ESAF-1600.md)", blocks[3])
+        self.assertIn("[ESAF-1600](ESAF-1600.md)", text)
+        self.assertEqual(
+            normalize_markdown_contract(text),
+            normalize_markdown_contract(PLANNED_LANDING_PAGE_CONTENT[name]),
+        )
 
     def test_required_foundation_files_exist(self) -> None:
         missing = [relative for relative in REQUIRED_CROSSWALK_FILES if not (ROOT / relative).is_file()]
@@ -320,20 +348,27 @@ class Esaf1600FoundationTests(unittest.TestCase):
         for name in ("pci-dss.md", "hitrust-csf.md", "uk-cyber-essentials.md"):
             text = (ROOT / "crosswalks" / name).read_text(encoding="utf-8")
             with self.subTest(name=name):
-                self.assert_planned_landing_page(text)
+                self.assert_planned_landing_page(name, text)
 
     def test_landing_page_contract_rejects_status_and_mapping_content_mutations(self) -> None:
         text = (ROOT / "crosswalks/pci-dss.md").read_text(encoding="utf-8")
         mutations = (
             text.replace("**Status:** Planned", "**Status:** Approved"),
             text.replace("**Status:** Planned", "**Status:** Planned\n\n**Status:** Reviewed"),
+            text.replace(
+                "Payment-account-data scope",
+                "PCI DSS 1.1 maps directly to IAM-100. Payment-account-data scope",
+            ),
             text + "\n| External provision | ESAF control |\n|---|---|\n| 1.1 | IAM-100 |\n",
             text + "\n## Approved mappings\n\nNo rows yet.\n",
         )
         for mutation in mutations:
             with self.subTest(mutation=mutation[-80:]):
                 with self.assertRaises(AssertionError):
-                    self.assert_planned_landing_page(mutation)
+                    self.assert_planned_landing_page("pci-dss.md", mutation)
+
+        whitespace_variant = text.replace("\n", "  \r\n\r\n")
+        self.assert_planned_landing_page("pci-dss.md", whitespace_variant)
 
     def test_contributing_requires_rights_provenance(self) -> None:
         text = (ROOT / "CONTRIBUTING.md").read_text(encoding="utf-8")
