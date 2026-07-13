@@ -106,6 +106,20 @@ class CrosswalkValidationTests(unittest.TestCase):
                     "\n".join(validate(self.root, baseline_ref=baseline).errors),
                 )
 
+    def test_schema_invalid_lifecycle_identifiers_fail_closed(self) -> None:
+        cases = (
+            ("set_unhashable_lifecycle_event_id", "events.0.event_id"),
+            ("set_unhashable_lifecycle_mapping_set_id", "mapping_set_id"),
+        )
+        for mutation, expected in cases:
+            with self.subTest(mutation=mutation):
+                self.fixture.reset_crosswalks()
+                self.fixture.create_approved_snapshot_with_lifecycle("approved")
+                getattr(self.fixture, mutation)()
+                errors = validate(self.root).errors
+                self.assertEqual(errors, sorted(set(errors)))
+                self.assertIn(expected, "\n".join(errors))
+
     def test_incomplete_reviewed_snapshot_is_rejected(self) -> None:
         self.fixture.create_valid_snapshot(status="reviewed", complete=False)
         errors = validate(self.root).errors
@@ -120,8 +134,23 @@ class CrosswalkValidationTests(unittest.TestCase):
         for status in ("draft", "reviewed", "approved"):
             with self.subTest(status=status):
                 self.fixture.reset_crosswalks()
-                self.fixture.create_valid_snapshot(status=status, complete=True)
+                if status == "approved":
+                    self.fixture.create_approved_snapshot_with_lifecycle("approved")
+                else:
+                    self.fixture.create_valid_snapshot(status=status, complete=True)
                 self.assertEqual(validate(self.root).errors, [])
+
+    def test_every_snapshot_state_requires_lifecycle_record(self) -> None:
+        for status in ("draft", "reviewed", "approved"):
+            with self.subTest(status=status):
+                self.fixture.reset_crosswalks()
+                self.fixture.create_valid_snapshot(
+                    status=status, complete=True, with_lifecycle=False
+                )
+                self.assertIn(
+                    "mapping set requires lifecycle record",
+                    "\n".join(validate(self.root).errors),
+                )
 
     def test_declared_subset_and_all_dispositions_are_accepted(self) -> None:
         self.fixture.create_valid_snapshot(
@@ -243,6 +272,7 @@ class CrosswalkValidationTests(unittest.TestCase):
         self.fixture.write_front_matter(
             record_path.relative_to(self.root).as_posix(), record, record_body
         )
+        self.fixture.refresh_lifecycle_snapshot_digest()
         self.assertEqual(validate(self.root).errors, [])
 
     def test_record_reviewer_must_differ_from_record_mapper(self) -> None:
@@ -358,6 +388,7 @@ class CrosswalkValidationTests(unittest.TestCase):
         manifest_path.write_text(
             render_manifest(manifest), encoding="utf-8", newline="\n"
         )
+        self.fixture.refresh_lifecycle_snapshot_digest()
         self.assertEqual(validate(self.root).errors, [])
 
     def test_manifest_mutation_matrix(self) -> None:

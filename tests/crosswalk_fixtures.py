@@ -144,6 +144,7 @@ class CrosswalkFixture:
         complete: bool = True,
         scope_type: str = "complete_publication",
         dispositions: tuple[str, ...] = ("mapped",),
+        with_lifecycle: bool = True,
     ) -> Path:
         commit = self.control_commit or self.commit_valid_control_catalog()
         catalog_bytes = subprocess.run(
@@ -229,6 +230,15 @@ class CrosswalkFixture:
                 status=record_status,
                 disposition=disposition,
             )
+        if with_lifecycle:
+            event = valid_event()
+            self._omit_empty_optional_event_fields(event)
+            event["event_digest"] = event_digest(event)
+            self._write_lifecycle(
+                MAPPING_SET_ID,
+                snapshot_digest(self.root, snapshot),
+                [event],
+            )
         return snapshot
 
     def create_approved_snapshot_with_lifecycle(self, final_state: str) -> Path:
@@ -257,7 +267,7 @@ class CrosswalkFixture:
         return snapshot
 
     def commit_approved_snapshot(self) -> str:
-        self.create_valid_snapshot(status="approved", complete=True)
+        self.create_approved_snapshot_with_lifecycle("approved")
         self._git("add", "crosswalks")
         self._git("commit", "--quiet", "-m", "Approved snapshot baseline")
         return self._git("rev-parse", "HEAD")
@@ -345,6 +355,21 @@ class CrosswalkFixture:
         lifecycle["snapshot_digest"] = "0" * 64
         self._write_lifecycle_metadata(lifecycle)
 
+    def refresh_lifecycle_snapshot_digest(self) -> None:
+        lifecycle = self._lifecycle()
+        lifecycle["snapshot_digest"] = snapshot_digest(self.root, self._snapshot())
+        self._write_lifecycle_metadata(lifecycle)
+
+    def set_unhashable_lifecycle_event_id(self) -> None:
+        self._mutate_lifecycle(
+            lambda value: value["events"][0].__setitem__("event_id", [])
+        )
+
+    def set_unhashable_lifecycle_mapping_set_id(self) -> None:
+        self._mutate_lifecycle(
+            lambda value: value.__setitem__("mapping_set_id", [])
+        )
+
     def _append_lifecycle_state(self, state: str, **overrides: str) -> None:
         lifecycle = self._lifecycle()
         events = lifecycle["events"]
@@ -392,6 +417,15 @@ class CrosswalkFixture:
         mapping_set_id = str(metadata["mapping_set_id"])
         self.write_front_matter(
             f"crosswalks/registry/{mapping_set_id}.md",
+            metadata,
+            "# Lifecycle record\n",
+        )
+
+    def _mutate_lifecycle(self, mutation: object) -> None:
+        metadata = self._lifecycle()
+        mutation(metadata)  # type: ignore[operator]
+        self.write_front_matter(
+            f"crosswalks/registry/{MAPPING_SET_ID}.md",
             metadata,
             "# Lifecycle record\n",
         )

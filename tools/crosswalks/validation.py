@@ -94,9 +94,10 @@ def validate_lifecycle(records: list[dict[str, object]]) -> list[str]:
             if not isinstance(event, dict):
                 continue
             event_id = event.get("event_id")
-            if event_id in seen_event_ids:
-                errors.append(f"{path}: duplicate lifecycle event {event_id}")
-            seen_event_ids.add(event_id)
+            if isinstance(event_id, str):
+                if event_id in seen_event_ids:
+                    errors.append(f"{path}: duplicate lifecycle event {event_id}")
+                seen_event_ids.add(event_id)
             if event.get("previous_event_digest") != previous:
                 errors.append(f"{path}: invalid previous lifecycle event digest")
             canonical = {
@@ -169,11 +170,14 @@ def validate_baseline(
         if differs:
             errors.append(f"{directory}: approved snapshot differs from trusted baseline")
 
-    current_lifecycle = {
-        model.get("metadata", {}).get("mapping_set_id"): model.get("metadata", {})
-        for model in current.lifecycle_records
-        if isinstance(model.get("metadata"), dict)
-    }
+    current_lifecycle = {}
+    for model in current.lifecycle_records:
+        metadata = model.get("metadata")
+        mapping_set_id = (
+            metadata.get("mapping_set_id") if isinstance(metadata, dict) else None
+        )
+        if isinstance(mapping_set_id, str):
+            current_lifecycle[mapping_set_id] = metadata
     for path in _git_tree_paths(root, commit, "crosswalks/registry"):
         if not path.endswith(".md"):
             continue
@@ -261,11 +265,15 @@ def _validate_lifecycle_links(
     lifecycle_records: list[dict[str, object]],
 ) -> list[str]:
     errors: list[str] = []
-    snapshots = {
-        model.get("metadata", {}).get("mapping_set_id"): model
-        for model in mapping_sets
-        if isinstance(model.get("metadata"), dict)
-    }
+    snapshots = {}
+    for model in mapping_sets:
+        metadata = model.get("metadata")
+        mapping_set_id = (
+            metadata.get("mapping_set_id") if isinstance(metadata, dict) else None
+        )
+        if isinstance(mapping_set_id, str):
+            snapshots[mapping_set_id] = model
+    lifecycle_counts: dict[str, int] = {}
     active: dict[tuple[object, object, object, object], str] = {}
     for lifecycle_model in lifecycle_records:
         lifecycle = lifecycle_model.get("metadata")
@@ -273,6 +281,9 @@ def _validate_lifecycle_links(
         if not isinstance(lifecycle, dict):
             continue
         mapping_set_id = lifecycle.get("mapping_set_id")
+        if not isinstance(mapping_set_id, str):
+            continue
+        lifecycle_counts[mapping_set_id] = lifecycle_counts.get(mapping_set_id, 0) + 1
         snapshot_model = snapshots.get(mapping_set_id)
         if not isinstance(snapshot_model, dict):
             errors.append(f"{relative}: lifecycle record has no mapping-set snapshot")
@@ -308,12 +319,21 @@ def _validate_lifecycle_links(
                 source_version.get("id") if isinstance(source_version, dict) else None,
                 esaf_release.get("id") if isinstance(esaf_release, dict) else None,
             )
+            if not all(isinstance(value, str) for value in key):
+                continue
             prior = active.get(key)
             if prior is not None and prior != mapping_set_id:
                 errors.append(
                     f"{relative}: multiple active published mapping sets for {key}"
                 )
             active[key] = str(mapping_set_id)
+    for mapping_set_id, snapshot_model in sorted(snapshots.items()):
+        if lifecycle_counts.get(mapping_set_id, 0) != 1:
+            relative = str(snapshot_model.get("path", mapping_set_id))
+            errors.append(
+                f"{relative}: mapping set requires lifecycle record "
+                f"(found {lifecycle_counts.get(mapping_set_id, 0)})"
+            )
     return errors
 
 
