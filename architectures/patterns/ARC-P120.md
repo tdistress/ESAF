@@ -156,10 +156,14 @@ Delegated and workload identities shall remain attributable to the initiating us
 | Z1 or Z2 to Z3 query admission | Bind trusted user or workload identity, tenant, capability, purpose, session, limits, and index scope |
 | Z3 retrieval to Z5 knowledge | Enforce server-derived authorization inside retrieval before content or metadata exposure |
 | Z5 to Z3 context assembly | Treat retrieved text as untrusted instructions; preserve provenance, authorization, classification, and version |
-| Z3 to Z4 generation | Send only authorized minimized context through ARC-P100 and record model, prompt, index, and source versions |
+| Z3 to Z4 query embedding, reranking, or generation | Authorize provider, region, purpose, and classification; minimize or pseudonymize queries, candidates, and metadata; prohibit disallowed retention or training; preserve tenant isolation; record all component versions |
 | Z3 to Z1 response and citation | Validate output and claim support; reauthorize citation rendering and source opening |
 | Z1 or Z3 to Z7 feedback and evidence | Minimize, classify, protect, rate-limit, correlate, and separate operational feedback from publication |
 | Z7 to Z3 or Z5 administration | Require privileged access, separation of duties, approved change, alerting, and complete evidence |
+
+Retrieval decisions shall produce an authorization snapshot or short-lived lease bound to identity, tenant, purpose, source set, policy version, index generation, and decision time. Before releasing source-derived claims, the response path shall verify that the decision remains valid and that no source revocation, ACL change, deletion, or quarantine event invalidated the evidence. On revocation or uncertainty, the system suppresses or regenerates affected content, escalates for review, or abstains; citation-only reauthorization is insufficient.
+
+Each federated index shall enforce authorization locally or consume an integrity-protected, audience-bound, short-lived authorization assertion from an approved authority. The federation contract defines issuer, audience, subject, tenant, purpose, allowed sources or attributes, policy version, decision age, expiration, revocation, and error semantics. Aggregators shall fail closed per source, shall not trust caller-supplied identity or filters, and shall prevent partial-result counts, metadata, timing, or error differences from revealing unauthorized knowledge.
 
 ## Components and responsibilities
 
@@ -195,6 +199,8 @@ Delegated and workload identities shall remain attributable to the initiating us
 Shared controls normally inherited through ARC-P100 or enterprise services include `API-100`, `IAM-100`, `IAM-110`, `IAM-130`, `IAM-140`, `IAM-150`, `MOD-100`, `MOD-110`, `MOD-130`, `ARC-120`, and `ARC-150`. The RAG owner retains responsibility to register and verify provenance for embedding and reranking models and to govern compatibility, version coupling, evaluation, release, and rollback across embeddings, index generations, retriever and reranker configuration, prompt templates, and generation models.
 
 Conditional controls include `DAT-140` for personal data or rights; `API-120` for tools, plugins, or connectors; `API-130` for MCP or orchestration-based retrieval; `API-140` for external retrieval services; `API-150` for portability or concentration risk; `MOD-140` for protected enterprise-held model artifacts; `MON-130` when an agent controls retrieval or memory; and `MOD-150` plus `OPS-150` for retirement.
+
+The accountable `owner_role` defined in each ESAF-1100 control record remains accountable for that control outcome. Roles listed in this pattern identify primary implementation and evidence responsibilities and do not transfer or replace catalog accountability.
 
 ## Control points and overlays
 
@@ -236,6 +242,7 @@ Organization-defined parameters shall identify exact values, scope, owner, appro
 | Source validation failure | Quarantine and prevent publication; notify the source owner |
 | Poisoned or malicious source | Revoke source or chunks, quarantine affected generation, investigate retrievals, rebuild, and preserve evidence |
 | Missing or stale ACL metadata | Deny affected retrieval and alert; do not search broadly and filter later |
+| Identity, policy, entitlement, or federated authorization service unavailable or indeterminate | Fail closed for retrieval, cache hits, and response release; permit stale allow decisions only through a narrowly risk-authorized bounded lease; alert and preserve the decision state |
 | Cross-tenant or cross-domain result | Block response, suspend affected partition or index, invoke incident response, and test related boundaries |
 | Index unavailable | Use an approved degraded mode, normally abstention; prohibit model-only fallback where grounding is mandatory |
 | Retrieval quality below threshold | Use bounded approved alternatives, then abstain or escalate |
@@ -275,6 +282,12 @@ Required evidence includes:
 - shared-responsibility and inherited-control matrix.
 
 External service evidence also includes provider data-use, retention, training-use, residency, tenant-isolation, incident-notification, export, rebuild, migration, exit, and deletion assurance and tests.
+
+Software-assurance evidence includes code and component inventories, human review, scanning, dependency and license analysis, vulnerability findings, remediation, and release approval for ingestion, retrieval, context, grounding, and citation components.
+
+Detection and alert evidence includes the RAG detection catalog, rules, representative test cases, tuning history, routing, on-call ownership, acknowledgment, escalation, and response results. Capacity evidence includes plans, load and stress results, quotas, budgets, cost forecasts, scaling thresholds, and scaling tests.
+
+Model and end-to-end RAG validation evidence includes test limitations, findings, approvals, residual-risk dispositions, selected test reperformance, and traceability from failed criteria to remediation, restriction, or authorized acceptance.
 
 Assessment shall include negative and failure-path testing for unauthorized cross-tenant and cross-domain retrieval, source existence and metadata leakage, missing or stale ACL denial, citation reauthorization, cache invalidation, source and index quarantine, deletion propagation through caches and backups, poisoned-source containment, index rebuild and rollback, instruction injection, fabricated citations, and approved degraded modes.
 
