@@ -258,6 +258,70 @@ class Esaf1600FoundationTests(unittest.TestCase):
             {"mapped", "no_direct_mapping", "out_of_scope"},
         )
 
+    def test_crosswalk_readme_documents_taxonomy_and_operational_links(self) -> None:
+        text = (ROOT / "crosswalks/README.md").read_text(encoding="utf-8")
+        for dimension in ("relationship", "direction", "coverage", "confidence"):
+            self.assertIn(dimension, text)
+        self.assertNotIn("strength", text.lower())
+        for target in (
+            "ESAF-1600.md",
+            "MAPPING_SET_TEMPLATE.md",
+            "PROVISION_INVENTORY_TEMPLATE.md",
+            "CROSSWALK_TEMPLATE.md",
+            "LIFECYCLE_RECORD_TEMPLATE.md",
+            "CATALOG.md",
+            "catalog.json",
+        ):
+            self.assertIn(f"]({target})", text)
+        self.assertIn("python tools/validate_crosswalks.py --write", text)
+        self.assertIn("python tools/validate_crosswalks.py --check", text)
+
+    def test_landing_pages_remain_planned_and_link_methodology(self) -> None:
+        for name in ("pci-dss.md", "hitrust-csf.md", "uk-cyber-essentials.md"):
+            text = (ROOT / "crosswalks" / name).read_text(encoding="utf-8")
+            with self.subTest(name=name):
+                self.assertIn("**Status:** Planned", text)
+                self.assertIn("[ESAF-1600](ESAF-1600.md)", text)
+                self.assertIn("No substantive mapping is approved", text)
+
+    def test_contributing_requires_rights_provenance(self) -> None:
+        text = (ROOT / "CONTRIBUTING.md").read_text(encoding="utf-8")
+        for phrase in (
+            "exact source identity and version",
+            "publication-rights basis",
+            "permitted and prohibited elements",
+            "authorized source access",
+            "mapper and reviewer shall be different people",
+            "intellectual-property attestation",
+        ):
+            self.assertIn(phrase, text)
+
+    def test_decision_log_records_esaf_1600_decisions_without_renumbering(self) -> None:
+        text = (ROOT / "project/DECISION_LOG.md").read_text(encoding="utf-8")
+        ids = re.findall(r"^\| (DEC-\d{4}) \|", text, flags=re.MULTILINE)
+        self.assertEqual(ids[-11:], [f"DEC-{number:04d}" for number in range(15, 26)])
+        for decision in (
+            "Provision Markdown is the authoritative crosswalk source",
+            "Generated crosswalk catalogs are deterministic derivative outputs",
+            "Relationship, direction, coverage, and confidence are independent dimensions",
+            "Negative dispositions are explicit records",
+            "Independent review is required before approval",
+            "Approved mapping snapshots are immutable and version-bound",
+            "Lifecycle changes use an external append-only registry",
+            "Assessment completeness is bounded by an authoritative provision inventory",
+            "Historical mappings resolve against a release-pinned ESAF control manifest",
+            "ESAF-1600 supersedes the prior ESAF-1100 mapping taxonomy",
+            "Restricted external requirement text is excluded and publication rights are recorded",
+        ):
+            self.assertIn(decision, text)
+
+    def test_tools_readme_documents_crosswalk_validation_modes(self) -> None:
+        text = (ROOT / "tools/README.md").read_text(encoding="utf-8")
+        self.assertIn("python tools/validate_crosswalks.py --write", text)
+        self.assertIn("python tools/validate_crosswalks.py --check", text)
+        self.assertIn("python tools/validate_crosswalks.py --check --baseline-ref", text)
+        self.assertIn("full Git history", text)
+
 
 if __name__ == "__main__":
     unittest.main()
