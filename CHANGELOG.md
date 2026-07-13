@@ -14,6 +14,7 @@ All notable changes to ESAF are documented in this file.
 - Added ARC-P100, defining centrally governed and federated enterprise AI platform and gateway enforcement.
 - Extended architecture validation to enforce pattern metadata, registry linkage, required sections, and control-reference integrity.
 - Added ARC-P120, defining governed dual-pipeline retrieval-augmented generation with federated knowledge, authorization-before-exposure, grounding, and citation controls.
+- Added ARC-P130, defining bounded-authority agentic and multi-agent systems with transactional action execution, attenuated delegation, and independent outcome assurance.
 
 ### Changed
 

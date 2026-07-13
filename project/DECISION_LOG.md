@@ -15,3 +15,4 @@
 | DEC-0011 | 2026-07-11 | ESAF-1200 uses a breadth-first, vendor-neutral architecture method with eight logical trust zones and separately reviewed patterns identified as ARC-P###. | Accepted |
 | DEC-0012 | 2026-07-11 | ARC-P100 uses centralized governance with federated enforcement and separates management, request, evidence, and provider flows. | Accepted |
 | DEC-0013 | 2026-07-12 | ARC-P120 separates knowledge supply from query execution, supports federated knowledge ownership, and enforces authorization inside retrieval before protected information is exposed. | Accepted |
+| DEC-0014 | 2026-07-12 | ARC-P130 uses externally issued bounded authority leases, attenuated delegation, transactional action execution, and independent Tier 3 and Tier 4 outcome assurance. | Accepted |
