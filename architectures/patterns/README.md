@@ -9,7 +9,7 @@ Pattern records are delivered through independently reviewed changes using [`../
 | [ARC-P120](ARC-P120.md) | Retrieval-augmented generation | Draft |
 | [ARC-P130](ARC-P130.md) | Agentic and multi-agent AI | Draft |
 | [ARC-P140](ARC-P140.md) | Private model deployment | Draft |
-| ARC-P150 | AI integration services | Proposed |
+| [ARC-P150](ARC-P150.md) | AI integration services | Draft |
 | [ARC-P160](ARC-P160.md) | AI observability | Draft |
 
 ## Publication order
