@@ -36,6 +36,10 @@ REQUIRED_SECTIONS = (
     "External mappings",
     "Change history",
 )
+EXPECTED_EXTERNAL_MAPPING = (
+    "Authoritative external mappings are maintained in the "
+    "[ESAF-1600 generated catalog](../../crosswalks/CATALOG.md)."
+)
 
 
 def parse_control(path: Path) -> tuple[dict, str]:
@@ -177,6 +181,9 @@ def validate() -> tuple[list[str], list[dict], dict[str, str], list[str]]:
         for heading in REQUIRED_SECTIONS:
             if not section(body, heading):
                 errors.append(f"{relative}: missing or empty section '## {heading}'")
+        external = section(body, "External mappings")
+        if external != EXPECTED_EXTERNAL_MAPPING:
+            errors.append(f"{relative}: External mappings must delegate to ESAF-1600")
         requirement = section(body, "Requirement")
         if len(re.findall(r"\bshall\b", requirement, flags=re.IGNORECASE)) != 1:
             errors.append(f"{relative}: Requirement must contain exactly one 'shall'")

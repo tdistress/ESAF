@@ -78,9 +78,7 @@ The organization shall [state the additional rigor or safeguard].
 
 ## External mappings
 
-| Authority | Publication | Version | Provision | Relationship | Direction | Rationale |
-|---|---|---|---|---|---|---|
-| Example | Example Standard | 1.0 | EX-1 | supports | ESAF to external | Explain the relationship |
+Authoritative external mappings are maintained in the [ESAF-1600 generated catalog](../crosswalks/CATALOG.md).
 
 ## Change history
 

@@ -1,3 +1,4 @@
+import json
 import re
 import unittest
 from pathlib import Path
@@ -18,6 +19,27 @@ REQUIRED_CROSSWALK_FILES = (
     "crosswalks/LIFECYCLE_RECORD_TEMPLATE.md",
 )
 YAML_BLOCK = re.compile(r"```yaml\n(.*?)```", re.DOTALL)
+CANONICAL_EXTERNAL_MAPPING_LINK = (
+    "Authoritative external mappings are maintained in the "
+    "[ESAF-1600 generated catalog](../../crosswalks/CATALOG.md)."
+)
+
+
+def control_record_paths(root: Path) -> list[Path]:
+    return sorted(
+        path
+        for path in (root / "controls").glob("*/*.md")
+        if re.fullmatch(r"[A-Z]{3}-[1-9][0-9]{2}", path.stem)
+    )
+
+
+def markdown_section(text: str, heading: str) -> str:
+    match = re.search(
+        rf"^## {re.escape(heading)}\s*$\n(.*?)(?=^## |\Z)",
+        text,
+        flags=re.MULTILINE | re.DOTALL,
+    )
+    return match.group(1).strip() if match else ""
 
 
 def extract_yaml_blocks(path: Path) -> list[dict[str, object]]:
@@ -38,6 +60,37 @@ class Esaf1600FoundationTests(unittest.TestCase):
     def test_required_foundation_files_exist(self) -> None:
         missing = [relative for relative in REQUIRED_CROSSWALK_FILES if not (ROOT / relative).is_file()]
         self.assertEqual(missing, [], f"missing foundation files: {missing}")
+
+    def test_every_control_delegates_external_mapping_authority(self) -> None:
+        records = control_record_paths(ROOT)
+        catalog = json.loads((ROOT / "controls/catalog.json").read_text(encoding="utf-8"))
+        self.assertEqual(len(records), len(catalog["controls"]))
+        self.assertEqual(
+            {path.relative_to(ROOT / "controls").as_posix() for path in records},
+            {record["path"] for record in catalog["controls"]},
+        )
+        for path in records:
+            with self.subTest(path=path.relative_to(ROOT).as_posix()):
+                section = markdown_section(path.read_text(encoding="utf-8"), "External mappings")
+                self.assertEqual(section, CANONICAL_EXTERNAL_MAPPING_LINK)
+
+    def test_esaf_1100_defers_taxonomy_to_esaf_1600(self) -> None:
+        text = (ROOT / "controls/ESAF-1100.md").read_text(encoding="utf-8")
+        self.assertNotIn("| equivalent |", text)
+        self.assertIn("ESAF-1600 is authoritative", text)
+
+    def test_mapping_migration_preserves_every_byte_outside_section(self) -> None:
+        from tools.migrate_control_mappings import replace_external_mapping, split_external_mapping
+
+        before = (
+            "# IAM-100 Example\n\n## External mappings\n\nOld text.\n\n"
+            "## Change history\n\nHistory.\n"
+        )
+        prefix, _old, suffix = split_external_mapping(before)
+        after = replace_external_mapping(before, CANONICAL_EXTERNAL_MAPPING_LINK)
+        new_prefix, new_section, new_suffix = split_external_mapping(after)
+        self.assertEqual((new_prefix, new_suffix), (prefix, suffix))
+        self.assertEqual(new_section, CANONICAL_EXTERNAL_MAPPING_LINK)
 
     def test_methodology_contains_required_normative_sections(self) -> None:
         text = (ROOT / "crosswalks/ESAF-1600.md").read_text(encoding="utf-8")
