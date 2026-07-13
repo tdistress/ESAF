@@ -58,11 +58,31 @@ def validate(root: Path, baseline_ref: str | None = None) -> ValidationResult:
     errors.extend(lifecycle_errors)
     errors.extend(validate_lifecycle(lifecycle_records))
     errors.extend(_validate_lifecycle_links(root, mapping_sets, lifecycle_records))
+    _attach_lifecycle_records(mapping_sets, lifecycle_records)
     result = ValidationResult(sorted(set(errors)), mapping_sets, lifecycle_records)
     if baseline_ref is not None:
         result.errors.extend(validate_baseline(root, baseline_ref, result))
         result.errors = sorted(set(result.errors))
     return result
+
+
+def _attach_lifecycle_records(
+    mapping_sets: list[dict[str, object]],
+    lifecycle_records: list[dict[str, object]],
+) -> None:
+    """Attach lifecycle metadata to the generator model after validation."""
+    lifecycle_by_id = {
+        metadata["mapping_set_id"]: metadata
+        for record in lifecycle_records
+        if isinstance((metadata := record.get("metadata")), dict)
+        and isinstance(metadata.get("mapping_set_id"), str)
+    }
+    for model in mapping_sets:
+        metadata = model.get("metadata")
+        mapping_set_id = (
+            metadata.get("mapping_set_id") if isinstance(metadata, dict) else None
+        )
+        model["lifecycle"] = lifecycle_by_id.get(mapping_set_id)
 
 
 def validate_lifecycle(records: list[dict[str, object]]) -> list[str]:

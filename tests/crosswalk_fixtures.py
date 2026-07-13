@@ -138,6 +138,75 @@ class CrosswalkFixture:
         path.write_text(f"---\n{yaml_text}---\n{body}", encoding="utf-8", newline="\n")
         return path
 
+    def write_generated_catalogs(self, markdown: str, json_text: str) -> None:
+        crosswalks = self.root / "crosswalks"
+        crosswalks.mkdir(parents=True, exist_ok=True)
+        (crosswalks / "CATALOG.md").write_text(
+            markdown, encoding="utf-8", newline="\n"
+        )
+        (crosswalks / "catalog.json").write_text(
+            json_text, encoding="utf-8", newline="\n"
+        )
+
+    def create_mixed_catalog_fixture(
+        self,
+        mapping_set_versions: tuple[str, str],
+        lifecycle_states: tuple[str, str],
+        dispositions: tuple[str, ...],
+        include_both_directions: bool,
+    ) -> None:
+        self.reset_crosswalks()
+        source = self.create_valid_snapshot(
+            status="approved", complete=True, dispositions=dispositions
+        )
+        source_lifecycle = (
+            self.root / "crosswalks" / "registry" / f"{MAPPING_SET_ID}.md"
+        )
+        source_lifecycle.unlink()
+
+        for version, final_state in zip(mapping_set_versions, lifecycle_states):
+            target = source.parent / version
+            if target != source:
+                shutil.copytree(source, target)
+            mapping_set_id = f"nist--ai-rmf--1.0--esaf-0.4-alpha--{version}"
+            for path in sorted(target.glob("*.md")):
+                metadata, body = parse_front_matter(path)
+                metadata["mapping_set_id"] = mapping_set_id
+                if path.name == "README.md":
+                    metadata["mapping_set_version"] = version
+                if include_both_directions and metadata.get("disposition") == "mapped":
+                    reverse = dict(metadata["relationships"][0])
+                    reverse["direction"] = "esaf_to_external"
+                    metadata["relationships"].append(reverse)
+                self.write_front_matter(
+                    path.relative_to(self.root).as_posix(), metadata, body
+                )
+            states = ("approved", "published", "deprecated", "retired")
+            events: list[dict[str, str]] = []
+            for state in states[: states.index(final_state) + 1]:
+                event = valid_event(
+                    event_id=f"{state}-{version.replace('.', '-')}",
+                    state=state,
+                    reason=f"Mapping set {state}.",
+                    previous_event_digest=(
+                        events[-1]["event_digest"] if events else "0" * 64
+                    ),
+                    approval_reference="APR-001" if state == "approved" else "",
+                    successor_id=(
+                        "nist--ai-rmf--1.0--esaf-0.4-alpha--0.11.0"
+                        if state == "deprecated"
+                        else ""
+                    ),
+                )
+                self._omit_empty_optional_event_fields(event)
+                event["event_digest"] = event_digest(event)
+                events.append(event)
+            self._write_lifecycle(
+                mapping_set_id, snapshot_digest(self.root, target), events
+            )
+        if source.name not in mapping_set_versions:
+            shutil.rmtree(source)
+
     def create_valid_snapshot(
         self,
         status: str = "draft",

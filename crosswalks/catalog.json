@@ -1,0 +1,23 @@
+{
+  "counts": {
+    "by_authority": {},
+    "by_confidence": {},
+    "by_coverage": {},
+    "by_direction": {},
+    "by_disposition": {},
+    "by_esaf_release": {},
+    "by_lifecycle_state": {},
+    "by_provision_status": {},
+    "by_publication": {},
+    "by_relationship": {},
+    "by_snapshot_status": {},
+    "by_source_version": {},
+    "mapping_sets": 0,
+    "negative_dispositions": 0,
+    "provisions": 0,
+    "relationships": 0
+  },
+  "generated_from": "crosswalks/mappings/** and crosswalks/registry/*.md",
+  "mapping_sets": [],
+  "schema_version": "1.0.0"
+}

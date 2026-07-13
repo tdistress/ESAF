@@ -1,15 +1,25 @@
 import hashlib
+import io
 import json
 import subprocess
+import sys
 import tempfile
 import unittest
+from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 
 from tests.crosswalk_fixtures import MAPPING_SET_ID, CrosswalkFixture, valid_event
 from tools.crosswalks.digests import event_bytes, event_digest
 from tools.crosswalks.io import parse_front_matter
 from tools.crosswalks.manifest import build_control_manifest, git_bytes, render_manifest
+from tools.crosswalks.catalog import (
+    build_catalog,
+    check_outputs,
+    render_json,
+    render_markdown,
+)
 from tools.crosswalks.validation import validate, validate_record
+from tools.validate_crosswalks import main as crosswalk_cli
 
 
 class CrosswalkValidationTests(unittest.TestCase):
@@ -20,6 +30,170 @@ class CrosswalkValidationTests(unittest.TestCase):
 
     def tearDown(self) -> None:
         self.temporary.cleanup()
+
+    def test_empty_catalog_is_explicit_and_deterministic(self) -> None:
+        catalog = build_catalog(validate(self.root))
+        self.assertEqual(catalog["counts"]["mapping_sets"], 0)
+        self.assertEqual(catalog["counts"]["provisions"], 0)
+        self.assertEqual(catalog["counts"]["relationships"], 0)
+        self.assertEqual(catalog["counts"]["negative_dispositions"], 0)
+        markdown = render_markdown(catalog)
+        self.assertIn("No mapping sets have been assessed", markdown)
+        self.assertNotIn("unmapped", markdown.lower())
+        self.assertEqual(render_json(catalog), render_json(catalog))
+        self.assertEqual(markdown, render_markdown(catalog))
+
+    def test_check_reports_stale_generated_output_exactly(self) -> None:
+        self.fixture.write_generated_catalogs("stale\n", "{}\n")
+        catalog = build_catalog(validate(self.root))
+        errors = check_outputs(self.root, catalog)
+        self.assertEqual(errors, sorted(errors))
+        self.assertEqual(len(errors), 2)
+        self.assertTrue(
+            all("generated output is missing or stale" in error for error in errors)
+        )
+        self.fixture.write_generated_catalogs(
+            render_markdown(catalog), render_json(catalog)
+        )
+        self.assertEqual(check_outputs(self.root, catalog), [])
+
+    def test_nonempty_catalog_preserves_data_counts_links_and_semantic_order(self) -> None:
+        self.fixture.create_mixed_catalog_fixture(
+            mapping_set_versions=("0.10.0", "0.2.0"),
+            lifecycle_states=("deprecated", "published"),
+            dispositions=("mapped", "no_direct_mapping", "out_of_scope"),
+            include_both_directions=True,
+        )
+        result = validate(self.root)
+        self.assertEqual(result.errors, [])
+        catalog = build_catalog(result)
+        self.assertEqual(catalog["schema_version"], "1.0.0")
+        self.assertEqual(
+            catalog["generated_from"],
+            "crosswalks/mappings/** and crosswalks/registry/*.md",
+        )
+        self.assertEqual(catalog["counts"]["mapping_sets"], 2)
+        self.assertEqual(catalog["counts"]["provisions"], 6)
+        self.assertEqual(catalog["counts"]["relationships"], 4)
+        self.assertEqual(catalog["counts"]["negative_dispositions"], 4)
+        self.assertEqual(
+            catalog["counts"]["by_direction"],
+            {"esaf_to_external": 2, "external_to_esaf": 2},
+        )
+        self.assertEqual(
+            catalog["counts"]["by_disposition"],
+            {"mapped": 2, "no_direct_mapping": 2, "out_of_scope": 2},
+        )
+        for dimension in (
+            "by_snapshot_status",
+            "by_lifecycle_state",
+            "by_provision_status",
+            "by_authority",
+            "by_publication",
+            "by_source_version",
+            "by_esaf_release",
+            "by_disposition",
+            "by_relationship",
+            "by_direction",
+            "by_coverage",
+            "by_confidence",
+        ):
+            self.assertEqual(
+                list(catalog["counts"][dimension]),
+                sorted(catalog["counts"][dimension]),
+            )
+        self.assertEqual(
+            [item["metadata"]["mapping_set_version"] for item in catalog["mapping_sets"]],
+            ["0.2.0", "0.10.0"],
+        )
+        for mapping_set in catalog["mapping_sets"]:
+            self.assertIn(
+                mapping_set["lifecycle"]["events"][-1]["state"],
+                {"published", "deprecated"},
+            )
+            self.assertEqual(
+                mapping_set["inventory"]["mapping_set_id"],
+                mapping_set["metadata"]["mapping_set_id"],
+            )
+            mapped = next(
+                item
+                for item in mapping_set["provisions"]
+                if item["metadata"]["disposition"] == "mapped"
+            )
+            self.assertEqual(
+                {leg["direction"] for leg in mapped["metadata"]["relationships"]},
+                {"esaf_to_external", "external_to_esaf"},
+            )
+            self.assertTrue(
+                mapped["path"].endswith(f"{mapped['metadata']['record_id']}.md")
+            )
+        markdown = render_markdown(catalog)
+        headings = (
+            "## Active published mapping sets",
+            "## Reviewed and draft work",
+            "## Deprecated and retired history",
+            "## Coverage and gaps",
+        )
+        positions = [markdown.index(heading) for heading in headings]
+        self.assertEqual(positions, sorted(positions))
+        for mapping_set in catalog["mapping_sets"]:
+            self.assertIn(
+                f"({mapping_set['path'].removeprefix('crosswalks/')})", markdown
+            )
+            for provision in mapping_set["provisions"]:
+                self.assertIn(
+                    f"({provision['path'].removeprefix('crosswalks/')})", markdown
+                )
+
+    def test_cli_requires_exactly_one_mode(self) -> None:
+        for arguments in ([], ["--check", "--write"]):
+            with self.subTest(arguments=arguments):
+                with redirect_stderr(io.StringIO()):
+                    with self.assertRaises(SystemExit) as raised:
+                        crosswalk_cli(arguments, root=self.root)
+                self.assertEqual(raised.exception.code, 2)
+
+    def test_cli_is_directly_executable_from_repository_root(self) -> None:
+        repository = Path(__file__).resolve().parents[1]
+        completed = subprocess.run(
+            [sys.executable, "tools/validate_crosswalks.py", "--help"],
+            cwd=repository,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        self.assertIn("--baseline-ref", completed.stdout)
+
+    def test_cli_write_occurs_only_after_successful_validation(self) -> None:
+        self.fixture.write_generated_catalogs("markdown sentinel\n", "json sentinel\n")
+        self.fixture.create_valid_snapshot(status="reviewed", complete=False)
+        output = io.StringIO()
+        with redirect_stdout(output):
+            return_code = crosswalk_cli(["--write"], root=self.root)
+        self.assertEqual(return_code, 1)
+        self.assertEqual(
+            (self.root / "crosswalks" / "CATALOG.md").read_text(encoding="utf-8"),
+            "markdown sentinel\n",
+        )
+        self.assertEqual(
+            (self.root / "crosswalks" / "catalog.json").read_text(encoding="utf-8"),
+            "json sentinel\n",
+        )
+        diagnostics = [
+            line for line in output.getvalue().splitlines() if line.startswith("- ")
+        ]
+        self.assertEqual(diagnostics, sorted(diagnostics))
+
+    def test_cli_write_check_and_optional_baseline_ref(self) -> None:
+        output = io.StringIO()
+        with redirect_stdout(output):
+            self.assertEqual(crosswalk_cli(["--write"], root=self.root), 0)
+            self.assertEqual(crosswalk_cli(["--check"], root=self.root), 0)
+            self.assertEqual(
+                crosswalk_cli(["--check", "--baseline-ref", "HEAD"], root=self.root),
+                0,
+            )
+        self.assertIn("0 mapping sets, 0 provisions, 0 relationships", output.getvalue())
 
     def test_valid_incomplete_draft_is_accepted(self) -> None:
         self.fixture.create_valid_snapshot(status="draft", complete=False)
