@@ -1,3 +1,4 @@
+import copy
 import hashlib
 import io
 import json
@@ -42,6 +43,171 @@ class CrosswalkValidationTests(unittest.TestCase):
         self.assertNotIn("unmapped", markdown.lower())
         self.assertEqual(render_json(catalog), render_json(catalog))
         self.assertEqual(markdown, render_markdown(catalog))
+
+    def test_catalog_rejects_malformed_mapping_set_components(self) -> None:
+        self.fixture.create_valid_snapshot(status="draft", complete=True)
+        cases = (
+            ("non-mapping model", lambda result: result.mapping_sets.__setitem__(0, [])),
+            ("missing metadata", lambda result: result.mapping_sets[0].pop("metadata")),
+            (
+                "non-mapping metadata",
+                lambda result: result.mapping_sets[0].__setitem__("metadata", []),
+            ),
+            (
+                "schema-invalid metadata",
+                lambda result: result.mapping_sets[0]["metadata"].pop("authority"),
+            ),
+            ("missing inventory", lambda result: result.mapping_sets[0].pop("inventory")),
+            (
+                "non-mapping inventory",
+                lambda result: result.mapping_sets[0].__setitem__("inventory", []),
+            ),
+            (
+                "missing inventory metadata",
+                lambda result: result.mapping_sets[0]["inventory"].pop("metadata"),
+            ),
+            ("missing lifecycle", lambda result: result.mapping_sets[0].pop("lifecycle")),
+            (
+                "non-mapping lifecycle",
+                lambda result: result.mapping_sets[0].__setitem__("lifecycle", []),
+            ),
+            (
+                "lifecycle differs from registry",
+                lambda result: result.mapping_sets[0].__setitem__(
+                    "lifecycle",
+                    {
+                        **result.mapping_sets[0]["lifecycle"],
+                        "snapshot_digest": "0" * 64,
+                    },
+                ),
+            ),
+        )
+        for name, mutation in cases:
+            with self.subTest(name=name):
+                result = copy.deepcopy(validate(self.root))
+                mutation(result)
+                with self.assertRaisesRegex(ValueError, "^invalid catalog model:") as first:
+                    build_catalog(result)
+                with self.assertRaisesRegex(ValueError, "^invalid catalog model:") as second:
+                    build_catalog(result)
+                self.assertEqual(str(first.exception), str(second.exception))
+
+    def test_catalog_rejects_malformed_provisions_and_relationships(self) -> None:
+        self.fixture.create_valid_snapshot(status="draft", complete=True)
+        cases = (
+            (
+                "non-array provisions",
+                lambda result: result.mapping_sets[0].__setitem__("provisions", {}),
+            ),
+            (
+                "non-mapping provision",
+                lambda result: result.mapping_sets[0]["provisions"].__setitem__(0, []),
+            ),
+            (
+                "missing provision metadata",
+                lambda result: result.mapping_sets[0]["provisions"][0].pop("metadata"),
+            ),
+            (
+                "non-array relationships",
+                lambda result: result.mapping_sets[0]["provisions"][0]["metadata"].__setitem__(
+                    "relationships", {}
+                ),
+            ),
+            (
+                "non-mapping relationship",
+                lambda result: result.mapping_sets[0]["provisions"][0]["metadata"][
+                    "relationships"
+                ].__setitem__(0, []),
+            ),
+        )
+        for name, mutation in cases:
+            with self.subTest(name=name):
+                result = copy.deepcopy(validate(self.root))
+                mutation(result)
+                with self.assertRaisesRegex(ValueError, "^invalid catalog model:"):
+                    build_catalog(result)
+
+    def test_catalog_rejects_every_missing_relationship_field(self) -> None:
+        self.fixture.create_valid_snapshot(status="draft", complete=True)
+        required_fields = (
+            "esaf_control_id",
+            "esaf_control_version",
+            "relationship",
+            "direction",
+            "coverage",
+            "confidence",
+            "rationale",
+            "conditions",
+            "expected_evidence",
+            "known_gaps",
+        )
+        for field in required_fields:
+            with self.subTest(field=field):
+                result = copy.deepcopy(validate(self.root))
+                result.mapping_sets[0]["provisions"][0]["metadata"]["relationships"][
+                    0
+                ].pop(field)
+                with self.assertRaisesRegex(ValueError, "^invalid catalog model:"):
+                    build_catalog(result)
+
+    def test_catalog_rejects_non_posix_or_out_of_scope_paths(self) -> None:
+        self.fixture.create_valid_snapshot(status="draft", complete=True)
+        cases = (
+            (
+                "mapping Windows path",
+                lambda result: result.mapping_sets[0].__setitem__(
+                    "path", "crosswalks\\mappings\\nist\\README.md"
+                ),
+            ),
+            (
+                "mapping absolute path",
+                lambda result: result.mapping_sets[0].__setitem__(
+                    "path", "/crosswalks/mappings/nist/README.md"
+                ),
+            ),
+            (
+                "mapping traversal",
+                lambda result: result.mapping_sets[0].__setitem__(
+                    "path", "crosswalks/mappings/../registry/record.md"
+                ),
+            ),
+            (
+                "mapping wrong scope",
+                lambda result: result.mapping_sets[0].__setitem__(
+                    "path", "controls/README.md"
+                ),
+            ),
+            (
+                "inventory wrong scope",
+                lambda result: result.mapping_sets[0]["inventory"].__setitem__(
+                    "path", "crosswalks/registry/PROVISION_INVENTORY.md"
+                ),
+            ),
+            (
+                "provision wrong snapshot",
+                lambda result: result.mapping_sets[0]["provisions"][0].__setitem__(
+                    "path", "crosswalks/mappings/other/record.md"
+                ),
+            ),
+            (
+                "registry Windows path",
+                lambda result: result.lifecycle_records[0].__setitem__(
+                    "path", "crosswalks\\registry\\record.md"
+                ),
+            ),
+            (
+                "registry wrong scope",
+                lambda result: result.lifecycle_records[0].__setitem__(
+                    "path", "crosswalks/mappings/record.md"
+                ),
+            ),
+        )
+        for name, mutation in cases:
+            with self.subTest(name=name):
+                result = copy.deepcopy(validate(self.root))
+                mutation(result)
+                with self.assertRaisesRegex(ValueError, "^invalid catalog model:"):
+                    build_catalog(result)
 
     def test_check_reports_stale_generated_output_exactly(self) -> None:
         self.fixture.write_generated_catalogs("stale\n", "{}\n")

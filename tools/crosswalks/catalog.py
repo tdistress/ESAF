@@ -6,8 +6,9 @@ import copy
 import json
 import re
 from collections import Counter
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
+from tools.crosswalks.schemas import load_schemas, schema_errors
 from tools.crosswalks.validation import ValidationResult
 
 
@@ -28,6 +29,241 @@ COUNT_DIMENSIONS = (
     "by_coverage",
     "by_confidence",
 )
+SCHEMA_ROOT = Path(__file__).parents[2]
+
+
+def _repository_path(
+    value: object,
+    location: str,
+    expected_prefix: tuple[str, ...],
+    errors: list[str],
+) -> PurePosixPath | None:
+    """Validate one canonical POSIX repository-relative path."""
+    if not isinstance(value, str) or not value:
+        errors.append(f"{location}: path must be a nonempty string")
+        return None
+    path = PurePosixPath(value)
+    if (
+        "\\" in value
+        or path.is_absolute()
+        or any(part in {".", ".."} for part in path.parts)
+        or path.as_posix() != value
+    ):
+        errors.append(f"{location}: path must be canonical POSIX repository-relative")
+        return None
+    if path.parts[: len(expected_prefix)] != expected_prefix:
+        errors.append(
+            f"{location}: path must be within {'/'.join(expected_prefix)}/"
+        )
+        return None
+    return path
+
+
+def _schema_model_errors(
+    schema_name: str,
+    value: object,
+    location: str,
+    validators: dict[str, object],
+) -> list[str]:
+    if not isinstance(value, dict):
+        return [f"{location}: metadata must be a mapping"]
+    return schema_errors(
+        validators[schema_name], value, location  # type: ignore[arg-type]
+    )
+
+
+def _catalog_model_errors(result: ValidationResult) -> list[str]:
+    """Validate the complete generator model before sorting or rendering it."""
+    errors: list[str] = []
+    validators = load_schemas(SCHEMA_ROOT)
+    if not isinstance(result.mapping_sets, list):
+        errors.append("mapping_sets: generator collection must be an array")
+        mapping_sets: list[object] = []
+    else:
+        mapping_sets = result.mapping_sets
+    if not isinstance(result.lifecycle_records, list):
+        errors.append("lifecycle_records: generator collection must be an array")
+        lifecycle_records: list[object] = []
+    else:
+        lifecycle_records = result.lifecycle_records
+
+    lifecycle_by_id: dict[str, dict[str, object]] = {}
+    for index, lifecycle_model in enumerate(lifecycle_records):
+        location = f"lifecycle_records.{index}"
+        if not isinstance(lifecycle_model, dict):
+            errors.append(f"{location}: lifecycle model must be a mapping")
+            continue
+        path = _repository_path(
+            lifecycle_model.get("path"),
+            f"{location}.path",
+            ("crosswalks", "registry"),
+            errors,
+        )
+        if path is not None and (
+            len(path.parts) != 3 or path.suffix != ".md" or path.name == ".gitkeep"
+        ):
+            errors.append(f"{location}.path: lifecycle path must name one registry Markdown record")
+        metadata = lifecycle_model.get("metadata")
+        errors.extend(
+            _schema_model_errors(
+                "lifecycle-record", metadata, f"{location}.metadata", validators
+            )
+        )
+        if not isinstance(metadata, dict):
+            continue
+        mapping_set_id = metadata.get("mapping_set_id")
+        if isinstance(mapping_set_id, str):
+            if mapping_set_id in lifecycle_by_id:
+                errors.append(
+                    f"{location}.metadata.mapping_set_id: duplicate lifecycle model"
+                )
+            else:
+                lifecycle_by_id[mapping_set_id] = metadata
+            if path is not None and path.name != f"{mapping_set_id}.md":
+                errors.append(
+                    f"{location}.path: lifecycle filename must match mapping-set id"
+                )
+
+    seen_mapping_set_ids: set[str] = set()
+    for index, model in enumerate(mapping_sets):
+        location = f"mapping_sets.{index}"
+        if not isinstance(model, dict):
+            errors.append(f"{location}: mapping-set model must be a mapping")
+            continue
+        metadata = model.get("metadata")
+        errors.extend(
+            _schema_model_errors(
+                "mapping-set", metadata, f"{location}.metadata", validators
+            )
+        )
+        mapping_set_id = (
+            metadata.get("mapping_set_id") if isinstance(metadata, dict) else None
+        )
+        if isinstance(mapping_set_id, str):
+            if mapping_set_id in seen_mapping_set_ids:
+                errors.append(f"{location}.metadata.mapping_set_id: duplicate mapping set")
+            seen_mapping_set_ids.add(mapping_set_id)
+
+        snapshot_path = _repository_path(
+            model.get("path"),
+            f"{location}.path",
+            ("crosswalks", "mappings"),
+            errors,
+        )
+        if snapshot_path is not None and (
+            len(snapshot_path.parts) != 7 or snapshot_path.name != "README.md"
+        ):
+            errors.append(
+                f"{location}.path: snapshot path must name a versioned mapping README.md"
+            )
+        if snapshot_path is not None and isinstance(metadata, dict):
+            authority = metadata.get("authority")
+            source_version = metadata.get("source_version")
+            esaf_release = metadata.get("esaf_release")
+            components = (
+                authority.get("id") if isinstance(authority, dict) else None,
+                source_version.get("id") if isinstance(source_version, dict) else None,
+                esaf_release.get("id") if isinstance(esaf_release, dict) else None,
+                metadata.get("mapping_set_version"),
+            )
+            if all(isinstance(item, str) for item in components):
+                expected = PurePosixPath(
+                    "crosswalks", "mappings", *components, "README.md"  # type: ignore[arg-type]
+                )
+                if snapshot_path != expected:
+                    errors.append(
+                        f"{location}.path: snapshot path must match mapping-set metadata"
+                    )
+
+        inventory_model = model.get("inventory")
+        if not isinstance(inventory_model, dict):
+            errors.append(f"{location}.inventory: inventory model must be a mapping")
+        else:
+            inventory_path = _repository_path(
+                inventory_model.get("path"),
+                f"{location}.inventory.path",
+                ("crosswalks", "mappings"),
+                errors,
+            )
+            if snapshot_path is not None and inventory_path != snapshot_path.with_name(
+                "PROVISION_INVENTORY.md"
+            ):
+                errors.append(
+                    f"{location}.inventory.path: inventory must belong to the mapping-set snapshot"
+                )
+            errors.extend(
+                _schema_model_errors(
+                    "provision-inventory",
+                    inventory_model.get("metadata"),
+                    f"{location}.inventory.metadata",
+                    validators,
+                )
+            )
+
+        lifecycle = model.get("lifecycle")
+        errors.extend(
+            _schema_model_errors(
+                "lifecycle-record", lifecycle, f"{location}.lifecycle", validators
+            )
+        )
+        if isinstance(mapping_set_id, str):
+            registry_lifecycle = lifecycle_by_id.get(mapping_set_id)
+            if registry_lifecycle is None:
+                errors.append(
+                    f"{location}.lifecycle: mapping set requires one registry lifecycle model"
+                )
+            elif lifecycle != registry_lifecycle:
+                errors.append(
+                    f"{location}.lifecycle: attached lifecycle must exactly match registry metadata"
+                )
+
+        provisions = model.get("provisions")
+        if not isinstance(provisions, list):
+            errors.append(f"{location}.provisions: provisions must be an array")
+            continue
+        for provision_index, provision in enumerate(provisions):
+            provision_location = f"{location}.provisions.{provision_index}"
+            if not isinstance(provision, dict):
+                errors.append(
+                    f"{provision_location}: provision model must be a mapping"
+                )
+                continue
+            provision_metadata = provision.get("metadata")
+            errors.extend(
+                _schema_model_errors(
+                    "mapping-record",
+                    provision_metadata,
+                    f"{provision_location}.metadata",
+                    validators,
+                )
+            )
+            provision_path = _repository_path(
+                provision.get("path"),
+                f"{provision_location}.path",
+                ("crosswalks", "mappings"),
+                errors,
+            )
+            if snapshot_path is not None and provision_path is not None:
+                if provision_path.parent != snapshot_path.parent:
+                    errors.append(
+                        f"{provision_location}.path: provision must belong to the mapping-set snapshot"
+                    )
+                record_id = (
+                    provision_metadata.get("record_id")
+                    if isinstance(provision_metadata, dict)
+                    else None
+                )
+                if isinstance(record_id, str) and provision_path.name != f"{record_id}.md":
+                    errors.append(
+                        f"{provision_location}.path: provision filename must match record id"
+                    )
+
+    orphan_ids = sorted(set(lifecycle_by_id) - seen_mapping_set_ids)
+    for mapping_set_id in orphan_ids:
+        errors.append(
+            f"lifecycle_records: lifecycle model has no mapping set {mapping_set_id}"
+        )
+    return sorted(set(errors))
 
 
 def _numeric_key(value: object) -> tuple[tuple[int, object], ...]:
@@ -95,6 +331,11 @@ def build_catalog(result: ValidationResult) -> dict[str, object]:
     """Build the complete catalog view from a successful validation result."""
     if result.errors:
         raise ValueError("cannot build a catalog from invalid authoritative records")
+    model_errors = _catalog_model_errors(result)
+    if model_errors:
+        raise ValueError(
+            "invalid catalog model:\n" + "\n".join(f"- {error}" for error in model_errors)
+        )
 
     dimensions = {name: Counter() for name in COUNT_DIMENSIONS}
     mapping_set_views: list[dict[str, object]] = []
