@@ -305,7 +305,7 @@ Record the selected tier and variant; custody and shared-responsibility fields; 
 | Offline bundle stale, replayed, clock-rolled-back, or expired | Use monotonic time and anti-rollback; safe stop and require reconciled re-enrollment. |
 | Edge capture, loss, repair, or custody change | Assume remote wipe can fail; revoke credentials, artifacts and trust, preserve evidence, and require governed re-enrollment. |
 
-The safe-failure matrix distinguishes promotion, new model load, new inference, continued inference, and resumption. It records permitted grace, evidence and policy freshness, capacity behavior, approved degraded substitutes, and authority. Tier 3 and Tier 4 stop when identity, integrity, isolation, required validation, authorization, policy, or assurance is unknown. Lower tiers may use a visible, time-bounded degraded configuration only when it increases neither data use, authority, tenancy nor connectivity.
+The safe-failure matrix distinguishes promotion, new model load, new inference, continued inference, and resumption. It records permitted grace, evidence and policy freshness, capacity behavior, approved degraded substitutes, and authority. Tier 3 and Tier 4 stop when identity, integrity, isolation, required validation, authorization, revocation, policy, or assurance is unknown. Lower tiers may use a visible, time-bounded degraded configuration only when it increases neither data use, authority, tenancy nor connectivity.
 
 ## Fallback recovery and retirement
 
