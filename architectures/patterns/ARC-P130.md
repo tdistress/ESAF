@@ -133,7 +133,7 @@ Runtime credentials are non-exportable where supported. Cloned, altered, unattes
 | Flow | Contents | Required properties |
 |---|---|---|
 | Agent admission | Principal, tenant, purpose, tier, definition, versions, deployment, parent lineage | Authentication, approval, attestation, lifecycle validation, correlation |
-| Authority lease | Principal, agent, purpose, tools, targets, data, budgets, delegation, approval, expiry | Integrity, audience, nonce, policy version, revocation, fail-closed semantics |
+| Authority lease | Principal, agent, purpose, tools, targets, data, budgets, delegation, approval, expiry | Integrity, audience, nonce, proof of possession, runtime binding, policy version, replay detection, revocation, fail-closed semantics |
 | Plan and replan | Objective, steps, dependencies, expected effects, approval gates, termination | Untrusted proposal, schema, limits, policy evaluation, no hidden authorization |
 | Delegation | Parent and child identity, task, attenuated lease, lineage, budgets, expiry | Eligibility, depth, breadth, aggregate limits, revocation propagation |
 | Agent message | Sender, receiver, task, purpose, content, provenance, classification | Authentication, typed envelope, replay protection, trust label, correlation |
@@ -156,6 +156,12 @@ Runtime credentials are non-exportable where supported. Cloned, altered, unattes
 | Z6 to Z3 outcome | Return authenticated typed target result with transaction ID and committed, failed, compensated, or unknown state |
 | Z7 to Z3 containment | Apply out-of-band pause, isolation, revocation, termination, restoration, and authorized resumption |
 | Z3 or Z6 to Z7 evidence | Emit attributable policy, lease, plan, message, tool, approval, transaction, result, memory, and lineage events |
+
+An authority lease is cryptographically bound, or equivalently proof-of-possession bound, to the attested runtime identity and protected channel. Each lease and authorized use has a unique identifier. Replayed, transferred, cloned, or re-bound use is rejected, and a changed runtime attestation invalidates the lease.
+
+Effective authority is the most restrictive intersection of current initiating-principal or managed-service authority, registered agent definition, attested runtime, tenant and purpose, complete delegation chain, current lease, enterprise policy, tool and target policy, data policy, approval scope, and runtime budgets. Explicit denial takes precedence. Effective authority is recomputed at dispatch and immediately before consequential commit; a valid lease alone is never sufficient.
+
+Where policy requires approval independence, the agent or runtime, lease issuer, transaction preparer or executor, tool owner, transaction beneficiary, and ordinary platform administrator cannot satisfy the approval. The human-facing semantic preview is derived from the exact canonical bytes and digest committed. Any material representation, canonicalization, target, parameter, policy, lease, or component-version change invalidates approval.
 
 ## Components and responsibilities
 
@@ -180,7 +186,7 @@ Runtime credentials are non-exportable where supported. Cloned, altered, unattes
 | Control group | Controls | Catalog accountability and primary evidence roles |
 |---|---|---|
 | Agent identity, authority, oversight, memory, traceability, intervention, multi-agent | `AGT-100`, `AGT-110`, `AGT-120`, `AGT-130`, `AGT-140`, `AGT-150`, `AGT-160` | Agent Owner remains accountable; IAM, platform, application, operations, and assurance produce evidence |
-| Governance and risk | `GOV-130`, `RSK-110` | Capability accountability and Enterprise Risk Management |
+| Governance, classification, and treatment | `GOV-130`, `RSK-110`, `RSK-120` | Capability accountability and Enterprise Risk Management |
 | APIs, tools, orchestration | `API-110`, `API-120`, `API-130` | API Owner and AI Platform Owner |
 | Human and non-human identity | `IAM-100`, `IAM-110`, `IAM-120`, `IAM-130`, `IAM-140`, `IAM-150` | IAM and AI Capability Technical Owner according to catalog |
 | Application security and abuse resistance | `APP-100`, `APP-110`, `APP-120`, `APP-130`, `APP-140`, `APP-150` | Application Owner or Application Engineering according to catalog |
@@ -189,8 +195,9 @@ Runtime credentials are non-exportable where supported. Cloned, altered, unattes
 | Monitoring and detection | `MON-100`, `MON-110`, `MON-120`, `MON-130`, `MON-140`, `MON-150` | AI Service Owner, Security Operations, Model Owner, and Agent Owner according to catalog |
 | Service, change, incident, recovery, capacity | `OPS-100`, `OPS-110`, `OPS-120`, `OPS-130`, `OPS-140` | Technical Owner, Incident Response, Business Continuity, and AI Service Owner |
 | Architecture governance, boundaries, failure, responsibility | `ARC-100`, `ARC-110`, `ARC-130`, `ARC-140` | Enterprise Architecture and Solution Architecture |
+| Tier 3 and Tier 4 outcome assurance | `AUD-110`, `AUD-120` | Internal Audit accountable for assessor independence; Assurance accountable for evidence sufficiency and integrity |
 
-`API-100`, `ARC-120`, `ARC-150`, `MOD-100`, `INF-100`, and `INF-130` are normally inherited and require configuration evidence, sample traces, limitation analysis, and failure tests. Conditional controls include `API-140`, `API-150`, `DAT-140`, `DAT-150`, and `OPS-150` according to external services, concentration, personal data, semantic memory, and retirement.
+`API-100`, `ARC-120`, `ARC-150`, `MOD-100`, `INF-100`, and `INF-130` are normally inherited and require configuration evidence, sample traces, limitation analysis, and failure tests. Conditional controls include `RSK-130` for foreseeable individual, group, societal, safety, or environmental impact; `API-140`, `API-150`, `DAT-140`, `DAT-150`, and `OPS-150` according to external services, concentration, personal data, semantic memory, and retirement.
 
 Catalog `owner_role` remains accountable. Pattern roles identify implementation and evidence responsibility without transferring accountability.
 
@@ -205,12 +212,14 @@ Catalog `owner_role` remains accountable. Pattern roles identify implementation 
 | CP5 | Inter-agent message gateway | Authenticate agents and validate contracts, purpose, provenance, classification, replay, rate, size, and instruction trust | AI Platform Owner, Agent Owner |
 | CP6 | Memory and state broker | Enforce scoped reads and writes, isolation, provenance, reliability, conflict, retention, correction, deletion, and poisoning defense | Agent Owner, Data Owner, state-platform owner |
 | CP7 | Tool registry and invocation gateway | Permit registered operations; validate schema, arguments, target, data, secrets, output, limits, and current authority | AI Platform Owner, tool owner, target-system owner |
-| CP8 | Human approval service | Bind eligible independent approval to canonical action digest, target, parameters, agent, lease, expiry, and approver | Business or risk approval authority, approval-service owner |
+| CP8 | Human approval service | Bind eligible independent approval to a semantic preview derived from the exact canonical bytes committed, target, parameters, agent, lease, expiry, and approver; invalidate on material representation or version change | Business or risk approval authority, approval-service owner |
 | CP9 | Transaction and side-effect coordinator | Separate prepare, commit, and reconcile; enforce canonical digest, freshness, idempotency, concurrency, retry, and compensation | Target-system or transaction owner, Platform Engineering |
 | CP10 | Runtime supervision and budgets | Enforce time, steps, tokens, cost, calls, fan-out, data, resources, and side effects; detect loops and escalation | AI Platform Owner, Platform Operations |
 | CP11 | Evidence and detection | Correlate principal, lineage, messages, plans, policy, leases, approvals, tools, transactions, outcomes, memory, and administration | AI Service Owner, Security Operations, assurance |
 | CP12 | Containment, kill, and recovery | Revoke leases, block tools, stop dispatch, terminate descendants, cancel durable work, reconcile actions, restore, and authorize resumption | Incident Response, Platform Operations, Agent Owner |
-| CP13 | Outcome assurance | Independently compare approved intent with authoritative target state before Tier 3 or Tier 4 success | Independent validation or assurance owner, target-system owner |
+| CP13 | Outcome assurance | Use a separately administered and isolated component to compare approved intent directly with target-native authoritative state, durably record the verdict, and block success and dependent action while unknown | Internal Audit accountable for independence, Assurance accountable for evidence, independent assessor performs and signs comparison, target-system owner supplies records |
+
+Tier 3 and Tier 4 outcome assurance uses separate administrative credentials and an independent failure domain from the agent runtime, tool gateway, and transaction coordinator. It derives verdicts from target-native authoritative state rather than agent or tool-reported success. No success or dependent action is released until the assurance verdict is durably recorded.
 
 Apply overlays for Tier 3 and Tier 4, external managed agent platforms, persistent agents, personal or regulated data, production actions, financial or legal transactions, safety impact, code execution, and research swarms.
 
@@ -280,6 +289,8 @@ Required evidence includes:
 Authoritative evidence is stored through separately administered append-only or WORM-capable controls with trusted time, ordering or sequence integrity, verification, access control, retention, and loss detection.
 
 Assessment shall recompute tier, risk, and baseline for representative agents and verify that authority, oversight, assurance, and failure behavior change accordingly. Tier 3 and Tier 4 testing independently compares the canonical approved action with authoritative target state across committed, failed, unknown, duplicate, partial, compensated, stale-approval, mismatched-target, and unavailable-assurance outcomes.
+
+Negative tests shall verify that the Agent Owner, runtime, lease issuer, transaction preparer or executor, tool gateway, and ordinary platform administrator cannot approve when independence is required, select or alter the outcome verdict, suppress contradictory evidence, or substitute agent or tool acknowledgments for target-native state. Unavailable, late, contradictory, stale, or integrity-failed evidence keeps the outcome unknown and blocks success and dependent action.
 
 ## Variants and alternatives
 
