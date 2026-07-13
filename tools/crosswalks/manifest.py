@@ -9,7 +9,8 @@ import subprocess
 from pathlib import Path
 
 
-_RELEASE = re.compile(r"(?m)^Current Version:\s+\*\*(?P<release>[^*]+)\*\*\s*$")
+_VERSION_LINE = re.compile(r"(?im)^[ \t]*current[ \t]+version[ \t]*:.*$")
+_RELEASE = re.compile(r"^Current Version:\s+\*\*(?P<release>[^*]+)\*\*\s*$")
 
 
 def _git(root: Path, *arguments: str) -> subprocess.CompletedProcess[bytes]:
@@ -35,6 +36,18 @@ def _resolve_commit(root: Path, revision: str) -> str:
     resolved = completed.stdout.decode("ascii", errors="replace").strip().lower()
     if resolved != revision.lower():
         raise ValueError("pinned commit is unreachable")
+    reachable = _git(
+        root,
+        "for-each-ref",
+        "--format=%(refname)",
+        "--contains",
+        resolved,
+        "refs/heads",
+        "refs/remotes",
+        "refs/tags",
+    )
+    if reachable.returncode or not reachable.stdout.strip():
+        raise ValueError("pinned commit is unreachable")
     return resolved
 
 
@@ -43,10 +56,30 @@ def _release_at(root: Path, commit_sha: str) -> str:
         text = git_bytes(root, commit_sha, "VERSION.md").decode("utf-8")
     except (UnicodeDecodeError, ValueError) as error:
         raise ValueError(f"cannot read VERSION.md at pinned commit: {error}") from error
-    match = _RELEASE.search(text)
+    declarations = _VERSION_LINE.findall(text)
+    if len(declarations) > 1:
+        raise ValueError("VERSION.md release declaration is ambiguous")
+    if len(declarations) != 1:
+        raise ValueError("VERSION.md release declaration is invalid")
+    match = _RELEASE.fullmatch(declarations[0])
     if match is None:
-        raise ValueError("VERSION.md release is unavailable at pinned commit")
+        raise ValueError("VERSION.md release declaration is invalid")
     return match.group("release")
+
+
+def _validate_tag_alias(root: Path, tag_alias: str) -> None:
+    if (
+        not tag_alias
+        or tag_alias != tag_alias.strip()
+        or tag_alias.startswith("-")
+        or tag_alias.startswith("refs/")
+        or tag_alias == "@"
+        or any(ord(character) < 32 or ord(character) == 127 for character in tag_alias)
+    ):
+        raise ValueError("tag alias is invalid")
+    completed = _git(root, "check-ref-format", f"refs/tags/{tag_alias}")
+    if completed.returncode:
+        raise ValueError("tag alias is invalid")
 
 
 def build_control_manifest(
@@ -64,7 +97,13 @@ def build_control_manifest(
         )
 
     if tag_alias is not None:
-        completed = _git(root, "rev-parse", "--verify", f"{tag_alias}^{{commit}}")
+        _validate_tag_alias(root, tag_alias)
+        completed = _git(
+            root,
+            "rev-parse",
+            "--verify",
+            f"refs/tags/{tag_alias}^{{commit}}",
+        )
         resolved_tag = (
             completed.stdout.decode("ascii", errors="replace").strip().lower()
             if completed.returncode == 0

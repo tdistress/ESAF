@@ -40,22 +40,35 @@ class CrosswalkFixture:
             self._git("init", "--quiet")
             self._git("config", "user.email", "fixture@example.com")
             self._git("config", "user.name", "Crosswalk Fixture")
-        control_path = self.root / "controls" / "IAM" / "IAM-100.md"
-        control_path.parent.mkdir(parents=True, exist_ok=True)
-        control_path.write_bytes(
-            b"---\nid: IAM-100\nstatus: draft\nversion: 1.0.0\n---\n\n# IAM-100\n"
+        iam_path = self.root / "controls" / "IAM" / "IAM-100.md"
+        iam_path.parent.mkdir(parents=True, exist_ok=True)
+        iam_path.write_bytes(
+            b"---\r\nid: IAM-100\r\nstatus: draft\r\nversion: 1.0.0\r\n---"
+            b"\r\n\r\n# IAM-100 caf\xc3\xa9"
         )
+        zzz_path = self.root / "controls" / "ZZZ" / "ZZZ-100.md"
+        zzz_path.parent.mkdir(parents=True, exist_ok=True)
+        zzz_path.write_bytes(
+            b"---\nid: ZZZ-100\nstatus: draft\nversion: 2.0.0\n---\n\n# ZZZ-100\n"
+        )
+        catalog_controls = [
+            {
+                "id": "ZZZ-100",
+                "version": "2.0.0",
+                "status": "draft",
+                "path": "ZZZ/ZZZ-100.md",
+            },
+            {
+                "id": "IAM-100",
+                "version": "1.0.0",
+                "status": "draft",
+                "path": "IAM/IAM-100.md",
+            },
+        ]
         catalog = {
             "schema_version": "1.0.0",
-            "control_count": 1,
-            "controls": [
-                {
-                    "id": "IAM-100",
-                    "version": "1.0.0",
-                    "status": "draft",
-                    "path": "IAM/IAM-100.md",
-                }
-            ],
+            "control_count": len(catalog_controls),
+            "controls": catalog_controls,
         }
         (self.root / "controls" / "catalog.json").write_text(
             json.dumps(catalog, indent=2) + "\n", encoding="utf-8", newline="\n"
@@ -71,6 +84,18 @@ class CrosswalkFixture:
         )
         self.control_commit = self._git("rev-parse", "HEAD")
         return self.control_commit
+
+    def commit_version_document(self, text: str) -> str:
+        (self.root / "VERSION.md").write_text(
+            text, encoding="utf-8", newline="\n"
+        )
+        self._git("add", "VERSION.md")
+        self._git("commit", "--quiet", "-m", "Mutate fixture version")
+        self.control_commit = self._git("rev-parse", "HEAD")
+        return self.control_commit
+
+    def dangling_control_commit(self) -> str:
+        return self._git("commit-tree", "HEAD^{tree}", "-m", "Dangling controls")
 
     def reset_repository(self) -> None:
         if self.control_commit is None:
@@ -124,6 +149,7 @@ class CrosswalkFixture:
                     "record_sha256": hashlib.sha256(record_bytes).hexdigest(),
                 }
             )
+        controls.sort(key=lambda control: str(control["id"]))
         catalog_digest = hashlib.sha256(catalog_bytes).hexdigest()
         snapshot = (
             self.root

@@ -1,3 +1,4 @@
+import hashlib
 import json
 import subprocess
 import tempfile
@@ -188,6 +189,53 @@ class CrosswalkValidationTests(unittest.TestCase):
         self.assertEqual(manifest["source_commit_sha"], commit)
         self.assertEqual(manifest["controls"][0]["id"], "IAM-100")
         self.assertEqual(len(manifest["controls"]), len(catalog["controls"]))
+        self.assertEqual(
+            [control["id"] for control in manifest["controls"]],
+            sorted(control["id"] for control in catalog["controls"]),
+        )
+        iam_bytes = git_bytes(self.root, commit, "controls/IAM/IAM-100.md")
+        self.assertFalse(iam_bytes.endswith(b"\n"))
+        self.assertIn("café".encode(), iam_bytes)
+        iam = next(control for control in manifest["controls"] if control["id"] == "IAM-100")
+        self.assertEqual(iam["record_sha256"], hashlib.sha256(iam_bytes).hexdigest())
+
+    def test_manifest_rejects_dangling_commit_object(self) -> None:
+        dangling = self.fixture.dangling_control_commit()
+        with self.assertRaisesRegex(ValueError, "pinned commit is unreachable"):
+            build_control_manifest(self.root, dangling, "0.4-alpha", None)
+
+    def test_manifest_rejects_branch_as_tag_alias(self) -> None:
+        commit = self.fixture.control_commit
+        self.assertIsNotNone(commit)
+        self.fixture._git("branch", "fixture-release", commit)
+        with self.assertRaisesRegex(
+            ValueError, "tag alias does not resolve to pinned commit"
+        ):
+            build_control_manifest(self.root, commit, "0.4-alpha", "fixture-release")
+
+    def test_manifest_rejects_revision_expression_as_tag_alias(self) -> None:
+        commit = self.fixture.control_commit
+        self.assertIsNotNone(commit)
+        self.fixture._git("tag", "fixture-release", commit)
+        with self.assertRaisesRegex(ValueError, "tag alias is invalid"):
+            build_control_manifest(
+                self.root, commit, "0.4-alpha", "fixture-release^{commit}"
+            )
+
+    def test_manifest_rejects_ambiguous_version_declarations(self) -> None:
+        commit = self.fixture.commit_version_document(
+            "# ESAF Version\n\nCurrent Version: **0.4-alpha**\n"
+            "Current Version: **9.9**\n"
+        )
+        with self.assertRaisesRegex(ValueError, "VERSION.md release declaration is ambiguous"):
+            build_control_manifest(self.root, commit, "0.4-alpha", None)
+
+    def test_manifest_rejects_malformed_version_declaration(self) -> None:
+        commit = self.fixture.commit_version_document(
+            "# ESAF Version\n\nCurrent Version: 0.4-alpha\n"
+        )
+        with self.assertRaisesRegex(ValueError, "VERSION.md release declaration is invalid"):
+            build_control_manifest(self.root, commit, "0.4-alpha", None)
 
     def test_manifest_rendering_is_deterministic_and_matches_fixture_bytes(self) -> None:
         snapshot = self.fixture.create_valid_snapshot(status="draft", complete=True)
@@ -255,6 +303,17 @@ class CrosswalkValidationTests(unittest.TestCase):
             "unresolved ESAF control identifier IAM-999",
             "\n".join(validate(self.root).errors),
         )
+
+    def test_control_resolution_diagnostic_names_record_path(self) -> None:
+        snapshot = self.fixture.create_valid_snapshot(status="draft", complete=True)
+        self.fixture.reference_unknown_control()
+        expected = f"{(snapshot / 'ext-1.md').relative_to(self.root).as_posix()}: "
+        error = next(
+            error
+            for error in validate(self.root).errors
+            if "unresolved ESAF control identifier" in error
+        )
+        self.assertTrue(error.startswith(expected), error)
 
     def test_snapshot_and_record_mutation_matrix(self) -> None:
         cases = (

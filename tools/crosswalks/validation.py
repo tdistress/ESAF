@@ -205,7 +205,7 @@ def _validate_snapshot(
 
     if manifest is not None:
         errors.extend(
-            _validate_control_manifest(root, snapshot, mapping_set, manifest, records)
+            _validate_control_manifest(root, snapshot, mapping_set, manifest, provisions)
         )
 
     if inventory is not None:
@@ -224,7 +224,7 @@ def _validate_control_manifest(
     snapshot: Path,
     mapping_set: dict[str, object],
     manifest: dict[str, object],
-    records: list[dict[str, object]] | None,
+    provisions: list[dict[str, object]],
 ) -> list[str]:
     """Validate manifest provenance and provision control references."""
     errors: list[str] = []
@@ -287,9 +287,11 @@ def _validate_control_manifest(
     if committed_bytes != expected_bytes:
         errors.append(f"{relative}: manifest differs from regeneration at pinned commit")
 
-    if records is None:
-        return errors
-    for record in records:
+    for provision in provisions:
+        record = provision.get("metadata")
+        record_path = provision.get("path")
+        if not isinstance(record, dict) or not isinstance(record_path, str):
+            continue
         relationships = record.get("relationships", [])
         if not isinstance(relationships, list):
             continue
@@ -301,11 +303,11 @@ def _validate_control_manifest(
             control = expected_controls.get(control_id)
             if control is None:
                 errors.append(
-                    f"{relative}: unresolved ESAF control identifier {control_id}"
+                    f"{record_path}: unresolved ESAF control identifier {control_id}"
                 )
             elif control.get("version") != control_version:
                 errors.append(
-                    f"{relative}: ESAF control version mismatch for {control_id}"
+                    f"{record_path}: ESAF control version mismatch for {control_id}"
                 )
     return errors
 
