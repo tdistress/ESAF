@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://esaf-standard.org/schemas/provision-inventory.schema.json",
+  "title": "ESAF crosswalk provision inventory",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "mapping_set_id", "scope_type", "scope_statement", "source_basis", "expected_count", "provision_ids"],
+  "properties": {
+    "schema_version": {"$ref": "#/$defs/semver"},
+    "mapping_set_id": {"$ref": "#/$defs/mappingSetId"},
+    "scope_type": {"enum": ["complete_publication", "declared_subset"]},
+    "scope_statement": {"type": "string", "minLength": 1},
+    "source_basis": {"type": "string", "minLength": 1},
+    "expected_count": {"type": "integer", "minimum": 0},
+    "provision_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}}
+  },
+  "$defs": {
+    "semver": {"type": "string", "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"},
+    "mappingSetId": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*--[a-z0-9]+(?:-[a-z0-9]+)*--[a-z0-9]+(?:[.-][a-z0-9]+)*--esaf-[a-z0-9]+(?:[.-][a-z0-9]+)*--(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"}
+  }
+}

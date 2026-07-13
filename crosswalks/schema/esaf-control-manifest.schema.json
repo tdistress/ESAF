@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://esaf-standard.org/schemas/esaf-control-manifest.schema.json",
+  "title": "ESAF control manifest",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema_version", "esaf_release", "source_commit_sha", "control_catalog_sha256", "controls"],
+  "properties": {
+    "schema_version": {"$ref": "#/$defs/semver"}, "esaf_release": {"type": "string", "minLength": 1},
+    "source_commit_sha": {"$ref": "#/$defs/sha40"}, "tag_alias": {"type": "string", "minLength": 1},
+    "control_catalog_sha256": {"$ref": "#/$defs/sha256"}, "controls": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/control"}}
+  },
+  "$defs": {
+    "semver": {"type": "string", "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"},
+    "sha40": {"type": "string", "pattern": "^[a-f0-9]{40}$"}, "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "control": {
+      "type": "object", "additionalProperties": false, "required": ["id", "version", "status", "path", "record_sha256"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[A-Z]{3}-[0-9]{3}$"}, "version": {"$ref": "#/$defs/semver"},
+        "status": {"enum": ["proposed", "draft", "approved", "published", "deprecated", "retired"]},
+        "path": {"type": "string", "pattern": "^(?:[A-Za-z0-9._-]+/)*[A-Za-z0-9._-]+\\.md$"}, "record_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    }
+  }
+}
