@@ -1,0 +1,183 @@
+import tempfile
+import unittest
+from pathlib import Path
+
+from tests.crosswalk_fixtures import CrosswalkFixture
+from tools.crosswalks.io import parse_front_matter
+from tools.crosswalks.validation import validate, validate_record
+
+
+class CrosswalkValidationTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.temporary = tempfile.TemporaryDirectory()
+        self.root = Path(self.temporary.name)
+        self.fixture = CrosswalkFixture(self.root)
+
+    def tearDown(self) -> None:
+        self.temporary.cleanup()
+
+    def test_valid_incomplete_draft_is_accepted(self) -> None:
+        self.fixture.create_valid_snapshot(status="draft", complete=False)
+        self.assertEqual(validate(self.root).errors, [])
+
+    def test_incomplete_reviewed_snapshot_is_rejected(self) -> None:
+        self.fixture.create_valid_snapshot(status="reviewed", complete=False)
+        errors = validate(self.root).errors
+        self.assertIn("missing provision record for inventory identifier EXT-2", "\n".join(errors))
+
+    def test_record_outside_inventory_is_always_rejected(self) -> None:
+        snapshot = self.fixture.create_valid_snapshot(status="draft", complete=True)
+        self.fixture.add_record(snapshot, external_provision_id="EXT-99", record_id="ext-99")
+        self.assertIn("not present in provision inventory", "\n".join(validate(self.root).errors))
+
+    def test_complete_positive_snapshot_states_are_accepted(self) -> None:
+        for status in ("draft", "reviewed", "approved"):
+            with self.subTest(status=status):
+                self.fixture.reset_crosswalks()
+                self.fixture.create_valid_snapshot(status=status, complete=True)
+                self.assertEqual(validate(self.root).errors, [])
+
+    def test_declared_subset_and_all_dispositions_are_accepted(self) -> None:
+        self.fixture.create_valid_snapshot(
+            status="reviewed",
+            complete=True,
+            scope_type="declared_subset",
+            dispositions=("mapped", "no_direct_mapping", "out_of_scope"),
+        )
+        self.assertEqual(validate(self.root).errors, [])
+
+    def test_validation_result_exposes_loaded_snapshot_model(self) -> None:
+        self.fixture.create_valid_snapshot(status="draft", complete=True)
+        result = validate(self.root)
+        self.assertEqual(len(result.mapping_sets), 1)
+        model = result.mapping_sets[0]
+        self.assertTrue(model["path"].endswith("/README.md"))
+        self.assertEqual(model["metadata"]["mapping_set_id"], "nist--ai-rmf--1.0--esaf-1.0--1.0.0")
+        self.assertEqual(model["inventory"]["metadata"]["provision_ids"], ["EXT-1"])
+        self.assertEqual(model["provisions"][0]["metadata"]["record_id"], "ext-1")
+        self.assertTrue(model["provisions"][0]["path"].endswith("/ext-1.md"))
+
+    def test_validate_record_exposes_unqualified_semantic_diagnostics(self) -> None:
+        snapshot = self.fixture.create_valid_snapshot(status="draft", complete=True)
+        mapping_set, _ = parse_front_matter(snapshot / "README.md")
+        record, _ = parse_front_matter(snapshot / "ext-1.md")
+        record["relationships"] = []
+        self.assertIn(
+            "mapped record requires at least one relationship",
+            validate_record(record, mapping_set),
+        )
+
+    def test_schema_invalid_inventory_is_reported_without_validator_crash(self) -> None:
+        snapshot = self.fixture.create_valid_snapshot(status="draft", complete=True)
+        inventory_path = snapshot / "PROVISION_INVENTORY.md"
+        inventory, body = parse_front_matter(inventory_path)
+        inventory["provision_ids"] = [{"invalid": "identifier"}]
+        self.fixture.write_front_matter(
+            inventory_path.relative_to(self.root).as_posix(), inventory, body
+        )
+        self.assertIn("is not of type 'string'", "\n".join(validate(self.root).errors))
+
+    def test_malformed_yaml_is_reported_for_snapshot_and_record(self) -> None:
+        for target in ("README.md", "ext-1.md"):
+            with self.subTest(target=target):
+                self.fixture.reset_crosswalks()
+                snapshot = self.fixture.create_valid_snapshot(status="draft", complete=True)
+                (snapshot / target).write_text(
+                    "---\ninvalid: [\n---\n# Broken\n", encoding="utf-8", newline="\n"
+                )
+                self.assertIn("invalid YAML", "\n".join(validate(self.root).errors))
+
+    def test_non_string_status_is_reported_for_snapshot_and_record(self) -> None:
+        for target in ("README.md", "ext-1.md"):
+            with self.subTest(target=target):
+                self.fixture.reset_crosswalks()
+                snapshot = self.fixture.create_valid_snapshot(status="draft", complete=True)
+                path = snapshot / target
+                metadata, body = parse_front_matter(path)
+                metadata["status"] = {"invalid": "status"}
+                self.fixture.write_front_matter(
+                    path.relative_to(self.root).as_posix(), metadata, body
+                )
+                self.assertIn("is not one of", "\n".join(validate(self.root).errors))
+
+    def test_reviewed_text_diagnostics_use_repository_relative_paths(self) -> None:
+        self.fixture.create_valid_snapshot(status="approved", complete=True)
+        self.fixture.break_local_link()
+        errors = [error for error in validate(self.root).errors if "broken local link" in error]
+        self.assertEqual(len(errors), 1)
+        self.assertTrue(errors[0].startswith("crosswalks/mappings/"))
+        self.assertNotIn(self.root.as_posix(), errors[0])
+
+    def test_identifier_only_context_is_accepted_when_identifiers_are_permitted(self) -> None:
+        snapshot = self.fixture.create_valid_snapshot(status="draft", complete=True)
+        mapping_path = snapshot / "README.md"
+        mapping_set, mapping_body = parse_front_matter(mapping_path)
+        mapping_set["publication_rights"]["permitted_elements"] = ["identifiers"]
+        mapping_set["publication_rights"]["prohibited_elements"] = ["titles", "paraphrases"]
+        self.fixture.write_front_matter(
+            mapping_path.relative_to(self.root).as_posix(), mapping_set, mapping_body
+        )
+        record_path = snapshot / "ext-1.md"
+        record, record_body = parse_front_matter(record_path)
+        record["context"] = {
+            "mode": "identifier_only",
+            "omission_rationale": "Publication rights prohibit a summary.",
+        }
+        self.fixture.write_front_matter(
+            record_path.relative_to(self.root).as_posix(), record, record_body
+        )
+        self.assertEqual(validate(self.root).errors, [])
+
+    def test_record_reviewer_must_differ_from_record_mapper(self) -> None:
+        snapshot = self.fixture.create_valid_snapshot(status="approved", complete=True)
+        record_path = snapshot / "ext-1.md"
+        record, body = parse_front_matter(record_path)
+        record["reviewer"]["id"] = record["mapper"]["id"]
+        self.fixture.write_front_matter(record_path.relative_to(self.root).as_posix(), record, body)
+        self.assertIn("reviewer must differ from mapper", "\n".join(validate(self.root).errors))
+
+    def test_snapshot_and_record_mutation_matrix(self) -> None:
+        cases = (
+            ("duplicate_mapping_set_id", "duplicate mapping-set id"),
+            ("duplicate_record_id", "duplicate record id"),
+            ("duplicate_external_provision_id", "duplicate external provision identifier"),
+            ("mismatch_snapshot_path", "snapshot path disagrees with metadata"),
+            ("mismatch_inventory_scope_type", "mapping-set scope type disagrees with provision inventory"),
+            ("mismatch_inventory_scope_statement", "mapping-set scope statement disagrees with provision inventory"),
+            ("mismatch_mapping_set_inventory_count", "mapping-set inventory count disagrees with provision inventory"),
+            ("mismatch_inventory_expected_count", "inventory expected count disagrees with provision identifiers"),
+            ("add_auxiliary_file", "unexpected snapshot entry"),
+            ("add_nested_directory", "unexpected snapshot entry"),
+            ("add_symbolic_link", "unexpected snapshot entry"),
+            ("remove_granularity_exception", "non-requirement granularity requires granularity_exception"),
+            ("remove_mapped_relationships", "mapped record requires at least one relationship"),
+            ("add_relationship_to_negative", "must not contain relationships"),
+            ("remove_negative_rationale", "negative disposition requires negative_rationale"),
+            ("duplicate_control_direction_leg", "duplicate relationship leg"),
+            ("make_mapper_reviewer_identical", "reviewer must differ from mapper"),
+            ("remove_review_metadata", "reviewed content requires review metadata"),
+            ("set_unsafe_child_status", "invalid snapshot/provision status combination"),
+            ("make_approved_snapshot_empty", "approved snapshot requires at least one provision"),
+            ("add_open_finding", "open review finding blocks approval"),
+            ("accept_important_finding", "Important findings must be resolved"),
+            ("remove_rights_approval", "publication-rights approval is required"),
+            ("add_unpermitted_paraphrase", "context exceeds permitted publication elements"),
+            ("break_local_link", "broken local link"),
+            ("add_reviewed_drafting_marker", "unresolved drafting marker"),
+            ("write_utf8_bom", "UTF-8 byte-order mark is prohibited"),
+            ("write_crlf", "CR or CRLF line endings are prohibited"),
+            ("write_encoding_corruption_signature", "possible text-encoding corruption"),
+        )
+        for mutation, expected in cases:
+            with self.subTest(mutation=mutation):
+                self.fixture.reset_crosswalks()
+                status = "reviewed" if mutation == "set_unsafe_child_status" else "approved"
+                self.fixture.create_valid_snapshot(status=status, complete=True)
+                if mutation == "add_symbolic_link" and not self.fixture.symlinks_supported():
+                    continue
+                getattr(self.fixture, mutation)()
+                self.assertIn(expected, "\n".join(validate(self.root).errors))
+
+
+if __name__ == "__main__":
+    unittest.main()
