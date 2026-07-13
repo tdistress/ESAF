@@ -1350,7 +1350,15 @@ class CrosswalkValidationTests(unittest.TestCase):
                 self.fixture.write_front_matter(path.relative_to(self.root).as_posix(), metadata, body + "\n" + text)
                 self.fixture.refresh_lifecycle_snapshot_digest()
                 self.assertNotIn("possible text-encoding corruption", "\n".join(validate(self.root).errors))
-        for text in ("caf\u00c3\u0192\u00c2\u00a9", "\u00e2\u20ac\u2122", "\ufffd"):
+        for text in (
+            "caf\u00c3\u0192\u00c2\u00a9",
+            "Fran\u00c3\u00a7ais",
+            "Espa\u00c3\u00b1a",
+            "\u00e2\u20ac\u02dc",
+            "\u00e2\u20ac\u00a6",
+            "\u00e2\u20ac\u2122",
+            "\ufffd",
+        ):
             with self.subTest(text=text):
                 self.fixture.reset_crosswalks()
                 snapshot = self.fixture.create_valid_snapshot(status="draft", complete=True)

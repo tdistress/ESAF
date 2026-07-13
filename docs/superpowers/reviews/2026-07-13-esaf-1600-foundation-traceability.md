@@ -106,13 +106,13 @@
 | 19.14 | Keep the three priority pages linked and free of completed-mapping claims. | Priority landing pages | Landing-page invariant and mutation tests | Pass |
 | 19.15 | Contain no external requirement text or substantive mapping assertions. | Empty mapping tree/catalog; planned landing pages; record schema excludes source text | `test_templates_are_outside_mapping_discovery`; `test_empty_catalog_is_explicit_and_deterministic`; landing-page mutation test | Pass |
 | 19.16 | Make no equivalence, certification, compliance, or legal-sufficiency claim. | `crosswalks/ESAF-1600.md`; controlled relationship enum | `test_methodology_prohibits_compliance_equivalence`; `test_mapping_schema_rejects_prohibited_relationship` | Pass |
-| 19.17 | Obtain independent whole-branch review with no unresolved Critical or Important findings. | Independent whole-branch review closure | Closure evidence has not yet been supplied by an independent whole-branch review. | Pending |
+| 19.17 | Obtain independent whole-branch review with no unresolved Critical or Important findings. | Two independent approvals of reviewed head `134a5408fcc8ebfb27f04dba9c7d41e027b675a2` | Independent specification and whole-branch quality/security reviews both approved the reviewed head with zero unresolved Critical or Important findings; the two approved Minor findings were closed with regression coverage. | Pass |
 
 ## Verification evidence
 
 - `python tools/validate_crosswalks.py --write`: exit 0; 0 mapping sets, 0 provisions, 0 relationships, 0 negative dispositions.
 - `python tools/validate_crosswalks.py --check`: exit 0 with the same counts.
-- `python -m unittest discover -s tests -v`: 167 tests passed, 0 failures; one Windows symlink-capability test skipped.
+- `python -m unittest discover -s tests -v`: 176 tests passed, 0 failures; three Windows symlink-capability tests skipped.
 - `python tools/validate_controls.py --check`: 91 controls, 91 objectives, and 16 families validated.
 - `python tools/validate_architectures.py`: 10 foundation files and 7 reserved patterns validated.
 - `python tools/migrate_control_mappings.py --check`: 91 catalog-derived mapping sections validated; 0 changed.

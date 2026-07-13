@@ -1121,6 +1121,10 @@ _DRAFTING_MARKER = re.compile(r"(?im)(?:^|\b)(?:TODO|TBD|FIXME|PLACEHOLDER)(?:\b
 _CORRUPTION_SIGNATURES = (
     "\u00c3\u0192\u00c2",
     "\u00c3\u00a9",
+    "\u00c3\u00a7",
+    "\u00c3\u00b1",
+    "\u00e2\u20ac\u02dc",
+    "\u00e2\u20ac\u00a6",
     "\u00e2\u20ac\u2122",
     "\u00e2\u20ac\u201c",
     "\u00e2\u20ac\u201d",
