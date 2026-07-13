@@ -138,19 +138,23 @@ def validate_baseline(
         )
 
     errors: list[str] = []
+    schema_root = (
+        root
+        if (root / "crosswalks" / "schema").exists()
+        else Path(__file__).parents[2]
+    )
+    validators = load_schemas(schema_root)
     baseline_paths = _git_tree_paths(root, commit, "crosswalks/mappings")
     for readme in (path for path in baseline_paths if path.endswith("/README.md")):
         metadata = _front_matter_bytes(_git_show(root, commit, readme))
-        status = metadata.get("status") if isinstance(metadata, dict) else None
-        if not isinstance(status, str) or status not in {
-            "draft",
-            "reviewed",
-            "approved",
-        }:
+        if not isinstance(metadata, dict) or schema_errors(
+            validators["mapping-set"], metadata, readme  # type: ignore[arg-type]
+        ):
             errors.append(
                 f"{readme}: trusted baseline snapshot metadata is malformed"
             )
             continue
+        status = metadata.get("status")
         if status != "approved":
             continue
         directory = readme.rsplit("/", 1)[0]
@@ -192,7 +196,9 @@ def validate_baseline(
         if not path.endswith(".md"):
             continue
         baseline = _front_matter_bytes(_git_show(root, commit, path))
-        if not isinstance(baseline, dict):
+        if not isinstance(baseline, dict) or schema_errors(
+            validators["lifecycle-record"], baseline, path  # type: ignore[arg-type]
+        ):
             errors.append(
                 f"{path}: trusted baseline lifecycle metadata is malformed"
             )

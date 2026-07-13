@@ -172,6 +172,25 @@ class CrosswalkValidationTests(unittest.TestCase):
             "\n".join(errors),
         )
 
+    def test_baseline_lifecycle_schema_rejects_empty_event_prefix(self) -> None:
+        baseline = self.fixture.commit_lifecycle_with_empty_events()
+        errors = validate(self.root, baseline_ref=baseline).errors
+        self.assertIn(
+            "crosswalks/registry/"
+            + MAPPING_SET_ID
+            + ".md: trusted baseline lifecycle metadata is malformed",
+            "\n".join(errors),
+        )
+
+    def test_baseline_snapshot_schema_rejects_type_safe_invalid_metadata(self) -> None:
+        baseline = self.fixture.commit_schema_invalid_snapshot_readme()
+        errors = validate(self.root, baseline_ref=baseline).errors
+        self.assertIn(
+            "crosswalks/mappings/nist/1.0/0.4-alpha/1.0.0/README.md: "
+            "trusted baseline snapshot metadata is malformed",
+            "\n".join(errors),
+        )
+
     def test_incomplete_reviewed_snapshot_is_rejected(self) -> None:
         self.fixture.create_valid_snapshot(status="reviewed", complete=False)
         errors = validate(self.root).errors

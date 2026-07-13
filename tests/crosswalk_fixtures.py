@@ -304,6 +304,21 @@ class CrosswalkFixture:
         lifecycle.write_bytes(valid)
         return baseline
 
+    def commit_lifecycle_with_empty_events(self) -> str:
+        self.create_approved_snapshot_with_lifecycle("approved")
+        lifecycle = self.root / "crosswalks" / "registry" / f"{MAPPING_SET_ID}.md"
+        valid = lifecycle.read_bytes()
+        metadata, body = parse_front_matter(lifecycle)
+        metadata["events"] = []
+        self.write_front_matter(
+            lifecycle.relative_to(self.root).as_posix(), metadata, body
+        )
+        self._git("add", "crosswalks")
+        self._git("commit", "--quiet", "-m", "Empty-event lifecycle baseline")
+        baseline = self._git("rev-parse", "HEAD")
+        lifecycle.write_bytes(valid)
+        return baseline
+
     def commit_snapshot_readme_missing_closing_delimiter(self) -> str:
         snapshot = self.create_approved_snapshot_with_lifecycle("approved")
         readme = snapshot / "README.md"
@@ -311,6 +326,19 @@ class CrosswalkFixture:
         readme.write_bytes(self._without_closing_delimiter(valid))
         self._git("add", "crosswalks")
         self._git("commit", "--quiet", "-m", "Unclosed snapshot baseline")
+        baseline = self._git("rev-parse", "HEAD")
+        readme.write_bytes(valid)
+        return baseline
+
+    def commit_schema_invalid_snapshot_readme(self) -> str:
+        snapshot = self.create_approved_snapshot_with_lifecycle("approved")
+        readme = snapshot / "README.md"
+        valid = readme.read_bytes()
+        metadata, body = parse_front_matter(readme)
+        metadata["schema_version"] = "invalid"
+        self.write_front_matter(readme.relative_to(self.root).as_posix(), metadata, body)
+        self._git("add", "crosswalks")
+        self._git("commit", "--quiet", "-m", "Schema-invalid snapshot baseline")
         baseline = self._git("rev-parse", "HEAD")
         readme.write_bytes(valid)
         return baseline
