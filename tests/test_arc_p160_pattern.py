@@ -196,17 +196,48 @@ class ArcP160PatternTests(unittest.TestCase):
         self.assertEqual(relationships, bullets)
 
     def assert_sensitive_telemetry_contract_complete(self, text: str) -> None:
+        intended_outcomes = section(text, "Intended outcomes").lower()
+        assumptions = section(text, "Assumptions and prerequisites").lower()
         purpose = section(text, "Purpose").lower()
         flows = section(text, "Data and instruction flows").lower()
+        components = section(text, "Components and responsibilities").lower()
         trust = section(text, "Trust boundaries").lower()
         evidence = section(text, "Evidence and assessment").lower()
         anti_patterns = section(text, "Anti-patterns").lower()
 
-        for item in ("input", "context", "retrieval", "output", "tool", "action"):
-            self.assertIn(item, purpose)
-        for item in ("agent", "retrieval", "tool", "classified content references"):
-            self.assertIn(item, flows)
-        self.assertIn("logging only final prompts and responses", anti_patterns)
+        sensitive_class_traces = {
+            "prompts": ("logging only final prompts and responses", anti_patterns),
+            "context": ("input, context, retrieval", purpose),
+            "retrieval content": ("provider, retrieval, tool, target", flows),
+            "outputs": ("model, output, tool, action", purpose),
+            "tool data": ("retrieval, tool, target, policy", flows),
+            "agent state": ("tier, lifecycle state", assumptions),
+        }
+        for sensitive_class, (trace, scoped_text) in sensitive_class_traces.items():
+            self.assertIn(trace, scoped_text, f"Missing handling trace for {sensitive_class}")
+        self.assertIn("principal, runtime, agent, model, provider", flows)
+        self.assertIn("classified content references", flows)
+
+        self.assertIn(
+            "content minimization through four governed capture modes and tenant-scoped lifecycle controls",
+            intended_outcomes,
+        )
+        self.assertIn("capture modes are:", flows)
+        for capture_rule in (
+            "metadata only:** the default when content is unnecessary",
+            "redacted excerpt:** narrowly approved diagnostic content",
+            "exceptional protected full content:** segregated content-evidence vault capture under explicit authorization",
+        ):
+            self.assertIn(capture_rule, flows)
+        self.assertIn(
+            "authenticate, attest, minimize, validate, tenant-bind",
+            components,
+        )
+        self.assertIn("capture approvals", evidence)
+        self.assertIn(
+            "lifecycle tests for retention, deletion, residency, export, tickets and legal hold",
+            evidence,
+        )
         self.assertIn("embeddings, stable hashes and rare features", flows)
         self.assertIn(
             "purpose and tenant isolation, scoped or keyed transforms, retention, correction, deletion, and legal hold extend to derived stores",
@@ -282,6 +313,49 @@ class ArcP160PatternTests(unittest.TestCase):
             "evidence integrity failure",
         ):
             self.assertIn(requirement, evidence)
+
+        table_lines = [line for line in failures.splitlines() if line.startswith("|")]
+        self.assertGreaterEqual(len(table_lines), 2)
+        self.assertEqual(
+            ["failure or abuse", "required treatment"],
+            [cell.strip() for cell in table_lines[0].strip("|").split("|")],
+        )
+        treatment_rows = {
+            cells[0]: cells[1]
+            for cells in (
+                [cell.strip() for cell in line.strip("|").split("|")]
+                for line in table_lines[2:]
+            )
+            if len(cells) == 2
+        }
+        safe_treatments = {
+            "spoofed source, correlation collision, replay, schema drift, or telemetry injection": (
+                "reject or quarantine",
+                "record gap",
+                "regenerate untrusted identifiers",
+                "investigate source and verifier state",
+            ),
+            "signing key compromise or privileged evidence alteration": (
+                "revoke trust",
+                "preserve custody",
+                "verify against separate trust roots and timestamp anchors",
+                "reassess affected evidence",
+            ),
+            "provider export delay, incompleteness, changed semantics, or outage": (
+                "record the gap",
+                "use enterprise boundary evidence",
+                "prohibit use where assurance cannot be met",
+                "execute portability or exit plans",
+            ),
+            "evidence, correlation, outcome, integrity, or assurance unavailable": (
+                "stop tier 3 and tier 4 consequential commit and dependent activity",
+                "do not report success",
+            ),
+        }
+        for failure, requirements in safe_treatments.items():
+            self.assertIn(failure, treatment_rows)
+            for requirement in requirements:
+                self.assertIn(requirement, treatment_rows[failure])
 
     def assert_figures_pair_with_mermaid_blocks(self, text: str) -> None:
         architecture = section(text, "Architecture views")
@@ -430,6 +504,31 @@ class ArcP160PatternTests(unittest.TestCase):
                 with self.assertRaises(AssertionError):
                     self.assert_sensitive_telemetry_contract_complete(mutant)
 
+    def test_sensitive_telemetry_contract_rejects_broken_governed_handling(self) -> None:
+        text = self.text()
+        mutants = {
+            "all minimization removed": text.replace("minimization", "handling").replace("minimize", "process"),
+            "governed capture relationship removed": text.replace(
+                "Content minimization through four governed capture modes and tenant-scoped lifecycle controls.",
+                "Sensitive classes are listed without a governed handling relationship.",
+                1,
+            ),
+            "collector minimization removed": text.replace(
+                "Authenticate, attest, minimize, validate, tenant-bind",
+                "Authenticate, attest, process, validate, tenant-bind",
+                1,
+            ),
+            "classified handling relationship removed": text.replace(
+                "classified content references",
+                "unclassified references",
+                1,
+            ),
+        }
+        for name, mutant in mutants.items():
+            with self.subTest(mutant=name):
+                with self.assertRaises(AssertionError):
+                    self.assert_sensitive_telemetry_contract_complete(mutant)
+
     def test_failure_and_abuse_treatment_is_complete(self) -> None:
         self.assert_resilience_contract_complete(self.text())
 
@@ -442,6 +541,30 @@ class ArcP160PatternTests(unittest.TestCase):
             "source compromise": text.replace("Spoofed source", "Unknown source", 1),
             "signing-key compromise": text.replace("compromise response", "incident response", 1),
             "provider outage": text.replace("changed semantics, or outage", "changed semantics", 1),
+        }
+        for name, mutant in mutants.items():
+            with self.subTest(mutant=name):
+                with self.assertRaises(AssertionError):
+                    self.assert_resilience_contract_complete(mutant)
+
+    def test_resilience_contract_rejects_unsafe_treatment_polarity(self) -> None:
+        text = self.text()
+        mutants = {
+            "spoofed source accepted": text.replace(
+                "Reject or quarantine; record gap; regenerate untrusted identifiers; investigate source and verifier state",
+                "Accept and continue; trust supplied identifiers",
+                1,
+            ),
+            "provider gap ignored": text.replace(
+                "Record the gap, use enterprise boundary evidence, prohibit use where assurance cannot be met, and execute portability or exit plans",
+                "Ignore the gap, trust provider claims, and continue use",
+                1,
+            ),
+            "integrity failure continued": text.replace(
+                "Stop Tier 3 and Tier 4 consequential commit and dependent activity; do not report success",
+                "Continue Tier 3 and Tier 4 consequential commit and report success",
+                1,
+            ),
         }
         for name, mutant in mutants.items():
             with self.subTest(mutant=name):

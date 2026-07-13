@@ -609,7 +609,7 @@ $py = 'C:\Users\phrea\.cache\codex-runtimes\codex-primary-runtime\dependencies\p
 git diff --check main...HEAD
 ```
 
-Expected: 23 ARC-P160 tests and 50 total tests pass; 91 controls, 91 objectives, and 16 families validate; 10 foundation files and 7 reserved patterns validate; diff check emits no output.
+Expected: 25 ARC-P160 tests and 52 total tests pass; 91 controls, 91 objectives, and 16 families validate; 10 foundation files and 7 reserved patterns validate; diff check emits no output.
 
 - [ ] **Step 3: Verify branch scope and cleanliness**
 
@@ -635,7 +635,7 @@ Expected: no unresolved Critical or Important findings. Any fix changes the revi
 Record in the PR body:
 
 ```text
-- 23 ARC-P160 focused tests and 50 total tests passed
+- 25 ARC-P160 focused tests and 52 total tests passed
 - 91 controls, 91 objectives, and 16 families validated
 - 10 architecture foundation files and 7 reserved patterns validated
 - Mermaid CLI 11.16.0 rendered all four ARC-P160 figures successfully (4/4)
