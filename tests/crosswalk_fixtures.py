@@ -895,6 +895,9 @@ class CrosswalkFixture:
     def add_open_critical_finding(self) -> None:
         self._set_finding("Critical", "open")
 
+    def add_open_snapshot_finding(self, severity: str) -> None:
+        self._set_finding(severity, "open", affected_record_ids=[])
+
     def add_open_minor_finding(self) -> None:
         self._set_finding("Minor", "open")
 
@@ -903,6 +906,37 @@ class CrosswalkFixture:
 
     def add_resolved_important_finding(self) -> None:
         self._set_finding("Important", "resolved")
+
+    def add_resolved_snapshot_finding(self, severity: str) -> None:
+        self._set_finding(severity, "resolved", affected_record_ids=[])
+
+    def accept_snapshot_finding(self, severity: str) -> None:
+        self._set_finding(severity, "accepted", affected_record_ids=[])
+
+    def accept_record_finding(self, severity: str) -> None:
+        self._set_finding(severity, "accepted")
+
+    def make_record_reviewed(self) -> None:
+        def mutate(value: dict[str, object]) -> None:
+            value["status"] = "reviewed"
+            value["reviewer"] = self._reviewer()
+
+        self._mutate_record(mutate)
+
+    def set_malformed_finding_field(self, field: str, value: object) -> None:
+        def mutate(metadata: dict[str, object]) -> None:
+            finding = metadata["findings"][0]  # type: ignore[index]
+            finding[field] = value  # type: ignore[index]
+
+        self._mutate_mapping_set(mutate)
+
+    def set_finding(
+        self,
+        severity: str,
+        status: str,
+        affected_record_ids: list[str] | None = None,
+    ) -> None:
+        self._set_finding(severity, status, affected_record_ids)
 
     def accept_important_finding(self) -> None:
         self._set_finding("Important", "accepted")
@@ -962,10 +996,17 @@ class CrosswalkFixture:
     def write_inventory_encoding_corruption_signature(self) -> None:
         self._append_inventory_body("\nPossible corruption: cafÃ©\n")
 
-    def _set_finding(self, severity: str, status: str) -> None:
+    def _set_finding(
+        self,
+        severity: str,
+        status: str,
+        affected_record_ids: list[str] | None = None,
+    ) -> None:
         finding: dict[str, object] = {
             "finding_id": "finding-1",
-            "affected_record_ids": ["ext-1"],
+            "affected_record_ids": (
+                ["ext-1"] if affected_record_ids is None else affected_record_ids
+            ),
             "severity": severity,
             "status": status,
             "description": "A review finding.",

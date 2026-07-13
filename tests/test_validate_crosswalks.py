@@ -536,32 +536,108 @@ class CrosswalkValidationTests(unittest.TestCase):
         errors = validate(self.root).errors
         self.assertIn("missing provision record for inventory identifier EXT-2", "\n".join(errors))
 
-    def test_reviewed_snapshot_and_record_reject_open_critical_or_important_findings(self) -> None:
-        for mutation, severity in (
-            ("add_open_critical_finding", "Critical"),
-            ("add_open_finding", "Important"),
+    def test_reviewed_snapshot_rejects_open_or_accepted_critical_and_important_findings(self) -> None:
+        for status in ("open", "accepted"):
+            for severity in ("Critical", "Important"):
+                with self.subTest(status=status, severity=severity):
+                    self.fixture.reset_crosswalks()
+                    self.fixture.create_valid_snapshot(status="reviewed", complete=True)
+                    if status == "open":
+                        self.fixture.add_open_snapshot_finding(severity)
+                    else:
+                        self.fixture.accept_snapshot_finding(severity)
+                    self.fixture.refresh_lifecycle_snapshot_digest()
+                    errors = "\n".join(validate(self.root).errors)
+                    self.assertIn(
+                        f"{status} {severity} review finding blocks reviewed content",
+                        errors,
+                    )
+                    self.assertIn("/1.0.0:", errors)
+
+    def test_reviewed_record_in_draft_snapshot_rejects_targeted_open_or_accepted_high_findings(self) -> None:
+        for status in ("open", "accepted"):
+            for severity in ("Critical", "Important"):
+                with self.subTest(status=status, severity=severity):
+                    self.fixture.reset_crosswalks()
+                    self.fixture.create_valid_snapshot(status="draft", complete=True)
+                    self.fixture.make_record_reviewed()
+                    if status == "open":
+                        self.fixture.set_finding(severity, status)
+                    else:
+                        self.fixture.accept_record_finding(severity)
+                    self.fixture.refresh_lifecycle_snapshot_digest()
+                    errors = "\n".join(validate(self.root).errors)
+                    self.assertIn(
+                        f"{status} {severity} review finding blocks reviewed content",
+                        errors,
+                    )
+                    self.assertIn("/ext-1.md:", errors)
+
+    def test_draft_snapshot_and_draft_record_allow_open_high_findings(self) -> None:
+        for target in ("snapshot", "record"):
+            with self.subTest(target=target):
+                self.fixture.reset_crosswalks()
+                self.fixture.create_valid_snapshot(status="draft", complete=True)
+                if target == "snapshot":
+                    self.fixture.add_open_snapshot_finding("Important")
+                else:
+                    self.fixture.add_open_finding()
+                self.fixture.refresh_lifecycle_snapshot_digest()
+                self.assertEqual(validate(self.root).errors, [])
+
+    def test_reviewed_entities_allow_open_or_accepted_minor_and_resolved_high_findings(self) -> None:
+        cases = (
+            ("snapshot", "open", "Minor"),
+            ("snapshot", "accepted", "Minor"),
+            ("snapshot", "resolved", "Critical"),
+            ("record", "open", "Minor"),
+            ("record", "accepted", "Minor"),
+            ("record", "resolved", "Important"),
+        )
+        for target, status, severity in cases:
+            with self.subTest(target=target, status=status, severity=severity):
+                self.fixture.reset_crosswalks()
+                parent_status = "reviewed" if target == "snapshot" else "draft"
+                self.fixture.create_valid_snapshot(status=parent_status, complete=True)
+                if target == "record":
+                    self.fixture.make_record_reviewed()
+                affected = [] if target == "snapshot" else None
+                self.fixture.set_finding(severity, status, affected_record_ids=affected)
+                self.fixture.refresh_lifecycle_snapshot_digest()
+                self.assertEqual(validate(self.root).errors, [])
+
+    def test_schema_invalid_finding_fields_return_diagnostics_without_crashing(self) -> None:
+        cases = (
+            ("severity", ["Critical"], "is not one of"),
+            ("affected_record_ids", {"ext-1": True}, "is not of type 'array'"),
+        )
+        for field, value, expected in cases:
+            with self.subTest(field=field):
+                self.fixture.reset_crosswalks()
+                self.fixture.create_valid_snapshot(status="reviewed", complete=True)
+                self.fixture.add_open_finding()
+                self.fixture.set_malformed_finding_field(field, value)
+                self.fixture.refresh_lifecycle_snapshot_digest()
+                self.assertIn(expected, "\n".join(validate(self.root).errors))
+
+        for field, value, expected in (
+            ("status", {"state": "open"}, "is not one of"),
+            ("disposition", ["invalid"], "is not of type 'string'"),
         ):
+            with self.subTest(field=field, status="approved"):
+                self.fixture.reset_crosswalks()
+                self.fixture.create_valid_snapshot(status="approved", complete=True)
+                self.fixture.add_open_minor_finding()
+                self.fixture.set_malformed_finding_field(field, value)
+                self.fixture.refresh_lifecycle_snapshot_digest()
+                self.assertIn(expected, "\n".join(validate(self.root).errors))
+
+    def test_reviewed_snapshot_allows_resolved_high_severity_findings(self) -> None:
+        for severity in ("Critical", "Important"):
             with self.subTest(severity=severity):
                 self.fixture.reset_crosswalks()
                 self.fixture.create_valid_snapshot(status="reviewed", complete=True)
-                getattr(self.fixture, mutation)()
-                self.fixture.refresh_lifecycle_snapshot_digest()
-                errors = "\n".join(validate(self.root).errors)
-                self.assertIn(
-                    f"open {severity} review finding blocks reviewed content",
-                    errors,
-                )
-
-    def test_reviewed_snapshot_allows_open_minor_and_resolved_high_severity_findings(self) -> None:
-        for mutation in (
-            "add_open_minor_finding",
-            "add_resolved_critical_finding",
-            "add_resolved_important_finding",
-        ):
-            with self.subTest(mutation=mutation):
-                self.fixture.reset_crosswalks()
-                self.fixture.create_valid_snapshot(status="reviewed", complete=True)
-                getattr(self.fixture, mutation)()
+                self.fixture.add_resolved_snapshot_finding(severity)
                 self.fixture.refresh_lifecycle_snapshot_digest()
                 self.assertEqual(validate(self.root).errors, [])
 

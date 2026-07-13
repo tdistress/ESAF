@@ -557,6 +557,12 @@ def _validate_snapshot(
             f"{record_relative}: {message}"
             for message in validate_record(record, mapping_set)
         )
+        if record.get("status") == "reviewed":
+            errors.extend(
+                _validate_reviewed_findings(
+                    mapping_set.get("findings"), record_relative, record_id
+                )
+            )
         errors.extend(_validate_reviewed_text(path, record.get("status"), record_relative))
 
     if manifest is not None:
@@ -768,32 +774,69 @@ def _validate_mapping_set(mapping_set: dict[str, object], relative: str) -> list
     elif rights.get("reviewer_id") == mapper_id:
         errors.append(f"{relative}: publication-rights reviewer must differ from mapper")
 
-    if isinstance(mapping_status, str) and mapping_status in {"reviewed", "approved"}:
-        findings = mapping_set.get("findings", [])
+    findings = mapping_set.get("findings", [])
+    if mapping_status == "reviewed":
+        errors.extend(_validate_reviewed_findings(findings, relative))
+    if mapping_status == "approved":
         if isinstance(findings, list):
             for finding in findings:
                 if not isinstance(finding, dict):
                     continue
                 severity = finding.get("severity")
                 status = finding.get("status")
-                if mapping_status == "reviewed":
-                    if severity in {"Critical", "Important"} and status == "open":
-                        errors.append(
-                            f"{relative}: open {severity} review finding blocks reviewed content"
-                        )
-                else:
-                    if status == "open":
-                        errors.append(f"{relative}: open review finding blocks approval")
-                    if (
-                        isinstance(severity, str)
-                        and severity in {"Critical", "Important"}
-                        and status != "resolved"
-                    ):
-                        errors.append(f"{relative}: {severity} findings must be resolved")
-                    if severity == "Minor" and status not in {"resolved", "accepted"}:
-                        errors.append(
-                            f"{relative}: Minor findings must be resolved or formally accepted"
-                        )
+                if status == "open":
+                    errors.append(f"{relative}: open review finding blocks approval")
+                if (
+                    isinstance(severity, str)
+                    and severity in {"Critical", "Important"}
+                    and status != "resolved"
+                ):
+                    errors.append(f"{relative}: {severity} findings must be resolved")
+                if severity == "Minor" and (
+                    not isinstance(status, str)
+                    or status not in {"resolved", "accepted"}
+                ):
+                    errors.append(
+                        f"{relative}: Minor findings must be resolved or formally accepted"
+                    )
+    return errors
+
+
+def _validate_reviewed_findings(
+    findings: object, relative: str, record_id: object | None = None
+) -> list[str]:
+    """Return entity-specific reviewed-finding diagnostics."""
+    if not isinstance(findings, list):
+        return []
+    errors: list[str] = []
+    for finding in findings:
+        if not isinstance(finding, dict):
+            continue
+        affected = finding.get("affected_record_ids")
+        if not isinstance(affected, list):
+            continue
+        targets_entity = (
+            not affected
+            if record_id is None
+            else isinstance(record_id, str)
+            and any(
+                isinstance(affected_id, str) and affected_id == record_id
+                for affected_id in affected
+            )
+        )
+        if not targets_entity:
+            continue
+        severity = finding.get("severity")
+        status = finding.get("status")
+        if (
+            isinstance(severity, str)
+            and severity in {"Critical", "Important"}
+            and isinstance(status, str)
+            and status in {"open", "accepted"}
+        ):
+            errors.append(
+                f"{relative}: {status} {severity} review finding blocks reviewed content"
+            )
     return errors
 
 
