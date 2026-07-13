@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://esaf-standard.org/schemas/mapping-set.schema.json",
+  "title": "ESAF crosswalk mapping set",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "mapping_set_id", "authority", "publication", "source_version", "esaf_release", "mapping_set_version", "status", "source", "publication_rights", "scope", "mapper", "findings", "change_history"],
+  "properties": {
+    "schema_version": {"$ref": "#/$defs/semver"},
+    "mapping_set_id": {"$ref": "#/$defs/mappingSetId"},
+    "authority": {"$ref": "#/$defs/namedSlug"},
+    "publication": {"$ref": "#/$defs/namedSlug"},
+    "source_version": {"$ref": "#/$defs/sourceVersion"},
+    "esaf_release": {"$ref": "#/$defs/esafRelease"},
+    "mapping_set_version": {"$ref": "#/$defs/semver"},
+    "status": {"enum": ["draft", "reviewed", "approved"]},
+    "source": {"$ref": "#/$defs/source"},
+    "publication_rights": {"$ref": "#/$defs/publicationRights"},
+    "scope": {"$ref": "#/$defs/scope"},
+    "mapper": {"$ref": "#/$defs/mapper"},
+    "reviewer": {"$ref": "#/$defs/reviewer"},
+    "approver": {"$ref": "#/$defs/approver"},
+    "findings": {"type": "array", "items": {"$ref": "#/$defs/finding"}},
+    "predecessor_id": {"$ref": "#/$defs/mappingSetId"},
+    "change_history": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/change"}}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"status": {"enum": ["reviewed", "approved"]}}, "required": ["status"]},
+      "then": {"required": ["reviewer"]}
+    },
+    {
+      "if": {"properties": {"status": {"const": "approved"}}, "required": ["status"]},
+      "then": {"required": ["approver"]}
+    }
+  ],
+  "$defs": {
+    "slug": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "versionId": {"type": "string", "pattern": "^[a-z0-9]+(?:[.-][a-z0-9]+)*$"},
+    "semver": {"type": "string", "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"},
+    "date": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$", "format": "date"},
+    "sha40": {"type": "string", "pattern": "^[a-f0-9]{40}$"},
+    "sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "mappingSetId": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*--[a-z0-9]+(?:-[a-z0-9]+)*--[a-z0-9]+(?:[.-][a-z0-9]+)*--esaf-[a-z0-9]+(?:[.-][a-z0-9]+)*--(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"},
+    "namedSlug": {
+      "type": "object", "additionalProperties": false, "required": ["id", "name"],
+      "properties": {"id": {"$ref": "#/$defs/slug"}, "name": {"type": "string", "minLength": 1}}
+    },
+    "sourceVersion": {
+      "type": "object", "additionalProperties": false, "required": ["id", "label"],
+      "properties": {"id": {"$ref": "#/$defs/versionId"}, "label": {"type": "string", "minLength": 1}}
+    },
+    "esafRelease": {
+      "type": "object", "additionalProperties": false,
+      "required": ["id", "label", "source_commit_sha", "control_catalog_sha256", "control_manifest_path"],
+      "properties": {
+        "id": {"$ref": "#/$defs/versionId"}, "label": {"type": "string", "minLength": 1},
+        "source_commit_sha": {"$ref": "#/$defs/sha40"}, "tag_alias": {"type": "string", "minLength": 1},
+        "control_catalog_sha256": {"$ref": "#/$defs/sha256"}, "control_manifest_path": {"const": "ESAF_CONTROL_MANIFEST.json"}
+      }
+    },
+    "source": {
+      "type": "object", "additionalProperties": false,
+      "required": ["official_url", "access_class", "licensing_note"],
+      "properties": {
+        "official_url": {"type": "string", "format": "uri"}, "publication_date": {"$ref": "#/$defs/date"},
+        "access_class": {"enum": ["public", "restricted", "licensed"]}, "licensing_note": {"type": "string", "minLength": 1}
+      }
+    },
+    "publicationElement": {"enum": ["identifiers", "titles", "structural_inventory", "paraphrases", "derivative_mapping_analysis", "official_links"]},
+    "publicationRights": {
+      "type": "object", "additionalProperties": false,
+      "required": ["basis", "permitted_elements", "prohibited_elements", "restrictions", "approved", "reviewer_id", "review_date", "reviewer_authorized_source_access", "publication_basis_reviewed"],
+      "properties": {
+        "basis": {"type": "string", "minLength": 1},
+        "permitted_elements": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/publicationElement"}},
+        "prohibited_elements": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/publicationElement"}},
+        "restrictions": {"type": "string"}, "approved": {"const": true},
+        "reviewer_id": {"type": "string", "minLength": 1}, "review_date": {"$ref": "#/$defs/date"},
+        "reviewer_authorized_source_access": {"const": true}, "publication_basis_reviewed": {"const": true}
+      }
+    },
+    "scope": {
+      "type": "object", "additionalProperties": false, "required": ["type", "statement", "inventory_count", "default_granularity"],
+      "properties": {
+        "type": {"enum": ["complete_publication", "declared_subset"]}, "statement": {"type": "string", "minLength": 1},
+        "inventory_count": {"type": "integer", "minimum": 0}, "default_granularity": {"enum": ["requirement", "clause", "domain"]}
+      }
+    },
+    "mapper": {
+      "type": "object", "additionalProperties": false, "required": ["id", "qualification", "date", "authorized_source_access"],
+      "properties": {"id": {"type": "string", "minLength": 1}, "qualification": {"type": "string", "minLength": 1}, "date": {"$ref": "#/$defs/date"}, "authorized_source_access": {"const": true}}
+    },
+    "reviewer": {
+      "type": "object", "additionalProperties": false, "required": ["id", "qualification", "date", "authorized_source_access", "findings_disposition"],
+      "properties": {"id": {"type": "string", "minLength": 1}, "qualification": {"type": "string", "minLength": 1}, "date": {"$ref": "#/$defs/date"}, "authorized_source_access": {"const": true}, "findings_disposition": {"type": "string", "minLength": 1}}
+    },
+    "approver": {
+      "type": "object", "additionalProperties": false, "required": ["id", "date"],
+      "properties": {"id": {"type": "string", "minLength": 1}, "date": {"$ref": "#/$defs/date"}}
+    },
+    "finding": {
+      "type": "object", "additionalProperties": false,
+      "required": ["finding_id", "affected_record_ids", "severity", "status", "description", "disposition"],
+      "properties": {
+        "finding_id": {"$ref": "#/$defs/slug"},
+        "affected_record_ids": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/slug"}},
+        "severity": {"enum": ["Critical", "Important", "Minor"]}, "status": {"enum": ["open", "resolved", "accepted"]},
+        "description": {"type": "string", "minLength": 1}, "disposition": {"type": "string", "minLength": 1},
+        "resolver_or_acceptor": {"type": "string", "minLength": 1}, "disposition_date": {"$ref": "#/$defs/date"},
+        "acceptance_rationale": {"type": "string", "minLength": 1}
+      },
+      "allOf": [
+        {"if": {"properties": {"status": {"const": "resolved"}}, "required": ["status"]}, "then": {"required": ["resolver_or_acceptor", "disposition_date"]}},
+        {"if": {"properties": {"status": {"const": "accepted"}}, "required": ["status"]}, "then": {"required": ["resolver_or_acceptor", "disposition_date", "acceptance_rationale"]}}
+      ]
+    },
+    "change": {
+      "type": "object", "additionalProperties": false, "required": ["version", "date", "change"],
+      "properties": {"version": {"$ref": "#/$defs/semver"}, "date": {"$ref": "#/$defs/date"}, "change": {"type": "string", "minLength": 1}}
+    }
+  }
+}

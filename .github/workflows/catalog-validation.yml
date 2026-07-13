@@ -6,9 +6,12 @@ on:
       - ".github/workflows/catalog-validation.yml"
       - "architectures/**"
       - "controls/**"
+      - "crosswalks/**"
       - "tests/**"
+      - "tools/crosswalks/**"
       - "tools/validate_architectures.py"
       - "tools/validate_controls.py"
+      - "tools/validate_crosswalks.py"
       - "requirements-dev.txt"
   push:
     branches: [main]
@@ -16,9 +19,12 @@ on:
       - ".github/workflows/catalog-validation.yml"
       - "architectures/**"
       - "controls/**"
+      - "crosswalks/**"
       - "tests/**"
+      - "tools/crosswalks/**"
       - "tools/validate_architectures.py"
       - "tools/validate_controls.py"
+      - "tools/validate_crosswalks.py"
       - "requirements-dev.txt"
   workflow_dispatch:
 
@@ -32,6 +38,8 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
@@ -46,3 +54,11 @@ jobs:
         run: python tools/validate_architectures.py
       - name: Validate controls and generated catalog
         run: python tools/validate_controls.py --check
+      - name: Validate crosswalk catalog
+        run: python tools/validate_crosswalks.py --check
+      - name: Validate crosswalk history on pull request
+        if: github.event_name == 'pull_request'
+        run: python tools/validate_crosswalks.py --check --baseline-ref "${{ github.event.pull_request.base.sha }}"
+      - name: Validate crosswalk history on protected-branch push
+        if: github.event_name == 'push' && github.event.before != '0000000000000000000000000000000000000000'
+        run: python tools/validate_crosswalks.py --check --baseline-ref "${{ github.event.before }}"

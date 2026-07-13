@@ -495,7 +495,7 @@ control-manifest-entry
   record_sha256: sha256
 ```
 
-Schema conditionals shall additionally require resolver/date for `resolved`, resolver/date/acceptance rationale for `accepted`, clause/domain granularity exceptions, and the exact source-context element in `publication_rights.permitted_elements` (`paraphrases` for summary, `identifiers` for identifier-only). Arrays described as nonempty use `minItems: 1`; identity and enum arrays use `uniqueItems: true`.
+Task 1 schema conditionals shall additionally require resolver/date for `resolved`, resolver/date/acceptance rationale for `accepted`, and clause/domain granularity exceptions. The mapping-record schema enforces context-internal exclusivity: `paraphrase` requires `summary` and prohibits `omission_rationale`, while `identifier_only` requires `omission_rationale` and prohibits `summary`. Rights/context coupling is cross-document and therefore belongs to Task 2 semantic validation, which shall require the mapping set's `publication_rights.permitted_elements` to contain `paraphrases` for summary context and `identifiers` for identifier-only context. Task 1 shall not duplicate publication-rights authority into mapping records. Arrays described as nonempty use `minItems: 1`; identity and enum arrays use `uniqueItems: true`.
 
 - [ ] **Step 5: Run focused tests and commit**
 

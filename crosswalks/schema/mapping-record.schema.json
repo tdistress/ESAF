@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://esaf-standard.org/schemas/mapping-record.schema.json",
+  "title": "ESAF crosswalk mapping record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "record_id", "mapping_set_id", "status", "external_provision_id", "granularity", "context", "source_locator", "disposition", "relationships", "mapper", "change_history"],
+  "properties": {
+    "schema_version": {"$ref": "#/$defs/semver"}, "record_id": {"$ref": "#/$defs/slug"},
+    "mapping_set_id": {"$ref": "#/$defs/mappingSetId"}, "status": {"enum": ["draft", "reviewed"]},
+    "external_provision_id": {"type": "string", "minLength": 1}, "granularity": {"enum": ["requirement", "clause", "domain"]},
+    "title": {"type": "string", "minLength": 1}, "context": {"$ref": "#/$defs/context"},
+    "source_locator": {"$ref": "#/$defs/sourceLocator"}, "granularity_exception": {"type": "string", "minLength": 1},
+    "disposition": {"enum": ["mapped", "no_direct_mapping", "out_of_scope"]},
+    "relationships": {"type": "array", "items": {"$ref": "#/$defs/relationship"}},
+    "negative_rationale": {"type": "string", "minLength": 1}, "mapper": {"$ref": "#/$defs/mapper"},
+    "reviewer": {"$ref": "#/$defs/reviewer"}, "predecessor_record_id": {"$ref": "#/$defs/slug"},
+    "change_history": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/change"}}
+  },
+  "allOf": [
+    {"if": {"properties": {"status": {"const": "reviewed"}}, "required": ["status"]}, "then": {"required": ["reviewer"]}},
+    {"if": {"properties": {"granularity": {"enum": ["clause", "domain"]}}, "required": ["granularity"]}, "then": {"required": ["granularity_exception"]}},
+    {
+      "if": {"properties": {"disposition": {"const": "mapped"}}, "required": ["disposition"]},
+      "then": {"properties": {"relationships": {"minItems": 1}}, "not": {"required": ["negative_rationale"]}},
+      "else": {"required": ["negative_rationale"], "properties": {"relationships": {"maxItems": 0}}}
+    }
+  ],
+  "$defs": {
+    "slug": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"},
+    "semver": {"type": "string", "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"},
+    "date": {"type": "string", "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$", "format": "date"},
+    "mappingSetId": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*--[a-z0-9]+(?:-[a-z0-9]+)*--[a-z0-9]+(?:[.-][a-z0-9]+)*--esaf-[a-z0-9]+(?:[.-][a-z0-9]+)*--(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"},
+    "context": {
+      "type": "object", "additionalProperties": false, "required": ["mode"],
+      "properties": {"mode": {"enum": ["paraphrase", "identifier_only"]}, "summary": {"type": "string", "minLength": 1}, "omission_rationale": {"type": "string", "minLength": 1}},
+      "allOf": [
+        {"if": {"properties": {"mode": {"const": "paraphrase"}}, "required": ["mode"]}, "then": {"required": ["summary"], "not": {"required": ["omission_rationale"]}}},
+        {"if": {"properties": {"mode": {"const": "identifier_only"}}, "required": ["mode"]}, "then": {"required": ["omission_rationale"], "not": {"required": ["summary"]}}}
+      ]
+    },
+    "sourceLocator": {
+      "type": "object", "additionalProperties": false, "required": ["official_url", "locator"],
+      "properties": {"official_url": {"type": "string", "format": "uri"}, "locator": {"type": "string", "minLength": 1}}
+    },
+    "mapper": {
+      "type": "object", "additionalProperties": false, "required": ["id", "date"],
+      "properties": {"id": {"type": "string", "minLength": 1}, "date": {"$ref": "#/$defs/date"}}
+    },
+    "reviewer": {
+      "type": "object", "additionalProperties": false, "required": ["id", "qualification", "date", "authorized_source_access", "findings_disposition"],
+      "properties": {"id": {"type": "string", "minLength": 1}, "qualification": {"type": "string", "minLength": 1}, "date": {"$ref": "#/$defs/date"}, "authorized_source_access": {"const": true}, "findings_disposition": {"type": "string", "minLength": 1}}
+    },
+    "relationship": {
+      "type": "object", "additionalProperties": false,
+      "required": ["esaf_control_id", "esaf_control_version", "relationship", "direction", "coverage", "confidence", "rationale", "conditions", "expected_evidence", "known_gaps"],
+      "properties": {
+        "esaf_control_id": {"type": "string", "pattern": "^[A-Z]{3}-[0-9]{3}$"}, "esaf_control_version": {"$ref": "#/$defs/semver"},
+        "relationship": {"enum": ["supports", "partially_supports", "complements", "prerequisite", "informs"]},
+        "direction": {"enum": ["esaf_to_external", "external_to_esaf"]}, "coverage": {"enum": ["substantial", "partial", "narrow", "contextual"]},
+        "confidence": {"enum": ["high", "medium", "low"]}, "rationale": {"type": "string", "minLength": 1},
+        "conditions": {"$ref": "#/$defs/nonemptyStrings"}, "expected_evidence": {"$ref": "#/$defs/nonemptyStrings"}, "known_gaps": {"$ref": "#/$defs/nonemptyStrings"}
+      }
+    },
+    "nonemptyStrings": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},
+    "change": {
+      "type": "object", "additionalProperties": false, "required": ["version", "date", "change"],
+      "properties": {"version": {"$ref": "#/$defs/semver"}, "date": {"$ref": "#/$defs/date"}, "change": {"type": "string", "minLength": 1}}
+    }
+  }
+}
