@@ -193,6 +193,52 @@ class ArcP150PatternTests(unittest.TestCase):
             with self.subTest(requirement=requirement):
                 self.assertIn(requirement, text)
 
+    def test_contract_adapter_and_dependency_lifecycle_records_are_complete(self) -> None:
+        text = self.text()
+        for requirement in (
+            "Services define owners, consumers, operations, side effects, interaction modes, schemas, examples, canonicalization, classifications, dependencies, providers, targets, limits, SLOs, support dates, compatibility, deprecation, migration, suspension, and retirement.",
+            "Breaking and non-breaking change rules are explicit and tested in both producer and consumer directions.",
+            "Unknown fields, version fallback, schema downgrade, content-type change, SDK or connector behavior change, and provider response drift cannot be accepted silently.",
+            "Signed configuration, staged rollout, rollback, consumer notification, compatibility windows, and emergency blocking are required.",
+            "Adapters and dependencies have approved identity, source, version, integrity, vulnerability, license, support, configuration, credential, endpoint, serialization, logging, retry, and retirement records.",
+            "A connector or SDK update that changes endpoints, retention, training use, residency, authentication, serialization, retry, logging, output, or error behavior triggers review and compatibility testing.",
+            "Service publication requires owner, purpose, consumers, operations, protocol modes, schemas, data, dependencies, providers and targets, limits, SLOs, evidence, compatibility, support, recovery, and retirement approval.",
+            "Material change triggers architecture, risk, security, privacy, legal, supplier, and operational review as applicable.",
+        ):
+            with self.subTest(requirement=requirement):
+                self.assertIn(requirement, text)
+
+    def test_material_effect_outputs_and_errors_use_independent_controls(self) -> None:
+        text = self.text()
+        for requirement in (
+            "When AI-selected output is used to invoke, execute, persist, route, or otherwise determine material effect through an endpoint, method, tool, query, command, file path, callback URL, credential reference, or business object, it requires independent allowlisting, authorization, validation, and the applicable ARC-P130 control.",
+            "Errors do not disclose secrets, internal topology, provider configuration, job existence, tenant metadata, inaccessible objects, or sensitive model diagnostics.",
+        ):
+            with self.subTest(requirement=requirement):
+                self.assertIn(requirement, text)
+
+    def test_capacity_and_cascading_failure_controls_are_complete(self) -> None:
+        text = self.text()
+        for requirement in (
+            "Capacity controls cover request and item size, tokens, sequence, concurrent requests, connections, stream buffers, queue depth, batch size, fan-out, retry budgets, callback backoff, worker capacity, result retention, cost, and downstream rate.",
+            "Circuit breakers, admission control, fair scheduling, per-tenant quotas, backpressure, load shedding, and dependency isolation prevent retry storms and cascading failure.",
+        ):
+            with self.subTest(requirement=requirement):
+                self.assertIn(requirement, text)
+
+    def test_approved_editorial_invariants_are_exact(self) -> None:
+        text = self.text()
+        for requirement in (
+            "Contracts define gap detection, wait, skip, quarantine, backfill, and reconciliation behavior.",
+            "Duplicate, replayed, out-of-order, late, conflicting, expired, and poison events are detected and dispositioned.",
+            "deadline or explicit no-deadline prohibition",
+            "| 0.1.0 | 0.4-alpha | 2026-07-12 | Initial draft |",
+        ):
+            with self.subTest(requirement=requirement):
+                self.assertIn(requirement, text)
+        self.assertNotIn("deadline (or an explicit prohibition on no deadline)", text)
+        self.assertNotIn("| 0.1.0 | 0.4-alpha | 2026-07-11 | Initial draft |", text)
+
 
 if __name__ == "__main__":
     unittest.main()
