@@ -241,6 +241,43 @@ class ArcP160PatternTests(unittest.TestCase):
             with self.subTest(requirement=requirement):
                 self.assertIn(requirement, text)
 
+    def test_assurance_independence_and_correlation_boundaries_are_explicit(self) -> None:
+        text = self.text()
+        lower = text.lower()
+        for requirement in (
+            "Externally supplied correlation identifiers are untrusted inputs.",
+            "They never authorize access or action.",
+            "Monitored workloads cannot administer authoritative evidence or assurance verdicts.",
+            "cannot select, suppress, rewrite or delete authoritative evidence or verdicts",
+            "ordinary administrative privilege does not imply cross-tenant evidence access",
+        ):
+            with self.subTest(requirement=requirement):
+                self.assertIn(requirement.lower(), lower)
+
+    def test_sensitive_evidence_and_sampling_rules_are_explicit(self) -> None:
+        text = self.text()
+        for requirement in (
+            "Sampling cannot omit denials, incidents, gaps, material decisions, consequential outcomes, or required Tier 3 and Tier 4 outcome records.",
+            "Alert payloads reference protected evidence rather than copying sensitive source content.",
+            "Alerts, cases, tickets, email, and chat shall not duplicate raw or sensitive source content.",
+            "Derived signals, including embeddings, stable hashes and rare features, are classified and tested for re-identification and linkability.",
+        ):
+            with self.subTest(requirement=requirement):
+                self.assertIn(requirement, text)
+
+    def test_tenant_provider_and_ground_truth_boundaries_are_explicit(self) -> None:
+        text = self.text().lower()
+        for requirement in (
+            "tenant identity shall be bound at the source and independently validated at ingestion",
+            "cross-tenant support or break-glass access requires dual authorization",
+            "provider evidence remains externally asserted unless independently corroborated",
+            "the affected tier, action, or provider use is prohibited rather than represented as observable",
+            "operational dashboards and aggregates remain traceable conveniences, never authoritative evidence",
+            "model self-evaluation as authoritative evidence",
+        ):
+            with self.subTest(requirement=requirement):
+                self.assertIn(requirement, text)
+
     def test_capture_modes_and_six_logical_planes_are_preserved(self) -> None:
         self.assert_capture_modes_and_planes_preserved(self.text())
 
