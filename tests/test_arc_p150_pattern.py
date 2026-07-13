@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import re
 import unittest
 from pathlib import Path
@@ -9,6 +10,15 @@ ROOT = Path(__file__).resolve().parents[1]
 PATTERN = ROOT / "architectures" / "patterns" / "ARC-P150.md"
 REGISTRY = ROOT / "architectures" / "patterns" / "README.md"
 TEMPLATE = ROOT / "architectures" / "ARCHITECTURE_TEMPLATE.md"
+CATALOG = ROOT / "controls" / "catalog.json"
+CONTROL = re.compile(r"`([A-Z]{3}-\d{3})`")
+
+
+def subsection(text: str, title: str) -> str:
+    match = re.search(rf"^### {re.escape(title)}\s*$\n(.*?)(?=^### |^## |\Z)", text, re.MULTILINE | re.DOTALL)
+    if not match:
+        raise AssertionError(f"Missing subsection: {title}")
+    return match.group(1)
 
 
 def headings(path: Path, level: int) -> list[str]:
@@ -54,6 +64,39 @@ class ArcP150PatternTests(unittest.TestCase):
         markers = ("t" + "bd", "t" + "odo", "place" + "holder", "lorem" + " ipsum")
         for marker in markers:
             self.assertNotIn(marker, text)
+
+    def test_control_partition_matches_catalog_exactly(self) -> None:
+        text = self.text()
+        required = set(CONTROL.findall(subsection(text, "Required catalog controls")))
+        inherited = set(CONTROL.findall(subsection(text, "Inherited and verified catalog controls")))
+        conditional = set(CONTROL.findall(subsection(text, "Conditional catalog controls")))
+        catalog = {item["id"] for item in json.loads(CATALOG.read_text(encoding="utf-8"))["controls"]}
+        self.assertEqual((46, 26, 19), (len(required), len(inherited), len(conditional)))
+        self.assertFalse(required & inherited)
+        self.assertFalse(required & conditional)
+        self.assertFalse(inherited & conditional)
+        self.assertEqual(catalog, required | inherited | conditional)
+
+    def test_control_points_are_exact_and_singly_accountable(self) -> None:
+        text = self.text()
+        ids = re.findall(r"^\| (CP\d+) \|", text, re.MULTILINE)
+        self.assertEqual([f"CP{number}" for number in range(1, 16)], ids)
+        self.assertIn("exactly one accountable owner", text.lower())
+
+    def test_design_coverage_and_variants_are_complete(self) -> None:
+        text = self.text().lower()
+        for coverage in ("| 1-5 |", "| 6-7 |", "| 8-9 |", "| 10-14 |", "| 15-17 |", "| 18-20 |", "| 21-24 |"):
+            self.assertIn(coverage, text)
+        for variant in (
+            "central multi-protocol hub",
+            "durable workflow and event backbone",
+            "regional or sovereign cells",
+            "high-assurance dedicated cell",
+            "edge or intermittently connected cell",
+            "thin synchronous service",
+            "external managed integration service",
+        ):
+            self.assertIn(variant, text)
 
     def test_seven_numbered_mermaid_views_cover_required_components(self) -> None:
         text = self.text()

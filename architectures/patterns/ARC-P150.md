@@ -296,9 +296,60 @@ Each regional or domain execution cell has a unique workload identity, accountab
 
 Each implementation shall allocate all applicable ESAF-1100 controls as required, inherited-and-verified, or conditional without overlap. The control record identifies implementation location, the catalog-accountable owner, evidence owner, inheritance source and limitations, conditional trigger, freshness, failure dependency, retained responsibility, exception state, and assessment result.
 
+### Required catalog controls
+
+- Governance and risk: `GOV-130`, `RSK-110`, `RSK-120`, `RSK-140`.
+- Identity: `IAM-100`, `IAM-110`, `IAM-120`, `IAM-130`, `IAM-140`, `IAM-150`.
+- Data: `DAT-100`, `DAT-110`, `DAT-120`, `DAT-130`, `DAT-160`.
+- Model and application: `MOD-120`, `APP-100`, `APP-110`, `APP-120`, `APP-130`, `APP-140`, `APP-150`.
+- Platform and integration: `API-110`, `API-150`, `INF-140`, `INF-150`.
+- Operations: `OPS-100`, `OPS-110`, `OPS-120`, `OPS-130`, `OPS-140`, `OPS-150`.
+- Monitoring: `MON-100`, `MON-110`, `MON-120`, `MON-140`, `MON-150`.
+- Compliance and assurance: `CMP-100`, `CMP-110`, `AUD-110`, `AUD-120`.
+- Workforce and architecture: `EDU-130`, `ARC-100`, `ARC-110`, `ARC-130`, `ARC-140`.
+
+### Inherited and verified catalog controls
+
+At each applicable dependency and boundary, the implementation shall verify `GOV-100`, `GOV-110`, `GOV-120`, `GOV-140`, `STR-100`, `STR-130`, `RSK-100`, `MOD-100`, `MOD-110`, `MOD-130`, `MOD-140`, `MOD-150`, `API-100`, `INF-100`, `INF-110`, `INF-120`, `INF-130`, `AUD-100`, `AUD-130`, `AUD-140`, `EDU-100`, `EDU-110`, `EDU-120`, `EDU-140`, `ARC-120`, and `ARC-150`. The inheritance record identifies the source, applicable component or crossing, supplied outcome, consumer configuration, limitations, evidence, freshness, failure dependency, and retained responsibility; it does not require an unrelated broker or target to implement enterprise-level or model-specific controls.
+
+### Conditional catalog controls
+
+Conditional controls are `STR-110` for value claims; `STR-120` for experimentation; `RSK-130` for material individual, group, safety, environmental, or societal impact; `DAT-140` for personal data and rights; `DAT-150` for retrieval, embeddings, or vector data; `API-120` for tools, plugins, or connectors; `API-130` for MCP or any qualifying context-exchange or orchestration mechanism, whether deterministic or dynamic; `API-140` for external AI services, APIs, tool providers, data processors, evaluation services, or subcontracted operations participating in the integration path; `AGT-100`, `AGT-110`, `AGT-120`, `AGT-130`, `AGT-140`, `AGT-150`, `AGT-160`, and `MON-130` for agentic operation; and `CMP-120`, `CMP-130`, and `CMP-140` for suppliers, jurisdiction or transfer, and intellectual-property or licensing obligations.
+
+The three allocations are mutually exclusive and cover all 91 catalog controls.
+
 ## Control points and overlays
 
-Deployments shall implement and evidence the approved CP1 through CP15 control points for governance, registration, admission, contract validation, context binding, isolation, dispatch, durable state, inference, data and retrieval, tool and target handoff, output delivery, external boundaries, evidence export, recovery, compatibility, and retirement. Applicable security, privacy, resilience, deployment, risk, jurisdiction, supplier, records, and assurance overlays shall strengthen rather than weaken the baseline.
+| ID | Control point | Outcome | Primary implementation and evidence roles |
+|---|---|---|---|
+| CP1 | Service registration and approval | Every service has accountable ownership, purpose, contracts, dependencies, limits, lifecycle, and approved state | AI Service Owner; Enterprise Architecture, Risk, Security, Privacy, Legal, and Operations |
+| CP2 | Consumer registration and admission | Only approved consumers invoke allowed operations for an authorized tenant, purpose, tier, and context | Application Owner; IAM, API Owner, and Policy Administration |
+| CP3 | Contract, schema, version, and canonicalization | Requests, events, files, frames, callbacks, and responses conform to an approved unambiguous contract | API Owner; Application Security and Contract Registry Custodian |
+| CP4 | Identity, tenant, purpose, classification, and delegation binding | Authoritative context survives every hop without caller-controlled expansion | IAM and API Owner; Policy Administration and Data Governance |
+| CP5 | Integration state and tenant isolation | Jobs, queues, streams, batches, callbacks, caches, results, evidence, and support state remain isolated | AI Platform Owner; Platform Engineering, Data Owner, and Security Engineering |
+| CP6 | Deterministic dispatch and cell selection | Only approved service, operation, version, region, and execution cell receive work | AI Platform Owner and API Owner; Platform Operations and Enterprise Architecture |
+| CP7 | Durable acceptance and delivery state | Job identity, request digest, idempotency, order, expiry, policy, cancellation, and correlation are atomic and attributable | Integration Platform Owner; Messaging, Workflow, and SRE teams |
+| CP8 | Inference handoff | Model access preserves context and implements ARC-P100 admission, policy, routing, and provider-control outcomes through an approved centralized or federated enforcement point, with ARC-P140 additionally applied for enterprise-operated model lifecycle and serving | AI Service Owner; AI Platform Owner and, when applicable, Model Owner |
+| CP9 | Data and retrieval handoff | Data access preserves authorization, provenance, classification, lifecycle, and ARC-P120 semantics where applicable | Data Owner; Data Governance and Retrieval Service Owner |
+| CP10 | Tool and target handoff | Deterministic target calls are allowlisted and authorized; AI-selected or consequential action invokes ARC-P130 | Application Owner; Target Owner, IAM, and Agent Governance |
+| CP11 | Output validation and delivery | Only authorized, validated, classified, and correctly labeled results reach each destination | Application Owner; Application Security, Data Governance, and Records Management |
+| CP12 | External provider, event, and callback boundary | External responsibilities, sender and destination identity, message integrity, data use, failure, and exit are governed | AI Capability Technical Owner; Third-Party Risk, Security, Privacy, and API Owner |
+| CP13 | Evidence export and assurance gaps | Attributable minimized evidence reaches ARC-P160 and material gaps block unsupported assurance claims | AI Service Owner and Observability Platform; Security Operations consumes detections and Assurance independently verifies completeness and gaps |
+| CP14 | Capacity, retry, reconciliation, recovery, and degradation | Resource use and failure are bounded; unknown outcomes reconcile; degraded modes never expand scope | AI Service Owner and SRE; Platform Operations, Business Continuity, and Incident Response |
+| CP15 | Compatibility, migration, deprecation, portability, and retirement | Consumers and providers change or exit without silent contract drift or residual access | Enterprise Architecture and AI Service Owner; API Owner, Procurement, Records, and Operations |
+
+Catalog `owner_role` remains accountable. Pattern roles identify implementation and evidence responsibilities without transferring control accountability. Each tailored deployment assigns exactly one accountable owner per CP; all other listed roles are implementation, consultation, consumption, evidence, or assurance contributors. Every deployment maintains a CP1-CP15 assurance matrix mapping controls, the single accountable owner, evidence-producing roles, artifacts, procedures, objectives, review state, exceptions, findings, and remediation.
+
+| Overlay | Control-point application |
+|---|---|
+| Security | CP2-CP8 and CP10-CP14 strengthen identity, contract integrity, isolation, dispatch, handoffs, evidence, containment, and recovery. |
+| Privacy | CP1, CP4-CP5, CP9, CP11-CP13, and CP15 govern purpose, minimization, rights, disclosure, external processing, retention, deletion, and exit. |
+| Resilience | CP5-CP7 and CP12-CP15 govern blast radius, durable state, dependency failure, reconciliation, continuity, migration, and retirement. |
+| Deployment | CP1, CP5-CP8, CP12-CP15 bind cell topology, region, environment, conformance, external supply, operations, and portability. |
+| Risk | CP1-CP2 and CP8-CP15 apply tier, impact, exception, supplier, outcome, assurance-gap, recovery, and residual-risk decisions. |
+| Obligation | CP1, CP3-CP5, CP9, CP11-CP13, and CP15 map jurisdiction, supplier, records, legal hold, licensing, evidence, deletion, and contractual exit obligations. |
+
+Overlays strengthen rather than weaken baseline control-point outcomes, single accountability, catalog allocation, or safe-state requirements.
 
 ## Architecture decisions and parameters
 
@@ -389,15 +440,77 @@ Provider exit and retirement drain or cancel work, resolve every unknown outcome
 
 ## Evidence and assessment
 
-The implementation shall retain inventories, architecture and boundary records, versioned contracts, identity and delegation matrices, data lifecycle mappings, signed configuration history, delivery and reconciliation matrices, state records, compatibility and recovery tests, provider-gap records, and a CP1 through CP15 assurance matrix. Minimized, attributable runtime evidence is exported through an independently protected path to ARC-P160. Acceptance tests define objective, precondition, exact evidence, thresholds, safe state, accountable reviewer, and retest trigger.
+Required evidence includes:
+
+- service, consumer, provider, target, adapter, broker, cell, callback, subscription, route, owner, purpose, protocol, tier, region, environment, version, support, and retirement inventories;
+- context, component, sequence, deployment, state-machine, administration, evidence, and recovery diagrams;
+- complete boundary-crossing records for every material path;
+- versioned API, event, file, stream, batch, and callback contracts; schema hashes; canonicalization rules; examples; compatibility matrices; and deprecation schedules;
+- identity and delegation matrices covering submit, execute, cancel, status, result, replay, administer, support, and target commit;
+- field-level classification, provenance, transformation, retention, residency, encryption, deletion, legal-hold, and secret-handling mappings;
+- signed configuration, contract, route, cell-conformance, callback-registration, subscription, exception, and emergency-restriction history;
+- timeout, deadline, retry, idempotency, sequence, order, cancellation, expiry, unknown-outcome, compensation, and reconciliation matrices by operation;
+- job ledgers, event and queue records, stream state, callback receipts, replay decisions, dead-letter and quarantine records, batch manifests, per-item dispositions, result releases, and target-native evidence;
+- event evidence that records occurrence, receipt, and processing times; time quality and uncertainty; scoped source sequence; duplicate, gap, reorder, and late-arrival disposition; transformation lineage; delivery and acknowledgment state; and source attestation;
+- provider and protocol gap registers covering identifiers, semantics, retention, training use, subprocessors, residency, callback and backfill, outage, throttling, integrity, deletion, portability, and exit;
+- load, quota, cost, capacity, backpressure, retry-storm, fan-out, failover, chaos, recovery, portability, compatibility, migration, deprecation, and retirement tests;
+- independently protected ARC-P160 evidence for admission, authorization, transformation, dispatch, inference, retrieval, target call, callback, retry, cancellation, result release, side effect, reconciliation, policy or configuration change, gap, and recovery, exported through identities, interfaces, trust roots, and authorization distinct from operations and administration; and
+- the CP1-CP15 assurance matrix.
+
+Negative testing includes forged user, workload, tenant, purpose, classification, delegation, token audience, and scope; cross-tenant request, object, job, callback, resume-token, cache, queue, batch-item, result, dead-letter, export, backup, and support access; malicious or unavailable bootstrap, wrong-cell substitution, redirect and host confusion, routing-assertion forgery, wrong audience, tenant, capability, region, endpoint, version, or expiry, replayed route, downgrade, failover to an ineligible cell, and selected-cell endpoint-identity mismatch; cloned or compromised cell, stolen cell identity, stale or forged runtime attestation, release-closure mismatch, lateral secret use from an unapproved runtime, forged cell evidence, and selection of a quarantined cell; duplicate keys, unknown fields, alternate encodings, ambiguous types, numeric overflow, schema downgrade, canonicalization mismatch, wrong content type, and oversized nesting; direct and indirect prompt injection in structured fields, files, URLs, headers, event metadata, provider status, callbacks, errors, and target responses; model-generated endpoint, method, tool, query, command, file path, callback URL, credential reference, or target object; duplicate submit, concurrent idempotency, changed payload, replay after expiry, timeout retry, reorder, late callback, cancellation race, and eventual completion after caller timeout; authorization or revocation change while queued, streaming, batched, retrying, or awaiting callback; worker crash before and after effect, broker acknowledgment loss, callback loss, poison message, dead-letter replay, partial batch or stream, and contradictory provider or target state; event topic enumeration, wildcard escalation, consumer-group takeover, unauthorized subscribe, consume, acknowledge, checkpoint, replay, backfill, or retained-backlog access after revocation; callback signature, timestamp, nonce, audience, digest, job binding, compromised callback signer, pre-compromise signature received after revocation, key-status or replay-cache outage, key rotation, redirect, DNS rebinding, unregistered private address, response size, and error disclosure; provider or model failover that changes region, retention, training, safety, schema, behavior, or assurance; frame injection, truncation, cross-stream mixing, resume-token theft, slow consumer, connection exhaustion, and sensitive partial-output release; mixed-tenant batching, cache-key omission, count or timing leakage, unauthorized item hidden in an authorized batch, and aggregate success masking failures; retry storms, fan-out explosion, quota evasion, expensive-payload amplification, and backpressure propagation; forged, wrong-purpose, stale, downgraded, rollback, or split-brain signed configuration, compromised signer, key rotation or revocation failure, and continued trust in pre-compromise artifacts; control-plane compromise, partition during emergency containment, conflicting emergency commands, out-of-band containment failure, and unsafe recovery from containment; clock skew, clock rollback, time-source loss, excessive time uncertainty, and acceptance of expired policy, authorization, callback, lease, or replay windows; semantic-loss and differential tests across gateway, broker, adapter, SDK, callback, and target hops for dropped, truncated, defaulted, duplicated, reinterpreted, or synthesized identity, tenant, purpose, classification, provenance, expiry, delegation, policy, cancellation, and unknown-outcome metadata; observability outage, forged trace IDs, telemetry injection, raw-content leakage, evidence tampering, and attempted replay or action through Z7; connector or SDK rollback, compromised dependency, expired certificate, revoked secret, unsupported protocol, stale policy, silent contract drift, and cell configuration rollback; and retirement with surviving credentials, routes, jobs, schedules, callbacks, subscriptions, replicas, caches, results, exports, backups, or provider-held data.
+
+Each exercise defines objective, input and precondition, exact evidence, pass and fail thresholds, safe-state or escalation, accountable reviewer, and retest trigger. A successful transport response is never evidence of authorization, correct model behavior, completed side effect, or verified business outcome. Every deployment retains the failure-and-abuse treatment records required above, including initiating condition or adversary capability, affected boundary and state machines, detection signal and maximum detection interval, containment and safe state, recovery and resumption authority, authoritative reconciliation source, evidence, residual risk, tier applicability, and retest trigger.
+
+### Design coverage matrix
+
+This matrix is retained in the pattern and summarized in the pull request. Reviewers trace each row through the named pattern sections and figures to the accountable CP, required evidence, and executable assessment case; a passing repository validator does not replace that review.
+
+| Design sections | Design obligations | Pattern sections and figures | CPs | Evidence and assessment cases | Reviewer discipline |
+|---|---|---|---|---|---|
+| 1-5 | Purpose, scope, non-goals, applicability, prerequisites, and prohibited uses | Purpose through Prohibited uses; Figure 1 | CP1, CP2, CP8-CP12, CP15 | Service and consumer inventories, purpose and tier records, boundary decisions, prohibited-use tests | Confirm the selected primary and supporting patterns and reject scope or authority expansion. |
+| 6-7 | Contract-first fabric, federated topology, zones, crossings, and component responsibilities | Architecture views; Trust boundaries and zones; Components and responsibilities; Figures 1-3 | CP1-CP7, CP12-CP13 | Architecture, deployment, administration, evidence, and complete boundary-crossing records; cell conformance and isolation tests | Trace every material crossing, responsibility, identity, trust root, dependency, and failure path. |
+| 8-9 | Normative flow and all six interaction modes | Request, data, and control flows; Interaction modes and delivery semantics; Figures 4-5 | CP2-CP14 | Versioned protocol contracts, state records, callback receipts, batch manifests, event records, idempotency and reconciliation matrices | Review each enabled mode independently and prohibit transport-to-business-state projection. |
+| 10-14 | Identity, policy, data, state, signing trust, time, containment, and supporting-pattern handoffs | Architecture decisions and parameters and its identity, contract, state, signing, and time subsections; Figures 3-6 | CP2-CP14 | Identity and delegation matrices, data lifecycle mappings, signed histories, current-authorization, semantic-loss, compromise, revocation, time, and containment tests | Verify authority never expands, state authorities remain orthogonal, and assurance identities, interfaces, trust roots, and authority remain independent. |
+| 15-17 | Failure and abuse treatment, degraded operation, recovery, reconciliation, and retirement | Failure modes and abuse cases; Fallback recovery and retirement; Figures 5-7 | CP5-CP7, CP11-CP15 | Failure-treatment records, chaos and recovery tests, gap records, safe-state exercises, portability, deletion, exit, and residual-access tests | Require explicit unknown states, authoritative reconciliation, governed resumption, and closure of every residual dependency. |
+| 18-20 | Control points, exact catalog allocation, evidence, and assessment | Required controls; Control points and overlays; Evidence and assessment | CP1-CP15 | 91-control partition, assurance matrix, artifact inventory, negative-test corpus, thresholds, findings, exceptions, and remediation | Verify one accountable owner per CP, catalog-owner retention, allocation completeness, evidence independence, and freshness. |
+| 21-24 | Variants, anti-patterns, acceptance, out-of-scope boundaries, and closure | Variants and alternatives; Anti-patterns; Related patterns; Change history | CP1-CP15 | Variant architecture and assurance matrices, anti-pattern review, acceptance checklist, repository validators, and change record | Confirm changed flows and external supply are explicit while invariants and enterprise accountability are retained. |
+
+### Pattern acceptance criteria
+
+The implemented pattern shall contain every required architecture-template section; define the contract-first federated fabric, six planes, all six interaction modes, and CP1 through CP15; maintain the approved boundary with ARC-P100, ARC-P110, ARC-P120, ARC-P130, ARC-P140, and ARC-P160; enumerate and correctly allocate all 91 catalog controls; require complete boundary-crossing records and protocol-specific state, security, failure, and evidence semantics; define orthogonal transport, service-execution, result-delivery, target-transaction, and business-outcome state machines with accountable owners and contradiction handling; make at-least-once delivery, unknown outcomes, idempotency, current authorization, reconciliation, and transport-versus-business outcome explicit; include risk-tiered signed cached operation without authority expansion; define signing-trust governance, trusted-time behavior, bounded authorization leases, granular event permissions, and adapter semantic-preservation tests; define the required evidence, assurance matrix, negative tests, variants, anti-patterns, safe failure, and retirement behavior; remain vendor-neutral and avoid implementation-product selection; and pass architecture, control, link, drafting-marker, structure, and repository validation.
+
+The acceptance record identifies each criterion, accountable reviewer, supporting sections and figures, CPs, catalog controls, evidence artifacts, assessment cases and thresholds, findings or exceptions, remediation owner and due date, approval decision, and retest trigger. Acceptance remains incomplete while a material evidence gap, unknown outcome, unresolved contradiction, unsafe degraded mode, or residual retirement access exists.
 
 ## Variants and alternatives
 
-Approved variants are a central multi-protocol hub, durable workflow and event backbone, regional or sovereign cells, a high-assurance dedicated cell, an edge or intermittently connected cell, a thin synchronous service, and an external managed integration service. Variants may combine or externally supply components only when responsibility, evidence, failure dependency, accountability, control-point outcomes, safe-state behavior, and changed flows remain explicit. Another primary pattern is preferred when the dominant capability is a managed copilot, retrieval, agency, private-model lifecycle, shared gateway, or independent assurance rather than reusable deterministic integration.
+- **Central multi-protocol hub:** may co-locate bootstrap, ingress, policy enforcement, contract validation, dispatch, adapters, and durable runtime to simplify governance and onboarding. Its architecture records changed flows and concentration, latency, residency, blast-radius, isolation, scaling, and continuity dependencies; co-location does not remove cell identity, boundary, or independent-evidence outcomes.
+- **Durable workflow and event backbone:** may supply job, queue, event, subscription, callback, delivery-state, and reconciliation components for long-running, event-heavy, callback-heavy, and failure-prone work. Workflow or transport state cannot supply authorization, agent authority, target-transaction truth, or business-outcome truth.
+- **Regional or sovereign cells:** place contracts, data, providers, targets, runtime state, administration, and evidence in approved jurisdictions. Cross-region routing, replication, evidence export, and failover are explicit governed flows and never silently change residency, provider, target, or assurance obligations.
+- **High-assurance dedicated cell:** isolates runtime, state, secrets, administration, queues, results, support paths, and evidence for incompatible Tier 4 or legal domains. Shared components are externally supplied only through documented crossings whose identity, availability, compromise, and recovery dependencies preserve the dedicated boundary.
+- **Edge or intermittently connected cell:** uses bounded signed bundles, local admission and evidence, offline revocation and expiry, restricted-only containment, constrained operation, and governed reconciliation. Isolation never extends authority or artifact lifetime, and changed synchronization and resumption flows remain explicit.
+- **Thin synchronous service:** may omit unused durable-mode components for low-latency bounded requests only when its contract prohibits asynchronous jobs, durable streams, batches, event subscriptions, callbacks, replay, and delayed result retrieval. It retains identity, contract, deadline, dispatch, output validation, evidence, failure, and retirement outcomes.
+- **External managed integration service:** may externally supply runtime, broker, workflow, adapter, callback, or delivery components, but the enterprise retains service approval, identity, contract, data, risk acceptance, evidence, continuity, portability, deletion, exit, and independent-assurance accountability across the provider boundary.
+
+Variants may combine or externally supply baseline components only when responsibility, evidence, failure dependency, retained enterprise accountability, and every changed flow are explicit in the architecture and assurance matrix. In every variant, CP1-CP15, the six-plane outcomes, ARC-P100 through ARC-P160 supporting-pattern handoffs, exactly one accountable owner per CP, complete boundary records, safe-state behavior, and the 91-control allocation remain invariant where applicable.
+
+Another primary pattern is preferred when the dominant capability is a managed copilot, retrieval, agency, private-model lifecycle, shared gateway, or independent assurance rather than reusable deterministic integration.
 
 ## Anti-patterns
 
-Anti-patterns include raw provider proxies, generic execute-anything endpoints, hidden adapter authority, caller- or model-selected destinations, silent schema downgrade, cross-tenant shared state, unbounded queues or retries, blind retry after unknown outcomes, transport success represented as business success, observability used as an action interface, and retirement that leaves credentials, routes, jobs, callbacks, subscriptions, results, exports, or provider data active.
+- Exposing raw provider APIs or a generic execute-anything endpoint as an enterprise service.
+- Treating queue, transport, callback, HTTP, trace, or model success as verified business outcome.
+- Claiming exactly-once business effects from broker or workflow guarantees.
+- Using event content, queue metadata, callback URLs, correlation IDs, or trace IDs as authorization.
+- Retrying non-idempotent work after an unknown outcome without reconciliation.
+- Allowing adapters to contain hidden provider routing, model selection, agent planning, business authorization, or target authority.
+- Sharing credentials, queues, caches, results, callbacks, dead letters, support access, or administrative paths across tenants without demonstrated isolation.
+- Accepting silent schema downgrade, unknown-field smuggling, content-type confusion, provider drift, or fallback to an unapproved version.
+- Accepting caller-selected or model-generated callback destinations, endpoints, methods, queries, tools, files, or target objects.
+- Allowing unbounded streams, queues, batches, retries, callbacks, fan-out, result retention, or cost.
+- Describing all integrations as tools and collapsing deterministic service integration into ARC-P130.
+- Using ARC-P150 to bypass ARC-P100, ARC-P120, ARC-P130, ARC-P140, target-native authorization, or ARC-P160 evidence requirements.
+- Using Z7 observability or support access as a replay, request, or action interface.
+- Retaining orphaned jobs, routes, credentials, subscriptions, callbacks, results, exports, or provider data after retirement.
 
 ## Related patterns
 
@@ -407,6 +520,8 @@ Anti-patterns include raw provider proxies, generic execute-anything endpoints, 
 - `ARC-P130` owns AI-selected tools or targets, expanded authority, autonomous planning, consequential action, approval, containment, and outcome assurance.
 - `ARC-P140` owns private model acquisition, adaptation, release, custody, serving, and revocation.
 - `ARC-P160` owns authoritative evidence custody, evaluation, detection, response, and independent assurance.
+
+ARC-P150 owns stable capability-level integration contracts, deterministic dispatch, protocol-specific delivery, integration state, and reconciliation. Supporting-pattern invocation does not transfer their responsibilities into an adapter or allow ARC-P150 to weaken them. ARC-P110 remains the workforce-experience pattern rather than a required runtime hop; ARC-P100 governs shared model and provider access; ARC-P120 governs retrieval; ARC-P130 governs AI-selected or consequential action; ARC-P140 governs enterprise-operated model lifecycle and serving; and ARC-P160 governs independently protected evidence and assurance. Conventional API, messaging, workflow, data, transaction, records, supplier, and target-native controls remain applicable outside these AI-pattern boundaries.
 
 ## Change history
 
