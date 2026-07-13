@@ -59,18 +59,20 @@ def mermaid_blocks(text: str) -> list[str]:
     return re.findall(r"```mermaid\n(.*?)\n```", text, re.DOTALL)
 
 
+def figure_mermaid_pairs(text: str) -> list[tuple[str, str]]:
+    architecture = section(text, "Architecture views")
+    return re.findall(
+        r"^### Figure (\d+)\.[^\n]*\n\n```mermaid\n(.*?)\n```",
+        architecture,
+        re.MULTILINE | re.DOTALL,
+    )
+
+
 class ArcP160PatternTests(unittest.TestCase):
     def text(self) -> str:
         return PATTERN.read_text(encoding="utf-8")
 
-    def test_registry_has_one_exact_arc_p160_draft_row(self) -> None:
-        registry = REGISTRY.read_text(encoding="utf-8")
-        expected = "| [ARC-P160](ARC-P160.md) | AI observability | Draft |"
-        self.assertEqual(1, registry.count(expected))
-        self.assertEqual(1, len(re.findall(r"^\| (?:\[)?ARC-P160", registry, re.MULTILINE)))
-
-    def test_required_metadata_is_complete(self) -> None:
-        text = self.text()
+    def assert_required_metadata_complete(self, text: str) -> None:
         for value in (
             "**Pattern ID:** ARC-P160",
             "**Status:** Draft",
@@ -88,6 +90,98 @@ class ArcP160PatternTests(unittest.TestCase):
         ):
             with self.subTest(value=value):
                 self.assertIn(value, text)
+
+        metadata = section(text, "Metadata")
+        rows = {
+            field.strip(): value.strip()
+            for field, value in re.findall(r"^\| ([^|]+) \|([^|]*)\|$", metadata, re.MULTILINE)
+        }
+        for field in (
+            "Owner",
+            "Required reviewers",
+            "Approval date",
+            "Review date",
+            "Pillars",
+            "Lifecycle stages",
+            "Capability tiers",
+            "Deployment models",
+            "Primary pattern role",
+            "Supersedes",
+        ):
+            self.assertTrue(rows.get(field), f"Metadata field is missing or empty: {field}")
+
+    def assert_capture_modes_and_planes_preserved(self, text: str) -> None:
+        expected_modes = (
+            "Metadata only",
+            "Derived signal",
+            "Redacted excerpt",
+            "Exceptional protected full content",
+        )
+        flow = section(text, "Data and instruction flows")
+        capture_list = re.search(
+            r"^Capture modes are:\s*$\n\n((?:^\d+\. \*\*.+$\n?)+)",
+            flow,
+            re.MULTILINE,
+        )
+        self.assertIsNotNone(capture_list)
+        actual_modes = tuple(
+            re.findall(r"^\d+\. \*\*(.+?):\*\*", capture_list.group(1), re.MULTILINE)
+        )
+        self.assertEqual(expected_modes, actual_modes)
+
+        lower = text.lower()
+        for mode in expected_modes:
+            self.assertIn(mode.lower(), lower)
+
+        expected_planes = (
+            "1 governance and configuration",
+            "2 signal collection",
+            "3 protected evidence",
+            "4 evaluation and ground truth",
+            "5 detection and response",
+            "6 analytics, service, and cost",
+        )
+        pairs = dict(figure_mermaid_pairs(text))
+        self.assertIn("2", pairs)
+        actual_planes = tuple(
+            label.lower()
+            for label in re.findall(r'^\s+\w+\["(\d+ [^":]+):', pairs["2"], re.MULTILINE)
+        )
+        self.assertEqual(expected_planes, actual_planes)
+
+        rendered_source = "\n".join(mermaid_blocks(text)).lower()
+        for plane in expected_planes:
+            self.assertIn(plane, rendered_source)
+
+    def assert_figures_pair_with_mermaid_blocks(self, text: str) -> None:
+        architecture = section(text, "Architecture views")
+        expected = [str(number) for number in range(1, 5)]
+        self.assertEqual(
+            expected,
+            re.findall(r"^### Figure (\d+)\.", architecture, re.MULTILINE),
+        )
+        self.assertEqual(expected, [number for number, _ in figure_mermaid_pairs(text)])
+        self.assertEqual(4, len(mermaid_blocks(architecture)))
+
+    def test_registry_has_one_exact_arc_p160_draft_row(self) -> None:
+        registry = REGISTRY.read_text(encoding="utf-8")
+        expected = "| [ARC-P160](ARC-P160.md) | AI observability | Draft |"
+        self.assertEqual(1, registry.count(expected))
+        self.assertEqual(1, len(re.findall(r"^\| (?:\[)?ARC-P160", registry, re.MULTILINE)))
+
+    def test_required_metadata_is_complete(self) -> None:
+        self.assert_required_metadata_complete(self.text())
+
+    def test_metadata_completeness_rejects_empty_required_value(self) -> None:
+        mutant = re.sub(
+            r"^\| Required reviewers \|.*$",
+            "| Required reviewers | |",
+            self.text(),
+            count=1,
+            flags=re.MULTILINE,
+        )
+        with self.assertRaises(AssertionError):
+            self.assert_required_metadata_complete(mutant)
 
     def test_template_headings_are_unique_and_ordered(self) -> None:
         expected = headings(TEMPLATE, 2)
@@ -133,30 +227,41 @@ class ArcP160PatternTests(unittest.TestCase):
         self.assertEqual([f"CP{number}" for number in range(1, 16)], ids)
         self.assertIn("implementation and evidence owners", lower)
 
-        for mode in (
-            "metadata only",
-            "derived signal",
-            "redacted excerpt",
-            "exceptional protected full content",
-        ):
-            self.assertIn(mode, lower)
-
-        diagrams = mermaid_blocks(text)
-        self.assertEqual([str(number) for number in range(1, 5)], re.findall(r"^### Figure (\d+)\.", text, re.MULTILINE))
-        self.assertEqual(4, len(diagrams))
-        rendered_source = "\n".join(diagrams).lower()
-        for plane in (
-            "1 governance and configuration",
-            "2 signal collection",
-            "3 protected evidence",
-            "4 evaluation and ground truth",
-            "5 detection and response",
-            "6 analytics, service, and cost",
-        ):
-            self.assertIn(plane, rendered_source)
-
         for pattern_id in ("ARC-P100", "ARC-P110", "ARC-P120", "ARC-P130", "ARC-P140", "ARC-P150"):
             self.assertIn(f"`{pattern_id}`", section(text, "Related patterns"))
+
+    def test_capture_modes_and_six_logical_planes_are_preserved(self) -> None:
+        self.assert_capture_modes_and_planes_preserved(self.text())
+
+    def test_capture_mode_and_logical_plane_exactness_rejects_extras(self) -> None:
+        extra_mode = self.text().replace(
+            "4. **Exceptional protected full content:** segregated content-evidence vault capture under explicit authorization.",
+            "4. **Exceptional protected full content:** segregated content-evidence vault capture under explicit authorization.\n"
+            "5. **Unapproved extra mode:** synthetic.",
+            1,
+        )
+        extra_plane = self.text().replace(
+            '  A["6 Analytics, service, and cost: reliability, capacity, value"]',
+            '  A["6 Analytics, service, and cost: reliability, capacity, value"]\n'
+            '  X["7 Unapproved extra plane: synthetic"]',
+            1,
+        )
+        for name, mutant in (("extra mode", extra_mode), ("extra plane", extra_plane)):
+            with self.subTest(mutant=name):
+                with self.assertRaises(AssertionError):
+                    self.assert_capture_modes_and_planes_preserved(mutant)
+
+    def test_four_numbered_figures_pair_with_mermaid_blocks(self) -> None:
+        self.assert_figures_pair_with_mermaid_blocks(self.text())
+
+    def test_figure_mermaid_pairing_rejects_misalignment(self) -> None:
+        mutant = self.text().replace(
+            "### Figure 1. Context view\n\n```mermaid",
+            "### Figure 1. Context view\n\nDisplaced block.\n\n```mermaid",
+            1,
+        )
+        with self.assertRaises(AssertionError):
+            self.assert_figures_pair_with_mermaid_blocks(mutant)
 
     def test_mermaid_source_avoids_known_sequence_hazards(self) -> None:
         diagrams = mermaid_blocks(self.text())
