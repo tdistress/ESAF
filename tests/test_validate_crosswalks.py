@@ -1,9 +1,12 @@
+import json
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
 
 from tests.crosswalk_fixtures import CrosswalkFixture
 from tools.crosswalks.io import parse_front_matter
+from tools.crosswalks.manifest import build_control_manifest, git_bytes, render_manifest
 from tools.crosswalks.validation import validate, validate_record
 
 
@@ -52,7 +55,10 @@ class CrosswalkValidationTests(unittest.TestCase):
         self.assertEqual(len(result.mapping_sets), 1)
         model = result.mapping_sets[0]
         self.assertTrue(model["path"].endswith("/README.md"))
-        self.assertEqual(model["metadata"]["mapping_set_id"], "nist--ai-rmf--1.0--esaf-1.0--1.0.0")
+        self.assertEqual(
+            model["metadata"]["mapping_set_id"],
+            "nist--ai-rmf--1.0--esaf-0.4-alpha--1.0.0",
+        )
         self.assertEqual(model["inventory"]["metadata"]["provision_ids"], ["EXT-1"])
         self.assertEqual(model["provisions"][0]["metadata"]["record_id"], "ext-1")
         self.assertTrue(model["provisions"][0]["path"].endswith("/ext-1.md"))
@@ -76,6 +82,18 @@ class CrosswalkValidationTests(unittest.TestCase):
             inventory_path.relative_to(self.root).as_posix(), inventory, body
         )
         self.assertIn("is not of type 'string'", "\n".join(validate(self.root).errors))
+
+    def test_schema_invalid_manifest_is_reported_without_validator_crash(self) -> None:
+        snapshot = self.fixture.create_valid_snapshot(status="draft", complete=True)
+        manifest_path = snapshot / "ESAF_CONTROL_MANIFEST.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest["controls"] = None
+        manifest_path.write_text(
+            json.dumps(manifest, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+            newline="\n",
+        )
+        self.assertIn("is not of type 'array'", "\n".join(validate(self.root).errors))
 
     def test_malformed_yaml_is_reported_for_snapshot_and_record(self) -> None:
         for target in ("README.md", "ext-1.md"):
@@ -151,6 +169,92 @@ class CrosswalkValidationTests(unittest.TestCase):
         record["reviewer"]["id"] = record["mapper"]["id"]
         self.fixture.write_front_matter(record_path.relative_to(self.root).as_posix(), record, body)
         self.assertIn("reviewer must differ from mapper", "\n".join(validate(self.root).errors))
+
+    def test_git_bytes_returns_exact_pinned_object_bytes(self) -> None:
+        commit = self.fixture.control_commit
+        self.assertIsNotNone(commit)
+        expected = subprocess.run(
+            ["git", "-C", str(self.root), "show", f"{commit}:controls/IAM/IAM-100.md"],
+            check=True,
+            capture_output=True,
+        ).stdout
+        self.assertEqual(git_bytes(self.root, commit, "controls/IAM/IAM-100.md"), expected)
+
+    def test_manifest_regenerates_from_pinned_commit(self) -> None:
+        commit = self.fixture.control_commit
+        self.assertIsNotNone(commit)
+        manifest = build_control_manifest(self.root, commit, "0.4-alpha", None)
+        catalog = json.loads(git_bytes(self.root, commit, "controls/catalog.json"))
+        self.assertEqual(manifest["source_commit_sha"], commit)
+        self.assertEqual(manifest["controls"][0]["id"], "IAM-100")
+        self.assertEqual(len(manifest["controls"]), len(catalog["controls"]))
+
+    def test_manifest_rendering_is_deterministic_and_matches_fixture_bytes(self) -> None:
+        snapshot = self.fixture.create_valid_snapshot(status="draft", complete=True)
+        mapping_set, _ = parse_front_matter(snapshot / "README.md")
+        release = mapping_set["esaf_release"]
+        manifest = build_control_manifest(
+            self.root,
+            release["source_commit_sha"],
+            release["id"],
+            release.get("tag_alias"),
+        )
+        self.assertEqual(
+            (snapshot / "ESAF_CONTROL_MANIFEST.json").read_bytes(),
+            render_manifest(manifest).encode("utf-8"),
+        )
+
+    def test_manifest_rejects_current_tree_substitution(self) -> None:
+        snapshot = self.fixture.create_valid_snapshot(status="draft", complete=True)
+        self.fixture.mutate_control_after_snapshot(snapshot)
+        self.assertIn(
+            "manifest differs from regeneration at pinned commit",
+            "\n".join(validate(self.root).errors),
+        )
+
+    def test_manifest_accepts_tag_alias_resolving_to_pinned_commit(self) -> None:
+        snapshot = self.fixture.create_valid_snapshot(status="draft", complete=True)
+        commit = self.fixture.control_commit
+        self.fixture._git("tag", "fixture-release", commit)
+        mapping_path = snapshot / "README.md"
+        mapping_set, body = parse_front_matter(mapping_path)
+        mapping_set["esaf_release"]["tag_alias"] = "fixture-release"
+        self.fixture.write_front_matter(
+            mapping_path.relative_to(self.root).as_posix(), mapping_set, body
+        )
+        manifest_path = snapshot / "ESAF_CONTROL_MANIFEST.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        manifest["tag_alias"] = "fixture-release"
+        manifest_path.write_text(
+            render_manifest(manifest), encoding="utf-8", newline="\n"
+        )
+        self.assertEqual(validate(self.root).errors, [])
+
+    def test_manifest_mutation_matrix(self) -> None:
+        cases = (
+            ("set_unreachable_commit", "pinned commit is unreachable"),
+            ("set_wrong_esaf_release", "VERSION.md release mismatch"),
+            ("point_tag_to_other_commit", "tag alias does not resolve to pinned commit"),
+            ("alter_catalog_digest", "control catalog digest mismatch"),
+            ("alter_control_record_digest", "control record digest mismatch"),
+            ("reference_unknown_control", "unresolved ESAF control identifier"),
+            ("set_wrong_control_version", "ESAF control version mismatch"),
+            ("omit_manifest_control", "manifest differs from regeneration at pinned commit"),
+        )
+        for mutation, expected in cases:
+            with self.subTest(mutation=mutation):
+                self.fixture.reset_repository()
+                self.fixture.create_valid_snapshot(status="draft", complete=True)
+                getattr(self.fixture, mutation)()
+                self.assertIn(expected, "\n".join(validate(self.root).errors))
+
+    def test_control_resolution_does_not_trust_injected_manifest_entries(self) -> None:
+        self.fixture.create_valid_snapshot(status="draft", complete=True)
+        self.fixture.inject_and_reference_unknown_control()
+        self.assertIn(
+            "unresolved ESAF control identifier IAM-999",
+            "\n".join(validate(self.root).errors),
+        )
 
     def test_snapshot_and_record_mutation_matrix(self) -> None:
         cases = (

@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import shutil
+import subprocess
 from pathlib import Path
 
 import yaml
@@ -11,9 +13,7 @@ import yaml
 from tools.crosswalks.io import parse_front_matter
 
 
-MAPPING_SET_ID = "nist--ai-rmf--1.0--esaf-1.0--1.0.0"
-SHA40 = "b" * 40
-SHA256 = "a" * 64
+MAPPING_SET_ID = "nist--ai-rmf--1.0--esaf-0.4-alpha--1.0.0"
 
 
 class CrosswalkFixture:
@@ -22,6 +22,65 @@ class CrosswalkFixture:
     def __init__(self, root: Path) -> None:
         self.root = root
         self.snapshot: Path | None = None
+        self.control_commit: str | None = None
+        self.commit_valid_control_catalog()
+
+    def _git(self, *arguments: str) -> str:
+        completed = subprocess.run(
+            ["git", "-C", str(self.root), *arguments],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        return completed.stdout.strip()
+
+    def commit_valid_control_catalog(self, release: str = "0.4-alpha") -> str:
+        if not (self.root / ".git").exists():
+            self.root.mkdir(parents=True, exist_ok=True)
+            self._git("init", "--quiet")
+            self._git("config", "user.email", "fixture@example.com")
+            self._git("config", "user.name", "Crosswalk Fixture")
+        control_path = self.root / "controls" / "IAM" / "IAM-100.md"
+        control_path.parent.mkdir(parents=True, exist_ok=True)
+        control_path.write_bytes(
+            b"---\nid: IAM-100\nstatus: draft\nversion: 1.0.0\n---\n\n# IAM-100\n"
+        )
+        catalog = {
+            "schema_version": "1.0.0",
+            "control_count": 1,
+            "controls": [
+                {
+                    "id": "IAM-100",
+                    "version": "1.0.0",
+                    "status": "draft",
+                    "path": "IAM/IAM-100.md",
+                }
+            ],
+        }
+        (self.root / "controls" / "catalog.json").write_text(
+            json.dumps(catalog, indent=2) + "\n", encoding="utf-8", newline="\n"
+        )
+        (self.root / "VERSION.md").write_text(
+            f"# ESAF Version\n\nCurrent Version: **{release}**\n",
+            encoding="utf-8",
+            newline="\n",
+        )
+        self._git("add", "VERSION.md", "controls")
+        self._git(
+            "commit", "--quiet", "--allow-empty", "-m", f"Fixture controls {release}"
+        )
+        self.control_commit = self._git("rev-parse", "HEAD")
+        return self.control_commit
+
+    def reset_repository(self) -> None:
+        if self.control_commit is None:
+            raise RuntimeError("fixture control commit is unavailable")
+        self._git("reset", "--hard", self.control_commit)
+        for tag in self._git("tag", "--list").splitlines():
+            if tag:
+                self._git("tag", "--delete", tag)
+        self.reset_crosswalks()
+        self.snapshot = None
 
     def reset_crosswalks(self) -> None:
         shutil.rmtree(self.root / "crosswalks" / "mappings", ignore_errors=True)
@@ -42,13 +101,37 @@ class CrosswalkFixture:
         scope_type: str = "complete_publication",
         dispositions: tuple[str, ...] = ("mapped",),
     ) -> Path:
+        commit = self.control_commit or self.commit_valid_control_catalog()
+        catalog_bytes = subprocess.run(
+            ["git", "-C", str(self.root), "show", f"{commit}:controls/catalog.json"],
+            check=True,
+            capture_output=True,
+        ).stdout
+        catalog = json.loads(catalog_bytes)
+        controls = []
+        for control in catalog["controls"]:
+            record_bytes = subprocess.run(
+                ["git", "-C", str(self.root), "show", f"{commit}:controls/{control['path']}"],
+                check=True,
+                capture_output=True,
+            ).stdout
+            controls.append(
+                {
+                    "id": control["id"],
+                    "version": control["version"],
+                    "status": control["status"],
+                    "path": control["path"],
+                    "record_sha256": hashlib.sha256(record_bytes).hexdigest(),
+                }
+            )
+        catalog_digest = hashlib.sha256(catalog_bytes).hexdigest()
         snapshot = (
             self.root
             / "crosswalks"
             / "mappings"
             / "nist"
             / "1.0"
-            / "1.0"
+            / "0.4-alpha"
             / "1.0.0"
         )
         snapshot.mkdir(parents=True, exist_ok=True)
@@ -56,7 +139,9 @@ class CrosswalkFixture:
 
         provision_count = len(dispositions) if complete else 2
         provision_ids = [f"EXT-{index}" for index in range(1, provision_count + 1)]
-        mapping_set = self._mapping_set(status, scope_type, provision_count)
+        mapping_set = self._mapping_set(
+            status, scope_type, provision_count, commit, catalog_digest
+        )
         inventory = {
             "schema_version": "1.0.0",
             "mapping_set_id": MAPPING_SET_ID,
@@ -78,21 +163,15 @@ class CrosswalkFixture:
         )
         manifest = {
             "schema_version": "1.0.0",
-            "esaf_release": "1.0",
-            "source_commit_sha": SHA40,
-            "control_catalog_sha256": SHA256,
-            "controls": [
-                {
-                    "id": "GOV-100",
-                    "version": "1.0.0",
-                    "status": "published",
-                    "path": "GOV/GOV-100.md",
-                    "record_sha256": SHA256,
-                }
-            ],
+            "esaf_release": "0.4-alpha",
+            "source_commit_sha": commit,
+            "control_catalog_sha256": catalog_digest,
+            "controls": controls,
         }
         (snapshot / "ESAF_CONTROL_MANIFEST.json").write_text(
-            json.dumps(manifest, indent=2) + "\n", encoding="utf-8", newline="\n"
+            json.dumps(manifest, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+            newline="\n",
         )
 
         record_status = "draft" if status == "draft" else "reviewed"
@@ -157,7 +236,7 @@ class CrosswalkFixture:
     @staticmethod
     def _relationship() -> dict[str, object]:
         return {
-            "esaf_control_id": "GOV-100",
+            "esaf_control_id": "IAM-100",
             "esaf_control_version": "1.0.0",
             "relationship": "supports",
             "direction": "external_to_esaf",
@@ -170,7 +249,12 @@ class CrosswalkFixture:
         }
 
     def _mapping_set(
-        self, status: str, scope_type: str, inventory_count: int
+        self,
+        status: str,
+        scope_type: str,
+        inventory_count: int,
+        commit: str,
+        catalog_digest: str,
     ) -> dict[str, object]:
         value: dict[str, object] = {
             "schema_version": "1.0.0",
@@ -179,10 +263,10 @@ class CrosswalkFixture:
             "publication": {"id": "ai-rmf", "name": "AI Risk Management Framework"},
             "source_version": {"id": "1.0", "label": "1.0"},
             "esaf_release": {
-                "id": "1.0",
-                "label": "ESAF 1.0",
-                "source_commit_sha": SHA40,
-                "control_catalog_sha256": SHA256,
+                "id": "0.4-alpha",
+                "label": "ESAF 0.4-alpha",
+                "source_commit_sha": commit,
+                "control_catalog_sha256": catalog_digest,
                 "control_manifest_path": "ESAF_CONTROL_MANIFEST.json",
             },
             "mapping_set_version": "1.0.0",
@@ -224,6 +308,74 @@ class CrosswalkFixture:
         if status == "approved":
             value["approver"] = {"id": "approver-1", "date": "2026-07-13"}
         return value
+
+    def mutate_control_after_snapshot(self, snapshot: Path) -> None:
+        path = self.root / "controls" / "IAM" / "IAM-100.md"
+        path.write_bytes(path.read_bytes() + b"\nCurrent-tree substitution.\n")
+        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        self._mutate_manifest(
+            lambda value: value["controls"][0].__setitem__("record_sha256", digest)
+        )
+
+    def set_unreachable_commit(self) -> None:
+        unreachable = "f" * 40
+        self._mutate_mapping_set(
+            lambda value: value["esaf_release"].__setitem__("source_commit_sha", unreachable)  # type: ignore[union-attr]
+        )
+        self._mutate_manifest(
+            lambda value: value.__setitem__("source_commit_sha", unreachable)
+        )
+
+    def set_wrong_esaf_release(self) -> None:
+        self._mutate_mapping_set(
+            lambda value: value["esaf_release"].__setitem__("id", "9.9")  # type: ignore[union-attr]
+        )
+        self._mutate_manifest(lambda value: value.__setitem__("esaf_release", "9.9"))
+
+    def point_tag_to_other_commit(self) -> None:
+        self._git("commit", "--quiet", "--allow-empty", "-m", "Other commit")
+        self._git("tag", "fixture-release")
+        self._mutate_mapping_set(
+            lambda value: value["esaf_release"].__setitem__("tag_alias", "fixture-release")  # type: ignore[union-attr]
+        )
+        self._mutate_manifest(lambda value: value.__setitem__("tag_alias", "fixture-release"))
+
+    def alter_catalog_digest(self) -> None:
+        digest = "0" * 64
+        self._mutate_mapping_set(
+            lambda value: value["esaf_release"].__setitem__("control_catalog_sha256", digest)  # type: ignore[union-attr]
+        )
+        self._mutate_manifest(
+            lambda value: value.__setitem__("control_catalog_sha256", digest)
+        )
+
+    def alter_control_record_digest(self) -> None:
+        self._mutate_manifest(
+            lambda value: value["controls"][0].__setitem__("record_sha256", "0" * 64)
+        )
+
+    def reference_unknown_control(self) -> None:
+        self._mutate_record(
+            lambda value: value["relationships"][0].__setitem__("esaf_control_id", "IAM-999")
+        )
+
+    def inject_and_reference_unknown_control(self) -> None:
+        self.reference_unknown_control()
+
+        def mutate(value: dict[str, object]) -> None:
+            injected = dict(value["controls"][0])  # type: ignore[index]
+            injected["id"] = "IAM-999"
+            value["controls"].append(injected)  # type: ignore[union-attr]
+
+        self._mutate_manifest(mutate)
+
+    def set_wrong_control_version(self) -> None:
+        self._mutate_record(
+            lambda value: value["relationships"][0].__setitem__("esaf_control_version", "9.9.9")
+        )
+
+    def omit_manifest_control(self) -> None:
+        self._mutate_manifest(lambda value: value.__setitem__("controls", []))
 
     def duplicate_mapping_set_id(self) -> None:
         snapshot = self._snapshot()
@@ -407,6 +559,16 @@ class CrosswalkFixture:
 
     def _mutate_record(self, mutation: object) -> None:
         self._mutate_front_matter(self._record(), mutation)
+
+    def _mutate_manifest(self, mutation: object) -> None:
+        path = self._snapshot() / "ESAF_CONTROL_MANIFEST.json"
+        value = json.loads(path.read_text(encoding="utf-8"))
+        mutation(value)  # type: ignore[operator]
+        path.write_text(
+            json.dumps(value, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+            newline="\n",
+        )
 
     def _mutate_front_matter(self, path: Path, mutation: object) -> None:
         metadata, body = parse_front_matter(path)

@@ -11,6 +11,7 @@ from urllib.parse import unquote, urlsplit
 import yaml
 
 from tools.crosswalks.io import parse_front_matter
+from tools.crosswalks.manifest import build_control_manifest, render_manifest
 from tools.crosswalks.schemas import load_schemas, schema_errors
 
 
@@ -154,7 +155,6 @@ def _validate_snapshot(
                 f"{relative}/ESAF_CONTROL_MANIFEST.json",
             )
         )
-
     records: list[dict[str, object]] = []
     provisions: list[dict[str, object]] = []
     seen_record_ids: set[str] = set()
@@ -203,6 +203,11 @@ def _validate_snapshot(
         )
         errors.extend(_validate_reviewed_text(path, record.get("status"), record_relative))
 
+    if manifest is not None:
+        errors.extend(
+            _validate_control_manifest(root, snapshot, mapping_set, manifest, records)
+        )
+
     if inventory is not None:
         errors.extend(_validate_inventory(relative, mapping_set, inventory, seen_external_ids))
     if mapping_set.get("status") == "approved" and not records:
@@ -212,6 +217,97 @@ def _validate_snapshot(
         root, snapshot, mapping_set, inventory or {}, manifest or {}, provisions
     )
     return errors, model
+
+
+def _validate_control_manifest(
+    root: Path,
+    snapshot: Path,
+    mapping_set: dict[str, object],
+    manifest: dict[str, object],
+    records: list[dict[str, object]] | None,
+) -> list[str]:
+    """Validate manifest provenance and provision control references."""
+    errors: list[str] = []
+    relative = snapshot.relative_to(root).as_posix()
+    release = mapping_set.get("esaf_release")
+    if not isinstance(release, dict):
+        return errors
+    commit = release.get("source_commit_sha")
+    release_id = release.get("id")
+    tag_alias = release.get("tag_alias")
+    if not isinstance(commit, str) or not isinstance(release_id, str):
+        return errors
+    if tag_alias is not None and not isinstance(tag_alias, str):
+        return errors
+
+    if manifest.get("source_commit_sha") != commit:
+        errors.append(f"{relative}: manifest source commit disagrees with snapshot")
+    if manifest.get("esaf_release") != release_id:
+        errors.append(f"{relative}: manifest ESAF release disagrees with snapshot")
+    if manifest.get("tag_alias") != tag_alias:
+        errors.append(f"{relative}: manifest tag alias disagrees with snapshot")
+    if manifest.get("control_catalog_sha256") != release.get("control_catalog_sha256"):
+        errors.append(f"{relative}: control catalog digest mismatch")
+
+    try:
+        regenerated = build_control_manifest(root, commit, release_id, tag_alias)
+    except ValueError as error:
+        errors.append(f"{relative}: {error}")
+        return errors
+
+    expected_catalog_digest = regenerated.get("control_catalog_sha256")
+    if release.get("control_catalog_sha256") != expected_catalog_digest:
+        errors.append(f"{relative}: control catalog digest mismatch")
+
+    expected_controls = {
+        item.get("id"): item
+        for item in regenerated.get("controls", [])
+        if isinstance(item, dict) and isinstance(item.get("id"), str)
+    }
+    manifest_controls = manifest.get("controls", [])
+    if not isinstance(manifest_controls, list):
+        manifest_controls = []
+    actual_controls = {
+        item.get("id"): item
+        for item in manifest_controls
+        if isinstance(item, dict) and isinstance(item.get("id"), str)
+    }
+    for control_id in sorted(expected_controls.keys() & actual_controls.keys()):
+        if actual_controls[control_id].get("record_sha256") != expected_controls[
+            control_id
+        ].get("record_sha256"):
+            errors.append(f"{relative}: control record digest mismatch for {control_id}")
+
+    manifest_path = snapshot / "ESAF_CONTROL_MANIFEST.json"
+    try:
+        committed_bytes = manifest_path.read_bytes()
+    except OSError:
+        committed_bytes = b""
+    expected_bytes = render_manifest(regenerated).encode("utf-8")
+    if committed_bytes != expected_bytes:
+        errors.append(f"{relative}: manifest differs from regeneration at pinned commit")
+
+    if records is None:
+        return errors
+    for record in records:
+        relationships = record.get("relationships", [])
+        if not isinstance(relationships, list):
+            continue
+        for relationship in relationships:
+            if not isinstance(relationship, dict):
+                continue
+            control_id = relationship.get("esaf_control_id")
+            control_version = relationship.get("esaf_control_version")
+            control = expected_controls.get(control_id)
+            if control is None:
+                errors.append(
+                    f"{relative}: unresolved ESAF control identifier {control_id}"
+                )
+            elif control.get("version") != control_version:
+                errors.append(
+                    f"{relative}: ESAF control version mismatch for {control_id}"
+                )
+    return errors
 
 
 def _snapshot_model(
