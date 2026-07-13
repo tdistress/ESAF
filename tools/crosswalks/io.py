@@ -15,7 +15,13 @@ def _construct_unique_mapping(
     loader.flatten_mapping(node)
     result: dict[object, object] = {}
     for key_node, value_node in node.value:
+        if not isinstance(key_node, yaml.ScalarNode):
+            raise ValueError("YAML mapping keys must be scalar and hashable")
         key = loader.construct_object(key_node, deep=deep)
+        try:
+            hash(key)
+        except TypeError as error:
+            raise ValueError("YAML mapping keys must be scalar and hashable") from error
         if key in result:
             raise ValueError(f"duplicate YAML key {key!r}")
         result[key] = loader.construct_object(value_node, deep=deep)

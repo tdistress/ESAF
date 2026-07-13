@@ -2,10 +2,12 @@ import copy
 import hashlib
 import io
 import json
+import os
 import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 
@@ -19,7 +21,7 @@ from tools.crosswalks.catalog import (
     render_json,
     render_markdown,
 )
-from tools.crosswalks.validation import validate, validate_record
+from tools.crosswalks.validation import _validate_mappings_tree, validate, validate_record
 from tools.validate_crosswalks import main as crosswalk_cli
 
 
@@ -1211,6 +1213,151 @@ class CrosswalkValidationTests(unittest.TestCase):
         lifecycle["events"][1]["event_digest"] = event_digest(lifecycle["events"][1])
         self.fixture._write_lifecycle_metadata(lifecycle)
         self.assertIn("lifecycle event dates must be nondecreasing", "\n".join(validate(self.root).errors))
+
+    def test_mappings_root_symlink_is_rejected_before_exists_or_traversal(self) -> None:
+        with mock.patch.object(Path, "is_symlink", return_value=True), mock.patch.object(
+            Path, "exists", side_effect=AssertionError("exists must not be queried")
+        ):
+            errors = _validate_mappings_tree(self.root)
+        self.assertIn("crosswalks/mappings: unexpected mappings-tree entry", errors)
+
+    def test_actual_mappings_root_symlink_is_rejected_when_supported(self) -> None:
+        crosswalks = self.root / "crosswalks"
+        crosswalks.mkdir()
+        external = self.root / "external"
+        external.mkdir()
+        try:
+            (crosswalks / "mappings").symlink_to(external, target_is_directory=True)
+        except OSError as error:
+            self.skipTest(f"directory symlinks unavailable: {error}")
+        self.assertIn(
+            "crosswalks/mappings: unexpected mappings-tree entry",
+            _validate_mappings_tree(self.root),
+        )
+
+    def test_local_markdown_links_must_remain_inside_repository(self) -> None:
+        snapshot = self.fixture.create_valid_snapshot(status="draft", complete=True)
+        record_path = snapshot / "ext-1.md"
+        metadata, body = parse_front_matter(record_path)
+        outside = self.root.parent / f"{self.root.name}-outside.md"
+        outside.write_text("outside", encoding="utf-8")
+        try:
+            for label, target in (
+                ("parent escape", os.path.relpath(outside, record_path.parent).replace("\\", "/")),
+                ("absolute", outside.as_posix()),
+            ):
+                with self.subTest(label=label):
+                    self.fixture.write_front_matter(
+                        record_path.relative_to(self.root).as_posix(), metadata, body + f"\n[x]({target})\n"
+                    )
+                    self.fixture.refresh_lifecycle_snapshot_digest()
+                    self.assertIn("local link escapes repository", "\n".join(validate(self.root).errors))
+        finally:
+            outside.unlink(missing_ok=True)
+
+    def test_local_markdown_links_accept_repository_anchor_and_external_targets(self) -> None:
+        snapshot = self.fixture.create_valid_snapshot(status="draft", complete=True)
+        record_path = snapshot / "ext-1.md"
+        target = self.root / "docs" / "target.md"
+        target.parent.mkdir()
+        target.write_text("target", encoding="utf-8")
+        relative_target = os.path.relpath(target, record_path.parent).replace("\\", "/")
+        metadata, body = parse_front_matter(record_path)
+        self.fixture.write_front_matter(
+            record_path.relative_to(self.root).as_posix(),
+            metadata,
+            body + f"\n[in repo]({relative_target}) [anchor](#heading) [web](https://example.com/x)\n",
+        )
+        self.fixture.refresh_lifecycle_snapshot_digest()
+        errors = "\n".join(validate(self.root).errors)
+        self.assertNotIn("broken local link", errors)
+        self.assertNotIn("local link escapes repository", errors)
+
+    def test_local_markdown_link_rejects_symlink_escape_when_supported(self) -> None:
+        snapshot = self.fixture.create_valid_snapshot(status="draft", complete=True)
+        record_path = snapshot / "ext-1.md"
+        outside = self.root.parent / f"{self.root.name}-outside.md"
+        outside.write_text("outside", encoding="utf-8")
+        link = self.root / "linked-outside.md"
+        try:
+            try:
+                link.symlink_to(outside)
+            except OSError as error:
+                self.skipTest(f"file symlinks unavailable: {error}")
+            metadata, body = parse_front_matter(record_path)
+            target = os.path.relpath(link, record_path.parent).replace("\\", "/")
+            self.fixture.write_front_matter(
+                record_path.relative_to(self.root).as_posix(), metadata, body + f"\n[x]({target})\n"
+            )
+            self.fixture.refresh_lifecycle_snapshot_digest()
+            self.assertIn("local link escapes repository", "\n".join(validate(self.root).errors))
+        finally:
+            link.unlink(missing_ok=True)
+            outside.unlink(missing_ok=True)
+
+    def test_complex_yaml_keys_fail_closed_with_deterministic_diagnostic(self) -> None:
+        snapshot = self.fixture.create_valid_snapshot(status="draft", complete=True)
+        paths = (
+            snapshot / "README.md",
+            snapshot / "ext-1.md",
+            snapshot / "PROVISION_INVENTORY.md",
+            self.root / "crosswalks" / "registry" / f"{MAPPING_SET_ID}.md",
+        )
+        for index, path in enumerate(paths):
+            with self.subTest(path=path.name):
+                raw = path.read_text(encoding="utf-8")
+                key = "? [a, b]\n: value\n" if index % 2 == 0 else "? {a: b}\n: value\n"
+                path.write_text(raw.replace("---\n", "---\n" + key, 1), encoding="utf-8", newline="\n")
+                self.assertIn("YAML mapping keys must be scalar and hashable", "\n".join(validate(self.root).errors))
+                self.fixture.reset_crosswalks()
+                snapshot = self.fixture.create_valid_snapshot(status="draft", complete=True)
+
+    def test_trusted_baseline_complex_yaml_key_fails_closed(self) -> None:
+        snapshot = self.fixture.create_valid_snapshot(status="approved", complete=True)
+        readme = snapshot / "README.md"
+        raw = readme.read_text(encoding="utf-8")
+        readme.write_text(
+            raw.replace("---\n", "---\n? {a: b}\n: value\n", 1),
+            encoding="utf-8",
+            newline="\n",
+        )
+        self.fixture._git("add", "crosswalks")
+        self.fixture._git("commit", "--quiet", "-m", "Complex baseline key")
+        baseline = self.fixture._git("rev-parse", "HEAD")
+        self.fixture.reset_crosswalks()
+        errors = "\n".join(validate(self.root, baseline_ref=baseline).errors)
+        self.assertIn("trusted baseline snapshot metadata is malformed", errors)
+        self.assertIn("YAML mapping keys must be scalar and hashable", errors)
+
+    def test_duplicate_finding_ids_are_rejected_and_malformed_ids_do_not_crash(self) -> None:
+        self.fixture.create_valid_snapshot(status="draft", complete=True)
+        self.fixture.set_finding("Minor", "resolved")
+        def duplicate(value: dict[str, object]) -> None:
+            finding = copy.deepcopy(value["findings"][0])
+            value["findings"].append(finding)
+        self.fixture._mutate_mapping_set(duplicate)
+        self.assertIn("duplicate finding id", "\n".join(validate(self.root).errors))
+        self.fixture._mutate_mapping_set(lambda value: value["findings"][0].__setitem__("finding_id", []))
+        self.assertIsInstance(validate(self.root).errors, list)
+
+    def test_mojibake_detection_is_precise(self) -> None:
+        for text in ("\u00c2ge et s\u00e9curit\u00e9", "\u00c3", "\u00c2"):
+            with self.subTest(text=text):
+                self.fixture.reset_crosswalks()
+                snapshot = self.fixture.create_valid_snapshot(status="draft", complete=True)
+                path = snapshot / "ext-1.md"
+                metadata, body = parse_front_matter(path)
+                self.fixture.write_front_matter(path.relative_to(self.root).as_posix(), metadata, body + "\n" + text)
+                self.fixture.refresh_lifecycle_snapshot_digest()
+                self.assertNotIn("possible text-encoding corruption", "\n".join(validate(self.root).errors))
+        for text in ("caf\u00c3\u0192\u00c2\u00a9", "\u00e2\u20ac\u2122", "\ufffd"):
+            with self.subTest(text=text):
+                self.fixture.reset_crosswalks()
+                snapshot = self.fixture.create_valid_snapshot(status="draft", complete=True)
+                path = snapshot / "ext-1.md"
+                metadata, body = parse_front_matter(path)
+                self.fixture.write_front_matter(path.relative_to(self.root).as_posix(), metadata, body + "\n" + text)
+                self.assertIn("possible text-encoding corruption", "\n".join(validate(self.root).errors))
 
 
 if __name__ == "__main__":

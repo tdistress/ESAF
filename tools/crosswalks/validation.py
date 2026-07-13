@@ -28,12 +28,16 @@ class ValidationResult:
 def snapshot_directories(root: Path) -> list[Path]:
     """Return snapshot directories in deterministic repository order."""
     base = root / "crosswalks" / "mappings"
+    if base.is_symlink():
+        return []
     return sorted(path.parent for path in base.rglob("README.md")) if base.exists() else []
 
 
 def _validate_mappings_tree(root: Path) -> list[str]:
     """Reject every mappings-tree entry that is not part of a valid snapshot path."""
     base = root / "crosswalks" / "mappings"
+    if base.is_symlink():
+        return ["crosswalks/mappings: unexpected mappings-tree entry"]
     if not base.exists():
         return []
     errors: list[str] = []
@@ -579,7 +583,7 @@ def _validate_snapshot(
     errors.extend(_validate_mapping_set(mapping_set, relative))
     errors.extend(
         _validate_reviewed_text(
-            snapshot / "README.md", mapping_set.get("status"), f"{relative}/README.md"
+            root, snapshot / "README.md", mapping_set.get("status"), f"{relative}/README.md"
         )
     )
 
@@ -629,6 +633,7 @@ def _validate_snapshot(
         )
         errors.extend(
             _validate_reviewed_text(
+                root,
                 snapshot / "PROVISION_INVENTORY.md",
                 mapping_set.get("status"),
                 f"{relative}/PROVISION_INVENTORY.md",
@@ -695,7 +700,7 @@ def _validate_snapshot(
                     mapping_set.get("findings"), record_relative, record_id
                 )
             )
-        errors.extend(_validate_reviewed_text(path, record.get("status"), record_relative))
+        errors.extend(_validate_reviewed_text(root, path, record.get("status"), record_relative))
 
     errors.extend(_validate_finding_targets(mapping_set, seen_record_ids, relative))
     errors.extend(_validate_publication_rights(mapping_set, records, relative))
@@ -927,6 +932,15 @@ def _validate_mapping_set(mapping_set: dict[str, object], relative: str) -> list
             errors.append(f"{relative}: publication-rights elements must exhaustively partition the schema elements")
 
     findings = mapping_set.get("findings", [])
+    if isinstance(findings, list):
+        seen_finding_ids: set[str] = set()
+        for finding in findings:
+            finding_id = finding.get("finding_id") if isinstance(finding, dict) else None
+            if not isinstance(finding_id, str):
+                continue
+            if finding_id in seen_finding_ids:
+                errors.append(f"{relative}: duplicate finding id {finding_id}")
+            seen_finding_ids.add(finding_id)
     if mapping_status == "reviewed":
         errors.extend(_validate_reviewed_findings(findings, relative))
     if mapping_status == "approved":
@@ -1104,11 +1118,19 @@ def _complete_reviewer(value: object) -> bool:
 
 _MARKDOWN_LINK = re.compile(r"!?\[[^\]]*\]\(([^)]+)\)")
 _DRAFTING_MARKER = re.compile(r"(?im)(?:^|\b)(?:TODO|TBD|FIXME|PLACEHOLDER)(?:\b|$)")
-_CORRUPTION_SIGNATURES = ("Ã", "Â", "â€", "â€™", "ï»¿", "�")
+_CORRUPTION_SIGNATURES = (
+    "\u00c3\u0192\u00c2",
+    "\u00c3\u00a9",
+    "\u00e2\u20ac\u2122",
+    "\u00e2\u20ac\u201c",
+    "\u00e2\u20ac\u201d",
+    "\u00ef\u00bb\u00bf",
+    "\ufffd",
+)
 
 
 def _validate_reviewed_text(
-    path: Path, status: object, relative: str, text: str | None = None
+    root: Path, path: Path, status: object, relative: str, text: str | None = None
 ) -> list[str]:
     if text is None:
         try:
@@ -1126,6 +1148,9 @@ def _validate_reviewed_text(
             raw_target = raw_target[1 : raw_target.index(">")]
         else:
             raw_target = raw_target.split(maxsplit=1)[0]
+        if re.match(r"^[A-Za-z]:[\\/]", raw_target) or raw_target.startswith(("/", "\\")):
+            errors.append(f"{relative}: local link escapes repository {raw_target}")
+            continue
         try:
             parsed = urlsplit(raw_target)
         except ValueError:
@@ -1134,8 +1159,15 @@ def _validate_reviewed_text(
         if parsed.scheme or parsed.netloc or raw_target.startswith("#"):
             continue
         target = unquote(parsed.path)
-        if target and not (path.parent / target).resolve().exists():
-            errors.append(f"{relative}: broken local link {raw_target}")
+        if target:
+            resolved = (path.parent / target).resolve()
+            try:
+                resolved.relative_to(root.resolve())
+            except ValueError:
+                errors.append(f"{relative}: local link escapes repository {raw_target}")
+                continue
+            if not resolved.exists():
+                errors.append(f"{relative}: broken local link {raw_target}")
     return errors
 
 
