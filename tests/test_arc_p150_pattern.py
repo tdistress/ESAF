@@ -55,6 +55,42 @@ class ArcP150PatternTests(unittest.TestCase):
         for marker in markers:
             self.assertNotIn(marker, text)
 
+    def test_seven_numbered_mermaid_views_cover_required_components(self) -> None:
+        text = self.text()
+        self.assertEqual([str(number) for number in range(1, 8)], re.findall(r"^### Figure (\d+)\.", text, re.MULTILINE))
+        diagrams = re.findall(r"```mermaid\n(.*?)\n```", text, re.DOTALL)
+        self.assertEqual(7, len(diagrams))
+        rendered_source = "\n".join(diagrams).lower()
+        for label in (
+            "shared control plane",
+            "global bootstrap",
+            "execution cell",
+            "policy-enforcement point",
+            "contract validator",
+            "durable state",
+            "output validator",
+            "administration",
+            "evidence export",
+            "arc-p100",
+            "arc-p120",
+            "arc-p130",
+            "arc-p140",
+            "arc-p160",
+        ):
+            self.assertIn(label, rendered_source)
+
+    def test_six_plane_outcomes_are_explicit(self) -> None:
+        text = self.text().lower()
+        for plane in (
+            "governance and contract plane",
+            "admission and policy plane",
+            "execution and adapter plane",
+            "durable delivery and state plane",
+            "output and delivery plane",
+            "operations, administration, and evidence plane",
+        ):
+            self.assertIn(plane, text)
+
 
 if __name__ == "__main__":
     unittest.main()
