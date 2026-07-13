@@ -6,12 +6,13 @@ import json
 import re
 import subprocess
 from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
 import yaml
 
-from tools.crosswalks.io import parse_front_matter
+from tools.crosswalks.io import load_yaml_mapping, parse_front_matter
 from tools.crosswalks.digests import event_digest, snapshot_digest
 from tools.crosswalks.manifest import build_control_manifest, render_manifest
 from tools.crosswalks.schemas import load_schemas, schema_errors
@@ -30,6 +31,49 @@ def snapshot_directories(root: Path) -> list[Path]:
     return sorted(path.parent for path in base.rglob("README.md")) if base.exists() else []
 
 
+def _validate_mappings_tree(root: Path) -> list[str]:
+    """Reject every mappings-tree entry that is not part of a valid snapshot path."""
+    base = root / "crosswalks" / "mappings"
+    if not base.exists():
+        return []
+    errors: list[str] = []
+    try:
+        entries = sorted(base.rglob("*"), key=lambda path: path.as_posix())
+    except OSError as error:
+        return [f"crosswalks/mappings: cannot inspect mappings tree: {error}"]
+    snapshots = {
+        path.parent
+        for path in entries
+        if path.name == "README.md"
+        and path.is_file()
+        and not path.is_symlink()
+        and len(path.parent.relative_to(base).parts) == 4
+    }
+    ancestors = {
+        ancestor
+        for snapshot in snapshots
+        for ancestor in snapshot.parents
+        if ancestor != base and base in ancestor.parents
+    }
+    allowed_files = {"README.md", "PROVISION_INVENTORY.md", "ESAF_CONTROL_MANIFEST.json"}
+    record_name = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*\.md$")
+    for entry in entries:
+        relative = entry.relative_to(root).as_posix()
+        valid = False
+        if entry.is_symlink():
+            valid = False
+        elif entry.is_dir():
+            valid = entry in snapshots or entry in ancestors
+        elif entry.is_file():
+            if entry.parent == base and entry.name == ".gitkeep":
+                valid = True
+            elif entry.parent in snapshots:
+                valid = entry.name in allowed_files or bool(record_name.fullmatch(entry.name))
+        if not valid:
+            errors.append(f"{relative}: unexpected mappings-tree entry")
+    return errors
+
+
 def validate(root: Path, baseline_ref: str | None = None) -> ValidationResult:
     """Validate all crosswalk mapping snapshots below ``root``."""
     errors: list[str] = []
@@ -38,6 +82,7 @@ def validate(root: Path, baseline_ref: str | None = None) -> ValidationResult:
     seen_mapping_set_ids: set[str] = set()
     schema_root = root if (root / "crosswalks" / "schema").exists() else Path(__file__).parents[2]
     validators = load_schemas(schema_root)
+    errors.extend(_validate_mappings_tree(root))
 
     for snapshot in snapshot_directories(root):
         relative = snapshot.relative_to(root).as_posix()
@@ -110,6 +155,7 @@ def validate_lifecycle(records: list[dict[str, object]]) -> list[str]:
             errors.append(f"{path}: invalid lifecycle transition")
         seen_event_ids: set[object] = set()
         previous = "0" * 64
+        previous_date: date | None = None
         for event in events:
             if not isinstance(event, dict):
                 continue
@@ -129,6 +175,16 @@ def validate_lifecycle(records: list[dict[str, object]]) -> list[str]:
             if event.get("event_digest") != calculated:
                 errors.append(f"{path}: lifecycle event digest mismatch")
             previous = str(event.get("event_digest", ""))
+            event_date = event.get("date")
+            if isinstance(event_date, str):
+                try:
+                    parsed_date = date.fromisoformat(event_date)
+                except ValueError:
+                    parsed_date = None
+                if parsed_date is not None:
+                    if previous_date is not None and parsed_date < previous_date:
+                        errors.append(f"{path}: lifecycle event dates must be nondecreasing")
+                    previous_date = parsed_date
             if (
                 event.get("state") == "deprecated"
                 and not event.get("successor_id")
@@ -165,8 +221,15 @@ def validate_baseline(
     )
     validators = load_schemas(schema_root)
     baseline_paths = _git_tree_paths(root, commit, "crosswalks/mappings")
+    baseline_approved_ids: set[str] = set()
     for readme in (path for path in baseline_paths if path.endswith("/README.md")):
-        metadata = _front_matter_bytes(_git_show(root, commit, readme))
+        try:
+            metadata = _front_matter_bytes(_git_show(root, commit, readme))
+        except ValueError as error:
+            errors.append(
+                f"{readme}: trusted baseline snapshot metadata is malformed: {error}"
+            )
+            continue
         if not isinstance(metadata, dict) or schema_errors(
             validators["mapping-set"], metadata, readme  # type: ignore[arg-type]
         ):
@@ -177,6 +240,9 @@ def validate_baseline(
         status = metadata.get("status")
         if status != "approved":
             continue
+        mapping_set_id = metadata.get("mapping_set_id")
+        if isinstance(mapping_set_id, str):
+            baseline_approved_ids.add(mapping_set_id)
         directory = readme.rsplit("/", 1)[0]
         baseline_files = sorted(
             path for path in baseline_paths if path.startswith(directory + "/")
@@ -215,7 +281,13 @@ def validate_baseline(
     for path in _git_tree_paths(root, commit, "crosswalks/registry"):
         if not path.endswith(".md"):
             continue
-        baseline = _front_matter_bytes(_git_show(root, commit, path))
+        try:
+            baseline = _front_matter_bytes(_git_show(root, commit, path))
+        except ValueError as error:
+            errors.append(
+                f"{path}: trusted baseline lifecycle metadata is malformed: {error}"
+            )
+            continue
         if not isinstance(baseline, dict) or schema_errors(
             validators["lifecycle-record"], baseline, path  # type: ignore[arg-type]
         ):
@@ -235,6 +307,11 @@ def validate_baseline(
             errors.append(
                 f"{path}: trusted baseline lifecycle metadata is malformed: "
                 "events must be an array"
+            )
+            continue
+        if mapping_set_id in baseline_approved_ids and not baseline_events:
+            errors.append(
+                f"{path}: trusted baseline lifecycle metadata is malformed"
             )
             continue
         candidate = current_lifecycle.get(mapping_set_id)
@@ -324,6 +401,7 @@ def _validate_lifecycle_links(
         if isinstance(mapping_set_id, str):
             snapshots[mapping_set_id] = model
     lifecycle_counts: dict[str, int] = {}
+    lifecycle_by_id: dict[str, dict[str, object]] = {}
     active: dict[tuple[object, object, object, object], str] = {}
     for lifecycle_model in lifecycle_records:
         lifecycle = lifecycle_model.get("metadata")
@@ -334,6 +412,7 @@ def _validate_lifecycle_links(
         if not isinstance(mapping_set_id, str):
             continue
         lifecycle_counts[mapping_set_id] = lifecycle_counts.get(mapping_set_id, 0) + 1
+        lifecycle_by_id[mapping_set_id] = lifecycle
         snapshot_model = snapshots.get(mapping_set_id)
         if not isinstance(snapshot_model, dict):
             errors.append(f"{relative}: lifecycle record has no mapping-set snapshot")
@@ -356,6 +435,15 @@ def _validate_lifecycle_links(
             if isinstance(events, list)
             else []
         )
+        snapshot_status = metadata.get("status")
+        if isinstance(snapshot_status, str) and snapshot_status in {"draft", "reviewed"} and states:
+            errors.append(
+                f"{relative}: {snapshot_status} mapping set requires empty lifecycle events"
+            )
+        if snapshot_status == "approved" and not states:
+            errors.append(
+                f"{relative}: approved mapping set requires an approval lifecycle event"
+            )
         if "published" in states and metadata.get("status") != "approved":
             errors.append(f"{relative}: published lifecycle requires approved snapshot")
         if states and states[-1] == "published":
@@ -384,6 +472,48 @@ def _validate_lifecycle_links(
                 f"{relative}: mapping set requires lifecycle record "
                 f"(found {lifecycle_counts.get(mapping_set_id, 0)})"
             )
+
+    def event_links(lifecycle: dict[str, object], field: str) -> set[str]:
+        events = lifecycle.get("events", [])
+        if not isinstance(events, list):
+            return set()
+        return {
+            value
+            for event in events
+            if isinstance(event, dict)
+            and isinstance((value := event.get(field)), str)
+            and value
+        }
+
+    for mapping_set_id, snapshot_model in sorted(snapshots.items()):
+        metadata = snapshot_model.get("metadata")
+        lifecycle = lifecycle_by_id.get(mapping_set_id, {})
+        if not isinstance(metadata, dict):
+            continue
+        predecessor_values = event_links(lifecycle, "predecessor_id")
+        declared_predecessor = metadata.get("predecessor_id")
+        if isinstance(declared_predecessor, str) and declared_predecessor:
+            predecessor_values.add(declared_predecessor)
+        successor_values = event_links(lifecycle, "successor_id")
+        relative = str(snapshot_model.get("path", mapping_set_id))
+        if len(predecessor_values) > 1:
+            errors.append(f"{relative}: conflicting predecessor mapping-set links")
+        if len(successor_values) > 1:
+            errors.append(f"{relative}: conflicting successor mapping-set links")
+        for field, values in (("predecessor", predecessor_values), ("successor", successor_values)):
+            for linked_id in sorted(values):
+                if linked_id == mapping_set_id:
+                    errors.append(f"{relative}: lifecycle link must not reference itself")
+                elif linked_id not in snapshots:
+                    errors.append(f"{relative}: {field} mapping set does not exist: {linked_id}")
+        for successor_id in sorted(successor_values & snapshots.keys()):
+            target_metadata = snapshots[successor_id].get("metadata")
+            if not isinstance(target_metadata, dict) or target_metadata.get("predecessor_id") != mapping_set_id:
+                errors.append(f"{relative}: successor link is not reciprocated by target predecessor_id")
+        for predecessor_id in sorted(predecessor_values & snapshots.keys()):
+            predecessor_lifecycle = lifecycle_by_id.get(predecessor_id, {})
+            if mapping_set_id not in event_links(predecessor_lifecycle, "successor_id"):
+                errors.append(f"{relative}: predecessor link is not reciprocated by predecessor lifecycle")
     return errors
 
 
@@ -428,10 +558,12 @@ def _front_matter_bytes(raw: bytes) -> dict[str, object] | None:
         parts = text.split("---\n", 2)
         if len(parts) != 3:
             return None
-        value = yaml.safe_load(parts[1])
+        value = load_yaml_mapping(parts[1])
+    except ValueError:
+        raise
     except (UnicodeError, yaml.YAMLError, IndexError):
         return None
-    return value if isinstance(value, dict) else None
+    return value
 
 
 def _validate_snapshot(
@@ -564,6 +696,9 @@ def _validate_snapshot(
                 )
             )
         errors.extend(_validate_reviewed_text(path, record.get("status"), record_relative))
+
+    errors.extend(_validate_finding_targets(mapping_set, seen_record_ids, relative))
+    errors.extend(_validate_publication_rights(mapping_set, records, relative))
 
     if manifest is not None:
         errors.extend(
@@ -773,6 +908,23 @@ def _validate_mapping_set(mapping_set: dict[str, object], relative: str) -> list
         errors.append(f"{relative}: publication-rights approval is required")
     elif rights.get("reviewer_id") == mapper_id:
         errors.append(f"{relative}: publication-rights reviewer must differ from mapper")
+    if isinstance(rights, dict):
+        universe = {
+            "identifiers", "titles", "structural_inventory", "paraphrases",
+            "derivative_mapping_analysis", "official_links",
+        }
+        permitted_values = rights.get("permitted_elements", [])
+        prohibited_values = rights.get("prohibited_elements", [])
+        permitted = {
+            item for item in permitted_values if isinstance(item, str)
+        } if isinstance(permitted_values, list) else set()
+        prohibited = {
+            item for item in prohibited_values if isinstance(item, str)
+        } if isinstance(prohibited_values, list) else set()
+        if permitted & prohibited:
+            errors.append(f"{relative}: publication-rights elements must be disjoint")
+        if permitted | prohibited != universe:
+            errors.append(f"{relative}: publication-rights elements must exhaustively partition the schema elements")
 
     findings = mapping_set.get("findings", [])
     if mapping_status == "reviewed":
@@ -799,6 +951,49 @@ def _validate_mapping_set(mapping_set: dict[str, object], relative: str) -> list
                     errors.append(
                         f"{relative}: Minor findings must be resolved or formally accepted"
                     )
+    return errors
+
+
+def _validate_finding_targets(
+    mapping_set: dict[str, object], record_ids: set[str], relative: str
+) -> list[str]:
+    errors: list[str] = []
+    findings = mapping_set.get("findings", [])
+    if not isinstance(findings, list):
+        return errors
+    for finding in findings:
+        affected = finding.get("affected_record_ids") if isinstance(finding, dict) else None
+        if not isinstance(affected, list):
+            continue
+        for record_id in affected:
+            if isinstance(record_id, str) and record_id not in record_ids:
+                errors.append(f"{relative}: finding target {record_id} does not resolve")
+    return errors
+
+
+def _validate_publication_rights(
+    mapping_set: dict[str, object], records: list[dict[str, object]], relative: str
+) -> list[str]:
+    rights = mapping_set.get("publication_rights")
+    if not isinstance(rights, dict):
+        return []
+    permitted = rights.get("permitted_elements", [])
+    prohibited = rights.get("prohibited_elements", [])
+    if not isinstance(permitted, list) or not isinstance(prohibited, list):
+        return []
+    committed = {"identifiers", "structural_inventory", "official_links"}
+    if records:
+        committed.add("derivative_mapping_analysis")
+    for record in records:
+        if record.get("title"):
+            committed.add("titles")
+        context = record.get("context")
+        if isinstance(context, dict) and context.get("mode") == "paraphrase":
+            committed.add("paraphrases")
+    errors = []
+    for element in sorted(committed):
+        if element not in permitted or element in prohibited:
+            errors.append(f"{relative}: committed element {element} is not permitted by publication rights")
     return errors
 
 
@@ -915,8 +1110,6 @@ _CORRUPTION_SIGNATURES = ("Ã", "Â", "â€", "â€™", "ï»¿", "�")
 def _validate_reviewed_text(
     path: Path, status: object, relative: str, text: str | None = None
 ) -> list[str]:
-    if not isinstance(status, str) or status not in {"reviewed", "approved"}:
-        return []
     if text is None:
         try:
             text = path.read_text(encoding="utf-8")
@@ -925,7 +1118,7 @@ def _validate_reviewed_text(
     errors: list[str] = []
     if any(signature in text for signature in _CORRUPTION_SIGNATURES):
         errors.append(f"{relative}: possible text-encoding corruption")
-    if _DRAFTING_MARKER.search(text):
+    if isinstance(status, str) and status in {"reviewed", "approved"} and _DRAFTING_MARKER.search(text):
         errors.append(f"{relative}: unresolved drafting marker")
     for match in _MARKDOWN_LINK.finditer(text):
         raw_target = match.group(1).strip()

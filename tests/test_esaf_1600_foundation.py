@@ -378,6 +378,8 @@ class Esaf1600FoundationTests(unittest.TestCase):
             "publication-rights basis",
             "permitted and prohibited elements",
             "authorized source access",
+            "reviewer_authorized_source_access: true",
+            "publication_basis_reviewed: true",
             "mapper and reviewer shall be different people",
             "intellectual-property attestation",
         ):

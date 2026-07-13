@@ -10,7 +10,7 @@ from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 
 from tests.crosswalk_fixtures import MAPPING_SET_ID, CrosswalkFixture, valid_event
-from tools.crosswalks.digests import event_bytes, event_digest
+from tools.crosswalks.digests import event_bytes, event_digest, snapshot_digest
 from tools.crosswalks.io import parse_front_matter
 from tools.crosswalks.manifest import build_control_manifest, git_bytes, render_manifest
 from tools.crosswalks.catalog import (
@@ -774,7 +774,9 @@ class CrosswalkValidationTests(unittest.TestCase):
         snapshot = self.fixture.create_valid_snapshot(status="draft", complete=True)
         mapping_path = snapshot / "README.md"
         mapping_set, mapping_body = parse_front_matter(mapping_path)
-        mapping_set["publication_rights"]["permitted_elements"] = ["identifiers"]
+        mapping_set["publication_rights"]["permitted_elements"] = [
+            "identifiers", "structural_inventory", "derivative_mapping_analysis", "official_links"
+        ]
         mapping_set["publication_rights"]["prohibited_elements"] = ["titles", "paraphrases"]
         self.fixture.write_front_matter(
             mapping_path.relative_to(self.root).as_posix(), mapping_set, mapping_body
@@ -985,6 +987,230 @@ class CrosswalkValidationTests(unittest.TestCase):
                     continue
                 getattr(self.fixture, mutation)()
                 self.assertIn(expected, "\n".join(validate(self.root).errors))
+
+    def test_mappings_tree_discovery_rejects_every_rogue_entry(self) -> None:
+        cases = ("rogue_file", "orphan_directory", "incomplete_snapshot", "nested_directory")
+        for case in cases:
+            with self.subTest(case=case):
+                self.fixture.reset_crosswalks()
+                base = self.root / "crosswalks" / "mappings"
+                if case == "rogue_file":
+                    base.mkdir(parents=True)
+                    (base / "source.txt").write_text("restricted source", encoding="utf-8")
+                elif case == "orphan_directory":
+                    (base / "orphan").mkdir(parents=True)
+                elif case == "incomplete_snapshot":
+                    (base / "nist" / "1.0" / "0.4-alpha" / "1.0.0").mkdir(parents=True)
+                else:
+                    snapshot = self.fixture.create_valid_snapshot(status="draft")
+                    (snapshot / "nested").mkdir()
+                self.assertIn("unexpected mappings-tree entry", "\n".join(validate(self.root).errors))
+
+    def test_mappings_tree_discovery_rejects_symlink_when_supported(self) -> None:
+        self.fixture.reset_crosswalks()
+        base = self.root / "crosswalks" / "mappings"
+        base.mkdir(parents=True)
+        target = self.root / "outside"
+        target.mkdir()
+        link = base / "linked"
+        try:
+            link.symlink_to(target, target_is_directory=True)
+        except OSError:
+            self.skipTest("directory symlinks unavailable")
+        self.assertIn("unexpected mappings-tree entry", "\n".join(validate(self.root).errors))
+
+    def test_duplicate_yaml_keys_fail_closed_for_all_authoritative_documents(self) -> None:
+        snapshot = self.fixture.create_valid_snapshot(status="approved")
+        paths_and_needles = (
+            (snapshot / "README.md", "status: approved\n", "status: approved\nstatus: draft\n"),
+            (snapshot / "PROVISION_INVENTORY.md", "expected_count: 1\n", "expected_count: 1\nexpected_count: 2\n"),
+            (snapshot / "ext-1.md", "  mode: paraphrase\n", "  mode: paraphrase\n  mode: identifier_only\n"),
+            (self.root / "crosswalks" / "registry" / f"{MAPPING_SET_ID}.md", "snapshot_digest:", "snapshot_digest:"),
+        )
+        for path, needle, replacement in paths_and_needles:
+            with self.subTest(path=path.name):
+                original = path.read_text(encoding="utf-8")
+                if path.parent.name == "registry":
+                    line = next(item for item in original.splitlines() if item.startswith("snapshot_digest:"))
+                    replacement = line + "\n" + line
+                    needle = line
+                path.write_text(original.replace(needle, replacement, 1), encoding="utf-8", newline="\n")
+                errors = "\n".join(validate(self.root).errors)
+                self.assertIn(path.relative_to(self.root).as_posix(), errors)
+                self.assertIn("duplicate YAML key", errors)
+                path.write_text(original, encoding="utf-8", newline="\n")
+
+    def test_trusted_baseline_duplicate_yaml_key_fails_closed(self) -> None:
+        snapshot = self.fixture.create_valid_snapshot(status="approved")
+        readme = snapshot / "README.md"
+        text = readme.read_text(encoding="utf-8")
+        readme.write_text(text.replace("status: approved\n", "status: approved\nstatus: draft\n", 1), encoding="utf-8", newline="\n")
+        self.fixture._git("add", "crosswalks")
+        self.fixture._git("commit", "--quiet", "-m", "Duplicate baseline key")
+        baseline = self.fixture._git("rev-parse", "HEAD")
+        self.fixture.reset_crosswalks()
+        errors = "\n".join(validate(self.root, baseline_ref=baseline).errors)
+        self.assertIn("trusted baseline snapshot metadata is malformed", errors)
+        self.assertIn("duplicate YAML key", errors)
+
+    def test_trusted_baseline_duplicate_lifecycle_key_fails_closed(self) -> None:
+        self.fixture.create_valid_snapshot(status="approved")
+        path = self.root / "crosswalks" / "registry" / f"{MAPPING_SET_ID}.md"
+        text = path.read_text(encoding="utf-8")
+        line = next(item for item in text.splitlines() if item.startswith("snapshot_digest:"))
+        path.write_text(text.replace(line, line + "\n" + line, 1), encoding="utf-8", newline="\n")
+        self.fixture._git("add", "crosswalks")
+        self.fixture._git("commit", "--quiet", "-m", "Duplicate lifecycle baseline key")
+        baseline = self.fixture._git("rev-parse", "HEAD")
+        self.fixture.reset_crosswalks()
+        errors = "\n".join(validate(self.root, baseline_ref=baseline).errors)
+        self.assertIn("trusted baseline lifecycle metadata is malformed", errors)
+        self.assertIn("duplicate YAML key", errors)
+
+    def test_finding_targets_must_resolve_even_for_drafts(self) -> None:
+        self.fixture.create_valid_snapshot(status="draft")
+        self.fixture.set_finding("Important", "open", ["missing-record"])
+        self.assertIn("finding target missing-record does not resolve", "\n".join(validate(self.root).errors))
+
+    def test_orphan_finding_target_cannot_bypass_review_gate(self) -> None:
+        self.fixture.create_valid_snapshot(status="reviewed")
+        self.fixture.set_finding("Important", "open", ["missing-record"])
+        errors = "\n".join(validate(self.root).errors)
+        self.assertIn("finding target missing-record does not resolve", errors)
+
+    def test_lifecycle_events_align_with_snapshot_editorial_state(self) -> None:
+        for status in ("draft", "reviewed"):
+            with self.subTest(status=status):
+                self.fixture.reset_crosswalks()
+                self.fixture.create_valid_snapshot(status=status)
+                self.assertEqual(validate(self.root).errors, [])
+                lifecycle = self.fixture._lifecycle()
+                event = valid_event()
+                self.fixture._omit_empty_optional_event_fields(event)
+                event["event_digest"] = event_digest(event)
+                lifecycle["events"] = [event]
+                self.fixture._write_lifecycle_metadata(lifecycle)
+                self.assertIn(f"{status} mapping set requires empty lifecycle events", "\n".join(validate(self.root).errors))
+        self.fixture.reset_crosswalks()
+        self.fixture.create_valid_snapshot(status="approved")
+        lifecycle = self.fixture._lifecycle()
+        lifecycle["events"] = []
+        self.fixture._write_lifecycle_metadata(lifecycle)
+        self.assertIn("approved mapping set requires an approval lifecycle event", "\n".join(validate(self.root).errors))
+
+    def test_lifecycle_links_reject_missing_self_and_nonreciprocal_successors(self) -> None:
+        self.fixture.create_approved_snapshot_with_lifecycle("published")
+        self.fixture._append_lifecycle_state("deprecated", successor_id="nist--ai-rmf--1.0--esaf-0.4-alpha--1.0.1")
+        self.assertIn("successor mapping set does not exist", "\n".join(validate(self.root).errors))
+        lifecycle = self.fixture._lifecycle()
+        lifecycle["events"][-1]["successor_id"] = MAPPING_SET_ID
+        lifecycle["events"][-1]["event_digest"] = event_digest(lifecycle["events"][-1])
+        self.fixture._write_lifecycle_metadata(lifecycle)
+        self.assertIn("lifecycle link must not reference itself", "\n".join(validate(self.root).errors))
+
+    def test_lifecycle_supersession_links_are_reciprocal_and_consistent(self) -> None:
+        self.fixture.create_mixed_catalog_fixture(
+            mapping_set_versions=("0.10.0", "0.2.0"),
+            lifecycle_states=("deprecated", "published"),
+            dispositions=("mapped",),
+            include_both_directions=False,
+        )
+        source_id = "nist--ai-rmf--1.0--esaf-0.4-alpha--0.10.0"
+        target_id = "nist--ai-rmf--1.0--esaf-0.4-alpha--0.2.0"
+        source_path = self.root / "crosswalks" / "registry" / f"{source_id}.md"
+        target_path = self.root / "crosswalks" / "mappings" / "nist" / "1.0" / "0.4-alpha" / "0.2.0" / "README.md"
+        source, body = parse_front_matter(source_path)
+        source["events"][-1]["successor_id"] = target_id
+        source["events"][-1]["event_digest"] = event_digest(source["events"][-1])
+        self.fixture.write_front_matter(source_path.relative_to(self.root).as_posix(), source, body)
+        self.assertIn("successor link is not reciprocated", "\n".join(validate(self.root).errors))
+
+        target, target_body = parse_front_matter(target_path)
+        target["predecessor_id"] = source_id
+        self.fixture.write_front_matter(target_path.relative_to(self.root).as_posix(), target, target_body)
+        target_registry = self.root / "crosswalks" / "registry" / f"{target_id}.md"
+        target_lifecycle, lifecycle_body = parse_front_matter(target_registry)
+        target_lifecycle["snapshot_digest"] = snapshot_digest(self.root, target_path.parent)
+        self.fixture.write_front_matter(target_registry.relative_to(self.root).as_posix(), target_lifecycle, lifecycle_body)
+        self.assertEqual(validate(self.root).errors, [])
+
+        source, body = parse_front_matter(source_path)
+        source["events"][0]["successor_id"] = MAPPING_SET_ID
+        source["events"][0]["event_digest"] = event_digest(source["events"][0])
+        for index in range(1, len(source["events"])):
+            source["events"][index]["previous_event_digest"] = source["events"][index - 1]["event_digest"]
+            source["events"][index]["event_digest"] = event_digest(source["events"][index])
+        self.fixture.write_front_matter(source_path.relative_to(self.root).as_posix(), source, body)
+        self.assertIn("conflicting successor mapping-set links", "\n".join(validate(self.root).errors))
+
+    def test_publication_rights_are_partitioned_and_cover_committed_content(self) -> None:
+        mutations = (
+            ("overlap", lambda rights: rights["prohibited_elements"].append("identifiers"), "must be disjoint"),
+            ("omission", lambda rights: rights["prohibited_elements"].remove("titles"), "must exhaustively partition"),
+            ("content", lambda rights: (rights["permitted_elements"].remove("paraphrases"), rights["prohibited_elements"].append("paraphrases")), "committed element paraphrases is not permitted"),
+        )
+        for name, mutation, expected in mutations:
+            with self.subTest(name=name):
+                self.fixture.reset_crosswalks()
+                self.fixture.create_valid_snapshot(status="draft")
+                self.fixture._mutate_mapping_set(lambda value: mutation(value["publication_rights"]))
+                self.assertIn(expected, "\n".join(validate(self.root).errors))
+
+    def test_publication_rights_require_explicit_reviewer_attestations(self) -> None:
+        self.fixture.create_valid_snapshot(status="draft")
+        self.fixture._mutate_mapping_set(
+            lambda value: value["publication_rights"].pop("reviewer_authorized_source_access", None)
+        )
+        self.assertIn("reviewer_authorized_source_access", "\n".join(validate(self.root).errors))
+
+    def test_publication_rights_cover_each_committed_element(self) -> None:
+        for element in ("identifiers", "structural_inventory", "official_links", "derivative_mapping_analysis", "paraphrases"):
+            with self.subTest(element=element):
+                self.fixture.reset_crosswalks()
+                self.fixture.create_valid_snapshot(status="draft")
+                def prohibit(value: dict[str, object]) -> None:
+                    rights = value["publication_rights"]
+                    rights["permitted_elements"].remove(element)
+                    rights["prohibited_elements"].append(element)
+                self.fixture._mutate_mapping_set(prohibit)
+                self.assertIn(f"committed element {element} is not permitted", "\n".join(validate(self.root).errors))
+        self.fixture.reset_crosswalks()
+        snapshot = self.fixture.create_valid_snapshot(status="draft")
+        record, body = parse_front_matter(snapshot / "ext-1.md")
+        record["title"] = "Permitted title required"
+        self.fixture.write_front_matter((snapshot / "ext-1.md").relative_to(self.root).as_posix(), record, body)
+        self.assertIn("committed element titles is not permitted", "\n".join(validate(self.root).errors))
+
+    def test_draft_text_rejects_broken_links_and_encoding_corruption(self) -> None:
+        for mutation, expected in (("break_local_link", "broken local link"), ("write_encoding_corruption_signature", "possible text-encoding corruption")):
+            with self.subTest(mutation=mutation):
+                self.fixture.reset_crosswalks()
+                self.fixture.create_valid_snapshot(status="draft")
+                getattr(self.fixture, mutation)()
+                self.assertIn(expected, "\n".join(validate(self.root).errors))
+
+    def test_impossible_dates_and_decreasing_lifecycle_dates_are_rejected(self) -> None:
+        for target in ("mapping-set", "record", "lifecycle"):
+            with self.subTest(target=target):
+                self.fixture.reset_crosswalks()
+                self.fixture.create_valid_snapshot(status="approved" if target == "lifecycle" else "draft")
+                if target == "mapping-set":
+                    self.fixture._mutate_mapping_set(lambda value: value["mapper"].__setitem__("date", "2026-02-30"))
+                elif target == "record":
+                    self.fixture._mutate_record(lambda value: value["mapper"].__setitem__("date", "2026-02-30"))
+                else:
+                    lifecycle = self.fixture._lifecycle()
+                    lifecycle["events"][0]["date"] = "2026-02-30"
+                    lifecycle["events"][0]["event_digest"] = event_digest(lifecycle["events"][0])
+                    self.fixture._write_lifecycle_metadata(lifecycle)
+                self.assertIn("2026-02-30", "\n".join(validate(self.root).errors))
+        self.fixture.reset_crosswalks()
+        self.fixture.create_approved_snapshot_with_lifecycle("published")
+        lifecycle = self.fixture._lifecycle()
+        lifecycle["events"][1]["date"] = "2026-07-12"
+        lifecycle["events"][1]["event_digest"] = event_digest(lifecycle["events"][1])
+        self.fixture._write_lifecycle_metadata(lifecycle)
+        self.assertIn("lifecycle event dates must be nondecreasing", "\n".join(validate(self.root).errors))
 
 
 if __name__ == "__main__":

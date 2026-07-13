@@ -72,6 +72,8 @@ def valid_mapping_set(status: str = "draft") -> dict[str, object]:
             "approved": True,
             "reviewer_id": "rights-reviewer",
             "review_date": "2026-07-13",
+            "reviewer_authorized_source_access": True,
+            "publication_basis_reviewed": True,
         },
         "scope": {
             "type": "complete_publication",
@@ -298,6 +300,7 @@ REQUIRED_PATHS = {
         "publication_rights.basis", "publication_rights.permitted_elements",
         "publication_rights.prohibited_elements", "publication_rights.restrictions",
         "publication_rights.approved", "publication_rights.reviewer_id", "publication_rights.review_date",
+        "publication_rights.reviewer_authorized_source_access", "publication_rights.publication_basis_reviewed",
         "scope", "scope.type", "scope.statement", "scope.inventory_count", "scope.default_granularity",
         "mapper", "mapper.id", "mapper.qualification", "mapper.date", "mapper.authorized_source_access",
         "findings", "change_history", "change_history.0.version", "change_history.0.date", "change_history.0.change",

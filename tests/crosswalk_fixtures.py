@@ -192,11 +192,7 @@ class CrosswalkFixture:
                         events[-1]["event_digest"] if events else "0" * 64
                     ),
                     approval_reference="APR-001" if state == "approved" else "",
-                    successor_id=(
-                        "nist--ai-rmf--1.0--esaf-0.4-alpha--0.11.0"
-                        if state == "deprecated"
-                        else ""
-                    ),
+                    successor_id="",
                 )
                 self._omit_empty_optional_event_fields(event)
                 event["event_digest"] = event_digest(event)
@@ -300,13 +296,16 @@ class CrosswalkFixture:
                 disposition=disposition,
             )
         if with_lifecycle:
-            event = valid_event()
-            self._omit_empty_optional_event_fields(event)
-            event["event_digest"] = event_digest(event)
+            events: list[dict[str, str]] = []
+            if status == "approved":
+                event = valid_event()
+                self._omit_empty_optional_event_fields(event)
+                event["event_digest"] = event_digest(event)
+                events.append(event)
             self._write_lifecycle(
                 MAPPING_SET_ID,
                 snapshot_digest(self.root, snapshot),
-                [event],
+                events,
             )
         return snapshot
 
@@ -323,11 +322,7 @@ class CrosswalkFixture:
                 reason=f"Mapping set {state}.",
                 previous_event_digest=previous,
                 approval_reference="APR-001" if state == "approved" else "",
-                successor_id=(
-                    "nist--ai-rmf--1.0--esaf-0.4-alpha--1.0.1"
-                    if state == "deprecated"
-                    else ""
-                ),
+                successor_id="",
             )
             self._omit_empty_optional_event_fields(event)
             event["event_digest"] = event_digest(event)
@@ -694,12 +689,17 @@ class CrosswalkFixture:
             },
             "publication_rights": {
                 "basis": "Documented publication review",
-                "permitted_elements": ["identifiers", "paraphrases"],
+                "permitted_elements": [
+                    "identifiers", "structural_inventory", "paraphrases",
+                    "derivative_mapping_analysis", "official_links",
+                ],
                 "prohibited_elements": ["titles"],
                 "restrictions": "No verbatim requirements.",
                 "approved": True,
                 "reviewer_id": "rights-reviewer",
                 "review_date": "2026-07-13",
+                "reviewer_authorized_source_access": True,
+                "publication_basis_reviewed": True,
             },
             "scope": {
                 "type": scope_type,

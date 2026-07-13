@@ -43,7 +43,7 @@ An external mapping contribution shall follow [ESAF-1600](crosswalks/ESAF-1600.m
 - the official source URL and exact source identity and version;
 - the approved publication-rights basis, access class, licensing note, and rights-review date;
 - the permitted and prohibited elements, including any restrictions on titles, identifiers, paraphrases, or derivative analysis;
-- attestations that the mapper, rights reviewer, and technical reviewer had authorized source access;
+- explicit `reviewer_authorized_source_access: true` and `publication_basis_reviewed: true` attestations, in addition to attestations that the mapper and technical reviewer had authorized source access;
 - mapper and reviewer qualifications, dates, and findings dispositions; and
 - an intellectual-property attestation confirming that no restricted or licensed external requirement text is included and that contributed summaries and analysis are original and within the recorded rights.
 

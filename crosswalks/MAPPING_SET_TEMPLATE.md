@@ -38,6 +38,8 @@ publication_rights:
   approved: true
   reviewer_id: rights-reviewer-1
   review_date: "2026-07-13"
+  reviewer_authorized_source_access: true
+  publication_basis_reviewed: true
 scope:
   type: complete_publication
   statement: Every provision in the non-authoritative example publication.

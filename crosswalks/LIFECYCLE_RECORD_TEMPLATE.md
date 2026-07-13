@@ -40,4 +40,6 @@ events:
 
 This non-authoritative example demonstrates the complete append-only chain. Its first event is the frozen Unicode NFC digest vector: the displayed `Café` reason hashes to `dce6853af1e45395304b66d057807375f8c0d61e7393a725f4776e9fba00b811`, including when authored with a decomposed accent before normalization.
 
+Draft and reviewed mapping sets use the same lifecycle-record metadata with `events: []`. Only an approved snapshot begins this demonstrated event chain. Every predecessor or successor in an authoritative record must resolve to another mapping set and must be reciprocated by that set's mapping metadata and lifecycle record.
+
 Replace the example identifiers, dates, actors, snapshot digest, linkage, reasons, approval reference, and every recomputed event digest before creating an authoritative registry record.
