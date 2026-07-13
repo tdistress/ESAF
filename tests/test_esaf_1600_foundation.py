@@ -69,6 +69,34 @@ class Esaf1600FoundationTests(unittest.TestCase):
             text,
         )
 
+    def test_methodology_requires_one_lifecycle_record_for_every_mapping_set(self) -> None:
+        text = (ROOT / "crosswalks/ESAF-1600.md").read_text(encoding="utf-8")
+        self.assertIn(
+            "Every mapping set, whether draft, reviewed, or approved, shall have exactly one lifecycle record",
+            text,
+        )
+
+    def test_methodology_defines_lifecycle_as_a_valid_prefix(self) -> None:
+        text = (ROOT / "crosswalks/ESAF-1600.md").read_text(encoding="utf-8")
+        self.assertIn(
+            "shall be an append-only valid prefix of `approved`, `published`, `deprecated`, `retired`",
+            text,
+        )
+        self.assertIn("The current terminal state may be any state in that ordered sequence", text)
+        self.assertNotIn("without omission, duplication, or reordering", text)
+
+    def test_methodology_states_reviewed_finding_gate_exactly(self) -> None:
+        text = (ROOT / "crosswalks/ESAF-1600.md").read_text(encoding="utf-8")
+        self.assertIn(
+            "Reviewed provision records and reviewed or approved snapshots shall have no open Critical or Important findings",
+            text,
+        )
+
+    def test_methodology_does_not_require_terminal_lf_for_snapshot_digest(self) -> None:
+        text = (ROOT / "crosswalks/ESAF-1600.md").read_text(encoding="utf-8")
+        self.assertNotIn("LF-terminated bytes", text)
+        self.assertIn("hash each permitted file's exact bytes", text)
+
     def test_templates_are_outside_mapping_discovery(self) -> None:
         result = validate(ROOT)
         self.assertEqual(result.mapping_sets, [])
@@ -89,6 +117,31 @@ class Esaf1600FoundationTests(unittest.TestCase):
     def test_mapping_set_template_is_schema_valid(self) -> None:
         metadata, _ = parse_front_matter(ROOT / "crosswalks/MAPPING_SET_TEMPLATE.md")
         self.assertEqual(schema_errors(self.validators["mapping-set"], metadata, "template"), [])
+
+    def test_mapping_set_template_demonstrates_review_approval_and_history_shapes(self) -> None:
+        metadata, _ = parse_front_matter(ROOT / "crosswalks/MAPPING_SET_TEMPLATE.md")
+        self.assertEqual(
+            set(metadata["reviewer"]),
+            {"id", "qualification", "date", "authorized_source_access", "findings_disposition"},
+        )
+        self.assertEqual(set(metadata["approver"]), {"id", "date"})
+        self.assertRegex(metadata["predecessor_id"], r"--\d+\.\d+\.\d+$")
+        resolved = metadata["findings"][0]
+        self.assertEqual(resolved["status"], "resolved")
+        self.assertTrue(resolved["resolver_or_acceptor"])
+        self.assertTrue(resolved["disposition_date"])
+
+        examples = extract_yaml_blocks(ROOT / "crosswalks/MAPPING_SET_TEMPLATE.md")
+        self.assertEqual(len(examples), 1)
+        accepted = examples[0]
+        self.assertEqual(accepted["severity"], "Minor")
+        self.assertEqual(accepted["status"], "accepted")
+        self.assertTrue(accepted["resolver_or_acceptor"])
+        self.assertTrue(accepted["disposition_date"])
+        self.assertTrue(accepted["acceptance_rationale"])
+        variant = dict(metadata)
+        variant["findings"] = [accepted]
+        self.assertEqual(schema_errors(self.validators["mapping-set"], variant, "template"), [])
 
     def test_inventory_template_demonstrates_both_scope_types(self) -> None:
         examples = extract_yaml_blocks(ROOT / "crosswalks/PROVISION_INVENTORY_TEMPLATE.md")

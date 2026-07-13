@@ -892,6 +892,18 @@ class CrosswalkFixture:
     def add_open_finding(self) -> None:
         self._set_finding("Important", "open")
 
+    def add_open_critical_finding(self) -> None:
+        self._set_finding("Critical", "open")
+
+    def add_open_minor_finding(self) -> None:
+        self._set_finding("Minor", "open")
+
+    def add_resolved_critical_finding(self) -> None:
+        self._set_finding("Critical", "resolved")
+
+    def add_resolved_important_finding(self) -> None:
+        self._set_finding("Important", "resolved")
+
     def accept_important_finding(self) -> None:
         self._set_finding("Important", "accepted")
 

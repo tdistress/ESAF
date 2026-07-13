@@ -768,7 +768,7 @@ def _validate_mapping_set(mapping_set: dict[str, object], relative: str) -> list
     elif rights.get("reviewer_id") == mapper_id:
         errors.append(f"{relative}: publication-rights reviewer must differ from mapper")
 
-    if mapping_set.get("status") == "approved":
+    if isinstance(mapping_status, str) and mapping_status in {"reviewed", "approved"}:
         findings = mapping_set.get("findings", [])
         if isinstance(findings, list):
             for finding in findings:
@@ -776,18 +776,24 @@ def _validate_mapping_set(mapping_set: dict[str, object], relative: str) -> list
                     continue
                 severity = finding.get("severity")
                 status = finding.get("status")
-                if status == "open":
-                    errors.append(f"{relative}: open review finding blocks approval")
-                if (
-                    isinstance(severity, str)
-                    and severity in {"Critical", "Important"}
-                    and status != "resolved"
-                ):
-                    errors.append(f"{relative}: {severity} findings must be resolved")
-                if severity == "Minor" and status not in {"resolved", "accepted"}:
-                    errors.append(
-                        f"{relative}: Minor findings must be resolved or formally accepted"
-                    )
+                if mapping_status == "reviewed":
+                    if severity in {"Critical", "Important"} and status == "open":
+                        errors.append(
+                            f"{relative}: open {severity} review finding blocks reviewed content"
+                        )
+                else:
+                    if status == "open":
+                        errors.append(f"{relative}: open review finding blocks approval")
+                    if (
+                        isinstance(severity, str)
+                        and severity in {"Critical", "Important"}
+                        and status != "resolved"
+                    ):
+                        errors.append(f"{relative}: {severity} findings must be resolved")
+                    if severity == "Minor" and status not in {"resolved", "accepted"}:
+                        errors.append(
+                            f"{relative}: Minor findings must be resolved or formally accepted"
+                        )
     return errors
 
 

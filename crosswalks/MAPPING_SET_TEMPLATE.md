@@ -48,7 +48,26 @@ mapper:
   qualification: Example mapper qualification statement.
   date: "2026-07-13"
   authorized_source_access: true
-findings: []
+reviewer:
+  id: reviewer-1
+  qualification: Independent example subject-matter reviewer.
+  date: "2026-07-14"
+  authorized_source_access: true
+  findings_disposition: All Critical and Important findings are resolved.
+approver:
+  id: approver-1
+  date: "2026-07-15"
+predecessor_id: example-authority--example-standard--2026.1--esaf-0.5-beta--0.9.0
+findings:
+  - finding_id: example-finding-resolved
+    affected_record_ids:
+      - ex-1-1
+    severity: Important
+    status: resolved
+    description: The directional rationale required clarification.
+    disposition: The mapper revised the rationale and the reviewer verified the correction.
+    resolver_or_acceptor: reviewer-1
+    disposition_date: "2026-07-14"
 change_history:
   - version: 1.0.0
     date: "2026-07-13"
@@ -69,6 +88,23 @@ Record the authoritative source, access basis, permission boundary, restrictions
 ## Mapping and review method
 
 Describe mapper qualifications, analytical method, independent review, and findings disposition without asserting outcome sufficiency.
+
+### Accepted Minor finding shape
+
+Use `accepted` only for a Minor finding and record the named acceptor, date, and rationale. This fenced example is parsed explicitly by the foundation tests and remains outside mapping discovery.
+
+```yaml
+finding_id: example-finding-accepted
+affected_record_ids:
+  - ex-1-2
+severity: Minor
+status: accepted
+description: A minor editorial ambiguity remains.
+disposition: The approval authority accepted the documented limitation.
+resolver_or_acceptor: approver-1
+disposition_date: "2026-07-15"
+acceptance_rationale: The ambiguity does not alter the mapping analysis and is documented for the next revision.
+```
 
 ## Change rationale
 

@@ -536,6 +536,35 @@ class CrosswalkValidationTests(unittest.TestCase):
         errors = validate(self.root).errors
         self.assertIn("missing provision record for inventory identifier EXT-2", "\n".join(errors))
 
+    def test_reviewed_snapshot_and_record_reject_open_critical_or_important_findings(self) -> None:
+        for mutation, severity in (
+            ("add_open_critical_finding", "Critical"),
+            ("add_open_finding", "Important"),
+        ):
+            with self.subTest(severity=severity):
+                self.fixture.reset_crosswalks()
+                self.fixture.create_valid_snapshot(status="reviewed", complete=True)
+                getattr(self.fixture, mutation)()
+                self.fixture.refresh_lifecycle_snapshot_digest()
+                errors = "\n".join(validate(self.root).errors)
+                self.assertIn(
+                    f"open {severity} review finding blocks reviewed content",
+                    errors,
+                )
+
+    def test_reviewed_snapshot_allows_open_minor_and_resolved_high_severity_findings(self) -> None:
+        for mutation in (
+            "add_open_minor_finding",
+            "add_resolved_critical_finding",
+            "add_resolved_important_finding",
+        ):
+            with self.subTest(mutation=mutation):
+                self.fixture.reset_crosswalks()
+                self.fixture.create_valid_snapshot(status="reviewed", complete=True)
+                getattr(self.fixture, mutation)()
+                self.fixture.refresh_lifecycle_snapshot_digest()
+                self.assertEqual(validate(self.root).errors, [])
+
     def test_record_outside_inventory_is_always_rejected(self) -> None:
         snapshot = self.fixture.create_valid_snapshot(status="draft", complete=True)
         self.fixture.add_record(snapshot, external_provision_id="EXT-99", record_id="ext-99")
