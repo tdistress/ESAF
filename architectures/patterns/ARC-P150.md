@@ -143,7 +143,7 @@ sequenceDiagram
   C->>A: Authenticate selected endpoint and present invocation
   A->>A: Endpoint authentication and local admission
   A->>V: Authorized canonical envelope
-  V->>D: Valid contract; durable acceptance when required
+  V->>D: Valid contract with durable acceptance when required
   D->>S: Deterministic dispatch and supporting-pattern handoff
   S-->>D: Result or explicit unknown outcome
   D->>D: Conditional reconciliation until claim is supportable

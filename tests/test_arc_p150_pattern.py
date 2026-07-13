@@ -122,6 +122,16 @@ class ArcP150PatternTests(unittest.TestCase):
         ):
             self.assertIn(label, rendered_source)
 
+    def test_sequence_diagram_messages_avoid_mermaid_statement_delimiters(self) -> None:
+        diagrams = re.findall(r"```mermaid\n(.*?)\n```", self.text(), re.DOTALL)
+        sequence_diagrams = [diagram for diagram in diagrams if diagram.startswith("sequenceDiagram")]
+        self.assertGreater(len(sequence_diagrams), 0)
+        for diagram in sequence_diagrams:
+            for line in diagram.splitlines():
+                if ":" in line:
+                    with self.subTest(line=line):
+                        self.assertNotIn(";", line.split(":", 1)[1])
+
     def test_six_plane_outcomes_are_explicit(self) -> None:
         text = self.text().lower()
         for plane in (
