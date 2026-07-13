@@ -185,6 +185,12 @@ def validate_baseline(
         if not isinstance(baseline, dict):
             continue
         mapping_set_id = baseline.get("mapping_set_id")
+        if not isinstance(mapping_set_id, str):
+            errors.append(
+                f"{path}: trusted baseline lifecycle metadata is malformed: "
+                "mapping_set_id must be a string"
+            )
+            continue
         candidate = current_lifecycle.get(mapping_set_id)
         baseline_events = baseline.get("events")
         candidate_events = candidate.get("events") if isinstance(candidate, dict) else None

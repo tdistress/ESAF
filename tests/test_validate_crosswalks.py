@@ -120,6 +120,15 @@ class CrosswalkValidationTests(unittest.TestCase):
                 self.assertEqual(errors, sorted(set(errors)))
                 self.assertIn(expected, "\n".join(errors))
 
+    def test_schema_invalid_baseline_lifecycle_identifier_fails_closed(self) -> None:
+        baseline = self.fixture.commit_unhashable_lifecycle_mapping_set_id()
+        errors = validate(self.root, baseline_ref=baseline).errors
+        self.assertEqual(errors, sorted(set(errors)))
+        self.assertIn(
+            "trusted baseline lifecycle metadata is malformed",
+            "\n".join(errors),
+        )
+
     def test_incomplete_reviewed_snapshot_is_rejected(self) -> None:
         self.fixture.create_valid_snapshot(status="reviewed", complete=False)
         errors = validate(self.root).errors

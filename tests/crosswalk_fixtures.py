@@ -278,6 +278,13 @@ class CrosswalkFixture:
         self._git("commit", "--quiet", "-m", "Approved lifecycle baseline")
         return self._git("rev-parse", "HEAD")
 
+    def commit_unhashable_lifecycle_mapping_set_id(self) -> str:
+        self.create_approved_snapshot_with_lifecycle("approved")
+        self.set_unhashable_lifecycle_mapping_set_id()
+        self._git("add", "crosswalks")
+        self._git("commit", "--quiet", "-m", "Malformed lifecycle baseline")
+        return self._git("rev-parse", "HEAD")
+
     def mutate_approved_record(self) -> None:
         path = self._record()
         path.write_bytes(path.read_bytes() + b"\nApproved content was rewritten.\n")
