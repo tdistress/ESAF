@@ -112,7 +112,9 @@
 
 - `python tools/validate_crosswalks.py --write`: exit 0; 0 mapping sets, 0 provisions, 0 relationships, 0 negative dispositions.
 - `python tools/validate_crosswalks.py --check`: exit 0 with the same counts.
-- `python -m unittest discover -s tests -v`: 152 tests passed, 0 failures.
+- `python -m unittest discover -s tests -v`: 167 tests passed, 0 failures; one Windows symlink-capability test skipped.
 - `python tools/validate_controls.py --check`: 91 controls, 91 objectives, and 16 families validated.
 - `python tools/validate_architectures.py`: 10 foundation files and 7 reserved patterns validated.
+- `python tools/migrate_control_mappings.py --check`: 91 catalog-derived mapping sections validated; 0 changed.
+- `python tools/validate_crosswalks.py --check --baseline-ref HEAD`: exit 0 with the same zero catalog counts.
 - `git diff --check`: exit 0.
