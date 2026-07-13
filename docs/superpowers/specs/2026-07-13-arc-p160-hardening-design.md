@@ -1,6 +1,6 @@
 # ARC-P160 AI Observability Hardening Design
 
-**Status:** Pending written-spec review
+**Status:** Approved
 
 **Target release:** 0.4-alpha
 
