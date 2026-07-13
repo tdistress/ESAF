@@ -278,6 +278,48 @@ class ArcP160PatternTests(unittest.TestCase):
             with self.subTest(requirement=requirement):
                 self.assertIn(requirement, text)
 
+    def test_failure_and_abuse_treatment_is_complete(self) -> None:
+        text = self.text().lower()
+        for requirement in (
+            "spoofed source",
+            "correlation collision",
+            "replay",
+            "schema drift",
+            "telemetry injection",
+            "clock regression",
+            "late, duplicate, missing, or out-of-order event",
+            "signing key compromise",
+            "privileged evidence alteration",
+            "provider export delay",
+            "alert poisoning",
+            "suppression abuse",
+            "containment abuse",
+            "evidence integrity failure",
+            "routing and backpressure failure",
+        ):
+            with self.subTest(requirement=requirement):
+                self.assertIn(requirement, text)
+
+    def test_tier_three_and_four_safe_stop_is_explicit(self) -> None:
+        text = self.text()
+        for requirement in (
+            "Stop Tier 3 and Tier 4 consequential commit and dependent activity; do not report success",
+            "Missing tenant binding, unverifiable telemetry, privacy-policy failure, expiry, or buffer exhaustion causes fail-safe rejection.",
+            "Monitoring failure cannot bypass enforcement.",
+        ):
+            with self.subTest(requirement=requirement):
+                self.assertIn(requirement, text)
+
+    def test_degraded_operation_and_recovery_are_bounded(self) -> None:
+        text = self.text()
+        for requirement in (
+            "Lower-tier operation may enter only a preapproved degraded mode with protected local buffering, explicit duration and volume, visible status, and no increase in data, authority, provider, or action scope.",
+            "Recovery validates signed backfill, sequence reconciliation, integrity and custody, gap disposition, privacy obligations, material incident review, and authorized return to normal.",
+            "Applicability matrices define commit-blocking evidence, source, tolerated delay, degraded state, recovery condition, and change authority for each capability and action class.",
+        ):
+            with self.subTest(requirement=requirement):
+                self.assertIn(requirement, text)
+
     def test_capture_modes_and_six_logical_planes_are_preserved(self) -> None:
         self.assert_capture_modes_and_planes_preserved(self.text())
 
