@@ -91,6 +91,41 @@ class ArcP150PatternTests(unittest.TestCase):
         ):
             self.assertIn(plane, text)
 
+    def test_all_interaction_modes_and_state_authorities_are_explicit(self) -> None:
+        text = self.text().lower()
+        for mode in (
+            "synchronous request and response",
+            "asynchronous jobs and queues",
+            "streaming",
+            "batch and file processing",
+            "events and subscriptions",
+            "callbacks and webhooks",
+        ):
+            self.assertIn(mode, text)
+        for state in (
+            "transport delivery",
+            "service execution",
+            "result delivery",
+            "target transaction",
+            "business outcome",
+        ):
+            self.assertIn(state, text)
+
+    def test_durable_and_authorization_invariants_are_explicit(self) -> None:
+        text = self.text().lower()
+        for requirement in (
+            "at-least-once",
+            "unknown outcome",
+            "idempotency",
+            "bounded authorization lease",
+            "current authorization",
+            "authoritative reconciliation",
+            "semantic map",
+            "granular event permissions",
+            "registered internal enterprise destinations",
+        ):
+            self.assertIn(requirement, text)
+
 
 if __name__ == "__main__":
     unittest.main()
