@@ -356,6 +356,50 @@ class UkCyberEssentialsV33CrosswalkTests(unittest.TestCase):
                 self.assertTrue(relationship["known_gaps"])
                 self.assertIn("ai", " ".join(relationship["known_gaps"]).lower())
 
+    def test_malware_records_are_complete_and_expose_endpoint_gap(self) -> None:
+        self.assert_group("e5", 12)
+        records = [self.load_record(f"ce33-e5-{number:03d}") for number in range(1, 13)]
+        for record in records:
+            self.assertTrue(record["source_locator"]["locator"].startswith("Section E.5"))
+
+        negatives = [
+            record for record in records if record["disposition"] == "no_direct_mapping"
+        ]
+        self.assertTrue(negatives)
+        self.assertTrue(
+            any("malware" in record["negative_rationale"].lower() for record in negatives)
+        )
+
+    def test_malware_relationships_preserve_narrow_ai_scope(self) -> None:
+        expected_controls = {
+            "ce33-e5-009": {"APP-140"},
+            "ce33-e5-010": {"APP-140"},
+            "ce33-e5-011": {"API-120"},
+        }
+        for number in range(1, 13):
+            record_id = f"ce33-e5-{number:03d}"
+            record = self.load_record(record_id)
+            if record_id in expected_controls:
+                self.assertEqual(
+                    {
+                        relationship["esaf_control_id"]
+                        for relationship in record["relationships"]
+                    },
+                    expected_controls[record_id],
+                )
+                for relationship in record["relationships"]:
+                    self.assertEqual(relationship["relationship"], "partially_supports")
+                    self.assertEqual(relationship["coverage"], "narrow")
+                    self.assertTrue(relationship["rationale"])
+                    self.assertTrue(relationship["conditions"])
+                    self.assertTrue(relationship["expected_evidence"])
+                    self.assertTrue(relationship["known_gaps"])
+                    self.assertIn("ai", " ".join(relationship["known_gaps"]).lower())
+            else:
+                self.assertEqual(record["disposition"], "no_direct_mapping")
+                self.assertEqual(record["relationships"], [])
+                self.assertTrue(record["negative_rationale"])
+
     def test_locked_provision_oracle_is_exact(self) -> None:
         oracle = json.loads(PROVISION_ORACLE.read_text(encoding="utf-8"))
         provisions = oracle["provisions"]

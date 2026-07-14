@@ -5,31 +5,32 @@
     },
     "by_confidence": {
       "high": 29,
-      "medium": 9
+      "low": 1,
+      "medium": 11
     },
     "by_coverage": {
-      "narrow": 36,
+      "narrow": 39,
       "partial": 2
     },
     "by_direction": {
-      "esaf_to_external": 38
+      "esaf_to_external": 41
     },
     "by_disposition": {
-      "mapped": 37,
-      "no_direct_mapping": 67
+      "mapped": 40,
+      "no_direct_mapping": 76
     },
     "by_esaf_release": {
       "0.4-alpha": 1
     },
     "by_lifecycle_state": {},
     "by_provision_status": {
-      "draft": 104
+      "draft": 116
     },
     "by_publication": {
       "cyber-essentials-requirements-for-it-infrastructure": 1
     },
     "by_relationship": {
-      "partially_supports": 38
+      "partially_supports": 41
     },
     "by_snapshot_status": {
       "draft": 1
@@ -38,9 +39,9 @@
       "3.3": 1
     },
     "mapping_sets": 1,
-    "negative_dispositions": 67,
-    "provisions": 104,
-    "relationships": 38
+    "negative_dispositions": 76,
+    "provisions": 116,
+    "relationships": 41
   },
   "generated_from": "crosswalks/mappings/** and crosswalks/registry/*.md",
   "mapping_sets": [
@@ -175,7 +176,7 @@
         "events": [],
         "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
         "schema_version": "1.0.0",
-        "snapshot_digest": "0564e8b0d2f5cf1c269a05dc2aa05c19dc2fd393ed25cbd5beb34d78adfa8ede"
+        "snapshot_digest": "a47abbb7b86217574ce6c649b2045f718bf34b7954c923622739ac1dbff01083"
       },
       "metadata": {
         "authority": {
@@ -4363,6 +4364,456 @@
             "status": "draft"
           },
           "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e4-029.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Malware Protection mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Keep a malware-protection mechanism active on every in-scope device."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-E5-001",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "ESAF 0.4-alpha contains no universal endpoint-malware control requiring an active malware-protection mechanism on every Cyber Essentials in-scope device; its AI infrastructure, application, and tool controls have narrower subjects and outcomes.",
+            "record_id": "ce33-e5-001",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.5, Malware Protection, Requirements, page 23, opening sentence",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e5-001.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Malware Protection mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Use at least one listed malware-protection option for each in-scope device."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-E5-002",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "ESAF 0.4-alpha does not require selection of a Cyber Essentials malware-protection option for every in-scope device; adjacent AI hardening and software-assurance controls do not establish that endpoint outcome.",
+            "record_id": "ce33-e5-002",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.5, Malware Protection, Requirements, page 23, opening paragraph, sentence 2",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e5-002.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Malware Protection mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Keep malware-protection software updated according to vendor instructions."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-E5-003",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "INF-110 and APP-140 address AI hardening and software-assurance practices, but neither expressly requires malware-protection software to be updated according to vendor instructions across the Cyber Essentials device population.",
+            "record_id": "ce33-e5-003",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.5, Malware Protection, Requirements, pages 23-24, 'In all cases' clause, update outcome",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e5-003.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Malware Protection mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "When anti-malware software is selected, update it in line with vendor recommendations."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-E5-004",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "ESAF 0.4-alpha does not expressly govern anti-malware software or require its update cadence to follow vendor recommendations, so the Cyber Essentials malware outcome has no direct control mapping.",
+            "record_id": "ce33-e5-004",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.5, Malware Protection, Anti-malware software option, page 24, bullet 1",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e5-004.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Malware Protection mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "When anti-malware software is selected, configure it to prevent malware from running."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-E5-005",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "INF-110 requires risk-proportionate hardening of AI infrastructure, but it does not require anti-malware software or configure that software to prevent malware from running on every Cyber Essentials in-scope device.",
+            "record_id": "ce33-e5-005",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.5, Malware Protection, Anti-malware software option, page 24, bullet 2",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e5-005.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Malware Protection mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "When anti-malware software is selected, configure it to prevent malicious-code execution."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-E5-006",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "INF-110 hardening and APP-140 software assurance can reduce malicious-code risk within AI systems, but neither expressly requires anti-malware software configured to prevent malicious-code execution on Cyber Essentials in-scope devices.",
+            "record_id": "ce33-e5-006",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.5, Malware Protection, Anti-malware software option, page 24, bullet 3",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e5-006.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Malware Protection mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "When anti-malware software is selected, prevent connections to malicious websites over the internet."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-E5-007",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "ESAF 0.4-alpha has no control requiring anti-malware software to block connections to malicious internet sites; AI infrastructure hardening and plugin governance do not establish that endpoint web-protection outcome.",
+            "record_id": "ce33-e5-007",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.5, Malware Protection, Anti-malware software option, page 24, bullet 4",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e5-007.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Malware Protection mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "When application allowlisting is selected, allow only approved applications to execute."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-E5-008",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "APP-140 controls secure development and release of AI application artifacts, but it does not require endpoint application allowlisting or prevent every unapproved application from executing on Cyber Essentials in-scope devices.",
+            "record_id": "ce33-e5-008",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.5, Malware Protection, Application allowlisting option, page 24, opening sentence, outcome 1",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e5-008.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Malware Protection mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "When application allowlisting is selected, restrict executable applications through code signing."
+            },
+            "disposition": "mapped",
+            "external_provision_id": "CE3.3-E5-009",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "record_id": "ce33-e5-009",
+            "relationships": [
+              {
+                "conditions": [
+                  "Code signing is selected and enforced for executable AI application artifacts governed by APP-140."
+                ],
+                "confidence": "low",
+                "coverage": "narrow",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "APP-140",
+                "esaf_control_version": "0.1.0",
+                "expected_evidence": [
+                  "AI application release standard, signing configuration, signing keys and certificates, build logs, signed-artifact inventory, and deployment verification."
+                ],
+                "known_gaps": [
+                  "APP-140 presents code signing as implementation guidance for AI application artifacts; it does not require endpoint application allowlisting or restrict every executable application through code signing across the Cyber Essentials device population."
+                ],
+                "rationale": "APP-140 directs code signing within controlled secure build and release practices for AI application artifacts, contributing signed-code assurance for that narrow application population.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.5, Malware Protection, Application allowlisting option, page 24, opening sentence, outcome 2",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e5-009.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Malware Protection mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Actively approve allowlisted applications before deploying them to devices."
+            },
+            "disposition": "mapped",
+            "external_provision_id": "CE3.3-E5-010",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "record_id": "ce33-e5-010",
+            "relationships": [
+              {
+                "conditions": [
+                  "The application is an internally built or materially configured AI application governed by APP-140 and the release process requires recorded approval before deployment."
+                ],
+                "confidence": "medium",
+                "coverage": "narrow",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "APP-140",
+                "esaf_control_version": "0.1.0",
+                "expected_evidence": [
+                  "AI application release policy, approval record, protected-pipeline configuration, release evidence, and deployment history."
+                ],
+                "known_gaps": [
+                  "APP-140 governs a narrow AI application population; it does not establish endpoint application allowlisting, require active approval of every application, or cover the full Cyber Essentials device population."
+                ],
+                "rationale": "APP-140 requires controlled review, build, release, and change practices and identifies approvals and security gates as evidence for AI application deployments, contributing predeployment approval for that narrow population.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.5, Malware Protection, Application allowlisting option, page 24, bullet 1",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e5-010.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Malware Protection mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Maintain a current list of approved applications."
+            },
+            "disposition": "mapped",
+            "external_provision_id": "CE3.3-E5-011",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "record_id": "ce33-e5-011",
+            "relationships": [
+              {
+                "conditions": [
+                  "The approved application is a tool or plugin that an in-scope AI capability can invoke and the API-120 registry is maintained through change and retirement."
+                ],
+                "confidence": "medium",
+                "coverage": "narrow",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "API-120",
+                "esaf_control_version": "0.1.0",
+                "expected_evidence": [
+                  "AI tool and plugin registry, current approval status, owner records, change history, periodic review results, and retirement evidence."
+                ],
+                "known_gaps": [
+                  "API-120 covers AI-invokable tools and plugins, not every application installed or executable on Cyber Essentials in-scope devices, and does not itself implement application allowlisting."
+                ],
+                "rationale": "API-120 requires every AI-invokable tool or plugin to be inventoried, approved, monitored, and retired, contributing a current approval inventory for that narrow application-like population.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.5, Malware Protection, Application allowlisting option, page 24, bullet 2, outcome 1",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e5-011.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Malware Protection mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Prevent users from installing applications that are unsigned or have an invalid signature."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-E5-012",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "APP-140 recommends code signing within AI software-assurance practices, but it does not require endpoint enforcement that prevents users from installing unsigned or invalidly signed applications across the Cyber Essentials device population.",
+            "record_id": "ce33-e5-012",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.5, Malware Protection, Application allowlisting option, page 24, bullet 2, outcome 2",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e5-012.md"
         }
       ]
     }
