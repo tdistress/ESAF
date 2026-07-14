@@ -84,7 +84,7 @@ The NCSC PDF is Crown copyright. The NCSC terms apply the Open Government Licenc
 - avoid copied source passages when original concise paraphrases suffice; and
 - prohibit any implication of NCSC, IASME, Certification Body, or government endorsement.
 
-A named rights reviewer different from the inventory authors shall verify the exact pinned bytes and recorded permission boundary before the oracle is accepted.
+A named rights reviewer different from both inventory authors shall verify the exact pinned bytes, publication basis, attribution, permitted derivative elements, excluded elements, and restrictions **before either source-derived scratch inventory, ledger, paraphrase, or oracle enters Git**. The rights record itself may be committed first because it contains only source identity, bibliographic facts, the reviewer's decision, and the approved publication boundary. Inventory work shall stop if that decision is absent, conditional, or does not cover the intended committed fields.
 
 IASME pages display separate IASME copyright, and no open reuse licence was identified. OGL permissions shall not be extended to IASME material. Until a distinct rights basis is approved, only bibliographic facts, official links, and independently written high-level context may be committed about IASME notices.
 
@@ -111,7 +111,7 @@ The `complete_publication` universe contains every independently actionable or n
 - navigation, branding, headers, footers, page numbers, and rights-only material; and
 - references to the separately published Cyber Essentials requirements, which are dependencies rather than incorporated provisions.
 
-Every substantive heading shall appear exactly once in a section ledger as `included` or `context_only`, with printed pages, PDF pages, rationale, and atom count. Context material remains accounted for without becoming artificial `out_of_scope` provision records.
+Every substantive section occurrence shall appear exactly once in a section ledger as `included` or `context_only`, with a unique hierarchical `section_id`, `parent_section_id`, heading text, group, printed-page coordinates, PDF-page coordinates, rationale, and atom count. Occurrence identity, rather than heading text, controls uniqueness so repeated headings remain separate and auditable. Every provision shall reference exactly one included occurrence through `section_id`. Context material remains accounted for without becoming artificial `out_of_scope` provision records.
 
 ## 7. Atomization rule
 
@@ -131,7 +131,7 @@ Apply these rules consistently:
 
 ### 7.1 Visual provisions
 
-Text extraction is not authoritative for completeness. PDF page 9, printed page 8, contains Figure 1 decision logic that ordinary linear extraction does not preserve. Each of its seven independent decisions shall be one decision-rule atom; Yes and No arrows shall remain branches of that atom rather than separate atoms.
+Text extraction is not authoritative for completeness. PDF page 9, printed page 8, contains Figure 1 decision logic that ordinary linear extraction does not preserve. Each of its seven independent decisions shall be one decision-rule atom with `source_assigned_label` values forming the exact set `Figure 1 decision 1` through `Figure 1 decision 7`; Yes and No arrows shall remain branches of that atom rather than separate atoms.
 
 Locators for visual provisions shall use both coordinate systems, for example `PDF page 9 / printed page 8, Figure 1, decision 4`. Every PDF page shall be rendered and visually inspected before the oracle count is frozen.
 
@@ -141,15 +141,16 @@ The public text says that general prerequisites apply to `tests 2 to 7`, while t
 
 ## 8. Independent reconciliation and count
 
-No expected provision count is approved by this design. Two inventory authors shall independently inspect the exact canonical bytes, including every rendered page, and produce complete atom lists without sharing a provisional count. They shall then reconcile inclusion decisions, atom boundaries, identifiers, summaries, kinds, and locators.
+No expected provision count is approved by this design. After the independent rights gate passes, two inventory authors shall independently inspect the exact canonical bytes, including every rendered page, and produce complete atom lists and complete section-occurrence ledgers without sharing a provisional count or occurrence set. They shall then reconcile inclusion decisions, atom boundaries, identifiers, summaries, kinds, actors, locators, and occurrence links.
 
 The reconciled list becomes the locked oracle only after:
 
 1. all differences are dispositioned with rationale;
-2. the section-ledger counts, group counts, and total agree;
-3. a separate rights reviewer approves publication of every committed element;
-4. an independent specification/inventory reviewer finds no unresolved Critical or Important issue; and
-5. an independent security/overclaiming reviewer finds no unresolved Critical or Important issue on the same exact candidate SHA.
+2. an independent reconciler locks the exact expected set of hierarchical section occurrences from the source before deriving any atom count, and tests assert exact set equality rather than heading-count equality;
+3. every provision links to one included ledger occurrence, and section-ledger counts derived from those links, group counts, and total agree;
+4. the prior rights decision is re-attested against every class of committed source-derived element without changing its publication basis;
+5. an independent specification/inventory reviewer finds no unresolved Critical or Important issue; and
+6. an independent security/overclaiming reviewer finds no unresolved Critical or Important issue on the same exact candidate SHA.
 
 Any subsequent count, summary, identifier, locator, source, or rights change invalidates both reviews and requires redispatch on the new candidate.
 
@@ -171,20 +172,39 @@ The locked oracle will be stored at:
 
 `docs/superpowers/specs/2026-07-14-uk-cyber-essentials-plus-v3.2-provision-oracle.json`
 
-Its top-level contract shall include:
+Tests shall enforce the following closed contract as an exact JSON Schema equivalent: every object has `additionalProperties: false`; every listed property is required unless explicitly described as nullable; arrays retain publication order and contain no duplicate values where a set is intended. Strings are nonempty after trimming. Dates use `YYYY-MM-DD`, SHA-256 values use 64 lowercase hexadecimal characters, byte/page/count fields are nonnegative integers, and no numeric count is fixed until reconciliation.
 
-- schema version and atomization-rule version;
-- source title, authority, version, resource page, canonical URL, legacy URL, dates, media type, byte lengths, page count, and both SHA-256 digests;
-- copyright, licence, attribution, permitted and prohibited elements, and rights restrictions;
-- known source anomalies and separately sourced operational context;
-- included and context-only sections;
-- the complete section ledger;
-- total and group counts; and
-- the ordered provision array.
+The top-level object has exactly these required properties:
 
-Each provision shall contain `record_id`, `external_provision_id`, `group`, `kind`, `source_assigned_label`, original `summary`, and precise `locator`.
+- `schema_version`: string, initially `1.0.0`;
+- `atomization_rule_version`: string, initially `1.0.0`;
+- `scope`: object with exactly `type` (`complete_publication`) and `statement` (string bounded to the pinned public PDF);
+- `source`: source object defined below;
+- `rights`: rights object defined below;
+- `inventory_provenance`: inventory-provenance object defined below;
+- `operational_context`: array of context objects defined below;
+- `known_anomalies`: array of anomaly objects defined below;
+- `groups`: array equal in order to `M`, `T1`, `S`, `T2`, `T3`, `T4`, `T5`, `C`, `A`, `B`;
+- `section_ledger`: ordered array of section-occurrence objects defined below;
+- `counts`: counts object defined below;
+- `assurance_limits`: assurance-limits object defined below; and
+- `provisions`: ordered array of provision objects defined below.
 
-`kind` shall be one of `applicability`, `prerequisite`, `procedure_step`, `decision_rule`, `result_rule`, `evidence_retention`, or `recommendation`.
+The `source` object has exactly these required properties: `title` (string), `authority` (string), `publication_identifier` (string), `version` (string equal to `3.2`), `display_date` (string `YYYY-MM`), `resource_page_url` (URI string), `resource_page_date` (date), `access_date` (date), `media_type` (string equal to `application/pdf`), `pdf_page_count` (positive integer), and `variants` (array). `variants` contains exactly two objects, ordered canonical then legacy, each with exactly `role` (`canonical` or `legacy`), `url` (URI string), `byte_length` (positive integer), and `sha256` (digest string).
+
+The `rights` object has exactly these required properties: `copyright` (string), `licence_name` (string), `licence_url` (URI string), `attribution` (string), `publication_basis` (string), `permitted_elements` (nonempty array of unique strings), `prohibited_elements` (nonempty array of unique strings), `restrictions` (nonempty array of unique strings), `iasme_partition` (object), and `review` (object). `iasme_partition` has exactly `owner` (string), `licence` (nullable string; null until a separate licence is approved), `permitted_facts` (nonempty unique string array), and `prohibited_source_derived_elements` (nonempty unique string array). `review` has exactly `reviewer` (string), `review_date` (date), `independent_of_inventory_authors` (boolean required true), `canonical_sha256` (digest), `legacy_sha256` (digest), `publication_basis_verified` (boolean required true), and `disposition` (string equal to `approved`).
+
+The `inventory_provenance` object has exactly `authors` (array of exactly two unique nonempty strings), `reconciler` (nonempty string), `rights_record_commit` (40-character lowercase Git SHA string), and `inventories_started_after_rights_commit` (boolean required true). Tests shall require `rights.review.reviewer` to differ from both authors and shall use Git history during repository validation to prove `rights_record_commit` is an ancestor of the first commit containing any source-derived inventory artifact.
+
+Each `operational_context` item has exactly `owner` (string), `title` (string), `url` (URI string), `publication_date` (date), `access_date` (date), `relevance` (original high-level string), and `rights_partition` (string equal to `bibliographic_facts_and_original_context_only`). Each `known_anomalies` item has exactly `anomaly_id` (unique string), `source_literal` (string), `locator` (locator object), and `treatment` (string that records without correction or expansion).
+
+Each `section_ledger` occurrence has exactly `section_id` (unique hierarchical identifier such as `sec-t3-figure-1`), `parent_section_id` (nullable string referencing another ledger occurrence), `heading` (string; repeated values permitted), `group` (one controlled group), `pdf_pages` (page-range object), `printed_pages` (nullable page-range object), `decision` (`included` or `context_only`), `rationale` (string), and `atom_count` (nonnegative integer). A page-range object has exactly `start` and `end` positive integers with `start <= end`. The reconciler shall independently specify and freeze the exact ordered `section_id` set; tests shall assert exact equality, valid parent references, coordinates, and group values. Ledger atom counts shall be computed from provision `section_id` links, including zero for context-only occurrences, rather than trusted as free-standing declarations.
+
+The `counts` object has exactly `total` (nonnegative integer) and `by_group` (object with exactly the ten group names as nonnegative integer properties). Tests shall derive both from `provisions`, require their sums to agree, and compare them with the link-derived ledger counts. Count literals enter tests only after both independent inventories and the independently specified occurrence set are reconciled.
+
+Each provision has exactly these required properties: `record_id` (string), `external_provision_id` (string), `section_id` (string referencing one `included` ledger occurrence), `group` (controlled group matching that occurrence), `kind` (controlled kind), `actors` (nonempty array of unique controlled actor strings), `actor_basis` (original concise string identifying the source grammar that assigns the actor or actors), `source_assigned_label` (nullable string), `summary` (original concise string), and `locator` (locator object). `actors` values are limited to `Assessor`, `Applicant`, `Certification Body`, `Certifying Body`, and `Delivery Partner`; multiple actors are allowed only when `actor_basis` and the locator demonstrate that the source expressly assigns the same atom to each. A locator has exactly `pdf_page` (positive integer), `printed_page` (nullable positive integer), `section` (string), `detail` (string), and `source_assigned_label` (nullable string). `kind` is one of `applicability`, `prerequisite`, `procedure_step`, `decision_rule`, `result_rule`, `evidence_retention`, or `recommendation`.
+
+The `assurance_limits` object has exactly these required properties, all expressed as original bounded statements rather than source quotation: `scope_boundary`, `population_and_sample_boundary`, `assessment_date_boundary`, `evidence_date_boundary`, `tool_and_provenance_boundary`, `point_in_time_boundary`, and `discretion_owner` (strings); `exception_predicates` (array); and `prohibited_inferences` (array). `exception_predicates` contains exactly two objects, one for each distinct less-than-five-percent rule in the publication, with exactly `exception_id` (unique string), `predicate` (string), `owner` (one controlled actor), `locator` (locator object), and `not_a_score` (boolean required true). `prohibited_inferences` shall contain the exact controlled set `predictive_sufficiency`, `full_population_assurance`, and `continuous_assurance`.
 
 ## 10. Future mapping boundary
 
@@ -209,10 +229,11 @@ The discretionary less-than-five-percent exception is not a 95-percent complianc
 
 The source-inventory implementation milestone shall create:
 
+- an independently approved rights record committed before any source-derived inventory content;
 - the locked JSON oracle at the path in section 9.2;
 - focused tests for source identity, rights, section coverage, visual decisions, identifiers, counts, kinds, summaries, locators, anomalies, and prohibited claims;
 - a concise Cyber Essentials Plus roadmap section in `crosswalks/uk-cyber-essentials.md` linking the oracle and preserving the core/Plus boundary;
-- traceability evidence recording the two independent inventories and both exact-SHA final reviews; and
+- traceability evidence recording the two independent inventories, independently specified occurrence set, derived counts, and gate results, while exact reviewed PR-head SHA evidence remains external to the reviewed commit; and
 - project backlog wording that moves the next activity from design to independently reconciled inventory implementation.
 
 The milestone shall not create a mapping snapshot directory, lifecycle record, control manifest, provision mapping record, relationship leg, generated crosswalk statistic, or claim of scheme completeness.
@@ -225,13 +246,15 @@ Final acceptance requires:
 
 1. canonical and legacy official source identities are byte-pinned;
 2. all 24 pages are rendered and visually inspected;
-3. two independent atom lists are reconciled and the count is frozen only afterward;
-4. every substantive heading is accounted for exactly once;
-5. section, group, and total counts agree exactly;
-6. all identifiers, summaries, kinds, and locators satisfy the oracle contract;
-7. Figure 1's seven decisions and the `tests 2 to 7` anomaly are locked;
-8. NCSC and IASME provenance and rights remain separate;
-9. focused and full repository tests, all validators, link checks, cache checks, and whole-branch diff checks pass;
-10. exact-SHA inventory/specification and security/overclaiming reviews have no unresolved Critical or Important findings;
-11. required GitHub checks pass on the reviewed PR-head SHA and post-merge validation passes on the resulting merged-main SHA; and
-12. no mapping, certification, equivalence, endorsement, full-population, continuous-assurance, or current-scheme-completeness claim is introduced.
+3. rights approval precedes any source-derived inventory content entering Git, and the reviewer is independent of both inventory authors;
+4. two independent atom lists and ledgers are reconciled and the count is frozen only afterward;
+5. the independently specified exact section-occurrence set is locked, including repeated headings, and every provision links to one included occurrence;
+6. section counts derived from provision links, group counts, and total counts agree exactly;
+7. the closed JSON contract rejects missing, mistyped, nullable-when-nonnullable, and unknown fields; all identifiers, actors, summaries, kinds, and locators satisfy it;
+8. Figure 1's decision-label set is exactly decisions 1 through 7, and the `tests 2 to 7` anomaly is locked;
+9. NCSC and IASME provenance and rights remain separate;
+10. assurance limits encode actor, scope, population/sample, dates, tool/provenance, point-in-time, discretion, both exception predicates, and prohibited predictive/full-population/continuous inferences;
+11. focused and full repository tests, all validators, an explicit general link validator, cache checks, and whole-branch diff checks pass;
+12. exact-SHA inventory/specification and security/overclaiming reviews have no unresolved Critical or Important findings;
+13. required GitHub checks pass on the externally recorded reviewed PR-head SHA and post-merge validation passes on the resulting merged-main SHA; and
+14. no mapping, certification, equivalence, endorsement, full-population, continuous-assurance, or current-scheme-completeness claim is introduced.
