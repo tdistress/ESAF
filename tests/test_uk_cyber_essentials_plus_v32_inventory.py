@@ -6,11 +6,13 @@ import re
 import subprocess
 import unittest
 from collections import Counter
+from datetime import date
 from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
 ORACLE = ROOT / "docs/superpowers/specs/2026-07-14-uk-cyber-essentials-plus-v3.2-provision-oracle.json"
+RIGHTS_REVIEW = ROOT / "docs/superpowers/reviews/2026-07-14-uk-cyber-essentials-plus-v3.2-rights-review.md"
 SOURCE_TITLE = "Cyber Essentials Plus Test Specification"
 SOURCE_AUTHORITY = "UK National Cyber Security Centre"
 PUBLICATION_IDENTIFIER = "cyber-essentials-plus-test-specification"
@@ -50,6 +52,64 @@ TOP_LEVEL_KEYS = {
 }
 LOCATOR_KEYS = {"pdf_page", "printed_page", "section", "detail"}
 LANDING_PAGE = ROOT / "crosswalks/uk-cyber-essentials.md"
+SCOPE_STATEMENT = (
+    "This complete-publication oracle inventories the public NCSC Cyber Essentials "
+    "Plus Test Specification v3.2. It is not a complete inventory of the current "
+    "operational Cyber Essentials Plus scheme, Delivery Partner methodology, or "
+    "certification process."
+)
+ORIGINAL_FREE_TEXT_PATHS = (
+    re.compile(r"^scope\.statement$"),
+    re.compile(r"^rights\.publication_basis$"),
+    re.compile(r"^rights\.restrictions\[\d+\]$"),
+    re.compile(r"^rights\.iasme_partition\.(?:permitted_facts|prohibited_source_derived_elements)\[\d+\]$"),
+    re.compile(r"^operational_context\[\d+\]\.relevance$"),
+    re.compile(r"^known_anomalies\[\d+\]\.treatment$"),
+    re.compile(r"^section_ledger\[\d+\]\.rationale$"),
+    re.compile(r"^provisions\[\d+\]\.(?:actor_basis|summary)$"),
+    re.compile(r"^provisions\[\d+\]\.locator\.detail$"),
+    re.compile(
+        r"^assurance_limits\.(?:scope_boundary|population_and_sample_boundary|"
+        r"assessment_date_boundary|evidence_date_boundary|tool_and_provenance_boundary|"
+        r"point_in_time_boundary)$"
+    ),
+)
+AFFIRMATIVE_PROHIBITED_CLAIMS = {
+    "certification": (
+        r"\b(?:provides|confers|establishes|demonstrates|proves|guarantees) (?:a )?certification\b",
+        r"\bcertifies (?:the|an|any)\b",
+    ),
+    "compliance": (
+        r"\b(?:provides|establishes|demonstrates|proves|guarantees) compliance\b",
+        r"\b(?:is|are) compliant with\b",
+    ),
+    "equivalence": (
+        r"\b(?:provides|establishes|demonstrates|proves|guarantees) equivalence\b",
+        r"\b(?:is|are) equivalent to\b",
+    ),
+    "endorsement": (
+        r"\b(?:provides|establishes|demonstrates|proves|guarantees) endorsement\b",
+        r"\b(?:is|are) endorsed by\b",
+        r"\b(?:has|carries|receives) (?:NCSC |IASME |government )?endorsement\b",
+        r"\b(?:NCSC|IASME) endorses\b",
+    ),
+    "predictive_sufficiency": (
+        r"\b(?:provides|establishes|demonstrates|proves|guarantees) predictive sufficiency\b",
+        r"\b(?:is|are) sufficient to predict\b",
+        r"\bpredicts future (?:security|compliance|performance|outcomes?)\b",
+    ),
+    "full_population_assurance": (
+        r"\b(?:provides|establishes|demonstrates|proves|guarantees) full[- ]population assurance\b",
+        r"\bassures (?:the )?(?:entire|full) population\b",
+    ),
+    "continuous_assurance": (
+        r"\b(?:provides|establishes|demonstrates|proves|guarantees) continuous assurance\b",
+    ),
+    "current_scheme_completeness": (
+        r"\b(?:is|provides|establishes) (?:a )?complete inventory of the current operational\b",
+        r"\bfully describes the current (?:operational )?scheme\b",
+    ),
+}
 
 
 class CyberEssentialsPlusV32InventoryTests(unittest.TestCase):
@@ -83,6 +143,10 @@ class CyberEssentialsPlusV32InventoryTests(unittest.TestCase):
     def assert_date(self, value: object) -> str:
         text = self.assert_nonempty_string(value)
         self.assertRegex(text, r"^\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])$")
+        try:
+            date.fromisoformat(text)
+        except ValueError:
+            self.fail(f"invalid calendar date: {text}")
         return text
 
     def assert_uri(self, value: object) -> str:
@@ -132,6 +196,39 @@ class CyberEssentialsPlusV32InventoryTests(unittest.TestCase):
                 found.extend(self.walk(child, f"{path}[{index}]"))
         return found
 
+    def original_free_text(self, oracle: object) -> list[tuple[str, str]]:
+        return [
+            (path, value)
+            for path, value in self.walk(oracle)
+            if isinstance(value, str)
+            and any(pattern.fullmatch(path) for pattern in ORIGINAL_FREE_TEXT_PATHS)
+        ]
+
+    def normalized_prose(self, value: str) -> str:
+        return " ".join(re.findall(r"[a-z0-9%]+", value.lower()))
+
+    def assert_no_copied_source_passages(
+        self, oracle: object, source_passages: list[str], *, minimum_words: int = 5,
+    ) -> None:
+        normalized_passages = [
+            self.normalized_prose(passage) for passage in source_passages
+        ]
+        for path, value in self.original_free_text(oracle):
+            normalized_value = self.normalized_prose(value)
+            if len(normalized_value.split()) < minimum_words:
+                continue
+            for passage in normalized_passages:
+                if normalized_value in passage or passage in normalized_value:
+                    self.fail(f"copied source passage found at {path}: {value!r}")
+
+    def assert_no_affirmative_prohibited_claims(self, text: str) -> None:
+        for category, claims in AFFIRMATIVE_PROHIBITED_CLAIMS.items():
+            for claim in claims:
+                self.assertIsNone(
+                    re.search(claim, text, flags=re.IGNORECASE),
+                    f"affirmative {category} claim matched {claim!r}",
+                )
+
     def git(self, *args: str) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
             ["git", *args], cwd=ROOT, text=True, capture_output=True, check=False,
@@ -139,6 +236,55 @@ class CyberEssentialsPlusV32InventoryTests(unittest.TestCase):
 
     def test_locked_oracle_exists(self) -> None:
         self.assertTrue(ORACLE.is_file())
+
+    def test_copied_source_text_detector_covers_all_original_free_text(self) -> None:
+        source_passages = [
+            "The assessor must preserve every relevant evidence record for the assessment.",
+            "A complete scheme description includes all current operational methods and rules.",
+        ]
+        copied_summary = {
+            "provisions": [{
+                "summary": "The assessor must preserve every relevant evidence record for the assessment",
+            }],
+        }
+        copied_scope = {
+            "scope": {
+                "statement": "A complete scheme description includes all current operational methods and rules",
+            },
+        }
+        for candidate, path in (
+            (copied_summary, "provisions[0].summary"),
+            (copied_scope, "scope.statement"),
+        ):
+            with self.assertRaisesRegex(AssertionError, re.escape(path)):
+                self.assert_no_copied_source_passages(candidate, source_passages)
+
+    def test_prohibited_claim_detector_covers_all_eight_categories(self) -> None:
+        affirmative_examples = {
+            "certification": "The oracle provides certification for the Applicant.",
+            "compliance": "The Applicant is compliant with ESAF.",
+            "equivalence": "The assessment establishes equivalence with ESAF.",
+            "endorsement": "The publication is endorsed by NCSC.",
+            "predictive_sufficiency": "The result is sufficient to predict future security.",
+            "full_population_assurance": "The sample provides full population assurance.",
+            "continuous_assurance": "The certificate guarantees continuous assurance.",
+            "current_scheme_completeness": (
+                "The oracle is a complete inventory of the current operational scheme."
+            ),
+        }
+        self.assertEqual(set(PROHIBITED_INFERENCES), set(affirmative_examples))
+        for category, example in affirmative_examples.items():
+            with self.assertRaisesRegex(AssertionError, category):
+                self.assert_no_affirmative_prohibited_claims(example)
+        self.assert_no_affirmative_prohibited_claims(
+            "The oracle does not provide certification, demonstrate compliance, "
+            "or establish continuous assurance."
+        )
+
+    def test_date_parser_rejects_impossible_calendar_dates(self) -> None:
+        self.assertEqual("2026-07-14", self.assert_date("2026-07-14"))
+        with self.assertRaisesRegex(AssertionError, "invalid calendar date"):
+            self.assert_date("2026-02-31")
 
     @unittest.skipUnless(ORACLE.is_file(), "locked oracle is intentionally absent")
     def test_source_identity_is_exact(self) -> None:
@@ -167,9 +313,7 @@ class CyberEssentialsPlusV32InventoryTests(unittest.TestCase):
 
         scope = self.assert_exact_keys(oracle["scope"], {"type", "statement"})
         self.assertEqual("complete_publication", scope["type"])
-        statement = self.assert_nonempty_string(scope["statement"]).lower()
-        for boundary in ("public", "v3.2", "pdf", "not", "operational", "certification"):
-            self.assertIn(boundary, statement)
+        self.assertEqual(SCOPE_STATEMENT, scope["statement"])
 
         source = self.assert_exact_keys(
             oracle["source"],
@@ -278,6 +422,20 @@ class CyberEssentialsPlusV32InventoryTests(unittest.TestCase):
 
         commit_check = self.git("cat-file", "-e", f"{rights_sha}^{{commit}}")
         self.assertEqual(0, commit_check.returncode, commit_check.stderr)
+        relative_rights_review = RIGHTS_REVIEW.relative_to(ROOT).as_posix()
+        rights_history = self.git(
+            "log", "--diff-filter=A", "--format=%H", "--", relative_rights_review,
+        )
+        self.assertEqual(0, rights_history.returncode, rights_history.stderr)
+        self.assertEqual([rights_sha], rights_history.stdout.splitlines())
+        rights_introduction = self.git(
+            "diff-tree", "--root", "--no-commit-id", "--name-status", "-r",
+            rights_sha,
+        )
+        self.assertEqual(0, rights_introduction.returncode, rights_introduction.stderr)
+        self.assertEqual(
+            f"A\t{relative_rights_review}", rights_introduction.stdout.strip(),
+        )
         relative_oracle = ORACLE.relative_to(ROOT).as_posix()
         history = self.git(
             "log", "--diff-filter=A", "--format=%H", "--", relative_oracle,
@@ -525,6 +683,15 @@ class CyberEssentialsPlusV32InventoryTests(unittest.TestCase):
             self.assertNotEqual("tests 2 to 7", provision["summary"])
 
     @unittest.skipUnless(ORACLE.is_file(), "locked oracle is intentionally absent")
+    def test_original_free_text_excludes_source_copy_markers(self) -> None:
+        free_text = self.original_free_text(self.oracle())
+        self.assertTrue(free_text)
+        for path, value in free_text:
+            self.assertNotRegex(value, r"[\r\n•]", path)
+            self.assertNotRegex(value, r"[\"“”]", path)
+            self.assertNotRegex(value, r"\b(?:shall|must|should)\b", path)
+
+    @unittest.skipUnless(ORACLE.is_file(), "locked oracle is intentionally absent")
     def test_oracle_has_no_mapping_fields_or_prohibited_claim_phrases(self) -> None:
         oracle = self.oracle()
         prohibited_fields = {
@@ -542,18 +709,8 @@ class CyberEssentialsPlusV32InventoryTests(unittest.TestCase):
 
         serialized = json.dumps(oracle, ensure_ascii=False)
         landing = LANDING_PAGE.read_text(encoding="utf-8")
-        affirmative_claims = (
-            r"\b(?:establishes|demonstrates|proves|guarantees) certification\b",
-            r"\b(?:establishes|demonstrates|proves|guarantees) compliance\b",
-            r"\b(?:is|are) equivalent to ESAF\b",
-            r"\b(?:endorsed|approved) by (?:NCSC|IASME)\b",
-            r"\b(?:provides|establishes|demonstrates|proves|guarantees) full[- ]population assurance\b",
-            r"\b(?:provides|establishes|demonstrates|proves|guarantees) continuous assurance\b",
-            r"\bis a complete inventory of the current operational\b",
-        )
         for text in (serialized, landing):
-            for claim in affirmative_claims:
-                self.assertIsNone(re.search(claim, text, flags=re.IGNORECASE))
+            self.assert_no_affirmative_prohibited_claims(text)
 
 
 if __name__ == "__main__":
