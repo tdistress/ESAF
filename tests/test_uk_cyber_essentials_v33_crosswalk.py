@@ -515,6 +515,28 @@ class UkCyberEssentialsV33CrosswalkTests(unittest.TestCase):
             encoding="utf-8"
         )
         _, snapshot = parse_front_matter(SNAPSHOT / "README.md")
+        manifest = json.loads(
+            (SNAPSHOT / "ESAF_CONTROL_MANIFEST.json").read_text(encoding="utf-8")
+        )
+        records = [
+            parse_front_matter(path)[0]
+            for path in sorted(SNAPSHOT.glob("ce33-*.md"))
+        ]
+        relationships = [
+            relationship
+            for record in records
+            for relationship in record["relationships"]
+        ]
+        distinct_controls = {
+            relationship["esaf_control_id"] for relationship in relationships
+        }
+        manifest_versions = {control["version"] for control in manifest["controls"]}
+        self.assertEqual(len(manifest_versions), 1)
+        baseline_statement = (
+            f"The pinned baseline contains {len(manifest['controls'])} draft controls "
+            f"v{manifest_versions.pop()}; {len(relationships)} legs reference "
+            f"{len(distinct_controls)} distinct controls."
+        )
         for text in (landing, snapshot):
             for expected in (
                 "116",
@@ -524,7 +546,7 @@ class UkCyberEssentialsV33CrosswalkTests(unittest.TestCase):
                 "password",
                 "14-day",
                 "malware",
-                "All 91 referenced ESAF controls are draft",
+                baseline_statement,
                 "Cyber Essentials Plus",
                 "separate",
             ):

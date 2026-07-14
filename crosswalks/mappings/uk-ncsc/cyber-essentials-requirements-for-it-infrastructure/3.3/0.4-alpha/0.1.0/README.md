@@ -100,6 +100,6 @@ The draft preserves prominent gaps where ESAF 0.4-alpha does not state the exter
 
 ## Draft lifecycle
 
-The ESAF baseline is pinned to commit `5de9ff356ddad1e193444cd7308eff16ed83e811`. All 91 referenced ESAF controls are draft version 0.1.0. This mapping set remains draft with no schema reviewer or approver and an empty lifecycle event array pending qualified human review.
+The ESAF baseline is pinned to commit `5de9ff356ddad1e193444cd7308eff16ed83e811`. The pinned baseline contains 91 draft controls v0.1.0; 41 legs reference 16 distinct controls. All provision records and relationship legs remain draft. Independent technical review of the candidate does not constitute qualified Cyber Essentials scheme review or lifecycle approval. This mapping set has no schema reviewer or approver and an empty lifecycle event array pending qualified human review.
 
 Cyber Essentials Plus remains a separate roadmap item because its assurance and testing purpose differs from the core publication. This snapshot makes no statement about Plus testing outcomes.

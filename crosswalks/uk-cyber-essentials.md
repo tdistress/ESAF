@@ -46,7 +46,7 @@ Prominent gaps include:
 
 ## Draft-control boundary
 
-The mapping set remains draft. All 91 referenced ESAF controls are draft version 0.1.0 and are pinned to the ESAF 0.4-alpha source baseline. No relationship has been independently reviewed or approved, and qualified human review is required before any lifecycle transition. The crosswalk describes analytical contributions from ESAF controls to individual provisions; it does not establish certification, compliance, equivalence, a compliance percentage, legal sufficiency, or implementation effectiveness.
+The mapping set remains draft. The pinned baseline contains 91 draft controls v0.1.0; 41 legs reference 16 distinct controls. All provision records and relationship legs remain draft. Independent technical review of the candidate does not constitute qualified Cyber Essentials scheme review or lifecycle approval. Qualified human review is required before any lifecycle transition. The crosswalk describes analytical contributions from ESAF controls to individual provisions; it does not establish certification, compliance, equivalence, a compliance percentage, legal sufficiency, or implementation effectiveness.
 
 ## Cyber Essentials Plus roadmap
 

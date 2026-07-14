@@ -15,7 +15,7 @@
 | 3 | Every provision has defensible forward legs or a specific negative rationale. | Provision records; whole-snapshot semantics test; 41 relationship legs and 76 negative dispositions in generated catalog. | Enforced locally. |
 | 4 | Every relationship resolves to the pinned ESAF manifest. | `ESAF_CONTROL_MANIFEST.json`; whole-snapshot version-resolution test; crosswalk validator. | Enforced locally. |
 | 5 | Landing page and catalogs expose draft status, counts, and prominent gaps. | `crosswalks/uk-cyber-essentials.md`; snapshot `README.md`; `crosswalks/CATALOG.md`; `crosswalks/catalog.json`; narrative and catalog-agreement tests. | Enforced locally. |
-| 6 | Focused, full-suite, crosswalk, migration, control, architecture, baseline, link, and diff checks pass. | Task 10 final-gate command set and task report. | Passed during candidate preparation. |
+| 6 | Focused, full-suite, crosswalk, migration, control, architecture, baseline, link, and diff checks pass. | Task 10 final-gate command set and task report. | Passed on the replacement candidate content before commit. |
 | 7 | Two independent reviewers report no unresolved Critical or Important findings. | Exact-SHA specification/inventory review and security/overclaiming review. | Pending immutable candidate review. |
 | 8 | The protected-branch workflow passes after merge. | Pull-request checks and post-merge protected-branch workflow. | Pending pull request and merge. |
 | 9 | Snapshot remains draft pending qualified human review. | Snapshot and all records use `status: draft`; registry has `events: []`; draft-state tests. | Enforced locally. |
