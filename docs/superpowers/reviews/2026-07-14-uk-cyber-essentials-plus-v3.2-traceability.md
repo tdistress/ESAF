@@ -111,28 +111,26 @@ Every provision links to exactly one included occurrence in the same group. Summ
 
 ## Validator TDD and preliminary command evidence
 
-Tests for the general repository link validator were written before `tools/validate_links.py`. They cover all Git-tracked Markdown, relative and repository-root paths, directory indexes, same-file and target fragments, duplicate heading anchors, URL-decoding, missing targets, missing anchors, decoded and plain repository escapes, ignored external/network URLs, file/line/original-target diagnostics, deterministic diagnostic order, and exclusion of untracked Markdown.
+Focused tests cover every Git-tracked Markdown file; relative and repository-root paths; directory indexes; inline and reference-style destinations; balanced nested parentheses; same-file and target fragments; inline-code and duplicate heading anchors; URL-decoded paths and fragment boundaries; missing targets and anchors; decoded and plain repository escapes; ignored external/network URLs; complete file, line, and original-target diagnostics; deterministic diagnostic order; exclusion of untracked Markdown; and the exact exit contract of 0 for success, 1 for broken links, and 2 for operational failure.
 
-The focused RED ran five tests against the absent validator. Python returned exit code 2 with `can't open file ... tools\\validate_links.py: [Errno 2] No such file or directory`; the success case failed and the four diagnostic expectations lacked output for that same expected reason. After the minimal implementation, the focused suite ran five tests in 2.467 seconds and passed.
+For the consolidated parser correction, nine focused tests ran before the implementation change. Three failed for the intended reasons: a broken reference definition was ignored with exit 0, a nested balanced-parenthesis target was truncated in the diagnostic, and a URL-decoded fragment could not match a heading containing inline code. The strengthened broken-link exit-1 and operational-failure exit-2 assertions already passed. After replacing the flat parsing layer, all nine focused tests passed. Self-review then exposed that the reference destination was checked without proving full and collapsed usage lookup; one added focused test failed because both undefined usages returned exit 0. Normalized definition lookup resolved that gap, and the final ten-test suite passed. The complete preliminary rerun below is the authoritative GREEN evidence.
 
 Preliminary command results on the completed working-tree content were:
 
 | Command | Result |
 |---|---|
-| `python -m unittest tests.test_validate_links -v` | 5 tests passed in 2.476 seconds |
-| `python -m unittest tests.test_uk_cyber_essentials_plus_v32_inventory -v` | 18 tests passed in 0.267 seconds |
-| `python -m unittest discover -s tests -v` | 229 tests passed in 158.320 seconds; 3 expected Windows symlink-capability skips |
+| `python -m unittest tests.test_validate_links -v` | 10 tests passed in 5.107 seconds |
+| `python -m unittest tests.test_uk_cyber_essentials_plus_v32_inventory -v` | 18 tests passed |
+| `python -m unittest discover -s tests -v` | 234 tests passed in 161.362 seconds; 3 expected Windows symlink-capability skips |
 | `python tools/validate_controls.py --check` | 91 controls, 91 objectives, and 16 families validated |
 | `python tools/validate_architectures.py` | 10 foundation files and 7 reserved patterns validated |
 | `python tools/validate_crosswalks.py --check --baseline-ref $base` | 1 mapping set, 116 provisions, 41 relationships, and 76 negative dispositions validated |
-| `python tools/validate_links.py --check` | 325 tracked Markdown files validated with all repository-local links resolving |
+| `python tools/validate_links.py --check` | 326 tracked Markdown files validated with all repository-local links resolving |
 | `git diff --check "$base..HEAD"` | exited 0 |
-
-The first preliminary wrapper used an insufficient process timeout and was terminated before completing the full suite. It is not acceptance evidence; the completed rerun above supersedes it.
 
 ## Changed files
 
-This traceability step changes exactly:
+This consolidated correction changes exactly:
 
 - `tools/validate_links.py`
 - `tests/test_validate_links.py`

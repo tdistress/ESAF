@@ -81,7 +81,7 @@ class LinkValidatorTests(unittest.TestCase):
 
         result = self.validate()
 
-        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(result.returncode, 1)
         self.assertIn("README.md:5: docs/absent.md: target does not exist", result.stdout)
 
     def test_reports_missing_anchor_with_source_line_and_original_target(self):
@@ -91,7 +91,7 @@ class LinkValidatorTests(unittest.TestCase):
 
         result = self.validate()
 
-        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(result.returncode, 1)
         self.assertIn(
             "README.md:1: docs/guide.md#not-present: anchor does not exist",
             result.stdout,
@@ -106,7 +106,7 @@ class LinkValidatorTests(unittest.TestCase):
 
         result = self.validate()
 
-        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(result.returncode, 1)
         self.assertIn("README.md:1: ../outside.md: target escapes repository", result.stdout)
         self.assertIn("README.md:2: %2e%2e/outside.md: target escapes repository", result.stdout)
 
@@ -118,11 +118,91 @@ class LinkValidatorTests(unittest.TestCase):
 
         result = self.validate()
 
-        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(result.returncode, 1)
         first = result.stdout.index("a-first.md:3: a.md")
         last = result.stdout.index("z-last.md:1: z.md")
         self.assertLess(first, last)
         self.assertIn("2 broken repository-local links", result.stdout)
+
+    def test_validates_reference_style_definitions_and_reports_definition_line(self):
+        self.write(
+            "README.md",
+            "# Home\n\n"
+            "[valid guide][guide]\n"
+            "[missing guide][missing]\n\n"
+            "[guide]: docs/guide.md#reference-heading\n"
+            "[missing]: docs/missing_(draft).md \"optional title\"\n",
+        )
+        self.write("docs/guide.md", "# Reference heading\n")
+        self.track("README.md", "docs/guide.md")
+
+        result = self.validate()
+
+        self.assertEqual(result.returncode, 1)
+        self.assertIn(
+            "README.md:7: docs/missing_(draft).md: target does not exist",
+            result.stdout,
+        )
+        self.assertNotIn("docs/guide.md#reference-heading: ", result.stdout)
+
+    def test_reports_full_and_collapsed_references_without_definitions(self):
+        self.write(
+            "README.md",
+            "[full reference][missing-full]\n[missing-collapsed][]\n",
+        )
+        self.track("README.md")
+
+        result = self.validate()
+
+        self.assertEqual(result.returncode, 1)
+        self.assertIn(
+            "README.md:1: [missing-full]: reference definition does not exist",
+            result.stdout,
+        )
+        self.assertIn(
+            "README.md:2: [missing-collapsed]: reference definition does not exist",
+            result.stdout,
+        )
+
+    def test_balanced_parenthesis_destination_preserves_complete_original_target(self):
+        target = "docs/missing_(draft(v2)).md#not-(present)"
+        self.write("README.md", f"[draft]({target})\n")
+        self.track("README.md")
+
+        result = self.validate()
+
+        self.assertEqual(result.returncode, 1)
+        self.assertIn(
+            f"README.md:1: {target}: target does not exist",
+            result.stdout,
+        )
+
+    def test_inline_code_heading_content_and_url_decoded_fragment_form_anchor(self):
+        self.write(
+            "README.md",
+            "# Commands\n\n[check](docs/guide.md#run-%2D%2Dcheck-now)\n",
+        )
+        self.write("docs/guide.md", "# Run `--check` now\n")
+        self.track("README.md", "docs/guide.md")
+
+        result = self.validate()
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_operational_failure_returns_two(self):
+        outside_git = tempfile.TemporaryDirectory()
+        self.addCleanup(outside_git.cleanup)
+
+        result = subprocess.run(
+            [sys.executable, str(VALIDATOR), "--check"],
+            cwd=outside_git.name,
+            capture_output=True,
+            text=True,
+            env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
+        )
+
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("link validation failed:", result.stdout)
 
 
 if __name__ == "__main__":
