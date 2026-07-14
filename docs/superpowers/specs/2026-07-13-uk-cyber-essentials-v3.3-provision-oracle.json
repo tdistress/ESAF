@@ -1,0 +1,713 @@
+{
+  "source_title": "Cyber Essentials: Requirements for IT Infrastructure v3.3",
+  "source_version": "3.3",
+  "source_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf",
+  "source_sha256": "e5a857de99cba9e1c0e3d2c9ac5d626edf7215e1c5b906fc18b4ef1a34684923",
+  "count": 116,
+  "groups": {
+    "D": 44,
+    "E1": 12,
+    "E2": 12,
+    "E3": 7,
+    "E4": 29,
+    "E5": 12
+  },
+  "provisions": [
+    {
+      "record_id": "ce33-d-001",
+      "external_provision_id": "CE3.3-D-001",
+      "summary": "Assessment and certification should cover the whole business IT infrastructure or a well-defined, separately managed subset.",
+      "locator": "Section D, Cyber Essentials scope overview, page 6, opening paragraph, sentence 1"
+    },
+    {
+      "record_id": "ce33-d-002",
+      "external_provision_id": "CE3.3-D-002",
+      "summary": "Define the business unit managing the scope.",
+      "locator": "Section D, Cyber Essentials scope overview, page 6, opening paragraph, scope-boundary element 1"
+    },
+    {
+      "record_id": "ce33-d-003",
+      "external_provision_id": "CE3.3-D-003",
+      "summary": "Define the network boundary.",
+      "locator": "Section D, Cyber Essentials scope overview, page 6, opening paragraph, scope-boundary element 2"
+    },
+    {
+      "record_id": "ce33-d-004",
+      "external_provision_id": "CE3.3-D-004",
+      "summary": "Define the physical location.",
+      "locator": "Section D, Cyber Essentials scope overview, page 6, opening paragraph, scope-boundary element 3"
+    },
+    {
+      "record_id": "ce33-d-005",
+      "external_provision_id": "CE3.3-D-005",
+      "summary": "Agree the scope with the Certification Body before assessment begins.",
+      "locator": "Section D, Cyber Essentials scope overview, page 6, opening paragraph, final sentence"
+    },
+    {
+      "record_id": "ce33-d-006",
+      "external_provision_id": "CE3.3-D-006",
+      "summary": "Justify a partial scope to the assessor when infrastructure is excluded.",
+      "locator": "Section D, Cyber Essentials scope overview, page 6, paragraph beginning 'Where parts of an organisation's infrastructure'"
+    },
+    {
+      "record_id": "ce33-d-007",
+      "external_provision_id": "CE3.3-D-007",
+      "summary": "Apply the requirements to in-scope devices and software that accept incoming network connections from internet-connected devices.",
+      "locator": "Section D, Cyber Essentials scope overview, page 6, applicability list, bullet 1"
+    },
+    {
+      "record_id": "ce33-d-008",
+      "external_provision_id": "CE3.3-D-008",
+      "summary": "Apply the requirements to in-scope devices and software that establish outbound connections to devices via the internet.",
+      "locator": "Section D, Cyber Essentials scope overview, page 6, applicability list, bullet 2"
+    },
+    {
+      "record_id": "ce33-d-009",
+      "external_provision_id": "CE3.3-D-009",
+      "summary": "Apply the requirements to in-scope devices and software that control data flow between such devices and the internet.",
+      "locator": "Section D, Cyber Essentials scope overview, pages 6-7, applicability list, bullet 3"
+    },
+    {
+      "record_id": "ce33-d-010",
+      "external_provision_id": "CE3.3-D-010",
+      "summary": "Include end-user devices in scope.",
+      "locator": "Section D, Cyber Essentials scope overview, page 7, paragraph 1"
+    },
+    {
+      "record_id": "ce33-d-011",
+      "external_provision_id": "CE3.3-D-011",
+      "summary": "Include cloud services hosting organisational data or services in scope.",
+      "locator": "Section D, Cyber Essentials scope overview, page 7, paragraph 2"
+    },
+    {
+      "record_id": "ce33-d-012",
+      "external_provision_id": "CE3.3-D-012",
+      "summary": "Include user-owned devices that access organisational data or services.",
+      "locator": "Section D(i), Bring your own device (BYOD), page 8, opening sentence"
+    },
+    {
+      "record_id": "ce33-d-013",
+      "external_provision_id": "CE3.3-D-013",
+      "summary": "Exclude mobile or remote devices used only for native voice applications.",
+      "locator": "Section D(i), Bring your own device (BYOD), page 8, exclusion list, bullet 1"
+    },
+    {
+      "record_id": "ce33-d-014",
+      "external_provision_id": "CE3.3-D-014",
+      "summary": "Exclude mobile or remote devices used only for native text applications.",
+      "locator": "Section D(i), Bring your own device (BYOD), page 8, exclusion list, bullet 2"
+    },
+    {
+      "record_id": "ce33-d-015",
+      "external_provision_id": "CE3.3-D-015",
+      "summary": "Exclude mobile or remote devices used only for multi-factor authentication applications.",
+      "locator": "Section D(i), Bring your own device (BYOD), page 8, exclusion list, bullet 3"
+    },
+    {
+      "record_id": "ce33-d-016",
+      "external_provision_id": "CE3.3-D-016",
+      "summary": "Include corporate and BYOD home or remote devices used for organisational business.",
+      "locator": "Section D(ii), Home and remote working, page 9, paragraph 1"
+    },
+    {
+      "record_id": "ce33-d-017",
+      "external_provision_id": "CE3.3-D-017",
+      "summary": "Include an organisation-provided home or remote router.",
+      "locator": "Section D(ii), Home and remote working, page 9, paragraph 2"
+    },
+    {
+      "record_id": "ce33-d-018",
+      "external_provision_id": "CE3.3-D-018",
+      "summary": "Exclude other home or remote routers.",
+      "locator": "Section D(ii), Home and remote working, page 9, paragraph 3, first clause"
+    },
+    {
+      "record_id": "ce33-d-019",
+      "external_provision_id": "CE3.3-D-019",
+      "summary": "Apply Cyber Essentials firewall controls on user devices when the home or remote router is excluded.",
+      "locator": "Section D(ii), Home and remote working, page 9, paragraph 3, consequence after 'which means'"
+    },
+    {
+      "record_id": "ce33-d-020",
+      "external_provision_id": "CE3.3-D-020",
+      "summary": "Treat the company, virtual, or cloud firewall as the internet boundary when a corporate VPN is used.",
+      "locator": "Section D(ii), Home and remote working, page 9, final paragraph"
+    },
+    {
+      "record_id": "ce33-d-021",
+      "external_provision_id": "CE3.3-D-021",
+      "summary": "Include wireless devices that can communicate with other devices via the internet.",
+      "locator": "Section D(iii), Wireless devices, page 9, bullet 1"
+    },
+    {
+      "record_id": "ce33-d-022",
+      "external_provision_id": "CE3.3-D-022",
+      "summary": "Exclude wireless devices that cannot be attacked directly via the internet.",
+      "locator": "Section D(iii), Wireless devices, page 9, bullet 2"
+    },
+    {
+      "record_id": "ce33-d-023",
+      "external_provision_id": "CE3.3-D-023",
+      "summary": "Exclude wireless devices that form part of an ISP router at a home or remote location.",
+      "locator": "Section D(iii), Wireless devices, page 9, bullet 3"
+    },
+    {
+      "record_id": "ce33-d-024",
+      "external_provision_id": "CE3.3-D-024",
+      "summary": "Ensure all controls are implemented for in-scope cloud services, regardless of whether the applicant or provider implements them.",
+      "locator": "Section D(iv), Cloud services, page 9, responsibility paragraph"
+    },
+    {
+      "record_id": "ce33-d-025",
+      "external_provision_id": "CE3.3-D-025",
+      "summary": "Configure Software as a Service securely.",
+      "locator": "Section D(iv), Cloud services, page 10, Software as a Service bullet, prescriptive sentence"
+    },
+    {
+      "record_id": "ce33-d-026",
+      "external_provision_id": "CE3.3-D-026",
+      "summary": "Ensure a cloud provider implementing controls is contractually committed through clauses or referenced documents.",
+      "locator": "Section D(iv), Cloud services, page 11, paragraph immediately after Table 1"
+    },
+    {
+      "record_id": "ce33-d-027",
+      "external_provision_id": "CE3.3-D-027",
+      "summary": "Include all organisation-owned accounts used by third parties.",
+      "locator": "Section D(v), Accounts used by third parties and managed infrastructure, page 11, paragraph 1"
+    },
+    {
+      "record_id": "ce33-d-028",
+      "external_provision_id": "CE3.3-D-028",
+      "summary": "Confirm that Cyber Essentials technical controls are met for externally managed services.",
+      "locator": "Section D(v), Accounts used by third parties and managed infrastructure, page 11, paragraph 2, outcome 1"
+    },
+    {
+      "record_id": "ce33-d-029",
+      "external_provision_id": "CE3.3-D-029",
+      "summary": "Demonstrate externally managed-service control compliance in assessment answers.",
+      "locator": "Section D(v), Accounts used by third parties and managed infrastructure, page 11, paragraph 2, outcome 2"
+    },
+    {
+      "record_id": "ce33-d-030",
+      "external_provision_id": "CE3.3-D-030",
+      "summary": "Include organisation-owned end-user devices loaned to third parties.",
+      "locator": "Section D(vi), Devices used by third parties, page 11, paragraph 1"
+    },
+    {
+      "record_id": "ce33-d-031",
+      "external_provision_id": "CE3.3-D-031",
+      "summary": "Include employee BYOD.",
+      "locator": "Section D(vi), Devices used by third parties, page 12, Table 2, Employee row, BYOD column"
+    },
+    {
+      "record_id": "ce33-d-032",
+      "external_provision_id": "CE3.3-D-032",
+      "summary": "Include volunteer BYOD.",
+      "locator": "Section D(vi), Devices used by third parties, page 12, Table 2, Volunteer row, BYOD column"
+    },
+    {
+      "record_id": "ce33-d-033",
+      "external_provision_id": "CE3.3-D-033",
+      "summary": "Include trustee BYOD.",
+      "locator": "Section D(vi), Devices used by third parties, page 12, Table 2, Trustee row, BYOD column"
+    },
+    {
+      "record_id": "ce33-d-034",
+      "external_provision_id": "CE3.3-D-034",
+      "summary": "Include university research-assistant BYOD.",
+      "locator": "Section D(vi), Devices used by third parties, page 12, Table 2, University research assistant row, BYOD column"
+    },
+    {
+      "record_id": "ce33-d-035",
+      "external_provision_id": "CE3.3-D-035",
+      "summary": "Exclude student BYOD.",
+      "locator": "Section D(vi), Devices used by third parties, page 12, Table 2, Student row, BYOD column"
+    },
+    {
+      "record_id": "ce33-d-036",
+      "external_provision_id": "CE3.3-D-036",
+      "summary": "Exclude third-party-owned devices used by MSP administrators.",
+      "locator": "Section D(vi), Devices used by third parties, page 12, Table 2, MSP administrator row, Owned by a third party column"
+    },
+    {
+      "record_id": "ce33-d-037",
+      "external_provision_id": "CE3.3-D-037",
+      "summary": "Exclude MSP-administrator BYOD.",
+      "locator": "Section D(vi), Devices used by third parties, page 12, Table 2, MSP administrator row, BYOD column"
+    },
+    {
+      "record_id": "ce33-d-038",
+      "external_provision_id": "CE3.3-D-038",
+      "summary": "Exclude third-party-owned devices used by third-party contractors.",
+      "locator": "Section D(vi), Devices used by third parties, page 12, Table 2, Third party contractor row, Owned by a third party column"
+    },
+    {
+      "record_id": "ce33-d-039",
+      "external_provision_id": "CE3.3-D-039",
+      "summary": "Exclude third-party-contractor BYOD.",
+      "locator": "Section D(vi), Devices used by third parties, page 12, Table 2, Third party contractor row, BYOD column"
+    },
+    {
+      "record_id": "ce33-d-040",
+      "external_provision_id": "CE3.3-D-040",
+      "summary": "Exclude third-party-owned devices used by customers.",
+      "locator": "Section D(vi), Devices used by third parties, page 12, Table 2, Customer row, Owned by a third party column"
+    },
+    {
+      "record_id": "ce33-d-041",
+      "external_provision_id": "CE3.3-D-041",
+      "summary": "Exclude customer BYOD.",
+      "locator": "Section D(vi), Devices used by third parties, page 12, Table 2, Customer row, BYOD column"
+    },
+    {
+      "record_id": "ce33-d-042",
+      "external_provision_id": "CE3.3-D-042",
+      "summary": "Confirm correct configuration of out-of-scope devices that interact with organisational services or data.",
+      "locator": "Section D(vi), Devices used by third parties, page 12, paragraph immediately after Table 2"
+    },
+    {
+      "record_id": "ce33-d-043",
+      "external_provision_id": "CE3.3-D-043",
+      "summary": "Include publicly available commercial web applications by default.",
+      "locator": "Section D(vii), Software development, page 12, sentence 1"
+    },
+    {
+      "record_id": "ce33-d-044",
+      "external_provision_id": "CE3.3-D-044",
+      "summary": "Exclude bespoke and custom web-application components.",
+      "locator": "Section D(vii), Software development, page 12, sentence 2"
+    },
+    {
+      "record_id": "ce33-e1-001",
+      "external_provision_id": "CE3.3-E1-001",
+      "summary": "Configure a software firewall when the organisation does not control the network to which a device connects.",
+      "locator": "Section E.1, Firewalls, Introduction, page 13, paragraph beginning 'Alternatively'"
+    },
+    {
+      "record_id": "ce33-e1-002",
+      "external_provision_id": "CE3.3-E1-002",
+      "summary": "Protect every in-scope device with a correctly configured firewall or firewall-capable network device.",
+      "locator": "Section E.1, Firewalls, Requirements, pages 13-14, opening paragraph"
+    },
+    {
+      "record_id": "ce33-e1-003",
+      "external_provision_id": "CE3.3-E1-003",
+      "summary": "Replace default firewall administrative passwords with strong unique passwords or disable remote administrative access.",
+      "locator": "Section E.1, Firewalls, Requirements, page 14, bullet 1"
+    },
+    {
+      "record_id": "ce33-e1-004",
+      "external_provision_id": "CE3.3-E1-004",
+      "summary": "Prevent internet access to firewall administrative interfaces except under the permitted exception.",
+      "locator": "Section E.1, Firewalls, Requirements, page 14, bullet 2, main rule"
+    },
+    {
+      "record_id": "ce33-e1-005",
+      "external_provision_id": "CE3.3-E1-005",
+      "summary": "Document a clear business need for an internet-accessible firewall administrative interface.",
+      "locator": "Section E.1, Firewalls, Requirements, page 14, bullet 2, exception condition 1"
+    },
+    {
+      "record_id": "ce33-e1-006",
+      "external_provision_id": "CE3.3-E1-006",
+      "summary": "Protect an allowed internet-accessible firewall administrative interface with MFA or an IP allowlist plus properly managed password authentication.",
+      "locator": "Section E.1, Firewalls, Requirements, page 14, bullet 2, exception condition 2 and sub-bullets 1-2"
+    },
+    {
+      "record_id": "ce33-e1-007",
+      "external_provision_id": "CE3.3-E1-007",
+      "summary": "Block unauthenticated inbound connections by default.",
+      "locator": "Section E.1, Firewalls, Requirements, page 14, bullet 3"
+    },
+    {
+      "record_id": "ce33-e1-008",
+      "external_provision_id": "CE3.3-E1-008",
+      "summary": "Obtain approval from an authorised person for inbound firewall rules.",
+      "locator": "Section E.1, Firewalls, Requirements, page 14, bullet 4, outcome 1"
+    },
+    {
+      "record_id": "ce33-e1-009",
+      "external_provision_id": "CE3.3-E1-009",
+      "summary": "Document inbound firewall rules.",
+      "locator": "Section E.1, Firewalls, Requirements, page 14, bullet 4, outcome 2"
+    },
+    {
+      "record_id": "ce33-e1-010",
+      "external_provision_id": "CE3.3-E1-010",
+      "summary": "Include the business need in inbound firewall-rule documentation.",
+      "locator": "Section E.1, Firewalls, Requirements, page 14, bullet 4, outcome 3"
+    },
+    {
+      "record_id": "ce33-e1-011",
+      "external_provision_id": "CE3.3-E1-011",
+      "summary": "Remove or disable unnecessary firewall rules when they are no longer needed.",
+      "locator": "Section E.1, Firewalls, Requirements, page 14, bullet 5"
+    },
+    {
+      "record_id": "ce33-e1-012",
+      "external_provision_id": "CE3.3-E1-012",
+      "summary": "Use a software firewall on devices used on untrusted networks.",
+      "locator": "Section E.1, Firewalls, Requirements, page 14, final sentence"
+    },
+    {
+      "record_id": "ce33-e2-001",
+      "external_provision_id": "CE3.3-E2-001",
+      "summary": "Regularly remove or disable unnecessary user accounts.",
+      "locator": "Section E.2, Secure Configuration, Requirements, Computers and network devices, page 15, bullet 1"
+    },
+    {
+      "record_id": "ce33-e2-002",
+      "external_provision_id": "CE3.3-E2-002",
+      "summary": "Regularly change default or guessable account passwords.",
+      "locator": "Section E.2, Secure Configuration, Requirements, Computers and network devices, page 15, bullet 2"
+    },
+    {
+      "record_id": "ce33-e2-003",
+      "external_provision_id": "CE3.3-E2-003",
+      "summary": "Regularly remove or disable unnecessary software.",
+      "locator": "Section E.2, Secure Configuration, Requirements, Computers and network devices, page 15, bullet 3"
+    },
+    {
+      "record_id": "ce33-e2-004",
+      "external_provision_id": "CE3.3-E2-004",
+      "summary": "Regularly disable autorun features that permit file execution without user authorisation.",
+      "locator": "Section E.2, Secure Configuration, Requirements, Computers and network devices, page 15, bullet 4"
+    },
+    {
+      "record_id": "ce33-e2-005",
+      "external_provision_id": "CE3.3-E2-005",
+      "summary": "Authenticate users before granting access to organisational data or services.",
+      "locator": "Section E.2, Secure Configuration, Requirements, Computers and network devices, page 15, bullet 5"
+    },
+    {
+      "record_id": "ce33-e2-006",
+      "external_provision_id": "CE3.3-E2-006",
+      "summary": "Maintain appropriate device-locking controls for physically present users.",
+      "locator": "Section E.2, Secure Configuration, Requirements, Computers and network devices, pages 15-16, bullet 6"
+    },
+    {
+      "record_id": "ce33-e2-007",
+      "external_provision_id": "CE3.3-E2-007",
+      "summary": "Require a biometric, password, or PIN before a physically present user can access device services.",
+      "locator": "Section E.2, Secure Configuration, Device unlocking credentials, page 16, paragraph 1"
+    },
+    {
+      "record_id": "ce33-e2-008",
+      "external_provision_id": "CE3.3-E2-008",
+      "summary": "Protect the chosen device-unlocking authentication method against brute-force attacks.",
+      "locator": "Section E.2, Secure Configuration, Device unlocking credentials, page 16, paragraph 2"
+    },
+    {
+      "record_id": "ce33-e2-009",
+      "external_provision_id": "CE3.3-E2-009",
+      "summary": "Where configurable, use throttling allowing no more than 10 guesses in five minutes or lock the device after no more than 10 unsuccessful attempts.",
+      "locator": "Section E.2, Secure Configuration, Device unlocking credentials, page 16, paragraph beginning 'When it is possible to configure', bullets 1-2"
+    },
+    {
+      "record_id": "ce33-e2-010",
+      "external_provision_id": "CE3.3-E2-010",
+      "summary": "Use the vendor default when the device-unlocking brute-force controls are not configurable.",
+      "locator": "Section E.2, Secure Configuration, Device unlocking credentials, page 16, paragraph immediately after the throttling and lockout bullets"
+    },
+    {
+      "record_id": "ce33-e2-011",
+      "external_provision_id": "CE3.3-E2-011",
+      "summary": "Use a minimum six-character password or PIN for credentials used only to unlock a device.",
+      "locator": "Section E.2, Secure Configuration, Device unlocking credentials, page 16, credential-quality paragraph, sentence 2"
+    },
+    {
+      "record_id": "ce33-e2-012",
+      "external_provision_id": "CE3.3-E2-012",
+      "summary": "Apply the full User Access Control password requirements when device-unlocking credentials are also used for authentication.",
+      "locator": "Section E.2, Secure Configuration, Device unlocking credentials, page 16, credential-quality paragraph, sentence 3"
+    },
+    {
+      "record_id": "ce33-e3-001",
+      "external_provision_id": "CE3.3-E3-001",
+      "summary": "Keep all in-scope software up to date.",
+      "locator": "Section E.3, Security Update Management, Requirements, page 17, opening sentence"
+    },
+    {
+      "record_id": "ce33-e3-002",
+      "external_provision_id": "CE3.3-E3-002",
+      "summary": "Use only licensed and supported software on in-scope devices.",
+      "locator": "Section E.3, Security Update Management, Requirements, page 17, bullet 1"
+    },
+    {
+      "record_id": "ce33-e3-003",
+      "external_provision_id": "CE3.3-E3-003",
+      "summary": "Remove unsupported software from devices or place it in a defined subset that blocks all internet traffic to and from it.",
+      "locator": "Section E.3, Security Update Management, Requirements, page 17, bullet 2"
+    },
+    {
+      "record_id": "ce33-e3-004",
+      "external_provision_id": "CE3.3-E3-004",
+      "summary": "Enable automatic updates where possible.",
+      "locator": "Section E.3, Security Update Management, Requirements, page 17, bullet 3"
+    },
+    {
+      "record_id": "ce33-e3-005",
+      "external_provision_id": "CE3.3-E3-005",
+      "summary": "Apply updates within 14 days when the vendor describes the fixed vulnerabilities as critical or high risk.",
+      "locator": "Section E.3, Security Update Management, Requirements, page 17, bullet 4, condition 1"
+    },
+    {
+      "record_id": "ce33-e3-006",
+      "external_provision_id": "CE3.3-E3-006",
+      "summary": "Apply updates within 14 days when the fixed vulnerabilities have a CVSS v3 base score of 7 or above.",
+      "locator": "Section E.3, Security Update Management, Requirements, page 17, bullet 4, condition 2"
+    },
+    {
+      "record_id": "ce33-e3-007",
+      "external_provision_id": "CE3.3-E3-007",
+      "summary": "Apply updates within 14 days when the vendor supplies no severity details for the vulnerabilities fixed.",
+      "locator": "Section E.3, Security Update Management, Requirements, page 17, bullet 4, condition 3"
+    },
+    {
+      "record_id": "ce33-e4-001",
+      "external_provision_id": "CE3.3-E4-001",
+      "summary": "Control organisational user accounts, including accounts used by third parties.",
+      "locator": "Section E.4, User Access Control, Requirements, page 19, opening paragraph, sentence 1, outcome 1"
+    },
+    {
+      "record_id": "ce33-e4-002",
+      "external_provision_id": "CE3.3-E4-002",
+      "summary": "Control access privileges that grant access to organisational data and services.",
+      "locator": "Section E.4, User Access Control, Requirements, page 19, opening paragraph, sentence 1, outcome 2"
+    },
+    {
+      "record_id": "ce33-e4-003",
+      "external_provision_id": "CE3.3-E4-003",
+      "summary": "Understand how user accounts authenticate.",
+      "locator": "Section E.4, User Access Control, Requirements, page 19, opening paragraph, final sentence, outcome 1"
+    },
+    {
+      "record_id": "ce33-e4-004",
+      "external_provision_id": "CE3.3-E4-004",
+      "summary": "Manage authentication according to the authentication method used.",
+      "locator": "Section E.4, User Access Control, Requirements, page 19, opening paragraph, final sentence, outcome 2"
+    },
+    {
+      "record_id": "ce33-e4-005",
+      "external_provision_id": "CE3.3-E4-005",
+      "summary": "Maintain a process for creating user accounts.",
+      "locator": "Section E.4, User Access Control, Requirements, page 19, bullet 1, outcome 1"
+    },
+    {
+      "record_id": "ce33-e4-006",
+      "external_provision_id": "CE3.3-E4-006",
+      "summary": "Maintain a process for approving user accounts.",
+      "locator": "Section E.4, User Access Control, Requirements, page 19, bullet 1, outcome 2"
+    },
+    {
+      "record_id": "ce33-e4-007",
+      "external_provision_id": "CE3.3-E4-007",
+      "summary": "Authenticate users with unique credentials before granting access to applications or devices.",
+      "locator": "Section E.4, User Access Control, Requirements, page 19, bullet 2"
+    },
+    {
+      "record_id": "ce33-e4-008",
+      "external_provision_id": "CE3.3-E4-008",
+      "summary": "Remove or disable user accounts when they are no longer required.",
+      "locator": "Section E.4, User Access Control, Requirements, pages 19-20, bullet 3"
+    },
+    {
+      "record_id": "ce33-e4-009",
+      "external_provision_id": "CE3.3-E4-009",
+      "summary": "Implement multi-factor authentication wherever it is available.",
+      "locator": "Section E.4, User Access Control, Requirements, page 20, bullet 4, first clause"
+    },
+    {
+      "record_id": "ce33-e4-010",
+      "external_provision_id": "CE3.3-E4-010",
+      "summary": "Always use multi-factor authentication for cloud-service authentication.",
+      "locator": "Section E.4, User Access Control, Requirements, page 20, bullet 4, second clause"
+    },
+    {
+      "record_id": "ce33-e4-011",
+      "external_provision_id": "CE3.3-E4-011",
+      "summary": "Use separate accounts for administrative activities.",
+      "locator": "Section E.4, User Access Control, Requirements, page 20, bullet 5, outcome 1"
+    },
+    {
+      "record_id": "ce33-e4-012",
+      "external_provision_id": "CE3.3-E4-012",
+      "summary": "Restrict administrative accounts to administrative activities only.",
+      "locator": "Section E.4, User Access Control, Requirements, page 20, bullet 5, outcome 2"
+    },
+    {
+      "record_id": "ce33-e4-013",
+      "external_provision_id": "CE3.3-E4-013",
+      "summary": "Remove or disable special access privileges when they are no longer required.",
+      "locator": "Section E.4, User Access Control, Requirements, page 20, bullet 6"
+    },
+    {
+      "record_id": "ce33-e4-014",
+      "external_provision_id": "CE3.3-E4-014",
+      "summary": "Use multi-factor authentication for administrative accounts.",
+      "locator": "Section E.4, User Access Control, Multi-factor authentication, pages 20-21, opening sentence, account population 1"
+    },
+    {
+      "record_id": "ce33-e4-015",
+      "external_provision_id": "CE3.3-E4-015",
+      "summary": "Use multi-factor authentication for accounts accessible from the internet.",
+      "locator": "Section E.4, User Access Control, Multi-factor authentication, page 21, opening sentence, account population 2"
+    },
+    {
+      "record_id": "ce33-e4-016",
+      "external_provision_id": "CE3.3-E4-016",
+      "summary": "Require the password factor in multi-factor authentication to contain at least eight characters.",
+      "locator": "Section E.4, User Access Control, Multi-factor authentication, page 21, paragraph 2, outcome 1"
+    },
+    {
+      "record_id": "ce33-e4-017",
+      "external_provision_id": "CE3.3-E4-017",
+      "summary": "Apply no maximum length restriction to the password factor in multi-factor authentication.",
+      "locator": "Section E.4, User Access Control, Multi-factor authentication, page 21, paragraph 2, outcome 2"
+    },
+    {
+      "record_id": "ce33-e4-018",
+      "external_provision_id": "CE3.3-E4-018",
+      "summary": "Choose additional authentication factors that are usable.",
+      "locator": "Section E.4, User Access Control, Multi-factor authentication, page 21, paragraph immediately after the additional-factor list, outcome 1"
+    },
+    {
+      "record_id": "ce33-e4-019",
+      "external_provision_id": "CE3.3-E4-019",
+      "summary": "Choose additional authentication factors that are accessible.",
+      "locator": "Section E.4, User Access Control, Multi-factor authentication, page 21, paragraph immediately after the additional-factor list, outcome 2"
+    },
+    {
+      "record_id": "ce33-e4-020",
+      "external_provision_id": "CE3.3-E4-020",
+      "summary": "Require every user account to authenticate.",
+      "locator": "Section E.4, User Access Control, Password-based authentication, page 21, opening sentence"
+    },
+    {
+      "record_id": "ce33-e4-021",
+      "external_provision_id": "CE3.3-E4-021",
+      "summary": "Protect passwords against brute-force guessing with MFA, compliant throttling, or device lockout after no more than 10 unsuccessful attempts.",
+      "locator": "Section E.4, User Access Control, Password-based authentication, pages 21-22, protective-measures bullet 1 and sub-bullets 1-3"
+    },
+    {
+      "record_id": "ce33-e4-022",
+      "external_provision_id": "CE3.3-E4-022",
+      "summary": "Manage password quality using MFA, at least 12 characters with no maximum, or at least eight characters with no maximum plus a common-password denylist.",
+      "locator": "Section E.4, User Access Control, Password-based authentication, page 22, protective-measures bullet 2 and sub-bullets 1-3"
+    },
+    {
+      "record_id": "ce33-e4-023",
+      "external_provision_id": "CE3.3-E4-023",
+      "summary": "Educate users to avoid common and reused passwords.",
+      "locator": "Section E.4, User Access Control, Password-based authentication, page 22, support-users bullet, sub-bullet 1"
+    },
+    {
+      "record_id": "ce33-e4-024",
+      "external_provision_id": "CE3.3-E4-024",
+      "summary": "Encourage users to create passwords from at least three words.",
+      "locator": "Section E.4, User Access Control, Password-based authentication, page 22, support-users bullet, sub-bullet 2"
+    },
+    {
+      "record_id": "ce33-e4-025",
+      "external_provision_id": "CE3.3-E4-025",
+      "summary": "Provide usable secure storage for passwords.",
+      "locator": "Section E.4, User Access Control, Password-based authentication, page 22, support-users bullet, sub-bullet 3, outcome 1"
+    },
+    {
+      "record_id": "ce33-e4-026",
+      "external_provision_id": "CE3.3-E4-026",
+      "summary": "Provide clear information about how and when secure password storage may be used.",
+      "locator": "Section E.4, User Access Control, Password-based authentication, page 22, support-users bullet, sub-bullet 3, outcome 2"
+    },
+    {
+      "record_id": "ce33-e4-027",
+      "external_provision_id": "CE3.3-E4-027",
+      "summary": "Do not enforce regular password expiry.",
+      "locator": "Section E.4, User Access Control, Password-based authentication, page 22, support-users bullet, sub-bullet 4"
+    },
+    {
+      "record_id": "ce33-e4-028",
+      "external_provision_id": "CE3.3-E4-028",
+      "summary": "Do not enforce password complexity requirements.",
+      "locator": "Section E.4, User Access Control, Password-based authentication, page 22, support-users bullet, sub-bullet 5"
+    },
+    {
+      "record_id": "ce33-e4-029",
+      "external_provision_id": "CE3.3-E4-029",
+      "summary": "Maintain a process to promptly change passwords when a password or account is known or suspected to be compromised.",
+      "locator": "Section E.4, User Access Control, Password-based authentication, pages 22-23, final paragraph"
+    },
+    {
+      "record_id": "ce33-e5-001",
+      "external_provision_id": "CE3.3-E5-001",
+      "summary": "Keep a malware-protection mechanism active on every in-scope device.",
+      "locator": "Section E.5, Malware Protection, Requirements, page 23, opening sentence"
+    },
+    {
+      "record_id": "ce33-e5-002",
+      "external_provision_id": "CE3.3-E5-002",
+      "summary": "Use at least one listed malware-protection option for each in-scope device.",
+      "locator": "Section E.5, Malware Protection, Requirements, page 23, opening paragraph, sentence 2"
+    },
+    {
+      "record_id": "ce33-e5-003",
+      "external_provision_id": "CE3.3-E5-003",
+      "summary": "Keep malware-protection software updated according to vendor instructions.",
+      "locator": "Section E.5, Malware Protection, Requirements, pages 23-24, 'In all cases' clause, update outcome"
+    },
+    {
+      "record_id": "ce33-e5-004",
+      "external_provision_id": "CE3.3-E5-004",
+      "summary": "When anti-malware software is selected, update it in line with vendor recommendations.",
+      "locator": "Section E.5, Malware Protection, Anti-malware software option, page 24, bullet 1"
+    },
+    {
+      "record_id": "ce33-e5-005",
+      "external_provision_id": "CE3.3-E5-005",
+      "summary": "When anti-malware software is selected, configure it to prevent malware from running.",
+      "locator": "Section E.5, Malware Protection, Anti-malware software option, page 24, bullet 2"
+    },
+    {
+      "record_id": "ce33-e5-006",
+      "external_provision_id": "CE3.3-E5-006",
+      "summary": "When anti-malware software is selected, configure it to prevent malicious-code execution.",
+      "locator": "Section E.5, Malware Protection, Anti-malware software option, page 24, bullet 3"
+    },
+    {
+      "record_id": "ce33-e5-007",
+      "external_provision_id": "CE3.3-E5-007",
+      "summary": "When anti-malware software is selected, prevent connections to malicious websites over the internet.",
+      "locator": "Section E.5, Malware Protection, Anti-malware software option, page 24, bullet 4"
+    },
+    {
+      "record_id": "ce33-e5-008",
+      "external_provision_id": "CE3.3-E5-008",
+      "summary": "When application allowlisting is selected, allow only approved applications to execute.",
+      "locator": "Section E.5, Malware Protection, Application allowlisting option, page 24, opening sentence, outcome 1"
+    },
+    {
+      "record_id": "ce33-e5-009",
+      "external_provision_id": "CE3.3-E5-009",
+      "summary": "When application allowlisting is selected, restrict executable applications through code signing.",
+      "locator": "Section E.5, Malware Protection, Application allowlisting option, page 24, opening sentence, outcome 2"
+    },
+    {
+      "record_id": "ce33-e5-010",
+      "external_provision_id": "CE3.3-E5-010",
+      "summary": "Actively approve allowlisted applications before deploying them to devices.",
+      "locator": "Section E.5, Malware Protection, Application allowlisting option, page 24, bullet 1"
+    },
+    {
+      "record_id": "ce33-e5-011",
+      "external_provision_id": "CE3.3-E5-011",
+      "summary": "Maintain a current list of approved applications.",
+      "locator": "Section E.5, Malware Protection, Application allowlisting option, page 24, bullet 2, outcome 1"
+    },
+    {
+      "record_id": "ce33-e5-012",
+      "external_provision_id": "CE3.3-E5-012",
+      "summary": "Prevent users from installing applications that are unsigned or have an invalid signature.",
+      "locator": "Section E.5, Malware Protection, Application allowlisting option, page 24, bullet 2, outcome 2"
+    }
+  ]
+}
