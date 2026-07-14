@@ -12,6 +12,7 @@ Artificial intelligence is becoming foundational to modern enterprises, but orga
 ESAF is designed to fill that gap. Its design philosophy is simple: build a framework organizations can implement, not merely read.
 
 ## Core pillars
+We are utilizing and aligning with the three pillars of the SANS Secure AI Blueprint:
 
 - **Protect AI** secures AI systems, models, infrastructure, identities, data, applications, and autonomous agents.
 - **Utilize AI** enables responsible, secure, and measurable enterprise adoption.
