@@ -189,7 +189,7 @@ class ReleaseMetadataTests(unittest.TestCase):
     def test_backlog_preserves_cyber_essentials_plus_next_activity(self) -> None:
         backlog = read_repository_file("project/BACKLOG.md")
         self.assertIn(
-            "Cyber Essentials Plus public-source acquisition and atomization design",
+            "Build and independently reconcile the Cyber Essentials Plus v3.2 public-source oracle",
             backlog,
         )
         self.assertIn("separate, source-versioned", backlog)
