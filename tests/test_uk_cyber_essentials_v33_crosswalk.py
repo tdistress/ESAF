@@ -194,13 +194,41 @@ class UkCyberEssentialsV33CrosswalkTests(unittest.TestCase):
 
     def test_update_records_are_complete_and_keep_three_fixed_deadline_triggers(self) -> None:
         self.assert_group("e3", 7)
-        for record_id in ("ce33-e3-005", "ce33-e3-006", "ce33-e3-007"):
+
+        unsupported = self.load_record("ce33-e3-003")
+        self.assertEqual(
+            {leg["esaf_control_id"] for leg in unsupported["relationships"]},
+            {"ARC-150"},
+        )
+
+        automatic = self.load_record("ce33-e3-004")
+        self.assertEqual(automatic["disposition"], "no_direct_mapping")
+        self.assertEqual(automatic["relationships"], [])
+        automatic_rationale = automatic["negative_rationale"].lower()
+        self.assertIn("automated changes", automatic_rationale)
+        self.assertIn("configuration", automatic_rationale)
+        self.assertIn("does not require automatic-update enablement", automatic_rationale)
+
+        trigger_terms = {
+            "ce33-e3-005": ("vendor", "critical", "high risk"),
+            "ce33-e3-006": ("cvss v3", "7 or above"),
+            "ce33-e3-007": ("vendor", "severity"),
+        }
+        for record_id, terms in trigger_terms.items():
             record = self.load_record(record_id)
+            self.assertTrue(record["relationships"])
+            self.assertEqual(
+                {leg["esaf_control_id"] for leg in record["relationships"]},
+                {"INF-120"},
+            )
             self.assertIn("14 days", record["context"]["summary"])
             for leg in record["relationships"]:
-                self.assertTrue(
-                    any("14-day" in gap or "14 day" in gap for gap in leg["known_gaps"])
-                )
+                gaps = " ".join(leg["known_gaps"]).lower()
+                self.assertRegex(gaps, r"14[- ]day")
+                for term in terms:
+                    self.assertIn(term, gaps)
+                if record_id == "ce33-e3-007":
+                    self.assertRegex(gaps, r"omission|omitted|no severity")
 
     def test_locked_provision_oracle_is_exact(self) -> None:
         oracle = json.loads(PROVISION_ORACLE.read_text(encoding="utf-8"))

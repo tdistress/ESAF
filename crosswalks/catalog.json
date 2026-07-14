@@ -5,18 +5,18 @@
     },
     "by_confidence": {
       "high": 18,
-      "medium": 12
+      "medium": 6
     },
     "by_coverage": {
-      "narrow": 28,
+      "narrow": 22,
       "partial": 2
     },
     "by_direction": {
-      "esaf_to_external": 30
+      "esaf_to_external": 24
     },
     "by_disposition": {
-      "mapped": 24,
-      "no_direct_mapping": 51
+      "mapped": 23,
+      "no_direct_mapping": 52
     },
     "by_esaf_release": {
       "0.4-alpha": 1
@@ -29,7 +29,7 @@
       "cyber-essentials-requirements-for-it-infrastructure": 1
     },
     "by_relationship": {
-      "partially_supports": 30
+      "partially_supports": 24
     },
     "by_snapshot_status": {
       "draft": 1
@@ -38,9 +38,9 @@
       "3.3": 1
     },
     "mapping_sets": 1,
-    "negative_dispositions": 51,
+    "negative_dispositions": 52,
     "provisions": 75,
-    "relationships": 30
+    "relationships": 24
   },
   "generated_from": "crosswalks/mappings/** and crosswalks/registry/*.md",
   "mapping_sets": [
@@ -175,7 +175,7 @@
         "events": [],
         "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
         "schema_version": "1.0.0",
-        "snapshot_digest": "b07d14b03e0322c049a68dcb07fcf44f13d81fcc83225c812e671b9b76b6bc61"
+        "snapshot_digest": "9da68d9e09ff65ff2db86e631fde182c82f492c350a0c3e814f5abb5eb8fffe0"
       },
       "metadata": {
         "authority": {
@@ -2958,24 +2958,6 @@
                 ],
                 "rationale": "ARC-150 requires replacement, deprecation, and retirement of AI technologies and calls for unsupported deployed AI components to have approved treatment, contributing to removal of unsupported covered technology.",
                 "relationship": "partially_supports"
-              },
-              {
-                "conditions": [
-                  "The unsupported software affects an AI workload and the organization has separately selected complete internet isolation as its treatment."
-                ],
-                "confidence": "medium",
-                "coverage": "narrow",
-                "direction": "esaf_to_external",
-                "esaf_control_id": "INF-130",
-                "esaf_control_version": "0.1.0",
-                "expected_evidence": [
-                  "Network-policy configuration, reviews, tests, approvals, deployment logs, drift results, and traffic-test evidence."
-                ],
-                "known_gaps": [
-                  "INF-130 does not itself identify unsupported software, require its removal, or require placement in a defined subset that blocks all internet traffic to and from it; the Cyber Essentials internet-isolation outcome remains separate."
-                ],
-                "rationale": "INF-130 governs controlled, tested, approved, and monitored network policies and infrastructure configuration, contributing to implementation and verification of an isolation configuration when that treatment is selected.",
-                "relationship": "partially_supports"
               }
             ],
             "schema_version": "1.0.0",
@@ -3000,7 +2982,7 @@
               "mode": "paraphrase",
               "summary": "Enable automatic updates where possible."
             },
-            "disposition": "mapped",
+            "disposition": "no_direct_mapping",
             "external_provision_id": "CE3.3-E3-004",
             "granularity": "requirement",
             "mapper": {
@@ -3008,45 +2990,9 @@
               "id": "esaf-crosswalk-editorial-team"
             },
             "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "ESAF governs automated changes through OPS-110 and controlled infrastructure configuration through INF-130, but does not require automatic-update enablement where possible for software on Cyber Essentials in-scope devices.",
             "record_id": "ce33-e3-004",
-            "relationships": [
-              {
-                "conditions": [
-                  "The automatic-update setting is infrastructure configuration affecting an AI workload."
-                ],
-                "confidence": "medium",
-                "coverage": "narrow",
-                "direction": "esaf_to_external",
-                "esaf_control_id": "INF-130",
-                "esaf_control_version": "0.1.0",
-                "expected_evidence": [
-                  "Approved configuration source, update-setting reviews, tests, deployment logs, and drift-monitoring results."
-                ],
-                "known_gaps": [
-                  "INF-130 controls configuration but does not require automatic-update enablement where possible for all software on every Cyber Essentials in-scope device."
-                ],
-                "rationale": "INF-130 requires controlled, versioned, reviewed, tested, approved, and monitored configuration for AI-workload infrastructure, contributing to reliable configuration of automatic-update settings.",
-                "relationship": "partially_supports"
-              },
-              {
-                "conditions": [
-                  "Automatic or supplier-driven software updates affect an AI capability and are governed as changes under OPS-110."
-                ],
-                "confidence": "medium",
-                "coverage": "narrow",
-                "direction": "esaf_to_external",
-                "esaf_control_id": "OPS-110",
-                "esaf_control_version": "0.1.0",
-                "expected_evidence": [
-                  "Automated-update policy, change criteria, deployment configuration, update logs, verification results, and rollback evidence."
-                ],
-                "known_gaps": [
-                  "OPS-110 governs automatic updates when used but does not require automatic-update enablement where possible for all software on every Cyber Essentials in-scope device."
-                ],
-                "rationale": "OPS-110 expressly applies change and release controls to automated and supplier-driven changes, contributing to controlled deployment and verification when AI-capability updates are automatic.",
-                "relationship": "partially_supports"
-              }
-            ],
+            "relationships": [],
             "schema_version": "1.0.0",
             "source_locator": {
               "locator": "Section E.3, Security Update Management, Requirements, page 17, bullet 3",
@@ -3079,24 +3025,6 @@
             "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
             "record_id": "ce33-e3-005",
             "relationships": [
-              {
-                "conditions": [
-                  "The vendor-rated vulnerability affects software within APP-140 applicability and remediation is performed through an update."
-                ],
-                "confidence": "medium",
-                "coverage": "narrow",
-                "direction": "esaf_to_external",
-                "esaf_control_id": "APP-140",
-                "esaf_control_version": "0.1.0",
-                "expected_evidence": [
-                  "Dependency inventory, vendor advisory, security finding, release approval, update deployment evidence, and remediation verification."
-                ],
-                "known_gaps": [
-                  "APP-140 does not impose the fixed 14-day update deadline or require a vendor description of critical or high risk to trigger that deadline, and its remediation or acceptance practices do not satisfy those Cyber Essentials outcomes."
-                ],
-                "rationale": "APP-140 requires vulnerability and dependency practices plus remediation or acceptance of sampled security findings for covered AI applications, contributing to controlled remediation through software updates.",
-                "relationship": "partially_supports"
-              },
               {
                 "conditions": [
                   "The vendor-rated vulnerability affects AI infrastructure or a dependency covered by INF-120 and the selected disposition is an available update."
@@ -3150,24 +3078,6 @@
             "relationships": [
               {
                 "conditions": [
-                  "The scored vulnerability affects software within APP-140 applicability and remediation is performed through an update."
-                ],
-                "confidence": "medium",
-                "coverage": "narrow",
-                "direction": "esaf_to_external",
-                "esaf_control_id": "APP-140",
-                "esaf_control_version": "0.1.0",
-                "expected_evidence": [
-                  "Dependency inventory, scored security finding, release approval, update deployment evidence, and remediation verification."
-                ],
-                "known_gaps": [
-                  "APP-140 does not impose the fixed 14-day update deadline or require a CVSS v3 base score of 7 or above to trigger that deadline, and its remediation or acceptance practices do not satisfy those Cyber Essentials outcomes."
-                ],
-                "rationale": "APP-140 requires vulnerability, dependency, release, and change practices for covered AI applications and verification of remediation or acceptance, contributing to controlled remediation through software updates.",
-                "relationship": "partially_supports"
-              },
-              {
-                "conditions": [
                   "The scored vulnerability affects AI infrastructure or a dependency covered by INF-120 and the selected disposition is an available update."
                 ],
                 "confidence": "high",
@@ -3217,24 +3127,6 @@
             "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
             "record_id": "ce33-e3-007",
             "relationships": [
-              {
-                "conditions": [
-                  "The vendor advisory without severity details affects software within APP-140 applicability and remediation is performed through an update."
-                ],
-                "confidence": "medium",
-                "coverage": "narrow",
-                "direction": "esaf_to_external",
-                "esaf_control_id": "APP-140",
-                "esaf_control_version": "0.1.0",
-                "expected_evidence": [
-                  "Dependency inventory, vendor advisory lacking severity details, security finding, release approval, update deployment evidence, and remediation verification."
-                ],
-                "known_gaps": [
-                  "APP-140 does not impose the fixed 14-day update deadline or require the vendor's omission of severity details to trigger that deadline, and its remediation or acceptance practices do not satisfy those Cyber Essentials outcomes."
-                ],
-                "rationale": "APP-140 requires vulnerability, dependency, release, and change practices for covered AI applications and verification of remediation or acceptance, contributing to controlled remediation through software updates.",
-                "relationship": "partially_supports"
-              },
               {
                 "conditions": [
                   "The vendor advisory concerns AI infrastructure or a dependency covered by INF-120 and the selected disposition is the available update."
