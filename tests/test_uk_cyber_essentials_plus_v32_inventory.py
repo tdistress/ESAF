@@ -1580,6 +1580,17 @@ class CyberEssentialsPlusV32InventoryTests(unittest.TestCase):
                 candidate, source_window_digests={copied_digest},
             )
 
+    def test_b_001_preserves_complete_assessment_file_coverage(self) -> None:
+        provision = next(
+            item for item in self.oracle()["provisions"]
+            if item["external_provision_id"] == "CEPTS3.2-B-001"
+        )
+
+        self.assertEqual(
+            "Supply each Certification Body with every assessment file needed for testing.",
+            provision["summary"],
+        )
+
     def assert_no_affirmative_prohibited_claims(self, text: str) -> None:
         for category, claims in AFFIRMATIVE_PROHIBITED_CLAIMS.items():
             for claim in claims:

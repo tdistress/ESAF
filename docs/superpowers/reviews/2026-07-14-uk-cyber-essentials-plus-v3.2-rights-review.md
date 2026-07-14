@@ -121,15 +121,17 @@ This approval covers the complete closed oracle contract planned by the reviewed
 
 **Re-attestation date:** 2026-07-14
 
-**Reviewed candidate base HEAD:** `76d31edfd3564d88d5e65c458a67a72ff14fb766`
+**Reviewed candidate base HEAD:** `3113b2574b16e491cb757af0318baac2b9aaaec3`
 
-**Reviewed oracle SHA-256:** `6cd443c82b9b748c8859424b9fb48c446da478f0fa84a4eedd4e06c5ad8077cf`
+**Reviewed oracle SHA-256:** `096a5c1238b92250b1497e76ef175b6b8e99f05a65a21ed66263f8b1cf68578a`
 
-**Reviewed semantic-comparison SHA-256:** `e0a31500b168f25abcf127a417326204bba80f0db67a4dd485093b11f4b0ce8e`
+**Reviewed semantic-comparison SHA-256:** `ec77e0b12b2b5ddc59fabbfeb59a77a518bb1ea060850974d863dd2c150f29b1`
 
-**Reviewed reconciliation SHA-256:** `71002c0800569d2446181b86513d1138321e5913f76a69237e5884052d7ba4f0`
+**Reviewed reconciliation SHA-256:** `6563dfaeac62fd505edf49661ab0b826b00a67778af7de9b29029af16f0fd284`
 
-**Reviewed inventory-test SHA-256:** `70a48c00ba0c0ab9b10eb543e21b75439d17e3674a262b2315fdc9a9e4d2ac81`
+**Reviewed inventory-test SHA-256:** `3663fc611416eefcdda7dba924761fb72a7feb67edc66df214060bab33e8acf2`
+
+**Superseded pre-R2 rights-record SHA-256:** `8adde3b99c2ff68b254d674b3d19a275a8527a54b17a1c82e243e6785f0db00d`
 
 **Nature of decision:** This re-attestation confirms that the reconciled oracle remains within the publication basis approved before inventory work in commit `6add413fc7a8a6330cf16dc5d12e3b9b85aa34e6`. It does not grant retroactive permission and does not expand that basis.
 
@@ -149,16 +151,18 @@ The same independent reviewer compared every committed source-derived and narrat
 | `section_ledger` | 55 NCSC-PDF occurrences containing approved titles, structural inventory, coordinates, original rationales, and derived counts | Confirmed within prior approval |
 | `counts` | Facts derived from the approved structural inventory | Confirmed within prior approval |
 | `assurance_limits` | Original paraphrases, locators, controlled predicates, and derivative analysis | Confirmed within prior approval |
-| `provisions` | 144 records containing approved ESAF identifiers, source-assigned labels, structure, actors, original actor bases and summaries, kinds, and locators; 36 summaries were reparaphrased without changing their evidence anchors or outcomes | Confirmed within prior approval |
+| `provisions` | 144 records containing approved ESAF identifiers, source-assigned labels, structure, actors, original actor bases and summaries, kinds, and locators; 36 summaries were reparaphrased and B-001 received an R2 completeness correction without changing evidence anchors or outcomes | Confirmed within prior approval |
 
 The narrative review covered all 509 instances in the planned original-free-text classes: the scope statement; rights publication basis, restrictions, and IASME partition terms; anomaly treatment; all 55 ledger rationales; all 144 actor bases, summaries, and locator details; and all six assurance-boundary statements. All 36 reparaphrased provision summaries were compared with their unchanged source locators, prior summaries, independent author proposals, and corresponding resolved semantic-comparison rows. Each remains an original, evidence-faithful statement of the same action, population, condition, timing, or outcome.
 
+`CEPTS3.2-B-001` now states: `Supply each Certification Body with every assessment file needed for testing.` The universal `each` and `every` preserve the source's comprehensive, all-required outcome rather than weakening it to a merely broad collection. The actors, kind, Appendix B source locator, and responsibility remain unchanged. None of the summary's seven normalized five-word windows occurs in the verified source-window corpus, and its semantic-comparison row remains resolved against the canonical PDF digest.
+
 `CEPTS3.2-T4-008` remains bounded to the rendered Test case 4.1 result evidence. Its summary preserves an observable MFA prompt or challenge before access and does not strengthen that criterion into completed or successfully provided MFA. Its wording contains no normalized five-word source window.
 
-The replacement source-copy guard contains exactly 3,055 distinct SHA-256 digests, each independently reproduced from a distinct normalized five-word window in the verified canonical text after removing repeated publication headers and respecting paragraph and list-item boundaries. The committed constant contains only concatenated 32-byte digests encoded with Base64, not source text. The guard checks every five-word window in every controlled original-free-text value, and its focused mutation test proves that copied source words are detected even when surrounded by additional original text. Only the separately approved source identity, title, and licence-name phrases are exempted.
+The replacement source-copy guard contains exactly 3,055 distinct SHA-256 digests, each independently reproduced from a distinct normalized five-word window in the verified canonical text after removing repeated publication headers. Numbered items are split before windowing, producing 91 extracted passages. The extracted bullet marker is mojibake that the generator does not treat as a boundary. A comparison run that additionally split bullets produced 2,878 windows; the frozen 3,055-window set therefore conservatively retains exactly 177 cross-bullet windows and loses none of the bullet-split windows. The committed constant contains only concatenated 32-byte digests encoded with Base64, not source text. The guard checks every five-word window in every controlled original-free-text value, and its focused mutation test proves that copied source words are detected even when surrounded by additional original text. Only the separately approved source identity, title, and licence-name phrases are exempted.
 
 The IASME partition remains closed. The only IASME-named oracle value is `rights.iasme_partition.owner`; `operational_context` is empty; and no IASME-derived text, heading hierarchy, occurrence, provision, count, assurance rule, imagery, logo, mark, or endorsement implication appears in the ledger, provisions, or assurance limits. The NCSC OGL basis has not been extended to IASME material.
 
 The copied-text boundary also remains exact. `copied_requirement_or_passage_text_prohibited` is `true`; `allowed_verbatim_locations` remains the singleton `["known_anomalies[0].source_literal"]`; and a recursive value walk finds `tests 2 to 7` exactly once, at that approved path and nowhere else.
 
-**RE-ATTESTED WITHOUT RESERVATION FOR THE EXACT FINAL-FIX CANDIDATE.** Codex Rights Reviewer R1 confirms that every reconciled source-derived and narrative field class, all 36 reparaphrases, the T4-008 evidence boundary, and the source-derived digest guard are covered by the prior pre-inventory approval. This remains confirmation rather than retroactive permission. No expanded publication basis or new permission is required for the exact oracle, semantic comparison, reconciliation, and inventory-test hashes recorded above.
+**RE-ATTESTED WITHOUT RESERVATION FOR THE EXACT R2 CORRECTION.** Codex Rights Reviewer R1 confirms that every reconciled source-derived and narrative field class, all 36 reparaphrases, the B-001 completeness correction, the T4-008 evidence boundary, and the accurately described source-derived digest guard are covered by the prior pre-inventory approval. This remains confirmation rather than retroactive permission. No expanded publication basis or new permission is required for the exact oracle, semantic comparison, reconciliation, and inventory-test hashes recorded above.

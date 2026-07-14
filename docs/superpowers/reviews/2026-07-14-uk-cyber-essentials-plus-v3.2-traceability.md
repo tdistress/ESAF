@@ -10,15 +10,15 @@
 |---|---|
 | Canonical NCSC PDF | 424,226 bytes; 24 PDF pages; SHA-256 `2adf2703dec3b581e13e39c6a1de230bb1bce6d85f1158bb1eb53108e28596e8` |
 | Legacy official NCSC PDF | 419,191 bytes; 24 PDF pages; SHA-256 `d334c717597a01fab7a362377b7b04c8449568052ed1c4cf48837f6fb3aca694` |
-| Locked oracle | SHA-256 `6cd443c82b9b748c8859424b9fb48c446da478f0fa84a4eedd4e06c5ad8077cf` |
-| Tracked reconciliation record | SHA-256 `71002c0800569d2446181b86513d1138321e5913f76a69237e5884052d7ba4f0` |
-| Rights review and final-fix re-attestation | SHA-256 `f9a718020695bd9126fcc834f33c2e1d3cf457c8bfd17a75afb75d70644a45f8` |
-| Focused inventory contract test | SHA-256 `70a48c00ba0c0ab9b10eb543e21b75439d17e3674a262b2315fdc9a9e4d2ac81` |
+| Locked oracle | SHA-256 `096a5c1238b92250b1497e76ef175b6b8e99f05a65a21ed66263f8b1cf68578a` |
+| Tracked reconciliation record | SHA-256 `6563dfaeac62fd505edf49661ab0b826b00a67778af7de9b29029af16f0fd284` |
+| Rights review and R2 re-attestation | SHA-256 `dd4e380087d5ae487f432dc08843e5c9d9dd57711cd7904403955359fb701ab1` |
+| Focused inventory contract test | SHA-256 `3663fc611416eefcdda7dba924761fb72a7feb67edc66df214060bab33e8acf2` |
 | Focused link-validator test | SHA-256 `72fec52a30208e6a82c4cd0bc5cc5434dcb4717bddca01d9f978d9d6782b04b4` |
 | Link validator | SHA-256 `bdca046054d16ad18877d2ca3343acfd751b3a09be53c488fc2a605b7f4fd87e` |
 | Independent Author A inventory | SHA-256 `54b288ac07e9a3acf33ecc1db187f8410c1a9502a5bd9ecf4e5820fddd0a1559` |
 | Independent Author B inventory | SHA-256 `8c62f87697d9bb8965363924c26c25ec08a20bd07ac537c76b7191ae17c37604` |
-| External semantic comparison | SHA-256 `e0a31500b168f25abcf127a417326204bba80f0db67a4dd485093b11f4b0ce8e` |
+| External semantic comparison | SHA-256 `ec77e0b12b2b5ddc59fabbfeb59a77a518bb1ea060850974d863dd2c150f29b1` |
 
 The canonical acquisition source is the NCSC resource-page target dated 2025-04-28 and accessed 2026-07-14. The legacy URL is retained as a known official byte variant. The source version remains 3.2 and the displayed publication date remains April 2025.
 
@@ -28,7 +28,7 @@ Codex Rights Reviewer R1 approved the publication boundary before inventory work
 
 The approved boundary attributes the NCSC, applies OGL v3.0 to the covered NCSC material, permits the exact six-element rights universe, excludes marks, imagery, third-party material, copied passages, and endorsement implications, and keeps IASME material in a separate closed partition. Copied requirement or passage text is prohibited except for `known_anomalies[0].source_literal`, whose exact value occurs once as `tests 2 to 7`.
 
-On 2026-07-14, the same independent rights reviewer re-attested the exact final-fix candidate without reservation. The review covered all 509 original-free-text instances, all 36 reparaphrased provision summaries and the rights-publication-basis reparaphrase, the T4-008 prompt criterion, the 3,055-digest containment guard, all 55 ledger rationales, all 144 actor bases, summaries, and locator details, and all six assurance-boundary statements. It confirmed the oracle, semantic-comparison, reconciliation, and focused-inventory-test hashes above, found no unapproved copied narrative window or IASME-derived inventory content, and did not expand or retroactively alter the pre-inventory publication basis.
+On 2026-07-14, the same independent rights reviewer re-attested the exact R2 correction without reservation. The review covered all 509 original-free-text instances, all 36 prior reparaphrases, the B-001 complete required-file outcome, the T4-008 prompt criterion, the 3,055-digest containment guard, all 55 ledger rationales, all 144 actor bases, summaries, and locator details, and all six assurance-boundary statements. It confirmed the oracle, semantic-comparison, reconciliation, and focused-inventory-test hashes above, found no unapproved copied narrative window or IASME-derived inventory content, and did not expand or retroactively alter the pre-inventory publication basis.
 
 Codex Rights Reviewer R1 is distinct from Codex Inventory Author A, Codex Inventory Author B, and Codex Inventory Reconciler R1.
 
@@ -121,13 +121,15 @@ For the consolidated parser correction, nine focused tests ran before the implem
 
 The exact-head final review then found four Important gaps. Test-first regressions proved that shortcut text/image references were not recognized, the final directory-index candidate could escape through a link, a copied five-word source window with surrounding words bypassed the durable gate, and T4-008 strengthened an observable MFA prompt into providing MFA. The directory-index RED reproduced against the prior implementation through a Windows junction: expected `target escapes repository`, observed `target does not exist`. The completed fixes recognize CommonMark shortcuts only when defined, resolve and recheck the final directory index, freeze all 3,055 source-window SHA-256 digests without source text, reparaphrase all exposed copies, and preserve the T4-008 prompt/challenge criterion. Rights Reviewer R1 re-attested the exact hashes above before this record and the complete gates were refreshed.
 
+R2 review then found that B-001's `broad collection` wording could be incomplete. Its focused regression failed against that wording and now locks the original five-word-safe summary `Supply each Certification Body with every assessment file needed for testing.` The correction preserves the comprehensive all-required outcome without changing the actor, kind, section link, locator, counts, or structure. R2 also corrected the digest-method description: numbered items are split into 91 passages, while the mojibake bullet marker is conservatively not treated as a boundary. The 3,055-window frozen set contains all 2,878 bullet-split windows plus exactly 177 cross-bullet windows and loses none of the bullet-split coverage. Rights Reviewer R1 independently reproduced these results and re-attested the exact R2 hashes before traceability finalization.
+
 Preliminary command results on the completed working-tree content were:
 
 | Command | Result |
 |---|---|
-| `python -m unittest tests.test_validate_links -v` | 14 tests passed in 6.674 seconds; the Windows directory-junction containment regression executed without a skip |
-| `python -m unittest tests.test_uk_cyber_essentials_plus_v32_inventory -v` | 19 tests passed in 0.261 seconds |
-| `python -m unittest discover -s tests -v` | 239 tests passed in 167.024 seconds; 3 expected Windows symlink-capability skips |
+| `python -m unittest tests.test_validate_links -v` | 14 tests passed in 6.959 seconds; the Windows directory-junction containment regression executed without a skip |
+| `python -m unittest tests.test_uk_cyber_essentials_plus_v32_inventory -v` | 20 tests passed in 0.272 seconds |
+| `python -m unittest discover -s tests -v` | 240 tests passed in 168.055 seconds; 3 expected Windows symlink-capability skips |
 | `python tools/validate_controls.py --check` | 91 controls, 91 objectives, and 16 families validated |
 | `python tools/validate_architectures.py` | 10 foundation files and 7 reserved patterns validated |
 | `python tools/validate_crosswalks.py --check --baseline-ref $base` | 1 mapping set, 116 provisions, 41 relationships, and 76 negative dispositions validated |
@@ -136,14 +138,12 @@ Preliminary command results on the completed working-tree content were:
 
 ## Changed files
 
-This consolidated final-review correction changes exactly these tracked files:
+This R2 correction changes exactly these tracked files:
 
 - `docs/superpowers/reviews/2026-07-14-uk-cyber-essentials-plus-v3.2-inventory-reconciliation.md`
 - `docs/superpowers/reviews/2026-07-14-uk-cyber-essentials-plus-v3.2-rights-review.md`
 - `docs/superpowers/reviews/2026-07-14-uk-cyber-essentials-plus-v3.2-traceability.md`
 - `docs/superpowers/specs/2026-07-14-uk-cyber-essentials-plus-v3.2-provision-oracle.json`
 - `tests/test_uk_cyber_essentials_plus_v32_inventory.py`
-- `tests/test_validate_links.py`
-- `tools/validate_links.py`
 
 Independent specification/inventory review and independent security/overclaiming review remain required on one immutable exact head. Their identities, dispositions, ancestry evidence, integration checks, and protected-branch results belong in external pull-request or check evidence so this tracked record remains non-self-referential.
