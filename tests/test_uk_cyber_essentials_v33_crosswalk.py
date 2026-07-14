@@ -230,6 +230,70 @@ class UkCyberEssentialsV33CrosswalkTests(unittest.TestCase):
                 if record_id == "ce33-e3-007":
                     self.assertRegex(gaps, r"omission|omitted|no severity")
 
+    def test_user_access_first_batch_is_complete_and_separates_mfa_outcomes(self) -> None:
+        self.assertEqual(
+            [path.stem for path in record_paths("ce33-e4")],
+            [f"ce33-e4-{number:03d}" for number in range(1, 16)],
+        )
+        for number in range(1, 16):
+            record = self.load_record(f"ce33-e4-{number:03d}")
+            self.assertTrue(record["source_locator"]["locator"].startswith("Section E.4"))
+            if record["relationships"]:
+                for relationship in record["relationships"]:
+                    self.assertTrue(relationship["rationale"])
+                    self.assertTrue(relationship["conditions"])
+                    self.assertTrue(relationship["expected_evidence"])
+                    gaps = " ".join(relationship["known_gaps"]).lower()
+                    self.assertIn("ai", gaps)
+            else:
+                self.assertIn("ai", record["negative_rationale"].lower())
+
+        available = self.load_record("ce33-e4-009")
+        cloud = self.load_record("ce33-e4-010")
+        self.assertNotEqual(available["context"]["summary"], cloud["context"]["summary"])
+        self.assertIn("wherever", available["context"]["summary"].lower())
+        self.assertIn("cloud", cloud["context"]["summary"].lower())
+
+        creation = self.load_record("ce33-e4-005")
+        approval = self.load_record("ce33-e4-006")
+        self.assertNotEqual(creation["context"]["summary"], approval["context"]["summary"])
+        self.assertEqual(
+            {relationship["esaf_control_id"] for relationship in creation["relationships"]},
+            {"IAM-100"},
+        )
+        self.assertEqual(approval["disposition"], "no_direct_mapping")
+        self.assertEqual(approval["relationships"], [])
+
+        unique_authentication = self.load_record("ce33-e4-007")
+        self.assertEqual(
+            {
+                relationship["esaf_control_id"]
+                for relationship in unique_authentication["relationships"]
+            },
+            {"IAM-110"},
+        )
+        unique_gap = " ".join(unique_authentication["relationships"][0]["known_gaps"]).lower()
+        self.assertIn("unique", unique_gap)
+
+        administrative = self.load_record("ce33-e4-011")
+        restricted = self.load_record("ce33-e4-012")
+        self.assertNotEqual(administrative["context"]["summary"], restricted["context"]["summary"])
+        for record in (administrative, restricted):
+            self.assertEqual(
+                {relationship["esaf_control_id"] for relationship in record["relationships"]},
+                {"IAM-130"},
+            )
+
+        admin_mfa = self.load_record("ce33-e4-014")
+        internet_mfa = self.load_record("ce33-e4-015")
+        self.assertNotEqual(admin_mfa["context"]["summary"], internet_mfa["context"]["summary"])
+        self.assertEqual(
+            {relationship["esaf_control_id"] for relationship in admin_mfa["relationships"]},
+            {"IAM-110"},
+        )
+        self.assertEqual(internet_mfa["disposition"], "no_direct_mapping")
+        self.assertEqual(internet_mfa["relationships"], [])
+
     def test_locked_provision_oracle_is_exact(self) -> None:
         oracle = json.loads(PROVISION_ORACLE.read_text(encoding="utf-8"))
         provisions = oracle["provisions"]

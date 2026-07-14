@@ -4,32 +4,32 @@
       "uk-ncsc": 1
     },
     "by_confidence": {
-      "high": 18,
-      "medium": 6
+      "high": 27,
+      "medium": 9
     },
     "by_coverage": {
-      "narrow": 22,
+      "narrow": 34,
       "partial": 2
     },
     "by_direction": {
-      "esaf_to_external": 24
+      "esaf_to_external": 36
     },
     "by_disposition": {
-      "mapped": 23,
-      "no_direct_mapping": 52
+      "mapped": 35,
+      "no_direct_mapping": 55
     },
     "by_esaf_release": {
       "0.4-alpha": 1
     },
     "by_lifecycle_state": {},
     "by_provision_status": {
-      "draft": 75
+      "draft": 90
     },
     "by_publication": {
       "cyber-essentials-requirements-for-it-infrastructure": 1
     },
     "by_relationship": {
-      "partially_supports": 24
+      "partially_supports": 36
     },
     "by_snapshot_status": {
       "draft": 1
@@ -38,9 +38,9 @@
       "3.3": 1
     },
     "mapping_sets": 1,
-    "negative_dispositions": 52,
-    "provisions": 75,
-    "relationships": 24
+    "negative_dispositions": 55,
+    "provisions": 90,
+    "relationships": 36
   },
   "generated_from": "crosswalks/mappings/** and crosswalks/registry/*.md",
   "mapping_sets": [
@@ -175,7 +175,7 @@
         "events": [],
         "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
         "schema_version": "1.0.0",
-        "snapshot_digest": "9da68d9e09ff65ff2db86e631fde182c82f492c350a0c3e814f5abb5eb8fffe0"
+        "snapshot_digest": "e22cd2528cd617407e99cbe37d9cefbb87aaffcbf54f6039ef3b1c662bfc30df"
       },
       "metadata": {
         "authority": {
@@ -3154,6 +3154,717 @@
             "status": "draft"
           },
           "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e3-007.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 User Access Control mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Control organisational user accounts, including accounts used by third parties."
+            },
+            "disposition": "mapped",
+            "external_provision_id": "CE3.3-E4-001",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "record_id": "ce33-e4-001",
+            "relationships": [
+              {
+                "conditions": [
+                  "The user or third-party account can access an in-scope AI asset and is governed as a human identity under IAM-100."
+                ],
+                "confidence": "high",
+                "coverage": "narrow",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "IAM-100",
+                "esaf_control_version": "0.1.0",
+                "expected_evidence": [
+                  "AI identity inventory, account owner and purpose, identity-provider record, lifecycle status, and sampled third-party identity record."
+                ],
+                "known_gaps": [
+                  "IAM-100 covers identities that can access in-scope AI assets; it does not require control of every organisational or third-party user account across the broader Cyber Essentials scope."
+                ],
+                "rationale": "IAM-100 requires lifecycle governance for every human and third-party identity that can access in-scope AI assets, directly contributing control of the corresponding organisational user accounts.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.4, User Access Control, Requirements, page 19, opening paragraph, sentence 1, outcome 1",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e4-001.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 User Access Control mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Control access privileges that grant access to organisational data and services."
+            },
+            "disposition": "mapped",
+            "external_provision_id": "CE3.3-E4-002",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "record_id": "ce33-e4-002",
+            "relationships": [
+              {
+                "conditions": [
+                  "The privilege grants access to an in-scope AI asset or action governed by IAM-120."
+                ],
+                "confidence": "high",
+                "coverage": "narrow",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "IAM-120",
+                "esaf_control_version": "0.1.0",
+                "expected_evidence": [
+                  "AI access model, role or attribute definition, approval, effective authorization policy, and sampled granted and denied access."
+                ],
+                "known_gaps": [
+                  "IAM-120 controls privileges for in-scope AI assets and actions; it does not govern every privilege granting access to organisational data or services outside that AI scope."
+                ],
+                "rationale": "IAM-120 requires authorization of access to AI assets and actions by approved purpose, role, attributes, context, and least privilege, directly contributing control of privileges for organisational AI data and services.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.4, User Access Control, Requirements, page 19, opening paragraph, sentence 1, outcome 2",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e4-002.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 User Access Control mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Understand how user accounts authenticate."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-E4-003",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "IAM-110 requires authentication before access to non-public AI assets, and MON-150 preserves attributable audit trails for material AI access, but neither requires the organization to document or otherwise understand how every user account authenticates.",
+            "record_id": "ce33-e4-003",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.4, User Access Control, Requirements, page 19, opening paragraph, final sentence, outcome 1",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e4-003.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 User Access Control mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Manage authentication according to the authentication method used."
+            },
+            "disposition": "mapped",
+            "external_provision_id": "CE3.3-E4-004",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "record_id": "ce33-e4-004",
+            "relationships": [
+              {
+                "conditions": [
+                  "The authentication method controls access to a non-public in-scope AI asset and falls within the risk criteria defined under IAM-110."
+                ],
+                "confidence": "high",
+                "coverage": "narrow",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "IAM-110",
+                "esaf_control_version": "0.1.0",
+                "expected_evidence": [
+                  "AI authentication standard, identity-provider and endpoint configuration, risk criteria, session policy, and authentication logs."
+                ],
+                "known_gaps": [
+                  "IAM-110 is risk-proportionate and limited to non-public AI assets; it does not prescribe management requirements for every authentication method used by every Cyber Essentials account."
+                ],
+                "rationale": "IAM-110 requires authentication mechanisms for non-public AI assets to have strength, context, and resistance proportionate to risk, directly contributing management appropriate to the authentication method in use.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.4, User Access Control, Requirements, page 19, opening paragraph, final sentence, outcome 2",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e4-004.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 User Access Control mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Maintain a process for creating user accounts."
+            },
+            "disposition": "mapped",
+            "external_provision_id": "CE3.3-E4-005",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "record_id": "ce33-e4-005",
+            "relationships": [
+              {
+                "conditions": [
+                  "The new user account can access an in-scope AI asset and its creation is integrated with the identity lifecycle governed by IAM-100."
+                ],
+                "confidence": "high",
+                "coverage": "narrow",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "IAM-100",
+                "esaf_control_version": "0.1.0",
+                "expected_evidence": [
+                  "AI identity onboarding procedure, creation request, owner and purpose record, identity-provider event, and reconciliation result."
+                ],
+                "known_gaps": [
+                  "IAM-100 supports creation as one element of the lifecycle for identities with AI access, but it does not require a user-account creation process for all applications and devices in the wider Cyber Essentials scope."
+                ],
+                "rationale": "IAM-100 requires lifecycle management of every identity that can access in-scope AI assets and explicitly includes creation in its implementation guidance, directly contributing an account-creation process for AI access.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.4, User Access Control, Requirements, page 19, bullet 1, outcome 1",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e4-005.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 User Access Control mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Maintain a process for approving user accounts."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-E4-006",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "IAM-100 governs creation and lifecycle management of identities with access to in-scope AI assets, while IAM-120 requires authorization according to approved purpose and role; neither control requires a distinct process that approves the creation of user accounts.",
+            "record_id": "ce33-e4-006",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.4, User Access Control, Requirements, page 19, bullet 1, outcome 2",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e4-006.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 User Access Control mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Authenticate users with unique credentials before granting access to applications or devices."
+            },
+            "disposition": "mapped",
+            "external_provision_id": "CE3.3-E4-007",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "record_id": "ce33-e4-007",
+            "relationships": [
+              {
+                "conditions": [
+                  "The application or device access path reaches a non-public in-scope AI asset governed by IAM-110."
+                ],
+                "confidence": "high",
+                "coverage": "narrow",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "IAM-110",
+                "esaf_control_version": "0.1.0",
+                "expected_evidence": [
+                  "AI authentication standard, access-path configuration, identity-provider record, authentication log, and unauthenticated-access test."
+                ],
+                "known_gaps": [
+                  "IAM-110 requires authentication for non-public AI assets but does not itself require every user credential to be unique or cover applications and devices that do not provide access to those AI assets."
+                ],
+                "rationale": "IAM-110 requires identities to be authenticated before receiving access to non-public AI assets, directly contributing the pre-access authentication aspect of the provision.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.4, User Access Control, Requirements, page 19, bullet 2",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e4-007.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 User Access Control mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Remove or disable user accounts when they are no longer required."
+            },
+            "disposition": "mapped",
+            "external_provision_id": "CE3.3-E4-008",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "record_id": "ce33-e4-008",
+            "relationships": [
+              {
+                "conditions": [
+                  "The user account can access an in-scope AI asset and is no longer required under its recorded owner, purpose, or capability lifecycle."
+                ],
+                "confidence": "high",
+                "coverage": "narrow",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "IAM-100",
+                "esaf_control_version": "0.1.0",
+                "expected_evidence": [
+                  "AI identity inventory, termination or decommission trigger, suspension or deletion event, identity-provider status, and reconciliation result."
+                ],
+                "known_gaps": [
+                  "IAM-100 addresses accounts associated with identities that can access in-scope AI assets; it does not require removal or disabling of every unneeded user account across all Cyber Essentials applications and devices."
+                ],
+                "rationale": "IAM-100 requires lifecycle management for identities that can access in-scope AI assets and explicitly includes suspension and deletion, directly contributing removal or disabling of unneeded AI user accounts.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.4, User Access Control, Requirements, pages 19-20, bullet 3",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e4-008.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 User Access Control mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Implement multi-factor authentication wherever it is available."
+            },
+            "disposition": "mapped",
+            "external_provision_id": "CE3.3-E4-009",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "record_id": "ce33-e4-009",
+            "relationships": [
+              {
+                "conditions": [
+                  "MFA is available for a privileged or high-impact human access path to a non-public in-scope AI asset and is selected under IAM-110's risk-proportionate authentication standard."
+                ],
+                "confidence": "medium",
+                "coverage": "narrow",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "IAM-110",
+                "esaf_control_version": "0.1.0",
+                "expected_evidence": [
+                  "AI authentication risk criteria, identity-provider MFA policy, enrolled-factor record, access-path configuration, and successful and failed MFA logs."
+                ],
+                "known_gaps": [
+                  "IAM-110 does not require MFA wherever it is available for every Cyber Essentials account; its explicit MFA guidance is limited to privileged or high-impact human access to non-public AI assets."
+                ],
+                "rationale": "IAM-110's guidance calls for phishing-resistant multi-factor authentication for privileged or high-impact human access to non-public AI assets, directly contributing MFA deployment where that risk condition applies.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.4, User Access Control, Requirements, page 20, bullet 4, first clause",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e4-009.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 User Access Control mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Always use multi-factor authentication for cloud-service authentication."
+            },
+            "disposition": "mapped",
+            "external_provision_id": "CE3.3-E4-010",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "record_id": "ce33-e4-010",
+            "relationships": [
+              {
+                "conditions": [
+                  "The cloud-service authentication path provides privileged or high-impact human access to a non-public in-scope AI asset and is governed by IAM-110."
+                ],
+                "confidence": "medium",
+                "coverage": "narrow",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "IAM-110",
+                "esaf_control_version": "0.1.0",
+                "expected_evidence": [
+                  "Cloud identity-provider MFA policy, AI access risk classification, enrolled-factor record, conditional-access configuration, and MFA authentication logs."
+                ],
+                "known_gaps": [
+                  "IAM-110 does not always require MFA for every cloud-service authentication; it is limited to non-public AI assets and expressly recommends MFA only for privileged or high-impact human access."
+                ],
+                "rationale": "IAM-110's guidance calls for phishing-resistant multi-factor authentication for privileged or high-impact human access to non-public AI assets, contributing MFA when such access is delivered through a cloud service.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.4, User Access Control, Requirements, page 20, bullet 4, second clause",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e4-010.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 User Access Control mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Use separate accounts for administrative activities."
+            },
+            "disposition": "mapped",
+            "external_provision_id": "CE3.3-E4-011",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "record_id": "ce33-e4-011",
+            "relationships": [
+              {
+                "conditions": [
+                  "The administrative activity can change an in-scope AI model, data set, instruction, safety control, tool, production configuration, log, or authorization policy governed by IAM-130."
+                ],
+                "confidence": "high",
+                "coverage": "narrow",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "IAM-130",
+                "esaf_control_version": "0.1.0",
+                "expected_evidence": [
+                  "Privileged AI role definition, separate administrative identity record, privileged-access workflow, authentication event, and sampled administrative session."
+                ],
+                "known_gaps": [
+                  "IAM-130 requires separate identities only for privileged access to the enumerated in-scope AI assets and does not establish separate administrative accounts for every application or device in the Cyber Essentials scope."
+                ],
+                "rationale": "IAM-130's implementation guidance explicitly requires separate administrative identities for privileged access capable of changing protected AI assets, directly contributing separate accounts for those administrative activities.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.4, User Access Control, Requirements, page 20, bullet 5, outcome 1",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e4-011.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 User Access Control mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Restrict administrative accounts to administrative activities only."
+            },
+            "disposition": "mapped",
+            "external_provision_id": "CE3.3-E4-012",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "record_id": "ce33-e4-012",
+            "relationships": [
+              {
+                "conditions": [
+                  "The account or session provides privileged access capable of changing an in-scope AI asset covered by IAM-130."
+                ],
+                "confidence": "high",
+                "coverage": "narrow",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "IAM-130",
+                "esaf_control_version": "0.1.0",
+                "expected_evidence": [
+                  "Privileged AI access policy, prohibited-use rule, administrative session configuration, session log, monitoring alert, and sampled routine-use denial."
+                ],
+                "known_gaps": [
+                  "IAM-130 restricts privileged access to enumerated in-scope AI assets and addresses routine productivity use from privileged sessions; it does not restrict every administrative account in the broader Cyber Essentials scope to administrative activity only."
+                ],
+                "rationale": "IAM-130 requires privileged AI access to be restricted and its guidance prevents routine productivity use from privileged sessions, directly contributing restriction of administrative identities to administrative activity.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.4, User Access Control, Requirements, page 20, bullet 5, outcome 2",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e4-012.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 User Access Control mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Remove or disable special access privileges when they are no longer required."
+            },
+            "disposition": "mapped",
+            "external_provision_id": "CE3.3-E4-013",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "record_id": "ce33-e4-013",
+            "relationships": [
+              {
+                "conditions": [
+                  "The special privilege grants access to an in-scope AI asset and its approved need has ended or changed under an IAM-150 revocation trigger."
+                ],
+                "confidence": "high",
+                "coverage": "narrow",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "IAM-150",
+                "esaf_control_version": "0.1.0",
+                "expected_evidence": [
+                  "AI access review population, privilege approval, change or termination trigger, revocation record, effective-permission check, and overdue escalation."
+                ],
+                "known_gaps": [
+                  "IAM-150 revokes or adjusts access to in-scope AI assets at a risk-defined frequency or upon specified change; it does not govern every special privilege across all Cyber Essentials applications and devices."
+                ],
+                "rationale": "IAM-150 requires access to AI assets to be revoked or adjusted promptly when purpose, role, authorization, supplier relationship, or operational need changes, directly contributing removal of special AI access privileges that are no longer required.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.4, User Access Control, Requirements, page 20, bullet 6",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e4-013.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 User Access Control mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Use multi-factor authentication for administrative accounts."
+            },
+            "disposition": "mapped",
+            "external_provision_id": "CE3.3-E4-014",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "record_id": "ce33-e4-014",
+            "relationships": [
+              {
+                "conditions": [
+                  "The administrative account provides privileged human access to a non-public in-scope AI asset and is governed by IAM-110's authentication standard."
+                ],
+                "confidence": "medium",
+                "coverage": "narrow",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "IAM-110",
+                "esaf_control_version": "0.1.0",
+                "expected_evidence": [
+                  "Privileged AI account inventory, identity-provider MFA policy, enrolled phishing-resistant factor, administrative access-path configuration, and MFA authentication logs."
+                ],
+                "known_gaps": [
+                  "IAM-110's MFA guidance covers privileged human access to non-public AI assets, not every administrative account across the full Cyber Essentials population; the guidance is not stated as a universal normative MFA mandate."
+                ],
+                "rationale": "IAM-110's guidance explicitly calls for phishing-resistant multi-factor authentication for privileged human access to non-public AI assets, directly contributing MFA for AI administrative accounts.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.4, User Access Control, Multi-factor authentication, pages 20-21, opening sentence, account population 1",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e4-014.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 User Access Control mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Use multi-factor authentication for accounts accessible from the internet."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-E4-015",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "IAM-110 recommends phishing-resistant MFA for privileged or high-impact human access to non-public AI assets, but it does not require MFA for every account merely because that account is accessible from the internet; MON-150 audit trails do not supply that authentication requirement.",
+            "record_id": "ce33-e4-015",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.4, User Access Control, Multi-factor authentication, page 21, opening sentence, account population 2",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e4-015.md"
         }
       ]
     }
