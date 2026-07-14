@@ -30,7 +30,8 @@
       "cyber-essentials-requirements-for-it-infrastructure": 1
     },
     "by_relationship": {
-      "partially_supports": 41
+      "partially_supports": 40,
+      "prerequisite": 1
     },
     "by_snapshot_status": {
       "draft": 1
@@ -176,7 +177,7 @@
         "events": [],
         "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
         "schema_version": "1.0.0",
-        "snapshot_digest": "a47abbb7b86217574ce6c649b2045f718bf34b7954c923622739ac1dbff01083"
+        "snapshot_digest": "e68d45f01a3737e468a9b1e6a2cdb6c88af7bc2415be9d4224239c66a75d0665"
       },
       "metadata": {
         "authority": {
@@ -4654,7 +4655,7 @@
             "relationships": [
               {
                 "conditions": [
-                  "Code signing is selected and enforced for executable AI application artifacts governed by APP-140."
+                  "Code signing is implemented for executable AI application artifacts governed by APP-140, and a separate control verifies signatures and restricts execution to authorized signed applications."
                 ],
                 "confidence": "low",
                 "coverage": "narrow",
@@ -4662,13 +4663,13 @@
                 "esaf_control_id": "APP-140",
                 "esaf_control_version": "0.1.0",
                 "expected_evidence": [
-                  "AI application release standard, signing configuration, signing keys and certificates, build logs, signed-artifact inventory, and deployment verification."
+                  "AI application release standard, signing configuration, signing keys and certificates, build logs, signed-artifact inventory, and separately governed signature-verification and execution-policy evidence."
                 ],
                 "known_gaps": [
-                  "APP-140 presents code signing as implementation guidance for AI application artifacts; it does not require endpoint application allowlisting or restrict every executable application through code signing across the Cyber Essentials device population."
+                  "APP-140 governs signing practices for AI application artifacts only. It does not provide signature-verification or execution enforcement, establish endpoint application restriction, or cover every executable application across the Cyber Essentials device population."
                 ],
-                "rationale": "APP-140 directs code signing within controlled secure build and release practices for AI application artifacts, contributing signed-code assurance for that narrow application population.",
-                "relationship": "partially_supports"
+                "rationale": "APP-140 directs code signing within controlled build and release practices for AI application artifacts. Producing signed AI artifacts can supply a prerequisite input to a separate enforcement mechanism that verifies signatures and restricts execution.",
+                "relationship": "prerequisite"
               }
             ],
             "schema_version": "1.0.0",

@@ -371,24 +371,25 @@ class UkCyberEssentialsV33CrosswalkTests(unittest.TestCase):
         )
 
     def test_malware_relationships_preserve_narrow_ai_scope(self) -> None:
-        expected_controls = {
-            "ce33-e5-009": {"APP-140"},
-            "ce33-e5-010": {"APP-140"},
-            "ce33-e5-011": {"API-120"},
+        expected_relationships = {
+            "ce33-e5-009": ({"APP-140"}, "prerequisite"),
+            "ce33-e5-010": ({"APP-140"}, "partially_supports"),
+            "ce33-e5-011": ({"API-120"}, "partially_supports"),
         }
         for number in range(1, 13):
             record_id = f"ce33-e5-{number:03d}"
             record = self.load_record(record_id)
-            if record_id in expected_controls:
+            if record_id in expected_relationships:
+                expected_controls, expected_type = expected_relationships[record_id]
                 self.assertEqual(
                     {
                         relationship["esaf_control_id"]
                         for relationship in record["relationships"]
                     },
-                    expected_controls[record_id],
+                    expected_controls,
                 )
                 for relationship in record["relationships"]:
-                    self.assertEqual(relationship["relationship"], "partially_supports")
+                    self.assertEqual(relationship["relationship"], expected_type)
                     self.assertEqual(relationship["coverage"], "narrow")
                     self.assertTrue(relationship["rationale"])
                     self.assertTrue(relationship["conditions"])
