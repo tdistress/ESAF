@@ -21,10 +21,15 @@ def current_version() -> str:
 def current_changelog_section(version: str) -> str:
     changelog = read_repository_file("CHANGELOG.md")
     heading = f"## {version} - Unreleased"
-    if heading not in changelog:
-        raise AssertionError(f"CHANGELOG.md must contain {heading!r}")
-    section = changelog.split(heading, 1)[1]
-    return section.split("\n## ", 1)[0]
+    heading_matches = list(
+        re.finditer(rf"^{re.escape(heading)}$", changelog, re.MULTILINE)
+    )
+    if len(heading_matches) != 1:
+        raise AssertionError(f"CHANGELOG.md must contain exactly one {heading!r} heading")
+    section_start = heading_matches[0].end()
+    next_release = re.search(r"^## .+$", changelog[section_start:], re.MULTILINE)
+    section_end = section_start + next_release.start() if next_release else len(changelog)
+    return changelog[section_start:section_end]
 
 
 def draft_architecture_patterns() -> list[tuple[str, str]]:
@@ -44,14 +49,37 @@ def normalized_words(text: str) -> str:
     return " ".join(re.findall(r"[a-z0-9]+", text.casefold()))
 
 
+def markdown_list_items(text: str) -> list[str]:
+    item_pattern = re.compile(
+        r"^(?P<indent>\s*)(?:[-+*]|\d+[.)])\s+"
+        r"(?:\[[ xX]\]\s*)?(?P<body>.*)$"
+    )
+    items: list[str] = []
+    ancestors: list[tuple[int, str]] = []
+    for line in text.splitlines():
+        match = item_pattern.match(line)
+        if match:
+            indentation = len(match.group("indent").expandtabs(4))
+            while ancestors and ancestors[-1][0] >= indentation:
+                ancestors.pop()
+            body = match.group("body")
+            items.append(" ".join([item for _, item in ancestors] + [body]))
+            ancestors.append((indentation, body))
+    return items
+
+
 class ReleaseMetadataTests(unittest.TestCase):
     def test_readme_badge_matches_current_version(self) -> None:
         version = current_version()
         readme = read_repository_file("README.md")
-        badge_version = version.replace("-", "--")
-        self.assertIn(
-            f"/badge/version-{badge_version}-orange",
+        badges = re.findall(
+            r"!\[Version\]\((?P<url>[^)]+)\)",
             readme,
+        )
+        self.assertEqual(1, len(badges), "README must contain exactly one version badge")
+        self.assertEqual(
+            f"https://img.shields.io/badge/version-{version.replace('-', '--')}-orange",
+            badges[0],
             "README version badge must match VERSION.md",
         )
 
@@ -75,7 +103,12 @@ class ReleaseMetadataTests(unittest.TestCase):
     def test_current_changelog_section_is_unreleased(self) -> None:
         version = current_version()
         changelog = read_repository_file("CHANGELOG.md")
-        self.assertIn(f"## {version} - Unreleased", changelog)
+        heading = f"## {version} - Unreleased"
+        self.assertEqual(
+            1,
+            len(re.findall(rf"^{re.escape(heading)}$", changelog, re.MULTILINE)),
+            f"CHANGELOG.md must contain exactly one {heading!r} heading",
+        )
 
     def test_current_changelog_names_all_draft_architecture_patterns(self) -> None:
         patterns = draft_architecture_patterns()
@@ -90,21 +123,18 @@ class ReleaseMetadataTests(unittest.TestCase):
     def test_backlog_does_not_queue_registered_architecture_patterns(self) -> None:
         backlog = read_repository_file("project/BACKLOG.md")
         queued_drafts = [
-            normalized_words(line)
-            for line in backlog.splitlines()
-            if re.match(r"^- Draft\b", line, re.IGNORECASE)
+            normalized_words(item)
+            for item in markdown_list_items(backlog)
+            if re.search(
+                r"\b(?:draft|drafting|queue|queued|queues)\b",
+                normalized_words(item),
+            )
         ]
         for identifier, title in draft_architecture_patterns():
             with self.subTest(identifier=identifier):
-                title_words = normalized_words(title).split()
-                title_alias = " ".join(
-                    title_words[:-1]
-                    if title_words[-1] in {"deployment", "services"}
-                    else title_words
-                )
+                aliases = (normalized_words(identifier), normalized_words(title))
                 queued = any(
-                    normalized_words(identifier) in draft
-                    or title_alias in draft
+                    any(alias in draft for alias in aliases)
                     for draft in queued_drafts
                 )
                 self.assertFalse(
