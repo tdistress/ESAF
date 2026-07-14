@@ -16,7 +16,7 @@ The repository is on 0.4-alpha and contains Draft records for ARC-P100 through A
 
 The Cyber Essentials v3.3 snapshot is an early Draft crosswalk against the 0.4-alpha control baseline. Its presence does not complete the priority-crosswalk scope assigned to 0.5-beta, and it remains subject to qualified human review.
 
-No Git tag, consolidated exact-SHA release-gate record, or documented governance approval establishes a formal 0.4-alpha publication. All architecture patterns remain Draft. The milestone therefore closes planning drift and records open release gates; it does not publish or approve the release.
+No Git tag, consolidated candidate-and-merged-main release-gate record, or documented governance approval establishes a formal 0.4-alpha publication. All architecture patterns remain Draft. The milestone therefore closes planning drift and records open release gates; it does not publish or approve the release.
 
 ## 3. Decision
 
@@ -28,7 +28,7 @@ Use a conservative reconciliation with enforceable document invariants.
 4. Clarify that the 0.2-alpha through 0.4-alpha sections are unreleased working-draft stages and that the Cyber Essentials work is an early Draft artifact, not completion of the 0.5-beta milestone.
 5. Replace completed backlog items with the actual next queue: 0.4-alpha publication closure, qualified review of the Cyber Essentials core snapshot, Cyber Essentials Plus public-source acquisition and atomization design, remaining priority crosswalks, assessment work, and industry profiles.
 6. Update architecture narrative from a prospective queue to the completed initial Draft library while preserving every pattern's Draft status.
-7. Add a release-readiness record that distinguishes completed content from open publication gates and requires exact candidate-SHA evidence before release.
+7. Add a release-readiness record that distinguishes completed content from open publication gates and requires evidence for the exact reviewed candidate SHA and the exact resulting merged-main SHA before release.
 8. Add focused tests that prevent version, architecture-inventory, changelog, backlog, and unreleased-state drift.
 
 ## 4. Release-readiness boundary
@@ -37,14 +37,14 @@ Use a conservative reconciliation with enforceable document invariants.
 
 The open gates shall include:
 
-- approved release scope and exact candidate SHA;
-- normative, technical, editorial, terminology, and global-link review;
-- rendering and readability review of every Mermaid diagram;
-- qualified review of mappings required for the release scope;
-- synchronized changelog and version metadata;
-- governance approval;
-- passing GitHub checks and clean merge state; and
-- post-merge validation before tagging or publication.
+- approved release scope on the exact reviewed PR-head/candidate SHA;
+- normative, technical, editorial, terminology, and global-link review on that candidate SHA;
+- rendering and readability review of every Mermaid diagram on that candidate SHA;
+- qualified review of mappings required for the release scope on that candidate SHA;
+- synchronized changelog and version metadata on that candidate SHA;
+- governance approval on that candidate SHA;
+- passing GitHub checks and clean merge state for that PR head; and
+- post-merge validation on the exact resulting merged-main SHA before tagging or publication.
 
 The record will state that structural validators do not substitute for renderer validation, qualified mapping review, or governance approval.
 
@@ -57,7 +57,7 @@ A new `tests/test_release_metadata.py` module will require:
 - every registered architecture pattern identifier and title to appear in the 0.4-alpha changelog;
 - the backlog not to queue architecture records that already exist in the registry;
 - the backlog to identify Cyber Essentials Plus public-source acquisition and atomization as the next substantive crosswalk design activity; and
-- release-readiness text to preserve the exact-SHA, Mermaid-rendering, qualified-review, and governance-approval boundaries.
+- release-readiness text to preserve the reviewed-candidate-SHA, resulting-merged-main-SHA, Mermaid-rendering, qualified-review, and governance-approval boundaries and every gate's Open state.
 
 Tests will be written and observed failing against the current repository before metadata is changed.
 
@@ -85,7 +85,7 @@ Tests will be written and observed failing against the current repository before
 
 ### 7.1 Declare 0.4-alpha released
 
-Rejected because the repository has no tag, exact-SHA gate record, governance approval, qualified mapping review, or complete renderer evidence, and all architecture records remain Draft.
+Rejected because the repository has no tag, reviewed-candidate and resulting-merged-main gate record, governance approval, qualified mapping review, or complete renderer evidence, and all architecture records remain Draft.
 
 ### 7.2 Skip reconciliation and begin Cyber Essentials Plus immediately
 

@@ -83,6 +83,28 @@ def markdown_list_items(text: str) -> list[str]:
     return items
 
 
+def release_readiness_rows() -> list[tuple[str, str, str]]:
+    release_plan = read_repository_file("project/RELEASE_PLAN.md")
+    section_match = re.search(
+        r"^## 0\.4-alpha readiness\s*$"
+        r"(?P<section>.*?)"
+        r"(?=^## |\Z)",
+        release_plan,
+        re.MULTILINE | re.DOTALL,
+    )
+    if section_match is None:
+        raise AssertionError("project/RELEASE_PLAN.md must contain a 0.4-alpha readiness section")
+    row_pattern = re.compile(
+        r"^\| (?P<gate>[^|]+?) \| (?P<state>[^|]+?) \| (?P<evidence>[^|]+?) \|$",
+        re.MULTILINE,
+    )
+    return [
+        (match.group("gate"), match.group("state"), match.group("evidence"))
+        for match in row_pattern.finditer(section_match.group("section"))
+        if match.group("gate") != "Gate"
+    ]
+
+
 class ReleaseMetadataTests(unittest.TestCase):
     def test_readme_badge_matches_current_version(self) -> None:
         version = current_version()
@@ -175,7 +197,8 @@ class ReleaseMetadataTests(unittest.TestCase):
     def test_release_plan_preserves_readiness_boundaries(self) -> None:
         release_plan = read_repository_file("project/RELEASE_PLAN.md")
         boundaries = (
-            "exact candidate SHA",
+            "reviewed candidate SHA",
+            "resulting merged-main SHA",
             "every Mermaid diagram",
             "qualified contributors",
             "governance approval",
@@ -184,6 +207,23 @@ class ReleaseMetadataTests(unittest.TestCase):
         for boundary in boundaries:
             with self.subTest(boundary=boundary):
                 self.assertIn(boundary, release_plan)
+
+    def test_release_readiness_gates_remain_open(self) -> None:
+        expected_gates = (
+            "Scope and milestone approval",
+            "Normative and technical review",
+            "Editorial and terminology review",
+            "Cross-reference and rendering review",
+            "Standards mapping review",
+            "Release metadata synchronization",
+            "Governance approval",
+            "Post-merge validation",
+        )
+        rows = release_readiness_rows()
+        self.assertEqual(expected_gates, tuple(gate for gate, _, _ in rows))
+        for gate, state, _ in rows:
+            with self.subTest(gate=gate):
+                self.assertEqual("Open", state)
 
 
 if __name__ == "__main__":

@@ -12,7 +12,7 @@
 
 - 0.4-alpha remains a Working Draft and Unreleased.
 - ARC-P100 through ARC-P160 remain Draft; this milestone does not approve or publish them.
-- No release gate may be marked complete without exact-SHA evidence.
+- No pre-merge release gate may be marked complete without evidence tied to the exact reviewed candidate SHA, and no post-merge gate may be marked complete without evidence tied to the exact resulting merged-main SHA.
 - Structural validation does not substitute for Mermaid rendering, qualified mapping review, or governance approval.
 - Cyber Essentials core and Cyber Essentials Plus remain independently sourced artifacts.
 - Markdown remains authoritative; no generated catalog changes are expected.
@@ -98,7 +98,8 @@ class ReleaseMetadataTests(unittest.TestCase):
     def test_release_readiness_preserves_open_gate_boundaries(self) -> None:
         release = read("project/RELEASE_PLAN.md")
         for requirement in (
-            "exact candidate SHA",
+            "reviewed candidate SHA",
+            "resulting merged-main SHA",
             "every Mermaid diagram",
             "qualified contributors",
             "governance approval",
@@ -152,7 +153,7 @@ Apply these exact outcomes:
 - README badge advertises `0.4-alpha`.
 - ROADMAP declares `**Version:** 0.4-alpha` and includes AI integration services in Phase 3.
 - VERSION uses `Release Stage: **Initial Reference Architecture Draft Library**`.
-- Architecture overview heading becomes `Initial pattern library` and states that the seven Draft patterns have been delivered through independently reviewed changes.
+- Architecture overview heading becomes `Initial pattern library` and states that the seven Draft patterns have been delivered through independently reviewable changes.
 - Registry heading becomes `Initial drafting sequence` and uses past tense without changing registry statuses.
 
 - [ ] **Step 2: Complete the 0.4-alpha changelog**
@@ -172,9 +173,9 @@ Retain the statement that GitHub Issues is authoritative, then list only active 
 
 - [ ] **Step 4: Add the 0.4-alpha readiness record**
 
-Keep the seven durable gates, then add a table with columns `Gate`, `Current state`, and `Required closure evidence`. Record architecture content as complete at Draft level, but every publication gate as Open. Require exact candidate SHA, full tests and three validators, global links and terminology review, rendering and readability review of every Mermaid diagram, qualified mapping review where mappings are in scope, synchronized metadata, governance approval, passing GitHub checks, clean merge state, and post-merge validation. End with:
+Keep the seven durable gates, then add a table with columns `Gate`, `Current state`, and `Required closure evidence`. Record architecture content as complete at Draft level, but every publication gate as Open. Tie pre-merge scope, review, full tests and three validators, global links and terminology review, rendering and readability review of every Mermaid diagram, qualified mapping review where mappings are in scope, synchronized metadata, governance approval, passing GitHub checks, and clean merge state to the exact reviewed PR-head/candidate SHA. Tie post-merge validation to the exact resulting merged-main SHA. End with:
 
-> Until every applicable gate is closed on one exact candidate SHA, 0.4-alpha must not be tagged or represented as released.
+> Until every applicable pre-merge gate is closed on the exact reviewed candidate SHA and post-merge validation passes on the exact resulting merged-main SHA, 0.4-alpha must not be tagged or represented as released.
 
 - [ ] **Step 5: Run focused tests and verify GREEN**
 
@@ -207,7 +208,7 @@ git commit -m "Reconcile 0.4-alpha release planning"
 
 **Interfaces:**
 - Consumes: the complete branch relative to `origin/main`.
-- Produces: exact-SHA validation evidence, independent review closure, a merged pull request, and a clean updated `main`.
+- Produces: exact reviewed-candidate and resulting-merged-main validation evidence, independent review closure, a merged pull request, and a clean updated `main`.
 
 - [ ] **Step 1: Run the complete local gate set**
 
@@ -233,12 +234,12 @@ Provide the reviewer the design, plan, base SHA, head SHA, and complete diff. Re
 
 - [ ] **Step 3: Publish the pull request**
 
-Push `agent/v04-alpha-closure` and open a pull request against `main`. The body shall record scope, non-release boundary, exact reviewed SHA, exact test and validator results, review findings, and residual open publication gates.
+Push `agent/v04-alpha-closure` and open a pull request against `main`. The body shall record scope, non-release boundary, exact reviewed candidate SHA, exact test and validator results, review findings, and residual open publication gates.
 
 - [ ] **Step 4: Verify GitHub state and merge**
 
-Wait for all required checks, verify the PR head still equals the reviewed SHA and the merge state is clean, then merge without bypassing checks. Verify merge completion before attempting local branch cleanup.
+Wait for all required checks, verify the PR head still equals the exact reviewed candidate SHA and the merge state is clean, then merge without bypassing checks. Verify merge completion before attempting local branch cleanup.
 
 - [ ] **Step 5: Verify merged main and clean up**
 
-Update local `main`, rerun the focused release-metadata tests and all three validators, confirm a clean worktree and no caches, remove the temporary worktree, prune worktree metadata, and delete the local and remote feature branch.
+Update local `main`, record the exact resulting merged-main SHA, rerun the focused release-metadata tests and all three validators on it, confirm a clean worktree and no caches, remove the temporary worktree, prune worktree metadata, and delete the local and remote feature branch.

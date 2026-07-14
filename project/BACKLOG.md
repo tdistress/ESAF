@@ -7,4 +7,4 @@ The authoritative work queue should be maintained in GitHub Issues. This file re
 - Complete Cyber Essentials Plus public-source acquisition and atomization design as a separate, source-versioned scheme artifact.
 - Establish substantive PCI DSS and HITRUST CSF mapping sets.
 - Define assessment evidence and maturity scoring.
-- Establish planned profiles.
+- Establish planned industry profiles.
