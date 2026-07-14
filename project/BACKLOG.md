@@ -2,9 +2,9 @@
 
 The authoritative work queue should be maintained in GitHub Issues. This file records only high-level initiatives:
 
-- Draft the ARC-P160 AI observability pattern.
-- Establish PCI DSS and HITRUST CSF crosswalk methodology; Cyber Essentials core v3.3 now has a machine-validated draft mapping set.
-- Create Cyber Essentials Plus as the next separate, source-versioned UK scheme artifact without inferring Plus assurance from the core mapping.
-- Draft enterprise copilot, private-model, and AI integration patterns.
+- Complete open 0.4-alpha publication gates.
+- Obtain qualified human review for Cyber Essentials core v3.3.
+- Complete Cyber Essentials Plus public-source acquisition and atomization design as a separate, source-versioned scheme artifact.
+- Establish substantive PCI DSS and HITRUST CSF mapping sets.
 - Define assessment evidence and maturity scoring.
-- Establish healthcare, financial services, critical infrastructure, retail, government, media, and UK profiles.
+- Establish planned profiles.

@@ -2,7 +2,7 @@
 
 **Status:** Working Draft
 
-**Version:** 0.1-alpha
+**Version:** 0.4-alpha
 
 ## Phase 0 - Foundation
 
@@ -26,7 +26,7 @@
 
 - Architecture method, principles, trust zones, selection, pattern contract, overlays, and decision records
 - Enterprise AI platform and gateway
-- RAG, agentic AI, private model, enterprise copilot, and observability patterns
+- RAG, agentic AI, private model, enterprise copilot, AI integration services, and observability patterns
 - Trust boundaries, security overlays, and implementation decision records
 
 ## Phase 4 - Standards Crosswalk
