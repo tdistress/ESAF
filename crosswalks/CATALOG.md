@@ -22,7 +22,7 @@
 
 ## Coverage and gaps
 
-Mapping sets: 1; provisions: 68; directional relationships: 17; negative dispositions: 51.
+Mapping sets: 1; provisions: 75; directional relationships: 30; negative dispositions: 51.
 
 | Provision record | Disposition | Relationships |
 |---|---|---:|
@@ -94,3 +94,10 @@ Mapping sets: 1; provisions: 68; directional relationships: 17; negative disposi
 | [ce33-e2-010](mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e2-010.md) | no_direct_mapping | 0 |
 | [ce33-e2-011](mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e2-011.md) | no_direct_mapping | 0 |
 | [ce33-e2-012](mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e2-012.md) | mapped | 1 |
+| [ce33-e3-001](mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e3-001.md) | mapped | 2 |
+| [ce33-e3-002](mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e3-002.md) | mapped | 1 |
+| [ce33-e3-003](mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e3-003.md) | mapped | 2 |
+| [ce33-e3-004](mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e3-004.md) | mapped | 2 |
+| [ce33-e3-005](mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e3-005.md) | mapped | 2 |
+| [ce33-e3-006](mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e3-006.md) | mapped | 2 |
+| [ce33-e3-007](mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e3-007.md) | mapped | 2 |

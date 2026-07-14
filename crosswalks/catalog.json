@@ -4,18 +4,18 @@
       "uk-ncsc": 1
     },
     "by_confidence": {
-      "high": 11,
-      "medium": 6
+      "high": 18,
+      "medium": 12
     },
     "by_coverage": {
-      "narrow": 15,
+      "narrow": 28,
       "partial": 2
     },
     "by_direction": {
-      "esaf_to_external": 17
+      "esaf_to_external": 30
     },
     "by_disposition": {
-      "mapped": 17,
+      "mapped": 24,
       "no_direct_mapping": 51
     },
     "by_esaf_release": {
@@ -23,13 +23,13 @@
     },
     "by_lifecycle_state": {},
     "by_provision_status": {
-      "draft": 68
+      "draft": 75
     },
     "by_publication": {
       "cyber-essentials-requirements-for-it-infrastructure": 1
     },
     "by_relationship": {
-      "partially_supports": 17
+      "partially_supports": 30
     },
     "by_snapshot_status": {
       "draft": 1
@@ -39,8 +39,8 @@
     },
     "mapping_sets": 1,
     "negative_dispositions": 51,
-    "provisions": 68,
-    "relationships": 17
+    "provisions": 75,
+    "relationships": 30
   },
   "generated_from": "crosswalks/mappings/** and crosswalks/registry/*.md",
   "mapping_sets": [
@@ -175,7 +175,7 @@
         "events": [],
         "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
         "schema_version": "1.0.0",
-        "snapshot_digest": "6aa09f471774871a359d8d686f13d4c5281d79b1735bafba9f3d238a3a64a236"
+        "snapshot_digest": "b07d14b03e0322c049a68dcb07fcf44f13d81fcc83225c812e671b9b76b6bc61"
       },
       "metadata": {
         "authority": {
@@ -2797,6 +2797,471 @@
             "status": "draft"
           },
           "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e2-012.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Security Update Management mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Keep all in-scope software up to date."
+            },
+            "disposition": "mapped",
+            "external_provision_id": "CE3.3-E3-001",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "record_id": "ce33-e3-001",
+            "relationships": [
+              {
+                "conditions": [
+                  "The software is an AI technology or architecture component governed through the ARC-150 lifecycle process."
+                ],
+                "confidence": "high",
+                "coverage": "narrow",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "ARC-150",
+                "esaf_control_version": "0.1.0",
+                "expected_evidence": [
+                  "Technology catalog, deployed-version inventory, support dates, supplier roadmaps, migration records, and lifecycle exceptions."
+                ],
+                "known_gaps": [
+                  "ARC-150 governs AI technologies and architecture components and does not require all software on every Cyber Essentials in-scope device to be kept up to date."
+                ],
+                "rationale": "ARC-150 requires governance of the currency and support status of AI technologies and architecture components, contributing to current software versions for covered AI technology.",
+                "relationship": "partially_supports"
+              },
+              {
+                "conditions": [
+                  "The software is part of AI infrastructure or a dependency covered by INF-120, and remediation of an identified vulnerability is performed by applying an update."
+                ],
+                "confidence": "high",
+                "coverage": "narrow",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "INF-120",
+                "esaf_control_version": "0.1.0",
+                "expected_evidence": [
+                  "AI infrastructure inventory, supplier advisories, vulnerability findings, remediation tickets, update deployment records, and verification results."
+                ],
+                "known_gaps": [
+                  "INF-120 permits risk-based remediation, mitigation, or acceptance and does not require every item of software in the broader Cyber Essentials scope to be kept at the latest supported update level."
+                ],
+                "rationale": "INF-120 requires vulnerabilities affecting AI infrastructure and dependencies to be remediated or otherwise dispositioned and therefore contributes to applying security updates to vulnerable AI infrastructure software.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.3, Security Update Management, Requirements, page 17, opening sentence",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e3-001.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Security Update Management mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Use only licensed and supported software on in-scope devices."
+            },
+            "disposition": "mapped",
+            "external_provision_id": "CE3.3-E3-002",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "record_id": "ce33-e3-002",
+            "relationships": [
+              {
+                "conditions": [
+                  "The software is an AI technology or architecture component recorded and governed under ARC-150."
+                ],
+                "confidence": "high",
+                "coverage": "narrow",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "ARC-150",
+                "esaf_control_version": "0.1.0",
+                "expected_evidence": [
+                  "Technology catalog, version and support-date records, supplier roadmaps, approved-technology records, and lifecycle exceptions."
+                ],
+                "known_gaps": [
+                  "ARC-150 neither requires software licensing nor establishes that every software item on every Cyber Essentials in-scope device is supported; universal licensing and support remain separate requirements."
+                ],
+                "rationale": "ARC-150 requires support status and support dates to be governed for AI technologies and architecture components, directly contributing to the supported-software portion for covered AI technology.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.3, Security Update Management, Requirements, page 17, bullet 1",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e3-002.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Security Update Management mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Remove unsupported software from devices or place it in a defined subset that blocks all internet traffic to and from it."
+            },
+            "disposition": "mapped",
+            "external_provision_id": "CE3.3-E3-003",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "record_id": "ce33-e3-003",
+            "relationships": [
+              {
+                "conditions": [
+                  "The unsupported software is an AI technology or architecture component governed through ARC-150 and its approved treatment is removal or retirement."
+                ],
+                "confidence": "high",
+                "coverage": "narrow",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "ARC-150",
+                "esaf_control_version": "0.1.0",
+                "expected_evidence": [
+                  "Technology catalog, support dates, unsupported-component findings, approved treatment, retirement plan, and removal verification."
+                ],
+                "known_gaps": [
+                  "ARC-150 does not require removal of every unsupported software item from every Cyber Essentials device and does not require the alternative treatment to be a defined subset that blocks all internet traffic to and from the unsupported software."
+                ],
+                "rationale": "ARC-150 requires replacement, deprecation, and retirement of AI technologies and calls for unsupported deployed AI components to have approved treatment, contributing to removal of unsupported covered technology.",
+                "relationship": "partially_supports"
+              },
+              {
+                "conditions": [
+                  "The unsupported software affects an AI workload and the organization has separately selected complete internet isolation as its treatment."
+                ],
+                "confidence": "medium",
+                "coverage": "narrow",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "INF-130",
+                "esaf_control_version": "0.1.0",
+                "expected_evidence": [
+                  "Network-policy configuration, reviews, tests, approvals, deployment logs, drift results, and traffic-test evidence."
+                ],
+                "known_gaps": [
+                  "INF-130 does not itself identify unsupported software, require its removal, or require placement in a defined subset that blocks all internet traffic to and from it; the Cyber Essentials internet-isolation outcome remains separate."
+                ],
+                "rationale": "INF-130 governs controlled, tested, approved, and monitored network policies and infrastructure configuration, contributing to implementation and verification of an isolation configuration when that treatment is selected.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.3, Security Update Management, Requirements, page 17, bullet 2",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e3-003.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Security Update Management mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Enable automatic updates where possible."
+            },
+            "disposition": "mapped",
+            "external_provision_id": "CE3.3-E3-004",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "record_id": "ce33-e3-004",
+            "relationships": [
+              {
+                "conditions": [
+                  "The automatic-update setting is infrastructure configuration affecting an AI workload."
+                ],
+                "confidence": "medium",
+                "coverage": "narrow",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "INF-130",
+                "esaf_control_version": "0.1.0",
+                "expected_evidence": [
+                  "Approved configuration source, update-setting reviews, tests, deployment logs, and drift-monitoring results."
+                ],
+                "known_gaps": [
+                  "INF-130 controls configuration but does not require automatic-update enablement where possible for all software on every Cyber Essentials in-scope device."
+                ],
+                "rationale": "INF-130 requires controlled, versioned, reviewed, tested, approved, and monitored configuration for AI-workload infrastructure, contributing to reliable configuration of automatic-update settings.",
+                "relationship": "partially_supports"
+              },
+              {
+                "conditions": [
+                  "Automatic or supplier-driven software updates affect an AI capability and are governed as changes under OPS-110."
+                ],
+                "confidence": "medium",
+                "coverage": "narrow",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "OPS-110",
+                "esaf_control_version": "0.1.0",
+                "expected_evidence": [
+                  "Automated-update policy, change criteria, deployment configuration, update logs, verification results, and rollback evidence."
+                ],
+                "known_gaps": [
+                  "OPS-110 governs automatic updates when used but does not require automatic-update enablement where possible for all software on every Cyber Essentials in-scope device."
+                ],
+                "rationale": "OPS-110 expressly applies change and release controls to automated and supplier-driven changes, contributing to controlled deployment and verification when AI-capability updates are automatic.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.3, Security Update Management, Requirements, page 17, bullet 3",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e3-004.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Security Update Management mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Apply updates within 14 days when the vendor describes the fixed vulnerabilities as critical or high risk."
+            },
+            "disposition": "mapped",
+            "external_provision_id": "CE3.3-E3-005",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "record_id": "ce33-e3-005",
+            "relationships": [
+              {
+                "conditions": [
+                  "The vendor-rated vulnerability affects software within APP-140 applicability and remediation is performed through an update."
+                ],
+                "confidence": "medium",
+                "coverage": "narrow",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "APP-140",
+                "esaf_control_version": "0.1.0",
+                "expected_evidence": [
+                  "Dependency inventory, vendor advisory, security finding, release approval, update deployment evidence, and remediation verification."
+                ],
+                "known_gaps": [
+                  "APP-140 does not impose the fixed 14-day update deadline or require a vendor description of critical or high risk to trigger that deadline, and its remediation or acceptance practices do not satisfy those Cyber Essentials outcomes."
+                ],
+                "rationale": "APP-140 requires vulnerability and dependency practices plus remediation or acceptance of sampled security findings for covered AI applications, contributing to controlled remediation through software updates.",
+                "relationship": "partially_supports"
+              },
+              {
+                "conditions": [
+                  "The vendor-rated vulnerability affects AI infrastructure or a dependency covered by INF-120 and the selected disposition is an available update."
+                ],
+                "confidence": "high",
+                "coverage": "narrow",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "INF-120",
+                "esaf_control_version": "0.1.0",
+                "expected_evidence": [
+                  "Supplier advisory, affected-asset record, vulnerability ticket, prioritization decision, update deployment record, and verification result."
+                ],
+                "known_gaps": [
+                  "INF-120's risk-based service levels do not impose the fixed 14-day update deadline or make a vendor description of critical or high risk an independently sufficient trigger; Cyber Essentials requires both outcomes regardless of ESAF risk-based prioritization, mitigation, or acceptance."
+                ],
+                "rationale": "INF-120 requires supplier advisories to inform assessment and risk-based disposition of vulnerabilities affecting AI infrastructure and dependencies, contributing to identification and remediation of vendor-rated critical or high-risk vulnerabilities.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.3, Security Update Management, Requirements, page 17, bullet 4, condition 1",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e3-005.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Security Update Management mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Apply updates within 14 days when the fixed vulnerabilities have a CVSS v3 base score of 7 or above."
+            },
+            "disposition": "mapped",
+            "external_provision_id": "CE3.3-E3-006",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "record_id": "ce33-e3-006",
+            "relationships": [
+              {
+                "conditions": [
+                  "The scored vulnerability affects software within APP-140 applicability and remediation is performed through an update."
+                ],
+                "confidence": "medium",
+                "coverage": "narrow",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "APP-140",
+                "esaf_control_version": "0.1.0",
+                "expected_evidence": [
+                  "Dependency inventory, scored security finding, release approval, update deployment evidence, and remediation verification."
+                ],
+                "known_gaps": [
+                  "APP-140 does not impose the fixed 14-day update deadline or require a CVSS v3 base score of 7 or above to trigger that deadline, and its remediation or acceptance practices do not satisfy those Cyber Essentials outcomes."
+                ],
+                "rationale": "APP-140 requires vulnerability, dependency, release, and change practices for covered AI applications and verification of remediation or acceptance, contributing to controlled remediation through software updates.",
+                "relationship": "partially_supports"
+              },
+              {
+                "conditions": [
+                  "The scored vulnerability affects AI infrastructure or a dependency covered by INF-120 and the selected disposition is an available update."
+                ],
+                "confidence": "high",
+                "coverage": "narrow",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "INF-120",
+                "esaf_control_version": "0.1.0",
+                "expected_evidence": [
+                  "Vulnerability finding with CVSS data, affected-asset record, prioritization ticket, update deployment record, and verification result."
+                ],
+                "known_gaps": [
+                  "INF-120's risk-based criteria and service levels do not impose the fixed 14-day update deadline or make a CVSS v3 base score of 7 or above an independently sufficient trigger; Cyber Essentials requires both outcomes regardless of ESAF risk-based prioritization, mitigation, or acceptance."
+                ],
+                "rationale": "INF-120 requires vulnerabilities affecting AI infrastructure and dependencies to be assessed, prioritized, and dispositioned using defined criteria, contributing to identification and remediation of scored vulnerabilities.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.3, Security Update Management, Requirements, page 17, bullet 4, condition 2",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e3-006.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Security Update Management mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Apply updates within 14 days when the vendor supplies no severity details for the vulnerabilities fixed."
+            },
+            "disposition": "mapped",
+            "external_provision_id": "CE3.3-E3-007",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "record_id": "ce33-e3-007",
+            "relationships": [
+              {
+                "conditions": [
+                  "The vendor advisory without severity details affects software within APP-140 applicability and remediation is performed through an update."
+                ],
+                "confidence": "medium",
+                "coverage": "narrow",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "APP-140",
+                "esaf_control_version": "0.1.0",
+                "expected_evidence": [
+                  "Dependency inventory, vendor advisory lacking severity details, security finding, release approval, update deployment evidence, and remediation verification."
+                ],
+                "known_gaps": [
+                  "APP-140 does not impose the fixed 14-day update deadline or require the vendor's omission of severity details to trigger that deadline, and its remediation or acceptance practices do not satisfy those Cyber Essentials outcomes."
+                ],
+                "rationale": "APP-140 requires vulnerability, dependency, release, and change practices for covered AI applications and verification of remediation or acceptance, contributing to controlled remediation through software updates.",
+                "relationship": "partially_supports"
+              },
+              {
+                "conditions": [
+                  "The vendor advisory concerns AI infrastructure or a dependency covered by INF-120 and the selected disposition is the available update."
+                ],
+                "confidence": "high",
+                "coverage": "narrow",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "INF-120",
+                "esaf_control_version": "0.1.0",
+                "expected_evidence": [
+                  "Vendor advisory lacking severity details, affected-asset record, vulnerability ticket, update deployment record, and verification result."
+                ],
+                "known_gaps": [
+                  "INF-120's risk-based criteria and service levels do not impose the fixed 14-day update deadline or make the vendor's omission of severity details an independently sufficient trigger; Cyber Essentials requires both outcomes regardless of ESAF risk-based prioritization, mitigation, or acceptance."
+                ],
+                "rationale": "INF-120 requires supplier advisories and vulnerability sources to inform disposition of vulnerabilities affecting AI infrastructure and dependencies, contributing to detection and remediation when an advisory identifies fixed vulnerabilities without severity details.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.3, Security Update Management, Requirements, page 17, bullet 4, condition 3",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e3-007.md"
         }
       ]
     }

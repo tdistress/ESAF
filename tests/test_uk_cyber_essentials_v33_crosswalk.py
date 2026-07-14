@@ -192,6 +192,16 @@ class UkCyberEssentialsV33CrosswalkTests(unittest.TestCase):
         unlock_length = self.load_record("ce33-e2-011")["negative_rationale"].lower()
         self.assertIn("six-character", unlock_length)
 
+    def test_update_records_are_complete_and_keep_three_fixed_deadline_triggers(self) -> None:
+        self.assert_group("e3", 7)
+        for record_id in ("ce33-e3-005", "ce33-e3-006", "ce33-e3-007"):
+            record = self.load_record(record_id)
+            self.assertIn("14 days", record["context"]["summary"])
+            for leg in record["relationships"]:
+                self.assertTrue(
+                    any("14-day" in gap or "14 day" in gap for gap in leg["known_gaps"])
+                )
+
     def test_locked_provision_oracle_is_exact(self) -> None:
         oracle = json.loads(PROVISION_ORACLE.read_text(encoding="utf-8"))
         provisions = oracle["provisions"]
