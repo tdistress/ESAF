@@ -119,6 +119,7 @@ class UkCyberEssentialsV33CrosswalkTests(unittest.TestCase):
         for record_id in (
             "ce33-e1-001",
             "ce33-e1-002",
+            "ce33-e1-003",
             "ce33-e1-004",
             "ce33-e1-005",
             "ce33-e1-006",
@@ -139,6 +140,15 @@ class UkCyberEssentialsV33CrosswalkTests(unittest.TestCase):
             )
             gap = " ".join(metadata["relationships"][0]["known_gaps"]).lower()
             self.assertIn("firewall", gap)
+
+    def test_firewall_rule_approval_mapping_preserves_authorised_person_gap(self) -> None:
+        approval = self.load_record("ce33-e1-008")
+        self.assertEqual(len(approval["relationships"]), 1)
+        relationship = approval["relationships"][0]
+        self.assertEqual(relationship["esaf_control_id"], "INF-130")
+        self.assertEqual(relationship["confidence"], "medium")
+        gap = " ".join(relationship["known_gaps"]).lower()
+        self.assertIn("does not itself require approval by an authorised person", gap)
 
     def test_locked_provision_oracle_is_exact(self) -> None:
         oracle = json.loads(PROVISION_ORACLE.read_text(encoding="utf-8"))

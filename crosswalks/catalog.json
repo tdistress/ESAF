@@ -4,19 +4,19 @@
       "uk-ncsc": 1
     },
     "by_confidence": {
-      "high": 9,
-      "medium": 5
+      "high": 8,
+      "medium": 4
     },
     "by_coverage": {
-      "narrow": 12,
+      "narrow": 10,
       "partial": 2
     },
     "by_direction": {
-      "esaf_to_external": 14
+      "esaf_to_external": 12
     },
     "by_disposition": {
-      "mapped": 13,
-      "no_direct_mapping": 43
+      "mapped": 12,
+      "no_direct_mapping": 44
     },
     "by_esaf_release": {
       "0.4-alpha": 1
@@ -29,7 +29,7 @@
       "cyber-essentials-requirements-for-it-infrastructure": 1
     },
     "by_relationship": {
-      "partially_supports": 14
+      "partially_supports": 12
     },
     "by_snapshot_status": {
       "draft": 1
@@ -38,9 +38,9 @@
       "3.3": 1
     },
     "mapping_sets": 1,
-    "negative_dispositions": 43,
+    "negative_dispositions": 44,
     "provisions": 56,
-    "relationships": 14
+    "relationships": 12
   },
   "generated_from": "crosswalks/mappings/** and crosswalks/registry/*.md",
   "mapping_sets": [
@@ -175,7 +175,7 @@
         "events": [],
         "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
         "schema_version": "1.0.0",
-        "snapshot_digest": "b3f5a20892045e42e62344f9f3c30c0bc278f1760a5726fe4f5533cbd9b580fa"
+        "snapshot_digest": "f5ba98993e23f97551e46e457465d9d6aff102efb79973e63e83f43271e5e682"
       },
       "metadata": {
         "authority": {
@@ -1941,7 +1941,7 @@
               "mode": "paraphrase",
               "summary": "Replace default firewall administrative passwords with strong unique passwords or disable remote administrative access."
             },
-            "disposition": "mapped",
+            "disposition": "no_direct_mapping",
             "external_provision_id": "CE3.3-E1-003",
             "granularity": "requirement",
             "mapper": {
@@ -1949,45 +1949,9 @@
               "id": "esaf-crosswalk-editorial-team"
             },
             "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "IAM-110 and IAM-130 require authentication safeguards for applicable AI administrative access, but neither requires either Cyber Essentials source alternative: replacing default firewall administrative passwords with strong unique values or disabling remote administration.",
             "record_id": "ce33-e1-003",
-            "relationships": [
-              {
-                "conditions": [
-                  "The firewall administrative interface controls access to a non-public AI asset and is governed by IAM-110."
-                ],
-                "confidence": "medium",
-                "coverage": "narrow",
-                "direction": "esaf_to_external",
-                "esaf_control_id": "IAM-110",
-                "esaf_control_version": "0.1.0",
-                "expected_evidence": [
-                  "Authentication standard, firewall administrative-interface configuration, and authentication test results for the AI environment."
-                ],
-                "known_gaps": [
-                  "IAM-110 does not expressly require replacement of every default firewall password, password uniqueness, or disabling remote firewall administration."
-                ],
-                "rationale": "IAM-110 requires risk-proportionate authentication before access to non-public AI assets and expressly covers administrative functions, supporting the strong-authentication branch for an AI firewall administrative interface.",
-                "relationship": "partially_supports"
-              },
-              {
-                "conditions": [
-                  "Firewall administration can change production configuration for an in-scope AI environment and is treated as privileged access under IAM-130."
-                ],
-                "confidence": "medium",
-                "coverage": "narrow",
-                "direction": "esaf_to_external",
-                "esaf_control_id": "IAM-130",
-                "esaf_control_version": "0.1.0",
-                "expected_evidence": [
-                  "Privileged-role definition, separate administrative identity configuration, and authentication records for firewall administration."
-                ],
-                "known_gaps": [
-                  "IAM-130 does not mandate removal of default firewall passwords, strong unique password values, or disabling remote administrative access."
-                ],
-                "rationale": "IAM-130 requires separate authentication for privileged access capable of changing production configuration, contributing protection of administrative access to a firewall serving an AI environment.",
-                "relationship": "partially_supports"
-              }
-            ],
+            "relationships": [],
             "schema_version": "1.0.0",
             "source_locator": {
               "locator": "Section E.1, Firewalls, Requirements, page 14, bullet 1",
@@ -2156,7 +2120,7 @@
                 "conditions": [
                   "The inbound firewall rule is infrastructure configuration affecting an in-scope AI workload and follows the INF-130 approval workflow."
                 ],
-                "confidence": "high",
+                "confidence": "medium",
                 "coverage": "narrow",
                 "direction": "esaf_to_external",
                 "esaf_control_id": "INF-130",
@@ -2165,7 +2129,7 @@
                   "Versioned firewall configuration, attributable review and approval record, test results, and deployment log for the inbound rule."
                 ],
                 "known_gaps": [
-                  "INF-130 applies to infrastructure affecting AI workloads and does not mandate firewall deployment or approval of every inbound firewall rule across the Cyber Essentials scope."
+                  "INF-130 applies to infrastructure affecting AI workloads and does not mandate firewall deployment or approval of every inbound firewall rule across the Cyber Essentials scope; INF-130 does not itself require approval by an authorised person."
                 ],
                 "rationale": "INF-130 requires infrastructure configuration affecting AI workloads to be reviewed and approved, directly supporting approval of inbound firewall rules in that controlled configuration.",
                 "relationship": "partially_supports"
