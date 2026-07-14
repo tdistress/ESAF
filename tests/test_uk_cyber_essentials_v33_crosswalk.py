@@ -103,6 +103,43 @@ class UkCyberEssentialsV33CrosswalkTests(unittest.TestCase):
         self.assertIn("including for in-scope AI services", gap)
         self.assertIn("Cyber Essentials-specific technical verification remains separate", gap)
 
+    def test_firewall_records_are_complete_and_do_not_infer_firewall_presence(self) -> None:
+        self.assert_group("e1", 12)
+
+        for number in range(1, 13):
+            metadata = self.load_record(f"ce33-e1-{number:03d}")
+            self.assertTrue(metadata["source_locator"]["locator"].startswith("Section E.1"))
+            for relationship in metadata["relationships"]:
+                self.assertEqual(relationship["direction"], "esaf_to_external")
+                self.assertTrue(relationship["rationale"])
+                self.assertTrue(relationship["conditions"])
+                self.assertTrue(relationship["expected_evidence"])
+                self.assertTrue(relationship["known_gaps"])
+
+        for record_id in (
+            "ce33-e1-001",
+            "ce33-e1-002",
+            "ce33-e1-004",
+            "ce33-e1-005",
+            "ce33-e1-006",
+            "ce33-e1-007",
+            "ce33-e1-010",
+            "ce33-e1-012",
+        ):
+            metadata = self.load_record(record_id)
+            self.assertEqual(metadata["disposition"], "no_direct_mapping")
+            self.assertEqual(metadata["relationships"], [])
+            self.assertIn("firewall", metadata["negative_rationale"].lower())
+
+        for record_id in ("ce33-e1-008", "ce33-e1-009", "ce33-e1-011"):
+            metadata = self.load_record(record_id)
+            self.assertEqual(
+                {relationship["esaf_control_id"] for relationship in metadata["relationships"]},
+                {"INF-130"},
+            )
+            gap = " ".join(metadata["relationships"][0]["known_gaps"]).lower()
+            self.assertIn("firewall", gap)
+
     def test_locked_provision_oracle_is_exact(self) -> None:
         oracle = json.loads(PROVISION_ORACLE.read_text(encoding="utf-8"))
         provisions = oracle["provisions"]

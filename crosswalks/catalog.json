@@ -4,32 +4,32 @@
       "uk-ncsc": 1
     },
     "by_confidence": {
-      "high": 7,
-      "medium": 2
+      "high": 9,
+      "medium": 5
     },
     "by_coverage": {
-      "narrow": 7,
+      "narrow": 12,
       "partial": 2
     },
     "by_direction": {
-      "esaf_to_external": 9
+      "esaf_to_external": 14
     },
     "by_disposition": {
-      "mapped": 9,
-      "no_direct_mapping": 35
+      "mapped": 13,
+      "no_direct_mapping": 43
     },
     "by_esaf_release": {
       "0.4-alpha": 1
     },
     "by_lifecycle_state": {},
     "by_provision_status": {
-      "draft": 44
+      "draft": 56
     },
     "by_publication": {
       "cyber-essentials-requirements-for-it-infrastructure": 1
     },
     "by_relationship": {
-      "partially_supports": 9
+      "partially_supports": 14
     },
     "by_snapshot_status": {
       "draft": 1
@@ -38,9 +38,9 @@
       "3.3": 1
     },
     "mapping_sets": 1,
-    "negative_dispositions": 35,
-    "provisions": 44,
-    "relationships": 9
+    "negative_dispositions": 43,
+    "provisions": 56,
+    "relationships": 14
   },
   "generated_from": "crosswalks/mappings/** and crosswalks/registry/*.md",
   "mapping_sets": [
@@ -175,7 +175,7 @@
         "events": [],
         "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
         "schema_version": "1.0.0",
-        "snapshot_digest": "4a846f49510fd72a42a404e429b2ec15e6e98a363bd4e67461735e1e0ad68ea0"
+        "snapshot_digest": "b3f5a20892045e42e62344f9f3c30c0bc278f1760a5726fe4f5533cbd9b580fa"
       },
       "metadata": {
         "authority": {
@@ -1861,6 +1861,492 @@
             "status": "draft"
           },
           "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-044.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Firewalls mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Configure a software firewall when the organisation does not control the network to which a device connects."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-E1-001",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "INF-110 requires risk-proportionate hardening of AI infrastructure but does not require a software firewall when a device connects to a network the organisation does not control.",
+            "record_id": "ce33-e1-001",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.1, Firewalls, Introduction, page 13, paragraph beginning 'Alternatively'",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e1-001.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Firewalls mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Protect every in-scope device with a correctly configured firewall or firewall-capable network device."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-E1-002",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "INF-110 requires approved hardening baselines for AI infrastructure, but neither it nor another candidate ESAF control mandates correctly configured firewall protection for every in-scope device.",
+            "record_id": "ce33-e1-002",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.1, Firewalls, Requirements, pages 13-14, opening paragraph",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e1-002.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Firewalls mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Replace default firewall administrative passwords with strong unique passwords or disable remote administrative access."
+            },
+            "disposition": "mapped",
+            "external_provision_id": "CE3.3-E1-003",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "record_id": "ce33-e1-003",
+            "relationships": [
+              {
+                "conditions": [
+                  "The firewall administrative interface controls access to a non-public AI asset and is governed by IAM-110."
+                ],
+                "confidence": "medium",
+                "coverage": "narrow",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "IAM-110",
+                "esaf_control_version": "0.1.0",
+                "expected_evidence": [
+                  "Authentication standard, firewall administrative-interface configuration, and authentication test results for the AI environment."
+                ],
+                "known_gaps": [
+                  "IAM-110 does not expressly require replacement of every default firewall password, password uniqueness, or disabling remote firewall administration."
+                ],
+                "rationale": "IAM-110 requires risk-proportionate authentication before access to non-public AI assets and expressly covers administrative functions, supporting the strong-authentication branch for an AI firewall administrative interface.",
+                "relationship": "partially_supports"
+              },
+              {
+                "conditions": [
+                  "Firewall administration can change production configuration for an in-scope AI environment and is treated as privileged access under IAM-130."
+                ],
+                "confidence": "medium",
+                "coverage": "narrow",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "IAM-130",
+                "esaf_control_version": "0.1.0",
+                "expected_evidence": [
+                  "Privileged-role definition, separate administrative identity configuration, and authentication records for firewall administration."
+                ],
+                "known_gaps": [
+                  "IAM-130 does not mandate removal of default firewall passwords, strong unique password values, or disabling remote administrative access."
+                ],
+                "rationale": "IAM-130 requires separate authentication for privileged access capable of changing production configuration, contributing protection of administrative access to a firewall serving an AI environment.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.1, Firewalls, Requirements, page 14, bullet 1",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e1-003.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Firewalls mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Prevent internet access to firewall administrative interfaces except under the permitted exception."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-E1-004",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "INF-110 recommends restricting management paths, while ARC-110 documents administrative paths, but no candidate ESAF control mandates preventing internet access to firewall administrative interfaces subject only to the Cyber Essentials exception.",
+            "record_id": "ce33-e1-004",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.1, Firewalls, Requirements, page 14, bullet 2, main rule",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e1-004.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Firewalls mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Document a clear business need for an internet-accessible firewall administrative interface."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-E1-005",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "ARC-110 requires documentation of AI administrative paths, but it does not require a documented clear business need for exposing a firewall administrative interface to the internet.",
+            "record_id": "ce33-e1-005",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.1, Firewalls, Requirements, page 14, bullet 2, exception condition 1",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e1-005.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Firewalls mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Protect an allowed internet-accessible firewall administrative interface with MFA or an IP allowlist plus properly managed password authentication."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-E1-006",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "IAM-110 and IAM-130 require risk-proportionate and separately authenticated privileged access, but neither mandates the exact MFA-or-IP-allowlist-plus-password alternatives for an internet-accessible firewall administrative interface.",
+            "record_id": "ce33-e1-006",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.1, Firewalls, Requirements, page 14, bullet 2, exception condition 2 and sub-bullets 1-2",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e1-006.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Firewalls mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Block unauthenticated inbound connections by default."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-E1-007",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "IAM-110 requires authentication before access to non-public AI assets, but no candidate ESAF control mandates a firewall default that blocks every unauthenticated inbound connection.",
+            "record_id": "ce33-e1-007",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.1, Firewalls, Requirements, page 14, bullet 3",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e1-007.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Firewalls mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Obtain approval from an authorised person for inbound firewall rules."
+            },
+            "disposition": "mapped",
+            "external_provision_id": "CE3.3-E1-008",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "record_id": "ce33-e1-008",
+            "relationships": [
+              {
+                "conditions": [
+                  "The inbound firewall rule is infrastructure configuration affecting an in-scope AI workload and follows the INF-130 approval workflow."
+                ],
+                "confidence": "high",
+                "coverage": "narrow",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "INF-130",
+                "esaf_control_version": "0.1.0",
+                "expected_evidence": [
+                  "Versioned firewall configuration, attributable review and approval record, test results, and deployment log for the inbound rule."
+                ],
+                "known_gaps": [
+                  "INF-130 applies to infrastructure affecting AI workloads and does not mandate firewall deployment or approval of every inbound firewall rule across the Cyber Essentials scope."
+                ],
+                "rationale": "INF-130 requires infrastructure configuration affecting AI workloads to be reviewed and approved, directly supporting approval of inbound firewall rules in that controlled configuration.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.1, Firewalls, Requirements, page 14, bullet 4, outcome 1",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e1-008.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Firewalls mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Document inbound firewall rules."
+            },
+            "disposition": "mapped",
+            "external_provision_id": "CE3.3-E1-009",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "record_id": "ce33-e1-009",
+            "relationships": [
+              {
+                "conditions": [
+                  "The inbound firewall rule affects an in-scope AI workload and is maintained as controlled configuration under INF-130."
+                ],
+                "confidence": "high",
+                "coverage": "narrow",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "INF-130",
+                "esaf_control_version": "0.1.0",
+                "expected_evidence": [
+                  "Configuration repository and deployed firewall configuration showing the versioned inbound rule, review history, and drift comparison."
+                ],
+                "known_gaps": [
+                  "INF-130 does not mandate firewall deployment or documentation of inbound firewall rules outside infrastructure affecting AI workloads."
+                ],
+                "rationale": "INF-130 requires infrastructure configuration affecting AI workloads to be controlled, versioned, and reproducible, directly supporting documentation of inbound firewall rules represented in that configuration.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.1, Firewalls, Requirements, page 14, bullet 4, outcome 2",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e1-009.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Firewalls mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Include the business need in inbound firewall-rule documentation."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-E1-010",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "INF-130 requires controlled, reviewed, and approved infrastructure configuration, but it does not require inbound firewall-rule documentation to state the business need for each rule.",
+            "record_id": "ce33-e1-010",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.1, Firewalls, Requirements, page 14, bullet 4, outcome 3",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e1-010.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Firewalls mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Remove or disable unnecessary firewall rules when they are no longer needed."
+            },
+            "disposition": "mapped",
+            "external_provision_id": "CE3.3-E1-011",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "record_id": "ce33-e1-011",
+            "relationships": [
+              {
+                "conditions": [
+                  "The firewall rule affects an in-scope AI workload, has been identified as no longer needed, and its removal or disabling is processed under INF-130."
+                ],
+                "confidence": "medium",
+                "coverage": "narrow",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "INF-130",
+                "esaf_control_version": "0.1.0",
+                "expected_evidence": [
+                  "Drift or configuration finding identifying the obsolete rule, approved removal change, updated firewall configuration, test result, and deployment log."
+                ],
+                "known_gaps": [
+                  "INF-130 governs a firewall-rule change once initiated but does not itself require periodic identification and removal of every unnecessary firewall rule across the Cyber Essentials scope."
+                ],
+                "rationale": "INF-130 requires infrastructure configuration affecting AI workloads to be controlled, monitored, and changed through a reviewed process, supporting removal or disabling of an obsolete firewall rule through controlled configuration change.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.1, Firewalls, Requirements, page 14, bullet 5",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e1-011.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Firewalls mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Use a software firewall on devices used on untrusted networks."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-E1-012",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "INF-110 requires risk-proportionate hardening of AI infrastructure but does not mandate a software firewall on every device used on an untrusted network.",
+            "record_id": "ce33-e1-012",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.1, Firewalls, Requirements, page 14, final sentence",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e1-012.md"
         }
       ]
     }
