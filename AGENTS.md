@@ -75,4 +75,3 @@ These instructions preserve durable project conventions for future Codex develop
 - `gh pr merge --delete-branch` can merge successfully and then fail during local branch deletion when another worktree owns the base branch. Verify PR state before retrying, then clean branches and worktrees separately.
 - Set `PYTHONDONTWRITEBYTECODE=1` during Python validation and verify that no `__pycache__` directories remain before declaring the checkout clean.
 - On Windows, deeply nested project-local worktrees can make tracked files unreadable to Python or PowerShell even when Git reports a clean checkout. Use a short drive alias, run tests and tools through it, and verify the longest tracked paths before diagnosing missing repository content.
-- Keep implementation and review reports internally coherent. Replace superseded totals or conclusions instead of appending corrections that leave contradictory earlier evidence.
