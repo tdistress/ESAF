@@ -115,9 +115,6 @@ class UkCyberEssentialsV33CrosswalkTests(unittest.TestCase):
                 self.assertTrue(relationship["conditions"])
                 self.assertTrue(relationship["expected_evidence"])
                 self.assertTrue(relationship["known_gaps"])
-                if relationship["esaf_control_id"].startswith("IAM-"):
-                    conditions = " ".join(relationship["conditions"]).lower()
-                    self.assertIn("in-scope ai asset", conditions)
 
         for record_id in (
             "ce33-e1-001",
@@ -165,6 +162,15 @@ class UkCyberEssentialsV33CrosswalkTests(unittest.TestCase):
                 self.assertTrue(relationship["conditions"])
                 self.assertTrue(relationship["expected_evidence"])
                 self.assertTrue(relationship["known_gaps"])
+                if relationship["esaf_control_id"].startswith("IAM-"):
+                    conditions = " ".join(relationship["conditions"]).lower()
+                    self.assertIn("in-scope ai asset", conditions)
+
+        account_reduction = self.load_record("ce33-e2-001")
+        self.assertEqual(
+            {relationship["esaf_control_id"] for relationship in account_reduction["relationships"]},
+            {"IAM-100"},
+        )
 
         for record_id in (
             "ce33-e2-002",

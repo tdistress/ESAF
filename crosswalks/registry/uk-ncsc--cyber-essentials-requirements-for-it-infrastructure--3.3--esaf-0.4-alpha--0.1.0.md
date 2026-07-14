@@ -1,7 +1,7 @@
 ---
 schema_version: 1.0.0
 mapping_set_id: uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0
-snapshot_digest: 6fa8927d8b288b4f0de793c5ed4da74c72e30f48b2531125568a7a54d989f53d
+snapshot_digest: 6aa09f471774871a359d8d686f13d4c5281d79b1735bafba9f3d238a3a64a236
 events: []
 ---
 # Cyber Essentials v3.3 lifecycle record

@@ -4,15 +4,15 @@
       "uk-ncsc": 1
     },
     "by_confidence": {
-      "high": 12,
+      "high": 11,
       "medium": 6
     },
     "by_coverage": {
-      "narrow": 16,
+      "narrow": 15,
       "partial": 2
     },
     "by_direction": {
-      "esaf_to_external": 18
+      "esaf_to_external": 17
     },
     "by_disposition": {
       "mapped": 17,
@@ -29,7 +29,7 @@
       "cyber-essentials-requirements-for-it-infrastructure": 1
     },
     "by_relationship": {
-      "partially_supports": 18
+      "partially_supports": 17
     },
     "by_snapshot_status": {
       "draft": 1
@@ -40,7 +40,7 @@
     "mapping_sets": 1,
     "negative_dispositions": 51,
     "provisions": 68,
-    "relationships": 18
+    "relationships": 17
   },
   "generated_from": "crosswalks/mappings/** and crosswalks/registry/*.md",
   "mapping_sets": [
@@ -175,7 +175,7 @@
         "events": [],
         "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
         "schema_version": "1.0.0",
-        "snapshot_digest": "6fa8927d8b288b4f0de793c5ed4da74c72e30f48b2531125568a7a54d989f53d"
+        "snapshot_digest": "6aa09f471774871a359d8d686f13d4c5281d79b1735bafba9f3d238a3a64a236"
       },
       "metadata": {
         "authority": {
@@ -2351,24 +2351,6 @@
                   "IAM-100 is limited to identities that can access in-scope AI assets and does not require removal or disabling of every unnecessary account on all Cyber Essentials computers and network devices; it also does not prescribe a fixed review frequency."
                 ],
                 "rationale": "IAM-100 requires the lifecycle of every human and non-human identity that can access in-scope AI assets to be managed, directly supporting suspension or deletion of unnecessary AI-system accounts.",
-                "relationship": "partially_supports"
-              },
-              {
-                "conditions": [
-                  "The account holds access to an in-scope AI asset and the access review or another lifecycle trigger establishes that the account is no longer needed."
-                ],
-                "confidence": "high",
-                "coverage": "narrow",
-                "direction": "esaf_to_external",
-                "esaf_control_id": "IAM-150",
-                "esaf_control_version": "0.1.0",
-                "expected_evidence": [
-                  "Access-review population and schedule, reviewer attestation, revocation decision, enforcement record, and identity-provider audit log."
-                ],
-                "known_gaps": [
-                  "IAM-150 governs access to AI assets rather than every account on every Cyber Essentials device and leaves review frequency risk-defined rather than requiring a universal cadence."
-                ],
-                "rationale": "IAM-150 requires risk-defined access review and prompt revocation or adjustment when operational need changes, directly supporting identification and disabling of unnecessary accounts with AI access.",
                 "relationship": "partially_supports"
               }
             ],
