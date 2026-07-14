@@ -115,6 +115,9 @@ class UkCyberEssentialsV33CrosswalkTests(unittest.TestCase):
                 self.assertTrue(relationship["conditions"])
                 self.assertTrue(relationship["expected_evidence"])
                 self.assertTrue(relationship["known_gaps"])
+                if relationship["esaf_control_id"].startswith("IAM-"):
+                    conditions = " ".join(relationship["conditions"]).lower()
+                    self.assertIn("in-scope ai asset", conditions)
 
         for record_id in (
             "ce33-e1-001",
@@ -149,6 +152,39 @@ class UkCyberEssentialsV33CrosswalkTests(unittest.TestCase):
         self.assertEqual(relationship["confidence"], "medium")
         gap = " ".join(relationship["known_gaps"]).lower()
         self.assertIn("does not itself require approval by an authorised person", gap)
+
+    def test_secure_configuration_records_are_complete_and_preserve_threshold_gaps(self) -> None:
+        self.assert_group("e2", 12)
+
+        for number in range(1, 13):
+            metadata = self.load_record(f"ce33-e2-{number:03d}")
+            self.assertTrue(metadata["source_locator"]["locator"].startswith("Section E.2"))
+            for relationship in metadata["relationships"]:
+                self.assertEqual(relationship["direction"], "esaf_to_external")
+                self.assertTrue(relationship["rationale"])
+                self.assertTrue(relationship["conditions"])
+                self.assertTrue(relationship["expected_evidence"])
+                self.assertTrue(relationship["known_gaps"])
+
+        for record_id in (
+            "ce33-e2-002",
+            "ce33-e2-003",
+            "ce33-e2-004",
+            "ce33-e2-006",
+            "ce33-e2-009",
+            "ce33-e2-010",
+            "ce33-e2-011",
+        ):
+            metadata = self.load_record(record_id)
+            self.assertEqual(metadata["disposition"], "no_direct_mapping")
+            self.assertEqual(metadata["relationships"], [])
+            self.assertTrue(metadata["negative_rationale"])
+
+        threshold = self.load_record("ce33-e2-009")["negative_rationale"].lower()
+        self.assertIn("10", threshold)
+        self.assertIn("five minutes", threshold)
+        unlock_length = self.load_record("ce33-e2-011")["negative_rationale"].lower()
+        self.assertIn("six-character", unlock_length)
 
     def test_locked_provision_oracle_is_exact(self) -> None:
         oracle = json.loads(PROVISION_ORACLE.read_text(encoding="utf-8"))
