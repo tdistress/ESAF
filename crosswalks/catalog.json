@@ -5,18 +5,18 @@
     },
     "by_confidence": {
       "high": 27,
-      "medium": 9
+      "medium": 8
     },
     "by_coverage": {
-      "narrow": 34,
+      "narrow": 33,
       "partial": 2
     },
     "by_direction": {
-      "esaf_to_external": 36
+      "esaf_to_external": 35
     },
     "by_disposition": {
-      "mapped": 35,
-      "no_direct_mapping": 55
+      "mapped": 34,
+      "no_direct_mapping": 56
     },
     "by_esaf_release": {
       "0.4-alpha": 1
@@ -29,7 +29,7 @@
       "cyber-essentials-requirements-for-it-infrastructure": 1
     },
     "by_relationship": {
-      "partially_supports": 36
+      "partially_supports": 35
     },
     "by_snapshot_status": {
       "draft": 1
@@ -38,9 +38,9 @@
       "3.3": 1
     },
     "mapping_sets": 1,
-    "negative_dispositions": 55,
+    "negative_dispositions": 56,
     "provisions": 90,
-    "relationships": 36
+    "relationships": 35
   },
   "generated_from": "crosswalks/mappings/** and crosswalks/registry/*.md",
   "mapping_sets": [
@@ -175,7 +175,7 @@
         "events": [],
         "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
         "schema_version": "1.0.0",
-        "snapshot_digest": "e22cd2528cd617407e99cbe37d9cefbb87aaffcbf54f6039ef3b1c662bfc30df"
+        "snapshot_digest": "092919a4070dfce2782f902a1ba82dee415929132f7af2a7e77ea393067a2d7f"
       },
       "metadata": {
         "authority": {
@@ -3591,7 +3591,7 @@
               "mode": "paraphrase",
               "summary": "Always use multi-factor authentication for cloud-service authentication."
             },
-            "disposition": "mapped",
+            "disposition": "no_direct_mapping",
             "external_provision_id": "CE3.3-E4-010",
             "granularity": "requirement",
             "mapper": {
@@ -3599,27 +3599,9 @@
               "id": "esaf-crosswalk-editorial-team"
             },
             "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "IAM-110 applies risk-proportionate authentication and recommends phishing-resistant MFA for privileged or high-impact human access to non-public AI assets, but that scoped guidance does not establish universal cloud-service MFA for every cloud-service authentication required by this provision.",
             "record_id": "ce33-e4-010",
-            "relationships": [
-              {
-                "conditions": [
-                  "The cloud-service authentication path provides privileged or high-impact human access to a non-public in-scope AI asset and is governed by IAM-110."
-                ],
-                "confidence": "medium",
-                "coverage": "narrow",
-                "direction": "esaf_to_external",
-                "esaf_control_id": "IAM-110",
-                "esaf_control_version": "0.1.0",
-                "expected_evidence": [
-                  "Cloud identity-provider MFA policy, AI access risk classification, enrolled-factor record, conditional-access configuration, and MFA authentication logs."
-                ],
-                "known_gaps": [
-                  "IAM-110 does not always require MFA for every cloud-service authentication; it is limited to non-public AI assets and expressly recommends MFA only for privileged or high-impact human access."
-                ],
-                "rationale": "IAM-110's guidance calls for phishing-resistant multi-factor authentication for privileged or high-impact human access to non-public AI assets, contributing MFA when such access is delivered through a cloud service.",
-                "relationship": "partially_supports"
-              }
-            ],
+            "relationships": [],
             "schema_version": "1.0.0",
             "source_locator": {
               "locator": "Section E.4, User Access Control, Requirements, page 20, bullet 4, second clause",

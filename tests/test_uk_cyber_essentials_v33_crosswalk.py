@@ -44,17 +44,17 @@ class UkCyberEssentialsV33CrosswalkTests(unittest.TestCase):
     def load_record(self, record_id: str) -> dict[str, object]:
         return parse_front_matter(SNAPSHOT / f"{record_id}.md")[0]
 
-    def assert_group(self, group: str, count: int) -> None:
-        paths = record_paths(f"ce33-{group}")
+    def assert_records_match_oracle(
+        self, paths: list[Path], expected_record_ids: list[str]
+    ) -> None:
         oracle = json.loads(PROVISION_ORACLE.read_text(encoding="utf-8"))
         oracle_by_id = {item["record_id"]: item for item in oracle["provisions"]}
-        self.assertEqual(
-            [path.stem for path in paths],
-            [f"ce33-{group}-{number:03d}" for number in range(1, count + 1)],
-        )
-        for number, path in enumerate(paths, 1):
+        self.assertEqual([path.stem for path in paths], expected_record_ids)
+        for path in paths:
             metadata, _ = parse_front_matter(path)
             expected = oracle_by_id[path.stem]
+            self.assertEqual(metadata["record_id"], path.stem)
+            self.assertEqual(metadata["record_id"], expected["record_id"])
             self.assertEqual(metadata["external_provision_id"], expected["external_provision_id"])
             self.assertEqual(metadata["status"], "draft")
             self.assertEqual(metadata["granularity"], "requirement")
@@ -64,15 +64,19 @@ class UkCyberEssentialsV33CrosswalkTests(unittest.TestCase):
             self.assertEqual(metadata["mapping_set_id"], MAPPING_SET_ID)
             self.assertEqual(metadata["change_history"][-1]["version"], "0.1.0")
             self.assertEqual(metadata["context"]["summary"], expected["summary"])
-            self.assertEqual(
-                {leg["direction"] for leg in metadata["relationships"]},
-                {"esaf_to_external"} if metadata["relationships"] else set(),
-            )
+            for relationship in metadata["relationships"]:
+                self.assertEqual(relationship["direction"], "esaf_to_external")
             if metadata["relationships"]:
                 self.assertNotEqual(metadata["disposition"], "no_direct_mapping")
             else:
                 self.assertEqual(metadata["disposition"], "no_direct_mapping")
                 self.assertTrue(metadata["negative_rationale"])
+
+    def assert_group(self, group: str, count: int) -> None:
+        self.assert_records_match_oracle(
+            record_paths(f"ce33-{group}"),
+            [f"ce33-{group}-{number:03d}" for number in range(1, count + 1)],
+        )
 
     def test_scope_records_are_complete_and_conservative(self) -> None:
         self.assert_group("d", 44)
@@ -231,13 +235,12 @@ class UkCyberEssentialsV33CrosswalkTests(unittest.TestCase):
                     self.assertRegex(gaps, r"omission|omitted|no severity")
 
     def test_user_access_first_batch_is_complete_and_separates_mfa_outcomes(self) -> None:
-        self.assertEqual(
-            [path.stem for path in record_paths("ce33-e4")],
+        self.assert_records_match_oracle(
+            record_paths("ce33-e4"),
             [f"ce33-e4-{number:03d}" for number in range(1, 16)],
         )
         for number in range(1, 16):
             record = self.load_record(f"ce33-e4-{number:03d}")
-            self.assertTrue(record["source_locator"]["locator"].startswith("Section E.4"))
             if record["relationships"]:
                 for relationship in record["relationships"]:
                     self.assertTrue(relationship["rationale"])
@@ -253,6 +256,12 @@ class UkCyberEssentialsV33CrosswalkTests(unittest.TestCase):
         self.assertNotEqual(available["context"]["summary"], cloud["context"]["summary"])
         self.assertIn("wherever", available["context"]["summary"].lower())
         self.assertIn("cloud", cloud["context"]["summary"].lower())
+        self.assertEqual(cloud["disposition"], "no_direct_mapping")
+        self.assertEqual(cloud["relationships"], [])
+        cloud_rationale = cloud["negative_rationale"].lower()
+        self.assertIn("privileged or high-impact", cloud_rationale)
+        self.assertIn("ai", cloud_rationale)
+        self.assertIn("universal cloud-service mfa", cloud_rationale)
 
         creation = self.load_record("ce33-e4-005")
         approval = self.load_record("ce33-e4-006")
