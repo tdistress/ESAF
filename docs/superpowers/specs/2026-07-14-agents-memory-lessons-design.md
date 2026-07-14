@@ -37,4 +37,3 @@ The implementation will be checked by:
 2. Scanning the changed files for placeholders and trailing whitespace.
 3. Running `git diff --check <merge-base>..HEAD`.
 4. Running the repository test suite through a short Windows drive alias to avoid deep-path false failures.
-
