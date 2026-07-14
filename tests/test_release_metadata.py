@@ -5,6 +5,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
+BACKLOG_PATTERN_ALIASES = {
+    "ARC-P140": ("private-model",),
+    "ARC-P150": ("AI integration",),
+}
+
 
 def read_repository_file(relative_path: str) -> str:
     return (ROOT / relative_path).read_text(encoding="utf-8")
@@ -47,6 +52,16 @@ def draft_architecture_patterns() -> list[tuple[str, str]]:
 
 def normalized_words(text: str) -> str:
     return " ".join(re.findall(r"[a-z0-9]+", text.casefold()))
+
+
+def contains_normalized_phrase(text: str, phrase: str) -> bool:
+    text_words = normalized_words(text).split()
+    phrase_words = normalized_words(phrase).split()
+    phrase_length = len(phrase_words)
+    return any(
+        text_words[index:index + phrase_length] == phrase_words
+        for index in range(len(text_words) - phrase_length + 1)
+    )
 
 
 def markdown_list_items(text: str) -> list[str]:
@@ -132,9 +147,16 @@ class ReleaseMetadataTests(unittest.TestCase):
         ]
         for identifier, title in draft_architecture_patterns():
             with self.subTest(identifier=identifier):
-                aliases = (normalized_words(identifier), normalized_words(title))
+                aliases = (
+                    identifier,
+                    title,
+                    *BACKLOG_PATTERN_ALIASES.get(identifier, ()),
+                )
                 queued = any(
-                    any(alias in draft for alias in aliases)
+                    any(
+                        contains_normalized_phrase(draft, alias)
+                        for alias in aliases
+                    )
                     for draft in queued_drafts
                 )
                 self.assertFalse(
