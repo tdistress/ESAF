@@ -12,9 +12,9 @@ Pattern records are delivered through independently reviewed changes using [`../
 | [ARC-P150](ARC-P150.md) | AI integration services | Draft |
 | [ARC-P160](ARC-P160.md) | AI observability | Draft |
 
-## Publication order
+## Initial drafting sequence
 
-Patterns are initially drafted in this order: enterprise AI platform and gateway; retrieval-augmented generation; agentic and multi-agent AI; AI observability; enterprise copilot; private model deployment; and AI integration services. The order establishes shared platform, data, agency, and evidence concepts before consumer-facing and specialized deployment patterns.
+Patterns were initially drafted in this order: enterprise AI platform and gateway; retrieval-augmented generation; agentic and multi-agent AI; AI observability; enterprise copilot; private model deployment; and AI integration services. The sequence established shared platform, data, agency, and evidence concepts before consumer-facing and specialized deployment patterns.
 
 ## Registry rules
 

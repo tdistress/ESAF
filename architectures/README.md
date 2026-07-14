@@ -13,8 +13,8 @@ ESAF-1200 defines vendor-neutral architecture methods and reusable patterns for 
 - [`overlays/`](overlays/README.md) defines reusable risk, deployment, and obligation overlays.
 - [`decisions/`](decisions/README.md) maintains architecture decision records.
 
-## Initial pattern queue
+## Initial pattern library
 
-The initial library covers enterprise AI platforms and gateways, enterprise copilots, retrieval-augmented generation, agentic and multi-agent AI, private model deployment, AI integration services, and AI observability. Each pattern is delivered through an independently reviewable change.
+The initial library covers enterprise AI platforms and gateways, enterprise copilots, retrieval-augmented generation, agentic and multi-agent AI, private model deployment, AI integration services, and AI observability. All seven Draft patterns have been delivered through independently reviewable changes.
 
 Product-specific configuration belongs in ESAF-1400. Crosswalk assertions belong in ESAF-1600. A reference pattern does not establish conformance with ESAF or an external standard.

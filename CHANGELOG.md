@@ -2,6 +2,8 @@
 
 All notable changes to ESAF are documented in this file.
 
+Versions 0.2-alpha through 0.4-alpha are unreleased working-draft stages unless their section records a release date.
+
 ## 0.4-alpha - Unreleased
 
 ### Added
@@ -11,16 +13,22 @@ All notable changes to ESAF are documented in this file.
 - Added pattern selection, tailoring, overlay, and architecture decision methods.
 - Added the canonical architecture pattern template and seven-pattern registry.
 - Added deterministic architecture validation, unit tests, and continuous integration enforcement.
-- Added ARC-P100, defining centrally governed and federated enterprise AI platform and gateway enforcement.
+- Added ARC-P100, Enterprise AI platform and gateway, defining centrally governed and federated enforcement.
+- Added ARC-P110, Enterprise copilot, defining governed employee-facing AI assistance.
 - Extended architecture validation to enforce pattern metadata, registry linkage, required sections, and control-reference integrity.
-- Added ARC-P120, defining governed dual-pipeline retrieval-augmented generation with federated knowledge, authorization-before-exposure, grounding, and citation controls.
-- Added ARC-P130, defining bounded-authority agentic and multi-agent systems with transactional action execution, attenuated delegation, and independent outcome assurance.
+- Added ARC-P120, Retrieval-augmented generation, defining governed dual-pipeline retrieval with federated knowledge, authorization-before-exposure, grounding, and citation controls.
+- Added ARC-P130, Agentic and multi-agent AI, defining bounded-authority systems with transactional action execution, attenuated delegation, and independent outcome assurance.
+- Added ARC-P140, Private model deployment, defining governed private model hosting and operation.
+- Added ARC-P150, AI integration services, defining governed integration boundaries and service controls.
+- Added ARC-P160, AI observability, defining lifecycle-aligned telemetry and assurance.
+- Hardened ARC-P160 through focused review and validation changes.
 - Added the machine-validated draft Cyber Essentials v3.3 crosswalk with 116 atomic provision records, 41 forward-only relationship legs, and 76 specific no-direct-mapping dispositions.
 - Added source-rights evidence, deterministic catalogs, focused semantic tests, and acceptance traceability for the Cyber Essentials v3.3 validated draft.
+- Recorded the Cyber Essentials snapshot as early Draft 0.5-beta work; it does not complete that milestone.
 
 ### Changed
 
-- Advanced release metadata to the Reference Architecture Foundation stage.
+- Advanced release metadata to the Initial Reference Architecture Draft Library stage.
 
 ## 0.3-alpha - Unreleased
 
