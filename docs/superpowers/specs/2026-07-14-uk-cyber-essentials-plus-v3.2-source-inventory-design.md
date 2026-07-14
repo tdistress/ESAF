@@ -162,7 +162,7 @@ Any subsequent count, summary, identifier, locator, source, or rights change inv
 - External provision prefix: `CEPTS3.2`
 - Groups: `M`, `T1`, `S`, `T2`, `T3`, `T4`, `T5`, `C`, `A`, and `B`
 
-Examples are `cepts32-m-001` / `CEPTS3.2-M-001` and `cepts32-t3-001` / `CEPTS3.2-T3-001`. Source-assigned labels such as `Sub-test 3.1.2` remain in the locator and `source_assigned_label`; they are not treated as globally unique provision identifiers.
+Examples are `cepts32-m-001` / `CEPTS3.2-M-001` and `cepts32-t3-001` / `CEPTS3.2-T3-001`. Source-assigned labels such as `Sub-test 3.1.2` remain only in the provision-level `source_assigned_label`; they are not treated as globally unique provision identifiers.
 
 Identifiers shall be unique, stable, lowercase for record filenames, uppercase in the external locator form, and ordered by publication flow. They are ESAF-assigned citation locators, not NCSC-issued identifiers.
 
@@ -172,7 +172,7 @@ The locked oracle will be stored at:
 
 `docs/superpowers/specs/2026-07-14-uk-cyber-essentials-plus-v3.2-provision-oracle.json`
 
-Tests shall enforce the following closed contract as an exact JSON Schema equivalent: every object has `additionalProperties: false`; every listed property is required unless explicitly described as nullable; arrays retain publication order and contain no duplicate values where a set is intended. Strings are nonempty after trimming. Dates use `YYYY-MM-DD`, SHA-256 values use 64 lowercase hexadecimal characters, byte/page/count fields are nonnegative integers, and no numeric count is fixed until reconciliation.
+Tests shall enforce the following closed contract as an exact JSON Schema equivalent: every object has `additionalProperties: false`; every listed property is required unless explicitly described as nullable; arrays retain publication order and contain no duplicate values where a set is intended. Strings are nonempty after trimming. Date fields use `YYYY-MM-DD` except the exact human-readable `source.display_date`, SHA-256 values use 64 lowercase hexadecimal characters, byte/page/count fields are nonnegative integers, and no numeric count is fixed until reconciliation.
 
 The top-level object has exactly these required properties:
 
@@ -182,6 +182,7 @@ The top-level object has exactly these required properties:
 - `source`: source object defined below;
 - `rights`: rights object defined below;
 - `inventory_provenance`: inventory-provenance object defined below;
+- `direction_boundary`: direction-boundary object defined below;
 - `operational_context`: array of context objects defined below;
 - `known_anomalies`: array of anomaly objects defined below;
 - `groups`: array equal in order to `M`, `T1`, `S`, `T2`, `T3`, `T4`, `T5`, `C`, `A`, `B`;
@@ -190,11 +191,13 @@ The top-level object has exactly these required properties:
 - `assurance_limits`: assurance-limits object defined below; and
 - `provisions`: ordered array of provision objects defined below.
 
-The `source` object has exactly these required properties: `title` (string), `authority` (string), `publication_identifier` (string), `version` (string equal to `3.2`), `display_date` (string `YYYY-MM`), `resource_page_url` (URI string), `resource_page_date` (date), `access_date` (date), `media_type` (string equal to `application/pdf`), `pdf_page_count` (positive integer), and `variants` (array). `variants` contains exactly two objects, ordered canonical then legacy, each with exactly `role` (`canonical` or `legacy`), `url` (URI string), `byte_length` (positive integer), and `sha256` (digest string).
+The `source` object has exactly these required properties and values: `title` (`Cyber Essentials Plus Test Specification`), `authority` (`UK National Cyber Security Centre`), `publication_identifier` (`cyber-essentials-plus-test-specification`), `version` (`3.2`), `display_date` (`April 2025`), `resource_page_url` (the pinned URI in section 3), `resource_page_date` (`2025-04-28`), `access_date` (`2026-07-14`), `media_type` (`application/pdf`), `pdf_page_count` (`24`), and `variants` (array). `variants` contains exactly two objects, ordered canonical then legacy, each with exactly `role` (`canonical` or `legacy`), `url` (the corresponding pinned URI), `byte_length` (the corresponding pinned positive integer), and `sha256` (the corresponding pinned digest).
 
-The `rights` object has exactly these required properties: `copyright` (string), `licence_name` (string), `licence_url` (URI string), `attribution` (string), `publication_basis` (string), `permitted_elements` (nonempty array of unique strings), `prohibited_elements` (nonempty array of unique strings), `restrictions` (nonempty array of unique strings), `iasme_partition` (object), and `review` (object). `iasme_partition` has exactly `owner` (string), `licence` (nullable string; null until a separate licence is approved), `permitted_facts` (nonempty unique string array), and `prohibited_source_derived_elements` (nonempty unique string array). `review` has exactly `reviewer` (string), `review_date` (date), `independent_of_inventory_authors` (boolean required true), `canonical_sha256` (digest), `legacy_sha256` (digest), `publication_basis_verified` (boolean required true), and `disposition` (string equal to `approved`).
+The `rights` object has exactly these required properties: `copyright` (string), `licence_name` (string), `licence_url` (URI string), `attribution` (string), `publication_basis` (string), `permitted_elements` (array), `prohibited_elements` (array), `restrictions` (nonempty array of unique strings), `iasme_partition` (object), and `review` (object). ESAF-1600 defines the exact six-element rights universe `identifiers`, `titles`, `structural_inventory`, `paraphrases`, `derivative_mapping_analysis`, and `official_links`. `permitted_elements` and `prohibited_elements` shall be disjoint and exhaustive over that universe. Because all six rights elements are committed in the oracle's rights declaration, `permitted_elements` shall equal all six in that order and `prohibited_elements` shall be empty. `restrictions` shall explicitly prohibit copied source text as well as excluded marks, imagery, third-party material, and endorsement implications. `iasme_partition` has exactly `owner` (string), `licence` (nullable string; null until a separate licence is approved), `permitted_facts` (nonempty unique string array), and `prohibited_source_derived_elements` (nonempty unique string array). `review` has exactly `reviewer` (string), `review_date` (date), `independent_of_inventory_authors` (boolean required true), `canonical_sha256` (digest), `legacy_sha256` (digest), `publication_basis_verified` (boolean required true), and `disposition` (string equal to `approved`).
 
 The `inventory_provenance` object has exactly `authors` (array of exactly two unique nonempty strings), `reconciler` (nonempty string), `rights_record_commit` (40-character lowercase Git SHA string), and `inventories_started_after_rights_commit` (boolean required true). Tests shall require `rights.review.reviewer` to differ from both authors and shall use Git history during repository validation to prove `rights_record_commit` is an ancestor of the first commit containing any source-derived inventory artifact.
+
+The `direction_boundary` object has exactly `oracle_establishes_mapping_direction` (boolean required false), `future_directions` (array exactly equal in order to `esaf_to_external`, `external_to_esaf`), and `assessed_independently` (boolean required true). The source oracle establishes no mapping direction; any future mapping assesses those two directions independently.
 
 Each `operational_context` item has exactly `owner` (string), `title` (string), `url` (URI string), `publication_date` (date), `access_date` (date), `relevance` (original high-level string), and `rights_partition` (string equal to `bibliographic_facts_and_original_context_only`). Each `known_anomalies` item has exactly `anomaly_id` (unique string), `source_literal` (string), `locator` (locator object), and `treatment` (string that records without correction or expansion).
 
@@ -202,9 +205,9 @@ Each `section_ledger` occurrence has exactly `section_id` (unique hierarchical i
 
 The `counts` object has exactly `total` (nonnegative integer) and `by_group` (object with exactly the ten group names as nonnegative integer properties). Tests shall derive both from `provisions`, require their sums to agree, and compare them with the link-derived ledger counts. Count literals enter tests only after both independent inventories and the independently specified occurrence set are reconciled.
 
-Each provision has exactly these required properties: `record_id` (string), `external_provision_id` (string), `section_id` (string referencing one `included` ledger occurrence), `group` (controlled group matching that occurrence), `kind` (controlled kind), `actors` (nonempty array of unique controlled actor strings), `actor_basis` (original concise string identifying the source grammar that assigns the actor or actors), `source_assigned_label` (nullable string), `summary` (original concise string), and `locator` (locator object). `actors` values are limited to `Assessor`, `Applicant`, `Certification Body`, `Certifying Body`, and `Delivery Partner`; multiple actors are allowed only when `actor_basis` and the locator demonstrate that the source expressly assigns the same atom to each. A locator has exactly `pdf_page` (positive integer), `printed_page` (nullable positive integer), `section` (string), `detail` (string), and `source_assigned_label` (nullable string). `kind` is one of `applicability`, `prerequisite`, `procedure_step`, `decision_rule`, `result_rule`, `evidence_retention`, or `recommendation`.
+Each provision has exactly these required properties: `record_id` (string), `external_provision_id` (string), `section_id` (string referencing one `included` ledger occurrence), `group` (controlled group matching that occurrence), `kind` (controlled kind), `actors` (nonempty array of unique controlled actor strings), `actor_basis` (original concise string identifying the source grammar that assigns the actor or actors), `source_assigned_label` (nullable string), `summary` (original concise string), and `locator` (locator object). `actors` values are limited to `Assessor`, `Applicant`, `Certification Body`, `Certifying Body`, and `Delivery Partner`; multiple actors are allowed only when `actor_basis` and the locator demonstrate that the source expressly assigns the same atom to each. A locator has exactly `pdf_page` (positive integer), `printed_page` (nullable positive integer), `section` (string), and `detail` (string); it does not duplicate `source_assigned_label`. `kind` is one of `applicability`, `prerequisite`, `procedure_step`, `decision_rule`, `result_rule`, `evidence_retention`, or `recommendation`.
 
-The `assurance_limits` object has exactly these required properties, all expressed as original bounded statements rather than source quotation: `scope_boundary`, `population_and_sample_boundary`, `assessment_date_boundary`, `evidence_date_boundary`, `tool_and_provenance_boundary`, `point_in_time_boundary`, and `discretion_owner` (strings); `exception_predicates` (array); and `prohibited_inferences` (array). `exception_predicates` contains exactly two objects, one for each distinct less-than-five-percent rule in the publication, with exactly `exception_id` (unique string), `predicate` (string), `owner` (one controlled actor), `locator` (locator object), and `not_a_score` (boolean required true). `prohibited_inferences` shall contain the exact controlled set `predictive_sufficiency`, `full_population_assurance`, and `continuous_assurance`.
+The `assurance_limits` object has exactly these required properties, all expressed as original bounded statements rather than source quotation: `scope_boundary`, `population_and_sample_boundary`, `assessment_date_boundary`, `evidence_date_boundary`, `tool_and_provenance_boundary`, and `point_in_time_boundary` (strings); `discretion_owner` (string equal to `Delivery Partner`); `discretionary_exception` (object); and `prohibited_inferences` (array). `discretionary_exception` models one exception and has exactly `owner` (`Delivery Partner`), `predicates` (array), `all_predicates_required` (boolean required true), `locator` (locator object), `automatic_pass` (boolean required false), and `is_95_percent_score` (boolean required false). `predicates` contains exactly two objects in order: `marginal-deviation-under-five-percent`, meaning a marginal deviation in less than 5% of performed tests; and `no-wider-process-failure-evidence`, meaning no evidence of wider failure of Applicant cybersecurity processes. Each predicate object has exactly `predicate_id` (the stated identifier) and `meaning` (the stated meaning). `prohibited_inferences` shall equal the exact controlled set `certification`, `compliance`, `equivalence`, `endorsement`, `predictive_sufficiency`, `full_population_assurance`, `continuous_assurance`, and `current_scheme_completeness`.
 
 ## 10. Future mapping boundary
 
@@ -221,7 +224,7 @@ Most Plus provisions prescribe assessment actors or assurance procedures rather 
 - avoid `supports` merely because a procedure tests a similar topic;
 - condition any reverse assurance leg on actor, scope, population, sample, date, tool, exceptions, and evidence provenance;
 - default to `no_direct_mapping` where ESAF does not expressly supply the external outcome; and
-- never infer certification, equivalence, predictive sufficiency, full-population coverage, or continuous assurance.
+- never infer certification, compliance, equivalence, endorsement, predictive sufficiency, full-population assurance, continuous assurance, or current-scheme completeness.
 
 The discretionary less-than-five-percent exception is not a 95-percent compliance score or automatic pass threshold. A certificate or test result is point-in-time, sampled assurance and does not by itself prove current ESAF control implementation.
 
@@ -240,7 +243,7 @@ The milestone shall not create a mapping snapshot directory, lifecycle record, c
 
 ## 12. Validation and acceptance
 
-Implementation shall fail closed on source drift, missing section-ledger entries, count disagreement, duplicate or unordered IDs, invalid kinds, empty summaries or locators, omitted visual decisions, missing rights approval, or prohibited claims.
+Implementation shall fail closed on source drift; source-identity mismatch; missing section-ledger entries; count disagreement; duplicate or unordered IDs; invalid kinds; empty summaries or locators; duplicate source labels in locators; omitted visual decisions; missing or late rights approval; invalid rights partition; invalid direction boundary; malformed discretionary exception; incomplete prohibited-inference set; or prohibited claims.
 
 Final acceptance requires:
 
@@ -250,11 +253,12 @@ Final acceptance requires:
 4. two independent atom lists and ledgers are reconciled and the count is frozen only afterward;
 5. the independently specified exact section-occurrence set is locked, including repeated headings, and every provision links to one included occurrence;
 6. section counts derived from provision links, group counts, and total counts agree exactly;
-7. the closed JSON contract rejects missing, mistyped, nullable-when-nonnullable, and unknown fields; all identifiers, actors, summaries, kinds, and locators satisfy it;
+7. the closed JSON contract rejects missing, mistyped, nullable-when-nonnullable, and unknown fields; all exact source constants, identifiers, actors, summaries, kinds, and nonduplicative locators satisfy it;
 8. Figure 1's decision-label set is exactly decisions 1 through 7, and the `tests 2 to 7` anomaly is locked;
-9. NCSC and IASME provenance and rights remain separate;
-10. assurance limits encode actor, scope, population/sample, dates, tool/provenance, point-in-time, discretion, both exception predicates, and prohibited predictive/full-population/continuous inferences;
-11. focused and full repository tests, all validators, an explicit general link validator, cache checks, and whole-branch diff checks pass;
-12. exact-SHA inventory/specification and security/overclaiming reviews have no unresolved Critical or Important findings;
-13. required GitHub checks pass on the externally recorded reviewed PR-head SHA and post-merge validation passes on the resulting merged-main SHA; and
-14. no mapping, certification, equivalence, endorsement, full-population, continuous-assurance, or current-scheme-completeness claim is introduced.
+9. NCSC and IASME provenance and rights remain separate; the ESAF-1600 six-element rights universe is disjointly and exhaustively partitioned with all six permitted, none prohibited, and copied source text expressly restricted;
+10. assurance limits encode actor, scope, population/sample, dates, tool/provenance, point-in-time, one Delivery Partner discretionary exception with both exact conjunctive predicates, no automatic pass or 95-percent score, and the exact eight prohibited inferences;
+11. the direction boundary states that the oracle establishes no mapping direction and any future `esaf_to_external` and `external_to_esaf` directions are assessed independently;
+12. focused and full repository tests, all validators, an explicit general link validator, cache checks, and whole-branch diff checks pass;
+13. exact-SHA inventory/specification and security/overclaiming reviews have no unresolved Critical or Important findings;
+14. the rights-review commit is an ancestor of both the reviewed PR head and resulting merged-main SHA, integration uses a merge commit rather than squash or rebase, required GitHub checks pass on the externally recorded reviewed PR-head SHA, and post-merge validation passes on the resulting merged-main SHA; and
+15. no mapping, certification, equivalence, endorsement, full-population, continuous-assurance, or current-scheme-completeness claim is introduced.
