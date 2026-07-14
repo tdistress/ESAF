@@ -1,23 +1,239 @@
 {
   "counts": {
-    "by_authority": {},
+    "by_authority": {
+      "uk-ncsc": 1
+    },
     "by_confidence": {},
     "by_coverage": {},
     "by_direction": {},
     "by_disposition": {},
-    "by_esaf_release": {},
+    "by_esaf_release": {
+      "0.4-alpha": 1
+    },
     "by_lifecycle_state": {},
     "by_provision_status": {},
-    "by_publication": {},
+    "by_publication": {
+      "cyber-essentials-requirements-for-it-infrastructure": 1
+    },
     "by_relationship": {},
-    "by_snapshot_status": {},
-    "by_source_version": {},
-    "mapping_sets": 0,
+    "by_snapshot_status": {
+      "draft": 1
+    },
+    "by_source_version": {
+      "3.3": 1
+    },
+    "mapping_sets": 1,
     "negative_dispositions": 0,
     "provisions": 0,
     "relationships": 0
   },
   "generated_from": "crosswalks/mappings/** and crosswalks/registry/*.md",
-  "mapping_sets": [],
+  "mapping_sets": [
+    {
+      "inventory": {
+        "expected_count": 116,
+        "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+        "provision_ids": [
+          "CE3.3-D-001",
+          "CE3.3-D-002",
+          "CE3.3-D-003",
+          "CE3.3-D-004",
+          "CE3.3-D-005",
+          "CE3.3-D-006",
+          "CE3.3-D-007",
+          "CE3.3-D-008",
+          "CE3.3-D-009",
+          "CE3.3-D-010",
+          "CE3.3-D-011",
+          "CE3.3-D-012",
+          "CE3.3-D-013",
+          "CE3.3-D-014",
+          "CE3.3-D-015",
+          "CE3.3-D-016",
+          "CE3.3-D-017",
+          "CE3.3-D-018",
+          "CE3.3-D-019",
+          "CE3.3-D-020",
+          "CE3.3-D-021",
+          "CE3.3-D-022",
+          "CE3.3-D-023",
+          "CE3.3-D-024",
+          "CE3.3-D-025",
+          "CE3.3-D-026",
+          "CE3.3-D-027",
+          "CE3.3-D-028",
+          "CE3.3-D-029",
+          "CE3.3-D-030",
+          "CE3.3-D-031",
+          "CE3.3-D-032",
+          "CE3.3-D-033",
+          "CE3.3-D-034",
+          "CE3.3-D-035",
+          "CE3.3-D-036",
+          "CE3.3-D-037",
+          "CE3.3-D-038",
+          "CE3.3-D-039",
+          "CE3.3-D-040",
+          "CE3.3-D-041",
+          "CE3.3-D-042",
+          "CE3.3-D-043",
+          "CE3.3-D-044",
+          "CE3.3-E1-001",
+          "CE3.3-E1-002",
+          "CE3.3-E1-003",
+          "CE3.3-E1-004",
+          "CE3.3-E1-005",
+          "CE3.3-E1-006",
+          "CE3.3-E1-007",
+          "CE3.3-E1-008",
+          "CE3.3-E1-009",
+          "CE3.3-E1-010",
+          "CE3.3-E1-011",
+          "CE3.3-E1-012",
+          "CE3.3-E2-001",
+          "CE3.3-E2-002",
+          "CE3.3-E2-003",
+          "CE3.3-E2-004",
+          "CE3.3-E2-005",
+          "CE3.3-E2-006",
+          "CE3.3-E2-007",
+          "CE3.3-E2-008",
+          "CE3.3-E2-009",
+          "CE3.3-E2-010",
+          "CE3.3-E2-011",
+          "CE3.3-E2-012",
+          "CE3.3-E3-001",
+          "CE3.3-E3-002",
+          "CE3.3-E3-003",
+          "CE3.3-E3-004",
+          "CE3.3-E3-005",
+          "CE3.3-E3-006",
+          "CE3.3-E3-007",
+          "CE3.3-E4-001",
+          "CE3.3-E4-002",
+          "CE3.3-E4-003",
+          "CE3.3-E4-004",
+          "CE3.3-E4-005",
+          "CE3.3-E4-006",
+          "CE3.3-E4-007",
+          "CE3.3-E4-008",
+          "CE3.3-E4-009",
+          "CE3.3-E4-010",
+          "CE3.3-E4-011",
+          "CE3.3-E4-012",
+          "CE3.3-E4-013",
+          "CE3.3-E4-014",
+          "CE3.3-E4-015",
+          "CE3.3-E4-016",
+          "CE3.3-E4-017",
+          "CE3.3-E4-018",
+          "CE3.3-E4-019",
+          "CE3.3-E4-020",
+          "CE3.3-E4-021",
+          "CE3.3-E4-022",
+          "CE3.3-E4-023",
+          "CE3.3-E4-024",
+          "CE3.3-E4-025",
+          "CE3.3-E4-026",
+          "CE3.3-E4-027",
+          "CE3.3-E4-028",
+          "CE3.3-E4-029",
+          "CE3.3-E5-001",
+          "CE3.3-E5-002",
+          "CE3.3-E5-003",
+          "CE3.3-E5-004",
+          "CE3.3-E5-005",
+          "CE3.3-E5-006",
+          "CE3.3-E5-007",
+          "CE3.3-E5-008",
+          "CE3.3-E5-009",
+          "CE3.3-E5-010",
+          "CE3.3-E5-011",
+          "CE3.3-E5-012"
+        ],
+        "schema_version": "1.0.0",
+        "scope_statement": "Every independently testable prescriptive provision in sections D and E of Cyber Essentials Requirements for IT Infrastructure v3.3 is inventoried.",
+        "scope_type": "complete_publication",
+        "source_basis": "Official NCSC publication v3.3; these ESAF-assigned identifiers follow the approved atomic provision oracle and publication-rights review."
+      },
+      "lifecycle": {
+        "events": [],
+        "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+        "schema_version": "1.0.0",
+        "snapshot_digest": "34b83c9319f3136aa8a2c31c68c4a62c2e858ebc10d92cf561ed77412401130e"
+      },
+      "metadata": {
+        "authority": {
+          "id": "uk-ncsc",
+          "name": "UK National Cyber Security Centre"
+        },
+        "change_history": [
+          {
+            "change": "Created the authoritative draft scaffold and complete provision inventory.",
+            "date": "2026-07-13",
+            "version": "0.1.0"
+          }
+        ],
+        "esaf_release": {
+          "control_catalog_sha256": "70bbd955a65969d2843b60220ad0aad2850f36ec6d189ecd32c40431b848b398",
+          "control_manifest_path": "ESAF_CONTROL_MANIFEST.json",
+          "id": "0.4-alpha",
+          "label": "ESAF 0.4-alpha",
+          "source_commit_sha": "5de9ff356ddad1e193444cd7308eff16ed83e811"
+        },
+        "findings": [],
+        "mapper": {
+          "authorized_source_access": true,
+          "date": "2026-07-13",
+          "id": "esaf-crosswalk-editorial-team",
+          "qualification": "ESAF crosswalk editorial team applying the approved ESAF-1600 Cyber Essentials v3.3 atomization and mapping design."
+        },
+        "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+        "mapping_set_version": "0.1.0",
+        "publication": {
+          "id": "cyber-essentials-requirements-for-it-infrastructure",
+          "name": "Cyber Essentials: Requirements for IT Infrastructure"
+        },
+        "publication_rights": {
+          "approved": true,
+          "basis": "The NCSC permits reuse of its Crown copyright website content under the Open Government Licence v3.0 unless otherwise indicated; this snapshot contains identifiers, titles, structural inventory, original paraphrases, original mapping analysis, and official links.",
+          "permitted_elements": [
+            "identifiers",
+            "titles",
+            "structural_inventory",
+            "paraphrases",
+            "derivative_mapping_analysis",
+            "official_links"
+          ],
+          "prohibited_elements": [],
+          "publication_basis_reviewed": true,
+          "restrictions": "Acknowledge NCSC Crown copyright and the Open Government Licence v3.0; do not use NCSC or government logos, reproduce third-party material, or imply endorsement, certification, or official status; prefer original paraphrases over copied requirement text.",
+          "review_date": "2026-07-13",
+          "reviewer_authorized_source_access": true,
+          "reviewer_id": "esaf-project-owner"
+        },
+        "schema_version": "1.0.0",
+        "scope": {
+          "default_granularity": "requirement",
+          "inventory_count": 116,
+          "statement": "Every independently testable prescriptive provision in sections D and E of Cyber Essentials Requirements for IT Infrastructure v3.3 is inventoried.",
+          "type": "complete_publication"
+        },
+        "source": {
+          "access_class": "public",
+          "licensing_note": "UK National Cyber Security Centre Crown copyright content reused under the Open Government Licence v3.0.",
+          "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf",
+          "publication_date": "2026-04-27"
+        },
+        "source_version": {
+          "id": "3.3",
+          "label": "3.3"
+        },
+        "status": "draft"
+      },
+      "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/README.md",
+      "provisions": []
+    }
+  ],
   "schema_version": "1.0.0"
 }

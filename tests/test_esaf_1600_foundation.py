@@ -239,10 +239,12 @@ class Esaf1600FoundationTests(unittest.TestCase):
         self.assertNotIn("LF-terminated bytes", text)
         self.assertIn("hash each permitted file's exact bytes", text)
 
-    def test_templates_are_outside_mapping_discovery(self) -> None:
+    def test_templates_are_outside_authoritative_mapping_discovery(self) -> None:
         result = validate(ROOT)
-        self.assertEqual(result.mapping_sets, [])
-        self.assertEqual(result.lifecycle_records, [])
+        self.assertEqual(len(result.mapping_sets), 1)
+        self.assertEqual(len(result.lifecycle_records), 1)
+        self.assertNotIn("TEMPLATE", result.mapping_sets[0]["path"])
+        self.assertNotIn("TEMPLATE", result.lifecycle_records[0]["path"])
 
     def test_lifecycle_template_contains_complete_valid_chain(self) -> None:
         metadata, _ = parse_front_matter(ROOT / "crosswalks/LIFECYCLE_RECORD_TEMPLATE.md")

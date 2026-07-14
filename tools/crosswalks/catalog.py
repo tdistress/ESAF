@@ -151,26 +151,31 @@ def _catalog_model_errors(result: ValidationResult) -> list[str]:
             errors,
         )
         if snapshot_path is not None and (
-            len(snapshot_path.parts) != 7 or snapshot_path.name != "README.md"
+            len(snapshot_path.parts) not in {7, 8} or snapshot_path.name != "README.md"
         ):
             errors.append(
                 f"{location}.path: snapshot path must name a versioned mapping README.md"
             )
         if snapshot_path is not None and isinstance(metadata, dict):
             authority = metadata.get("authority")
+            publication = metadata.get("publication")
             source_version = metadata.get("source_version")
             esaf_release = metadata.get("esaf_release")
             components = (
                 authority.get("id") if isinstance(authority, dict) else None,
+                publication.get("id") if isinstance(publication, dict) else None,
                 source_version.get("id") if isinstance(source_version, dict) else None,
                 esaf_release.get("id") if isinstance(esaf_release, dict) else None,
                 metadata.get("mapping_set_version"),
             )
             if all(isinstance(item, str) for item in components):
-                expected = PurePosixPath(
+                legacy = PurePosixPath(
+                    "crosswalks", "mappings", components[0], *components[2:], "README.md"  # type: ignore[arg-type]
+                )
+                publication_qualified = PurePosixPath(
                     "crosswalks", "mappings", *components, "README.md"  # type: ignore[arg-type]
                 )
-                if snapshot_path != expected:
+                if snapshot_path not in {legacy, publication_qualified}:
                     errors.append(
                         f"{location}.path: snapshot path must match mapping-set metadata"
                     )

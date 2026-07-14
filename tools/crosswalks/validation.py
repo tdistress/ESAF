@@ -51,7 +51,7 @@ def _validate_mappings_tree(root: Path) -> list[str]:
         if path.name == "README.md"
         and path.is_file()
         and not path.is_symlink()
-        and len(path.parent.relative_to(base).parts) == 4
+        and len(path.parent.relative_to(base).parts) in {4, 5}
     }
     ancestors = {
         ancestor
@@ -596,8 +596,8 @@ def _validate_snapshot(
     expected_id = _mapping_set_id(mapping_set)
     if expected_id and mapping_set_id != expected_id:
         errors.append(f"{relative}: mapping-set id disagrees with metadata")
-    expected_path = _snapshot_path(mapping_set)
-    if expected_path and relative != expected_path:
+    expected_paths = _snapshot_paths(mapping_set)
+    if expected_paths and relative not in expected_paths:
         errors.append(f"{relative}: snapshot path disagrees with metadata")
 
     allowed_names = {"README.md", "PROVISION_INVENTORY.md", "ESAF_CONTROL_MANIFEST.json"}
@@ -1195,17 +1195,18 @@ def _mapping_set_id(mapping_set: dict[str, object]) -> str | None:
         return None
 
 
-def _snapshot_path(mapping_set: dict[str, object]) -> str | None:
+def _snapshot_paths(mapping_set: dict[str, object]) -> set[str]:
     try:
-        return (
-            "crosswalks/mappings/"
-            f"{mapping_set['authority']['id']}/"  # type: ignore[index]
-            f"{mapping_set['source_version']['id']}/"  # type: ignore[index]
-            f"{mapping_set['esaf_release']['id']}/"  # type: ignore[index]
-            f"{mapping_set['mapping_set_version']}"
-        )
+        authority = mapping_set["authority"]["id"]  # type: ignore[index]
+        publication = mapping_set["publication"]["id"]  # type: ignore[index]
+        source_version = mapping_set["source_version"]["id"]  # type: ignore[index]
+        esaf_release = mapping_set["esaf_release"]["id"]  # type: ignore[index]
+        mapping_version = mapping_set["mapping_set_version"]
+        base = f"crosswalks/mappings/{authority}"
+        suffix = f"{source_version}/{esaf_release}/{mapping_version}"
+        return {f"{base}/{suffix}", f"{base}/{publication}/{suffix}"}
     except (KeyError, TypeError):
-        return None
+        return set()
 
 
 def _read_front_matter(

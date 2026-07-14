@@ -6,6 +6,8 @@ import unittest
 from pathlib import Path
 
 from tools.crosswalks.io import parse_front_matter
+from tools.crosswalks.catalog import build_catalog
+from tools.crosswalks.validation import validate
 
 
 ROOT = Path(__file__).parents[1]
@@ -16,9 +18,105 @@ MAPPING_SET_ID = "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--
 SNAPSHOT = ROOT / "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0"
 REGISTRY = ROOT / "crosswalks/registry" / f"{MAPPING_SET_ID}.md"
 PROVISION_ORACLE = ROOT / "docs/superpowers/specs/2026-07-13-uk-cyber-essentials-v3.3-provision-oracle.json"
+EXPECTED_GROUPS = {
+    "d": 44,
+    "e1": 12,
+    "e2": 12,
+    "e3": 7,
+    "e4": 29,
+    "e5": 12,
+}
+
+
+def expected_ids() -> list[str]:
+    return [
+        f"CE3.3-{group.upper()}-{number:03d}"
+        for group, count in EXPECTED_GROUPS.items()
+        for number in range(1, count + 1)
+    ]
 
 
 class UkCyberEssentialsV33CrosswalkTests(unittest.TestCase):
+    def test_locked_provision_oracle_is_exact(self) -> None:
+        oracle = json.loads(PROVISION_ORACLE.read_text(encoding="utf-8"))
+        provisions = oracle["provisions"]
+        expected_record_ids = [
+            f"ce33-{group}-{number:03d}"
+            for group, count in EXPECTED_GROUPS.items()
+            for number in range(1, count + 1)
+        ]
+        self.assertEqual(oracle["source_version"], "3.3")
+        self.assertEqual(oracle["source_url"], SOURCE_URL)
+        self.assertEqual(oracle["source_sha256"], SOURCE_SHA256)
+        self.assertEqual(oracle["count"], 116)
+        self.assertEqual(oracle["groups"], {key.upper(): value for key, value in EXPECTED_GROUPS.items()})
+        self.assertEqual([item["record_id"] for item in provisions], expected_record_ids)
+        self.assertEqual([item["external_provision_id"] for item in provisions], expected_ids())
+        self.assertEqual(len(set(expected_ids())), 116)
+        for item in provisions:
+            self.assertEqual(set(item), {"record_id", "external_provision_id", "summary", "locator"})
+            self.assertTrue(item["summary"])
+            self.assertTrue(item["locator"])
+
+    def test_snapshot_inventory_and_lifecycle_are_exact(self) -> None:
+        mapping, body = parse_front_matter(SNAPSHOT / "README.md")
+        inventory, _ = parse_front_matter(SNAPSHOT / "PROVISION_INVENTORY.md")
+        lifecycle, _ = parse_front_matter(REGISTRY)
+        self.assertEqual(
+            SNAPSHOT.relative_to(ROOT).as_posix(),
+            "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0",
+        )
+        self.assertEqual(mapping["mapping_set_id"], MAPPING_SET_ID)
+        self.assertEqual(mapping["source_version"], {"id": "3.3", "label": "3.3"})
+        self.assertEqual(mapping["mapping_set_version"], "0.1.0")
+        self.assertEqual(mapping["status"], "draft")
+        self.assertEqual(mapping["source"]["official_url"], SOURCE_URL)
+        self.assertEqual(mapping["source"]["publication_date"], "2026-04-27")
+        self.assertEqual(mapping["source"]["access_class"], "public")
+        self.assertEqual(mapping["esaf_release"]["source_commit_sha"], BASELINE_SHA)
+        self.assertEqual(mapping["scope"]["inventory_count"], 116)
+        self.assertEqual(mapping["mapper"]["id"], "esaf-crosswalk-editorial-team")
+        self.assertTrue(mapping["mapper"]["authorized_source_access"])
+        rights = mapping["publication_rights"]
+        self.assertEqual(
+            set(rights["permitted_elements"]),
+            {
+                "identifiers",
+                "titles",
+                "structural_inventory",
+                "paraphrases",
+                "derivative_mapping_analysis",
+                "official_links",
+            },
+        )
+        self.assertEqual(rights["prohibited_elements"], [])
+        self.assertEqual(rights["reviewer_id"], "esaf-project-owner")
+        self.assertNotEqual(rights["reviewer_id"], mapping["mapper"]["id"])
+        self.assertTrue(rights["reviewer_authorized_source_access"])
+        self.assertTrue(rights["publication_basis_reviewed"])
+        self.assertNotIn("reviewer", mapping)
+        self.assertNotIn("approver", mapping)
+        self.assertEqual(inventory["scope_type"], "complete_publication")
+        self.assertEqual(inventory["expected_count"], 116)
+        self.assertEqual(inventory["provision_ids"], expected_ids())
+        self.assertEqual(lifecycle["mapping_set_id"], MAPPING_SET_ID)
+        self.assertEqual(lifecycle["events"], [])
+        self.assertIn(SOURCE_SHA256, body)
+        self.assertIn("2026-07-13", body)
+        self.assertIn("UK National Cyber Security Centre", body)
+        self.assertIn("Open Government Licence v3.0", body)
+
+    def test_publication_qualified_snapshot_path_is_valid(self) -> None:
+        result = validate(ROOT)
+        path_errors = [
+            error
+            for error in result.errors
+            if "unexpected mappings-tree entry" in error
+            or "snapshot path disagrees with metadata" in error
+        ]
+        self.assertEqual(path_errors, [])
+        self.assertEqual(build_catalog(result)["counts"]["mapping_sets"], 1)
+
     def test_landing_page_freezes_source_rights_and_draft_boundary(self) -> None:
         text = (ROOT / "crosswalks/uk-cyber-essentials.md").read_text(encoding="utf-8")
         for expected in (
