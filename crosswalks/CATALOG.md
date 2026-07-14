@@ -22,7 +22,7 @@
 
 ## Coverage and gaps
 
-Mapping sets: 1; provisions: 44; directional relationships: 12; negative dispositions: 32.
+Mapping sets: 1; provisions: 44; directional relationships: 9; negative dispositions: 35.
 
 | Provision record | Disposition | Relationships |
 |---|---|---:|
@@ -32,9 +32,9 @@ Mapping sets: 1; provisions: 44; directional relationships: 12; negative disposi
 | [ce33-d-004](mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-004.md) | mapped | 1 |
 | [ce33-d-005](mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-005.md) | no_direct_mapping | 0 |
 | [ce33-d-006](mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-006.md) | mapped | 1 |
-| [ce33-d-007](mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-007.md) | mapped | 1 |
-| [ce33-d-008](mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-008.md) | mapped | 1 |
-| [ce33-d-009](mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-009.md) | mapped | 1 |
+| [ce33-d-007](mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-007.md) | no_direct_mapping | 0 |
+| [ce33-d-008](mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-008.md) | no_direct_mapping | 0 |
+| [ce33-d-009](mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-009.md) | no_direct_mapping | 0 |
 | [ce33-d-010](mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-010.md) | no_direct_mapping | 0 |
 | [ce33-d-011](mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-011.md) | mapped | 1 |
 | [ce33-d-012](mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-012.md) | no_direct_mapping | 0 |

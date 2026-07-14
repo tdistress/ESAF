@@ -77,6 +77,32 @@ class UkCyberEssentialsV33CrosswalkTests(unittest.TestCase):
     def test_scope_records_are_complete_and_conservative(self) -> None:
         self.assert_group("d", 44)
 
+    def test_scope_relationship_semantics_remain_conservative(self) -> None:
+        for record_id in ("ce33-d-007", "ce33-d-008", "ce33-d-009"):
+            metadata = self.load_record(record_id)
+            self.assertEqual(metadata["disposition"], "no_direct_mapping")
+            self.assertEqual(metadata["relationships"], [])
+            rationale = metadata["negative_rationale"]
+            self.assertIn("ARC-110 identifies", rationale)
+            self.assertIn("AI", rationale)
+            self.assertIn(
+                "does not require Cyber Essentials controls to be applied",
+                rationale,
+            )
+
+        managed_service = self.load_record("ce33-d-028")
+        self.assertEqual(len(managed_service["relationships"]), 1)
+        relationship = managed_service["relationships"][0]
+        self.assertEqual(relationship["esaf_control_id"], "CMP-120")
+        self.assertEqual(relationship["confidence"], "medium")
+        gap = " ".join(relationship["known_gaps"])
+        self.assertIn(
+            "does not itself establish every Cyber Essentials technical control is implemented or effective",
+            gap,
+        )
+        self.assertIn("including for in-scope AI services", gap)
+        self.assertIn("Cyber Essentials-specific technical verification remains separate", gap)
+
     def test_locked_provision_oracle_is_exact(self) -> None:
         oracle = json.loads(PROVISION_ORACLE.read_text(encoding="utf-8"))
         provisions = oracle["provisions"]

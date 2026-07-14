@@ -4,19 +4,19 @@
       "uk-ncsc": 1
     },
     "by_confidence": {
-      "high": 11,
-      "medium": 1
+      "high": 7,
+      "medium": 2
     },
     "by_coverage": {
-      "narrow": 10,
+      "narrow": 7,
       "partial": 2
     },
     "by_direction": {
-      "esaf_to_external": 12
+      "esaf_to_external": 9
     },
     "by_disposition": {
-      "mapped": 12,
-      "no_direct_mapping": 32
+      "mapped": 9,
+      "no_direct_mapping": 35
     },
     "by_esaf_release": {
       "0.4-alpha": 1
@@ -29,7 +29,7 @@
       "cyber-essentials-requirements-for-it-infrastructure": 1
     },
     "by_relationship": {
-      "partially_supports": 12
+      "partially_supports": 9
     },
     "by_snapshot_status": {
       "draft": 1
@@ -38,9 +38,9 @@
       "3.3": 1
     },
     "mapping_sets": 1,
-    "negative_dispositions": 32,
+    "negative_dispositions": 35,
     "provisions": 44,
-    "relationships": 12
+    "relationships": 9
   },
   "generated_from": "crosswalks/mappings/** and crosswalks/registry/*.md",
   "mapping_sets": [
@@ -175,7 +175,7 @@
         "events": [],
         "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
         "schema_version": "1.0.0",
-        "snapshot_digest": "4717c6810c18fb45fe153d3046f393f9cd07c1612269a77890d40ea4794d90d6"
+        "snapshot_digest": "4a846f49510fd72a42a404e429b2ec15e6e98a363bd4e67461735e1e0ad68ea0"
       },
       "metadata": {
         "authority": {
@@ -504,7 +504,7 @@
           "metadata": {
             "change_history": [
               {
-                "change": "Created the draft Cyber Essentials v3.3 Scope mapping record.",
+                "change": "Created the draft record and incorporated conservative mapping review corrections.",
                 "date": "2026-07-14",
                 "version": "0.1.0"
               }
@@ -513,7 +513,7 @@
               "mode": "paraphrase",
               "summary": "Apply the requirements to in-scope devices and software that accept incoming network connections from internet-connected devices."
             },
-            "disposition": "mapped",
+            "disposition": "no_direct_mapping",
             "external_provision_id": "CE3.3-D-007",
             "granularity": "requirement",
             "mapper": {
@@ -521,27 +521,9 @@
               "id": "esaf-crosswalk-editorial-team"
             },
             "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "ARC-110 identifies relevant AI components and incoming paths, but it does not require Cyber Essentials controls to be applied to the devices and software covered by this external outcome.",
             "record_id": "ce33-d-007",
-            "relationships": [
-              {
-                "conditions": [
-                  "The devices or software are components of an in-scope AI capability and the incoming path is represented under ARC-110."
-                ],
-                "confidence": "high",
-                "coverage": "narrow",
-                "direction": "esaf_to_external",
-                "esaf_control_id": "ARC-110",
-                "esaf_control_version": "0.1.0",
-                "expected_evidence": [
-                  "AI architecture and data-flow diagrams showing incoming internet-connected paths and entry points."
-                ],
-                "known_gaps": [
-                  "ARC-110 documents AI architecture; it does not inventory all enterprise devices or itself apply Cyber Essentials requirements to them."
-                ],
-                "rationale": "ARC-110 requires documentation of AI entry points, external dependencies, and flows, directly contributing identification of AI components that accept incoming connections across an internet-facing boundary.",
-                "relationship": "partially_supports"
-              }
-            ],
+            "relationships": [],
             "schema_version": "1.0.0",
             "source_locator": {
               "locator": "Section D, Cyber Essentials scope overview, page 6, applicability list, bullet 1",
@@ -555,7 +537,7 @@
           "metadata": {
             "change_history": [
               {
-                "change": "Created the draft Cyber Essentials v3.3 Scope mapping record.",
+                "change": "Created the draft record and incorporated conservative mapping review corrections.",
                 "date": "2026-07-14",
                 "version": "0.1.0"
               }
@@ -564,7 +546,7 @@
               "mode": "paraphrase",
               "summary": "Apply the requirements to in-scope devices and software that establish outbound connections to devices via the internet."
             },
-            "disposition": "mapped",
+            "disposition": "no_direct_mapping",
             "external_provision_id": "CE3.3-D-008",
             "granularity": "requirement",
             "mapper": {
@@ -572,27 +554,9 @@
               "id": "esaf-crosswalk-editorial-team"
             },
             "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "ARC-110 identifies relevant AI components and outbound paths, but it does not require Cyber Essentials controls to be applied to the devices and software covered by this external outcome.",
             "record_id": "ce33-d-008",
-            "relationships": [
-              {
-                "conditions": [
-                  "The devices or software are components of an in-scope AI capability and the outbound path is represented under ARC-110."
-                ],
-                "confidence": "high",
-                "coverage": "narrow",
-                "direction": "esaf_to_external",
-                "esaf_control_id": "ARC-110",
-                "esaf_control_version": "0.1.0",
-                "expected_evidence": [
-                  "AI architecture and data-flow diagrams showing outbound internet paths, exit points, and external dependencies."
-                ],
-                "known_gaps": [
-                  "ARC-110 is limited to AI architecture; it does not inventory general enterprise devices or itself impose Cyber Essentials requirements on outbound-connected assets."
-                ],
-                "rationale": "ARC-110 requires documentation of AI external dependencies, exit points, and flows, directly contributing identification of AI components that establish outbound internet connections.",
-                "relationship": "partially_supports"
-              }
-            ],
+            "relationships": [],
             "schema_version": "1.0.0",
             "source_locator": {
               "locator": "Section D, Cyber Essentials scope overview, page 6, applicability list, bullet 2",
@@ -606,7 +570,7 @@
           "metadata": {
             "change_history": [
               {
-                "change": "Created the draft Cyber Essentials v3.3 Scope mapping record.",
+                "change": "Created the draft record and incorporated conservative mapping review corrections.",
                 "date": "2026-07-14",
                 "version": "0.1.0"
               }
@@ -615,7 +579,7 @@
               "mode": "paraphrase",
               "summary": "Apply the requirements to in-scope devices and software that control data flow between such devices and the internet."
             },
-            "disposition": "mapped",
+            "disposition": "no_direct_mapping",
             "external_provision_id": "CE3.3-D-009",
             "granularity": "requirement",
             "mapper": {
@@ -623,27 +587,9 @@
               "id": "esaf-crosswalk-editorial-team"
             },
             "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "ARC-110 identifies relevant AI flow-control components and internet paths, but it does not require Cyber Essentials controls to be applied to the devices and software covered by this external outcome.",
             "record_id": "ce33-d-009",
-            "relationships": [
-              {
-                "conditions": [
-                  "The flow-control component participates in an in-scope AI architecture documented under ARC-110."
-                ],
-                "confidence": "high",
-                "coverage": "narrow",
-                "direction": "esaf_to_external",
-                "esaf_control_id": "ARC-110",
-                "esaf_control_version": "0.1.0",
-                "expected_evidence": [
-                  "AI data-flow and component diagrams identifying internet boundaries, control paths, and enforcement points."
-                ],
-                "known_gaps": [
-                  "ARC-110 does not establish a general network-device inventory or apply Cyber Essentials requirements outside the AI-system boundary."
-                ],
-                "rationale": "ARC-110 requires documentation of AI data and control flows and enforcement boundaries, directly contributing identification of AI components that control traffic between in-scope AI assets and the internet.",
-                "relationship": "partially_supports"
-              }
-            ],
+            "relationships": [],
             "schema_version": "1.0.0",
             "source_locator": {
               "locator": "Section D, Cyber Essentials scope overview, pages 6-7, applicability list, bullet 3",
@@ -1323,7 +1269,7 @@
           "metadata": {
             "change_history": [
               {
-                "change": "Created the draft Cyber Essentials v3.3 Scope mapping record.",
+                "change": "Created the draft record and incorporated conservative mapping review corrections.",
                 "date": "2026-07-14",
                 "version": "0.1.0"
               }
@@ -1346,7 +1292,7 @@
                 "conditions": [
                   "The externally managed service is an in-scope AI service or implements a control for an in-scope AI capability."
                 ],
-                "confidence": "high",
+                "confidence": "medium",
                 "coverage": "narrow",
                 "direction": "esaf_to_external",
                 "esaf_control_id": "CMP-120",
@@ -1355,9 +1301,9 @@
                   "Supplier assessment, assigned security obligations, responsibility matrix, assurance evidence, and remediation records."
                 ],
                 "known_gaps": [
-                  "CMP-120 does not establish or verify every Cyber Essentials technical control for managed services outside the AI scope."
+                  "CMP-120 does not itself establish every Cyber Essentials technical control is implemented or effective, including for in-scope AI services; Cyber Essentials-specific technical verification remains separate."
                 ],
-                "rationale": "CMP-120 requires verification and monitoring of third-party AI security obligations, directly contributing confirmation that externally managed AI services satisfy assigned technical-control obligations.",
+                "rationale": "CMP-120 requires verification and monitoring of assigned third-party AI security obligations, contributing supplier-governance evidence relevant to assessment of an externally managed AI service.",
                 "relationship": "partially_supports"
               }
             ],
