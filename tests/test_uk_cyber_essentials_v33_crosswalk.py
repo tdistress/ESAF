@@ -36,7 +36,47 @@ def expected_ids() -> list[str]:
     ]
 
 
+def record_paths(prefix: str) -> list[Path]:
+    return sorted(SNAPSHOT.glob(f"{prefix}-*.md"))
+
+
 class UkCyberEssentialsV33CrosswalkTests(unittest.TestCase):
+    def load_record(self, record_id: str) -> dict[str, object]:
+        return parse_front_matter(SNAPSHOT / f"{record_id}.md")[0]
+
+    def assert_group(self, group: str, count: int) -> None:
+        paths = record_paths(f"ce33-{group}")
+        oracle = json.loads(PROVISION_ORACLE.read_text(encoding="utf-8"))
+        oracle_by_id = {item["record_id"]: item for item in oracle["provisions"]}
+        self.assertEqual(
+            [path.stem for path in paths],
+            [f"ce33-{group}-{number:03d}" for number in range(1, count + 1)],
+        )
+        for number, path in enumerate(paths, 1):
+            metadata, _ = parse_front_matter(path)
+            expected = oracle_by_id[path.stem]
+            self.assertEqual(metadata["external_provision_id"], expected["external_provision_id"])
+            self.assertEqual(metadata["status"], "draft")
+            self.assertEqual(metadata["granularity"], "requirement")
+            self.assertEqual(metadata["source_locator"]["official_url"], SOURCE_URL)
+            self.assertEqual(metadata["source_locator"]["locator"], expected["locator"])
+            self.assertEqual(metadata["mapper"]["id"], "esaf-crosswalk-editorial-team")
+            self.assertEqual(metadata["mapping_set_id"], MAPPING_SET_ID)
+            self.assertEqual(metadata["change_history"][-1]["version"], "0.1.0")
+            self.assertEqual(metadata["context"]["summary"], expected["summary"])
+            self.assertEqual(
+                {leg["direction"] for leg in metadata["relationships"]},
+                {"esaf_to_external"} if metadata["relationships"] else set(),
+            )
+            if metadata["relationships"]:
+                self.assertNotEqual(metadata["disposition"], "no_direct_mapping")
+            else:
+                self.assertEqual(metadata["disposition"], "no_direct_mapping")
+                self.assertTrue(metadata["negative_rationale"])
+
+    def test_scope_records_are_complete_and_conservative(self) -> None:
+        self.assert_group("d", 44)
+
     def test_locked_provision_oracle_is_exact(self) -> None:
         oracle = json.loads(PROVISION_ORACLE.read_text(encoding="utf-8"))
         provisions = oracle["provisions"]

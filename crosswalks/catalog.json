@@ -3,19 +3,34 @@
     "by_authority": {
       "uk-ncsc": 1
     },
-    "by_confidence": {},
-    "by_coverage": {},
-    "by_direction": {},
-    "by_disposition": {},
+    "by_confidence": {
+      "high": 11,
+      "medium": 1
+    },
+    "by_coverage": {
+      "narrow": 10,
+      "partial": 2
+    },
+    "by_direction": {
+      "esaf_to_external": 12
+    },
+    "by_disposition": {
+      "mapped": 12,
+      "no_direct_mapping": 32
+    },
     "by_esaf_release": {
       "0.4-alpha": 1
     },
     "by_lifecycle_state": {},
-    "by_provision_status": {},
+    "by_provision_status": {
+      "draft": 44
+    },
     "by_publication": {
       "cyber-essentials-requirements-for-it-infrastructure": 1
     },
-    "by_relationship": {},
+    "by_relationship": {
+      "partially_supports": 12
+    },
     "by_snapshot_status": {
       "draft": 1
     },
@@ -23,9 +38,9 @@
       "3.3": 1
     },
     "mapping_sets": 1,
-    "negative_dispositions": 0,
-    "provisions": 0,
-    "relationships": 0
+    "negative_dispositions": 32,
+    "provisions": 44,
+    "relationships": 12
   },
   "generated_from": "crosswalks/mappings/** and crosswalks/registry/*.md",
   "mapping_sets": [
@@ -160,7 +175,7 @@
         "events": [],
         "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
         "schema_version": "1.0.0",
-        "snapshot_digest": "34b83c9319f3136aa8a2c31c68c4a62c2e858ebc10d92cf561ed77412401130e"
+        "snapshot_digest": "4717c6810c18fb45fe153d3046f393f9cd07c1612269a77890d40ea4794d90d6"
       },
       "metadata": {
         "authority": {
@@ -232,7 +247,1676 @@
         "status": "draft"
       },
       "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/README.md",
-      "provisions": []
+      "provisions": [
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Scope mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Assessment and certification should cover the whole business IT infrastructure or a well-defined, separately managed subset."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-D-001",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "No ESAF control requires Cyber Essentials assessment or certification to cover the whole business IT infrastructure or a separately managed enterprise subset; ESAF controls are scoped to AI capabilities and assets.",
+            "record_id": "ce33-d-001",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section D, Cyber Essentials scope overview, page 6, opening paragraph, sentence 1",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-001.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Scope mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Define the business unit managing the scope."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-D-002",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "GOV-130 assigns owners to in-scope AI capabilities but does not define the business unit managing a Cyber Essentials assessment scope.",
+            "record_id": "ce33-d-002",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section D, Cyber Essentials scope overview, page 6, opening paragraph, scope-boundary element 1",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-002.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Scope mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Define the network boundary."
+            },
+            "disposition": "mapped",
+            "external_provision_id": "CE3.3-D-003",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "record_id": "ce33-d-003",
+            "relationships": [
+              {
+                "conditions": [
+                  "The assessed network boundary contains in-scope AI components, flows, or enforcement points documented under ARC-110."
+                ],
+                "confidence": "high",
+                "coverage": "narrow",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "ARC-110",
+                "esaf_control_version": "0.1.0",
+                "expected_evidence": [
+                  "Current AI component and data-flow diagrams showing network and enforcement boundaries."
+                ],
+                "known_gaps": [
+                  "ARC-110 does not define the enterprise-wide Cyber Essentials network boundary or inventory non-AI devices."
+                ],
+                "rationale": "ARC-110 requires documented AI enforcement boundaries and data and control flows, directly contributing to definition of the network boundary for AI components within the assessed scope.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section D, Cyber Essentials scope overview, page 6, opening paragraph, scope-boundary element 2",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-003.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Scope mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Define the physical location."
+            },
+            "disposition": "mapped",
+            "external_provision_id": "CE3.3-D-004",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "record_id": "ce33-d-004",
+            "relationships": [
+              {
+                "conditions": [
+                  "The physical location is relevant to an in-scope AI hosting environment recorded under INF-100."
+                ],
+                "confidence": "medium",
+                "coverage": "narrow",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "INF-100",
+                "esaf_control_version": "0.1.0",
+                "expected_evidence": [
+                  "Approved AI environment record identifying the hosting location and deployment inventory."
+                ],
+                "known_gaps": [
+                  "INF-100 is limited to AI hosting and does not require a physical-location inventory for the whole business IT infrastructure."
+                ],
+                "rationale": "INF-100 requires AI workloads and supporting services to operate only in approved hosting environments, directly contributing location information for the AI-hosting portion of the assessed scope.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section D, Cyber Essentials scope overview, page 6, opening paragraph, scope-boundary element 3",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-004.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Scope mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Agree the scope with the Certification Body before assessment begins."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-D-005",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "No ESAF control requires agreement of an assessment scope with a Cyber Essentials Certification Body before assessment.",
+            "record_id": "ce33-d-005",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section D, Cyber Essentials scope overview, page 6, opening paragraph, final sentence",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-005.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Scope mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Justify a partial scope to the assessor when infrastructure is excluded."
+            },
+            "disposition": "mapped",
+            "external_provision_id": "CE3.3-D-006",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "record_id": "ce33-d-006",
+            "relationships": [
+              {
+                "conditions": [
+                  "The excluded infrastructure affects the scope or determination of an ESAF assessment for in-scope AI assets."
+                ],
+                "confidence": "high",
+                "coverage": "narrow",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "AUD-120",
+                "esaf_control_version": "0.1.0",
+                "expected_evidence": [
+                  "AI assessment workpapers recording scope, excluded infrastructure, rationale, and attributable supporting evidence."
+                ],
+                "known_gaps": [
+                  "AUD-120 is limited to AI assessment evidence; it does not establish Cyber Essentials assessor acceptance criteria or justify exclusions from general business infrastructure."
+                ],
+                "rationale": "AUD-120 requires sufficient evidence for each AI assessment scope and determination, directly supporting evidence for an exclusion decision affecting the AI-system portion of a partial scope.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section D, Cyber Essentials scope overview, page 6, paragraph beginning 'Where parts of an organisation's infrastructure'",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-006.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Scope mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Apply the requirements to in-scope devices and software that accept incoming network connections from internet-connected devices."
+            },
+            "disposition": "mapped",
+            "external_provision_id": "CE3.3-D-007",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "record_id": "ce33-d-007",
+            "relationships": [
+              {
+                "conditions": [
+                  "The devices or software are components of an in-scope AI capability and the incoming path is represented under ARC-110."
+                ],
+                "confidence": "high",
+                "coverage": "narrow",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "ARC-110",
+                "esaf_control_version": "0.1.0",
+                "expected_evidence": [
+                  "AI architecture and data-flow diagrams showing incoming internet-connected paths and entry points."
+                ],
+                "known_gaps": [
+                  "ARC-110 documents AI architecture; it does not inventory all enterprise devices or itself apply Cyber Essentials requirements to them."
+                ],
+                "rationale": "ARC-110 requires documentation of AI entry points, external dependencies, and flows, directly contributing identification of AI components that accept incoming connections across an internet-facing boundary.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section D, Cyber Essentials scope overview, page 6, applicability list, bullet 1",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-007.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Scope mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Apply the requirements to in-scope devices and software that establish outbound connections to devices via the internet."
+            },
+            "disposition": "mapped",
+            "external_provision_id": "CE3.3-D-008",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "record_id": "ce33-d-008",
+            "relationships": [
+              {
+                "conditions": [
+                  "The devices or software are components of an in-scope AI capability and the outbound path is represented under ARC-110."
+                ],
+                "confidence": "high",
+                "coverage": "narrow",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "ARC-110",
+                "esaf_control_version": "0.1.0",
+                "expected_evidence": [
+                  "AI architecture and data-flow diagrams showing outbound internet paths, exit points, and external dependencies."
+                ],
+                "known_gaps": [
+                  "ARC-110 is limited to AI architecture; it does not inventory general enterprise devices or itself impose Cyber Essentials requirements on outbound-connected assets."
+                ],
+                "rationale": "ARC-110 requires documentation of AI external dependencies, exit points, and flows, directly contributing identification of AI components that establish outbound internet connections.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section D, Cyber Essentials scope overview, page 6, applicability list, bullet 2",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-008.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Scope mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Apply the requirements to in-scope devices and software that control data flow between such devices and the internet."
+            },
+            "disposition": "mapped",
+            "external_provision_id": "CE3.3-D-009",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "record_id": "ce33-d-009",
+            "relationships": [
+              {
+                "conditions": [
+                  "The flow-control component participates in an in-scope AI architecture documented under ARC-110."
+                ],
+                "confidence": "high",
+                "coverage": "narrow",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "ARC-110",
+                "esaf_control_version": "0.1.0",
+                "expected_evidence": [
+                  "AI data-flow and component diagrams identifying internet boundaries, control paths, and enforcement points."
+                ],
+                "known_gaps": [
+                  "ARC-110 does not establish a general network-device inventory or apply Cyber Essentials requirements outside the AI-system boundary."
+                ],
+                "rationale": "ARC-110 requires documentation of AI data and control flows and enforcement boundaries, directly contributing identification of AI components that control traffic between in-scope AI assets and the internet.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section D, Cyber Essentials scope overview, pages 6-7, applicability list, bullet 3",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-009.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Scope mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Include end-user devices in scope."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-D-010",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "No candidate ESAF control requires all end-user devices to be included in an enterprise Cyber Essentials scope; AI inventories must not be treated as general device inventories.",
+            "record_id": "ce33-d-010",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section D, Cyber Essentials scope overview, page 7, paragraph 1",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-010.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Scope mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Include cloud services hosting organisational data or services in scope."
+            },
+            "disposition": "mapped",
+            "external_provision_id": "CE3.3-D-011",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "record_id": "ce33-d-011",
+            "relationships": [
+              {
+                "conditions": [
+                  "The cloud service hosts an in-scope AI workload, AI data, model, or supporting service governed by INF-100."
+                ],
+                "confidence": "high",
+                "coverage": "narrow",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "INF-100",
+                "esaf_control_version": "0.1.0",
+                "expected_evidence": [
+                  "Approved AI environment catalog and deployment inventory identifying the cloud service and hosted AI assets."
+                ],
+                "known_gaps": [
+                  "INF-100 is limited to AI hosting and does not require inclusion of every cloud service hosting general organizational data or services."
+                ],
+                "rationale": "INF-100 expressly covers cloud and supplier hosting environments for AI workloads, data, and supporting services, directly contributing identification of cloud services in the AI-system portion of scope.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section D, Cyber Essentials scope overview, page 7, paragraph 2",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-011.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Scope mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Include user-owned devices that access organisational data or services."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-D-012",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "No candidate ESAF control requires inclusion of all user-owned devices that access general organizational data or services; ESAF device-related applicability is limited to AI assets and environments.",
+            "record_id": "ce33-d-012",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section D(i), Bring your own device (BYOD), page 8, opening sentence",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-012.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Scope mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Exclude mobile or remote devices used only for native voice applications."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-D-013",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "No ESAF control defines a Cyber Essentials scope exclusion for mobile or remote devices used only for native voice applications.",
+            "record_id": "ce33-d-013",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section D(i), Bring your own device (BYOD), page 8, exclusion list, bullet 1",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-013.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Scope mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Exclude mobile or remote devices used only for native text applications."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-D-014",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "No ESAF control defines a Cyber Essentials scope exclusion for mobile or remote devices used only for native text applications.",
+            "record_id": "ce33-d-014",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section D(i), Bring your own device (BYOD), page 8, exclusion list, bullet 2",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-014.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Scope mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Exclude mobile or remote devices used only for multi-factor authentication applications."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-D-015",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "No ESAF control defines a Cyber Essentials scope exclusion for devices used only for multi-factor-authentication applications.",
+            "record_id": "ce33-d-015",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section D(i), Bring your own device (BYOD), page 8, exclusion list, bullet 3",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-015.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Scope mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Include corporate and BYOD home or remote devices used for organisational business."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-D-016",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "No candidate ESAF control requires all corporate or user-owned home or remote devices used for general organizational business to be included in scope.",
+            "record_id": "ce33-d-016",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section D(ii), Home and remote working, page 9, paragraph 1",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-016.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Scope mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Include an organisation-provided home or remote router."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-D-017",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "No ESAF control requires an organization-provided home or remote router to be included in a Cyber Essentials assessment scope.",
+            "record_id": "ce33-d-017",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section D(ii), Home and remote working, page 9, paragraph 2",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-017.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Scope mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Exclude other home or remote routers."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-D-018",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "No ESAF control defines a scope exclusion for home or remote routers not provided by the organization.",
+            "record_id": "ce33-d-018",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section D(ii), Home and remote working, page 9, paragraph 3, first clause",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-018.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Scope mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Apply Cyber Essentials firewall controls on user devices when the home or remote router is excluded."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-D-019",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "No candidate ESAF control requires Cyber Essentials firewall controls on user devices as a consequence of excluding a home or remote router.",
+            "record_id": "ce33-d-019",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section D(ii), Home and remote working, page 9, paragraph 3, consequence after 'which means'",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-019.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Scope mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Treat the company, virtual, or cloud firewall as the internet boundary when a corporate VPN is used."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-D-020",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "ARC-110 documents AI boundaries and flows but does not designate a company, virtual, or cloud firewall as the enterprise internet boundary when a corporate VPN is used.",
+            "record_id": "ce33-d-020",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section D(ii), Home and remote working, page 9, final paragraph",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-020.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Scope mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Include wireless devices that can communicate with other devices via the internet."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-D-021",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "No candidate ESAF control requires all internet-communicating wireless devices to be included in an enterprise device scope; AI architecture records are not a wireless-device inventory.",
+            "record_id": "ce33-d-021",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section D(iii), Wireless devices, page 9, bullet 1",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-021.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Scope mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Exclude wireless devices that cannot be attacked directly via the internet."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-D-022",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "No ESAF control defines a Cyber Essentials scope exclusion for wireless devices that cannot be attacked directly through the internet.",
+            "record_id": "ce33-d-022",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section D(iii), Wireless devices, page 9, bullet 2",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-022.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Scope mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Exclude wireless devices that form part of an ISP router at a home or remote location."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-D-023",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "No ESAF control defines a scope exclusion for wireless devices incorporated into an ISP router at a home or remote location.",
+            "record_id": "ce33-d-023",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section D(iii), Wireless devices, page 9, bullet 3",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-023.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Scope mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Ensure all controls are implemented for in-scope cloud services, regardless of whether the applicant or provider implements them."
+            },
+            "disposition": "mapped",
+            "external_provision_id": "CE3.3-D-024",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "record_id": "ce33-d-024",
+            "relationships": [
+              {
+                "conditions": [
+                  "The cloud service supports an in-scope AI capability and provider and consumer duties are documented under ARC-140."
+                ],
+                "confidence": "high",
+                "coverage": "partial",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "ARC-140",
+                "esaf_control_version": "0.1.0",
+                "expected_evidence": [
+                  "AI cloud shared-responsibility matrix, inherited-control records, consumer configurations, and provider evidence."
+                ],
+                "known_gaps": [
+                  "ARC-140 covers AI-related shared responsibility and does not by itself demonstrate implementation of every Cyber Essentials control for the cloud service."
+                ],
+                "rationale": "ARC-140 requires approved and monitored responsibility boundaries and validated inherited controls among AI capability owners and cloud providers, directly supporting implementation accountability for in-scope AI cloud services.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section D(iv), Cloud services, page 9, responsibility paragraph",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-024.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Scope mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Configure Software as a Service securely."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-D-025",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "INF-100 approves AI hosting environments but does not directly require secure configuration of Software as a Service; no listed candidate control states this general configuration outcome.",
+            "record_id": "ce33-d-025",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section D(iv), Cloud services, page 10, Software as a Service bullet, prescriptive sentence",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-025.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Scope mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Ensure a cloud provider implementing controls is contractually committed through clauses or referenced documents."
+            },
+            "disposition": "mapped",
+            "external_provision_id": "CE3.3-D-026",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "record_id": "ce33-d-026",
+            "relationships": [
+              {
+                "conditions": [
+                  "The cloud provider supplies an in-scope AI service or supporting AI control and the obligation is included in the supplier agreement."
+                ],
+                "confidence": "high",
+                "coverage": "partial",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "CMP-120",
+                "esaf_control_version": "0.1.0",
+                "expected_evidence": [
+                  "Executed cloud contract, referenced control terms, responsibility matrix, and current supplier assurance evidence."
+                ],
+                "known_gaps": [
+                  "CMP-120 does not prescribe Cyber Essentials-specific contract wording or cover cloud services unrelated to AI."
+                ],
+                "rationale": "CMP-120 requires third-party AI obligations to be contractually assigned, verified, monitored, and enforced, directly supporting contractual commitment where a cloud provider implements AI-related controls.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section D(iv), Cloud services, page 11, paragraph immediately after Table 1",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-026.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Scope mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Include all organisation-owned accounts used by third parties."
+            },
+            "disposition": "mapped",
+            "external_provision_id": "CE3.3-D-027",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "record_id": "ce33-d-027",
+            "relationships": [
+              {
+                "conditions": [
+                  "The organization-owned account is used by a third party to access an in-scope AI asset."
+                ],
+                "confidence": "high",
+                "coverage": "narrow",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "IAM-100",
+                "esaf_control_version": "0.1.0",
+                "expected_evidence": [
+                  "AI identity inventory showing account type, third-party user, owner, purpose, linked capability, and lifecycle status."
+                ],
+                "known_gaps": [
+                  "IAM-100 does not require inclusion of organization-owned third-party accounts that have no access to in-scope AI assets."
+                ],
+                "rationale": "IAM-100 requires inventory and lifecycle management of every third-party identity that can access in-scope AI assets, directly contributing coverage of organization-owned third-party accounts used for AI access.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section D(v), Accounts used by third parties and managed infrastructure, page 11, paragraph 1",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-027.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Scope mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Confirm that Cyber Essentials technical controls are met for externally managed services."
+            },
+            "disposition": "mapped",
+            "external_provision_id": "CE3.3-D-028",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "record_id": "ce33-d-028",
+            "relationships": [
+              {
+                "conditions": [
+                  "The externally managed service is an in-scope AI service or implements a control for an in-scope AI capability."
+                ],
+                "confidence": "high",
+                "coverage": "narrow",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "CMP-120",
+                "esaf_control_version": "0.1.0",
+                "expected_evidence": [
+                  "Supplier assessment, assigned security obligations, responsibility matrix, assurance evidence, and remediation records."
+                ],
+                "known_gaps": [
+                  "CMP-120 does not establish or verify every Cyber Essentials technical control for managed services outside the AI scope."
+                ],
+                "rationale": "CMP-120 requires verification and monitoring of third-party AI security obligations, directly contributing confirmation that externally managed AI services satisfy assigned technical-control obligations.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section D(v), Accounts used by third parties and managed infrastructure, page 11, paragraph 2, outcome 1",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-028.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Scope mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Demonstrate externally managed-service control compliance in assessment answers."
+            },
+            "disposition": "mapped",
+            "external_provision_id": "CE3.3-D-029",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "record_id": "ce33-d-029",
+            "relationships": [
+              {
+                "conditions": [
+                  "The assessment answer concerns an externally managed service supporting an in-scope AI capability."
+                ],
+                "confidence": "high",
+                "coverage": "narrow",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "AUD-120",
+                "esaf_control_version": "0.1.0",
+                "expected_evidence": [
+                  "Assessment workpapers linking the managed-service answer to current supplier evidence, scope, period, and determination."
+                ],
+                "known_gaps": [
+                  "AUD-120 governs AI assessment evidence and does not prescribe Cyber Essentials questionnaire answers or prove controls for non-AI managed services."
+                ],
+                "rationale": "AUD-120 requires attributable and sufficient evidence for each AI assessment determination, directly supporting substantiation of control claims for an externally managed AI service.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section D(v), Accounts used by third parties and managed infrastructure, page 11, paragraph 2, outcome 2",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-029.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Scope mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Include organisation-owned end-user devices loaned to third parties."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-D-030",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "No candidate ESAF control requires all organization-owned end-user devices loaned to third parties to be included in an enterprise Cyber Essentials scope.",
+            "record_id": "ce33-d-030",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section D(vi), Devices used by third parties, page 11, paragraph 1",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-030.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Scope mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Include employee BYOD."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-D-031",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "No candidate ESAF control requires inclusion of employee BYOD as a general device class; ESAF identity and architecture inventories do not constitute an enterprise BYOD inventory.",
+            "record_id": "ce33-d-031",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section D(vi), Devices used by third parties, page 12, Table 2, Employee row, BYOD column",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-031.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Scope mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Include volunteer BYOD."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-D-032",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "No candidate ESAF control requires inclusion of volunteer BYOD as a general device class.",
+            "record_id": "ce33-d-032",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section D(vi), Devices used by third parties, page 12, Table 2, Volunteer row, BYOD column",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-032.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Scope mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Include trustee BYOD."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-D-033",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "No candidate ESAF control requires inclusion of trustee BYOD as a general device class.",
+            "record_id": "ce33-d-033",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section D(vi), Devices used by third parties, page 12, Table 2, Trustee row, BYOD column",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-033.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Scope mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Include university research-assistant BYOD."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-D-034",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "No candidate ESAF control requires inclusion of university research-assistant BYOD as a general device class.",
+            "record_id": "ce33-d-034",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section D(vi), Devices used by third parties, page 12, Table 2, University research assistant row, BYOD column",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-034.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Scope mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Exclude student BYOD."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-D-035",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "No ESAF control defines a Cyber Essentials scope exclusion for student BYOD.",
+            "record_id": "ce33-d-035",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section D(vi), Devices used by third parties, page 12, Table 2, Student row, BYOD column",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-035.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Scope mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Exclude third-party-owned devices used by MSP administrators."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-D-036",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "No ESAF control defines a Cyber Essentials scope exclusion for third-party-owned devices used by managed-service-provider administrators.",
+            "record_id": "ce33-d-036",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section D(vi), Devices used by third parties, page 12, Table 2, MSP administrator row, Owned by a third party column",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-036.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Scope mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Exclude MSP-administrator BYOD."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-D-037",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "No ESAF control defines a Cyber Essentials scope exclusion for BYOD used by managed-service-provider administrators.",
+            "record_id": "ce33-d-037",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section D(vi), Devices used by third parties, page 12, Table 2, MSP administrator row, BYOD column",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-037.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Scope mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Exclude third-party-owned devices used by third-party contractors."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-D-038",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "No ESAF control defines a Cyber Essentials scope exclusion for third-party-owned devices used by third-party contractors.",
+            "record_id": "ce33-d-038",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section D(vi), Devices used by third parties, page 12, Table 2, Third party contractor row, Owned by a third party column",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-038.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Scope mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Exclude third-party-contractor BYOD."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-D-039",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "No ESAF control defines a Cyber Essentials scope exclusion for BYOD used by third-party contractors.",
+            "record_id": "ce33-d-039",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section D(vi), Devices used by third parties, page 12, Table 2, Third party contractor row, BYOD column",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-039.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Scope mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Exclude third-party-owned devices used by customers."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-D-040",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "No ESAF control defines a Cyber Essentials scope exclusion for third-party-owned devices used by customers.",
+            "record_id": "ce33-d-040",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section D(vi), Devices used by third parties, page 12, Table 2, Customer row, Owned by a third party column",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-040.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Scope mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Exclude customer BYOD."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-D-041",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "No ESAF control defines a Cyber Essentials scope exclusion for customer BYOD.",
+            "record_id": "ce33-d-041",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section D(vi), Devices used by third parties, page 12, Table 2, Customer row, BYOD column",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-041.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Scope mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Confirm correct configuration of out-of-scope devices that interact with organisational services or data."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-D-042",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "ARC-110 may record external dependencies, but no candidate ESAF control directly requires correct configuration of every out-of-scope device interacting with general organizational services or data.",
+            "record_id": "ce33-d-042",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section D(vi), Devices used by third parties, page 12, paragraph immediately after Table 2",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-042.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Scope mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Include publicly available commercial web applications by default."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-D-043",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "No candidate ESAF control requires publicly available commercial web applications to be included by default in a Cyber Essentials scope.",
+            "record_id": "ce33-d-043",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section D(vii), Software development, page 12, sentence 1",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-043.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 Scope mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Exclude bespoke and custom web-application components."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-D-044",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "No candidate ESAF control defines a Cyber Essentials scope exclusion for bespoke or custom web-application components.",
+            "record_id": "ce33-d-044",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section D(vii), Software development, page 12, sentence 2",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-044.md"
+        }
+      ]
     }
   ],
   "schema_version": "1.0.0"
