@@ -114,3 +114,43 @@ This approval covers the complete closed oracle contract planned by the reviewed
 ## Final decision
 
 **APPROVED.** Codex Rights Reviewer R1 unconditionally approves all planned oracle field classes for the exact canonical and legacy NCSC byte variants recorded above. The publication basis, attribution, exhaustive six-element permitted set, empty prohibited set, copied-text prohibition, exact singleton anomaly exception, excluded material and marks, non-endorsement rule, and separate IASME partition are all verified and approved. Inventory authors A and B may begin only after this rights record is committed, and neither author may be Codex Rights Reviewer R1.
+
+## Post-reconciliation rights re-attestation
+
+**Re-attesting reviewer:** Codex Rights Reviewer R1
+
+**Re-attestation date:** 2026-07-14
+
+**Reviewed candidate:** `c723d3eba723ac3107dba2e0eccbf6de4f42f70a`
+
+**Reviewed oracle SHA-256:** `6c152f07be832a749f5b6ffe41f3a7d0002b21c650ed6564ed3d9da6399d73be`
+
+**Reviewed reconciliation SHA-256:** `229d45fa682edb2b019c71112fe05a6124537ed9dc392637997323692980b791`
+
+**Nature of decision:** This re-attestation confirms that the reconciled oracle remains within the publication basis approved before inventory work in commit `6add413fc7a8a6330cf16dc5d12e3b9b85aa34e6`. It does not grant retroactive permission and does not expand that basis.
+
+The same independent reviewer compared every committed source-derived and narrative field class with the prior approval:
+
+| Reconciled field class | Observed content and prior basis | Re-attestation |
+|---|---|---|
+| `schema_version`, `atomization_rule_version` | Original ESAF identifiers and metadata only | Confirmed within prior approval |
+| `scope` | One original bounded complete-publication statement | Confirmed within prior approval |
+| `source` | Approved title, bibliographic facts, exact byte identities, metadata, and official NCSC links | Confirmed within prior approval |
+| `rights` | Exact six-element permitted set, empty prohibited set, attribution, OGL link, restrictions, review, and closed IASME partition | Confirmed within prior approval |
+| `inventory_provenance` | Original authorship, reconciliation, commit, and sequencing facts | Confirmed within prior approval |
+| `direction_boundary` | Original ESAF governance analysis and controlled identifiers | Confirmed within prior approval |
+| `operational_context` | Empty; no IASME notice content was committed | Confirmed within prior approval |
+| `known_anomalies` | Original identifier, locator, and treatment with the sole approved literal exception | Confirmed within prior approval |
+| `groups` | ESAF-assigned structural identifiers | Confirmed within prior approval |
+| `section_ledger` | 55 NCSC-PDF occurrences containing approved titles, structural inventory, coordinates, original rationales, and derived counts | Confirmed within prior approval |
+| `counts` | Facts derived from the approved structural inventory | Confirmed within prior approval |
+| `assurance_limits` | Original paraphrases, locators, controlled predicates, and derivative analysis | Confirmed within prior approval |
+| `provisions` | 144 records containing approved ESAF identifiers, source-assigned labels, structure, actors, original actor bases and summaries, kinds, and locators | Confirmed within prior approval |
+
+The narrative review covered all 509 instances in the planned original-free-text classes: the scope statement; rights publication basis, restrictions, and IASME partition terms; anomaly treatment; all 55 ledger rationales; all 144 actor bases, summaries, and locator details; and all six assurance-boundary statements. The focused source-copy controls passed, and an additional normalized comparison found no narrative value of five or more words reproduced contiguously from the canonical source.
+
+The IASME partition remains closed. The only IASME-named oracle value is `rights.iasme_partition.owner`; `operational_context` is empty; and no IASME-derived text, heading hierarchy, occurrence, provision, count, assurance rule, imagery, logo, mark, or endorsement implication appears in the ledger, provisions, or assurance limits. The NCSC OGL basis has not been extended to IASME material.
+
+The copied-text boundary also remains exact. `copied_requirement_or_passage_text_prohibited` is `true`; `allowed_verbatim_locations` remains the singleton `["known_anomalies[0].source_literal"]`; and a recursive value walk finds `tests 2 to 7` exactly once, at that approved path and nowhere else.
+
+**RE-ATTESTED WITHOUT RESERVATION.** Codex Rights Reviewer R1 confirms that every reconciled source-derived and narrative field class is covered by the prior pre-inventory approval. No expanded publication basis or new permission is required for the reviewed oracle and reconciliation candidate.

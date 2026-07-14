@@ -189,10 +189,14 @@ class ReleaseMetadataTests(unittest.TestCase):
     def test_backlog_preserves_cyber_essentials_plus_next_activity(self) -> None:
         backlog = read_repository_file("project/BACKLOG.md")
         self.assertIn(
+            "Conduct the Cyber Essentials Plus v3.2 mapping go/no-go review for a separate, "
+            "source-versioned mapping set before any mapping implementation.",
+            backlog,
+        )
+        self.assertNotIn(
             "Build and independently reconcile the Cyber Essentials Plus v3.2 public-source oracle",
             backlog,
         )
-        self.assertIn("separate, source-versioned", backlog)
 
     def test_release_plan_preserves_readiness_boundaries(self) -> None:
         release_plan = read_repository_file("project/RELEASE_PLAN.md")

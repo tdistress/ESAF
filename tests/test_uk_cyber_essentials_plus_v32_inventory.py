@@ -751,6 +751,38 @@ class CyberEssentialsPlusV32InventoryTests(unittest.TestCase):
         for text in (serialized, landing):
             self.assert_no_affirmative_prohibited_claims(text)
 
+    @unittest.skipUnless(ORACLE.is_file(), "locked oracle is intentionally absent")
+    def test_landing_page_publishes_plus_source_inventory_boundary(self) -> None:
+        oracle = self.oracle()
+        landing = LANDING_PAGE.read_text(encoding="utf-8")
+        oracle_link = (
+            "../docs/superpowers/specs/"
+            "2026-07-14-uk-cyber-essentials-plus-v3.2-provision-oracle.json"
+        )
+
+        required_text = (
+            oracle_link,
+            oracle["source"]["resource_page_url"],
+            oracle["source"]["variants"][0]["url"],
+            oracle["source"]["variants"][1]["url"],
+            f'{oracle["source"]["variants"][0]["byte_length"]:,} bytes',
+            f'{oracle["source"]["variants"][1]["byte_length"]:,} bytes',
+            f'{oracle["counts"]["total"]} provisions',
+            "Cyber Essentials core v3.3",
+            "Cyber Essentials Plus v3.2",
+            "complete only for the pinned public v3.2 specification",
+            "2026 operational context",
+            "not consolidated into the public v3.2 PDF",
+            "No Cyber Essentials Plus mapping snapshot exists",
+            "not a complete inventory of the current operational Cyber Essentials Plus scheme",
+            "does not establish certification",
+        )
+        for expected in required_text:
+            with self.subTest(expected=expected):
+                self.assertIn(expected, landing)
+
+        self.assert_no_affirmative_prohibited_claims(landing)
+
 
 if __name__ == "__main__":
     unittest.main()
