@@ -10,11 +10,15 @@
 |---|---|
 | Canonical NCSC PDF | 424,226 bytes; 24 PDF pages; SHA-256 `2adf2703dec3b581e13e39c6a1de230bb1bce6d85f1158bb1eb53108e28596e8` |
 | Legacy official NCSC PDF | 419,191 bytes; 24 PDF pages; SHA-256 `d334c717597a01fab7a362377b7b04c8449568052ed1c4cf48837f6fb3aca694` |
-| Locked oracle | SHA-256 `6c152f07be832a749f5b6ffe41f3a7d0002b21c650ed6564ed3d9da6399d73be` |
-| Tracked reconciliation record | SHA-256 `229d45fa682edb2b019c71112fe05a6124537ed9dc392637997323692980b791` |
+| Locked oracle | SHA-256 `6cd443c82b9b748c8859424b9fb48c446da478f0fa84a4eedd4e06c5ad8077cf` |
+| Tracked reconciliation record | SHA-256 `71002c0800569d2446181b86513d1138321e5913f76a69237e5884052d7ba4f0` |
+| Rights review and final-fix re-attestation | SHA-256 `f9a718020695bd9126fcc834f33c2e1d3cf457c8bfd17a75afb75d70644a45f8` |
+| Focused inventory contract test | SHA-256 `70a48c00ba0c0ab9b10eb543e21b75439d17e3674a262b2315fdc9a9e4d2ac81` |
+| Focused link-validator test | SHA-256 `72fec52a30208e6a82c4cd0bc5cc5434dcb4717bddca01d9f978d9d6782b04b4` |
+| Link validator | SHA-256 `bdca046054d16ad18877d2ca3343acfd751b3a09be53c488fc2a605b7f4fd87e` |
 | Independent Author A inventory | SHA-256 `54b288ac07e9a3acf33ecc1db187f8410c1a9502a5bd9ecf4e5820fddd0a1559` |
 | Independent Author B inventory | SHA-256 `8c62f87697d9bb8965363924c26c25ec08a20bd07ac537c76b7191ae17c37604` |
-| External semantic comparison | SHA-256 `ff64ff5046cbeff053eaa073598aeb87a6487d6b4b67a967b6d7161bf93fe940` |
+| External semantic comparison | SHA-256 `e0a31500b168f25abcf127a417326204bba80f0db67a4dd485093b11f4b0ce8e` |
 
 The canonical acquisition source is the NCSC resource-page target dated 2025-04-28 and accessed 2026-07-14. The legacy URL is retained as a known official byte variant. The source version remains 3.2 and the displayed publication date remains April 2025.
 
@@ -24,7 +28,7 @@ Codex Rights Reviewer R1 approved the publication boundary before inventory work
 
 The approved boundary attributes the NCSC, applies OGL v3.0 to the covered NCSC material, permits the exact six-element rights universe, excludes marks, imagery, third-party material, copied passages, and endorsement implications, and keeps IASME material in a separate closed partition. Copied requirement or passage text is prohibited except for `known_anomalies[0].source_literal`, whose exact value occurs once as `tests 2 to 7`.
 
-On 2026-07-14, the same independent rights reviewer re-attested the oracle at commit `c723d3eba723ac3107dba2e0eccbf6de4f42f70a` without reservation. The review covered all 509 original-free-text instances, all 55 ledger rationales, all 144 actor bases, summaries, and locator details, and all six assurance-boundary statements. It confirmed the locked oracle and reconciliation hashes above, found no copied narrative value of five or more contiguous normalized source words, found no IASME-derived inventory content, and did not expand or retroactively alter the pre-inventory publication basis.
+On 2026-07-14, the same independent rights reviewer re-attested the exact final-fix candidate without reservation. The review covered all 509 original-free-text instances, all 36 reparaphrased provision summaries and the rights-publication-basis reparaphrase, the T4-008 prompt criterion, the 3,055-digest containment guard, all 55 ledger rationales, all 144 actor bases, summaries, and locator details, and all six assurance-boundary statements. It confirmed the oracle, semantic-comparison, reconciliation, and focused-inventory-test hashes above, found no unapproved copied narrative window or IASME-derived inventory content, and did not expand or retroactively alter the pre-inventory publication basis.
 
 Codex Rights Reviewer R1 is distinct from Codex Inventory Author A, Codex Inventory Author B, and Codex Inventory Reconciler R1.
 
@@ -115,25 +119,31 @@ Focused tests cover every Git-tracked Markdown file; relative and repository-roo
 
 For the consolidated parser correction, nine focused tests ran before the implementation change. Three failed for the intended reasons: a broken reference definition was ignored with exit 0, a nested balanced-parenthesis target was truncated in the diagnostic, and a URL-decoded fragment could not match a heading containing inline code. The strengthened broken-link exit-1 and operational-failure exit-2 assertions already passed. After replacing the flat parsing layer, all nine focused tests passed. Self-review then exposed that the reference destination was checked without proving full and collapsed usage lookup; one added focused test failed because both undefined usages returned exit 0. Normalized definition lookup resolved that gap, and the final ten-test suite passed. The complete preliminary rerun below is the authoritative GREEN evidence.
 
+The exact-head final review then found four Important gaps. Test-first regressions proved that shortcut text/image references were not recognized, the final directory-index candidate could escape through a link, a copied five-word source window with surrounding words bypassed the durable gate, and T4-008 strengthened an observable MFA prompt into providing MFA. The directory-index RED reproduced against the prior implementation through a Windows junction: expected `target escapes repository`, observed `target does not exist`. The completed fixes recognize CommonMark shortcuts only when defined, resolve and recheck the final directory index, freeze all 3,055 source-window SHA-256 digests without source text, reparaphrase all exposed copies, and preserve the T4-008 prompt/challenge criterion. Rights Reviewer R1 re-attested the exact hashes above before this record and the complete gates were refreshed.
+
 Preliminary command results on the completed working-tree content were:
 
 | Command | Result |
 |---|---|
-| `python -m unittest tests.test_validate_links -v` | 10 tests passed in 5.107 seconds |
-| `python -m unittest tests.test_uk_cyber_essentials_plus_v32_inventory -v` | 18 tests passed |
-| `python -m unittest discover -s tests -v` | 234 tests passed in 161.362 seconds; 3 expected Windows symlink-capability skips |
+| `python -m unittest tests.test_validate_links -v` | 14 tests passed in 6.674 seconds; the Windows directory-junction containment regression executed without a skip |
+| `python -m unittest tests.test_uk_cyber_essentials_plus_v32_inventory -v` | 19 tests passed in 0.261 seconds |
+| `python -m unittest discover -s tests -v` | 239 tests passed in 167.024 seconds; 3 expected Windows symlink-capability skips |
 | `python tools/validate_controls.py --check` | 91 controls, 91 objectives, and 16 families validated |
 | `python tools/validate_architectures.py` | 10 foundation files and 7 reserved patterns validated |
 | `python tools/validate_crosswalks.py --check --baseline-ref $base` | 1 mapping set, 116 provisions, 41 relationships, and 76 negative dispositions validated |
 | `python tools/validate_links.py --check` | 326 tracked Markdown files validated with all repository-local links resolving |
-| `git diff --check "$base..HEAD"` | exited 0 |
+| `git diff --check` | exited 0 for the complete working-tree correction |
 
 ## Changed files
 
-This consolidated correction changes exactly:
+This consolidated final-review correction changes exactly these tracked files:
 
-- `tools/validate_links.py`
-- `tests/test_validate_links.py`
+- `docs/superpowers/reviews/2026-07-14-uk-cyber-essentials-plus-v3.2-inventory-reconciliation.md`
+- `docs/superpowers/reviews/2026-07-14-uk-cyber-essentials-plus-v3.2-rights-review.md`
 - `docs/superpowers/reviews/2026-07-14-uk-cyber-essentials-plus-v3.2-traceability.md`
+- `docs/superpowers/specs/2026-07-14-uk-cyber-essentials-plus-v3.2-provision-oracle.json`
+- `tests/test_uk_cyber_essentials_plus_v32_inventory.py`
+- `tests/test_validate_links.py`
+- `tools/validate_links.py`
 
 Independent specification/inventory review and independent security/overclaiming review remain required on one immutable exact head. Their identities, dispositions, ancestry evidence, integration checks, and protected-branch results belong in external pull-request or check evidence so this tracked record remains non-self-referential.

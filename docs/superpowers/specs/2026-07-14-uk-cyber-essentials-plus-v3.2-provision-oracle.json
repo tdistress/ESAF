@@ -36,7 +36,7 @@
     "licence_name": "Open Government Licence v3.0",
     "licence_url": "https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/",
     "attribution": "UK National Cyber Security Centre",
-    "publication_basis": "Public sector information from the UK National Cyber Security Centre is reused under the Open Government Licence v3.0.",
+    "publication_basis": "Reuse of public-sector information from the UK National Cyber Security Centre follows Open Government Licence v3.0.",
     "permitted_elements": [
       "identifiers",
       "titles",
@@ -1125,7 +1125,7 @@
       ],
       "actor_basis": "The direct second-person obligation assigns the Assessor the pre-test agreement action; the Applicant is the counterparty.",
       "source_assigned_label": null,
-      "summary": "Agree the assessment scope boundary with the Applicant before testing starts.",
+      "summary": "Settle the assessment boundary with the Applicant before tests begin.",
       "locator": {
         "pdf_page": 4,
         "printed_page": 3,
@@ -1144,7 +1144,7 @@
       ],
       "actor_basis": "The section addresses the Assessor and places each listed precondition under a mandatory pre-test instruction.",
       "source_assigned_label": null,
-      "summary": "Obtain appropriate written permission from the Applicant before testing.",
+      "summary": "Secure suitable written authorization from the Applicant ahead of testing.",
       "locator": {
         "pdf_page": 5,
         "printed_page": 4,
@@ -1182,7 +1182,7 @@
       ],
       "actor_basis": "Mandatory pre-test list directed to the Assessor.",
       "source_assigned_label": null,
-      "summary": "Use technical means to confirm the Plus scope matches the networks and systems being assessed.",
+      "summary": "Technically verify that the Plus boundary corresponds to the assessed environment.",
       "locator": {
         "pdf_page": 5,
         "printed_page": 4,
@@ -1353,7 +1353,7 @@
       ],
       "actor_basis": "The prerequisite addresses the Assessor; Certification Body ownership describes the required host site rather than a separate duty.",
       "source_assigned_label": null,
-      "summary": "Use test files hosted on an external website owned by the Certification Body.",
+      "summary": "Use assessment files on a Certification Body-owned external site.",
       "locator": {
         "pdf_page": 6,
         "printed_page": 5,
@@ -1372,7 +1372,7 @@
       ],
       "actor_basis": "The conditional second-person clause authorizes the Assessor to request access arrangements.",
       "source_assigned_label": null,
-      "summary": "If needed, have the Applicant arrange access to the external test-file site, including allow-listing it where appropriate.",
+      "summary": "When necessary, ask the Applicant to enable reachability of the external assessment-file site, including a suitable allow-list entry.",
       "locator": {
         "pdf_page": 6,
         "printed_page": 5,
@@ -1410,7 +1410,7 @@
       ],
       "actor_basis": "The prerequisite list addresses the Assessor.",
       "source_assigned_label": null,
-      "summary": "Have working email clients, associated addresses, and web browsers on sampled in-scope end-user devices.",
+      "summary": "Ensure sampled in-scope user devices have functioning mail clients and addresses plus web browsers.",
       "locator": {
         "pdf_page": 6,
         "printed_page": 5,
@@ -1486,7 +1486,7 @@
       ],
       "actor_basis": "The fail rule directly instructs the Assessor how to propagate a sub-test failure.",
       "source_assigned_label": null,
-      "summary": "When any sub-test fails, also mark its parent case and the overall assessment as failing unless a stated exception applies.",
+      "summary": "Absent a stated exception, propagate a sub-test failure to its parent case and overall outcome.",
       "locator": {
         "pdf_page": 6,
         "printed_page": 5,
@@ -1581,7 +1581,7 @@
       ],
       "actor_basis": "The prerequisite list directly addresses the Assessor.",
       "source_assigned_label": null,
-      "summary": "Use a vulnerability scanning tool approved by the Delivery Partner.",
+      "summary": "Use a Delivery Partner-approved vulnerability scanner.",
       "locator": {
         "pdf_page": 8,
         "printed_page": 7,
@@ -1866,7 +1866,7 @@
       ],
       "actor_basis": "The interpretation directly tells the Assessor how to derive the case result.",
       "source_assigned_label": null,
-      "summary": "Pass Test case 1 only when every service evaluated under Sub-test 1.1 passes; otherwise fail the case.",
+      "summary": "Pass Test case 1 only if all services examined in Sub-test 1.1 pass; otherwise fail it.",
       "locator": {
         "pdf_page": 10,
         "printed_page": 9,
@@ -1904,7 +1904,7 @@
       ],
       "actor_basis": "The population list expressly includes this device class.",
       "source_assigned_label": null,
-      "summary": "Include end-user devices able to connect to organisational data or services in the remaining-test population.",
+      "summary": "Include user devices capable of reaching organisational information or services in the population for the remaining tests.",
       "locator": {
         "pdf_page": 10,
         "printed_page": 9,
@@ -2037,7 +2037,7 @@
       ],
       "actor_basis": "The mandatory cloud-service sentence appears in the Assessor-directed sampling section.",
       "source_assigned_label": null,
-      "summary": "Test every cloud service with a representative sample of user accounts.",
+      "summary": "For each cloud service, test a user-account sample representative of its population.",
       "locator": {
         "pdf_page": 10,
         "printed_page": 9,
@@ -2113,7 +2113,7 @@
       ],
       "actor_basis": "The prerequisite list addresses the Assessor.",
       "source_assigned_label": null,
-      "summary": "In addition to shared prerequisites, have a vulnerability scanning tool approved by the Delivery Partner.",
+      "summary": "Alongside the common prerequisites, have a Delivery Partner-approved vulnerability scanner available.",
       "locator": {
         "pdf_page": 11,
         "printed_page": 10,
@@ -2132,7 +2132,7 @@
       ],
       "actor_basis": "The opening sub-test instruction directly assigns the scan to the Assessor.",
       "source_assigned_label": "Sub-test 2.1",
-      "summary": "Scan each tested device with the approved vulnerability scanning tool.",
+      "summary": "Run the authorized vulnerability scanner against each selected device.",
       "locator": {
         "pdf_page": 11,
         "printed_page": 10,
@@ -2151,7 +2151,7 @@
       ],
       "actor_basis": "The scan-output instruction tells the Assessor to identify vulnerabilities satisfying any listed criterion.",
       "source_assigned_label": null,
-      "summary": "Treat a scanned vulnerability as qualifying when its vendor describes it as critical or high risk.",
+      "summary": "Treat a discovered vulnerability as qualifying if its vendor rates it high-risk or critical.",
       "locator": {
         "pdf_page": 11,
         "printed_page": 10,
@@ -2208,7 +2208,7 @@
       ],
       "actor_basis": "The conditional result paragraph directly assigns the sub-test outcome to the Assessor.",
       "source_assigned_label": null,
-      "summary": "Fail the sub-test when any qualifying vulnerability has a vendor fix available for more than 14 days; otherwise pass it.",
+      "summary": "Fail the sub-test if any qualifying vulnerability remained vendor-fixable beyond 14 days; otherwise pass.",
       "locator": {
         "pdf_page": 12,
         "printed_page": 11,
@@ -2284,7 +2284,7 @@
       ],
       "actor_basis": "The prerequisite sentence directly instructs the Assessor.",
       "source_assigned_label": null,
-      "summary": "Identify whether each sampled device uses anti-malware software or certificate-based application allow listing.",
+      "summary": "Determine whether each sampled device relies on anti-malware or certificate-controlled application allowlisting.",
       "locator": {
         "pdf_page": 13,
         "printed_page": 12,
@@ -2341,7 +2341,7 @@
       ],
       "actor_basis": "The opening sub-test sentence directly instructs the Assessor.",
       "source_assigned_label": "Sub-test 3.1",
-      "summary": "Check that anti-malware software is installed and running on each applicable sampled device.",
+      "summary": "Verify active anti-malware installation on every applicable sampled device.",
       "locator": {
         "pdf_page": 13,
         "printed_page": 12,
@@ -2379,7 +2379,7 @@
       ],
       "actor_basis": "The first sentence under the sub-test heading directly sets the test population.",
       "source_assigned_label": "Sub-test 3.1.1",
-      "summary": "Apply the email-delivery test to each sampled device or service on which a user can receive email.",
+      "summary": "Exercise email delivery for each sampled device or service that receives user mail.",
       "locator": {
         "pdf_page": 14,
         "printed_page": 13,
@@ -2455,7 +2455,7 @@
       ],
       "actor_basis": "The second numbered step separately assigns test-message preparation to the Assessor.",
       "source_assigned_label": "Sub-test 3.1.1",
-      "summary": "Prepare one test email for each selected file type, attaching one test file to each message.",
+      "summary": "Create a separate assessment email and attachment for every selected file type.",
       "locator": {
         "pdf_page": 14,
         "printed_page": 13,
@@ -2474,7 +2474,7 @@
       ],
       "actor_basis": "The third numbered step directly instructs the Assessor.",
       "source_assigned_label": "Sub-test 3.1.1",
-      "summary": "Attempt to send every prepared test email from the remote account to the test destination.",
+      "summary": "From the remote account, try sending each prepared assessment email to its destination.",
       "locator": {
         "pdf_page": 14,
         "printed_page": 13,
@@ -2493,7 +2493,7 @@
       ],
       "actor_basis": "The third numbered step separately assigns observation to the Assessor.",
       "source_assigned_label": "Sub-test 3.1.1",
-      "summary": "Observe the user attempting to open every attached test file.",
+      "summary": "Watch the user try to open each assessment attachment.",
       "locator": {
         "pdf_page": 14,
         "printed_page": 13,
@@ -2588,7 +2588,7 @@
       ],
       "actor_basis": "The first sentence below the sub-test heading sets the Assessor's test population.",
       "source_assigned_label": "Sub-test 3.1.2",
-      "summary": "Apply the browser-delivery test to each sampled device or service on which a user can browse the web.",
+      "summary": "Exercise browser delivery for every sampled device or service supporting user web access.",
       "locator": {
         "pdf_page": 14,
         "printed_page": 13,
@@ -2607,7 +2607,7 @@
       ],
       "actor_basis": "The recommendation expressly names the Applicant as the configuring actor.",
       "source_assigned_label": "Sub-test 3.1.2",
-      "summary": "Configure filtering for the approved external test site to represent filtering normally applied to other allowed sites.",
+      "summary": "Configure the authorized external assessment site with filtering representative of other permitted sites.",
       "locator": {
         "pdf_page": 14,
         "printed_page": 13,
@@ -2759,7 +2759,7 @@
       ],
       "actor_basis": "The first mandatory manual-check item directs the Assessor.",
       "source_assigned_label": "Sub-test 3.1.3",
-      "summary": "Use logs to verify that the anti-malware software is installed and operational.",
+      "summary": "Use logs to confirm the anti-malware installation is operating.",
       "locator": {
         "pdf_page": 15,
         "printed_page": 14,
@@ -2816,7 +2816,7 @@
       ],
       "actor_basis": "The sub-test heading and opening sentence define applicability to each sampled device using certificate-based allow listing.",
       "source_assigned_label": "Sub-test 3.2",
-      "summary": "Apply Sub-test 3.2 to each sampled device using certificate-based application allow listing.",
+      "summary": "Run Sub-test 3.2 on each sampled device governed by certificate-controlled application allowlisting.",
       "locator": {
         "pdf_page": 16,
         "printed_page": 15,
@@ -3063,7 +3063,7 @@
       ],
       "actor_basis": "The second numbered step recommends a fallback to the Assessor when step 1 cannot be performed.",
       "source_assigned_label": "Test case 4.1",
-      "summary": "If the primary method is impossible, share an incognito browser session from the Assessor device and observe the user's access.",
+      "summary": "If the primary method cannot be used, share an Assessor-device private-browser session and observe user access.",
       "locator": {
         "pdf_page": 17,
         "printed_page": 16,
@@ -3101,7 +3101,7 @@
       ],
       "actor_basis": "The conditional result sentences assign the outcome to the Assessor.",
       "source_assigned_label": "Test case 4.1",
-      "summary": "Pass when a user or administrator provides MFA before access is granted; otherwise fail.",
+      "summary": "Pass when access first prompts the user or administrator for an MFA form; otherwise fail.",
       "locator": {
         "pdf_page": 17,
         "printed_page": 16,
@@ -3215,7 +3215,7 @@
       ],
       "actor_basis": "The second numbered step directly instructs repetition.",
       "source_assigned_label": "Test case 5.1",
-      "summary": "Repeat the exercise on every sampled device in the audit.",
+      "summary": "Repeat the exercise across all devices sampled for the audit.",
       "locator": {
         "pdf_page": 19,
         "printed_page": 18,
@@ -3234,7 +3234,7 @@
       ],
       "actor_basis": "The conditional result sentences assign the outcome to the Assessor.",
       "source_assigned_label": "Test case 5.1",
-      "summary": "Pass only when an added login is requested and the process does not run with the standard user's account details; otherwise fail.",
+      "summary": "Pass only if another login is requested and ordinary user credentials cannot run the process; otherwise fail.",
       "locator": {
         "pdf_page": 19,
         "printed_page": 18,
@@ -3386,7 +3386,7 @@
       ],
       "actor_basis": "The minor-failure sentence directly instructs the Assessor to consult the Delivery Partner.",
       "source_assigned_label": null,
-      "summary": "When case failures arise from only a small number of minor issues, consult the Delivery Partner.",
+      "summary": "Consult the Delivery Partner when only a few minor issues caused case failures.",
       "locator": {
         "pdf_page": 20,
         "printed_page": 19,
@@ -3519,7 +3519,7 @@
       ],
       "actor_basis": "The first appendix item directly instructs the Assessor to use approved tools.",
       "source_assigned_label": null,
-      "summary": "Use only vulnerability scanning tools approved by the Delivery Partner for Plus testing.",
+      "summary": "For Plus testing, restrict vulnerability scanners to those the Delivery Partner authorizes.",
       "locator": {
         "pdf_page": 21,
         "printed_page": 20,
@@ -3576,7 +3576,7 @@
       ],
       "actor_basis": "The note expressly addresses the Delivery Partner.",
       "source_assigned_label": null,
-      "summary": "Provide Assessors with a list of TCP and UDP ports to scan.",
+      "summary": "Give Assessors the TCP and UDP port inventory for scanning.",
       "locator": {
         "pdf_page": 21,
         "printed_page": 20,
@@ -3595,7 +3595,7 @@
       ],
       "actor_basis": "The opening sentence expressly assigns responsibility to the Delivery Partner.",
       "source_assigned_label": null,
-      "summary": "Provide each Certification Body with a comprehensive set of test files.",
+      "summary": "Give every Certification Body a broad collection of assessment files.",
       "locator": {
         "pdf_page": 22,
         "printed_page": 21,
@@ -3709,7 +3709,7 @@
       ],
       "actor_basis": "The note expressly gives the Delivery Partner a mandatory delivery duty.",
       "source_assigned_label": null,
-      "summary": "Provide the Certification Body in advance with test files representing all file types Applicants are likely to encounter.",
+      "summary": "Beforehand, give the Certification Body assessment files covering the file types Applicants are expected to encounter.",
       "locator": {
         "pdf_page": 22,
         "printed_page": 21,
@@ -3728,7 +3728,7 @@
       ],
       "actor_basis": "The note directly recommends that the Delivery Partner encourage tailoring.",
       "source_assigned_label": null,
-      "summary": "Encourage the Certification Body to tailor the Assessor's test-file subset for each Applicant.",
+      "summary": "Encourage each Certification Body to customize the Assessor file subset for the Applicant.",
       "locator": {
         "pdf_page": 22,
         "printed_page": 21,
@@ -3785,7 +3785,7 @@
       ],
       "actor_basis": "The mandatory full-set list addresses the Delivery Partner as the provider.",
       "source_assigned_label": null,
-      "summary": "Include executable-by-default file types for common platforms, covering native binaries and scripting languages.",
+      "summary": "Include file types that common platforms execute by default, encompassing native programs and script formats.",
       "locator": {
         "pdf_page": 22,
         "printed_page": 21,

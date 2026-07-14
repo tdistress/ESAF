@@ -1,4 +1,5 @@
 import os
+import importlib.util
 from pathlib import Path
 import subprocess
 import sys
@@ -7,6 +8,10 @@ import unittest
 
 
 VALIDATOR = Path(__file__).resolve().parents[1] / "tools" / "validate_links.py"
+SPEC = importlib.util.spec_from_file_location("validate_links", VALIDATOR)
+assert SPEC is not None and SPEC.loader is not None
+VALIDATE_LINKS = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(VALIDATE_LINKS)
 
 
 class LinkValidatorTests(unittest.TestCase):
@@ -164,6 +169,45 @@ class LinkValidatorTests(unittest.TestCase):
             result.stdout,
         )
 
+    def test_shortcut_reference_usage_recognizes_only_defined_text_and_images(self):
+        line = "[guide] ![diagram]"
+
+        usages = list(VALIDATE_LINKS.reference_usages(line))
+
+        self.assertEqual(["guide", "diagram"], usages)
+
+    def test_validates_defined_shortcut_text_and_image_destinations(self):
+        self.write(
+            "README.md",
+            "[guide] ![diagram]\n\n"
+            "[guide]: docs/missing-guide.md\n"
+            "[diagram]: images/missing-diagram.png\n",
+        )
+        self.track("README.md")
+
+        result = self.validate()
+
+        self.assertEqual(result.returncode, 1)
+        self.assertIn(
+            "README.md:3: docs/missing-guide.md: target does not exist",
+            result.stdout,
+        )
+        self.assertIn(
+            "README.md:4: images/missing-diagram.png: target does not exist",
+            result.stdout,
+        )
+
+    def test_undefined_shortcuts_and_ordinary_bracket_text_are_not_links(self):
+        self.write(
+            "README.md",
+            "[undefined text] ![undefined image] ordinary [bracket text]\n",
+        )
+        self.track("README.md")
+
+        result = self.validate()
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
     def test_balanced_parenthesis_destination_preserves_complete_original_target(self):
         target = "docs/missing_(draft(v2)).md#not-(present)"
         self.write("README.md", f"[draft]({target})\n")
@@ -188,6 +232,38 @@ class LinkValidatorTests(unittest.TestCase):
         result = self.validate()
 
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_rejects_directory_index_symlink_escape_when_supported(self):
+        outside = self.repo.parent / "outside-index"
+        outside.mkdir()
+        self.addCleanup(outside.rmdir)
+        handbook = self.repo / "handbook"
+        handbook.mkdir()
+        try:
+            (handbook / "README.md").symlink_to(outside, target_is_directory=True)
+        except OSError as error:
+            if os.name != "nt":
+                self.skipTest(f"directory symlinks unavailable: {error}")
+            junction = subprocess.run(
+                [
+                    "cmd", "/c", "mklink", "/J",
+                    str(handbook / "README.md"), str(outside),
+                ],
+                capture_output=True,
+                text=True,
+            )
+            if junction.returncode != 0:
+                self.skipTest(f"directory links unavailable: {error}; {junction.stderr}")
+        self.write("README.md", "[handbook](handbook/)\n")
+        self.track("README.md")
+
+        result = self.validate()
+
+        self.assertEqual(result.returncode, 1)
+        self.assertIn(
+            "README.md:1: handbook/: target escapes repository",
+            result.stdout,
+        )
 
     def test_operational_failure_returns_two(self):
         outside_git = tempfile.TemporaryDirectory()

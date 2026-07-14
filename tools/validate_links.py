@@ -16,6 +16,9 @@ from urllib.parse import unquote, urlsplit
 HEADING_RE = re.compile(r"^\s{0,3}#{1,6}\s+(.+?)\s*#*\s*$")
 REFERENCE_DEFINITION_RE = re.compile(r"^\s{0,3}\[(?P<label>[^\]]+)\]:\s*")
 REFERENCE_USAGE_RE = re.compile(r"\[([^\]\n]+)\]\[([^\]\n]*)\]")
+SHORTCUT_REFERENCE_USAGE_RE = re.compile(
+    r"(?<!\\)(?:!)?\[([^\]\n]+)\](?![\[(:])"
+)
 EXPLICIT_ID_RE = re.compile(r"\b(?:id|name)=[\"']([^\"']+)[\"']", re.IGNORECASE)
 TAG_RE = re.compile(r"<[^>]*>")
 PUNCTUATION_RE = re.compile(r"[^\w\- ]", re.UNICODE)
@@ -180,10 +183,16 @@ def reference_definition(line: str) -> tuple[str, str] | None:
 
 def reference_usages(line: str):
     masked = replace_code_spans(line, preserve_content=False)
+    occupied: list[tuple[int, int]] = []
     for match in REFERENCE_USAGE_RE.finditer(masked):
+        occupied.append(match.span())
         first = line[match.start(1) : match.end(1)]
         second = line[match.start(2) : match.end(2)]
         yield second or first
+    for match in SHORTCUT_REFERENCE_USAGE_RE.finditer(masked):
+        if any(match.start() < end and match.end() > start for start, end in occupied):
+            continue
+        yield line[match.start(1) : match.end(1)]
 
 
 def github_slug(heading: str) -> str:
@@ -232,7 +241,11 @@ def resolved_target(root: Path, source: Path, target_path: str) -> tuple[Path | 
     except ValueError:
         return None, "target escapes repository"
     if candidate.is_dir():
-        candidate = candidate / "README.md"
+        candidate = (candidate / "README.md").resolve()
+        try:
+            candidate.relative_to(root)
+        except ValueError:
+            return None, "target escapes repository"
     if not candidate.is_file():
         return None, "target does not exist"
     return candidate, None
@@ -278,8 +291,21 @@ def validate(root: Path) -> tuple[list[str], int]:
                         diagnostics.append(
                             f"{relative_source}:{line_number}: {target}: anchor does not exist"
                         )
+            explicit_labels = list(
+                REFERENCE_USAGE_RE.finditer(
+                    replace_code_spans(line, preserve_content=False)
+                )
+            )
             for label in reference_usages(line):
-                if normalize_reference_label(label) not in definitions:
+                normalized_label = normalize_reference_label(label)
+                is_explicit = any(
+                    normalize_reference_label(match.group(2) or match.group(1))
+                    == normalized_label
+                    for match in explicit_labels
+                )
+                if not is_explicit and normalized_label not in definitions:
+                    continue
+                if normalized_label not in definitions:
                     diagnostics.append(
                         f"{relative_source}:{line_number}: [{label}]: "
                         "reference definition does not exist"
