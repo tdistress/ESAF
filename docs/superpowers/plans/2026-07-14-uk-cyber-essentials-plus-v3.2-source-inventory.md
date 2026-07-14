@@ -124,7 +124,7 @@ Add tests that, once the oracle exists, will require:
 - exact `schema_version` and `atomization_rule_version` boundaries;
 - `scope.type == "complete_publication"` and a scope statement bounded to the public v3.2 PDF;
 - exact NCSC/OGL attribution and an explicit separate IASME-rights limitation;
-- exact equality with `RIGHTS_ELEMENTS`; permitted/prohibited disjointness and exhaustiveness; `permitted_elements == list(RIGHTS_ELEMENTS)`; `prohibited_elements == []`; and a restriction explicitly prohibiting copied source text;
+- exact equality with `RIGHTS_ELEMENTS`; permitted/prohibited disjointness and exhaustiveness; `permitted_elements == list(RIGHTS_ELEMENTS)`; `prohibited_elements == []`; `copied_requirement_or_passage_text_prohibited is True`; and `allowed_verbatim_fragments == ["tests 2 to 7"]`;
 - the rights reviewer differs from both `inventory_provenance.authors`, the provenance records the committed rights-review SHA, and Git history proves that SHA precedes the first source-derived inventory commit;
 - the exact direction boundary: the oracle establishes no mapping direction, future `esaf_to_external` and `external_to_esaf` directions are listed in that order, and they are assessed independently;
 - `section_ledger` occurrence entries with hierarchical IDs, parents, repeated-heading-safe identity, group, PDF/printed ranges, decision, rationale, and atom count;
@@ -135,7 +135,7 @@ Add tests that, once the oracle exists, will require:
 - valid controlled `kind`; nonempty controlled `actors` drawn only from `Assessor`, `Applicant`, `Certification Body`, `Certifying Body`, and `Delivery Partner`; multiple actors permitted only with recorded source support; nonempty original summary; and structured dual-coordinate locator;
 - structured assurance limits covering scope, population/sample, assessment/evidence dates, tool/provenance, point-in-time status, `discretion_owner == "Delivery Partner"`, one Delivery Partner discretionary exception whose predicate IDs/meanings are exactly `marginal-deviation-under-five-percent` / `a marginal deviation in less than 5% of performed tests` and `no-wider-process-failure-evidence` / `no evidence of wider failure of Applicant cybersecurity processes`, `all_predicates_required is True`, explicit false automatic-pass and 95-percent-score flags, and `prohibited_inferences == list(PROHIBITED_INFERENCES)`;
 - the Figure 1 source-label set exactly equal to `Figure 1 decision 1` through `Figure 1 decision 7`;
-- the literal source anomaly `tests 2 to 7` recorded without correction;
+- exactly one anomaly whose `source_literal == "tests 2 to 7"`, with that sole allowed fragment occurring nowhere else in the oracle; and no provision summary or other free-text field matching copied requirement text or source passages from the pinned canonical PDF;
 - no mapping disposition, relationship, ESAF control, or compliance statistic fields; and
 - no prohibited claim phrases in the serialized oracle or landing-page update.
 
@@ -170,7 +170,7 @@ Download both URLs to the verified temporary directory. Verify media type, byte 
 
 - [ ] **Step 3: Obtain and commit independent rights approval**
 
-Before creating any inventory or section ledger, a named reviewer who will be neither inventory author shall verify both exact byte variants, NCSC attribution, OGL applicability and publication basis, the exact six-element ESAF-1600 rights universe, permission for all six elements, an empty prohibited-element set, the copied-source-text prohibition in restrictions, excluded third-party elements, logo/mark and endorsement restrictions, and the separate IASME rights partition. Record reviewer identity, date, both hashes, publication basis, permitted and prohibited elements, restrictions, and an approved/rejected disposition. Commit only the approved rights record:
+Before creating any inventory or section ledger, a named reviewer who will be neither inventory author shall verify both exact byte variants, NCSC attribution, OGL applicability and publication basis, the exact six-element ESAF-1600 rights universe, permission for all six elements, an empty prohibited-element set, the copied-requirement-or-passage prohibition, the exact singleton allowed fragment `tests 2 to 7`, excluded third-party elements, logo/mark and endorsement restrictions, and the separate IASME rights partition. Record reviewer identity, date, both hashes, publication basis, permitted and prohibited elements, the narrow verbatim exception, restrictions, and an approved/rejected disposition. Commit only the approved rights record:
 
 ```powershell
 git add docs/superpowers/reviews/2026-07-14-uk-cyber-essentials-plus-v3.2-rights-review.md
@@ -224,11 +224,11 @@ For each difference, record both proposals, the selected result, exact source ev
 
 - [ ] **Step 3: Create the canonical JSON oracle**
 
-Write every required property of the closed contract in design section 9.2 and no others. Record both inventory authors, reconciler, and the actual rights-record commit in `inventory_provenance`; prove that commit is an ancestor before proceeding. Include original concise paraphrases, controlled actors and actor basis, exact section links, structured dual-coordinate locators without a duplicate source label, the exact no-direction boundary, and structured assurance limits. Encode one Delivery Partner discretionary exception with both exact conjunctive predicates, `all_predicates_required: true`, `automatic_pass: false`, and `is_95_percent_score: false`; require the exact eight-value prohibited-inference set. Do not include source text, mappings, dispositions, relationships, or ESAF control references.
+Write every required property of the closed contract in design section 9.2 and no others. Record both inventory authors, reconciler, and the actual rights-record commit in `inventory_provenance`; prove that commit is an ancestor before proceeding. Include original concise paraphrases, controlled actors and actor basis, exact section links, structured dual-coordinate locators without a duplicate source label, the exact no-direction boundary, and structured assurance limits. Encode one Delivery Partner discretionary exception with both exact conjunctive predicates, `all_predicates_required: true`, `automatic_pass: false`, and `is_95_percent_score: false`; require the exact eight-value prohibited-inference set. Do not include copied requirement text or source passages except `known_anomalies[0].source_literal == "tests 2 to 7"`; do not include mappings, dispositions, relationships, or ESAF control references.
 
 - [ ] **Step 4: Freeze exact counts in tests**
 
-Only now set `EXPECTED_COUNT` to the reconciled integer and `EXPECTED_GROUP_COUNTS` to the reconciled group mapping. Set `EXPECTED_SECTION_IDS` to the independently specified exact ordered occurrence set. Add assertions for exact schema/property/type/nullability conformance; exact occurrence-set equality and valid parents; one valid included `section_id` per provision; ledger counts derived from provision links; group and total derivation; controlled actors and evidence for multi-actor atoms; no locator-level source label; exact Figure 1 labels 1 through 7; one conjunctive exception with the exact predicate IDs and meanings; false automatic-pass/95-percent-score flags; the exact eight-value prohibited-inference set; and the exact direction boundary.
+Only now set `EXPECTED_COUNT` to the reconciled integer and `EXPECTED_GROUP_COUNTS` to the reconciled group mapping. Set `EXPECTED_SECTION_IDS` to the independently specified exact ordered occurrence set. Add assertions for exact schema/property/type/nullability conformance; exact occurrence-set equality and valid parents; one valid included `section_id` per provision; ledger counts derived from provision links; group and total derivation; controlled actors and evidence for multi-actor atoms; no locator-level source label; exact Figure 1 labels 1 through 7; one conjunctive exception with the exact predicate IDs and meanings; false automatic-pass/95-percent-score flags; the exact eight-value prohibited-inference set; and the exact direction boundary. Using the verified temporary canonical PDF, normalize extracted requirement/source passages and assert that no provision summary or other free-text oracle value reproduces one; exempt only `known_anomalies[0].source_literal`, require it to equal `tests 2 to 7`, and require the recursive oracle occurrence count of that exact fragment to be one.
 
 - [ ] **Step 5: Run focused tests and verify GREEN**
 
@@ -344,7 +344,7 @@ The reviewer shall verify source identity, section completeness, visual decision
 
 - [ ] **Step 5: Dispatch exact-SHA security/overclaiming review independently**
 
-The reviewer shall verify rights-review sequencing and independence, the exact six-element rights partition and copied-source-text restriction, version skew, controlled actor and direction boundaries, scope/population/sample/date/tool/provenance/point-in-time limits, the Delivery Partner's one discretionary exception with both required conjunctive predicates and no automatic-pass/95-percent-score interpretation, excluded Pathways work, and the exact eight prohibited inferences. Resolve all Critical and Important findings.
+The reviewer shall verify rights-review sequencing and independence, the exact six-element rights partition, the copied-requirement-or-passage prohibition, the sole `tests 2 to 7` anomaly exception and its single occurrence, version skew, controlled actor and direction boundaries, scope/population/sample/date/tool/provenance/point-in-time limits, the Delivery Partner's one discretionary exception with both required conjunctive predicates and no automatic-pass/95-percent-score interpretation, excluded Pathways work, and the exact eight prohibited inferences. Resolve all Critical and Important findings.
 
 - [ ] **Step 6: Redispatch after every candidate change**
 
