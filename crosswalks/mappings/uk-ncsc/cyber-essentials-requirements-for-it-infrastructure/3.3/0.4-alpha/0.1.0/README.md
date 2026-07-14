@@ -57,7 +57,9 @@ change_history:
 ---
 # Cyber Essentials v3.3 to ESAF 0.4-alpha
 
-This authoritative snapshot is an incomplete draft. It inventories the source publication but contains no provision mapping records yet. It does not establish certification, compliance, equivalence, legal sufficiency, NCSC endorsement, or official status.
+This authoritative snapshot is a complete machine-validatable draft containing 116 provision records, 41 forward-only relationship legs, and 76 no-direct-mapping dispositions. It does not establish certification, compliance, equivalence, legal sufficiency, NCSC endorsement, or official status.
+
+`PROVISION_INVENTORY.md` fixes the complete-publication scope, and `ESAF_CONTROL_MANIFEST.json` pins every referenced control to the stated ESAF baseline. The [UK Cyber Essentials landing page](../../../../../../uk-cyber-essentials.md) provides the repository entry point.
 
 ## Source and publication rights
 
@@ -85,6 +87,19 @@ Included material comprises explicit must statements, imperatives, need-to state
 
 Excluded informative material comprises definitions, aims, examples, explanatory introductions, information boxes, section C backup guidance, section F zero-trust guidance, statements expressly identified as non-mandatory guidance, N/A table cells, repeated clarifications, and umbrella statements fully operationalized by following provisions. Cyber Essentials Plus is outside this mapping set and requires a separate source-versioned mapping set.
 
+## Draft mapping results and gaps
+
+The 116 provision records contain 41 forward-only relationship legs and 76 no-direct-mapping dispositions. Each relationship records its conditions, expected evidence, and known gaps. Multiple relationships are not treated as collectively sufficient.
+
+The draft preserves prominent gaps where ESAF 0.4-alpha does not state the external outcome directly:
+
+- mandatory firewall deployment, default-deny behavior, and the complete firewall administration baseline;
+- exact password length, blocklist, throttling, and lockout thresholds;
+- the fixed 14-day security-update deadline and its precise vendor, severity, and scoring triggers; and
+- endpoint malware protection, anti-malware configuration, and application allowlisting beyond the narrow AI-focused contributions recorded for three malware provisions.
+
 ## Draft lifecycle
 
-The ESAF baseline is pinned to commit `5de9ff356ddad1e193444cd7308eff16ed83e811`. All 91 manifest controls are draft version 0.1.0. This mapping set remains draft with no schema reviewer or approver and an empty lifecycle event array pending qualified human review.
+The ESAF baseline is pinned to commit `5de9ff356ddad1e193444cd7308eff16ed83e811`. All 91 referenced ESAF controls are draft version 0.1.0. This mapping set remains draft with no schema reviewer or approver and an empty lifecycle event array pending qualified human review.
+
+Cyber Essentials Plus remains a separate roadmap item because its assurance and testing purpose differs from the core publication. This snapshot makes no statement about Plus testing outcomes.

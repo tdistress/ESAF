@@ -4,6 +4,8 @@
 
 This work maps ESAF 0.4-alpha controls to the UK National Cyber Security Centre (NCSC) publication *Cyber Essentials: Requirements for IT Infrastructure v3.3*. The mapping set is limited to Cyber Essentials core. Cyber Essentials Plus has a distinct assurance purpose and will use a separate, source-versioned mapping set.
 
+The [authoritative draft snapshot](mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/README.md) contains the provision-level records. The [generated crosswalk catalog](CATALOG.md) provides the repository-wide derived view.
+
 ## Source and publication rights
 
 - Authority: UK National Cyber Security Centre
@@ -31,6 +33,21 @@ The complete-publication inventory contains 116 independently testable provision
 
 The inventory includes prescriptive scope classifications and independently testable requirements. It excludes definitions, aims, examples, explanatory introductions, information boxes, backup guidance in section C, zero-trust guidance in section F, and statements expressly identified as non-mandatory guidance.
 
+## Draft mapping results
+
+The 116 provision records contain 41 forward-only relationship legs and 76 no-direct-mapping dispositions. Relationship legs describe limited contributions from individual ESAF controls; several legs do not combine into a claim that a Cyber Essentials provision has been met.
+
+Prominent gaps include:
+
+- mandatory firewall deployment, default-deny behavior, and the full set of firewall administration outcomes;
+- exact password length, blocklist, throttling, and lockout thresholds;
+- the fixed 14-day security-update deadline and its precise vendor, severity, and scoring triggers; and
+- endpoint malware protection, anti-malware configuration, and application allowlisting outside the narrow AI application and integration contributions recorded in the snapshot.
+
 ## Draft-control boundary
 
-The mapping set and all referenced ESAF controls remain draft. No relationship has been independently reviewed or approved, and qualified human review is required before any lifecycle transition. The crosswalk describes analytical contributions from ESAF controls to individual provisions; it does not establish certification, compliance, equivalence, a compliance percentage, legal sufficiency, or implementation effectiveness.
+The mapping set remains draft. All 91 referenced ESAF controls are draft version 0.1.0 and are pinned to the ESAF 0.4-alpha source baseline. No relationship has been independently reviewed or approved, and qualified human review is required before any lifecycle transition. The crosswalk describes analytical contributions from ESAF controls to individual provisions; it does not establish certification, compliance, equivalence, a compliance percentage, legal sufficiency, or implementation effectiveness.
+
+## Cyber Essentials Plus roadmap
+
+Cyber Essentials Plus will be analyzed as a separate, source-versioned mapping set because its assurance and testing purpose differs from the core requirements mapped here. No Plus testing outcome is inferred from this core draft.

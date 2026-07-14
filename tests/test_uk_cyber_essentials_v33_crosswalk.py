@@ -401,6 +401,158 @@ class UkCyberEssentialsV33CrosswalkTests(unittest.TestCase):
                 self.assertEqual(record["relationships"], [])
                 self.assertTrue(record["negative_rationale"])
 
+    def test_complete_snapshot_has_exact_records_and_allowed_semantics(self) -> None:
+        records = [
+            parse_front_matter(path)[0]
+            for path in sorted(SNAPSHOT.glob("ce33-*.md"))
+        ]
+        inventory = parse_front_matter(SNAPSHOT / "PROVISION_INVENTORY.md")[0]
+        manifest = json.loads(
+            (SNAPSHOT / "ESAF_CONTROL_MANIFEST.json").read_text(encoding="utf-8")
+        )
+        manifest_versions = {
+            control["id"]: control["version"] for control in manifest["controls"]
+        }
+
+        self.assertEqual(len(records), 116)
+        self.assertEqual(
+            [record["external_provision_id"] for record in records],
+            inventory["provision_ids"],
+        )
+        self.assertEqual({record["status"] for record in records}, {"draft"})
+        self.assertEqual({record["granularity"] for record in records}, {"requirement"})
+        self.assertNotIn("out_of_scope", {record["disposition"] for record in records})
+        for record in records:
+            self.assertTrue(record["source_locator"]["locator"], record["record_id"])
+            for leg in record["relationships"]:
+                self.assertEqual(leg["direction"], "esaf_to_external")
+                self.assertEqual(
+                    manifest_versions[leg["esaf_control_id"]],
+                    leg["esaf_control_version"],
+                )
+                self.assertTrue(leg["conditions"], record["record_id"])
+                self.assertTrue(leg["expected_evidence"], record["record_id"])
+                self.assertTrue(leg["known_gaps"], record["record_id"])
+            if not record["relationships"]:
+                self.assertEqual(record["disposition"], "no_direct_mapping")
+                self.assertGreater(
+                    len(record["negative_rationale"].split()),
+                    8,
+                    record["record_id"],
+                )
+
+    def test_snapshot_claim_language_remains_qualified(self) -> None:
+        landing = ROOT / "crosswalks/uk-cyber-essentials.md"
+        paths = [landing, SNAPSHOT / "README.md", *sorted(SNAPSHOT.glob("ce33-*.md"))]
+        claim_phrases = {
+            "equivalent": re.compile(r"\bequivalent\b", re.IGNORECASE),
+            "certified by": re.compile(r"\bcertified by\b", re.IGNORECASE),
+            "ensures compliance": re.compile(r"\bensures compliance\b", re.IGNORECASE),
+            "compliance percentage": re.compile(
+                r"\bcompliance percentage\b", re.IGNORECASE
+            ),
+            "NCSC endorsement claim": re.compile(
+                r"\b(?:endorsed by (?:the )?NCSC|NCSC endorses)\b", re.IGNORECASE
+            ),
+        }
+        negative_qualifier = re.compile(
+            r"\b(?:does not|do not|is not|are not|not|no|without|avoid|prohibit)\b",
+            re.IGNORECASE,
+        )
+        violations: list[str] = []
+        for path in paths:
+            if path == landing:
+                metadata: dict[str, object] = {}
+                searchable = path.read_text(encoding="utf-8")
+            else:
+                metadata, searchable = parse_front_matter(path)
+            if path.name.startswith("ce33-"):
+                searchable += "\n" + metadata["context"]["summary"]
+            for label, pattern in claim_phrases.items():
+                for match in pattern.finditer(searchable):
+                    sentence_start = max(
+                        searchable.rfind(".", 0, match.start()),
+                        searchable.rfind("!", 0, match.start()),
+                        searchable.rfind("\n", 0, match.start()),
+                    )
+                    if not negative_qualifier.search(
+                        searchable[sentence_start + 1 : match.start()]
+                    ):
+                        violations.append(f"{path.relative_to(ROOT)}: {label}")
+        self.assertEqual(violations, [])
+
+    def test_landing_and_snapshot_local_links_resolve(self) -> None:
+        paths = [ROOT / "crosswalks/uk-cyber-essentials.md", SNAPSHOT / "README.md"]
+        missing: list[str] = []
+        for path in paths:
+            text = path.read_text(encoding="utf-8")
+            for target in re.findall(r"\[[^]]+\]\(([^)]+)\)", text):
+                if re.match(r"^[a-z][a-z0-9+.-]*:", target, re.IGNORECASE):
+                    continue
+                resolved = (path.parent / target.split("#", 1)[0]).resolve()
+                if not resolved.exists():
+                    missing.append(f"{path.relative_to(ROOT)} -> {target}")
+        self.assertEqual(missing, [])
+
+    def test_group_counts_and_generated_catalog_agree(self) -> None:
+        inventory = parse_front_matter(SNAPSHOT / "PROVISION_INVENTORY.md")[0]
+        catalog = json.loads((ROOT / "crosswalks/catalog.json").read_text(encoding="utf-8"))
+        actual_groups = {
+            group.upper(): len(record_paths(f"ce33-{group}"))
+            for group in EXPECTED_GROUPS
+        }
+        self.assertEqual(
+            actual_groups,
+            {group.upper(): count for group, count in EXPECTED_GROUPS.items()},
+        )
+        self.assertEqual(len(inventory["provision_ids"]), 116)
+        self.assertEqual(catalog["counts"]["provisions"], 116)
+        self.assertEqual(catalog["counts"]["relationships"], 41)
+        self.assertEqual(catalog["counts"]["negative_dispositions"], 76)
+
+    def test_final_narratives_expose_draft_counts_gaps_and_plus_roadmap(self) -> None:
+        landing = (ROOT / "crosswalks/uk-cyber-essentials.md").read_text(
+            encoding="utf-8"
+        )
+        _, snapshot = parse_front_matter(SNAPSHOT / "README.md")
+        for text in (landing, snapshot):
+            for expected in (
+                "116",
+                "41 forward-only relationship legs",
+                "76 no-direct-mapping dispositions",
+                "firewall",
+                "password",
+                "14-day",
+                "malware",
+                "All 91 referenced ESAF controls are draft",
+                "Cyber Essentials Plus",
+                "separate",
+            ):
+                self.assertIn(expected, text)
+        self.assertIn(
+            "[authoritative draft snapshot](mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/README.md)",
+            landing,
+        )
+
+    def test_validated_draft_milestone_and_traceability_are_recorded(self) -> None:
+        changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+        backlog = (ROOT / "project/BACKLOG.md").read_text(encoding="utf-8")
+        traceability_path = (
+            ROOT
+            / "docs/superpowers/reviews/2026-07-13-uk-cyber-essentials-v3.3-traceability.md"
+        )
+        self.assertIn("Cyber Essentials v3.3", changelog)
+        self.assertIn("116", changelog)
+        self.assertIn("validated draft", changelog.lower())
+        self.assertIn("Cyber Essentials Plus", backlog)
+        self.assertIn("separate", backlog)
+        self.assertTrue(traceability_path.is_file())
+        traceability = traceability_path.read_text(encoding="utf-8")
+        for criterion in range(1, 10):
+            self.assertRegex(traceability, rf"(?m)^\| {criterion} \|")
+        self.assertIn("independent", traceability.lower())
+        self.assertIn("immutable", traceability.lower())
+
     def test_locked_provision_oracle_is_exact(self) -> None:
         oracle = json.loads(PROVISION_ORACLE.read_text(encoding="utf-8"))
         provisions = oracle["provisions"]
