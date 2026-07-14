@@ -4,32 +4,32 @@
       "uk-ncsc": 1
     },
     "by_confidence": {
-      "high": 27,
-      "medium": 8
+      "high": 29,
+      "medium": 9
     },
     "by_coverage": {
-      "narrow": 33,
+      "narrow": 36,
       "partial": 2
     },
     "by_direction": {
-      "esaf_to_external": 35
+      "esaf_to_external": 38
     },
     "by_disposition": {
-      "mapped": 34,
-      "no_direct_mapping": 56
+      "mapped": 37,
+      "no_direct_mapping": 67
     },
     "by_esaf_release": {
       "0.4-alpha": 1
     },
     "by_lifecycle_state": {},
     "by_provision_status": {
-      "draft": 90
+      "draft": 104
     },
     "by_publication": {
       "cyber-essentials-requirements-for-it-infrastructure": 1
     },
     "by_relationship": {
-      "partially_supports": 35
+      "partially_supports": 38
     },
     "by_snapshot_status": {
       "draft": 1
@@ -38,9 +38,9 @@
       "3.3": 1
     },
     "mapping_sets": 1,
-    "negative_dispositions": 56,
-    "provisions": 90,
-    "relationships": 35
+    "negative_dispositions": 67,
+    "provisions": 104,
+    "relationships": 38
   },
   "generated_from": "crosswalks/mappings/** and crosswalks/registry/*.md",
   "mapping_sets": [
@@ -175,7 +175,7 @@
         "events": [],
         "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
         "schema_version": "1.0.0",
-        "snapshot_digest": "092919a4070dfce2782f902a1ba82dee415929132f7af2a7e77ea393067a2d7f"
+        "snapshot_digest": "117d200f736a51ea84c744aace9ae612fd5abf2175b01d8f9b1af83d796848d1"
       },
       "metadata": {
         "authority": {
@@ -3847,6 +3847,522 @@
             "status": "draft"
           },
           "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e4-015.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 User Access Control mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Require the password factor in multi-factor authentication to contain at least eight characters."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-E4-016",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "IAM-110 requires risk-proportionate authentication for access to non-public AI assets, but ESAF does not itself impose the source-specific minimum of eight characters on a password factor used for multi-factor authentication.",
+            "record_id": "ce33-e4-016",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.4, User Access Control, Multi-factor authentication, page 21, paragraph 2, outcome 1",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e4-016.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 User Access Control mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Apply no maximum length restriction to the password factor in multi-factor authentication."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-E4-017",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "IAM-110 requires risk-proportionate authentication for access to non-public AI assets, but ESAF does not itself prohibit a maximum-length restriction on a password factor used for multi-factor authentication.",
+            "record_id": "ce33-e4-017",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.4, User Access Control, Multi-factor authentication, page 21, paragraph 2, outcome 2",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e4-017.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 User Access Control mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Choose additional authentication factors that are usable."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-E4-018",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "IAM-110 addresses the risk-proportionate strength and context of authentication for non-public AI assets, but it does not itself require additional authentication factors to satisfy the Cyber Essentials usability outcome.",
+            "record_id": "ce33-e4-018",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.4, User Access Control, Multi-factor authentication, page 21, paragraph immediately after the additional-factor list, outcome 1",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e4-018.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 User Access Control mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Choose additional authentication factors that are accessible."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-E4-019",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "IAM-110 addresses the risk-proportionate strength and context of authentication for non-public AI assets, but it does not itself require additional authentication factors to satisfy the Cyber Essentials accessibility outcome.",
+            "record_id": "ce33-e4-019",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.4, User Access Control, Multi-factor authentication, page 21, paragraph immediately after the additional-factor list, outcome 2",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e4-019.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 User Access Control mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Require every user account to authenticate."
+            },
+            "disposition": "mapped",
+            "external_provision_id": "CE3.3-E4-020",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "record_id": "ce33-e4-020",
+            "relationships": [
+              {
+                "conditions": [
+                  "The user account grants access to a non-public in-scope AI asset governed by IAM-110."
+                ],
+                "confidence": "high",
+                "coverage": "narrow",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "IAM-110",
+                "esaf_control_version": "0.1.0",
+                "expected_evidence": [
+                  "AI authentication standard, user-account inventory, identity-provider configuration, access-path test results, and authentication logs."
+                ],
+                "known_gaps": [
+                  "IAM-110 applies to identities accessing non-public AI assets and does not itself require authentication for every user account across the broader Cyber Essentials application and device population."
+                ],
+                "rationale": "IAM-110 requires identities to authenticate before receiving access to non-public AI assets, directly contributing authentication for user accounts that reach those assets.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.4, User Access Control, Password-based authentication, page 21, opening sentence",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e4-020.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 User Access Control mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Protect passwords against brute-force guessing with MFA, compliant throttling, or device lockout after no more than 10 unsuccessful attempts."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-E4-021",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "IAM-110 calls for risk-proportionate authentication, phishing-resistant MFA for specified AI access, and defined failure handling, but ESAF does not itself impose the Cyber Essentials alternative set or its source-specific threshold of device lockout after no more than 10 unsuccessful attempts.",
+            "record_id": "ce33-e4-021",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.4, User Access Control, Password-based authentication, pages 21-22, protective-measures bullet 1 and sub-bullets 1-3",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e4-021.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 User Access Control mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Manage password quality using MFA, at least 12 characters with no maximum, or at least eight characters with no maximum plus a common-password denylist."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-E4-022",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "IAM-110 requires risk-proportionate authentication for non-public AI assets, but ESAF does not itself impose the Cyber Essentials password-quality alternatives, the source-specific minimums of 12 or eight characters, no-maximum rule, or common-password denylist.",
+            "record_id": "ce33-e4-022",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.4, User Access Control, Password-based authentication, page 22, protective-measures bullet 2 and sub-bullets 1-3",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e4-022.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 User Access Control mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Educate users to avoid common and reused passwords."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-E4-023",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "EDU-100 requires baseline AI literacy and EDU-110 requires competency for material AI roles, but neither ESAF control directly requires password education about common or reused passwords for the Cyber Essentials user population.",
+            "record_id": "ce33-e4-023",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.4, User Access Control, Password-based authentication, page 22, support-users bullet, sub-bullet 1",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e4-023.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 User Access Control mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Encourage users to create passwords from at least three words."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-E4-024",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "EDU-100 and EDU-110 govern AI literacy and role-based AI competency, but ESAF does not itself require users to create passwords from the source-specific minimum of three words.",
+            "record_id": "ce33-e4-024",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.4, User Access Control, Password-based authentication, page 22, support-users bullet, sub-bullet 2",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e4-024.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 User Access Control mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Provide usable secure storage for passwords."
+            },
+            "disposition": "mapped",
+            "external_provision_id": "CE3.3-E4-025",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "record_id": "ce33-e4-025",
+            "relationships": [
+              {
+                "conditions": [
+                  "The password is a credential used by an in-scope AI capability and the approved secrets-management mechanism is available to its authorized operator."
+                ],
+                "confidence": "high",
+                "coverage": "narrow",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "IAM-140",
+                "esaf_control_version": "0.1.0",
+                "expected_evidence": [
+                  "AI secrets-management standard, approved-store inventory, credential-storage configuration, access records, and tests for credentials outside approved stores."
+                ],
+                "known_gaps": [
+                  "IAM-140 governs credentials used by AI capabilities and does not itself require usable secure password storage for every Cyber Essentials user or define the source-specific usability outcome."
+                ],
+                "rationale": "IAM-140 requires credentials and other secrets used by AI capabilities to be stored through approved secrets-management mechanisms, directly contributing secure password storage within that AI scope.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.4, User Access Control, Password-based authentication, page 22, support-users bullet, sub-bullet 3, outcome 1",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e4-025.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 User Access Control mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Provide clear information about how and when secure password storage may be used."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-E4-026",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "IAM-140 requires approved secrets-management mechanisms for credentials used by AI capabilities, but ESAF does not itself require clear user-facing information about how and when secure password storage may be used.",
+            "record_id": "ce33-e4-026",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.4, User Access Control, Password-based authentication, page 22, support-users bullet, sub-bullet 3, outcome 2",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e4-026.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 User Access Control mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Do not enforce regular password expiry."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-E4-027",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "IAM-140 requires credential rotation within policy for AI capabilities and rapid rotation after specified triggers, but ESAF does not itself prohibit regular password expiry as Cyber Essentials requires.",
+            "record_id": "ce33-e4-027",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.4, User Access Control, Password-based authentication, page 22, support-users bullet, sub-bullet 4",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e4-027.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 User Access Control mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Do not enforce password complexity requirements."
+            },
+            "disposition": "no_direct_mapping",
+            "external_provision_id": "CE3.3-E4-028",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "IAM-110 requires risk-proportionate authentication for non-public AI assets, but ESAF does not itself prohibit password complexity requirements.",
+            "record_id": "ce33-e4-028",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.4, User Access Control, Password-based authentication, page 22, support-users bullet, sub-bullet 5",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e4-028.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials v3.3 User Access Control mapping record.",
+                "date": "2026-07-14",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Maintain a process to promptly change passwords when a password or account is known or suspected to be compromised."
+            },
+            "disposition": "mapped",
+            "external_provision_id": "CE3.3-E4-029",
+            "granularity": "requirement",
+            "mapper": {
+              "date": "2026-07-14",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+            "record_id": "ce33-e4-029",
+            "relationships": [
+              {
+                "conditions": [
+                  "The known or suspected compromise affects a password or account credential used by an in-scope AI capability and is handled through the IAM-140 secrets-management process."
+                ],
+                "confidence": "medium",
+                "coverage": "narrow",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "IAM-140",
+                "esaf_control_version": "0.1.0",
+                "expected_evidence": [
+                  "AI credential exposure procedure, incident or suspicion record, revocation and rotation timestamps, managed-store audit trail, and validation that the former credential no longer works."
+                ],
+                "known_gaps": [
+                  "IAM-140 covers credentials used by AI capabilities and provides rapid response as implementation guidance; it does not itself impose the Cyber Essentials prompt-change outcome for every user password or account."
+                ],
+                "rationale": "IAM-140 requires credentials used by AI capabilities to be rotated and revoked and directs rapid revocation and rotation after exposure, directly contributing compromise response for passwords in that AI scope.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "Section E.4, User Access Control, Password-based authentication, pages 22-23, final paragraph",
+              "official_url": "https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e4-029.md"
         }
       ]
     }

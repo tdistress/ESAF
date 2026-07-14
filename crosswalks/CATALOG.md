@@ -22,7 +22,7 @@
 
 ## Coverage and gaps
 
-Mapping sets: 1; provisions: 90; directional relationships: 35; negative dispositions: 56.
+Mapping sets: 1; provisions: 104; directional relationships: 38; negative dispositions: 67.
 
 | Provision record | Disposition | Relationships |
 |---|---|---:|
@@ -116,3 +116,17 @@ Mapping sets: 1; provisions: 90; directional relationships: 35; negative disposi
 | [ce33-e4-013](mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e4-013.md) | mapped | 1 |
 | [ce33-e4-014](mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e4-014.md) | mapped | 1 |
 | [ce33-e4-015](mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e4-015.md) | no_direct_mapping | 0 |
+| [ce33-e4-016](mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e4-016.md) | no_direct_mapping | 0 |
+| [ce33-e4-017](mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e4-017.md) | no_direct_mapping | 0 |
+| [ce33-e4-018](mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e4-018.md) | no_direct_mapping | 0 |
+| [ce33-e4-019](mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e4-019.md) | no_direct_mapping | 0 |
+| [ce33-e4-020](mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e4-020.md) | mapped | 1 |
+| [ce33-e4-021](mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e4-021.md) | no_direct_mapping | 0 |
+| [ce33-e4-022](mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e4-022.md) | no_direct_mapping | 0 |
+| [ce33-e4-023](mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e4-023.md) | no_direct_mapping | 0 |
+| [ce33-e4-024](mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e4-024.md) | no_direct_mapping | 0 |
+| [ce33-e4-025](mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e4-025.md) | mapped | 1 |
+| [ce33-e4-026](mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e4-026.md) | no_direct_mapping | 0 |
+| [ce33-e4-027](mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e4-027.md) | no_direct_mapping | 0 |
+| [ce33-e4-028](mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e4-028.md) | no_direct_mapping | 0 |
+| [ce33-e4-029](mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-e4-029.md) | mapped | 1 |

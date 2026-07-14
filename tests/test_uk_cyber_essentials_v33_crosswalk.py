@@ -236,7 +236,7 @@ class UkCyberEssentialsV33CrosswalkTests(unittest.TestCase):
 
     def test_user_access_first_batch_is_complete_and_separates_mfa_outcomes(self) -> None:
         self.assert_records_match_oracle(
-            record_paths("ce33-e4"),
+            [SNAPSHOT / f"ce33-e4-{number:03d}.md" for number in range(1, 16)],
             [f"ce33-e4-{number:03d}" for number in range(1, 16)],
         )
         for number in range(1, 16):
@@ -302,6 +302,59 @@ class UkCyberEssentialsV33CrosswalkTests(unittest.TestCase):
         )
         self.assertEqual(internet_mfa["disposition"], "no_direct_mapping")
         self.assertEqual(internet_mfa["relationships"], [])
+
+    def test_user_access_second_batch_preserves_source_thresholds(self) -> None:
+        self.assert_group("e4", 29)
+
+        checks = {
+            "ce33-e4-016": "eight",
+            "ce33-e4-021": "10",
+            "ce33-e4-022": "12",
+            "ce33-e4-024": "three",
+        }
+        for record_id, token in checks.items():
+            self.assertIn(token, self.load_record(record_id)["context"]["summary"])
+        self.assertIn(
+            "five minutes",
+            self.load_record("ce33-e2-009")["context"]["summary"],
+        )
+
+        for record_id in (
+            "ce33-e4-016",
+            "ce33-e4-017",
+            "ce33-e4-018",
+            "ce33-e4-019",
+            "ce33-e4-021",
+            "ce33-e4-022",
+            "ce33-e4-023",
+            "ce33-e4-024",
+            "ce33-e4-026",
+            "ce33-e4-027",
+            "ce33-e4-028",
+        ):
+            record = self.load_record(record_id)
+            self.assertEqual(record["disposition"], "no_direct_mapping")
+            self.assertEqual(record["relationships"], [])
+            self.assertTrue(record["negative_rationale"])
+
+        mapped_controls = {
+            "ce33-e4-020": {"IAM-110"},
+            "ce33-e4-025": {"IAM-140"},
+            "ce33-e4-029": {"IAM-140"},
+        }
+        for record_id, expected_controls in mapped_controls.items():
+            record = self.load_record(record_id)
+            self.assertTrue(record["relationships"])
+            self.assertEqual(
+                {relationship["esaf_control_id"] for relationship in record["relationships"]},
+                expected_controls,
+            )
+            for relationship in record["relationships"]:
+                self.assertTrue(relationship["rationale"])
+                self.assertTrue(relationship["conditions"])
+                self.assertTrue(relationship["expected_evidence"])
+                self.assertTrue(relationship["known_gaps"])
+                self.assertIn("ai", " ".join(relationship["known_gaps"]).lower())
 
     def test_locked_provision_oracle_is_exact(self) -> None:
         oracle = json.loads(PROVISION_ORACLE.read_text(encoding="utf-8"))
