@@ -47,6 +47,9 @@ ESAF_1600_DECISIONS = (
     "Historical mappings resolve against a release-pinned ESAF control manifest.",
     "ESAF-1600 supersedes the prior ESAF-1100 mapping taxonomy.",
     "Restricted external requirement text is excluded and publication rights are recorded.",
+    "Cyber Essentials core and Cyber Essentials Plus use separate mapping sets.",
+    "Cyber Essentials v3.3 uses 116 ESAF-assigned atomic provision locators.",
+    "The initial Cyber Essentials v3.3 mapping remains draft pending qualified human review.",
 )
 PLANNED_LANDING_PAGE_CONTENT = {
     "pci-dss.md": """# PCI DSS Crosswalk
@@ -64,14 +67,6 @@ No substantive mapping is approved. Future mapping work shall follow [ESAF-1600]
 This crosswalk will map applicable ESAF controls to a licensed, versioned HITRUST CSF release. Public project content shall not reproduce proprietary source material beyond permitted citation and identifiers.
 
 No substantive mapping is approved. Future mapping work shall follow [ESAF-1600](ESAF-1600.md) and identify the exact approved source version and publication-rights boundary before any mapping-set snapshot is created.
-""",
-    "uk-cyber-essentials.md": """# UK Cyber Essentials Crosswalk
-
-**Status:** Planned
-
-This crosswalk will map applicable ESAF controls to a versioned UK Cyber Essentials and Cyber Essentials Plus scheme specification, with clear separation between foundational cyber hygiene and AI-specific controls.
-
-No substantive mapping is approved. Future mapping work shall follow [ESAF-1600](ESAF-1600.md) and identify the exact approved source version before any mapping-set snapshot is created.
 """,
 }
 
@@ -244,10 +239,12 @@ class Esaf1600FoundationTests(unittest.TestCase):
         self.assertNotIn("LF-terminated bytes", text)
         self.assertIn("hash each permitted file's exact bytes", text)
 
-    def test_templates_are_outside_mapping_discovery(self) -> None:
+    def test_templates_are_outside_authoritative_mapping_discovery(self) -> None:
         result = validate(ROOT)
-        self.assertEqual(result.mapping_sets, [])
-        self.assertEqual(result.lifecycle_records, [])
+        self.assertEqual(len(result.mapping_sets), 1)
+        self.assertEqual(len(result.lifecycle_records), 1)
+        self.assertNotIn("TEMPLATE", result.mapping_sets[0]["path"])
+        self.assertNotIn("TEMPLATE", result.lifecycle_records[0]["path"])
 
     def test_lifecycle_template_contains_complete_valid_chain(self) -> None:
         metadata, _ = parse_front_matter(ROOT / "crosswalks/LIFECYCLE_RECORD_TEMPLATE.md")
@@ -346,7 +343,7 @@ class Esaf1600FoundationTests(unittest.TestCase):
         self.assertIn("python tools/validate_crosswalks.py --check", text)
 
     def test_landing_pages_remain_planned_and_link_methodology(self) -> None:
-        for name in ("pci-dss.md", "hitrust-csf.md", "uk-cyber-essentials.md"):
+        for name in ("pci-dss.md", "hitrust-csf.md"):
             text = (ROOT / "crosswalks" / name).read_text(encoding="utf-8")
             with self.subTest(name=name):
                 self.assert_planned_landing_page(name, text)
@@ -400,16 +397,16 @@ class Esaf1600FoundationTests(unittest.TestCase):
             rows.append(match.groups())
 
         ids = [row[0] for row in rows]
-        expected_ids = [f"DEC-{number:04d}" for number in range(1, 26)]
+        expected_ids = [f"DEC-{number:04d}" for number in range(1, 29)]
         self.assertEqual(ids, expected_ids)
         self.assertEqual(len(ids), len(set(ids)))
 
-        esaf_rows = rows[14:25]
+        esaf_rows = rows[14:28]
         self.assertEqual(
             [(row[0], row[2], row[3]) for row in esaf_rows],
             [
                 (f"DEC-{number:04d}", decision, "Accepted")
-                for number, decision in zip(range(15, 26), ESAF_1600_DECISIONS)
+                for number, decision in zip(range(15, 29), ESAF_1600_DECISIONS)
             ],
         )
 

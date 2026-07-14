@@ -1,0 +1,128 @@
+---
+schema_version: 1.0.0
+mapping_set_id: uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0
+scope_type: complete_publication
+scope_statement: Every independently testable prescriptive provision in sections D and E of Cyber Essentials Requirements for IT Infrastructure v3.3 is inventoried.
+source_basis: Official NCSC publication v3.3; these ESAF-assigned identifiers follow the approved atomic provision oracle and publication-rights review.
+expected_count: 116
+provision_ids:
+  - CE3.3-D-001
+  - CE3.3-D-002
+  - CE3.3-D-003
+  - CE3.3-D-004
+  - CE3.3-D-005
+  - CE3.3-D-006
+  - CE3.3-D-007
+  - CE3.3-D-008
+  - CE3.3-D-009
+  - CE3.3-D-010
+  - CE3.3-D-011
+  - CE3.3-D-012
+  - CE3.3-D-013
+  - CE3.3-D-014
+  - CE3.3-D-015
+  - CE3.3-D-016
+  - CE3.3-D-017
+  - CE3.3-D-018
+  - CE3.3-D-019
+  - CE3.3-D-020
+  - CE3.3-D-021
+  - CE3.3-D-022
+  - CE3.3-D-023
+  - CE3.3-D-024
+  - CE3.3-D-025
+  - CE3.3-D-026
+  - CE3.3-D-027
+  - CE3.3-D-028
+  - CE3.3-D-029
+  - CE3.3-D-030
+  - CE3.3-D-031
+  - CE3.3-D-032
+  - CE3.3-D-033
+  - CE3.3-D-034
+  - CE3.3-D-035
+  - CE3.3-D-036
+  - CE3.3-D-037
+  - CE3.3-D-038
+  - CE3.3-D-039
+  - CE3.3-D-040
+  - CE3.3-D-041
+  - CE3.3-D-042
+  - CE3.3-D-043
+  - CE3.3-D-044
+  - CE3.3-E1-001
+  - CE3.3-E1-002
+  - CE3.3-E1-003
+  - CE3.3-E1-004
+  - CE3.3-E1-005
+  - CE3.3-E1-006
+  - CE3.3-E1-007
+  - CE3.3-E1-008
+  - CE3.3-E1-009
+  - CE3.3-E1-010
+  - CE3.3-E1-011
+  - CE3.3-E1-012
+  - CE3.3-E2-001
+  - CE3.3-E2-002
+  - CE3.3-E2-003
+  - CE3.3-E2-004
+  - CE3.3-E2-005
+  - CE3.3-E2-006
+  - CE3.3-E2-007
+  - CE3.3-E2-008
+  - CE3.3-E2-009
+  - CE3.3-E2-010
+  - CE3.3-E2-011
+  - CE3.3-E2-012
+  - CE3.3-E3-001
+  - CE3.3-E3-002
+  - CE3.3-E3-003
+  - CE3.3-E3-004
+  - CE3.3-E3-005
+  - CE3.3-E3-006
+  - CE3.3-E3-007
+  - CE3.3-E4-001
+  - CE3.3-E4-002
+  - CE3.3-E4-003
+  - CE3.3-E4-004
+  - CE3.3-E4-005
+  - CE3.3-E4-006
+  - CE3.3-E4-007
+  - CE3.3-E4-008
+  - CE3.3-E4-009
+  - CE3.3-E4-010
+  - CE3.3-E4-011
+  - CE3.3-E4-012
+  - CE3.3-E4-013
+  - CE3.3-E4-014
+  - CE3.3-E4-015
+  - CE3.3-E4-016
+  - CE3.3-E4-017
+  - CE3.3-E4-018
+  - CE3.3-E4-019
+  - CE3.3-E4-020
+  - CE3.3-E4-021
+  - CE3.3-E4-022
+  - CE3.3-E4-023
+  - CE3.3-E4-024
+  - CE3.3-E4-025
+  - CE3.3-E4-026
+  - CE3.3-E4-027
+  - CE3.3-E4-028
+  - CE3.3-E4-029
+  - CE3.3-E5-001
+  - CE3.3-E5-002
+  - CE3.3-E5-003
+  - CE3.3-E5-004
+  - CE3.3-E5-005
+  - CE3.3-E5-006
+  - CE3.3-E5-007
+  - CE3.3-E5-008
+  - CE3.3-E5-009
+  - CE3.3-E5-010
+  - CE3.3-E5-011
+  - CE3.3-E5-012
+---
+# Cyber Essentials v3.3 provision inventory
+
+This is the complete, ordered inventory of ESAF-assigned citation identifiers for the source provisions. The identifiers are not printed or endorsed by the NCSC.

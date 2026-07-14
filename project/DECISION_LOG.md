@@ -27,3 +27,6 @@
 | DEC-0023 | 2026-07-13 | Historical mappings resolve against a release-pinned ESAF control manifest. | Accepted |
 | DEC-0024 | 2026-07-13 | ESAF-1600 supersedes the prior ESAF-1100 mapping taxonomy. | Accepted |
 | DEC-0025 | 2026-07-13 | Restricted external requirement text is excluded and publication rights are recorded. | Accepted |
+| DEC-0026 | 2026-07-13 | Cyber Essentials core and Cyber Essentials Plus use separate mapping sets. | Accepted |
+| DEC-0027 | 2026-07-13 | Cyber Essentials v3.3 uses 116 ESAF-assigned atomic provision locators. | Accepted |
+| DEC-0028 | 2026-07-13 | The initial Cyber Essentials v3.3 mapping remains draft pending qualified human review. | Accepted |
