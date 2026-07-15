@@ -1,0 +1,3854 @@
+{
+  "schema_version": "1.0.0",
+  "atomization_rule_version": "1.0.0",
+  "scope": {
+    "type": "complete_publication",
+    "statement": "This complete-publication oracle inventories the public NCSC Cyber Essentials Plus Test Specification v3.2. It is not a complete inventory of the current operational Cyber Essentials Plus scheme, Delivery Partner methodology, or certification process."
+  },
+  "source": {
+    "title": "Cyber Essentials Plus Test Specification",
+    "authority": "UK National Cyber Security Centre",
+    "publication_identifier": "cyber-essentials-plus-test-specification",
+    "version": "3.2",
+    "display_date": "April 2025",
+    "resource_page_url": "https://www.ncsc.gov.uk/cyberessentials/resources",
+    "resource_page_date": "2025-04-28",
+    "access_date": "2026-07-14",
+    "media_type": "application/pdf",
+    "pdf_page_count": 24,
+    "variants": [
+      {
+        "role": "canonical",
+        "url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf",
+        "byte_length": 424226,
+        "sha256": "2adf2703dec3b581e13e39c6a1de230bb1bce6d85f1158bb1eb53108e28596e8"
+      },
+      {
+        "role": "legacy",
+        "url": "https://www.ncsc.gov.uk/files/cyber-essentials-plus-test-specification-v3-2.pdf",
+        "byte_length": 419191,
+        "sha256": "d334c717597a01fab7a362377b7b04c8449568052ed1c4cf48837f6fb3aca694"
+      }
+    ]
+  },
+  "rights": {
+    "copyright": "Crown copyright",
+    "licence_name": "Open Government Licence v3.0",
+    "licence_url": "https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/",
+    "attribution": "UK National Cyber Security Centre",
+    "publication_basis": "Reuse of public-sector information from the UK National Cyber Security Centre follows Open Government Licence v3.0.",
+    "permitted_elements": [
+      "identifiers",
+      "titles",
+      "structural_inventory",
+      "paraphrases",
+      "derivative_mapping_analysis",
+      "official_links"
+    ],
+    "prohibited_elements": [],
+    "copied_requirement_or_passage_text_prohibited": true,
+    "allowed_verbatim_locations": [
+      "known_anomalies[0].source_literal"
+    ],
+    "restrictions": [
+      "Exclude photographs, images, infographics, and other third-party material unless separately licensed.",
+      "Exclude logos, certification marks, trade marks, crests, and other protected branding.",
+      "Do not imply official status, affiliation, approval, certification, or endorsement by a source party.",
+      "Do not extend the licence to third-party content or content under another arrangement.",
+      "Preserve the source attribution and Open Government Licence link when covered information is reused."
+    ],
+    "iasme_partition": {
+      "owner": "IASME Consortium Limited",
+      "licence": null,
+      "permitted_facts": [
+        "bibliographic facts",
+        "official links",
+        "independently written high-level context"
+      ],
+      "prohibited_source_derived_elements": [
+        "copied text or passages",
+        "authored structure",
+        "derived inventory or atomization",
+        "imagery, logos, and marks",
+        "endorsement implications"
+      ]
+    },
+    "review": {
+      "reviewer": "Codex Rights Reviewer R1",
+      "review_date": "2026-07-14",
+      "independent_of_inventory_authors": true,
+      "canonical_sha256": "2adf2703dec3b581e13e39c6a1de230bb1bce6d85f1158bb1eb53108e28596e8",
+      "legacy_sha256": "d334c717597a01fab7a362377b7b04c8449568052ed1c4cf48837f6fb3aca694",
+      "publication_basis_verified": true,
+      "disposition": "approved"
+    }
+  },
+  "inventory_provenance": {
+    "authors": [
+      "Codex Inventory Author A",
+      "Codex Inventory Author B"
+    ],
+    "reconciler": "Codex Inventory Reconciler R1",
+    "rights_record_commit": "6add413fc7a8a6330cf16dc5d12e3b9b85aa34e6",
+    "inventories_started_after_rights_commit": true
+  },
+  "direction_boundary": {
+    "oracle_establishes_mapping_direction": false,
+    "future_directions": [
+      "esaf_to_external",
+      "external_to_esaf"
+    ],
+    "assessed_independently": true
+  },
+  "operational_context": [],
+  "known_anomalies": [
+    {
+      "anomaly_id": "cepts32-anomaly-001",
+      "source_literal": "tests 2 to 7",
+      "locator": {
+        "pdf_page": 6,
+        "printed_page": 5,
+        "section": "General prerequisites for testing",
+        "detail": "introductory applicability line"
+      },
+      "treatment": "Recorded without correction or expansion; the publication itself presents only Test cases 1 through 5."
+    }
+  ],
+  "groups": [
+    "M",
+    "T1",
+    "S",
+    "T2",
+    "T3",
+    "T4",
+    "T5",
+    "C",
+    "A",
+    "B"
+  ],
+  "section_ledger": [
+    {
+      "section_id": "sec-m-cover",
+      "parent_section_id": null,
+      "heading": "Cover",
+      "group": "M",
+      "pdf_pages": {
+        "start": 1,
+        "end": 1
+      },
+      "printed_pages": null,
+      "decision": "context_only",
+      "rationale": "Publication identity and branding contain no independently assessable direction.",
+      "atom_count": 0
+    },
+    {
+      "section_id": "sec-m-contents",
+      "parent_section_id": null,
+      "heading": "Contents",
+      "group": "M",
+      "pdf_pages": {
+        "start": 2,
+        "end": 3
+      },
+      "printed_pages": {
+        "start": 1,
+        "end": 2
+      },
+      "decision": "context_only",
+      "rationale": "Navigation lists publication structure without adding operative requirements.",
+      "atom_count": 0
+    },
+    {
+      "section_id": "sec-m-whats-new",
+      "parent_section_id": null,
+      "heading": "What's new",
+      "group": "M",
+      "pdf_pages": {
+        "start": 4,
+        "end": 4
+      },
+      "printed_pages": {
+        "start": 3,
+        "end": 3
+      },
+      "decision": "context_only",
+      "rationale": "Change-topic summary is descriptive and does not independently direct an actor.",
+      "atom_count": 0
+    },
+    {
+      "section_id": "sec-m-audience",
+      "parent_section_id": null,
+      "heading": "Audience",
+      "group": "M",
+      "pdf_pages": {
+        "start": 4,
+        "end": 4
+      },
+      "printed_pages": {
+        "start": 3,
+        "end": 3
+      },
+      "decision": "context_only",
+      "rationale": "Defines readership and the Assessor shorthand used later.",
+      "atom_count": 0
+    },
+    {
+      "section_id": "sec-m-purpose",
+      "parent_section_id": null,
+      "heading": "Purpose",
+      "group": "M",
+      "pdf_pages": {
+        "start": 4,
+        "end": 5
+      },
+      "printed_pages": {
+        "start": 3,
+        "end": 4
+      },
+      "decision": "included",
+      "rationale": "Contains one pre-test scope-boundary duty; surrounding aims and authorship context are explanatory.",
+      "atom_count": 1
+    },
+    {
+      "section_id": "sec-m-before-you-begin",
+      "parent_section_id": null,
+      "heading": "Before you begin",
+      "group": "M",
+      "pdf_pages": {
+        "start": 5,
+        "end": 5
+      },
+      "printed_pages": {
+        "start": 4,
+        "end": 4
+      },
+      "decision": "included",
+      "rationale": "Sets pre-assessment permissions, scope checks, sampling preparation, report preparation, issue resolution, and evidence retention.",
+      "atom_count": 10
+    },
+    {
+      "section_id": "sec-m-general-prerequisites",
+      "parent_section_id": null,
+      "heading": "General prerequisites for testing",
+      "group": "M",
+      "pdf_pages": {
+        "start": 6,
+        "end": 6
+      },
+      "printed_pages": {
+        "start": 5,
+        "end": 5
+      },
+      "decision": "included",
+      "rationale": "Defines shared testing resources and a conditional access-arrangement action.",
+      "atom_count": 5
+    },
+    {
+      "section_id": "sec-m-success-criteria",
+      "parent_section_id": null,
+      "heading": "Success criteria",
+      "group": "M",
+      "pdf_pages": {
+        "start": 6,
+        "end": 7
+      },
+      "printed_pages": {
+        "start": 5,
+        "end": 6
+      },
+      "decision": "context_only",
+      "rationale": "Parent heading groups operative result and advisory occurrences without adding its own provision.",
+      "atom_count": 0
+    },
+    {
+      "section_id": "sec-m-test-results",
+      "parent_section_id": "sec-m-success-criteria",
+      "heading": "Test results",
+      "group": "M",
+      "pdf_pages": {
+        "start": 6,
+        "end": 6
+      },
+      "printed_pages": {
+        "start": 5,
+        "end": 5
+      },
+      "decision": "included",
+      "rationale": "Requires a result for every case and sub-test.",
+      "atom_count": 1
+    },
+    {
+      "section_id": "sec-m-pass",
+      "parent_section_id": "sec-m-test-results",
+      "heading": "Pass",
+      "group": "M",
+      "pdf_pages": {
+        "start": 6,
+        "end": 6
+      },
+      "printed_pages": {
+        "start": 5,
+        "end": 5
+      },
+      "decision": "included",
+      "rationale": "Defines aggregate pass preconditions at case and assessment levels.",
+      "atom_count": 2
+    },
+    {
+      "section_id": "sec-m-fail",
+      "parent_section_id": "sec-m-test-results",
+      "heading": "Fail",
+      "group": "M",
+      "pdf_pages": {
+        "start": 6,
+        "end": 7
+      },
+      "printed_pages": {
+        "start": 5,
+        "end": 6
+      },
+      "decision": "included",
+      "rationale": "Defines fail propagation and recommends completing the full appraisal despite an earlier failure.",
+      "atom_count": 2
+    },
+    {
+      "section_id": "sec-m-advisory-notes",
+      "parent_section_id": "sec-m-success-criteria",
+      "heading": "Advisory notes",
+      "group": "M",
+      "pdf_pages": {
+        "start": 7,
+        "end": 7
+      },
+      "printed_pages": {
+        "start": 6,
+        "end": 6
+      },
+      "decision": "included",
+      "rationale": "Allows advisory notes and identifies two independent uses.",
+      "atom_count": 3
+    },
+    {
+      "section_id": "sec-t1-test-case",
+      "parent_section_id": null,
+      "heading": "Test case 1: Remote vulnerability assessment",
+      "group": "T1",
+      "pdf_pages": {
+        "start": 8,
+        "end": 10
+      },
+      "printed_pages": {
+        "start": 7,
+        "end": 9
+      },
+      "decision": "context_only",
+      "rationale": "Parent occurrence identifies the test case; operative material is assigned to child occurrences.",
+      "atom_count": 0
+    },
+    {
+      "section_id": "sec-t1-purpose",
+      "parent_section_id": "sec-t1-test-case",
+      "heading": "Test purpose",
+      "group": "T1",
+      "pdf_pages": {
+        "start": 8,
+        "end": 8
+      },
+      "printed_pages": {
+        "start": 7,
+        "end": 7
+      },
+      "decision": "context_only",
+      "rationale": "States the threat scenario being evaluated without an independent actor action.",
+      "atom_count": 0
+    },
+    {
+      "section_id": "sec-t1-description",
+      "parent_section_id": "sec-t1-test-case",
+      "heading": "Test description",
+      "group": "T1",
+      "pdf_pages": {
+        "start": 8,
+        "end": 9
+      },
+      "printed_pages": {
+        "start": 7,
+        "end": 8
+      },
+      "decision": "context_only",
+      "rationale": "Structural parent for prerequisites, the numbered sub-test, and its visual decision flow.",
+      "atom_count": 0
+    },
+    {
+      "section_id": "sec-t1-prerequisites",
+      "parent_section_id": "sec-t1-description",
+      "heading": "Prerequisites",
+      "group": "T1",
+      "pdf_pages": {
+        "start": 8,
+        "end": 8
+      },
+      "printed_pages": {
+        "start": 7,
+        "end": 7
+      },
+      "decision": "included",
+      "rationale": "Specifies scan preparation plus DNS and destination-safety guidance.",
+      "atom_count": 4
+    },
+    {
+      "section_id": "sec-t1-subtest-1-1",
+      "parent_section_id": "sec-t1-description",
+      "heading": "Sub-test 1.1",
+      "group": "T1",
+      "pdf_pages": {
+        "start": 8,
+        "end": 9
+      },
+      "printed_pages": {
+        "start": 7,
+        "end": 8
+      },
+      "decision": "included",
+      "rationale": "Defines address discovery, coverage, scanning, and per-service evaluation.",
+      "atom_count": 4
+    },
+    {
+      "section_id": "sec-t1-figure-1",
+      "parent_section_id": "sec-t1-subtest-1-1",
+      "heading": "Figure 1: Sub-test flow diagram for assessing services accessible through the firewall",
+      "group": "T1",
+      "pdf_pages": {
+        "start": 9,
+        "end": 9
+      },
+      "printed_pages": {
+        "start": 8,
+        "end": 8
+      },
+      "decision": "included",
+      "rationale": "Visual flow contains seven independent service result decisions not preserved by linear extraction.",
+      "atom_count": 7
+    },
+    {
+      "section_id": "sec-t1-interpretation",
+      "parent_section_id": "sec-t1-test-case",
+      "heading": "Interpreting the test case results",
+      "group": "T1",
+      "pdf_pages": {
+        "start": 10,
+        "end": 10
+      },
+      "printed_pages": {
+        "start": 9,
+        "end": 9
+      },
+      "decision": "included",
+      "rationale": "Defines aggregate case outcome from all service outcomes.",
+      "atom_count": 1
+    },
+    {
+      "section_id": "sec-s-sample-testing",
+      "parent_section_id": null,
+      "heading": "Sample testing",
+      "group": "S",
+      "pdf_pages": {
+        "start": 10,
+        "end": 10
+      },
+      "printed_pages": {
+        "start": 9,
+        "end": 9
+      },
+      "decision": "included",
+      "rationale": "Defines population, representativeness, sample calculation, account coverage, and retained evidence.",
+      "atom_count": 11
+    },
+    {
+      "section_id": "sec-t2-test-case",
+      "parent_section_id": null,
+      "heading": "Test case 2: Check patching, by authenticated vulnerability scan of devices",
+      "group": "T2",
+      "pdf_pages": {
+        "start": 11,
+        "end": 12
+      },
+      "printed_pages": {
+        "start": 10,
+        "end": 11
+      },
+      "decision": "included",
+      "rationale": "The unheaded line immediately under the case title fixes the tested device population.",
+      "atom_count": 1
+    },
+    {
+      "section_id": "sec-t2-purpose",
+      "parent_section_id": "sec-t2-test-case",
+      "heading": "Test purpose",
+      "group": "T2",
+      "pdf_pages": {
+        "start": 11,
+        "end": 11
+      },
+      "printed_pages": {
+        "start": 10,
+        "end": 10
+      },
+      "decision": "context_only",
+      "rationale": "Explains the vulnerability-fix objective and examples without adding a separate procedure.",
+      "atom_count": 0
+    },
+    {
+      "section_id": "sec-t2-description",
+      "parent_section_id": "sec-t2-test-case",
+      "heading": "Test description",
+      "group": "T2",
+      "pdf_pages": {
+        "start": 11,
+        "end": 12
+      },
+      "printed_pages": {
+        "start": 10,
+        "end": 11
+      },
+      "decision": "context_only",
+      "rationale": "Structural parent for the prerequisite, sub-test, and interpretation occurrences.",
+      "atom_count": 0
+    },
+    {
+      "section_id": "sec-t2-prerequisites",
+      "parent_section_id": "sec-t2-description",
+      "heading": "Prerequisites",
+      "group": "T2",
+      "pdf_pages": {
+        "start": 11,
+        "end": 11
+      },
+      "printed_pages": {
+        "start": 10,
+        "end": 10
+      },
+      "decision": "included",
+      "rationale": "Requires an approved vulnerability scanning tool in addition to shared prerequisites.",
+      "atom_count": 1
+    },
+    {
+      "section_id": "sec-t2-subtest-2-1",
+      "parent_section_id": "sec-t2-description",
+      "heading": "Sub-test 2.1",
+      "group": "T2",
+      "pdf_pages": {
+        "start": 11,
+        "end": 12
+      },
+      "printed_pages": {
+        "start": 10,
+        "end": 11
+      },
+      "decision": "included",
+      "rationale": "Defines device scans, three vulnerability criteria, age-based result logic, and a mitigation exclusion.",
+      "atom_count": 6
+    },
+    {
+      "section_id": "sec-t2-interpretation",
+      "parent_section_id": "sec-t2-test-case",
+      "heading": "Interpreting the test case results",
+      "group": "T2",
+      "pdf_pages": {
+        "start": 12,
+        "end": 12
+      },
+      "printed_pages": {
+        "start": 11,
+        "end": 11
+      },
+      "decision": "included",
+      "rationale": "Defines aggregate case outcome from its sub-tests.",
+      "atom_count": 1
+    },
+    {
+      "section_id": "sec-t3-test-case",
+      "parent_section_id": null,
+      "heading": "Test case 3: Check malware protection",
+      "group": "T3",
+      "pdf_pages": {
+        "start": 13,
+        "end": 16
+      },
+      "printed_pages": {
+        "start": 12,
+        "end": 15
+      },
+      "decision": "included",
+      "rationale": "The unheaded line after the title fixes the tested device population.",
+      "atom_count": 1
+    },
+    {
+      "section_id": "sec-t3-purpose",
+      "parent_section_id": "sec-t3-test-case",
+      "heading": "Test purpose",
+      "group": "T3",
+      "pdf_pages": {
+        "start": 13,
+        "end": 13
+      },
+      "printed_pages": {
+        "start": 12,
+        "end": 12
+      },
+      "decision": "context_only",
+      "rationale": "Describes the malware-protection objective without adding a separate test action.",
+      "atom_count": 0
+    },
+    {
+      "section_id": "sec-t3-description",
+      "parent_section_id": "sec-t3-test-case",
+      "heading": "Test description",
+      "group": "T3",
+      "pdf_pages": {
+        "start": 13,
+        "end": 16
+      },
+      "printed_pages": {
+        "start": 12,
+        "end": 15
+      },
+      "decision": "context_only",
+      "rationale": "Structural parent for prerequisites, selection, sub-tests, and interpretation.",
+      "atom_count": 0
+    },
+    {
+      "section_id": "sec-t3-prerequisites",
+      "parent_section_id": "sec-t3-description",
+      "heading": "Prerequisites",
+      "group": "T3",
+      "pdf_pages": {
+        "start": 13,
+        "end": 13
+      },
+      "printed_pages": {
+        "start": 12,
+        "end": 12
+      },
+      "decision": "included",
+      "rationale": "Requires identifying each sampled device's protection method and applying shared test-file prerequisites.",
+      "atom_count": 1
+    },
+    {
+      "section_id": "sec-t3-select-subtests",
+      "parent_section_id": "sec-t3-description",
+      "heading": "Selecting appropriate sub-tests",
+      "group": "T3",
+      "pdf_pages": {
+        "start": 13,
+        "end": 13
+      },
+      "printed_pages": {
+        "start": 12,
+        "end": 12
+      },
+      "decision": "included",
+      "rationale": "Directs method-appropriate sub-test selection.",
+      "atom_count": 1
+    },
+    {
+      "section_id": "sec-t3-subtest-3-1",
+      "parent_section_id": "sec-t3-description",
+      "heading": "Sub-test 3.1 (for devices that use anti-malware software)",
+      "group": "T3",
+      "pdf_pages": {
+        "start": 13,
+        "end": 13
+      },
+      "printed_pages": {
+        "start": 12,
+        "end": 12
+      },
+      "decision": "included",
+      "rationale": "Defines applicability, a basic running-state check, and the Assessor's choice of test-file or manual method.",
+      "atom_count": 3
+    },
+    {
+      "section_id": "sec-t3-subtest-3-1-1",
+      "parent_section_id": "sec-t3-subtest-3-1",
+      "heading": "Sub-test 3.1.1 (Check effectiveness of defences against malware delivered by email)",
+      "group": "T3",
+      "pdf_pages": {
+        "start": 14,
+        "end": 14
+      },
+      "printed_pages": {
+        "start": 13,
+        "end": 13
+      },
+      "decision": "included",
+      "rationale": "Defines email applicability, baseline and test-message procedures, evidence capture, and three-way outcome logic.",
+      "atom_count": 11
+    },
+    {
+      "section_id": "sec-t3-subtest-3-1-2",
+      "parent_section_id": "sec-t3-subtest-3-1",
+      "heading": "Sub-test 3.1.2 (Check effectiveness of defences against malware delivered by browser)",
+      "group": "T3",
+      "pdf_pages": {
+        "start": 14,
+        "end": 15
+      },
+      "printed_pages": {
+        "start": 13,
+        "end": 14
+      },
+      "decision": "included",
+      "rationale": "Defines browser applicability, representative filtering guidance, test-file selection, and independent pass or fail branches.",
+      "atom_count": 8
+    },
+    {
+      "section_id": "sec-t3-subtest-3-1-3",
+      "parent_section_id": "sec-t3-subtest-3-1",
+      "heading": "Sub-test 3.1.3 (Manual Checks for devices that use anti-malware software)",
+      "group": "T3",
+      "pdf_pages": {
+        "start": 15,
+        "end": 15
+      },
+      "printed_pages": {
+        "start": 14,
+        "end": 14
+      },
+      "decision": "included",
+      "rationale": "Defines fallback manual-check applicability, two checks, and their conjunctive result rule.",
+      "atom_count": 4
+    },
+    {
+      "section_id": "sec-t3-subtest-3-2",
+      "parent_section_id": "sec-t3-description",
+      "heading": "Sub-test 3.2 (for devices that use certificate-based application allow listing)",
+      "group": "T3",
+      "pdf_pages": {
+        "start": 16,
+        "end": 16
+      },
+      "printed_pages": {
+        "start": 15,
+        "end": 15
+      },
+      "decision": "included",
+      "rationale": "Defines allow-listing applicability, five independently checkable properties, and aggregate sub-test outcome.",
+      "atom_count": 7
+    },
+    {
+      "section_id": "sec-t3-interpretation",
+      "parent_section_id": "sec-t3-test-case",
+      "heading": "Interpreting the test case results",
+      "group": "T3",
+      "pdf_pages": {
+        "start": 16,
+        "end": 16
+      },
+      "printed_pages": {
+        "start": 15,
+        "end": 15
+      },
+      "decision": "included",
+      "rationale": "Defines case outcome according to the protection method actually used.",
+      "atom_count": 1
+    },
+    {
+      "section_id": "sec-t4-test-case",
+      "parent_section_id": null,
+      "heading": "Test case 4: Check multi-factor authentication configuration",
+      "group": "T4",
+      "pdf_pages": {
+        "start": 17,
+        "end": 18
+      },
+      "printed_pages": {
+        "start": 16,
+        "end": 17
+      },
+      "decision": "included",
+      "rationale": "The unheaded line after the case title applies the test to all cloud services.",
+      "atom_count": 1
+    },
+    {
+      "section_id": "sec-t4-purpose",
+      "parent_section_id": "sec-t4-test-case",
+      "heading": "Test purpose",
+      "group": "T4",
+      "pdf_pages": {
+        "start": 17,
+        "end": 17
+      },
+      "printed_pages": {
+        "start": 16,
+        "end": 16
+      },
+      "decision": "context_only",
+      "rationale": "States the MFA configuration objective without adding an independent procedure.",
+      "atom_count": 0
+    },
+    {
+      "section_id": "sec-t4-description",
+      "parent_section_id": "sec-t4-test-case",
+      "heading": "Test description",
+      "group": "T4",
+      "pdf_pages": {
+        "start": 17,
+        "end": 17
+      },
+      "printed_pages": {
+        "start": 16,
+        "end": 16
+      },
+      "decision": "included",
+      "rationale": "Defines account-based login procedure, user and administrator coverage, and shared-authentication de-duplication.",
+      "atom_count": 3
+    },
+    {
+      "section_id": "sec-t4-case-4-1",
+      "parent_section_id": "sec-t4-test-case",
+      "heading": "Test case 4.1",
+      "group": "T4",
+      "pdf_pages": {
+        "start": 17,
+        "end": 17
+      },
+      "printed_pages": {
+        "start": 16,
+        "end": 16
+      },
+      "decision": "included",
+      "rationale": "Defines primary and fallback observation methods, repetition, and MFA result logic.",
+      "atom_count": 4
+    },
+    {
+      "section_id": "sec-t4-interpretation",
+      "parent_section_id": "sec-t4-test-case",
+      "heading": "Interpreting the test case results",
+      "group": "T4",
+      "pdf_pages": {
+        "start": 18,
+        "end": 18
+      },
+      "printed_pages": {
+        "start": 17,
+        "end": 17
+      },
+      "decision": "included",
+      "rationale": "Defines aggregate case outcome from all sub-tests.",
+      "atom_count": 1
+    },
+    {
+      "section_id": "sec-t5-test-case",
+      "parent_section_id": null,
+      "heading": "Test case 5: Check account separation",
+      "group": "T5",
+      "pdf_pages": {
+        "start": 19,
+        "end": 19
+      },
+      "printed_pages": {
+        "start": 18,
+        "end": 18
+      },
+      "decision": "included",
+      "rationale": "The unheaded line after the case title fixes the device and cloud population.",
+      "atom_count": 1
+    },
+    {
+      "section_id": "sec-t5-purpose",
+      "parent_section_id": "sec-t5-test-case",
+      "heading": "Test purpose",
+      "group": "T5",
+      "pdf_pages": {
+        "start": 19,
+        "end": 19
+      },
+      "printed_pages": {
+        "start": 18,
+        "end": 18
+      },
+      "decision": "context_only",
+      "rationale": "States the privilege-separation objective without adding an independent action.",
+      "atom_count": 0
+    },
+    {
+      "section_id": "sec-t5-description",
+      "parent_section_id": "sec-t5-test-case",
+      "heading": "Test description",
+      "group": "T5",
+      "pdf_pages": {
+        "start": 19,
+        "end": 19
+      },
+      "printed_pages": {
+        "start": 18,
+        "end": 18
+      },
+      "decision": "included",
+      "rationale": "Defines the standard-account attempt and complete sampled-device coverage.",
+      "atom_count": 2
+    },
+    {
+      "section_id": "sec-t5-case-5-1",
+      "parent_section_id": "sec-t5-test-case",
+      "heading": "Test case 5.1",
+      "group": "T5",
+      "pdf_pages": {
+        "start": 19,
+        "end": 19
+      },
+      "printed_pages": {
+        "start": 18,
+        "end": 18
+      },
+      "decision": "included",
+      "rationale": "Defines observation, repetition, and the conjunctive login/process outcome.",
+      "atom_count": 3
+    },
+    {
+      "section_id": "sec-t5-interpretation",
+      "parent_section_id": "sec-t5-test-case",
+      "heading": "Interpreting the test case results",
+      "group": "T5",
+      "pdf_pages": {
+        "start": 19,
+        "end": 19
+      },
+      "printed_pages": {
+        "start": 18,
+        "end": 18
+      },
+      "decision": "included",
+      "rationale": "Defines aggregate case outcome across all sampled devices.",
+      "atom_count": 1
+    },
+    {
+      "section_id": "sec-c-conclude",
+      "parent_section_id": null,
+      "heading": "Conclude the assessment",
+      "group": "C",
+      "pdf_pages": {
+        "start": 20,
+        "end": 20
+      },
+      "printed_pages": {
+        "start": 19,
+        "end": 19
+      },
+      "decision": "included",
+      "rationale": "Defines reporting, inability-to-conclude handling, deferral discretion, aggregate outcomes, and certificate actions.",
+      "atom_count": 10
+    },
+    {
+      "section_id": "sec-c-note-deferral",
+      "parent_section_id": "sec-c-conclude",
+      "heading": "Note for Delivery Partner",
+      "group": "C",
+      "pdf_pages": {
+        "start": 20,
+        "end": 20
+      },
+      "printed_pages": {
+        "start": 19,
+        "end": 19
+      },
+      "decision": "included",
+      "rationale": "First repeated note recommends a maximum deferral interval.",
+      "atom_count": 1
+    },
+    {
+      "section_id": "sec-c-note-exception",
+      "parent_section_id": "sec-c-conclude",
+      "heading": "Note for Delivery Partner",
+      "group": "C",
+      "pdf_pages": {
+        "start": 20,
+        "end": 20
+      },
+      "printed_pages": {
+        "start": 19,
+        "end": 19
+      },
+      "decision": "included",
+      "rationale": "Second repeated note supplies two conjunctive predicates for discretionary treatment of minor failures.",
+      "atom_count": 2
+    },
+    {
+      "section_id": "sec-a-appendix",
+      "parent_section_id": null,
+      "heading": "Appendix A: Vulnerability scanning",
+      "group": "A",
+      "pdf_pages": {
+        "start": 21,
+        "end": 21
+      },
+      "printed_pages": {
+        "start": 20,
+        "end": 20
+      },
+      "decision": "included",
+      "rationale": "Includes tool approval, address coverage, and Delivery Partner-limited port scope; introductory threat rationale is context.",
+      "atom_count": 3
+    },
+    {
+      "section_id": "sec-a-note-delivery-partner",
+      "parent_section_id": "sec-a-appendix",
+      "heading": "Note for Delivery Partner",
+      "group": "A",
+      "pdf_pages": {
+        "start": 21,
+        "end": 21
+      },
+      "printed_pages": {
+        "start": 20,
+        "end": 20
+      },
+      "decision": "included",
+      "rationale": "Recommends providing the Assessor a TCP and UDP port list.",
+      "atom_count": 1
+    },
+    {
+      "section_id": "sec-b-appendix",
+      "parent_section_id": null,
+      "heading": "Appendix B: Types of test file",
+      "group": "B",
+      "pdf_pages": {
+        "start": 22,
+        "end": 23
+      },
+      "printed_pages": {
+        "start": 21,
+        "end": 22
+      },
+      "decision": "included",
+      "rationale": "Assigns test-file responsibilities, result expectations, subset checks, required file populations, and detection guidance.",
+      "atom_count": 11
+    },
+    {
+      "section_id": "sec-b-note-delivery-partner",
+      "parent_section_id": "sec-b-appendix",
+      "heading": "Note for Delivery Partner",
+      "group": "B",
+      "pdf_pages": {
+        "start": 22,
+        "end": 22
+      },
+      "printed_pages": {
+        "start": 21,
+        "end": 21
+      },
+      "decision": "included",
+      "rationale": "Assigns representative-set delivery and recommends applicant-specific subset tailoring.",
+      "atom_count": 3
+    },
+    {
+      "section_id": "sec-m-rights-notice",
+      "parent_section_id": null,
+      "heading": "Rights and attribution notice",
+      "group": "M",
+      "pdf_pages": {
+        "start": 24,
+        "end": 24
+      },
+      "printed_pages": null,
+      "decision": "context_only",
+      "rationale": "Standalone publication-level copyright, licence, branding, and contact material is outside Appendix B and contains no assessment provision.",
+      "atom_count": 0
+    }
+  ],
+  "counts": {
+    "total": 144,
+    "by_group": {
+      "M": 24,
+      "T1": 16,
+      "S": 11,
+      "T2": 9,
+      "T3": 37,
+      "T4": 9,
+      "T5": 7,
+      "C": 13,
+      "A": 4,
+      "B": 14
+    }
+  },
+  "assurance_limits": {
+    "scope_boundary": "The inventory is complete only for the pinned public NCSC PDF, not for the operational scheme or another publication.",
+    "population_and_sample_boundary": "Results apply to the tested populations and samples and do not establish assurance for every untested device, account, service, or configuration.",
+    "assessment_date_boundary": "Assessment outcomes reflect the conditions examined on the assessment date rather than later conditions.",
+    "evidence_date_boundary": "Evidence supports only the period and conditions it records and does not establish later implementation state.",
+    "tool_and_provenance_boundary": "Results depend on the approved tools, methods, source evidence, and provenance used for the assessment.",
+    "point_in_time_boundary": "A result or certificate is sampled point-in-time assurance rather than continuous assurance.",
+    "discretion_owner": "Delivery Partner",
+    "discretionary_exception": {
+      "owner": "Delivery Partner",
+      "predicates": [
+        {
+          "predicate_id": "marginal-deviation-under-five-percent",
+          "meaning": "a marginal deviation in less than 5% of performed tests"
+        },
+        {
+          "predicate_id": "no-wider-process-failure-evidence",
+          "meaning": "no evidence of wider failure of Applicant cybersecurity processes"
+        }
+      ],
+      "all_predicates_required": true,
+      "locator": {
+        "pdf_page": 20,
+        "printed_page": 19,
+        "section": "Note for Delivery Partner",
+        "detail": "second repeated note, two numbered exception predicates"
+      },
+      "automatic_pass": false,
+      "is_95_percent_score": false
+    },
+    "prohibited_inferences": [
+      "certification",
+      "compliance",
+      "equivalence",
+      "endorsement",
+      "predictive_sufficiency",
+      "full_population_assurance",
+      "continuous_assurance",
+      "current_scheme_completeness"
+    ]
+  },
+  "provisions": [
+    {
+      "record_id": "cepts32-m-001",
+      "external_provision_id": "CEPTS3.2-M-001",
+      "section_id": "sec-m-purpose",
+      "group": "M",
+      "kind": "prerequisite",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The direct second-person obligation assigns the Assessor the pre-test agreement action; the Applicant is the counterparty.",
+      "source_assigned_label": null,
+      "summary": "Settle the assessment boundary with the Applicant before tests begin.",
+      "locator": {
+        "pdf_page": 4,
+        "printed_page": 3,
+        "section": "Purpose",
+        "detail": "final operative paragraph"
+      }
+    },
+    {
+      "record_id": "cepts32-m-002",
+      "external_provision_id": "CEPTS3.2-M-002",
+      "section_id": "sec-m-before-you-begin",
+      "group": "M",
+      "kind": "prerequisite",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The section addresses the Assessor and places each listed precondition under a mandatory pre-test instruction.",
+      "source_assigned_label": null,
+      "summary": "Secure suitable written authorization from the Applicant ahead of testing.",
+      "locator": {
+        "pdf_page": 5,
+        "printed_page": 4,
+        "section": "Before you begin",
+        "detail": "pre-test list, permission item"
+      }
+    },
+    {
+      "record_id": "cepts32-m-003",
+      "external_provision_id": "CEPTS3.2-M-003",
+      "section_id": "sec-m-before-you-begin",
+      "group": "M",
+      "kind": "prerequisite",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "Mandatory pre-test list directed to the Assessor.",
+      "source_assigned_label": null,
+      "summary": "Confirm the Plus assessment scope matches the scope on the valid self-assessment certificate.",
+      "locator": {
+        "pdf_page": 5,
+        "printed_page": 4,
+        "section": "Before you begin",
+        "detail": "pre-test list, certificate-scope item"
+      }
+    },
+    {
+      "record_id": "cepts32-m-004",
+      "external_provision_id": "CEPTS3.2-M-004",
+      "section_id": "sec-m-before-you-begin",
+      "group": "M",
+      "kind": "prerequisite",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "Mandatory pre-test list directed to the Assessor.",
+      "source_assigned_label": null,
+      "summary": "Technically verify that the Plus boundary corresponds to the assessed environment.",
+      "locator": {
+        "pdf_page": 5,
+        "printed_page": 4,
+        "section": "Before you begin",
+        "detail": "pre-test list, technical scope item"
+      }
+    },
+    {
+      "record_id": "cepts32-m-005",
+      "external_provision_id": "CEPTS3.2-M-005",
+      "section_id": "sec-m-before-you-begin",
+      "group": "M",
+      "kind": "prerequisite",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "Mandatory pre-test list directed to the Assessor.",
+      "source_assigned_label": null,
+      "summary": "Where the declared scope is less than the whole organisation, technically verify effective segregation of its subsets.",
+      "locator": {
+        "pdf_page": 5,
+        "printed_page": 4,
+        "section": "Before you begin",
+        "detail": "pre-test list, subset-segregation item"
+      }
+    },
+    {
+      "record_id": "cepts32-m-006",
+      "external_provision_id": "CEPTS3.2-M-006",
+      "section_id": "sec-m-before-you-begin",
+      "group": "M",
+      "kind": "prerequisite",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "Mandatory pre-test list directed to the Assessor.",
+      "source_assigned_label": null,
+      "summary": "Identify the samples that will be tested.",
+      "locator": {
+        "pdf_page": 5,
+        "printed_page": 4,
+        "section": "Before you begin",
+        "detail": "pre-test list, sampling item"
+      }
+    },
+    {
+      "record_id": "cepts32-m-007",
+      "external_provision_id": "CEPTS3.2-M-007",
+      "section_id": "sec-m-before-you-begin",
+      "group": "M",
+      "kind": "prerequisite",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "Mandatory pre-test list directed to the Assessor.",
+      "source_assigned_label": null,
+      "summary": "Determine when the identified sample testing will occur.",
+      "locator": {
+        "pdf_page": 5,
+        "printed_page": 4,
+        "section": "Before you begin",
+        "detail": "pre-test list, scheduling portion"
+      }
+    },
+    {
+      "record_id": "cepts32-m-008",
+      "external_provision_id": "CEPTS3.2-M-008",
+      "section_id": "sec-m-before-you-begin",
+      "group": "M",
+      "kind": "prerequisite",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "Mandatory pre-test list directed to the Assessor.",
+      "source_assigned_label": null,
+      "summary": "Have the correct report template available for the Applicant's assessment report.",
+      "locator": {
+        "pdf_page": 5,
+        "printed_page": 4,
+        "section": "Before you begin",
+        "detail": "pre-test list, report-template item"
+      }
+    },
+    {
+      "record_id": "cepts32-m-009",
+      "external_provision_id": "CEPTS3.2-M-009",
+      "section_id": "sec-m-before-you-begin",
+      "group": "M",
+      "kind": "procedure_step",
+      "actors": [
+        "Delivery Partner"
+      ],
+      "actor_basis": "The report-template item expressly assigns control of the report format to the Delivery Partner.",
+      "source_assigned_label": null,
+      "summary": "Set the format used for the Applicant assessment report.",
+      "locator": {
+        "pdf_page": 5,
+        "printed_page": 4,
+        "section": "Before you begin",
+        "detail": "report-template item, format assignment"
+      }
+    },
+    {
+      "record_id": "cepts32-m-010",
+      "external_provision_id": "CEPTS3.2-M-010",
+      "section_id": "sec-m-before-you-begin",
+      "group": "M",
+      "kind": "prerequisite",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The passive mandatory sentence appears in the Assessor-directed section and governs commencement.",
+      "source_assigned_label": null,
+      "summary": "Resolve issues found during the listed pre-test checks before Plus testing commences.",
+      "locator": {
+        "pdf_page": 5,
+        "printed_page": 4,
+        "section": "Before you begin",
+        "detail": "paragraph following pre-test list"
+      }
+    },
+    {
+      "record_id": "cepts32-m-011",
+      "external_provision_id": "CEPTS3.2-M-011",
+      "section_id": "sec-m-before-you-begin",
+      "group": "M",
+      "kind": "evidence_retention",
+      "actors": [
+        "Certifying Body"
+      ],
+      "actor_basis": "The retention sentence expressly names the Certifying Body.",
+      "source_assigned_label": null,
+      "summary": "Retain all evidence from the pre-test verifications for at least the certificate's lifetime.",
+      "locator": {
+        "pdf_page": 5,
+        "printed_page": 4,
+        "section": "Before you begin",
+        "detail": "closing retention paragraph"
+      }
+    },
+    {
+      "record_id": "cepts32-m-012",
+      "external_provision_id": "CEPTS3.2-M-012",
+      "section_id": "sec-m-general-prerequisites",
+      "group": "M",
+      "kind": "prerequisite",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The prerequisite list addresses the Assessor in the second person.",
+      "source_assigned_label": null,
+      "summary": "Have an external, unfiltered, non-deny-listed email system able to send arbitrary messages to an Applicant account.",
+      "locator": {
+        "pdf_page": 6,
+        "printed_page": 5,
+        "section": "General prerequisites for testing",
+        "detail": "first prerequisite item"
+      }
+    },
+    {
+      "record_id": "cepts32-m-013",
+      "external_provision_id": "CEPTS3.2-M-013",
+      "section_id": "sec-m-general-prerequisites",
+      "group": "M",
+      "kind": "prerequisite",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The prerequisite addresses the Assessor; Certification Body ownership describes the required host site rather than a separate duty.",
+      "source_assigned_label": null,
+      "summary": "Use assessment files on a Certification Body-owned external site.",
+      "locator": {
+        "pdf_page": 6,
+        "printed_page": 5,
+        "section": "General prerequisites for testing",
+        "detail": "second prerequisite item, hosting requirement"
+      }
+    },
+    {
+      "record_id": "cepts32-m-014",
+      "external_provision_id": "CEPTS3.2-M-014",
+      "section_id": "sec-m-general-prerequisites",
+      "group": "M",
+      "kind": "recommendation",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The conditional second-person clause authorizes the Assessor to request access arrangements.",
+      "source_assigned_label": null,
+      "summary": "When necessary, ask the Applicant to enable reachability of the external assessment-file site, including a suitable allow-list entry.",
+      "locator": {
+        "pdf_page": 6,
+        "printed_page": 5,
+        "section": "General prerequisites for testing",
+        "detail": "second prerequisite item, conditional access clause"
+      }
+    },
+    {
+      "record_id": "cepts32-m-015",
+      "external_provision_id": "CEPTS3.2-M-015",
+      "section_id": "sec-m-general-prerequisites",
+      "group": "M",
+      "kind": "prerequisite",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The prerequisite list addresses the Assessor.",
+      "source_assigned_label": null,
+      "summary": "Have users with credentials suitable for performing the tests.",
+      "locator": {
+        "pdf_page": 6,
+        "printed_page": 5,
+        "section": "General prerequisites for testing",
+        "detail": "third prerequisite item"
+      }
+    },
+    {
+      "record_id": "cepts32-m-016",
+      "external_provision_id": "CEPTS3.2-M-016",
+      "section_id": "sec-m-general-prerequisites",
+      "group": "M",
+      "kind": "prerequisite",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The prerequisite list addresses the Assessor.",
+      "source_assigned_label": null,
+      "summary": "Ensure sampled in-scope user devices have functioning mail clients and addresses plus web browsers.",
+      "locator": {
+        "pdf_page": 6,
+        "printed_page": 5,
+        "section": "General prerequisites for testing",
+        "detail": "fourth prerequisite item"
+      }
+    },
+    {
+      "record_id": "cepts32-m-017",
+      "external_provision_id": "CEPTS3.2-M-017",
+      "section_id": "sec-m-test-results",
+      "group": "M",
+      "kind": "procedure_step",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "A mandatory second-person instruction assigns result marking to the Assessor.",
+      "source_assigned_label": null,
+      "summary": "Assign an outcome to every test case and every sub-test.",
+      "locator": {
+        "pdf_page": 6,
+        "printed_page": 5,
+        "section": "Test results",
+        "detail": "opening result-marking instruction"
+      }
+    },
+    {
+      "record_id": "cepts32-m-018",
+      "external_provision_id": "CEPTS3.2-M-018",
+      "section_id": "sec-m-pass",
+      "group": "M",
+      "kind": "result_rule",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The pass rule directly constrains the Assessor's result marking.",
+      "source_assigned_label": null,
+      "summary": "Mark a test case as passing only when each of its sub-tests passes, except where this specification states an exception.",
+      "locator": {
+        "pdf_page": 6,
+        "printed_page": 5,
+        "section": "Pass",
+        "detail": "first aggregate pass item"
+      }
+    },
+    {
+      "record_id": "cepts32-m-019",
+      "external_provision_id": "CEPTS3.2-M-019",
+      "section_id": "sec-m-pass",
+      "group": "M",
+      "kind": "result_rule",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The pass rule directly constrains the Assessor's overall result marking.",
+      "source_assigned_label": null,
+      "summary": "Mark the overall assessment as passing only when every test case passes.",
+      "locator": {
+        "pdf_page": 6,
+        "printed_page": 5,
+        "section": "Pass",
+        "detail": "second aggregate pass item"
+      }
+    },
+    {
+      "record_id": "cepts32-m-020",
+      "external_provision_id": "CEPTS3.2-M-020",
+      "section_id": "sec-m-fail",
+      "group": "M",
+      "kind": "result_rule",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The fail rule directly instructs the Assessor how to propagate a sub-test failure.",
+      "source_assigned_label": null,
+      "summary": "Absent a stated exception, propagate a sub-test failure to its parent case and overall outcome.",
+      "locator": {
+        "pdf_page": 6,
+        "printed_page": 5,
+        "section": "Fail",
+        "detail": "failure propagation items"
+      }
+    },
+    {
+      "record_id": "cepts32-m-021",
+      "external_provision_id": "CEPTS3.2-M-021",
+      "section_id": "sec-m-fail",
+      "group": "M",
+      "kind": "recommendation",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "A second-person recommendation follows the fail rules.",
+      "source_assigned_label": null,
+      "summary": "Complete the assessment despite an earlier failure so the Applicant receives a full appraisal.",
+      "locator": {
+        "pdf_page": 7,
+        "printed_page": 6,
+        "section": "Fail",
+        "detail": "continuation paragraph before Advisory notes"
+      }
+    },
+    {
+      "record_id": "cepts32-m-022",
+      "external_provision_id": "CEPTS3.2-M-022",
+      "section_id": "sec-m-advisory-notes",
+      "group": "M",
+      "kind": "recommendation",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The section authorizes the Assessor, addressed as the second person, to add a note.",
+      "source_assigned_label": null,
+      "summary": "Optionally attach an advisory note to any result.",
+      "locator": {
+        "pdf_page": 7,
+        "printed_page": 6,
+        "section": "Advisory notes",
+        "detail": "opening authorization"
+      }
+    },
+    {
+      "record_id": "cepts32-m-023",
+      "external_provision_id": "CEPTS3.2-M-023",
+      "section_id": "sec-m-advisory-notes",
+      "group": "M",
+      "kind": "recommendation",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The follow-on instruction directs the Assessor to use advisory notes for stated purposes.",
+      "source_assigned_label": null,
+      "summary": "Use advisory notes to identify practical cybersecurity improvements for the Applicant.",
+      "locator": {
+        "pdf_page": 7,
+        "printed_page": 6,
+        "section": "Advisory notes",
+        "detail": "first stated use"
+      }
+    },
+    {
+      "record_id": "cepts32-m-024",
+      "external_provision_id": "CEPTS3.2-M-024",
+      "section_id": "sec-m-advisory-notes",
+      "group": "M",
+      "kind": "recommendation",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The follow-on instruction directs the Assessor to use advisory notes for stated purposes.",
+      "source_assigned_label": null,
+      "summary": "Use advisory notes to explain the basis for particular test decisions.",
+      "locator": {
+        "pdf_page": 7,
+        "printed_page": 6,
+        "section": "Advisory notes",
+        "detail": "second stated use"
+      }
+    },
+    {
+      "record_id": "cepts32-t1-001",
+      "external_provision_id": "CEPTS3.2-T1-001",
+      "section_id": "sec-t1-prerequisites",
+      "group": "T1",
+      "kind": "prerequisite",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The prerequisite list directly addresses the Assessor.",
+      "source_assigned_label": null,
+      "summary": "Use a Delivery Partner-approved vulnerability scanner.",
+      "locator": {
+        "pdf_page": 8,
+        "printed_page": 7,
+        "section": "Prerequisites",
+        "detail": "first prerequisite item"
+      }
+    },
+    {
+      "record_id": "cepts32-t1-002",
+      "external_provision_id": "CEPTS3.2-T1-002",
+      "section_id": "sec-t1-prerequisites",
+      "group": "T1",
+      "kind": "prerequisite",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The prerequisite list directly addresses the Assessor.",
+      "source_assigned_label": null,
+      "summary": "Identify the IP addresses that will be scanned.",
+      "locator": {
+        "pdf_page": 8,
+        "printed_page": 7,
+        "section": "Prerequisites",
+        "detail": "second prerequisite item"
+      }
+    },
+    {
+      "record_id": "cepts32-t1-003",
+      "external_provision_id": "CEPTS3.2-T1-003",
+      "section_id": "sec-t1-prerequisites",
+      "group": "T1",
+      "kind": "recommendation",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The optional scope method appears in the Assessor-directed prerequisite occurrence.",
+      "source_assigned_label": null,
+      "summary": "For a dynamically addressed Internet connection, optionally define scope using appropriate DNS entries.",
+      "locator": {
+        "pdf_page": 8,
+        "printed_page": 7,
+        "section": "Prerequisites",
+        "detail": "dynamic-address paragraph"
+      }
+    },
+    {
+      "record_id": "cepts32-t1-004",
+      "external_provision_id": "CEPTS3.2-T1-004",
+      "section_id": "sec-t1-prerequisites",
+      "group": "T1",
+      "kind": "recommendation",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "A cautionary second-person instruction assigns destination verification to the Assessor.",
+      "source_assigned_label": null,
+      "summary": "Check dynamic-address arrangements so assessment traffic is not sent to an unintended destination, including through carrier-grade NAT.",
+      "locator": {
+        "pdf_page": 8,
+        "printed_page": 7,
+        "section": "Prerequisites",
+        "detail": "address-safety paragraph"
+      }
+    },
+    {
+      "record_id": "cepts32-t1-005",
+      "external_provision_id": "CEPTS3.2-T1-005",
+      "section_id": "sec-t1-subtest-1-1",
+      "group": "T1",
+      "kind": "procedure_step",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The numbered sub-test directly instructs the Assessor.",
+      "source_assigned_label": "Sub-test 1.1",
+      "summary": "Identify every IP address currently used by the Applicant.",
+      "locator": {
+        "pdf_page": 8,
+        "printed_page": 7,
+        "section": "Test case 1",
+        "detail": "address-discovery action"
+      }
+    },
+    {
+      "record_id": "cepts32-t1-006",
+      "external_provision_id": "CEPTS3.2-T1-006",
+      "section_id": "sec-t1-subtest-1-1",
+      "group": "T1",
+      "kind": "applicability",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The first numbered step expressly extends the identified-address population.",
+      "source_assigned_label": "Sub-test 1.1",
+      "summary": "Include Applicant IaaS addresses in the discovered address population where IaaS is used.",
+      "locator": {
+        "pdf_page": 8,
+        "printed_page": 7,
+        "section": "Test case 1",
+        "detail": "IaaS coverage clause"
+      }
+    },
+    {
+      "record_id": "cepts32-t1-007",
+      "external_provision_id": "CEPTS3.2-T1-007",
+      "section_id": "sec-t1-subtest-1-1",
+      "group": "T1",
+      "kind": "procedure_step",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The second numbered step directly instructs the Assessor.",
+      "source_assigned_label": "Sub-test 1.1",
+      "summary": "Scan every identified address over the recommended TCP and UDP port set.",
+      "locator": {
+        "pdf_page": 8,
+        "printed_page": 7,
+        "section": "Test case 1",
+        "detail": "address-scan action"
+      }
+    },
+    {
+      "record_id": "cepts32-t1-008",
+      "external_provision_id": "CEPTS3.2-T1-008",
+      "section_id": "sec-t1-subtest-1-1",
+      "group": "T1",
+      "kind": "procedure_step",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The third numbered step directly assigns per-service flow evaluation to the Assessor.",
+      "source_assigned_label": "Sub-test 1.1",
+      "summary": "Apply Figure 1 to every discovered Internet-accessible service to determine its result.",
+      "locator": {
+        "pdf_page": 8,
+        "printed_page": 7,
+        "section": "Test case 1",
+        "detail": "per-service flow-evaluation action continuing onto the next page"
+      }
+    },
+    {
+      "record_id": "cepts32-t1-009",
+      "external_provision_id": "CEPTS3.2-T1-009",
+      "section_id": "sec-t1-figure-1",
+      "group": "T1",
+      "kind": "decision_rule",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "Figure 1 is the decision procedure invoked by the Assessor-directed third sub-test step.",
+      "source_assigned_label": "Figure 1 decision 1",
+      "summary": "Fail a service containing a high-risk vulnerability with a score of at least 7.0; otherwise continue to decision 2.",
+      "locator": {
+        "pdf_page": 9,
+        "printed_page": 8,
+        "section": "Figure 1",
+        "detail": "decision 1 and its Yes/No branches"
+      }
+    },
+    {
+      "record_id": "cepts32-t1-010",
+      "external_provision_id": "CEPTS3.2-T1-010",
+      "section_id": "sec-t1-figure-1",
+      "group": "T1",
+      "kind": "decision_rule",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "Figure 1 is the decision procedure invoked by the Assessor-directed third sub-test step.",
+      "source_assigned_label": "Figure 1 decision 2",
+      "summary": "Pass a service that exposes only information that is both public and read-only; otherwise continue to decision 3.",
+      "locator": {
+        "pdf_page": 9,
+        "printed_page": 8,
+        "section": "Figure 1",
+        "detail": "decision 2 and its Yes/No branches"
+      }
+    },
+    {
+      "record_id": "cepts32-t1-011",
+      "external_provision_id": "CEPTS3.2-T1-011",
+      "section_id": "sec-t1-figure-1",
+      "group": "T1",
+      "kind": "decision_rule",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "Figure 1 is the decision procedure invoked by the Assessor-directed third sub-test step.",
+      "source_assigned_label": "Figure 1 decision 3",
+      "summary": "Fail a service that does not require user authentication; otherwise continue to decision 4.",
+      "locator": {
+        "pdf_page": 9,
+        "printed_page": 8,
+        "section": "Figure 1",
+        "detail": "decision 3 and its No/Yes branches"
+      }
+    },
+    {
+      "record_id": "cepts32-t1-012",
+      "external_provision_id": "CEPTS3.2-T1-012",
+      "section_id": "sec-t1-figure-1",
+      "group": "T1",
+      "kind": "decision_rule",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "Figure 1 is the decision procedure invoked by the Assessor-directed third sub-test step.",
+      "source_assigned_label": "Figure 1 decision 4",
+      "summary": "Pass a service whose authentication uses at least two factors; otherwise continue to decision 5.",
+      "locator": {
+        "pdf_page": 9,
+        "printed_page": 8,
+        "section": "Figure 1",
+        "detail": "decision 4 and its Yes/No branches"
+      }
+    },
+    {
+      "record_id": "cepts32-t1-013",
+      "external_provision_id": "CEPTS3.2-T1-013",
+      "section_id": "sec-t1-figure-1",
+      "group": "T1",
+      "kind": "decision_rule",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "Figure 1 is the decision procedure invoked by the Assessor-directed third sub-test step.",
+      "source_assigned_label": "Figure 1 decision 5",
+      "summary": "Fail a service where default passwords remain unchanged; otherwise continue to decision 6.",
+      "locator": {
+        "pdf_page": 9,
+        "printed_page": 8,
+        "section": "Figure 1",
+        "detail": "decision 5 and its No/Yes branches"
+      }
+    },
+    {
+      "record_id": "cepts32-t1-014",
+      "external_provision_id": "CEPTS3.2-T1-014",
+      "section_id": "sec-t1-figure-1",
+      "group": "T1",
+      "kind": "decision_rule",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "Figure 1 is the decision procedure invoked by the Assessor-directed third sub-test step.",
+      "source_assigned_label": "Figure 1 decision 6",
+      "summary": "Pass a service that throttles login attempts to resist brute-force password guessing; otherwise continue to decision 7.",
+      "locator": {
+        "pdf_page": 9,
+        "printed_page": 8,
+        "section": "Figure 1",
+        "detail": "decision 6 and its Yes/No branches"
+      }
+    },
+    {
+      "record_id": "cepts32-t1-015",
+      "external_provision_id": "CEPTS3.2-T1-015",
+      "section_id": "sec-t1-figure-1",
+      "group": "T1",
+      "kind": "decision_rule",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "Figure 1 is the decision procedure invoked by the Assessor-directed third sub-test step.",
+      "source_assigned_label": "Figure 1 decision 7",
+      "summary": "Pass a service that locks users out after no more than ten failed login attempts; otherwise fail it.",
+      "locator": {
+        "pdf_page": 9,
+        "printed_page": 8,
+        "section": "Figure 1",
+        "detail": "decision 7 and its Yes/No branches"
+      }
+    },
+    {
+      "record_id": "cepts32-t1-016",
+      "external_provision_id": "CEPTS3.2-T1-016",
+      "section_id": "sec-t1-interpretation",
+      "group": "T1",
+      "kind": "result_rule",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The interpretation directly tells the Assessor how to derive the case result.",
+      "source_assigned_label": null,
+      "summary": "Pass Test case 1 only if all services examined in Sub-test 1.1 pass; otherwise fail it.",
+      "locator": {
+        "pdf_page": 10,
+        "printed_page": 9,
+        "section": "Interpreting the test case results",
+        "detail": "complete aggregate result rule"
+      }
+    },
+    {
+      "record_id": "cepts32-s-001",
+      "external_provision_id": "CEPTS3.2-S-001",
+      "section_id": "sec-s-sample-testing",
+      "group": "S",
+      "kind": "applicability",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The section directly assigns the remaining tests to the stated population.",
+      "source_assigned_label": null,
+      "summary": "Apply the remaining tests to the population of computing devices inside the agreed scope boundary.",
+      "locator": {
+        "pdf_page": 10,
+        "printed_page": 9,
+        "section": "Sample testing",
+        "detail": "opening population statement"
+      }
+    },
+    {
+      "record_id": "cepts32-s-002",
+      "external_provision_id": "CEPTS3.2-S-002",
+      "section_id": "sec-s-sample-testing",
+      "group": "S",
+      "kind": "applicability",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The population list expressly includes this device class.",
+      "source_assigned_label": null,
+      "summary": "Include user devices capable of reaching organisational information or services in the population for the remaining tests.",
+      "locator": {
+        "pdf_page": 10,
+        "printed_page": 9,
+        "section": "Sample testing",
+        "detail": "population list, end-user devices"
+      }
+    },
+    {
+      "record_id": "cepts32-s-003",
+      "external_provision_id": "CEPTS3.2-S-003",
+      "section_id": "sec-s-sample-testing",
+      "group": "S",
+      "kind": "applicability",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The population list expressly includes this device class.",
+      "source_assigned_label": null,
+      "summary": "Include every internally hosted server in the remaining-test population.",
+      "locator": {
+        "pdf_page": 10,
+        "printed_page": 9,
+        "section": "Sample testing",
+        "detail": "population list, internal servers"
+      }
+    },
+    {
+      "record_id": "cepts32-s-004",
+      "external_provision_id": "CEPTS3.2-S-004",
+      "section_id": "sec-s-sample-testing",
+      "group": "S",
+      "kind": "applicability",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The population list expressly includes this service class.",
+      "source_assigned_label": null,
+      "summary": "Include all cloud service types, including infrastructure, platform, and software services, in the remaining-test population.",
+      "locator": {
+        "pdf_page": 10,
+        "printed_page": 9,
+        "section": "Sample testing",
+        "detail": "population list, cloud services"
+      }
+    },
+    {
+      "record_id": "cepts32-s-005",
+      "external_provision_id": "CEPTS3.2-S-005",
+      "section_id": "sec-s-sample-testing",
+      "group": "S",
+      "kind": "procedure_step",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The sampling paragraph directly instructs the Assessor to test a representative sample when full testing is impractical.",
+      "source_assigned_label": null,
+      "summary": "When every in-scope device cannot practically be tested, select a device sample and take steps to establish that it is representative.",
+      "locator": {
+        "pdf_page": 10,
+        "printed_page": 9,
+        "section": "Sample testing",
+        "detail": "representative-device-sample paragraph"
+      }
+    },
+    {
+      "record_id": "cepts32-s-006",
+      "external_provision_id": "CEPTS3.2-S-006",
+      "section_id": "sec-s-sample-testing",
+      "group": "S",
+      "kind": "recommendation",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The recommendation explicitly addresses the Assessor as the second person.",
+      "source_assigned_label": null,
+      "summary": "Seek confidence that the combined testing represents all in-scope devices, accounting for configuration variation and provisioning effectiveness.",
+      "locator": {
+        "pdf_page": 10,
+        "printed_page": 9,
+        "section": "Sample testing",
+        "detail": "representativeness recommendation"
+      }
+    },
+    {
+      "record_id": "cepts32-s-007",
+      "external_provision_id": "CEPTS3.2-S-007",
+      "section_id": "sec-s-sample-testing",
+      "group": "S",
+      "kind": "procedure_step",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The bullet expressly names the Assessor and uses a mandatory verification instruction.",
+      "source_assigned_label": null,
+      "summary": "Verify that sample size was calculated correctly using the Delivery Partner's method.",
+      "locator": {
+        "pdf_page": 10,
+        "printed_page": 9,
+        "section": "Sample testing",
+        "detail": "sample-size verification item"
+      }
+    },
+    {
+      "record_id": "cepts32-s-008",
+      "external_provision_id": "CEPTS3.2-S-008",
+      "section_id": "sec-s-sample-testing",
+      "group": "S",
+      "kind": "evidence_retention",
+      "actors": [
+        "Certifying Body"
+      ],
+      "actor_basis": "The retention sentence expressly names the Certifying Body.",
+      "source_assigned_label": null,
+      "summary": "Retain evidence of the sample-size calculation for at least the certificate's lifetime.",
+      "locator": {
+        "pdf_page": 10,
+        "printed_page": 9,
+        "section": "Sample testing",
+        "detail": "sample-calculation evidence sentence"
+      }
+    },
+    {
+      "record_id": "cepts32-s-009",
+      "external_provision_id": "CEPTS3.2-S-009",
+      "section_id": "sec-s-sample-testing",
+      "group": "S",
+      "kind": "procedure_step",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The mandatory cloud-service sentence appears in the Assessor-directed sampling section.",
+      "source_assigned_label": null,
+      "summary": "For each cloud service, test a user-account sample representative of its population.",
+      "locator": {
+        "pdf_page": 10,
+        "printed_page": 9,
+        "section": "Sample testing",
+        "detail": "cloud-account sampling paragraph"
+      }
+    },
+    {
+      "record_id": "cepts32-s-010",
+      "external_provision_id": "CEPTS3.2-S-010",
+      "section_id": "sec-s-sample-testing",
+      "group": "S",
+      "kind": "applicability",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The mandatory sample-composition sentence defines the Assessor's cloud account population.",
+      "source_assigned_label": null,
+      "summary": "For each cloud service, include at least one normal account and one administrative account in the sample.",
+      "locator": {
+        "pdf_page": 10,
+        "printed_page": 9,
+        "section": "Sample testing",
+        "detail": "minimum cloud-account composition"
+      }
+    },
+    {
+      "record_id": "cepts32-s-011",
+      "external_provision_id": "CEPTS3.2-S-011",
+      "section_id": "sec-s-sample-testing",
+      "group": "S",
+      "kind": "recommendation",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The closing permissive sentence allows the Assessor to reuse accounts across services.",
+      "source_assigned_label": null,
+      "summary": "The same sampled users may be reused across multiple cloud services.",
+      "locator": {
+        "pdf_page": 10,
+        "printed_page": 9,
+        "section": "Sample testing",
+        "detail": "account-reuse sentence"
+      }
+    },
+    {
+      "record_id": "cepts32-t2-001",
+      "external_provision_id": "CEPTS3.2-T2-001",
+      "section_id": "sec-t2-test-case",
+      "group": "T2",
+      "kind": "applicability",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The imperative population sentence immediately below the test-case title addresses the Assessor.",
+      "source_assigned_label": null,
+      "summary": "Perform Test case 2 on sampled end-user devices, servers, and IaaS instances.",
+      "locator": {
+        "pdf_page": 11,
+        "printed_page": 10,
+        "section": "Test case 2",
+        "detail": "unheaded applicability line"
+      }
+    },
+    {
+      "record_id": "cepts32-t2-002",
+      "external_provision_id": "CEPTS3.2-T2-002",
+      "section_id": "sec-t2-prerequisites",
+      "group": "T2",
+      "kind": "prerequisite",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The prerequisite list addresses the Assessor.",
+      "source_assigned_label": null,
+      "summary": "Alongside the common prerequisites, have a Delivery Partner-approved vulnerability scanner available.",
+      "locator": {
+        "pdf_page": 11,
+        "printed_page": 10,
+        "section": "Prerequisites",
+        "detail": "test-specific prerequisite item"
+      }
+    },
+    {
+      "record_id": "cepts32-t2-003",
+      "external_provision_id": "CEPTS3.2-T2-003",
+      "section_id": "sec-t2-subtest-2-1",
+      "group": "T2",
+      "kind": "procedure_step",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The opening sub-test instruction directly assigns the scan to the Assessor.",
+      "source_assigned_label": "Sub-test 2.1",
+      "summary": "Run the authorized vulnerability scanner against each selected device.",
+      "locator": {
+        "pdf_page": 11,
+        "printed_page": 10,
+        "section": "Test case 2",
+        "detail": "opening scan action"
+      }
+    },
+    {
+      "record_id": "cepts32-t2-004",
+      "external_provision_id": "CEPTS3.2-T2-004",
+      "section_id": "sec-t2-subtest-2-1",
+      "group": "T2",
+      "kind": "decision_rule",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The scan-output instruction tells the Assessor to identify vulnerabilities satisfying any listed criterion.",
+      "source_assigned_label": null,
+      "summary": "Treat a discovered vulnerability as qualifying if its vendor rates it high-risk or critical.",
+      "locator": {
+        "pdf_page": 11,
+        "printed_page": 10,
+        "section": "Sub-test 2.1",
+        "detail": "first vulnerability criterion"
+      }
+    },
+    {
+      "record_id": "cepts32-t2-005",
+      "external_provision_id": "CEPTS3.2-T2-005",
+      "section_id": "sec-t2-subtest-2-1",
+      "group": "T2",
+      "kind": "decision_rule",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The scan-output instruction tells the Assessor to identify vulnerabilities satisfying any listed criterion.",
+      "source_assigned_label": null,
+      "summary": "Treat a scanned vulnerability as qualifying when its CVSS version 3 base score is at least 7.",
+      "locator": {
+        "pdf_page": 11,
+        "printed_page": 10,
+        "section": "Sub-test 2.1",
+        "detail": "second vulnerability criterion"
+      }
+    },
+    {
+      "record_id": "cepts32-t2-006",
+      "external_provision_id": "CEPTS3.2-T2-006",
+      "section_id": "sec-t2-subtest-2-1",
+      "group": "T2",
+      "kind": "decision_rule",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The scan-output instruction tells the Assessor to identify vulnerabilities satisfying any listed criterion.",
+      "source_assigned_label": null,
+      "summary": "Treat a scanned vulnerability as qualifying when the vendor gives no severity details for the vulnerabilities fixed by its update.",
+      "locator": {
+        "pdf_page": 11,
+        "printed_page": 10,
+        "section": "Sub-test 2.1",
+        "detail": "third vulnerability criterion"
+      }
+    },
+    {
+      "record_id": "cepts32-t2-007",
+      "external_provision_id": "CEPTS3.2-T2-007",
+      "section_id": "sec-t2-subtest-2-1",
+      "group": "T2",
+      "kind": "result_rule",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The conditional result paragraph directly assigns the sub-test outcome to the Assessor.",
+      "source_assigned_label": null,
+      "summary": "Fail the sub-test if any qualifying vulnerability remained vendor-fixable beyond 14 days; otherwise pass.",
+      "locator": {
+        "pdf_page": 12,
+        "printed_page": 11,
+        "section": "Sub-test 2.1",
+        "detail": "age-based pass/fail rule"
+      }
+    },
+    {
+      "record_id": "cepts32-t2-008",
+      "external_provision_id": "CEPTS3.2-T2-008",
+      "section_id": "sec-t2-subtest-2-1",
+      "group": "T2",
+      "kind": "decision_rule",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The exclusion statement governs what the Assessor may recognize during evaluation.",
+      "source_assigned_label": null,
+      "summary": "Do not recognize long-term virtual patching as an acceptable fix for vulnerabilities in unsupported legacy operating systems.",
+      "locator": {
+        "pdf_page": 12,
+        "printed_page": 11,
+        "section": "Sub-test 2.1",
+        "detail": "virtual-patching exclusion paragraph"
+      }
+    },
+    {
+      "record_id": "cepts32-t2-009",
+      "external_provision_id": "CEPTS3.2-T2-009",
+      "section_id": "sec-t2-interpretation",
+      "group": "T2",
+      "kind": "result_rule",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The interpretation directly assigns aggregate result marking to the Assessor.",
+      "source_assigned_label": null,
+      "summary": "Pass Test case 2 only when all of its sub-tests pass; otherwise fail the case.",
+      "locator": {
+        "pdf_page": 12,
+        "printed_page": 11,
+        "section": "Interpreting the test case results",
+        "detail": "complete aggregate result rule"
+      }
+    },
+    {
+      "record_id": "cepts32-t3-001",
+      "external_provision_id": "CEPTS3.2-T3-001",
+      "section_id": "sec-t3-test-case",
+      "group": "T3",
+      "kind": "applicability",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The imperative population line immediately below the title addresses the Assessor.",
+      "source_assigned_label": null,
+      "summary": "Perform Test case 3 on sampled end-user devices, IaaS instances, and servers providing an interactive user desktop.",
+      "locator": {
+        "pdf_page": 13,
+        "printed_page": 12,
+        "section": "Test case 3",
+        "detail": "unheaded applicability line"
+      }
+    },
+    {
+      "record_id": "cepts32-t3-002",
+      "external_provision_id": "CEPTS3.2-T3-002",
+      "section_id": "sec-t3-prerequisites",
+      "group": "T3",
+      "kind": "prerequisite",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The prerequisite sentence directly instructs the Assessor.",
+      "source_assigned_label": null,
+      "summary": "Determine whether each sampled device relies on anti-malware or certificate-controlled application allowlisting.",
+      "locator": {
+        "pdf_page": 13,
+        "printed_page": 12,
+        "section": "Prerequisites",
+        "detail": "protection-method identification"
+      }
+    },
+    {
+      "record_id": "cepts32-t3-003",
+      "external_provision_id": "CEPTS3.2-T3-003",
+      "section_id": "sec-t3-select-subtests",
+      "group": "T3",
+      "kind": "procedure_step",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The selection sentence is an imperative addressed to the Assessor.",
+      "source_assigned_label": null,
+      "summary": "Select sub-tests according to the malware-protection method in use.",
+      "locator": {
+        "pdf_page": 13,
+        "printed_page": 12,
+        "section": "Selecting appropriate sub-tests",
+        "detail": "selection instruction"
+      }
+    },
+    {
+      "record_id": "cepts32-t3-004",
+      "external_provision_id": "CEPTS3.2-T3-004",
+      "section_id": "sec-t3-subtest-3-1",
+      "group": "T3",
+      "kind": "applicability",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The sub-test heading and opening sentence limit this procedure to sampled devices using anti-malware software.",
+      "source_assigned_label": "Sub-test 3.1",
+      "summary": "Apply Sub-test 3.1 to each sampled device that uses anti-malware software.",
+      "locator": {
+        "pdf_page": 13,
+        "printed_page": 12,
+        "section": "Sub-test 3.1 (for devices that use anti-malware software)",
+        "detail": "heading and opening population clause"
+      }
+    },
+    {
+      "record_id": "cepts32-t3-005",
+      "external_provision_id": "CEPTS3.2-T3-005",
+      "section_id": "sec-t3-subtest-3-1",
+      "group": "T3",
+      "kind": "procedure_step",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The opening sub-test sentence directly instructs the Assessor.",
+      "source_assigned_label": "Sub-test 3.1",
+      "summary": "Verify active anti-malware installation on every applicable sampled device.",
+      "locator": {
+        "pdf_page": 13,
+        "printed_page": 12,
+        "section": "Sub-test 3.1 (for devices that use anti-malware software)",
+        "detail": "opening check"
+      }
+    },
+    {
+      "record_id": "cepts32-t3-006",
+      "external_provision_id": "CEPTS3.2-T3-006",
+      "section_id": "sec-t3-subtest-3-1",
+      "group": "T3",
+      "kind": "decision_rule",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The selection paragraph expressly assigns the method decision to the Assessor.",
+      "source_assigned_label": "Sub-test 3.1",
+      "summary": "Depending on the software, choose either the email and browser test-file sub-tests or the manual-check sub-test.",
+      "locator": {
+        "pdf_page": 13,
+        "printed_page": 12,
+        "section": "Sub-test 3.1 (for devices that use anti-malware software)",
+        "detail": "method-selection paragraph"
+      }
+    },
+    {
+      "record_id": "cepts32-t3-007",
+      "external_provision_id": "CEPTS3.2-T3-007",
+      "section_id": "sec-t3-subtest-3-1-1",
+      "group": "T3",
+      "kind": "applicability",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The first sentence under the sub-test heading directly sets the test population.",
+      "source_assigned_label": "Sub-test 3.1.1",
+      "summary": "Exercise email delivery for each sampled device or service that receives user mail.",
+      "locator": {
+        "pdf_page": 14,
+        "printed_page": 13,
+        "section": "Sub-test 3.1.1 (Check effectiveness of defences against malware delivered by email)",
+        "detail": "applicability sentence"
+      }
+    },
+    {
+      "record_id": "cepts32-t3-008",
+      "external_provision_id": "CEPTS3.2-T3-008",
+      "section_id": "sec-t3-subtest-3-1-1",
+      "group": "T3",
+      "kind": "procedure_step",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The first numbered step directly instructs the Assessor.",
+      "source_assigned_label": "Sub-test 3.1.1",
+      "summary": "Send an attachment-free baseline email from the remote test account to each sampled user environment.",
+      "locator": {
+        "pdf_page": 14,
+        "printed_page": 13,
+        "section": "Test case 3",
+        "detail": "baseline send action"
+      }
+    },
+    {
+      "record_id": "cepts32-t3-009",
+      "external_provision_id": "CEPTS3.2-T3-009",
+      "section_id": "sec-t3-subtest-3-1-1",
+      "group": "T3",
+      "kind": "procedure_step",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The first numbered step independently assigns observation evidence to the Assessor.",
+      "source_assigned_label": "Sub-test 3.1.1",
+      "summary": "Observe the user and verify that the baseline email reaches the test destination.",
+      "locator": {
+        "pdf_page": 14,
+        "printed_page": 13,
+        "section": "Test case 3",
+        "detail": "baseline arrival observation"
+      }
+    },
+    {
+      "record_id": "cepts32-t3-010",
+      "external_provision_id": "CEPTS3.2-T3-010",
+      "section_id": "sec-t3-subtest-3-1-1",
+      "group": "T3",
+      "kind": "procedure_step",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The second numbered step directly instructs the Assessor.",
+      "source_assigned_label": "Sub-test 3.1.1",
+      "summary": "Determine the file types to cover in the email test.",
+      "locator": {
+        "pdf_page": 14,
+        "printed_page": 13,
+        "section": "Test case 3",
+        "detail": "test-type selection"
+      }
+    },
+    {
+      "record_id": "cepts32-t3-011",
+      "external_provision_id": "CEPTS3.2-T3-011",
+      "section_id": "sec-t3-subtest-3-1-1",
+      "group": "T3",
+      "kind": "procedure_step",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The second numbered step separately assigns test-message preparation to the Assessor.",
+      "source_assigned_label": "Sub-test 3.1.1",
+      "summary": "Create a separate assessment email and attachment for every selected file type.",
+      "locator": {
+        "pdf_page": 14,
+        "printed_page": 13,
+        "section": "Test case 3",
+        "detail": "test-email preparation"
+      }
+    },
+    {
+      "record_id": "cepts32-t3-012",
+      "external_provision_id": "CEPTS3.2-T3-012",
+      "section_id": "sec-t3-subtest-3-1-1",
+      "group": "T3",
+      "kind": "procedure_step",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The third numbered step directly instructs the Assessor.",
+      "source_assigned_label": "Sub-test 3.1.1",
+      "summary": "From the remote account, try sending each prepared assessment email to its destination.",
+      "locator": {
+        "pdf_page": 14,
+        "printed_page": 13,
+        "section": "Test case 3",
+        "detail": "test-email send action"
+      }
+    },
+    {
+      "record_id": "cepts32-t3-013",
+      "external_provision_id": "CEPTS3.2-T3-013",
+      "section_id": "sec-t3-subtest-3-1-1",
+      "group": "T3",
+      "kind": "procedure_step",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The third numbered step separately assigns observation to the Assessor.",
+      "source_assigned_label": "Sub-test 3.1.1",
+      "summary": "Watch the user try to open each assessment attachment.",
+      "locator": {
+        "pdf_page": 14,
+        "printed_page": 13,
+        "section": "Test case 3",
+        "detail": "attachment-opening observation"
+      }
+    },
+    {
+      "record_id": "cepts32-t3-014",
+      "external_provision_id": "CEPTS3.2-T3-014",
+      "section_id": "sec-t3-subtest-3-1-1",
+      "group": "T3",
+      "kind": "procedure_step",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The third numbered step expressly requires the Assessor to capture the outcome.",
+      "source_assigned_label": "Sub-test 3.1.1",
+      "summary": "Record the outcome of each attempted attachment opening.",
+      "locator": {
+        "pdf_page": 14,
+        "printed_page": 13,
+        "section": "Test case 3",
+        "detail": "result-recording clause"
+      }
+    },
+    {
+      "record_id": "cepts32-t3-015",
+      "external_provision_id": "CEPTS3.2-T3-015",
+      "section_id": "sec-t3-subtest-3-1-1",
+      "group": "T3",
+      "kind": "result_rule",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The conditional outcome sentence assigns a failure result to the Assessor.",
+      "source_assigned_label": "Sub-test 3.1.1",
+      "summary": "Fail the email sub-test if any malware test file arrives and the user can access it.",
+      "locator": {
+        "pdf_page": 14,
+        "printed_page": 13,
+        "section": "Test case 3",
+        "detail": "malware-file failure branch"
+      }
+    },
+    {
+      "record_id": "cepts32-t3-016",
+      "external_provision_id": "CEPTS3.2-T3-016",
+      "section_id": "sec-t3-subtest-3-1-1",
+      "group": "T3",
+      "kind": "result_rule",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The conditional outcome sentence assigns a failure result to the Assessor.",
+      "source_assigned_label": "Sub-test 3.1.1",
+      "summary": "Fail the email sub-test if any executable test file arrives and runs without a prompt requiring added user interaction.",
+      "locator": {
+        "pdf_page": 14,
+        "printed_page": 13,
+        "section": "Test case 3",
+        "detail": "executable-file failure branch"
+      }
+    },
+    {
+      "record_id": "cepts32-t3-017",
+      "external_provision_id": "CEPTS3.2-T3-017",
+      "section_id": "sec-t3-subtest-3-1-1",
+      "group": "T3",
+      "kind": "result_rule",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The residual outcome sentence assigns the pass result to the Assessor.",
+      "source_assigned_label": "Sub-test 3.1.1",
+      "summary": "Pass the email sub-test when neither failure branch applies.",
+      "locator": {
+        "pdf_page": 14,
+        "printed_page": 13,
+        "section": "Test case 3",
+        "detail": "residual pass branch"
+      }
+    },
+    {
+      "record_id": "cepts32-t3-018",
+      "external_provision_id": "CEPTS3.2-T3-018",
+      "section_id": "sec-t3-subtest-3-1-2",
+      "group": "T3",
+      "kind": "applicability",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The first sentence below the sub-test heading sets the Assessor's test population.",
+      "source_assigned_label": "Sub-test 3.1.2",
+      "summary": "Exercise browser delivery for every sampled device or service supporting user web access.",
+      "locator": {
+        "pdf_page": 14,
+        "printed_page": 13,
+        "section": "Sub-test 3.1.2 (Check effectiveness of defences against malware delivered by browser)",
+        "detail": "applicability sentence"
+      }
+    },
+    {
+      "record_id": "cepts32-t3-019",
+      "external_provision_id": "CEPTS3.2-T3-019",
+      "section_id": "sec-t3-subtest-3-1-2",
+      "group": "T3",
+      "kind": "recommendation",
+      "actors": [
+        "Applicant"
+      ],
+      "actor_basis": "The recommendation expressly names the Applicant as the configuring actor.",
+      "source_assigned_label": "Sub-test 3.1.2",
+      "summary": "Configure the authorized external assessment site with filtering representative of other permitted sites.",
+      "locator": {
+        "pdf_page": 14,
+        "printed_page": 13,
+        "section": "Test case 3",
+        "detail": "representative-filtering recommendation"
+      }
+    },
+    {
+      "record_id": "cepts32-t3-020",
+      "external_provision_id": "CEPTS3.2-T3-020",
+      "section_id": "sec-t3-subtest-3-1-2",
+      "group": "T3",
+      "kind": "procedure_step",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The first numbered step directly instructs the Assessor.",
+      "source_assigned_label": "Sub-test 3.1.2",
+      "summary": "Select test files appropriate to the operating system under test.",
+      "locator": {
+        "pdf_page": 15,
+        "printed_page": 14,
+        "section": "Test case 3",
+        "detail": "operating-system file selection"
+      }
+    },
+    {
+      "record_id": "cepts32-t3-021",
+      "external_provision_id": "CEPTS3.2-T3-021",
+      "section_id": "sec-t3-subtest-3-1-2",
+      "group": "T3",
+      "kind": "decision_rule",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The second numbered step combines the Assessor's observation with its required result.",
+      "source_assigned_label": "Sub-test 3.1.2",
+      "summary": "Observe Internet access and pass the sub-test if the user cannot access the Internet.",
+      "locator": {
+        "pdf_page": 15,
+        "printed_page": 14,
+        "section": "Test case 3",
+        "detail": "Internet-access branch"
+      }
+    },
+    {
+      "record_id": "cepts32-t3-022",
+      "external_provision_id": "CEPTS3.2-T3-022",
+      "section_id": "sec-t3-subtest-3-1-2",
+      "group": "T3",
+      "kind": "decision_rule",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The third numbered step combines the Assessor's observation with its required result.",
+      "source_assigned_label": "Sub-test 3.1.2",
+      "summary": "Observe an attempted approved-file download and pass the sub-test if downloading is prevented.",
+      "locator": {
+        "pdf_page": 15,
+        "printed_page": 14,
+        "section": "Test case 3",
+        "detail": "download-prevention branch"
+      }
+    },
+    {
+      "record_id": "cepts32-t3-023",
+      "external_provision_id": "CEPTS3.2-T3-023",
+      "section_id": "sec-t3-subtest-3-1-2",
+      "group": "T3",
+      "kind": "decision_rule",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The fourth numbered step directly assigns a pass result based on observed blocking.",
+      "source_assigned_label": "Sub-test 3.1.2",
+      "summary": "Pass the sub-test if access to the downloaded test files is blocked.",
+      "locator": {
+        "pdf_page": 15,
+        "printed_page": 14,
+        "section": "Test case 3",
+        "detail": "file-access blocking branch"
+      }
+    },
+    {
+      "record_id": "cepts32-t3-024",
+      "external_provision_id": "CEPTS3.2-T3-024",
+      "section_id": "sec-t3-subtest-3-1-2",
+      "group": "T3",
+      "kind": "result_rule",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The conditional outcome sentence assigns failure to the Assessor.",
+      "source_assigned_label": "Sub-test 3.1.2",
+      "summary": "Fail the browser sub-test if any malware test file downloads and remains accessible to the user.",
+      "locator": {
+        "pdf_page": 15,
+        "printed_page": 14,
+        "section": "Test case 3",
+        "detail": "malware-download failure branch"
+      }
+    },
+    {
+      "record_id": "cepts32-t3-025",
+      "external_provision_id": "CEPTS3.2-T3-025",
+      "section_id": "sec-t3-subtest-3-1-2",
+      "group": "T3",
+      "kind": "result_rule",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The conditional outcome sentence assigns failure to the Assessor.",
+      "source_assigned_label": "Sub-test 3.1.2",
+      "summary": "Fail the browser sub-test if any executable test file downloads and runs without a prompt requiring added user interaction.",
+      "locator": {
+        "pdf_page": 15,
+        "printed_page": 14,
+        "section": "Test case 3",
+        "detail": "executable-download failure branch"
+      }
+    },
+    {
+      "record_id": "cepts32-t3-026",
+      "external_provision_id": "CEPTS3.2-T3-026",
+      "section_id": "sec-t3-subtest-3-1-3",
+      "group": "T3",
+      "kind": "applicability",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The mandatory opening sentence defines the devices and condition requiring manual checks.",
+      "source_assigned_label": "Sub-test 3.1.3",
+      "summary": "Use manual checks on every sampled anti-malware EUD, IaaS instance, or interactive-desktop server when test files did not establish correct configuration.",
+      "locator": {
+        "pdf_page": 15,
+        "printed_page": 14,
+        "section": "Sub-test 3.1.3 (Manual Checks for devices that use anti-malware software)",
+        "detail": "conditional population statement"
+      }
+    },
+    {
+      "record_id": "cepts32-t3-027",
+      "external_provision_id": "CEPTS3.2-T3-027",
+      "section_id": "sec-t3-subtest-3-1-3",
+      "group": "T3",
+      "kind": "procedure_step",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The first mandatory manual-check item directs the Assessor.",
+      "source_assigned_label": "Sub-test 3.1.3",
+      "summary": "Use logs to confirm the anti-malware installation is operating.",
+      "locator": {
+        "pdf_page": 15,
+        "printed_page": 14,
+        "section": "Test case 3",
+        "detail": "first manual-check item"
+      }
+    },
+    {
+      "record_id": "cepts32-t3-028",
+      "external_provision_id": "CEPTS3.2-T3-028",
+      "section_id": "sec-t3-subtest-3-1-3",
+      "group": "T3",
+      "kind": "procedure_step",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The second mandatory manual-check item directs the Assessor.",
+      "source_assigned_label": "Sub-test 3.1.3",
+      "summary": "Verify that anti-malware software updates follow the vendor's configuration instructions.",
+      "locator": {
+        "pdf_page": 15,
+        "printed_page": 14,
+        "section": "Test case 3",
+        "detail": "second manual-check item"
+      }
+    },
+    {
+      "record_id": "cepts32-t3-029",
+      "external_provision_id": "CEPTS3.2-T3-029",
+      "section_id": "sec-t3-subtest-3-1-3",
+      "group": "T3",
+      "kind": "result_rule",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The closing conditional sentence assigns the sub-test result to the Assessor.",
+      "source_assigned_label": "Sub-test 3.1.3",
+      "summary": "Pass the manual sub-test only when both checks confirm correct installation and configuration; otherwise fail it.",
+      "locator": {
+        "pdf_page": 15,
+        "printed_page": 14,
+        "section": "Test case 3",
+        "detail": "conjunctive result rule"
+      }
+    },
+    {
+      "record_id": "cepts32-t3-030",
+      "external_provision_id": "CEPTS3.2-T3-030",
+      "section_id": "sec-t3-subtest-3-2",
+      "group": "T3",
+      "kind": "applicability",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The sub-test heading and opening sentence define applicability to each sampled device using certificate-based allow listing.",
+      "source_assigned_label": "Sub-test 3.2",
+      "summary": "Run Sub-test 3.2 on each sampled device governed by certificate-controlled application allowlisting.",
+      "locator": {
+        "pdf_page": 16,
+        "printed_page": 15,
+        "section": "Sub-test 3.2 (for devices that use certificate-based application allow listing)",
+        "detail": "heading and opening population clause"
+      }
+    },
+    {
+      "record_id": "cepts32-t3-031",
+      "external_provision_id": "CEPTS3.2-T3-031",
+      "section_id": "sec-t3-subtest-3-2",
+      "group": "T3",
+      "kind": "procedure_step",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The first check item is under a direct Assessor instruction.",
+      "source_assigned_label": "Sub-test 3.2",
+      "summary": "Check that trusted roots equal the operating-system manufacturer's standard set or a subset of it.",
+      "locator": {
+        "pdf_page": 16,
+        "printed_page": 15,
+        "section": "Test case 3",
+        "detail": "trusted-root baseline item"
+      }
+    },
+    {
+      "record_id": "cepts32-t3-032",
+      "external_provision_id": "CEPTS3.2-T3-032",
+      "section_id": "sec-t3-subtest-3-2",
+      "group": "T3",
+      "kind": "procedure_step",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The second check item is under a direct Assessor instruction.",
+      "source_assigned_label": "Sub-test 3.2",
+      "summary": "Check that additional trusted roots were added only with explicit Applicant agreement.",
+      "locator": {
+        "pdf_page": 16,
+        "printed_page": 15,
+        "section": "Test case 3",
+        "detail": "additional-root authorization item"
+      }
+    },
+    {
+      "record_id": "cepts32-t3-033",
+      "external_provision_id": "CEPTS3.2-T3-033",
+      "section_id": "sec-t3-subtest-3-2",
+      "group": "T3",
+      "kind": "procedure_step",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The third check item independently covers unsigned execution under a direct Assessor instruction.",
+      "source_assigned_label": "Sub-test 3.2",
+      "summary": "Verify that an unsigned executable cannot run on the device.",
+      "locator": {
+        "pdf_page": 16,
+        "printed_page": 15,
+        "section": "Test case 3",
+        "detail": "unsigned-executable portion"
+      }
+    },
+    {
+      "record_id": "cepts32-t3-034",
+      "external_provision_id": "CEPTS3.2-T3-034",
+      "section_id": "sec-t3-subtest-3-2",
+      "group": "T3",
+      "kind": "procedure_step",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The third check item independently covers invalid certificate chains under a direct Assessor instruction.",
+      "source_assigned_label": "Sub-test 3.2",
+      "summary": "Verify that an executable signed by a certificate outside a trusted chain cannot run.",
+      "locator": {
+        "pdf_page": 16,
+        "printed_page": 15,
+        "section": "Test case 3",
+        "detail": "untrusted-chain executable portion"
+      }
+    },
+    {
+      "record_id": "cepts32-t3-035",
+      "external_provision_id": "CEPTS3.2-T3-035",
+      "section_id": "sec-t3-subtest-3-2",
+      "group": "T3",
+      "kind": "procedure_step",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The fourth check item is under a direct Assessor instruction.",
+      "source_assigned_label": "Sub-test 3.2",
+      "summary": "Check that operating-system policy applies code-signing controls to every applicable executable format.",
+      "locator": {
+        "pdf_page": 16,
+        "printed_page": 15,
+        "section": "Test case 3",
+        "detail": "code-signing policy item"
+      }
+    },
+    {
+      "record_id": "cepts32-t3-036",
+      "external_provision_id": "CEPTS3.2-T3-036",
+      "section_id": "sec-t3-subtest-3-2",
+      "group": "T3",
+      "kind": "result_rule",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The closing conditional sentences assign the result to the Assessor.",
+      "source_assigned_label": "Sub-test 3.2",
+      "summary": "Pass the allow-listing sub-test only when every listed check is true; otherwise fail it.",
+      "locator": {
+        "pdf_page": 16,
+        "printed_page": 15,
+        "section": "Test case 3",
+        "detail": "aggregate sub-test result"
+      }
+    },
+    {
+      "record_id": "cepts32-t3-037",
+      "external_provision_id": "CEPTS3.2-T3-037",
+      "section_id": "sec-t3-interpretation",
+      "group": "T3",
+      "kind": "result_rule",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The interpretation directly assigns the case outcome to the Assessor.",
+      "source_assigned_label": null,
+      "summary": "Fail Test case 3 when the sub-test matching a device's protection method fails; otherwise pass the case.",
+      "locator": {
+        "pdf_page": 16,
+        "printed_page": 15,
+        "section": "Interpreting the test case results",
+        "detail": "method-dependent aggregate result"
+      }
+    },
+    {
+      "record_id": "cepts32-t4-001",
+      "external_provision_id": "CEPTS3.2-T4-001",
+      "section_id": "sec-t4-test-case",
+      "group": "T4",
+      "kind": "applicability",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The imperative population line below the title addresses the Assessor.",
+      "source_assigned_label": null,
+      "summary": "Perform Test case 4 on every cloud service.",
+      "locator": {
+        "pdf_page": 17,
+        "printed_page": 16,
+        "section": "Test case 4",
+        "detail": "unheaded applicability line"
+      }
+    },
+    {
+      "record_id": "cepts32-t4-002",
+      "external_provision_id": "CEPTS3.2-T4-002",
+      "section_id": "sec-t4-description",
+      "group": "T4",
+      "kind": "procedure_step",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The test description assigns the sampled-user login exercise within the Assessor-directed publication.",
+      "source_assigned_label": null,
+      "summary": "Have users of sampled devices attempt to sign in to organisational cloud services with organisation-issued accounts.",
+      "locator": {
+        "pdf_page": 17,
+        "printed_page": 16,
+        "section": "Test description",
+        "detail": "sampled-user login sentence"
+      }
+    },
+    {
+      "record_id": "cepts32-t4-003",
+      "external_provision_id": "CEPTS3.2-T4-003",
+      "section_id": "sec-t4-description",
+      "group": "T4",
+      "kind": "applicability",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The mandatory coverage sentence directs testing of both stated account roles.",
+      "source_assigned_label": null,
+      "summary": "Test both normal-user and administrator access for each cloud service.",
+      "locator": {
+        "pdf_page": 17,
+        "printed_page": 16,
+        "section": "Test description",
+        "detail": "role-coverage sentence"
+      }
+    },
+    {
+      "record_id": "cepts32-t4-004",
+      "external_provision_id": "CEPTS3.2-T4-004",
+      "section_id": "sec-t4-description",
+      "group": "T4",
+      "kind": "applicability",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The shared-service clause sets the required repetition boundary for the Assessor.",
+      "source_assigned_label": null,
+      "summary": "When cloud services share authentication, perform the test once for each distinct authentication service.",
+      "locator": {
+        "pdf_page": 17,
+        "printed_page": 16,
+        "section": "Test description",
+        "detail": "shared-authentication clause"
+      }
+    },
+    {
+      "record_id": "cepts32-t4-005",
+      "external_provision_id": "CEPTS3.2-T4-005",
+      "section_id": "sec-t4-case-4-1",
+      "group": "T4",
+      "kind": "procedure_step",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The first numbered step expressly names the Assessor as observer.",
+      "source_assigned_label": "Test case 4.1",
+      "summary": "Observe users access cloud services with organisation-issued accounts from an untrusted device or incognito browser session.",
+      "locator": {
+        "pdf_page": 17,
+        "printed_page": 16,
+        "section": "Test case 4",
+        "detail": "primary observation method"
+      }
+    },
+    {
+      "record_id": "cepts32-t4-006",
+      "external_provision_id": "CEPTS3.2-T4-006",
+      "section_id": "sec-t4-case-4-1",
+      "group": "T4",
+      "kind": "recommendation",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The second numbered step recommends a fallback to the Assessor when step 1 cannot be performed.",
+      "source_assigned_label": "Test case 4.1",
+      "summary": "If the primary method cannot be used, share an Assessor-device private-browser session and observe user access.",
+      "locator": {
+        "pdf_page": 17,
+        "printed_page": 16,
+        "section": "Test case 4",
+        "detail": "fallback observation method"
+      }
+    },
+    {
+      "record_id": "cepts32-t4-007",
+      "external_provision_id": "CEPTS3.2-T4-007",
+      "section_id": "sec-t4-case-4-1",
+      "group": "T4",
+      "kind": "procedure_step",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The third numbered step directly instructs repetition.",
+      "source_assigned_label": "Test case 4.1",
+      "summary": "Repeat the access test for every authentication service in use.",
+      "locator": {
+        "pdf_page": 17,
+        "printed_page": 16,
+        "section": "Test case 4",
+        "detail": "repetition step"
+      }
+    },
+    {
+      "record_id": "cepts32-t4-008",
+      "external_provision_id": "CEPTS3.2-T4-008",
+      "section_id": "sec-t4-case-4-1",
+      "group": "T4",
+      "kind": "result_rule",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The conditional result sentences assign the outcome to the Assessor.",
+      "source_assigned_label": "Test case 4.1",
+      "summary": "Pass when access first prompts the user or administrator for an MFA form; otherwise fail.",
+      "locator": {
+        "pdf_page": 17,
+        "printed_page": 16,
+        "section": "Test case 4",
+        "detail": "access-result rule"
+      }
+    },
+    {
+      "record_id": "cepts32-t4-009",
+      "external_provision_id": "CEPTS3.2-T4-009",
+      "section_id": "sec-t4-interpretation",
+      "group": "T4",
+      "kind": "result_rule",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The interpretation directly assigns aggregate result marking to the Assessor.",
+      "source_assigned_label": null,
+      "summary": "Pass Test case 4 only when all of its sub-tests pass; otherwise fail the case.",
+      "locator": {
+        "pdf_page": 18,
+        "printed_page": 17,
+        "section": "Interpreting the test case results",
+        "detail": "complete aggregate result rule"
+      }
+    },
+    {
+      "record_id": "cepts32-t5-001",
+      "external_provision_id": "CEPTS3.2-T5-001",
+      "section_id": "sec-t5-test-case",
+      "group": "T5",
+      "kind": "applicability",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The imperative population line below the title addresses the Assessor.",
+      "source_assigned_label": null,
+      "summary": "Perform Test case 5 on sampled end-user devices, interactive-desktop servers, and cloud environments able to run administrative processes.",
+      "locator": {
+        "pdf_page": 19,
+        "printed_page": 18,
+        "section": "Test case 5",
+        "detail": "unheaded applicability line"
+      }
+    },
+    {
+      "record_id": "cepts32-t5-002",
+      "external_provision_id": "CEPTS3.2-T5-002",
+      "section_id": "sec-t5-description",
+      "group": "T5",
+      "kind": "procedure_step",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The description assigns the account-separation exercise within the Assessor-directed publication.",
+      "source_assigned_label": null,
+      "summary": "While a standard user account is signed in, have the user attempt a defined administrative process.",
+      "locator": {
+        "pdf_page": 19,
+        "printed_page": 18,
+        "section": "Test description",
+        "detail": "standard-account exercise"
+      }
+    },
+    {
+      "record_id": "cepts32-t5-003",
+      "external_provision_id": "CEPTS3.2-T5-003",
+      "section_id": "sec-t5-description",
+      "group": "T5",
+      "kind": "applicability",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The mandatory sentence fixes complete sampled-device coverage.",
+      "source_assigned_label": null,
+      "summary": "Test every sampled device.",
+      "locator": {
+        "pdf_page": 19,
+        "printed_page": 18,
+        "section": "Test description",
+        "detail": "complete sample coverage sentence"
+      }
+    },
+    {
+      "record_id": "cepts32-t5-004",
+      "external_provision_id": "CEPTS3.2-T5-004",
+      "section_id": "sec-t5-case-5-1",
+      "group": "T5",
+      "kind": "procedure_step",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The first numbered step directly tells the Assessor what to observe.",
+      "source_assigned_label": "Test case 5.1",
+      "summary": "Observe a user with the current account attempt an administrative process appropriate to the sampled operating system.",
+      "locator": {
+        "pdf_page": 19,
+        "printed_page": 18,
+        "section": "Test case 5",
+        "detail": "administrative-process observation"
+      }
+    },
+    {
+      "record_id": "cepts32-t5-005",
+      "external_provision_id": "CEPTS3.2-T5-005",
+      "section_id": "sec-t5-case-5-1",
+      "group": "T5",
+      "kind": "procedure_step",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The second numbered step directly instructs repetition.",
+      "source_assigned_label": "Test case 5.1",
+      "summary": "Repeat the exercise across all devices sampled for the audit.",
+      "locator": {
+        "pdf_page": 19,
+        "printed_page": 18,
+        "section": "Test case 5",
+        "detail": "repetition step"
+      }
+    },
+    {
+      "record_id": "cepts32-t5-006",
+      "external_provision_id": "CEPTS3.2-T5-006",
+      "section_id": "sec-t5-case-5-1",
+      "group": "T5",
+      "kind": "result_rule",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The conditional result sentences assign the outcome to the Assessor.",
+      "source_assigned_label": "Test case 5.1",
+      "summary": "Pass only if another login is requested and ordinary user credentials cannot run the process; otherwise fail.",
+      "locator": {
+        "pdf_page": 19,
+        "printed_page": 18,
+        "section": "Test case 5",
+        "detail": "conjunctive process result"
+      }
+    },
+    {
+      "record_id": "cepts32-t5-007",
+      "external_provision_id": "CEPTS3.2-T5-007",
+      "section_id": "sec-t5-interpretation",
+      "group": "T5",
+      "kind": "result_rule",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The interpretation directly assigns aggregate result marking to the Assessor.",
+      "source_assigned_label": null,
+      "summary": "Pass Test case 5 only when all sub-tests pass across every sampled device; otherwise fail the case.",
+      "locator": {
+        "pdf_page": 19,
+        "printed_page": 18,
+        "section": "Interpreting the test case results",
+        "detail": "complete aggregate result rule"
+      }
+    },
+    {
+      "record_id": "cepts32-c-001",
+      "external_provision_id": "CEPTS3.2-C-001",
+      "section_id": "sec-c-conclude",
+      "group": "C",
+      "kind": "procedure_step",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The opening imperative addresses the Assessor after completion of testing.",
+      "source_assigned_label": null,
+      "summary": "Compile the assessment report after all tests are completed.",
+      "locator": {
+        "pdf_page": 20,
+        "printed_page": 19,
+        "section": "Conclude the assessment",
+        "detail": "opening report instruction"
+      }
+    },
+    {
+      "record_id": "cepts32-c-002",
+      "external_provision_id": "CEPTS3.2-C-002",
+      "section_id": "sec-c-conclude",
+      "group": "C",
+      "kind": "procedure_step",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The conditional sentence directly instructs the Assessor to consult the Delivery Partner.",
+      "source_assigned_label": null,
+      "summary": "If the assessment cannot be concluded on the appointed day, consult the Delivery Partner.",
+      "locator": {
+        "pdf_page": 20,
+        "printed_page": 19,
+        "section": "Conclude the assessment",
+        "detail": "inability-to-conclude clause"
+      }
+    },
+    {
+      "record_id": "cepts32-c-003",
+      "external_provision_id": "CEPTS3.2-C-003",
+      "section_id": "sec-c-conclude",
+      "group": "C",
+      "kind": "decision_rule",
+      "actors": [
+        "Delivery Partner"
+      ],
+      "actor_basis": "The sentence expressly assigns deferral discretion to the Delivery Partner.",
+      "source_assigned_label": null,
+      "summary": "Decide whether incomplete tests may be deferred and completed later.",
+      "locator": {
+        "pdf_page": 20,
+        "printed_page": 19,
+        "section": "Conclude the assessment",
+        "detail": "deferral-discretion clause"
+      }
+    },
+    {
+      "record_id": "cepts32-c-004",
+      "external_provision_id": "CEPTS3.2-C-004",
+      "section_id": "sec-c-note-deferral",
+      "group": "C",
+      "kind": "recommendation",
+      "actors": [
+        "Delivery Partner"
+      ],
+      "actor_basis": "The first note expressly addresses the Delivery Partner.",
+      "source_assigned_label": null,
+      "summary": "Avoid allowing a test deferral to exceed one month.",
+      "locator": {
+        "pdf_page": 20,
+        "printed_page": 19,
+        "section": "Note for Delivery Partner",
+        "detail": "first note, deferral interval"
+      }
+    },
+    {
+      "record_id": "cepts32-c-005",
+      "external_provision_id": "CEPTS3.2-C-005",
+      "section_id": "sec-c-conclude",
+      "group": "C",
+      "kind": "result_rule",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The all-pass sentence directly addresses the Assessor's overall outcome and certificate action.",
+      "source_assigned_label": null,
+      "summary": "Record an overall pass when every test case passes.",
+      "locator": {
+        "pdf_page": 20,
+        "printed_page": 19,
+        "section": "Conclude the assessment",
+        "detail": "all-cases-pass branch, assessment outcome"
+      }
+    },
+    {
+      "record_id": "cepts32-c-006",
+      "external_provision_id": "CEPTS3.2-C-006",
+      "section_id": "sec-c-conclude",
+      "group": "C",
+      "kind": "procedure_step",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The all-pass sentence directly addresses the Assessor's overall outcome and certificate action.",
+      "source_assigned_label": null,
+      "summary": "After the normal overall pass, proceed with awarding the Plus certificate.",
+      "locator": {
+        "pdf_page": 20,
+        "printed_page": 19,
+        "section": "Conclude the assessment",
+        "detail": "all-cases-pass branch, certificate action"
+      }
+    },
+    {
+      "record_id": "cepts32-c-007",
+      "external_provision_id": "CEPTS3.2-C-007",
+      "section_id": "sec-c-conclude",
+      "group": "C",
+      "kind": "procedure_step",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The minor-failure sentence directly instructs the Assessor to consult the Delivery Partner.",
+      "source_assigned_label": null,
+      "summary": "Consult the Delivery Partner when only a few minor issues caused case failures.",
+      "locator": {
+        "pdf_page": 20,
+        "printed_page": 19,
+        "section": "Conclude the assessment",
+        "detail": "minor-failure consultation branch"
+      }
+    },
+    {
+      "record_id": "cepts32-c-008",
+      "external_provision_id": "CEPTS3.2-C-008",
+      "section_id": "sec-c-conclude",
+      "group": "C",
+      "kind": "decision_rule",
+      "actors": [
+        "Delivery Partner"
+      ],
+      "actor_basis": "The sentence expressly assigns the exceptional pass decision to the Delivery Partner.",
+      "source_assigned_label": null,
+      "summary": "At its discretion, allow an Applicant with qualifying minor failures to pass the overall assessment.",
+      "locator": {
+        "pdf_page": 20,
+        "printed_page": 19,
+        "section": "Conclude the assessment",
+        "detail": "discretionary exception branch, assessment outcome"
+      }
+    },
+    {
+      "record_id": "cepts32-c-009",
+      "external_provision_id": "CEPTS3.2-C-009",
+      "section_id": "sec-c-conclude",
+      "group": "C",
+      "kind": "procedure_step",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "After the Delivery Partner's discretionary outcome, the text directly permits the Assessor to proceed with the certificate action.",
+      "source_assigned_label": null,
+      "summary": "After a discretionary overall pass, proceed with awarding the Plus certificate.",
+      "locator": {
+        "pdf_page": 20,
+        "printed_page": 19,
+        "section": "Conclude the assessment",
+        "detail": "discretionary exception branch, certificate action"
+      }
+    },
+    {
+      "record_id": "cepts32-c-010",
+      "external_provision_id": "CEPTS3.2-C-010",
+      "section_id": "sec-c-note-exception",
+      "group": "C",
+      "kind": "decision_rule",
+      "actors": [
+        "Delivery Partner"
+      ],
+      "actor_basis": "The second Delivery Partner note defines the first expected predicate for its discretion.",
+      "source_assigned_label": null,
+      "summary": "Limit exceptional treatment to marginal deviations found in less than five percent of performed tests.",
+      "locator": {
+        "pdf_page": 20,
+        "printed_page": 19,
+        "section": "Note for Delivery Partner",
+        "detail": "second note, first predicate"
+      }
+    },
+    {
+      "record_id": "cepts32-c-011",
+      "external_provision_id": "CEPTS3.2-C-011",
+      "section_id": "sec-c-note-exception",
+      "group": "C",
+      "kind": "decision_rule",
+      "actors": [
+        "Delivery Partner"
+      ],
+      "actor_basis": "The second Delivery Partner note defines the second expected predicate for its discretion.",
+      "source_assigned_label": null,
+      "summary": "Limit exceptional treatment to cases with no evidence of a broader failure in the Applicant's cybersecurity processes.",
+      "locator": {
+        "pdf_page": 20,
+        "printed_page": 19,
+        "section": "Note for Delivery Partner",
+        "detail": "second note, second predicate"
+      }
+    },
+    {
+      "record_id": "cepts32-c-012",
+      "external_provision_id": "CEPTS3.2-C-012",
+      "section_id": "sec-c-conclude",
+      "group": "C",
+      "kind": "result_rule",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The closing residual rule directly assigns the failed outcome and certificate action to the Assessor.",
+      "source_assigned_label": null,
+      "summary": "Record an overall failure when neither pass route applies.",
+      "locator": {
+        "pdf_page": 20,
+        "printed_page": 19,
+        "section": "Conclude the assessment",
+        "detail": "residual branch, assessment outcome"
+      }
+    },
+    {
+      "record_id": "cepts32-c-013",
+      "external_provision_id": "CEPTS3.2-C-013",
+      "section_id": "sec-c-conclude",
+      "group": "C",
+      "kind": "procedure_step",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The closing residual rule directly assigns the failed outcome and certificate action to the Assessor.",
+      "source_assigned_label": null,
+      "summary": "Do not award a certificate after the residual overall failure.",
+      "locator": {
+        "pdf_page": 20,
+        "printed_page": 19,
+        "section": "Conclude the assessment",
+        "detail": "residual branch, certificate action"
+      }
+    },
+    {
+      "record_id": "cepts32-a-001",
+      "external_provision_id": "CEPTS3.2-A-001",
+      "section_id": "sec-a-appendix",
+      "group": "A",
+      "kind": "prerequisite",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The first appendix item directly instructs the Assessor to use approved tools.",
+      "source_assigned_label": null,
+      "summary": "For Plus testing, restrict vulnerability scanners to those the Delivery Partner authorizes.",
+      "locator": {
+        "pdf_page": 21,
+        "printed_page": 20,
+        "section": "Appendix A: Vulnerability scanning",
+        "detail": "first appendix item"
+      }
+    },
+    {
+      "record_id": "cepts32-a-002",
+      "external_provision_id": "CEPTS3.2-A-002",
+      "section_id": "sec-a-appendix",
+      "group": "A",
+      "kind": "procedure_step",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The second appendix item directly instructs the Assessor.",
+      "source_assigned_label": null,
+      "summary": "Scan every IP address associated with the Applicant.",
+      "locator": {
+        "pdf_page": 21,
+        "printed_page": 20,
+        "section": "Appendix A: Vulnerability scanning",
+        "detail": "second appendix item, address coverage"
+      }
+    },
+    {
+      "record_id": "cepts32-a-003",
+      "external_provision_id": "CEPTS3.2-A-003",
+      "section_id": "sec-a-appendix",
+      "group": "A",
+      "kind": "recommendation",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The permissive clause lets the Assessor use a Delivery Partner-defined port subset.",
+      "source_assigned_label": null,
+      "summary": "A Delivery Partner-specified limited port range may be scanned instead of every port on every address.",
+      "locator": {
+        "pdf_page": 21,
+        "printed_page": 20,
+        "section": "Appendix A: Vulnerability scanning",
+        "detail": "second appendix item, limited-port clause"
+      }
+    },
+    {
+      "record_id": "cepts32-a-004",
+      "external_provision_id": "CEPTS3.2-A-004",
+      "section_id": "sec-a-note-delivery-partner",
+      "group": "A",
+      "kind": "recommendation",
+      "actors": [
+        "Delivery Partner"
+      ],
+      "actor_basis": "The note expressly addresses the Delivery Partner.",
+      "source_assigned_label": null,
+      "summary": "Give Assessors the TCP and UDP port inventory for scanning.",
+      "locator": {
+        "pdf_page": 21,
+        "printed_page": 20,
+        "section": "Note for Delivery Partner",
+        "detail": "port-list recommendation"
+      }
+    },
+    {
+      "record_id": "cepts32-b-001",
+      "external_provision_id": "CEPTS3.2-B-001",
+      "section_id": "sec-b-appendix",
+      "group": "B",
+      "kind": "procedure_step",
+      "actors": [
+        "Delivery Partner"
+      ],
+      "actor_basis": "The opening sentence expressly assigns responsibility to the Delivery Partner.",
+      "source_assigned_label": null,
+      "summary": "Supply each Certification Body with every assessment file needed for testing.",
+      "locator": {
+        "pdf_page": 22,
+        "printed_page": 21,
+        "section": "Appendix B: Types of test file",
+        "detail": "opening responsibility sentence"
+      }
+    },
+    {
+      "record_id": "cepts32-b-002",
+      "external_provision_id": "CEPTS3.2-B-002",
+      "section_id": "sec-b-appendix",
+      "group": "B",
+      "kind": "procedure_step",
+      "actors": [
+        "Certification Body"
+      ],
+      "actor_basis": "The next sentence expressly assigns subset definition to the Certification Body.",
+      "source_assigned_label": null,
+      "summary": "Define an Applicant-appropriate subset of the test-file set for the Assessor to use.",
+      "locator": {
+        "pdf_page": 22,
+        "printed_page": 21,
+        "section": "Appendix B: Types of test file",
+        "detail": "subset-definition responsibility"
+      }
+    },
+    {
+      "record_id": "cepts32-b-003",
+      "external_provision_id": "CEPTS3.2-B-003",
+      "section_id": "sec-b-appendix",
+      "group": "B",
+      "kind": "procedure_step",
+      "actors": [
+        "Certification Body"
+      ],
+      "actor_basis": "The same responsibility sentence independently assigns hosting to the Certification Body.",
+      "source_assigned_label": null,
+      "summary": "Host the Applicant-specific test-file subset.",
+      "locator": {
+        "pdf_page": 22,
+        "printed_page": 21,
+        "section": "Appendix B: Types of test file",
+        "detail": "subset-hosting responsibility"
+      }
+    },
+    {
+      "record_id": "cepts32-b-004",
+      "external_provision_id": "CEPTS3.2-B-004",
+      "section_id": "sec-b-appendix",
+      "group": "B",
+      "kind": "prerequisite",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The direct second-person instruction assigns the check to the Assessor.",
+      "source_assigned_label": null,
+      "summary": "Confirm with the Certification Body that the correct files will be supplied for each test.",
+      "locator": {
+        "pdf_page": 22,
+        "printed_page": 21,
+        "section": "Appendix B: Types of test file",
+        "detail": "correct-file check"
+      }
+    },
+    {
+      "record_id": "cepts32-b-005",
+      "external_provision_id": "CEPTS3.2-B-005",
+      "section_id": "sec-b-appendix",
+      "group": "B",
+      "kind": "decision_rule",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The test-file group description defines the expected behavior used by the Assessor's result evaluation.",
+      "source_assigned_label": null,
+      "summary": "Expect anti-malware controls to detect malware test files and prevent user access.",
+      "locator": {
+        "pdf_page": 22,
+        "printed_page": 21,
+        "section": "Appendix B: Types of test file",
+        "detail": "malware-file group criterion"
+      }
+    },
+    {
+      "record_id": "cepts32-b-006",
+      "external_provision_id": "CEPTS3.2-B-006",
+      "section_id": "sec-b-appendix",
+      "group": "B",
+      "kind": "decision_rule",
+      "actors": [
+        "Assessor"
+      ],
+      "actor_basis": "The test-file group description defines the expected behavior used by the Assessor's result evaluation.",
+      "source_assigned_label": null,
+      "summary": "Expect executable test files to trigger at least a warning and a user choice before execution.",
+      "locator": {
+        "pdf_page": 22,
+        "printed_page": 21,
+        "section": "Appendix B: Types of test file",
+        "detail": "executable-file group criterion"
+      }
+    },
+    {
+      "record_id": "cepts32-b-007",
+      "external_provision_id": "CEPTS3.2-B-007",
+      "section_id": "sec-b-note-delivery-partner",
+      "group": "B",
+      "kind": "procedure_step",
+      "actors": [
+        "Delivery Partner"
+      ],
+      "actor_basis": "The note expressly gives the Delivery Partner a mandatory delivery duty.",
+      "source_assigned_label": null,
+      "summary": "Beforehand, give the Certification Body assessment files covering the file types Applicants are expected to encounter.",
+      "locator": {
+        "pdf_page": 22,
+        "printed_page": 21,
+        "section": "Note for Delivery Partner",
+        "detail": "representative-set duty"
+      }
+    },
+    {
+      "record_id": "cepts32-b-008",
+      "external_provision_id": "CEPTS3.2-B-008",
+      "section_id": "sec-b-note-delivery-partner",
+      "group": "B",
+      "kind": "recommendation",
+      "actors": [
+        "Delivery Partner"
+      ],
+      "actor_basis": "The note directly recommends that the Delivery Partner encourage tailoring.",
+      "source_assigned_label": null,
+      "summary": "Encourage each Certification Body to customize the Assessor file subset for the Applicant.",
+      "locator": {
+        "pdf_page": 22,
+        "printed_page": 21,
+        "section": "Note for Delivery Partner",
+        "detail": "tailoring recommendation"
+      }
+    },
+    {
+      "record_id": "cepts32-b-009",
+      "external_provision_id": "CEPTS3.2-B-009",
+      "section_id": "sec-b-note-delivery-partner",
+      "group": "B",
+      "kind": "recommendation",
+      "actors": [
+        "Certification Body"
+      ],
+      "actor_basis": "The recommendation concerns the subset that the preceding responsibility assigns the Certification Body to define.",
+      "source_assigned_label": null,
+      "summary": "Make each Applicant-specific subset reflect that Applicant's applications and platforms.",
+      "locator": {
+        "pdf_page": 22,
+        "printed_page": 21,
+        "section": "Note for Delivery Partner",
+        "detail": "subset-relevance recommendation"
+      }
+    },
+    {
+      "record_id": "cepts32-b-010",
+      "external_provision_id": "CEPTS3.2-B-010",
+      "section_id": "sec-b-appendix",
+      "group": "B",
+      "kind": "applicability",
+      "actors": [
+        "Delivery Partner"
+      ],
+      "actor_basis": "The mandatory full-set list addresses the Delivery Partner as the provider.",
+      "source_assigned_label": null,
+      "summary": "Include container formats the Applicant environment can process in the representative full test-file set.",
+      "locator": {
+        "pdf_page": 22,
+        "printed_page": 21,
+        "section": "Appendix B: Types of test file",
+        "detail": "full-set list, container formats"
+      }
+    },
+    {
+      "record_id": "cepts32-b-011",
+      "external_provision_id": "CEPTS3.2-B-011",
+      "section_id": "sec-b-appendix",
+      "group": "B",
+      "kind": "applicability",
+      "actors": [
+        "Delivery Partner"
+      ],
+      "actor_basis": "The mandatory full-set list addresses the Delivery Partner as the provider.",
+      "source_assigned_label": null,
+      "summary": "Include file types that common platforms execute by default, encompassing native programs and script formats.",
+      "locator": {
+        "pdf_page": 22,
+        "printed_page": 21,
+        "section": "Appendix B: Types of test file",
+        "detail": "full-set list, executable formats"
+      }
+    },
+    {
+      "record_id": "cepts32-b-012",
+      "external_provision_id": "CEPTS3.2-B-012",
+      "section_id": "sec-b-appendix",
+      "group": "B",
+      "kind": "applicability",
+      "actors": [
+        "Delivery Partner"
+      ],
+      "actor_basis": "The mandatory full-set list addresses the Delivery Partner as the provider.",
+      "source_assigned_label": null,
+      "summary": "Include routinely received file types, such as office documents, that contain inert malware samples.",
+      "locator": {
+        "pdf_page": 22,
+        "printed_page": 21,
+        "section": "Appendix B: Types of test file",
+        "detail": "full-set list, routine file formats"
+      }
+    },
+    {
+      "record_id": "cepts32-b-013",
+      "external_provision_id": "CEPTS3.2-B-013",
+      "section_id": "sec-b-appendix",
+      "group": "B",
+      "kind": "recommendation",
+      "actors": [
+        "Delivery Partner"
+      ],
+      "actor_basis": "The continued appendix guidance directly recommends the Delivery Partner's executable-file design.",
+      "source_assigned_label": null,
+      "summary": "Use executable test files with conspicuous behavior so execution is quickly and easily observable.",
+      "locator": {
+        "pdf_page": 23,
+        "printed_page": 22,
+        "section": "Appendix B: Types of test file",
+        "detail": "continued guidance, executable behavior"
+      }
+    },
+    {
+      "record_id": "cepts32-b-014",
+      "external_provision_id": "CEPTS3.2-B-014",
+      "section_id": "sec-b-appendix",
+      "group": "B",
+      "kind": "recommendation",
+      "actors": [
+        "Delivery Partner"
+      ],
+      "actor_basis": "The continued appendix guidance directly recommends the Delivery Partner's malware-sample selection.",
+      "source_assigned_label": null,
+      "summary": "Use specific inert malware samples known to be detected by most common antivirus products.",
+      "locator": {
+        "pdf_page": 23,
+        "printed_page": 22,
+        "section": "Appendix B: Types of test file",
+        "detail": "continued guidance, malware samples"
+      }
+    }
+  ]
+}
