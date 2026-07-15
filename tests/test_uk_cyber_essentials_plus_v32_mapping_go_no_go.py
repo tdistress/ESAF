@@ -476,6 +476,16 @@ REQUIRED_ESAF_TO_EXTERNAL_QUESTION = (
     "Cyber Essentials Plus v3.2 provision, without implying that the assessment procedure "
     "has been performed or passed?"
 )
+REQUIRED_EXTERNAL_TO_ESAF_QUESTION = (
+    "Can evidence or a result produced by performing a specific public Cyber Essentials "
+    "Plus v3.2 provision materially support evaluation of an exact normative ESAF control "
+    "outcome under explicit actor, scope, population, sample, date, tool, exception, and "
+    "provenance conditions?"
+)
+LOCKED_QUESTIONS = {
+    "esaf_to_external": REQUIRED_ESAF_TO_EXTERNAL_QUESTION,
+    "external_to_esaf": REQUIRED_EXTERNAL_TO_ESAF_QUESTION,
+}
 APPROVED_CONTROLLED_LANGUAGE_BOUNDARIES = (
     re.compile(r"^this\s+analysis\s+does\s+not\s+establish\s+certification\s+or\s+compliance$", re.I),
     re.compile(r"^the\s+frameworks\s+are\s+not\s+equivalent(?:\s+and\s+ncsc\s+does\s+not\s+endorse\s+this\s+review)?$", re.I),
@@ -602,6 +612,9 @@ def controlled_language_violations_in_matrix(
                 child_value, (*path, "*")
             )
         ]
+    if isinstance(value, str) and path == ("direction_assessments", "*", "question"):
+        if value not in LOCKED_QUESTIONS.values():
+            return ["locked question mismatch"]
     if isinstance(value, str) and path in MATRIX_NARRATIVE_PATHS:
         return prohibited_claim_violations(value)
     return []
@@ -1101,6 +1114,21 @@ class MappingValidatorRegressionTests(unittest.TestCase):
         self.assertEqual(prohibited_claim_violations(required_question), [])
         self.assertTrue(prohibited_claim_violations(required_question.replace("passed", "succeeded")))
 
+    def test_schema_aware_locked_question_rejects_near_variants(self) -> None:
+        variants = (
+            REQUIRED_ESAF_TO_EXTERNAL_QUESTION.replace("passed", "completed"),
+            REQUIRED_ESAF_TO_EXTERNAL_QUESTION.replace(
+                ", without implying that the assessment procedure has been performed or passed",
+                "",
+            ),
+        )
+        for question in variants:
+            with self.subTest(question=question):
+                violations = controlled_language_violations_in_matrix({
+                    "direction_assessments": [{"question": question}],
+                })
+                self.assertIn("locked question mismatch", violations)
+
     def test_schema_aware_narratives_accept_closed_categorical_values(self) -> None:
         complete_like = {
             "source_oracle": {
@@ -1459,6 +1487,7 @@ class MatrixClosedContractTests(unittest.TestCase):
             }, "direction_assessment")
             role = self.matrix["roles"][f"{assessment['direction']}_analyst"]
             self.assertEqual(assessment["analyst"], role)
+            self.assertEqual(assessment["question"], LOCKED_QUESTIONS[assessment["direction"]])
             for key in ("direction", "analyst", "question", "disposition", "decision_rationale"):
                 self.assert_nonempty_string(assessment[key], f"assessment.{key}")
             for probe_id in assessment["positive_probe_identifiers"]:
