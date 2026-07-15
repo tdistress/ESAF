@@ -406,9 +406,9 @@ def validate_probe_scenario_bindings(probe: dict, oracle: dict) -> None:
 
 
 CONTROLLED_LANGUAGE_OUTCOME = re.compile(
-    r"\b(?:certif(?:ication|ied|y|ies)|complian(?:ce|t)|equivalen(?:ce|t)|"
-    r"endorse(?:ment|d|s)?|predictive(?:ly)?\s+sufficien\w*|predicts?\s+future\s+sufficien\w*|"
-    r"testing\s+outcome|pass(?:ed|es)?|succeed(?:ed|s)?|success(?:ful|fully)?|"
+    r"\b(?:certif(?:ication|ied|y|ies|ying)|complian(?:ce|t)|equivalen(?:ce|t)|"
+    r"endors(?:e|ement|ed|es|ing)|predictive(?:ly)?\s+sufficien\w*|predicts?\s+future\s+sufficien\w*|"
+    r"testing\s+outcome|pass(?:ed|es|ing)?|succeed(?:ed|s|ing)?|success(?:ful|fully)?|"
     r"current[- ](?:operational[- ])?scheme(?:\s+(?:completeness|inventory))?|"
     r"full[- ]population\s+assurance|assurance\s+(?:over|for|across|of)\s+(?:the\s+)?full\s+population|"
     r"all\s+(?:untested\s+)?(?:devices|accounts|services|configurations|systems)\s+are\s+assured|"
@@ -418,6 +418,11 @@ CONTROLLED_LANGUAGE_OUTCOME = re.compile(
 CONTROLLED_REPORTING_PREFIX = (
     r"(?:the\s+(?:review|analysis|report|evidence)\s+"
     r"(?:shows|confirms|establishes(?:\s+that)?|indicates)\s+)?"
+)
+REQUIRED_ORACLE_SCOPE_STATEMENT = (
+    "This complete-publication oracle inventories the public NCSC Cyber Essentials Plus "
+    "Test Specification v3.2. It is not a complete inventory of the current operational "
+    "Cyber Essentials Plus scheme, Delivery Partner methodology, or certification process."
 )
 APPROVED_CONTROLLED_LANGUAGE_BOUNDARIES = (
     re.compile(r"^this\s+analysis\s+does\s+not\s+establish\s+certification\s+or\s+compliance$", re.I),
@@ -452,8 +457,9 @@ APPROVED_CONTROLLED_LANGUAGE_BOUNDARIES = (
     ),
     re.compile(r"^the\s+review\s+establishes\s+source\s+identity\s+before\s+certification\s+is\s+considered$", re.I),
     re.compile(
-        r"^(?:the\s+)?(?:assessment|test|testing)\b.*\b(?:pass(?:ed|es)?|succeed(?:ed|s)?)\b\s+"
-        r"(?:(?:for|in|on)\s+)?(?:no|zero|none|neither|not\s+a\s+single)\b.*$",
+        r"^(?:the\s+)?(?:assessment|test|testing)\s+(?:passed|succeeded)\s+(?:"
+        r"(?:in\s+)?(?:no|zero)\s+(?:controls|cases)|none\s+of\s+the\s+controls|"
+        r"neither\s+control|not\s+a\s+single\s+control)$",
         re.I,
     ),
     re.compile(r"^testing\s+succeeded\s+without\s+passing\s+any\s+controls$", re.I),
@@ -480,6 +486,10 @@ def prohibited_claim_violations(text: str) -> list[str]:
     This deliberately does not infer English semantics. Any protected outcome mention
     outside the closed boundary templates requires rewriting and independent review.
     """
+    if normalize_controlled_proposition(text) == normalize_controlled_proposition(
+        REQUIRED_ORACLE_SCOPE_STATEMENT
+    ):
+        return []
     violations: list[str] = []
     for raw_proposition in re.split(r"(?<=[.!?])\s+|[\r\n]+", text):
         proposition = normalize_controlled_proposition(raw_proposition)
@@ -490,6 +500,58 @@ def prohibited_claim_violations(text: str) -> list[str]:
                 f"controlled-language violation: protected outcome '{match.group(0)}'"
             )
     return violations
+
+
+def is_non_narrative_key(key: str) -> bool:
+    return key in {
+        "id", "ids", "identifier", "identifiers", "path", "paths", "locator", "locators",
+        "url", "urls", "sha256", "digest", "digests", "commit", "commits", "date", "version",
+        "review_identifier", "schema_version",
+    } or key.endswith(
+        (
+            "_id", "_ids", "_identifier", "_identifiers", "_path", "_paths", "_locator", "_locators",
+            "_url", "_urls", "_sha256", "_digest", "_digests", "_commit", "_commits", "_date", "_version",
+        )
+    )
+
+
+def controlled_language_violations_in_value(value: object, key: str = "") -> list[str]:
+    """Validate parsed narrative values without scanning serialized JSON syntax."""
+    if is_non_narrative_key(key):
+        return []
+    if isinstance(value, dict):
+        return [
+            violation
+            for child_key, child_value in value.items()
+            for violation in controlled_language_violations_in_value(child_value, child_key)
+        ]
+    if isinstance(value, list):
+        return [
+            violation
+            for child_value in value
+            for violation in controlled_language_violations_in_value(child_value, key)
+        ]
+    if isinstance(value, str):
+        return prohibited_claim_violations(value)
+    return []
+
+
+def controlled_language_violations_in_review(review: str) -> list[str]:
+    """Validate rendered-review narrative one logical Markdown line/cell at a time."""
+    return [
+        violation
+        for line in review.splitlines()
+        for cell in line.split("|")
+        for narrative in [
+            re.sub(r"\((?:https?://|/?\.\.?/)[^)]+\)", "", cell).strip()
+        ]
+        if not re.fullmatch(
+            r"(?:https?://\S+|[a-z0-9_./\\-]+\.(?:json|md)|[0-9a-f]{40,64})",
+            narrative,
+            re.I,
+        )
+        for violation in prohibited_claim_violations(narrative)
+    ]
 
 
 class MappingGoNoGoTests(unittest.TestCase):
@@ -937,6 +999,40 @@ class MappingValidatorRegressionTests(unittest.TestCase):
                 self.assertTrue(violations)
                 self.assertTrue(all("controlled-language violation" in item for item in violations))
 
+    def test_parsed_narratives_accept_required_source_boundaries(self) -> None:
+        parsed = {
+            "assurance_and_overclaiming_risks": (
+                "Certification is outside the scope of this analysis."
+            ),
+            "scope_statement": self.oracle["scope"]["statement"],
+            "source_url": "https://example.invalid/certification-process",
+            "review_identifier": "certification-process",
+            "path": "docs/certification-process.md",
+            "identifier": "certification-process",
+        }
+        self.assertEqual(controlled_language_violations_in_value(parsed), [])
+
+    def test_intrinsic_morphological_anchors_fail_closed(self) -> None:
+        claims = (
+            "NCSC is endorsing this review.",
+            "The assessment is passing all controls.",
+            "This process is certifying the applicant.",
+        )
+        for claim in claims:
+            with self.subTest(claim=claim):
+                self.assertTrue(prohibited_claim_violations(claim))
+
+    def test_negative_result_quantifier_does_not_suppress_another_outcome(self) -> None:
+        claims = (
+            "The assessment established compliance and passed no controls.",
+            "The assessment passed no controls but succeeded overall.",
+            "The assessment passed no controls while certification was established.",
+            "The test passed none of the controls and endorsement was conferred.",
+        )
+        for claim in claims:
+            with self.subTest(claim=claim):
+                self.assertTrue(prohibited_claim_violations(claim))
+
     def test_all_outcome_result_quantifiers_are_accepted(self) -> None:
         boundaries = (
             "The assessment passed zero controls.",
@@ -1268,7 +1364,8 @@ class MatrixClosedContractTests(unittest.TestCase):
         self.assertEqual(PROHIBITED_KEYS & recursive_keys(self.matrix), set())
         combined = MATRIX.read_text(encoding="utf-8") + "\n" + self.review
         self.assertNotIn(self.oracle["known_anomalies"][0]["source_literal"], combined)
-        self.assertEqual(prohibited_claim_violations(combined), [])
+        self.assertEqual(controlled_language_violations_in_value(self.matrix), [])
+        self.assertEqual(controlled_language_violations_in_review(self.review), [])
         base = git("merge-base", "HEAD", "origin/main")
         changed = git("diff", "--name-only", base, "--", "crosswalks/mappings", "crosswalks/registry")
         self.assertEqual(changed, "")
