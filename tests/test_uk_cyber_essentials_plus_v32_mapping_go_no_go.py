@@ -410,7 +410,7 @@ PROHIBITED_CLAIM_PATTERNS = (
     re.compile(r"\b(?:certif(?:y|ies)|is certified|is compliant)\b", re.I),
     re.compile(r"\b(?:is|are|establish\w*|prov(?:e|es))\b[^.;\n]{0,30}\bequivalen(?:t|ce)\b", re.I),
     re.compile(r"\b(?:have|has) equivalent\b", re.I),
-    re.compile(r"\b(?:endorsed by|endorses|(?:establish\w*|constitutes?) (?:NCSC )?endorsement)\b", re.I),
+    re.compile(r"\b(?:endors(?:e|es|ed)\b(?: by)?|(?:establish\w*|constitutes?) (?:NCSC )?endorsement)\b", re.I),
     re.compile(r"\b(?:predictively sufficient|predictive sufficiency|predicts? future sufficiency)\b", re.I),
     re.compile(r"\b(?:prov(?:e|es)|establish\w*|guarantee\w*)\b[^.;\n]{0,60}\b(?:assessment|test(?:ing)?)\b[^.;\n]{0,30}\b(?:passed|pass|outcome)\b", re.I),
     re.compile(r"\b(?:testing succeeded|assessment succeeded)\b", re.I),
@@ -419,19 +419,48 @@ PROHIBITED_CLAIM_PATTERNS = (
     re.compile(r"\ball untested [^.;\n]{0,40}\bare assured\b", re.I),
     re.compile(r"\b(?:continuous assurance|continuously assures?|assured continuously)\b", re.I),
 )
-NEGATION = re.compile(r"\b(?:does not|do not|is not|are not|not|no|without|cannot|never|neither)\b", re.I)
+COORDINATION_BOUNDARY = re.compile(
+    r"(?:[.;!\n]+|,\s*(?:but|and|yet|however)\s+|\s+(?:but|and|yet|however)\s+)",
+    re.I,
+)
+NEGATED_AUXILIARY = re.compile(
+    r"\b(?:do|does|did|is|are|was|were|has|have|can|could|will|would)\s+not"
+    r"(?:\s+\w+){0,3}\s*$",
+    re.I,
+)
+NEGATED_NO_LIST = re.compile(
+    r"\b(?:provides?|establishes?|shows?|offers?|confers?)\s+no\b",
+    re.I,
+)
+NEGATED_AFTER_PROPOSITION = re.compile(
+    r"^\s*(?:is|are|was|were|has|have|does|do)?\s*not\s+"
+    r"(?:implied|established|demonstrated|proven|proved|supported|shown|conferred|achieved)\b",
+    re.I,
+)
+
+
+def prohibited_proposition_is_negated(clause: str, match: re.Match[str]) -> bool:
+    proposition = match.group(0)
+    if re.search(r"\b(?:not|no|without|never|neither)\b", proposition, re.I):
+        return True
+    prefix = clause[:match.start()]
+    if NEGATED_AUXILIARY.search(prefix):
+        return True
+    no_list = NEGATED_NO_LIST.search(prefix)
+    if no_list and not COORDINATION_BOUNDARY.search(prefix[no_list.end():]):
+        return True
+    if re.search(r"\bwithout(?:\s+\w+){0,3}\s*$", prefix, re.I):
+        return True
+    return bool(NEGATED_AFTER_PROPOSITION.search(clause[match.end():]))
 
 
 def prohibited_claim_violations(text: str) -> list[str]:
     violations: list[str] = []
-    for pattern in PROHIBITED_CLAIM_PATTERNS:
-        for match in pattern.finditer(text):
-            clause_start = max(
-                text.rfind(".", 0, match.start()), text.rfind(";", 0, match.start()),
-                text.rfind("!", 0, match.start()), text.rfind("\n", 0, match.start()),
-            ) + 1
-            if not NEGATION.search(text[clause_start:match.end()]):
-                violations.append(match.group(0))
+    for clause in COORDINATION_BOUNDARY.split(text):
+        for pattern in PROHIBITED_CLAIM_PATTERNS:
+            for match in pattern.finditer(clause):
+                if not prohibited_proposition_is_negated(clause, match):
+                    violations.append(match.group(0))
     return violations
 
 
@@ -596,6 +625,20 @@ class MappingValidatorRegressionTests(unittest.TestCase):
             "No mapping snapshot exists. A GO authorizes design only.",
         )
         for boundary in boundaries:
+            with self.subTest(boundary=boundary):
+                self.assertEqual(prohibited_claim_violations(boundary), [])
+
+    def test_prohibited_inference_negation_is_scoped_to_its_proposition(self) -> None:
+        for claim in (
+            "This does not establish certification, but it guarantees compliance.",
+            "No evidence was omitted, and this analysis establishes certification.",
+        ):
+            with self.subTest(claim=claim):
+                self.assertTrue(prohibited_claim_violations(claim))
+        for boundary in (
+            "The review establishes that certification is not implied.",
+            "The analysis proves equivalence is not established.",
+        ):
             with self.subTest(boundary=boundary):
                 self.assertEqual(prohibited_claim_violations(boundary), [])
 
