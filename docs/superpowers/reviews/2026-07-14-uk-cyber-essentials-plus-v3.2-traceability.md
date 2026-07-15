@@ -10,7 +10,7 @@
 |---|---|
 | Canonical NCSC PDF | 424,226 bytes; 24 PDF pages; SHA-256 `2adf2703dec3b581e13e39c6a1de230bb1bce6d85f1158bb1eb53108e28596e8` |
 | Legacy official NCSC PDF | 419,191 bytes; 24 PDF pages; SHA-256 `d334c717597a01fab7a362377b7b04c8449568052ed1c4cf48837f6fb3aca694` |
-| Locked oracle | SHA-256 `096a5c1238b92250b1497e76ef175b6b8e99f05a65a21ed66263f8b1cf68578a` |
+| Locked oracle | SHA-256 `8a6ad659394130c360205aa8a693b812f6c3a6778bc1395cd93ac6187f8386bc` |
 | Tracked reconciliation record | SHA-256 `6563dfaeac62fd505edf49661ab0b826b00a67778af7de9b29029af16f0fd284` |
 | Rights review and R2 re-attestation | SHA-256 `dd4e380087d5ae487f432dc08843e5c9d9dd57711cd7904403955359fb701ab1` |
 | Focused inventory contract test | SHA-256 `3663fc611416eefcdda7dba924761fb72a7feb67edc66df214060bab33e8acf2` |
