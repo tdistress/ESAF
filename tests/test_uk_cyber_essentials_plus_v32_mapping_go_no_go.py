@@ -405,18 +405,40 @@ def validate_probe_scenario_bindings(probe: dict, oracle: dict) -> None:
         validate_scenario_binding(probe, binding, oracle)
 
 
+CLAIM_MODIFIERS = (
+    r"(?:\s+(?:directly|itself|independently|validly|defensibly|conclusively|actually|materially)){0,2}"
+)
+CLAIM_DETERMINERS = r"(?:\s+that)?(?:\s+(?:the|a|an|this|such))?"
 PROHIBITED_CLAIM_PATTERNS = (
-    re.compile(r"\b(?:establish\w*|prov(?:e|es)|ensur(?:e|es)|achiev\w*|confer\w*|demonstrat\w*|guarantee\w*)\b[^.;\n]{0,60}\b(?:certification|compliance)\b", re.I),
+    re.compile(
+        rf"\b(?:establish\w*|prov(?:e|es)|ensur(?:e|es)|achiev\w*|confer\w*|demonstrat\w*|guarantee\w*)\b"
+        rf"{CLAIM_MODIFIERS}{CLAIM_DETERMINERS}\s+(?:certification|compliance)\b",
+        re.I,
+    ),
     re.compile(r"\b(?:certif(?:y|ies)|is certified|is compliant)\b", re.I),
-    re.compile(r"\b(?:is|are|establish\w*|prov(?:e|es))\b[^.;\n]{0,30}\bequivalen(?:t|ce)\b", re.I),
-    re.compile(r"\b(?:have|has) equivalent\b", re.I),
-    re.compile(r"\b(?:endors(?:e|es|ed)\b(?: by)?|(?:establish\w*|constitut\w*|guarantee\w*|impl(?:y|ies)|confer\w*) (?:NCSC )?endorsement)\b", re.I),
+    re.compile(rf"\b(?:is|are|have|has){CLAIM_MODIFIERS}\s+equivalent\b", re.I),
+    re.compile(
+        rf"\b(?:establish\w*|prov(?:e|es))\b{CLAIM_MODIFIERS}{CLAIM_DETERMINERS}"
+        rf"\s+equivalence\b",
+        re.I,
+    ),
+    re.compile(
+        rf"\b(?:endors(?:e|es|ed)\b(?:\s+by)?|"
+        rf"(?:establish\w*|constitut\w*|guarantee\w*|impl(?:y|ies)|confer\w*)\b"
+        rf"{CLAIM_MODIFIERS}{CLAIM_DETERMINERS}\s+(?:NCSC\s+)?endorsement)\b",
+        re.I,
+    ),
     re.compile(r"\b(?:predictively sufficient|predictive sufficiency|predicts? future sufficiency)\b", re.I),
-    re.compile(r"\b(?:prov(?:e|es)|establish\w*|guarantee\w*)\b[^.;\n]{0,60}\b(?:assessment|test(?:ing)?)\b[^.;\n]{0,30}\b(?:passed|pass|outcome)\b", re.I),
+    re.compile(
+        rf"\b(?:prov(?:e|es)|establish\w*|guarantee\w*)\b{CLAIM_MODIFIERS}"
+        rf"{CLAIM_DETERMINERS}\s+(?:assessment|test(?:ing)?)"
+        rf"(?:\s+(?:has|had))?\s+(?:passed|passes|pass|outcome)\b",
+        re.I,
+    ),
     re.compile(r"\b(?:testing succeeded|assessment succeeded)\b", re.I),
     re.compile(r"\b(?:covers? the current operational scheme|complete (?:inventory of|for) the current operational scheme|complete current[- ]scheme inventory|current[- ]scheme completeness)\b", re.I),
     re.compile(r"\bfull[- ]population assurance\b", re.I),
-    re.compile(r"\ball untested [^.;\n]{0,40}\bare assured\b", re.I),
+    re.compile(r"\ball (?:untested )?(?:devices|accounts|services|configurations|systems) are assured\b", re.I),
     re.compile(r"\b(?:continuous assurance|continuously assures?|assured continuously)\b", re.I),
 )
 COORDINATION_BOUNDARY = re.compile(
@@ -664,6 +686,10 @@ class MappingValidatorRegressionTests(unittest.TestCase):
             "The analysis never reviews evidence before it establishes certification.",
             "The analysis cannot inspect logs although it proves compliance.",
             "The analysis neither omits facts nor obscures sources even as it proves equivalence.",
+            "The analysis does not prove a gap while it establishes certification.",
+            "The analysis never demonstrates an omission before it guarantees compliance.",
+            "The analysis cannot establish source identity although it proves compliance.",
+            "The review does not establish a source fact whereas it directly confers certification.",
         ):
             with self.subTest(mixed=mixed):
                 self.assertTrue(prohibited_claim_violations(mixed))
