@@ -151,8 +151,8 @@ For each direction, validators shall derive `positive_probe_identifiers` as the 
 
 The directional disposition shall then be derived mechanically:
 
-- `GO` requires all seven gates to be `PASS`, a nonempty derived positive-probe array, no unresolved analyst disagreement, and empty `prerequisites` and `reconsideration_triggers` arrays.
-- `HOLD` requires no `FAIL` gate and at least one `BLOCKED` gate. Every unresolved analyst disagreement shall mark at least one affected gate `BLOCKED`; disagreement represented only in prose is invalid. `HOLD` shall have one or more externally resolvable `prerequisites`, each naming the missing evidence and re-entry test, and an empty `reconsideration_triggers` array.
+- `GO` requires all seven gates to be `PASS`, a nonempty derived positive-probe array, and empty `prerequisites` and `reconsideration_triggers` arrays.
+- `HOLD` requires no `FAIL` gate and at least one `BLOCKED` gate within that sealed directional submission. `HOLD` shall have one or more externally resolvable `prerequisites`, each naming the missing evidence and re-entry test, and an empty `reconsideration_triggers` array.
 - `NO_GO` requires at least one `FAIL` gate or, when all seven gates are `PASS`, an empty derived positive-probe array after the complete adversarial probe set. It shall have empty `prerequisites` and one or more `reconsideration_triggers`, each naming a source, methodology, or framework change and evidence that would justify reconsideration.
 
 A reviewer shall be able to reproduce the disposition from the gate statuses and probe conclusions without relying on unstated judgment.
@@ -226,11 +226,17 @@ The milestone shall identify:
 - one rights reviewer different from both analysts; and
 - two exact-head reviewers: specification/methodology and security/overclaiming.
 
-Each directional analyst shall receive the approved design, locked oracle, ESAF controls, and ESAF-1600 method. Each shall run in a separately verified child beneath the system temporary directory, with distinct read/write permissions or process boundaries that prevent either analyst from listing or reading the other's output child. Shared output directories and reliance on prompt-only secrecy are invalid. Neither analyst shall see the other direction's provisional disposition, gate statuses, probe conclusions, counts, or files before submitting their own result.
+The controller shall dispatch both directional analysts concurrently as sibling Codex agents with `fork_turns="none"`. Each receives an independently hashed direction-specific prompt and the same hashed common-input manifest: approved design, locked oracle, ESAF controls, ESAF-1600 method, and closed contract. Analysts shall write no output file and shall return exactly one canonical JSON payload only as their final response through the controller mailbox. Sibling agents cannot access the controller mailbox. The controller shall not persist outside that mailbox, quote, summarize, or reveal either payload until both final messages have been received. Neither analyst shall see the other direction's provisional disposition, gate statuses, probe conclusions, counts, or payload.
 
-Before reconciliation begins, each analyst shall make an immutable submission and attestation. The provenance record shall capture direction, analyst identity, UTC submission timestamp, SHA-256 of the exact submitted bytes, a digest reference used by reconciliation, and an attestation that the other output was not visible. Submission bytes shall not change after the timestamp; any correction requires a new submission, digest, timestamp, and supersession record before comparison.
+This brokered-private-submission protocol is mandatory for Codex collaboration. If the runtime cannot prove private controller-mailbox semantics, the implementation shall use analysts running under separate principals or containers with equivalent private return channels; if neither mechanism is available, analysis stops. Shared-filesystem output, prompt-only secrecy, sequential dispatch, and `fork_turns` values other than `none` are invalid.
 
-The reconciler shall disposition every disagreement, missing coverage axis, unsupported citation, and conclusion difference. An unresolved disagreement shall mark the affected gate `BLOCKED`, record a re-entry prerequisite, and produce `HOLD` for the affected direction.
+Receipt seals each payload permanently. The controller shall record the prompt and common-input digests, UTC receipt time, SHA-256 of the exact canonical payload bytes, a unique digest reference, and the analyst's no-file/no-sibling-content attestations. Correction, mutation, and supersession after sealing are prohibited. If either member of the pair is missing, malformed, noncanonical, or fails any contract validation, the controller shall discard both payloads and redispatch two fresh analysts without disclosing either prior payload. No invalid or discarded submission may enter the matrix or provenance.
+
+Each final-response payload shall contain exactly `direction`, `analyst`, `direction_assessment`, `probes`, `no_output_file_attestation`, and `no_sibling_content_attestation`. Direction, analyst, assessment, and probes shall agree internally; both attestations shall be `true`. The direction-specific prompt envelope and common-input manifest shall also be JSON values hashed with the canonical serialization below, so their recorded digests identify the complete dispatched instructions and shared source set rather than a prose description.
+
+The reconciler is a validation-and-packaging role, not an analyst. It shall validate each sealed payload independently and may not alter either payload, resolve differences between the asymmetric questions, add gates, change conclusions, or manufacture prerequisites. The committed direction assessment and direction-local probes shall be byte-semantically identical to the accepted payload content after canonical parsing. `HOLD` can arise only from `BLOCKED` gates and prerequisites already present in that direction's sealed submission.
+
+Canonical JSON bytes for payload and content hashing shall be UTF-8 bytes of Python `json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"), allow_nan=False)`. Inputs shall contain only JSON types; object keys are sorted, array order is preserved, and no trailing newline is included. Each direction-content digest shall hash exactly `{"direction_assessment": <that assessment>, "probes": <that direction's probes in matrix order>}` under this serialization. Tests shall recompute both digests from committed matrix content.
 
 The exact-head reviewers shall be independent of the analysts and reconciler. Independent Codex review establishes technical closure only; it does not qualify a future mapping snapshot as reviewed or approved under ESAF-1600.
 
@@ -262,11 +268,17 @@ The top-level object shall contain exactly:
 
 `coverage_contract` shall contain exactly `groups`, `kinds`, `actors`, and `special_scenarios`, using the ordered values in section 8.
 
-`analysis_provenance` shall contain exactly `isolation`, `submissions`, and `reconciliation_evidence_references`. `isolation` shall contain exactly `system_temp_verified`, `outside_repository_verified`, `distinct_children_verified`, and `no_shared_output_visibility_verified`, all `true`. `submissions` shall contain exactly two direction-ordered objects, each containing exactly `direction`, `analyst`, `submitted_at_utc`, `sha256`, `digest_reference`, `independence_attestation`, and `supersedes_digest_reference`. The SHA-256 shall be lowercase hexadecimal; `digest_reference` shall be unique; `supersedes_digest_reference` shall be JSON `null` for an original immutable submission or the unique digest reference of the immediately superseded submission. `reconciliation_evidence_references` shall contain both and only the current direction-ordered submission digest references.
+`analysis_provenance` shall contain exactly `broker_protocol`, `prompt_digests`, `common_input_sha256`, `submissions`, `direction_content_digests`, and `reconciliation`.
+
+`broker_protocol` shall contain exactly `dispatch_mode`, `fork_turns`, `concurrent`, `analyst_output_channel`, `no_output_files`, `controller_withholding_attestation`, `sibling_mailbox_inaccessible_attestation`, and `fail_closed_fallback`. Values shall be `codex_sibling_agents`, `none`, `true`, `controller_mailbox_final_response`, `true`, `true`, `true`, and `separate_principals_or_containers_else_stop`, respectively. `prompt_digests` shall contain exactly two direction-ordered objects with exactly `direction` and lowercase hexadecimal `sha256`. `common_input_sha256` shall be lowercase hexadecimal.
+
+`submissions` shall contain exactly two direction-ordered objects, each containing exactly `direction`, `analyst`, `received_at_utc`, `payload_sha256`, `digest_reference`, `no_output_file_attestation`, and `no_sibling_content_attestation`. Each analyst shall equal the matching role and direction-assessment analyst. Digests and references shall be unique; receipt timestamps shall be UTC ISO 8601 values; both attestations shall be `true`. Tests shall reconstruct the exact payload object from the matching committed assessment, direction-local probes, analyst, direction, and two true attestations, then require its canonical SHA-256 to equal `payload_sha256`. There is no correction or supersession field.
+
+`direction_content_digests` shall contain exactly two direction-ordered objects with exactly `direction` and `sha256`. Each digest shall equal the recomputation defined in section 9. `reconciliation` shall contain exactly `reconciler`, `submission_digest_references`, `direction_validations`, `post_seal_changes_prohibited`, and `packaging_disposition`. Its `reconciler` shall equal `roles.reconciler`; its digest references shall equal the two submission references in direction order; `post_seal_changes_prohibited` shall be `true`; and `packaging_disposition` shall be `accepted`. `direction_validations` shall contain exactly two direction-ordered objects, each with exactly `direction`, `status`, and `evidence_references`; committed status shall be `ACCEPTED` and evidence references shall be nonempty. A matrix with a rejected, changed, discarded, or incomplete payload is invalid and shall not be committed.
 
 `direction_assessments` shall contain exactly two objects in the direction order in section 3.2. Each contains exactly `direction`, `analyst`, `question`, `gate_results`, `positive_probe_identifiers`, `disposition`, `decision_rationale`, `prerequisites`, and `reconsideration_triggers`.
 
-Each prerequisite entry shall contain exactly `prerequisite`, `required_evidence`, and `reentry_test`, all nonempty strings that describe an action available outside the completed analysis and an objectively checkable return condition. Each reconsideration-trigger entry shall contain exactly `change` and `required_evidence`, both nonempty strings. Narrative wishes, restatements of disagreement, and analyst-only reconsideration are not externally resolvable.
+Each prerequisite entry shall contain exactly `prerequisite`, `required_evidence`, and `reentry_test`, all nonempty strings that describe an action available outside the completed analysis and an objectively checkable return condition. Each reconsideration-trigger entry shall contain exactly `change` and `required_evidence`, both nonempty strings. Narrative wishes, restatements of analyst opinion, and analyst-only reconsideration are not externally resolvable.
 
 Each gate-result object contains exactly `gate`, `status`, `rationale`, and `evidence_references`. Evidence references shall resolve to probe identifiers, repository-relative source paths with stable locators, or official URLs already approved as bibliographic facts.
 
@@ -310,6 +322,8 @@ Create:
 
 Tracked traceability shall remain non-self-referential. Exact candidate SHA, reviewer dispositions, GitHub check results, and merged-main SHA belong in pull-request or check evidence.
 
+Tracked traceability shall record the broker protocol and fallback, direction-ordered prompt digests, common-input digest, analyst identities and attestations, receipt timestamps, accepted payload digest references, recomputed direction-content digests, and the closed accepted reconciliation. It shall not contain discarded payload content or digests, correction/supersession fields, controller-mailbox contents, or filesystem paths for analyst output because analyst output files are prohibited.
+
 ### 10.4 Navigation and queue
 
 Modify only as required:
@@ -324,8 +338,8 @@ Tests shall fail closed on:
 - oracle path, digest, version, count, or atomization-rule drift;
 - disagreement between the source-inventory traceability digest table and LF-normalized tracked artifact bytes;
 - source-derived analysis committed before rights re-attestation;
-- role-identity collisions or analysts seeing the other provisional result before submission;
-- missing or open-ended isolation provenance, mutable or post-reconciliation submissions, invalid submission digests, or reconciliation evidence that omits both submission digest references;
+- role-identity collisions, nonconcurrent dispatch, non-`none` forks, filesystem analyst output, unavailable private mailbox semantics without the fail-closed fallback, controller disclosure before both receipts, or analysts seeing sibling content;
+- missing prompt/common-input/receipt provenance, noncanonical payloads, invalid submission or direction-content digests, any correction or supersession mechanism, post-seal changes, an invalid pair retained instead of discarded together, or reconciliation that is not fully `ACCEPTED`;
 - missing or extra directions, gates, groups, kinds, actors, or special scenarios;
 - special-scenario claims without direction-local provision/anomaly/assurance-limit bindings;
 - invalid provision, control, probe, evidence, or cross-reference identifiers;
@@ -341,7 +355,7 @@ Tests shall fail closed on:
 - hand-maintained review totals, including per-direction group, kind, actor, or special-scenario totals, that disagree with values derived from valid probe bindings; or
 - broken links, encoding corruption, cache files, source downloads, renderings, or scratch artifacts in the repository.
 
-Source identity or oracle drift stops the review. A rights conflict, unresolved analyst disagreement, or resolvable evidence gap produces `HOLD`; it shall not be guessed through. A structural semantic failure or absence of every defensible positive probe produces `NO_GO`. A new source version requires a new source-versioned review.
+Source identity or oracle drift stops the review. A direction-local rights conflict or resolvable evidence gap encoded as a `BLOCKED` gate and prerequisite in the sealed submission produces `HOLD`; it shall not be guessed through. A structural semantic failure or absence of every defensible positive probe produces `NO_GO`. A new source version requires a new source-versioned review.
 
 ## 12. Review, integration, and publication gates
 
@@ -369,7 +383,7 @@ The milestone is complete when:
 
 1. the exact locked public v3.2 oracle is the only external decision universe;
 2. the source-inventory traceability digest table matches every LF-normalized tracked artifact and is protected by regression coverage;
-3. `esaf_to_external` and `external_to_esaf` have separate, independently authored assessments with verified isolated output children, immutable pre-reconciliation attestations, digests, timestamps, and closed provenance;
+3. `esaf_to_external` and `external_to_esaf` have concurrently authored broker-private submissions with `fork_turns="none"`, no output files, both-receipt withholding, prompt/common-input/receipt digests and timestamps, and a fail-closed isolation fallback;
 4. each direction records all seven gates and one mechanically derived `GO`, `HOLD`, or `NO_GO` disposition;
 5. each direction covers all ten groups, seven kinds, five actors, and nine special scenarios through valid direction-local evidence bindings, and the renderer derives and displays each per-axis total;
 6. every positive probe cites exact normative ESAF control text through stable locators;
@@ -377,8 +391,9 @@ The milestone is complete when:
 8. rights re-attestation precedes committed source-derived feasibility analysis and preserves the IASME partition;
 9. no mapping snapshot, lifecycle record, mapping record, relationship leg, generated mapping statistic, or authoritative mapping field is created;
 10. a `GO` authorizes only a separate direction-specific mapping design;
-11. positive identifiers and dispositions are derived from direction-local probes; `GO`, `HOLD`, and `NO_GO` enforce their exact prerequisite and trigger invariants;
+11. positive identifiers and dispositions are derived from each immutable sealed direction; `GO`, `HOLD`, and `NO_GO` enforce their exact prerequisite and trigger invariants, and no cross-direction disagreement rule exists;
 12. narrative and backlog outputs are derived from the matrix and preserve all prohibited-inference boundaries;
 13. focused and full tests, all validators, diff checks, artifact checks, and clean-worktree checks pass;
 14. exact-SHA specification/methodology and security/overclaiming reviews have no unresolved Critical or Important findings; and
-15. PR-head, GitHub-check, merge-state, integration, and post-merge evidence are recorded externally without making tracked traceability self-referential.
+15. the reconciler only validates and packages two accepted sealed payloads, both committed direction-content digests recompute exactly, and invalid pairs are discarded and freshly redispatched; and
+16. PR-head, GitHub-check, merge-state, integration, and post-merge evidence are recorded externally without making tracked traceability self-referential.

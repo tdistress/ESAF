@@ -4,7 +4,7 @@
 
 **Goal:** Produce two independently reasoned, machine-validated `GO`, `HOLD`, or `NO_GO` feasibility decisions for mapping ESAF 0.4-alpha and the pinned public Cyber Essentials Plus v3.2 oracle without creating a mapping snapshot.
 
-**Architecture:** Repair and regression-lock the source-inventory digest evidence first, then commit an independent rights re-attestation before any feasibility analysis. Two isolated directional analysts produce temporary probe sets that a reconciler converts into one closed JSON matrix; a deterministic renderer produces the human-readable decision record, and focused tests enforce coverage, disposition mechanics, independence, overclaiming boundaries, and the absence of authoritative mapping artifacts.
+**Architecture:** Repair and regression-lock the source-inventory digest evidence first, then commit an independent rights re-attestation before any feasibility analysis. A controller concurrently dispatches two `fork_turns="none"` analysts that return canonical JSON only through its private mailbox; after both immutable payloads arrive, a validation-only reconciler packages the accepted pair without alteration. A deterministic renderer produces the human-readable decision record, and focused tests enforce cryptographic payload binding, coverage, disposition mechanics, independence, overclaiming boundaries, and the absence of authoritative mapping artifacts.
 
 **Tech Stack:** Python 3 `unittest`, JSON, Markdown, SHA-256, Git history, existing ESAF validators, GitHub Actions.
 
@@ -297,10 +297,12 @@ PROHIBITED_KEYS = {
 Add tests that require:
 
 - exact top-level keys and schema/review identifier values from design section 10.1;
-- exact nested key sets for source, rights, roles, coverage, analysis provenance, immutable submissions, assessments, prerequisites, reconsideration triggers, gates, probes, scenario bindings, condition entries, and normative bases;
+- exact nested key sets for source, rights, roles, coverage, analysis provenance, broker protocol, prompt digests, immutable submissions, direction-content digests, reconciliation, direction validations, assessments, prerequisites, reconsideration triggers, gates, probes, scenario bindings, condition entries, and normative bases;
 - exact direction order, unique role identities, rights reviewer independence, and direction-ordered analyst submission identities;
 - the rights record commit to change only the rights file and precede the first probe commit;
-- four true closed isolation attestations, two unique immutable submission digests/timestamps/references, and reconciliation evidence that references both submission digest references;
+- exact broker values for concurrent `fork_turns="none"` sibling dispatch, controller-mailbox-only final responses, no output files, both-receipt withholding, sibling mailbox inaccessibility, and `separate_principals_or_containers_else_stop` fallback;
+- two direction-ordered prompt digests, one common-input digest, two UTC ISO 8601 receipt timestamps and unique recomputed payload digests/references with true attestations, no correction or supersession property anywhere, and a closed accepted reconciliation referencing both submissions;
+- two direction-content digests recomputed from canonical JSON of each exact assessment plus its direction-local probes in matrix order;
 - exact gate, group, kind, actor, scenario, status, disposition, and conclusion sets;
 - valid provision IDs and derived group/kind/actor values from the oracle;
 - valid control IDs and normative requirement locators resolved from the pinned ESAF control files;
@@ -310,7 +312,7 @@ Add tests that require:
 - every `external_to_esaf` positive probe to have the exact ordered 11-condition checklist, accepted status, and nonempty resolving evidence references, while every other probe has an empty checklist;
 - `NO_POSITIVE_BASIS` to name the missing outcome;
 - `INDETERMINATE` to link a nonempty prerequisite;
-- `positive_probe_identifiers` to equal the ordered positive probe IDs derived directly for that direction, and exact disposition/prerequisite/reconsideration-trigger mechanics from design section 7, including `BLOCKED` for every unresolved disagreement;
+- `positive_probe_identifiers` to equal the ordered positive probe IDs derived directly for that direction, and exact disposition/prerequisite/reconsideration-trigger mechanics from design section 7; `HOLD` derives only from direction-local sealed `BLOCKED` gates and prerequisites;
 - recursive absence of `PROHIBITED_KEYS` and prohibited claim phrases;
 - no anomaly source literal in the matrix or review;
 - no changed path beneath mapping or registry roots relative to the implementation merge base; and
@@ -342,6 +344,51 @@ def recursive_keys(value: object) -> set[str]:
             for key in recursive_keys(child)
         }
     return set()
+
+
+def canonical_json_bytes(value: object) -> bytes:
+    return json.dumps(
+        value,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+    ).encode("utf-8")
+
+
+def direction_content_sha256(matrix: dict, direction: str) -> str:
+    assessment = next(
+        item for item in matrix["direction_assessments"]
+        if item["direction"] == direction
+    )
+    value = {
+        "direction_assessment": assessment,
+        "probes": [
+            probe for probe in matrix["probes"]
+            if probe["direction"] == direction
+        ],
+    }
+    return hashlib.sha256(canonical_json_bytes(value)).hexdigest()
+
+
+def submission_payload_sha256(matrix: dict, direction: str) -> str:
+    submission = next(
+        item for item in matrix["analysis_provenance"]["submissions"]
+        if item["direction"] == direction
+    )
+    assessment = next(
+        item for item in matrix["direction_assessments"]
+        if item["direction"] == direction
+    )
+    payload = {
+        "direction": direction,
+        "analyst": submission["analyst"],
+        "direction_assessment": assessment,
+        "probes": [p for p in matrix["probes"] if p["direction"] == direction],
+        "no_output_file_attestation": True,
+        "no_sibling_content_attestation": True,
+    }
+    return hashlib.sha256(canonical_json_bytes(payload)).hexdigest()
 
 
 def derive_coverage(matrix: dict, direction: str) -> dict[str, set[str]]:
@@ -380,6 +427,8 @@ def expected_disposition(
 
 Also assert: `GO` has empty prerequisites and triggers; `HOLD` has nonempty externally resolvable prerequisites and empty triggers; `NO_GO` has empty prerequisites and nonempty reconsideration triggers.
 
+Import `hashlib` and `json`. Require every recorded submission `payload_sha256` to equal `submission_payload_sha256` and the recorded `direction_content_digests` to equal `direction_content_sha256` for both directions. Recursively reject `supersedes_digest_reference` and any correction field. Require the reconciliation role to equal `roles.reconciler`, both direction validations to be `ACCEPTED` with evidence, `post_seal_changes_prohibited` to be true, and packaging disposition to be `accepted`. Mutating any assessment or direction-local probe after digest creation shall make the test fail.
+
 - [ ] **Step 3: Run the focused suite and verify matrix RED**
 
 ```powershell
@@ -391,7 +440,7 @@ Expected: rights tests pass and matrix-dependent tests fail only because the mat
 
 - [ ] **Step 4: Write renderer tests RED**
 
-Create renderer tests with a minimal valid fixture containing both directions. Require:
+Create renderer tests with a minimal valid fixture containing both directions, fully accepted reconciliation provenance, and direction-content digests computed only after the fixture's assessments and probes are finalized. Require:
 
 ```python
 from tools.render_ce_plus_mapping_go_no_go import render
@@ -425,6 +474,16 @@ class RenderMappingGoNoGoTests(unittest.TestCase):
         fixture["direction_assessments"][0]["direction"] = "bidirectional"
         with self.assertRaisesRegex(ValueError, "unexpected direction order"):
             render(fixture)
+
+    def test_render_rejects_unaccepted_or_digest_drifted_packaging(self) -> None:
+        fixture = self.fixture()
+        fixture["analysis_provenance"]["reconciliation"]["packaging_disposition"] = "rejected"
+        with self.assertRaisesRegex(ValueError, "unaccepted reconciliation"):
+            render(fixture)
+        fixture = self.fixture()
+        fixture["direction_assessments"][0]["decision_rationale"] += " changed"
+        with self.assertRaisesRegex(ValueError, "direction content digest mismatch"):
+            render(fixture)
 ```
 
 Run and expect import failure because the renderer does not exist.
@@ -437,14 +496,48 @@ Create:
 from __future__ import annotations
 
 from collections import Counter
+import hashlib
+import json
 
 DIRECTIONS = ("esaf_to_external", "external_to_esaf")
+
+
+def canonical_json_bytes(value: object) -> bytes:
+    return json.dumps(
+        value, ensure_ascii=False, sort_keys=True,
+        separators=(",", ":"), allow_nan=False,
+    ).encode("utf-8")
+
+
+def direction_content_sha256(matrix: dict, direction: str) -> str:
+    assessment = next(
+        item for item in matrix["direction_assessments"]
+        if item["direction"] == direction
+    )
+    content = {
+        "direction_assessment": assessment,
+        "probes": [p for p in matrix["probes"] if p["direction"] == direction],
+    }
+    return hashlib.sha256(canonical_json_bytes(content)).hexdigest()
 
 
 def render(matrix: dict) -> str:
     assessments = matrix["direction_assessments"]
     if tuple(item["direction"] for item in assessments) != DIRECTIONS:
         raise ValueError("unexpected direction order")
+    provenance = matrix["analysis_provenance"]
+    reconciliation = provenance["reconciliation"]
+    if (
+        reconciliation["packaging_disposition"] != "accepted"
+        or any(item["status"] != "ACCEPTED" for item in reconciliation["direction_validations"])
+    ):
+        raise ValueError("unaccepted reconciliation")
+    recorded = {
+        item["direction"]: item["sha256"]
+        for item in provenance["direction_content_digests"]
+    }
+    if any(recorded.get(direction) != direction_content_sha256(matrix, direction) for direction in DIRECTIONS):
+        raise ValueError("direction content digest mismatch")
     probes = matrix["probes"]
     lines = [
         "# Cyber Essentials Plus v3.2 Mapping Go/No-Go Review",
@@ -509,20 +602,20 @@ git commit -m "Test Cyber Essentials Plus mapping feasibility contract"
 
 ---
 
-### Task 4: Independently analyze both directions and reconcile the matrix
+### Task 4: Broker two private sealed analyses and package the matrix
 
 **Files:**
 - Create: `docs/superpowers/specs/2026-07-15-uk-cyber-essentials-plus-v3.2-mapping-feasibility-matrix.json`
 - Create by renderer: `docs/superpowers/reviews/2026-07-15-uk-cyber-essentials-plus-v3.2-mapping-go-no-go-review.md`
-- Create outside repository in isolated system-temp children: `esaf-to-external-analysis.json`, `external-to-esaf-analysis.json`, immutable submission attestations, analyst ledgers, and reconciliation comparison
+- Receive only through controller mailbox: two canonical JSON final-response payloads
 
 **Interfaces:**
 - Consumes: locked contract, rights-only ancestor commit, oracle, ESAF controls, and ESAF-1600.
 - Produces: the canonical closed matrix and byte-derived review record used by Task 5.
 
-- [ ] **Step 1: Create and verify isolated system-temporary workspaces**
+- [ ] **Step 1: Verify the private broker and hash dispatch inputs**
 
-Create a unique coordination child of `[System.IO.Path]::GetTempPath()` and two distinct analyst output children that are not readable or listable by the other analyst process. Resolve the temp root, all children, and repository root with `GetFullPath`; require every child prefix to be beneath temp and outside the repository. Verify the process or permission boundary with an attempted cross-child read from each analyst context and require both attempts to fail. Record resolved paths and command evidence only outside the repository; the matrix records the four closed boolean isolation attestations, not paths.
+Confirm that sibling Codex agents cannot access the controller mailbox. If that semantic is unavailable, use separate principals or containers with private return channels; if neither is available, stop. Build the common-input manifest and the two complete direction-specific prompts, serialize each with the design's canonical JSON rule, and compute their SHA-256 digests. Do not use analyst output files or shared scratch.
 
 - [ ] **Step 2: Prove rights ancestry before analysis**
 
@@ -535,36 +628,34 @@ if ($LASTEXITCODE -ne 0) { throw "Rights re-attestation is not an ancestor" }
 
 Stop if the record is conditional, rejected, or missing any field class.
 
-- [ ] **Step 3: Dispatch the ESAF-to-external analyst**
+- [ ] **Step 3: Concurrently dispatch both private analysts**
 
-The analyst receives the design, oracle, controls, methodology, closed contract, and only their verified temporary output child. They shall answer only the section 5.1 question, cover every group/kind/actor/scenario for their direction, create deterministic provision/anomaly/assurance-limit bindings for every scenario, and produce provisional gates and probes. They shall not see or list the other analyst's output or conclusion.
+Spawn the first sibling and immediately spawn the second with `fork_turns="none"`, without waiting for or reading a final response between dispatches; require both agent states to be active concurrently before accepting either result. Give each only its direction-specific prompt and the common inputs. Require no tool or filesystem writes and exactly one canonical JSON final response with the exact payload keys `direction`, `analyst`, `direction_assessment`, `probes`, `no_output_file_attestation`, and `no_sibling_content_attestation`, with both attestations `true`. The ESAF-to-external analyst answers only section 5.1. The external-to-ESAF analyst answers only section 5.2 and supplies every required condition checklist. Both cover every group, kind, actor, and deterministically bound scenario for their own direction.
 
-- [ ] **Step 4: Dispatch the external-to-ESAF analyst independently**
+- [ ] **Step 4: Withhold and seal the pair**
 
-The second analyst receives the same common inputs but only the section 5.2 question and their separately protected temporary output child. They shall not see or list the first analyst's output, conclusion, probe count, or gate statuses. Each positive probe shall include the exact ordered condition checklist for actor, scope, population, sample, assessment date, evidence date, tool, provenance, exception, Delivery Partner discretion, and point-in-time status, with a status and resolving evidence for every entry.
+The controller shall not persist outside its mailbox, quote, summarize, or reveal the first payload while awaiting the second. After both final messages arrive, record each UTC receipt time, canonical payload SHA-256, and unique digest reference. Receipt permanently seals the payloads: no correction, mutation, or supersession is allowed.
 
-- [ ] **Step 5: Seal and attest both submissions before comparison**
+- [ ] **Step 5: Validate the pair without altering it**
 
-In each isolated analyst context, serialize the final submission deterministically, compute SHA-256 over the exact bytes, record UTC submission time and the no-other-output-visible attestation, then remove analyst write permission or copy the bytes to a reconciler-owned immutable location. Assign a unique digest reference. Verify the sealed digest immediately before reconciliation. Any correction creates a new timestamped submission with `supersedes_digest_reference`; never overwrite submitted bytes.
+The reconciler, distinct from both analysts, parses each sealed final response as bare JSON and requires its exact UTF-8 bytes to equal canonical reserialization with no code fence, prefix, suffix, or trailing newline. It then validates exact direction and keys, seven ordered gates, direction-local disposition mechanics, complete coverage, scenario bindings, oracle provisions, ESAF locators, condition checklists, prohibited fields/claims, and attestations. It cannot compare answers as if they addressed one question and cannot alter gates, conclusions, rationales, prerequisites, or probes.
 
-- [ ] **Step 6: Validate both temporary analyses before comparison**
+If either payload is missing or fails any check, discard both as a pair. Without revealing prior content, return to Step 3 and dispatch two fresh analysts. Do not retain discarded payloads in matrix provenance, do not ask either analyst to correct a sealed payload, and do not proceed until one fresh pair validates fully.
 
-For each sealed file, verify its recorded digest, exact direction, seven ordered gates, complete direction-local coverage axes, valid deterministic special-scenario bindings, valid oracle provisions, valid ESAF control locators, external-to-ESAF positive condition checklists, conclusion preconditions, absence of prohibited keys and claims, and analyst identity distinctness. Derive its positive IDs from its probes. Do not average or select a conclusion yet.
+- [ ] **Step 6: Package the accepted pair and bind matrix content**
 
-- [ ] **Step 7: Reconcile every issue into the canonical matrix**
+Copy each accepted assessment and its probes into the matrix without semantic or structural alteration. Populate the closed broker, prompt, common-input, submission, and reconciliation provenance. Reconciliation records both ordered digest references, two `ACCEPTED` validations with evidence, `post_seal_changes_prohibited: true`, and `packaging_disposition: accepted`; `reconciliation.reconciler` shall equal `roles.reconciler`.
 
-Only after both submissions are sealed, give the reconciler read access to both immutable copies. Generate a comparison by submission digest reference, provision selection, coverage axes, normative basis, semantic conclusion, assurance risk, gate status, prerequisite, and disposition. Record every correction and its source evidence in temporary reconciliation output. Any unresolved disagreement shall set the affected canonical gate to `BLOCKED`, create an externally resolvable prerequisite, and therefore derive `HOLD`.
+For each direction, compute SHA-256 over canonical JSON of `{"direction_assessment": assessment, "probes": direction_local_probes_in_matrix_order}` and record it in `direction_content_digests`. Recompute both digests after the final matrix serialization and stop on mismatch. `rights_re_attestation.record_commit` shall be the actual 40-character rights commit.
 
-The reconciler shall create the top-level matrix with exact key sets from the design. `rights_re_attestation.record_commit` shall be the actual 40-character rights commit. The matrix shall record the two analyst identities, a distinct reconciler, the four isolation attestations, both immutable submission records, and reconciliation evidence references to both submission digests. Derive `positive_probe_identifiers`, disposition, prerequisite emptiness/nonemptiness, and trigger emptiness/nonemptiness mechanically; do not copy provisional declarations.
-
-- [ ] **Step 8: Render the review record**
+- [ ] **Step 7: Render the review record**
 
 ```powershell
 $env:PYTHONDONTWRITEBYTECODE='1'
 python tools/render_ce_plus_mapping_go_no_go.py --matrix docs/superpowers/specs/2026-07-15-uk-cyber-essentials-plus-v3.2-mapping-feasibility-matrix.json --output docs/superpowers/reviews/2026-07-15-uk-cyber-essentials-plus-v3.2-mapping-go-no-go-review.md --write
 ```
 
-- [ ] **Step 9: Run all focused tests GREEN**
+- [ ] **Step 8: Run all focused tests GREEN**
 
 ```powershell
 $env:PYTHONDONTWRITEBYTECODE='1'
@@ -574,7 +665,7 @@ python tools/render_ce_plus_mapping_go_no_go.py --matrix docs/superpowers/specs/
 
 Expected: all focused tests pass and the rendered record is current.
 
-- [ ] **Step 10: Commit the reconciled decision artifacts**
+- [ ] **Step 9: Commit the reconciled decision artifacts**
 
 ```powershell
 git add docs/superpowers/specs/2026-07-15-uk-cyber-essentials-plus-v3.2-mapping-feasibility-matrix.json docs/superpowers/reviews/2026-07-15-uk-cyber-essentials-plus-v3.2-mapping-go-no-go-review.md
@@ -632,15 +723,15 @@ Record:
 
 - repaired source-inventory digest evidence;
 - rights record identity and ancestry;
-- analyst identities and independence;
-- temporary analysis artifact digests without temporary paths;
-- reconciler identity and difference dispositions;
+- analyst identities, concurrent `fork_turns="none"` dispatch, private controller-mailbox semantics, no-file attestations, and the fail-closed fallback;
+- direction-ordered prompt digests, common-input digest, receipt timestamps, accepted payload digests/references, and recomputed direction-content digests;
+- reconciler identity, both direction-local `ACCEPTED` validation records and evidence, post-seal-change prohibition, and accepted packaging disposition;
 - per-direction coverage derived from probes;
 - directional gates and dispositions derived from the matrix;
 - changed files and command results; and
 - status `Pending exact-head reviews`.
 
-Do not include or reserve fields for the traceability file's own commit, candidate SHA, reviewed SHA, PR head, merge SHA, or GitHub check result.
+Do not include discarded payload content or digests, supersession/correction fields, or fields for the traceability file's own commit, candidate SHA, reviewed SHA, PR head, merge SHA, or GitHub check result.
 
 - [ ] **Step 5: Run focused tests and commit publication metadata**
 
@@ -701,15 +792,15 @@ Require no changed path under `crosswalks/mappings/` or `crosswalks/registry/`, 
 
 - [ ] **Step 2: Dispatch exact-SHA specification/methodology review**
 
-The reviewer shall verify source and traceability repair, rights sequencing, closed contracts, direction independence, coverage completeness, normative citations, gate mechanics, renderer derivation, schema fit, and absence of mapping artifacts. Resolve every Critical and Important finding.
+The reviewer shall verify source and traceability repair, rights sequencing, closed contracts, executable broker-private direction independence, concurrent `fork_turns="none"` dispatch evidence, sealed-pair rejection behavior, reconciler non-alteration, recomputed direction-content digests, coverage completeness, normative citations, gate mechanics, renderer derivation, schema fit, and absence of mapping artifacts. Resolve every Critical and Important finding.
 
 - [ ] **Step 3: Dispatch exact-SHA security/overclaiming review independently**
 
-The reviewer shall verify copied-source protection, anomaly non-duplication, IASME partition, source-version boundary, actor/scope/sample/date/tool/provenance/point-in-time limits, Delivery Partner discretion, direction asymmetry, condition semantics, all prohibited inferences, and design-only meaning of `GO`. Resolve every Critical and Important finding.
+The reviewer shall verify copied-source protection, anomaly non-duplication, IASME partition, source-version boundary, controller withholding/private-mailbox claims and fallback, absence of discarded or corrected payload material, actor/scope/sample/date/tool/provenance/point-in-time limits, Delivery Partner discretion, direction asymmetry, condition semantics, all prohibited inferences, and design-only meaning of `GO`. Resolve every Critical and Important finding.
 
 - [ ] **Step 4: Redispatch both reviews after any change**
 
-Add focused regression coverage where practical, replace superseded tracked evidence rather than appending contradictions, commit, rerun every candidate gate, and redispatch both reviewers on the new exact SHA. Once both reviews approve one immutable head, make no tracked change.
+Add focused regression coverage where practical, replace stale tracked review evidence rather than appending contradictions, commit, rerun every candidate gate, and redispatch both reviewers on the new exact SHA. Once both reviews approve one immutable head, make no tracked change.
 
 - [ ] **Step 5: Push and open the reviewable pull request**
 
@@ -730,4 +821,4 @@ if ($LASTEXITCODE -ne 0) { throw "Reviewed head is not based on the expected bas
 
 Update local `main`; require `git rev-list --parents -n 1 HEAD` to contain exactly the merge commit plus two parents, require the first parent to equal the recorded base head and the reviewed feature head to be the second parent (or an ancestor of that second parent if the host created an equivalent merge parent), and prove rights-record and reviewed-head ancestry to the merge. A one-parent squash/rebase result is a publication failure. Rerun focused tests, all domain validators, link validation, renderer check, and the throwing cache, scratch, prohibited-path, generated-drift, and dirty-status checks. Verify a clean checkout.
 
-Resolve the system-temp root, exact scratch child, repository root, and worktree path before recursive removal. Remove only the verified scratch child beneath system temp and the verified project-owned worktree beneath `.worktrees/`. Then remove the merged local and remote feature branches and confirm `main == origin/main`.
+Resolve the system-temp root, any exact non-analyst validation scratch child, repository root, and worktree path before recursive removal. Remove only a verified validation scratch child beneath system temp and the verified project-owned worktree beneath `.worktrees/`; no analyst payload scratch shall exist. Then remove the merged local and remote feature branches and confirm `main == origin/main`.
