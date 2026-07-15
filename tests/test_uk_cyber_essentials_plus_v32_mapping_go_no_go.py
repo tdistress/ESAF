@@ -470,6 +470,12 @@ REQUIRED_ORACLE_SCOPE_STATEMENT = (
     "Test Specification v3.2. It is not a complete inventory of the current operational "
     "Cyber Essentials Plus scheme, Delivery Partner methodology, or certification process."
 )
+REQUIRED_ESAF_TO_EXTERNAL_QUESTION = (
+    "Does exact normative ESAF control text directly provide or require an outcome, "
+    "action, condition, or prerequisite that materially contributes to a specific public "
+    "Cyber Essentials Plus v3.2 provision, without implying that the assessment procedure "
+    "has been performed or passed?"
+)
 APPROVED_CONTROLLED_LANGUAGE_BOUNDARIES = (
     re.compile(r"^this\s+analysis\s+does\s+not\s+establish\s+certification\s+or\s+compliance$", re.I),
     re.compile(r"^the\s+frameworks\s+are\s+not\s+equivalent(?:\s+and\s+ncsc\s+does\s+not\s+endorse\s+this\s+review)?$", re.I),
@@ -532,6 +538,8 @@ def prohibited_claim_violations(text: str) -> list[str]:
     This deliberately does not infer English semantics. Any protected outcome mention
     outside the closed boundary templates requires rewriting and independent review.
     """
+    if text == REQUIRED_ESAF_TO_EXTERNAL_QUESTION:
+        return []
     if normalize_controlled_proposition(text) == normalize_controlled_proposition(
         REQUIRED_ORACLE_SCOPE_STATEMENT
     ):
@@ -1082,6 +1090,16 @@ class MappingValidatorRegressionTests(unittest.TestCase):
                 violations = prohibited_claim_violations(claim)
                 self.assertTrue(violations)
                 self.assertTrue(all("controlled-language violation" in item for item in violations))
+
+    def test_required_esaf_to_external_question_is_an_exact_closed_exception(self) -> None:
+        required_question = (
+            "Does exact normative ESAF control text directly provide or require an "
+            "outcome, action, condition, or prerequisite that materially contributes "
+            "to a specific public Cyber Essentials Plus v3.2 provision, without "
+            "implying that the assessment procedure has been performed or passed?"
+        )
+        self.assertEqual(prohibited_claim_violations(required_question), [])
+        self.assertTrue(prohibited_claim_violations(required_question.replace("passed", "succeeded")))
 
     def test_schema_aware_narratives_accept_closed_categorical_values(self) -> None:
         complete_like = {
