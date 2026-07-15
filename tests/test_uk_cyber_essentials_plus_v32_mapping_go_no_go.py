@@ -405,263 +405,90 @@ def validate_probe_scenario_bindings(probe: dict, oracle: dict) -> None:
         validate_scenario_binding(probe, binding, oracle)
 
 
-TESTING_POSITIVE_GRAMMAR = (
-    r"(?:assessment|test(?:ing)?)\b"
-    r"(?:(?![.;!\n])\s+[a-z]+)*?\s+"
-    r"(?:pass(?:ed|es)?|succeed(?:ed|s)?|success(?:ful|fully)?)"
-)
-TESTING_RESULT = re.compile(
-    r"\b(?:pass(?:ed|es)?|succeed(?:ed|s)?|success(?:ful|fully)?)\b\s*$",
+CONTROLLED_LANGUAGE_OUTCOME = re.compile(
+    r"\b(?:certif(?:ication|ied|y|ies)|complian(?:ce|t)|equivalen(?:ce|t)|"
+    r"endorse(?:ment|d|s)?|predictive(?:ly)?\s+sufficien\w*|predicts?\s+future\s+sufficien\w*|"
+    r"testing\s+outcome|pass(?:ed|es)?|succeed(?:ed|s)?|success(?:ful|fully)?|"
+    r"current[- ](?:operational[- ])?scheme(?:\s+(?:completeness|inventory))?|"
+    r"full[- ]population\s+assurance|assurance\s+(?:over|for|across|of)\s+(?:the\s+)?full\s+population|"
+    r"all\s+(?:untested\s+)?(?:devices|accounts|services|configurations|systems)\s+are\s+assured|"
+    r"continuous\s+assurance|continuously\s+assures?|assured\s+continuously|assurance\s+continuously)\b",
     re.I,
 )
-PROHIBITED_OUTCOME_PATTERNS = (
-    re.compile(r"\bcertif(?:ication|ied|y|ies)\b", re.I),
-    re.compile(r"\bcomplian(?:ce|t)\b", re.I),
-    re.compile(r"\bequivalen(?:ce|t)\b", re.I),
-    re.compile(r"\bendorse(?:ment|d|s)?\b", re.I),
+CONTROLLED_REPORTING_PREFIX = (
+    r"(?:the\s+(?:review|analysis|report|evidence)\s+"
+    r"(?:shows|confirms|establishes(?:\s+that)?|indicates)\s+)?"
+)
+APPROVED_CONTROLLED_LANGUAGE_BOUNDARIES = (
+    re.compile(r"^this\s+analysis\s+does\s+not\s+establish\s+certification\s+or\s+compliance$", re.I),
+    re.compile(r"^the\s+frameworks\s+are\s+not\s+equivalent(?:\s+and\s+ncsc\s+does\s+not\s+endorse\s+this\s+review)?$", re.I),
     re.compile(
-        r"\b(?:predictive(?:ly)?\s+sufficien\w*|predicts?\s+future\s+sufficien\w*)\b",
+        r"^the\s+result\s+provides\s+no\s+predictive\s+sufficiency,\s*testing\s+outcome,\s*"
+        r"current[- ]scheme\s+completeness,\s*full[- ]population\s+assurance,\s*"
+        r"(?:or\s+)?continuous\s+assurance$",
         re.I,
     ),
+    re.compile(r"^the\s+analysis\s+(?:never|cannot)\s+(?:directly\s+|defensibly\s+)?establish(?:es)?\s+certification$", re.I),
+    re.compile(r"^the\s+analysis\s+neither\s+establishes\s+certification\s+nor\s+proves\s+compliance$", re.I),
+    re.compile(r"^the\s+review\s+establishes\s+that\s+certification\s+is\s+not\s+implied$", re.I),
+    re.compile(r"^the\s+analysis\s+proves\s+equivalence\s+is\s+not\s+established$", re.I),
+    re.compile(r"^(?:no\s+(?:certification\s+is\s+conferred|compliance\s+is\s+established)|there\s+is\s+no\s+equivalence\s+between\s+the\s+frameworks)$", re.I),
+    re.compile(r"^certification(?:,?\s+compliance,?\s+and\s+equivalence|\s+and\s+compliance)\s+are\s+not\s+established$", re.I),
+    re.compile(r"^certification\s+is\s+neither\s+demonstrated\s+nor\s+implied$", re.I),
     re.compile(
-        rf"\b(?:{TESTING_POSITIVE_GRAMMAR}|testing\s+outcome)\b",
+        rf"^{CONTROLLED_REPORTING_PREFIX}(?:certification\s+(?:is|falls|lies)\s+outside\s+(?:the\s+)?scope\s+of\s+this\s+analysis|"
+        r"compliance\s+(?:(?:should|ought\s+to)\s+)?remains?\s+a\s+customer\s+determination|"
+        r"equivalence\s+(?:(?:was|has|had)\s+not\s+(?:been\s+)?assessed|was\s+not\s+established)|"
+        r"endorsement\s+(?:is\s+a\s+prohibited\s+inference|cannot\s+be\s+inferred|must\s+not\s+be\s+inferred)|"
+        r"full[- ]population\s+assurance\s+(?:is\s+outside\s+the\s+evidence\s+boundary|(?:would|may)\s+require\s+separate\s+evidence|requires\s+separate\s+evidence)|"
+        r"continuous\s+assurance\s+(?:(?:still\s+)?requires\s+separate\s+evidence|continues\s+to\s+require\s+separate\s+evidence))$",
         re.I,
     ),
+    re.compile(r"^the\s+risk\s+of\s+(?:highly\s+consequential\s+)?certification\s+overclaiming\s+is\s+documented$", re.I),
     re.compile(
-        r"\b(?:current[- ](?:operational[- ])?scheme(?:\s+(?:completeness|inventory))?"
-        r"|complete\s+(?:inventory\s+(?:of|for)\s+)?the\s+current\s+operational\s+scheme"
-        r"|complete\s+current[- ]scheme\s+inventory)\b",
+        r"^the\s+review\s+establishes\s+source\s+identity\s+(?:"
+        r"and\s+(?:it\s+)?documents|then\s+(?:the\s+report\s+)?discusses|and\s+wrote\s+about)\s+certification\s+risk$",
         re.I,
     ),
+    re.compile(r"^the\s+review\s+establishes\s+source\s+identity\s+before\s+certification\s+is\s+considered$", re.I),
     re.compile(
-        r"\b(?:full[- ]population\s+assurance"
-        r"|assurance\s+(?:over|for|across|of)\s+(?:the\s+)?full\s+population"
-        r"|all\s+(?:untested\s+)?(?:devices|accounts|services|configurations|systems)\s+are\s+assured)\b",
+        r"^(?:the\s+)?(?:assessment|test|testing)\b.*\b(?:pass(?:ed|es)?|succeed(?:ed|s)?)\b\s+"
+        r"(?:(?:for|in|on)\s+)?(?:no|zero|none|neither|not\s+a\s+single)\b.*$",
         re.I,
     ),
+    re.compile(r"^testing\s+succeeded\s+without\s+passing\s+any\s+controls$", re.I),
     re.compile(
-        r"\b(?:continuous\s+assurance|continuously\s+assures?"
-        r"|assured\s+continuously|assurance\s+continuously)\b",
+        r"^(?:certification\s+was\s+established\s+for\s+no\s+applicants|"
+        r"compliance\s+was\s+demonstrated\s+in\s+zero\s+cases|"
+        r"endorsement\s+was\s+conferred\s+on\s+none\s+of\s+the\s+reports)$",
         re.I,
     ),
 )
-OUTCOME_ANCHOR = re.compile(
-    "(?:" + "|".join(pattern.pattern for pattern in PROHIBITED_OUTCOME_PATTERNS) + ")",
-    re.I,
-)
-INHERENTLY_AFFIRMATIVE_OUTCOME = re.compile(
-    r"^(?:certif(?:ied|y|ies)|endorse(?:d|s)?|predicts?\s+future\s+sufficien\w*"
-    r"|(?:assessment|test(?:ing)?)\s+(?:(?:has|had|is|was)\s+)?"
-    r"(?:[a-z]+ly\s+)*(?:pass(?:ed|es)?|succeed(?:ed|s)?|successful)"
-    r"|(?:assessment|test(?:ing)?)\s+(?:resulted\s+in\s+(?:a\s+)?successful\s+pass"
-    r"|constitutes\s+(?:a\s+)?pass|success\s+was\s+established)"
-    r"|complete\s+(?:inventory\s+(?:of|for)\s+)?the\s+current\s+operational\s+scheme"
-    r"|complete\s+current[- ]scheme\s+inventory"
-    r"|all\s+(?:untested\s+)?(?:devices|accounts|services|configurations|systems)\s+are\s+assured"
-    r"|continuously\s+assures?|assured\s+continuously)$",
-    re.I,
-)
-AFFIRMATIVE_PREFIX_PREDICATE = re.compile(
-    r"\b(?:achiev\w*|are|certif\w*|confer\w*|confirm\w*|constitut\w*|covers?"
-    r"|declar\w*|demonstrat\w*|endorse\w*|ensur\w*|establish\w*|guarantee\w*|has|have"
-    r"|impl(?:y|ies)|indicat\w*|is|offers?|provides?|prov(?:e|es)|represents?|shows?)\b"
-    r"|\bverif(?:y|ies)\b",
-    re.I,
-)
-PREFIX_PROPOSITION_BOUNDARY = re.compile(
-    r"(?:[,;.!?]|\b(?:after|although|as|before|but|despite|except|if|no|nor|not|or|"
-    r"unless|until|when|whereas|while|without|yet)\b)",
-    re.I,
-)
-PREFIX_COORDINATED_PREDICATE = re.compile(
-    r"\b(?:and|then)\s+(?:"
-    r"(?:(?:it|they|this|that|the\s+[a-z]+)\s+[a-z]+)"
-    r"|[a-z]+(?:s|ed)|wrote)\b",
-    re.I,
-)
-POSTPREDICATE_CHAIN_TOKEN = (
-    r"(?:all|and|be|been|both|each|had|has|have|now|very|[a-z]+ly)"
-)
-OUTCOME_AFFIRMATIVE_POSTPREDICATE = re.compile(
-    rf"^\s+(?:is|are|was|were|has|have|had|will|would|can|could|may|must|shall|should)\s+"
-    rf"(?:{POSTPREDICATE_CHAIN_TOKEN}\s+)*"
-    r"(?:achieved|confirmed|conferred|demonstrated|established|provided|successful)\b",
-    re.I,
-)
-OUTCOME_BOUNDARY_POSTPREDICATE = re.compile(
-    r"^\s+(?:"
-    r"(?:is|are|was|were)\s+(?:not\s+assessed|neither\b|outside\s+(?:the\s+)?(?:scope|evidence\s+boundary)|"
-    r"a\s+prohibited\s+inference|considered\b)"
-    r"|(?:has|have|had)\s+not\s+(?:been\s+)?assessed"
-    r"|(?:falls?|lies?)\s+outside\s+(?:the\s+)?scope"
-    r"|(?:ought\s+to|should)\s+remain\s+(?:a\s+)?customer\s+determination"
-    r"|(?:(?:must|can)\s+not|cannot)\s+(?:be\s+)?inferred"
-    r"|(?:may|would)\s+require\s+separate\s+evidence"
-    r"|(?:continues?\s+to|still)\s+requires?\s+separate\s+evidence"
-    r"|remains?\s+(?:a\s+)?customer\s+determination"
-    r"|requires?\s+separate\s+evidence)\b",
-    re.I,
-)
-OUTCOME_POSTPREDICATE = re.compile(
-    r"^\s+(?:is|are|was|were|has|have|had|will|would|can|could|may|must|shall|should|"
-    r"falls?|lies?|ought|continues?|still|remains?|requires?)\b",
-    re.I,
-)
-RESULT_NEGATIVE_QUANTIFIER = re.compile(
-    r"^\s+(?:(?:for|in|on)\s+)?(?:no\b|zero\b|none\b|neither\b|not\s+a\s+single\b)"
-    r"|^\s+without\b[^.;!\n]*\bany\b",
-    re.I,
-)
-TESTING_MENTION_PREDICATE = re.compile(
-    r"\b(?:discuss(?:es|ed)?|describ(?:e|es|ed)|examin(?:e|es|ed)|review(?:s|ed)?)\b",
-    re.I,
-)
-INHERITED_TESTING_RESULT = re.compile(
-    r"\b(?:assessment|test(?:ing)?)\b[^.;!\n]*?[,;]\s*"
-    r"(?:and|but|then)\s+(?:[a-z]+ly\s+)*"
-    r"(?:pass(?:ed|es)?|succeed(?:ed|s)?|success(?:ful|fully)?)\b",
-    re.I,
-)
-COORDINATION_BOUNDARY = re.compile(
-    r"(?:[.;!\n]+|,\s*(?:but|and|yet|however)\s+|\s+(?:yet|however)\s+)",
-    re.I,
-)
-NEGATED_AUXILIARY = re.compile(
-    r"\b(?:do|does|did|is|are|was|were|has|have|can|could|will|would)\s+not"
-    r"(?:\s+[a-z]+ly){0,2}(?:\s+[a-z]+)?(?:\s+that)?"
-    r"(?:\s+(?:the|a|an|this|such))?(?:\s+[a-z]+(?:al|ful|ive|ous|ary|ic|ed))?\s*$",
-    re.I,
-)
-NEGATED_OPERATOR = re.compile(
-    r"\b(?:neither|nor|never|cannot)"
-    r"(?:\s+[a-z]+ly){0,2}(?:\s+[a-z]+)?(?:\s+that)?"
-    r"(?:\s+(?:the|a|an|this|such))?(?:\s+[a-z]+(?:al|ful|ive|ous|ary|ic|ed))?\s*$",
-    re.I,
-)
-NEGATED_NO_LIST_START = re.compile(
-    r"\b(?:provides?|establishes?|shows?|offers?|confers?)\s+no\b",
-    re.I,
-)
-NEGATED_GOVERNED_LIST_START = re.compile(
-    r"\b(?:(?:do|does|did|is|are|was|were|has|have|can|could|will|would)\s+not"
-    r"|never|cannot)(?:\s+[a-z]+ly){0,2}\s+[a-z]+(?:\s+that)?"
-    r"(?:\s+(?:the|a|an|this|such))?(?:\s+[a-z]+(?:al|ful|ive|ous|ary|ic|ed)\b)?",
-    re.I,
-)
-NEGATED_NEITHER_NOR = re.compile(
-    r"\bneither(?:\s+[a-z]+ly){0,2}\s+[a-z]+(?:\s+(?:the|a|an|this|such))?\s+"
-    + OUTCOME_ANCHOR.pattern
-    + r"\s+nor(?:\s+[a-z]+ly){0,2}(?:\s+[a-z]+)?(?:\s+(?:the|a|an|this|such))?\s*$",
-    re.I,
-)
-NEGATED_AFTER_PROPOSITION = re.compile(
-    r"^\s*(?:is|are|was|were|has|have|does|do)?\s*not\s+"
-    r"(?:implied|established|demonstrated|proven|proved|supported|shown|conferred|achieved)\b",
-    re.I,
-)
 
 
-def negative_no_list_governs(clause: str, match: re.Match[str]) -> bool:
-    starts = list(NEGATED_NO_LIST_START.finditer(clause[:match.start()]))
-    if not starts:
-        return False
-    intervening = clause[starts[-1].end():match.start()]
-    remainder = OUTCOME_ANCHOR.sub("", intervening)
-    return bool(re.fullmatch(r"(?:\s|,|\band\b|\bor\b|\bnor\b)*", remainder, re.I))
+def normalize_controlled_proposition(text: str) -> str:
+    return re.sub(r"\s+", " ", text.strip().strip('"\'` ,;:.!?')).lower()
 
 
-def negative_governed_list_governs(clause: str, match: re.Match[str]) -> bool:
-    starts = list(NEGATED_GOVERNED_LIST_START.finditer(clause[:match.start()]))
-    if not starts:
-        return False
-    intervening = clause[starts[-1].end():match.start()]
-    remainder = OUTCOME_ANCHOR.sub("", intervening)
-    return bool(re.fullmatch(r"(?:\s|,|\band\b|\bor\b|\bnor\b)*", remainder, re.I))
-
-
-def prohibited_outcome_is_affirmed(clause: str, match: re.Match[str]) -> bool:
-    suffix = clause[match.end():]
-    if OUTCOME_BOUNDARY_POSTPREDICATE.search(suffix):
-        return False
-    affirmative_postpredicate = OUTCOME_AFFIRMATIVE_POSTPREDICATE.search(suffix)
-    if affirmative_postpredicate:
-        return not RESULT_NEGATIVE_QUANTIFIER.search(suffix[affirmative_postpredicate.end():])
-    if OUTCOME_POSTPREDICATE.search(suffix):
-        return False
-    if TESTING_RESULT.search(match.group(0)):
-        local_result = re.split(r"\b(?:and|but)\b", match.group(0), flags=re.I)[-1]
-        if re.search(r"\b(?:no|not|never|neither)\b", local_result, re.I):
-            return False
-        if TESTING_MENTION_PREDICATE.search(local_result):
-            return False
-        if re.search(r"\bthat\s+(?:is|are|was|were)\b", local_result, re.I):
-            return False
-        result_word = TESTING_RESULT.search(match.group(0)).group(0).strip().lower()
-        if result_word in {"success", "successful"} and not (
-            re.search(
-                r"\b(?:is|are|was|were|has|have|had|will|completed|achieved|constitutes|resulted)\b",
-                local_result,
-                re.I,
-            )
-            or re.match(r"^\s+pass\b", suffix, re.I)
-        ):
-            return False
-        if RESULT_NEGATIVE_QUANTIFIER.search(suffix):
-            return False
-        return True
-    if INHERENTLY_AFFIRMATIVE_OUTCOME.fullmatch(match.group(0)):
-        return True
-    prefix = clause[:match.start()]
-    predicates = list(AFFIRMATIVE_PREFIX_PREDICATE.finditer(prefix))
-    if not predicates:
-        return False
-    predicate_tail = prefix[predicates[-1].end():]
-    return not (
-        PREFIX_PROPOSITION_BOUNDARY.search(predicate_tail)
-        or PREFIX_COORDINATED_PREDICATE.search(predicate_tail)
-    )
-
-
-def prohibited_proposition_is_negated(clause: str, match: re.Match[str]) -> bool:
-    proposition = match.group(0)
-    if (
-        not TESTING_RESULT.search(proposition)
-        and re.search(r"\b(?:not|no|without|never|neither)\b", proposition, re.I)
-    ):
-        return True
-    prefix = clause[:match.start()]
-    if re.search(r"\bno\s*$", prefix, re.I):
-        return True
-    if NEGATED_AUXILIARY.search(prefix) or NEGATED_OPERATOR.search(prefix):
-        return True
-    if negative_no_list_governs(clause, match):
-        return True
-    if negative_governed_list_governs(clause, match):
-        return True
-    if NEGATED_NEITHER_NOR.search(prefix):
-        return True
-    if re.search(
-        r"\bwithout(?:\s+(?:directly|independently|validly|defensibly|conclusively|actually|materially)){0,2}\s*$",
-        prefix,
-        re.I,
-    ):
-        return True
-    return bool(NEGATED_AFTER_PROPOSITION.search(clause[match.end():]))
+def approved_controlled_language_boundary(proposition: str) -> bool:
+    return any(pattern.fullmatch(proposition) for pattern in APPROVED_CONTROLLED_LANGUAGE_BOUNDARIES)
 
 
 def prohibited_claim_violations(text: str) -> list[str]:
+    """Fail closed unless a protected proposition uses approved controlled language.
+
+    This deliberately does not infer English semantics. Any protected outcome mention
+    outside the closed boundary templates requires rewriting and independent review.
+    """
     violations: list[str] = []
-    for clause in COORDINATION_BOUNDARY.split(text):
-        for pattern in PROHIBITED_OUTCOME_PATTERNS:
-            for match in pattern.finditer(clause):
-                if (
-                    prohibited_outcome_is_affirmed(clause, match)
-                    and not prohibited_proposition_is_negated(clause, match)
-                ):
-                    violations.append(match.group(0))
-    for match in INHERITED_TESTING_RESULT.finditer(text):
-        if not RESULT_NEGATIVE_QUANTIFIER.search(text[match.end():]):
-            violations.append(match.group(0))
+    for raw_proposition in re.split(r"(?<=[.!?])\s+|[\r\n]+", text):
+        proposition = normalize_controlled_proposition(raw_proposition)
+        if not proposition or approved_controlled_language_boundary(proposition):
+            continue
+        for match in CONTROLLED_LANGUAGE_OUTCOME.finditer(proposition):
+            violations.append(
+                f"controlled-language violation: protected outcome '{match.group(0)}'"
+            )
     return violations
 
 
@@ -1069,16 +896,20 @@ class MappingValidatorRegressionTests(unittest.TestCase):
             with self.subTest(boundary=boundary):
                 self.assertEqual(prohibited_claim_violations(boundary), [])
 
-    def test_testing_mentions_are_neutral_but_punctuation_inherits_subject(self) -> None:
-        boundaries = (
+    def test_unrecognized_neutral_paraphrases_fail_closed_but_punctuation_inherits_subject(self) -> None:
+        unrecognized = (
             "The assessment discusses successful testing methods.",
             "Testing documentation describes success criteria.",
             "The test examined successful configurations.",
             "The assessment reviewed controls that were successful elsewhere.",
+            "Certification remains an analytical topic.",
+            "Continuous assurance appears in the glossary.",
         )
-        for boundary in boundaries:
-            with self.subTest(boundary=boundary):
-                self.assertEqual(prohibited_claim_violations(boundary), [])
+        for text in unrecognized:
+            with self.subTest(text=text):
+                violations = prohibited_claim_violations(text)
+                self.assertTrue(violations)
+                self.assertTrue(all("controlled-language violation" in item for item in violations))
         claims = (
             "The assessment was reviewed, and successfully passed.",
             "The assessment was reviewed, but ultimately passed.",
@@ -1087,6 +918,24 @@ class MappingValidatorRegressionTests(unittest.TestCase):
         for claim in claims:
             with self.subTest(claim=claim):
                 self.assertTrue(prohibited_claim_violations(claim))
+
+    def test_arbitrary_affirmative_variants_fail_closed(self) -> None:
+        claims = (
+            "The committee exuberantly ratified certification.",
+            "Compliance undeniably materialized.",
+            "The frameworks somehow acquired equivalence.",
+            "The report enthusiastically announced endorsement.",
+            "The sample unexpectedly attained predictive sufficiency.",
+            "The assessment miraculously achieved success.",
+            "The inventory magically gained current-scheme completeness.",
+            "The sample supposedly yielded full-population assurance.",
+            "The system somehow attained continuous assurance.",
+        )
+        for claim in claims:
+            with self.subTest(claim=claim):
+                violations = prohibited_claim_violations(claim)
+                self.assertTrue(violations)
+                self.assertTrue(all("controlled-language violation" in item for item in violations))
 
     def test_all_outcome_result_quantifiers_are_accepted(self) -> None:
         boundaries = (
