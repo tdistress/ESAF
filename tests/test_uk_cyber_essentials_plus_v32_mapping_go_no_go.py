@@ -13,6 +13,7 @@ ORACLE = ROOT / "docs/superpowers/specs/2026-07-14-uk-cyber-essentials-plus-v3.2
 RIGHTS = ROOT / "docs/superpowers/reviews/2026-07-15-uk-cyber-essentials-plus-v3.2-mapping-feasibility-rights-re-attestation.md"
 MATRIX = ROOT / "docs/superpowers/specs/2026-07-15-uk-cyber-essentials-plus-v3.2-mapping-feasibility-matrix.json"
 REVIEW = ROOT / "docs/superpowers/reviews/2026-07-15-uk-cyber-essentials-plus-v3.2-mapping-go-no-go-review.md"
+LANDING = ROOT / "crosswalks/uk-cyber-essentials.md"
 ORACLE_SHA256 = "8a6ad659394130c360205aa8a693b812f6c3a6778bc1395cd93ac6187f8386bc"
 PRIOR_RIGHTS_COMMIT = "6add413fc7a8a6330cf16dc5d12e3b9b85aa34e6"
 REVIEW_IDENTIFIER = "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--mapping-feasibility--0.1.0"
@@ -1646,3 +1647,37 @@ class MatrixClosedContractTests(unittest.TestCase):
             coverage = derive_coverage(self.matrix, direction)
             for label, key in (("Groups", "groups"), ("Kinds", "kinds"), ("Actors", "actors"), ("Special scenarios", "special_scenarios")):
                 self.assertIn(f"| {label} | {len(coverage[key])} |", section)
+
+    def test_landing_page_publishes_the_bounded_directional_decisions(self) -> None:
+        landing = LANDING.read_text(encoding="utf-8")
+        section_match = re.search(
+            r"(?ms)^## Cyber Essentials Plus v3\.2 mapping feasibility\s*$"
+            r"(.*?)(?=^## |\Z)",
+            landing,
+        )
+        self.assertIsNotNone(section_match)
+        section = section_match.group(1)
+        self.assertIn(
+            "[canonical feasibility matrix](../docs/superpowers/specs/"
+            "2026-07-15-uk-cyber-essentials-plus-v3.2-mapping-feasibility-matrix.json)",
+            landing,
+        )
+        self.assertIn(
+            "[rendered decision record](../docs/superpowers/reviews/"
+            "2026-07-15-uk-cyber-essentials-plus-v3.2-mapping-go-no-go-review.md)",
+            landing,
+        )
+        self.assertEqual(
+            re.findall(
+                r"`(esaf_to_external|external_to_esaf)`: \*\*(GO|HOLD|NO_GO)\*\*",
+                section,
+            ),
+            [
+                (assessment["direction"], assessment["disposition"])
+                for assessment in self.matrix["direction_assessments"]
+            ],
+        )
+        self.assertIn("No Cyber Essentials Plus mapping exists.", landing)
+        self.assertIn("`GO` authorizes design only", landing)
+        self.assertIn("pinned public Cyber Essentials Plus v3.2 specification", landing)
+        self.assertIn("current operational Cyber Essentials Plus scheme", landing)

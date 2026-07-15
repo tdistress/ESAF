@@ -65,3 +65,9 @@ The NCSC material is Crown copyright and is reused under the Open Government Lic
 There is 2026 operational context outside this source boundary: NCSC publishes core v3.3 while the public Plus test specification remains v3.2, and separate 2026 operational changes are not consolidated into the public v3.2 PDF. Those changes are context only and are not part of the 144-provision universe.
 
 No Cyber Essentials Plus mapping snapshot exists. The oracle does not establish certification, compliance, equivalence, current-scheme completeness, or any Plus testing outcome.
+
+## Cyber Essentials Plus v3.2 mapping feasibility
+
+The [canonical feasibility matrix](../docs/superpowers/specs/2026-07-15-uk-cyber-essentials-plus-v3.2-mapping-feasibility-matrix.json) and [rendered decision record](../docs/superpowers/reviews/2026-07-15-uk-cyber-essentials-plus-v3.2-mapping-go-no-go-review.md) record these directional dispositions: `esaf_to_external`: **GO** and `external_to_esaf`: **GO**. No Cyber Essentials Plus mapping exists. `GO` authorizes design only; it does not authorize mapping implementation.
+
+These decisions apply only to the pinned public Cyber Essentials Plus v3.2 specification. They do not establish completeness for the current operational Cyber Essentials Plus scheme or change the source and assurance boundaries above.
