@@ -247,6 +247,194 @@ def resolve_oracle_path(oracle: dict, path: str) -> object:
     raise KeyError(path)
 
 
+def parse_rights_record(text: str) -> dict[str, object]:
+    def field(label: str) -> str:
+        match = re.search(rf"(?m)^\*\*{re.escape(label)}:\*\*\s*(?:`([^`]+)`|(.+))$", text)
+        if not match:
+            raise ValueError(f"missing rights record field: {label}")
+        return (match.group(1) or match.group(2)).strip()
+
+    section = text.split("## Approved field classes", 1)[1].split("## ", 1)[0]
+    return {
+        "reviewer": field("Reviewer"),
+        "review_date": field("Review date"),
+        "prior_rights_commit": field("Prior rights commit"),
+        "oracle_sha256": field("Oracle SHA-256"),
+        "iasme_partition_preserved": field("IASME partition preserved").lower() == "yes",
+        "copied_source_prohibition_preserved": field("Copied-source prohibition preserved").lower() == "yes",
+        "disposition": field("Disposition").lower(),
+        "field_classes_reviewed": re.findall(r"(?m)^- `([^`]+)`$", section),
+    }
+
+
+def validate_rights_binding(matrix: dict, rights_text: str) -> None:
+    record = parse_rights_record(rights_text)
+    rights = matrix["rights_re_attestation"]
+    bound_fields = (
+        "reviewer", "review_date", "prior_rights_commit", "oracle_sha256",
+        "iasme_partition_preserved", "copied_source_prohibition_preserved",
+        "field_classes_reviewed", "disposition",
+    )
+    if any(rights.get(key) != record[key] for key in bound_fields):
+        raise ValueError("rights record mismatch")
+    analyst_roles = {
+        matrix["roles"]["esaf_to_external_analyst"],
+        matrix["roles"]["external_to_esaf_analyst"],
+    }
+    if rights["reviewer"] in analyst_roles:
+        raise ValueError("rights reviewer is not independent")
+
+
+def validate_nonempty_contract_strings(value: object, path: str = "matrix") -> None:
+    if value is None:
+        raise ValueError(f"empty required value at {path}")
+    if isinstance(value, str):
+        if not value.strip():
+            raise ValueError(f"empty required string at {path}")
+    elif isinstance(value, dict):
+        for key, child in value.items():
+            validate_nonempty_contract_strings(child, f"{path}.{key}")
+    elif isinstance(value, list):
+        for index, child in enumerate(value):
+            validate_nonempty_contract_strings(child, f"{path}[{index}]")
+
+
+def validate_missing_outcomes(probes: list[dict]) -> None:
+    for probe in probes:
+        if probe["conclusion"] != "NO_POSITIVE_BASIS":
+            continue
+        match = re.search(r"(?i)\bmissing outcome:\s*(\S(?:.*\S)?)", probe["rationale"])
+        if not match:
+            raise ValueError(f"{probe['probe_id']} must name a nonempty missing outcome")
+
+
+def markdown_anchors(text: str) -> set[str]:
+    anchors: set[str] = set()
+    for heading in re.findall(r"(?m)^#{1,6}\s+(.+?)\s*$", text):
+        anchor = re.sub(r"[^a-z0-9 -]", "", heading.lower())
+        anchors.add(re.sub(r"[ -]+", "-", anchor).strip("-"))
+    return anchors
+
+
+def approved_official_urls(oracle: dict) -> set[str]:
+    return {
+        oracle["source"]["resource_page_url"],
+        oracle["rights"]["licence_url"],
+        *(variant["url"] for variant in oracle["source"]["variants"]),
+    }
+
+
+def validate_evidence_reference(reference: str, probe_ids: set[str], oracle: dict) -> None:
+    if reference in probe_ids:
+        return
+    if reference in approved_official_urls(oracle):
+        return
+    path_text, separator, locator = reference.partition("#")
+    if not separator or not path_text or not locator:
+        raise ValueError(f"invalid evidence reference: {reference}")
+    path = (ROOT / path_text).resolve()
+    try:
+        path.relative_to(ROOT.resolve())
+    except ValueError as error:
+        raise ValueError(f"invalid evidence reference: {reference}") from error
+    if not path.is_file():
+        raise ValueError(f"invalid evidence reference: {reference}")
+    if path.suffix.lower() == ".md":
+        if locator not in markdown_anchors(path.read_text(encoding="utf-8")):
+            raise ValueError(f"invalid evidence reference: {reference}")
+        return
+    if path == ORACLE.resolve():
+        try:
+            resolve_oracle_path(oracle, locator)
+        except (KeyError, StopIteration) as error:
+            raise ValueError(f"invalid evidence reference: {reference}") from error
+        return
+    raise ValueError(f"invalid evidence reference: {reference}")
+
+
+def validate_scenario_binding(probe: dict, binding: dict, oracle: dict) -> None:
+    scenario = binding["scenario_id"]
+    if scenario not in SCENARIO_EVIDENCE:
+        raise ValueError(f"unknown scenario: {scenario}")
+    ids = set(binding["provision_ids"])
+    paths = set(binding["oracle_paths"])
+    if not ids or not ids <= set(probe["provision_ids"]) or not paths:
+        raise ValueError(f"invalid {scenario} binding")
+    for path in paths:
+        try:
+            resolve_oracle_path(oracle, path)
+        except (KeyError, StopIteration) as error:
+            raise ValueError(f"invalid {scenario} oracle path: {path}") from error
+        match = re.match(r"provisions\[([^]]+)\]", path)
+        if match and match.group(1) not in ids:
+            raise ValueError(f"unbound provision path in {scenario}: {path}")
+    contract = SCENARIO_EVIDENCE[scenario]
+    if not contract["required"] <= ids:
+        raise ValueError(f"{scenario} is missing required provisions")
+    if contract["one_of"] and not contract["one_of"] & ids:
+        raise ValueError(f"{scenario} is missing an alternative provision")
+    if not contract["paths"] <= paths:
+        raise ValueError(f"{scenario} is missing required oracle paths")
+    if scenario == "figure-1-decision-logic":
+        ids_required = {"CEPTS3.2-T1-008", *(f"CEPTS3.2-T1-{number:03d}" for number in range(9, 17))}
+        if not ids_required <= ids:
+            raise ValueError("figure-1-decision-logic is incomplete")
+    for provision_id in ids:
+        if f"provisions[{provision_id}].external_provision_id" not in paths:
+            raise ValueError(f"{scenario} lacks bound provision identity path")
+    if scenario == "known-source-anomaly":
+        if resolve_oracle_path(oracle, "known_anomalies[0].anomaly_id") != "cepts32-anomaly-001":
+            raise ValueError("known-source-anomaly identity mismatch")
+    if scenario == "expected-no-direct-esaf-basis":
+        if probe["conclusion"] != "NO_POSITIVE_BASIS":
+            raise ValueError("expected-no-direct-esaf-basis requires NO_POSITIVE_BASIS")
+        for provision_id in ids:
+            if not {
+                f"provisions[{provision_id}].summary",
+                f"provisions[{provision_id}].locator",
+            } <= paths:
+                raise ValueError("expected-no-direct-esaf-basis lacks summary and locator")
+
+
+def validate_probe_scenario_bindings(probe: dict, oracle: dict) -> None:
+    labels = probe["special_scenarios"]
+    bindings = probe["special_scenario_bindings"]
+    if labels != [binding["scenario_id"] for binding in bindings] or len(labels) != len(set(labels)):
+        raise ValueError("scenario labels and bindings disagree")
+    for binding in bindings:
+        validate_scenario_binding(probe, binding, oracle)
+
+
+PROHIBITED_CLAIM_PATTERNS = (
+    re.compile(r"\b(?:establish\w*|prov(?:e|es)|ensur(?:e|es)|achiev\w*|confer\w*|demonstrat\w*|guarantee\w*)\b[^.;\n]{0,60}\b(?:certification|compliance)\b", re.I),
+    re.compile(r"\b(?:certif(?:y|ies)|is certified|is compliant)\b", re.I),
+    re.compile(r"\b(?:is|are|establish\w*|prov(?:e|es))\b[^.;\n]{0,30}\bequivalen(?:t|ce)\b", re.I),
+    re.compile(r"\b(?:have|has) equivalent\b", re.I),
+    re.compile(r"\b(?:endorsed by|endorses|(?:establish\w*|constitutes?) (?:NCSC )?endorsement)\b", re.I),
+    re.compile(r"\b(?:predictively sufficient|predictive sufficiency|predicts? future sufficiency)\b", re.I),
+    re.compile(r"\b(?:prov(?:e|es)|establish\w*|guarantee\w*)\b[^.;\n]{0,60}\b(?:assessment|test(?:ing)?)\b[^.;\n]{0,30}\b(?:passed|pass|outcome)\b", re.I),
+    re.compile(r"\b(?:testing succeeded|assessment succeeded)\b", re.I),
+    re.compile(r"\b(?:covers? the current operational scheme|complete (?:inventory of|for) the current operational scheme|complete current[- ]scheme inventory|current[- ]scheme completeness)\b", re.I),
+    re.compile(r"\bfull[- ]population assurance\b", re.I),
+    re.compile(r"\ball untested [^.;\n]{0,40}\bare assured\b", re.I),
+    re.compile(r"\b(?:continuous assurance|continuously assures?|assured continuously)\b", re.I),
+)
+NEGATION = re.compile(r"\b(?:does not|do not|is not|are not|not|no|without|cannot|never|neither)\b", re.I)
+
+
+def prohibited_claim_violations(text: str) -> list[str]:
+    violations: list[str] = []
+    for pattern in PROHIBITED_CLAIM_PATTERNS:
+        for match in pattern.finditer(text):
+            clause_start = max(
+                text.rfind(".", 0, match.start()), text.rfind(";", 0, match.start()),
+                text.rfind("!", 0, match.start()), text.rfind("\n", 0, match.start()),
+            ) + 1
+            if not NEGATION.search(text[clause_start:match.end()]):
+                violations.append(match.group(0))
+    return violations
+
+
 class MappingGoNoGoTests(unittest.TestCase):
     def test_oracle_digest_is_locked(self) -> None:
         self.assertEqual(normalized_sha256(ORACLE), ORACLE_SHA256)
@@ -269,6 +457,149 @@ class MappingGoNoGoTests(unittest.TestCase):
         self.assertEqual([], missing)
 
 
+class MappingValidatorRegressionTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.oracle = json.loads(ORACLE.read_text(encoding="utf-8"))
+        cls.rights_text = RIGHTS.read_text(encoding="utf-8")
+
+    def test_rights_binding_comes_from_committed_record(self) -> None:
+        record = parse_rights_record(self.rights_text)
+        matrix = {
+            "rights_re_attestation": {
+                "reviewer": record["reviewer"],
+                "review_date": record["review_date"],
+                "prior_rights_commit": record["prior_rights_commit"],
+                "oracle_sha256": record["oracle_sha256"],
+                "field_classes_reviewed": list(FIELD_CLASSES),
+                "iasme_partition_preserved": True,
+                "copied_source_prohibition_preserved": True,
+                "disposition": "approved",
+            },
+            "roles": {
+                "esaf_to_external_analyst": "Analyst A",
+                "external_to_esaf_analyst": "Analyst B",
+                "reconciler": "Reconciler",
+            },
+        }
+        validate_rights_binding(matrix, self.rights_text)
+        for key, forged in (("reviewer", "Forged reviewer"), ("review_date", "2099-01-01")):
+            with self.subTest(key=key):
+                mutated = json.loads(json.dumps(matrix))
+                mutated["rights_re_attestation"][key] = forged
+                with self.assertRaisesRegex(ValueError, "rights record mismatch"):
+                    validate_rights_binding(mutated, self.rights_text)
+        matrix["roles"]["esaf_to_external_analyst"] = record["reviewer"]
+        with self.assertRaisesRegex(ValueError, "rights reviewer is not independent"):
+            validate_rights_binding(matrix, self.rights_text)
+
+    def test_empty_contract_strings_and_generic_missing_outcomes_are_rejected(self) -> None:
+        value = {"roles": {"reconciler": "Reconciler"}, "items": ["evidence"]}
+        validate_nonempty_contract_strings(value)
+        value["roles"]["reconciler"] = "  "
+        with self.assertRaisesRegex(ValueError, "empty required string"):
+            validate_nonempty_contract_strings(value)
+        value["roles"]["reconciler"] = None
+        with self.assertRaisesRegex(ValueError, "empty required value"):
+            validate_nonempty_contract_strings(value)
+        probe = {
+            "probe_id": "probe-1",
+            "conclusion": "NO_POSITIVE_BASIS",
+            "rationale": "The material does not establish the needed result.",
+        }
+        with self.assertRaisesRegex(ValueError, "missing outcome"):
+            validate_missing_outcomes([probe])
+        probe["rationale"] = "Missing outcome: a retained-evidence duty for the Applicant."
+        validate_missing_outcomes([probe])
+
+    def test_evidence_references_are_closed_and_locators_resolve(self) -> None:
+        approved_url = self.oracle["source"]["resource_page_url"]
+        validate_evidence_reference("probe-1", {"probe-1"}, self.oracle)
+        validate_evidence_reference(approved_url, set(), self.oracle)
+        validate_evidence_reference(
+            f"{RIGHTS.relative_to(ROOT).as_posix()}#approved-field-classes",
+            set(), self.oracle,
+        )
+        validate_evidence_reference(
+            f"{ORACLE.relative_to(ROOT).as_posix()}#assurance_limits.scope_boundary",
+            set(), self.oracle,
+        )
+        for invalid in (
+            "https://example.invalid/evidence",
+            f"{RIGHTS.relative_to(ROOT).as_posix()}#invented-heading",
+            RIGHTS.relative_to(ROOT).as_posix(),
+        ):
+            with self.subTest(invalid=invalid):
+                with self.assertRaisesRegex(ValueError, "invalid evidence reference"):
+                    validate_evidence_reference(invalid, set(), self.oracle)
+
+    def test_every_claimed_scenario_binding_is_validated(self) -> None:
+        probe = {
+            "probe_id": "probe-1",
+            "conclusion": "POSITIVE_FEASIBILITY",
+            "provision_ids": ["CEPTS3.2-M-006", "CEPTS3.2-M-011"],
+            "special_scenarios": [
+                "sampling-and-population-limits", "evidence-retention",
+            ],
+            "special_scenario_bindings": [
+                {
+                    "scenario_id": "sampling-and-population-limits",
+                    "provision_ids": ["CEPTS3.2-M-006"],
+                    "oracle_paths": [
+                        "provisions[CEPTS3.2-M-006].external_provision_id",
+                        "assurance_limits.population_and_sample_boundary",
+                    ],
+                },
+                {
+                    "scenario_id": "evidence-retention",
+                    "provision_ids": ["CEPTS3.2-M-011"],
+                    "oracle_paths": [
+                        "provisions[CEPTS3.2-M-011].external_provision_id",
+                    ],
+                },
+            ],
+        }
+        with self.assertRaisesRegex(ValueError, "evidence-retention"):
+            validate_probe_scenario_bindings(probe, self.oracle)
+        probe["special_scenario_bindings"][1]["oracle_paths"].append(
+            "assurance_limits.evidence_date_boundary"
+        )
+        validate_probe_scenario_bindings(probe, self.oracle)
+
+    def test_affirmative_prohibited_inferences_are_detected_without_boundary_false_positives(self) -> None:
+        claims = (
+            "This analysis establishes certification.",
+            "The result proves compliance.",
+            "The frameworks are equivalent.",
+            "NCSC endorses this review.",
+            "The sample is predictively sufficient for future state.",
+            "The evidence proves the assessment passed.",
+            "This inventory covers the current operational scheme.",
+            "The sample provides full-population assurance.",
+            "The result provides continuous assurance.",
+            "This certifies the Applicant and the Applicant is compliant.",
+            "The sources have equivalent requirements.",
+            "This constitutes NCSC endorsement.",
+            "The sample predicts future sufficiency.",
+            "Testing succeeded for this control.",
+            "This is a complete current-scheme inventory.",
+            "All untested devices are assured by the sample.",
+            "The controls remain assured continuously.",
+        )
+        for claim in claims:
+            with self.subTest(claim=claim):
+                self.assertTrue(prohibited_claim_violations(claim))
+        boundaries = (
+            "This analysis does not establish certification or compliance.",
+            "The frameworks are not equivalent and NCSC does not endorse this review.",
+            "The result provides no predictive sufficiency, testing outcome, current-scheme completeness, full-population assurance, or continuous assurance.",
+            "No mapping snapshot exists. A GO authorizes design only.",
+        )
+        for boundary in boundaries:
+            with self.subTest(boundary=boundary):
+                self.assertEqual(prohibited_claim_violations(boundary), [])
+
+
 @unittest.skipUnless(MATRIX.is_file() and REVIEW.is_file(), "Task 4 artifacts are absent")
 class MatrixClosedContractTests(unittest.TestCase):
     @classmethod
@@ -286,13 +617,10 @@ class MatrixClosedContractTests(unittest.TestCase):
         self.assertTrue(value.strip(), context)
 
     def assert_evidence_reference(self, reference: str) -> None:
-        if reference in self.probes or reference.startswith("https://"):
-            return
-        path_text, separator, locator = reference.partition("#")
-        self.assertTrue(separator and locator, reference)
-        self.assertTrue((ROOT / path_text).is_file(), reference)
+        validate_evidence_reference(reference, set(self.probes), self.oracle)
 
     def test_top_level_source_rights_roles_and_coverage_are_closed(self) -> None:
+        validate_nonempty_contract_strings(self.matrix)
         assert_exact_keys(self, self.matrix, {
             "schema_version", "review_identifier", "source_oracle",
             "rights_re_attestation", "roles", "coverage_contract",
@@ -311,6 +639,8 @@ class MatrixClosedContractTests(unittest.TestCase):
         self.assertEqual(source["expected_provision_count"], 144)
         self.assertEqual(source["atomization_rule_version"], "1.0.0")
         self.assertEqual(source["scope_statement"], self.oracle["scope"]["statement"])
+        for key in ("path", "sha256", "source_version", "atomization_rule_version", "scope_statement"):
+            self.assert_nonempty_string(source[key], f"source_oracle.{key}")
         rights = self.matrix["rights_re_attestation"]
         assert_exact_keys(self, rights, {
             "record_path", "record_commit", "reviewer", "review_date",
@@ -325,12 +655,21 @@ class MatrixClosedContractTests(unittest.TestCase):
         for key in ("publication_basis_covered", "iasme_partition_preserved", "copied_source_prohibition_preserved"):
             self.assertIs(rights[key], True)
         self.assertEqual(rights["disposition"], "approved")
+        for key in (
+            "record_path", "record_commit", "reviewer", "review_date",
+            "prior_rights_commit", "oracle_sha256", "disposition",
+        ):
+            self.assert_nonempty_string(rights[key], f"rights_re_attestation.{key}")
+        for value in rights["field_classes_reviewed"]:
+            self.assert_nonempty_string(value, "rights field class")
         assert_exact_keys(self, self.matrix["roles"], {
             "esaf_to_external_analyst", "external_to_esaf_analyst", "reconciler",
         }, "roles")
         roles = self.matrix["roles"]
         self.assertEqual(len(set(roles.values())), 3)
-        self.assertNotIn(rights["reviewer"], roles.values())
+        for key, value in roles.items():
+            self.assert_nonempty_string(value, f"roles.{key}")
+        validate_rights_binding(self.matrix, RIGHTS.read_text(encoding="utf-8"))
         coverage = self.matrix["coverage_contract"]
         assert_exact_keys(self, coverage, {"groups", "kinds", "actors", "special_scenarios"}, "coverage_contract")
         self.assertEqual(coverage, {
@@ -374,6 +713,8 @@ class MatrixClosedContractTests(unittest.TestCase):
         self.assertEqual([item["direction"] for item in prompts], list(DIRECTIONS))
         for item in prompts:
             assert_exact_keys(self, item, {"direction", "sha256"}, "prompt_digest")
+            self.assert_nonempty_string(item["direction"], "prompt direction")
+            self.assert_nonempty_string(item["sha256"], "prompt digest")
             self.assertRegex(item["sha256"], HEX_SHA256)
         self.assertEqual(len({item["sha256"] for item in prompts}), 2)
         self.assertRegex(provenance["common_input_sha256"], HEX_SHA256)
@@ -391,6 +732,8 @@ class MatrixClosedContractTests(unittest.TestCase):
             }, "submission")
             self.assertRegex(item["received_at_utc"], UTC_ISO_8601)
             self.assertRegex(item["payload_sha256"], HEX_SHA256)
+            for key in ("direction", "analyst", "received_at_utc", "payload_sha256", "digest_reference"):
+                self.assert_nonempty_string(item[key], f"submission.{key}")
             self.assertEqual(item["payload_sha256"], submission_payload_sha256(self.matrix, item["direction"]))
             self.assertIs(item["no_output_file_attestation"], True)
             self.assertIs(item["no_sibling_content_attestation"], True)
@@ -400,6 +743,8 @@ class MatrixClosedContractTests(unittest.TestCase):
         self.assertEqual([item["direction"] for item in digests], list(DIRECTIONS))
         for item in digests:
             assert_exact_keys(self, item, {"direction", "sha256"}, "direction_content_digest")
+            self.assert_nonempty_string(item["direction"], "digest direction")
+            self.assert_nonempty_string(item["sha256"], "direction digest")
             self.assertEqual(item["sha256"], direction_content_sha256(self.matrix, item["direction"]))
         reconciliation = provenance["reconciliation"]
         assert_exact_keys(self, reconciliation, {
@@ -407,7 +752,10 @@ class MatrixClosedContractTests(unittest.TestCase):
             "post_seal_changes_prohibited", "packaging_disposition",
         }, "reconciliation")
         self.assertEqual(reconciliation["reconciler"], self.matrix["roles"]["reconciler"])
+        self.assert_nonempty_string(reconciliation["reconciler"], "reconciliation.reconciler")
         self.assertEqual(reconciliation["submission_digest_references"], [item["digest_reference"] for item in submissions])
+        for reference in reconciliation["submission_digest_references"]:
+            self.assert_nonempty_string(reference, "submission digest reference")
         self.assertIs(reconciliation["post_seal_changes_prohibited"], True)
         self.assertEqual(reconciliation["packaging_disposition"], "accepted")
         validations = reconciliation["direction_validations"]
@@ -415,6 +763,8 @@ class MatrixClosedContractTests(unittest.TestCase):
         for item in validations:
             assert_exact_keys(self, item, {"direction", "status", "evidence_references"}, "direction_validation")
             self.assertEqual(item["status"], "ACCEPTED")
+            self.assert_nonempty_string(item["direction"], "validation direction")
+            self.assert_nonempty_string(item["status"], "validation status")
             self.assertTrue(item["evidence_references"])
             for reference in item["evidence_references"]:
                 self.assert_evidence_reference(reference)
@@ -436,6 +786,10 @@ class MatrixClosedContractTests(unittest.TestCase):
             }, "direction_assessment")
             role = self.matrix["roles"][f"{assessment['direction']}_analyst"]
             self.assertEqual(assessment["analyst"], role)
+            for key in ("direction", "analyst", "question", "disposition", "decision_rationale"):
+                self.assert_nonempty_string(assessment[key], f"assessment.{key}")
+            for probe_id in assessment["positive_probe_identifiers"]:
+                self.assert_nonempty_string(probe_id, "positive probe identifier")
             self.assertEqual([gate["gate"] for gate in assessment["gate_results"]], list(GATES))
             self.assertEqual(assessment["disposition"], expected_disposition(assessment, self.probes))
             self.assertIn(assessment["disposition"], DISPOSITIONS)
@@ -467,6 +821,7 @@ class MatrixClosedContractTests(unittest.TestCase):
 
     def test_probe_contract_oracle_derivation_and_conditions_are_exact(self) -> None:
         self.assertEqual(len(self.probes), len(self.matrix["probes"]))
+        validate_missing_outcomes(self.matrix["probes"])
         for probe in self.matrix["probes"]:
             assert_exact_keys(self, probe, {
                 "probe_id", "direction", "provision_ids", "selection_basis", "groups",
@@ -478,6 +833,15 @@ class MatrixClosedContractTests(unittest.TestCase):
             self.assertIn(probe["direction"], DIRECTIONS)
             self.assertIn(probe["conclusion"], PROBE_CONCLUSIONS)
             self.assertTrue(probe["provision_ids"])
+            for key in (
+                "probe_id", "direction", "selection_basis", "semantic_fit_analysis",
+                "assurance_and_overclaiming_risks",
+                "source_rights_and_operational_limits", "conclusion", "rationale",
+            ):
+                self.assert_nonempty_string(probe[key], f"probe.{key}")
+            for key in ("provision_ids", "groups", "kinds", "actors", "special_scenarios"):
+                for value in probe[key]:
+                    self.assert_nonempty_string(value, f"probe.{key}")
             selected = [self.provisions[item] for item in probe["provision_ids"]]
             self.assertEqual(probe["groups"], list(dict.fromkeys(item["group"] for item in selected)))
             self.assertEqual(probe["kinds"], list(dict.fromkeys(item["kind"] for item in selected)))
@@ -498,8 +862,6 @@ class MatrixClosedContractTests(unittest.TestCase):
                 self.assertEqual(probe["condition_checklist"], [])
             if probe["conclusion"] == "POSITIVE_FEASIBILITY":
                 self.assertTrue(probe["esaf_normative_bases"])
-            if probe["conclusion"] == "NO_POSITIVE_BASIS":
-                self.assertRegex(probe["rationale"], r"(?i)missing|does not (?:supply|provide|require|establish)")
             if probe["conclusion"] == "INDETERMINATE":
                 assessment = next(item for item in self.matrix["direction_assessments"] if item["direction"] == probe["direction"])
                 self.assertTrue(assessment["prerequisites"])
@@ -522,18 +884,9 @@ class MatrixClosedContractTests(unittest.TestCase):
             })
             selected = [probe for probe in self.matrix["probes"] if probe["direction"] == direction]
             for probe in selected:
-                self.assertEqual(probe["special_scenarios"], [item["scenario_id"] for item in probe["special_scenario_bindings"]])
-                self.assertEqual(len(set(probe["special_scenarios"])), len(probe["special_scenarios"]))
+                validate_probe_scenario_bindings(probe, self.oracle)
                 for binding in probe["special_scenario_bindings"]:
                     assert_exact_keys(self, binding, {"scenario_id", "provision_ids", "oracle_paths"}, "scenario binding")
-                    self.assertTrue(binding["provision_ids"])
-                    self.assertTrue(set(binding["provision_ids"]) <= set(probe["provision_ids"]))
-                    self.assertTrue(binding["oracle_paths"])
-                    for path in binding["oracle_paths"]:
-                        resolve_oracle_path(self.oracle, path)
-                        match = re.match(r"provisions\[([^]]+)\]", path)
-                        if match:
-                            self.assertIn(match.group(1), binding["provision_ids"])
             for scenario, contract in SCENARIO_EVIDENCE.items():
                 probe, binding = next(
                     (probe, binding)
@@ -562,12 +915,7 @@ class MatrixClosedContractTests(unittest.TestCase):
         self.assertEqual(PROHIBITED_KEYS & recursive_keys(self.matrix), set())
         combined = MATRIX.read_text(encoding="utf-8") + "\n" + self.review
         self.assertNotIn(self.oracle["known_anomalies"][0]["source_literal"], combined)
-        for pattern in (
-            r"(?i)\bequivalent to\b", r"(?i)\bensures compliance\b",
-            r"(?i)\bcertified by\b", r"(?i)\bNCSC endorses\b",
-            r"(?i)\bproves (?:continuous|full.population) assurance\b",
-        ):
-            self.assertNotRegex(combined, pattern)
+        self.assertEqual(prohibited_claim_violations(combined), [])
         base = git("merge-base", "HEAD", "origin/main")
         changed = git("diff", "--name-only", base, "--", "crosswalks/mappings", "crosswalks/registry")
         self.assertEqual(changed, "")

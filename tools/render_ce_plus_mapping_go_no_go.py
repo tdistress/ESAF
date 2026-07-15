@@ -36,9 +36,12 @@ def render(matrix: dict) -> str:
         raise ValueError("unexpected direction order")
     provenance = matrix["analysis_provenance"]
     reconciliation = provenance["reconciliation"]
+    validations = reconciliation.get("direction_validations")
     if (
         reconciliation["packaging_disposition"] != "accepted"
-        or any(item["status"] != "ACCEPTED" for item in reconciliation["direction_validations"])
+        or not isinstance(validations, list)
+        or [item.get("direction") for item in validations] != list(DIRECTIONS)
+        or any(item.get("status") != "ACCEPTED" for item in validations)
     ):
         raise ValueError("unaccepted reconciliation")
     recorded = {

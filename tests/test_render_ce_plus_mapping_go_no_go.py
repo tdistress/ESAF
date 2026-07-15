@@ -133,6 +133,30 @@ class RenderMappingGoNoGoTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "direction content digest mismatch"):
             render(fixture)
 
+    def test_render_requires_exact_direction_ordered_validations(self) -> None:
+        invalid_arrays = (
+            [],
+            [{"direction": "esaf_to_external", "status": "ACCEPTED"}],
+            [
+                {"direction": "esaf_to_external", "status": "ACCEPTED"},
+                {"direction": "esaf_to_external", "status": "ACCEPTED"},
+            ],
+            [
+                {"direction": "external_to_esaf", "status": "ACCEPTED"},
+                {"direction": "esaf_to_external", "status": "ACCEPTED"},
+            ],
+        )
+        for validations in invalid_arrays:
+            with self.subTest(validations=validations):
+                fixture = self.fixture()
+                fixture["analysis_provenance"]["reconciliation"]["direction_validations"] = validations
+                with self.assertRaisesRegex(ValueError, "unaccepted reconciliation"):
+                    render(fixture)
+        fixture = self.fixture()
+        del fixture["analysis_provenance"]["reconciliation"]["direction_validations"]
+        with self.assertRaisesRegex(ValueError, "unaccepted reconciliation"):
+            render(fixture)
+
     def test_cli_writes_checks_and_reports_drift(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
