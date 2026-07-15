@@ -405,41 +405,41 @@ def validate_probe_scenario_bindings(probe: dict, oracle: dict) -> None:
         validate_scenario_binding(probe, binding, oracle)
 
 
-CLAIM_MODIFIERS = (
-    r"(?:\s+(?:directly|itself|independently|validly|defensibly|conclusively|actually|materially)){0,2}"
+PROHIBITED_OUTCOME_PATTERNS = (
+    re.compile(r"\bcertif(?:ication|ied|y|ies)\b", re.I),
+    re.compile(r"\bcomplian(?:ce|t)\b", re.I),
+    re.compile(r"\bequivalen(?:ce|t)\b", re.I),
+    re.compile(r"\bendorse(?:ment|d|s)?\b", re.I),
+    re.compile(
+        r"\b(?:predictive(?:ly)?\s+sufficien\w*|predicts?\s+future\s+sufficien\w*)\b",
+        re.I,
+    ),
+    re.compile(
+        r"\b(?:assessment|test(?:ing)?)\s+(?:[a-z]+ly\s+)*"
+        r"(?:has\s+|had\s+)?(?:pass(?:ed|es)?|succeed(?:ed|s)?|outcome)\b",
+        re.I,
+    ),
+    re.compile(
+        r"\b(?:current[- ](?:operational[- ])?scheme(?:\s+(?:completeness|inventory))?"
+        r"|complete\s+(?:inventory\s+(?:of|for)\s+)?the\s+current\s+operational\s+scheme"
+        r"|complete\s+current[- ]scheme\s+inventory)\b",
+        re.I,
+    ),
+    re.compile(
+        r"\b(?:full[- ]population\s+assurance"
+        r"|assurance\s+(?:over|for|across|of)\s+(?:the\s+)?full\s+population"
+        r"|all\s+(?:untested\s+)?(?:devices|accounts|services|configurations|systems)\s+are\s+assured)\b",
+        re.I,
+    ),
+    re.compile(
+        r"\b(?:continuous\s+assurance|continuously\s+assures?"
+        r"|assured\s+continuously|assurance\s+continuously)\b",
+        re.I,
+    ),
 )
-CLAIM_DETERMINERS = r"(?:\s+that)?(?:\s+(?:the|a|an|this|such))?"
-PROHIBITED_CLAIM_PATTERNS = (
-    re.compile(
-        rf"\b(?:establish\w*|prov(?:e|es)|ensur(?:e|es)|achiev\w*|confer\w*|demonstrat\w*|guarantee\w*)\b"
-        rf"{CLAIM_MODIFIERS}{CLAIM_DETERMINERS}\s+(?:certification|compliance)\b",
-        re.I,
-    ),
-    re.compile(r"\b(?:certif(?:y|ies)|is certified|is compliant)\b", re.I),
-    re.compile(rf"\b(?:is|are|have|has){CLAIM_MODIFIERS}\s+equivalent\b", re.I),
-    re.compile(
-        rf"\b(?:establish\w*|prov(?:e|es))\b{CLAIM_MODIFIERS}{CLAIM_DETERMINERS}"
-        rf"\s+equivalence\b",
-        re.I,
-    ),
-    re.compile(
-        rf"\b(?:endors(?:e|es|ed)\b(?:\s+by)?|"
-        rf"(?:establish\w*|constitut\w*|guarantee\w*|impl(?:y|ies)|confer\w*)\b"
-        rf"{CLAIM_MODIFIERS}{CLAIM_DETERMINERS}\s+(?:NCSC\s+)?endorsement)\b",
-        re.I,
-    ),
-    re.compile(r"\b(?:predictively sufficient|predictive sufficiency|predicts? future sufficiency)\b", re.I),
-    re.compile(
-        rf"\b(?:prov(?:e|es)|establish\w*|guarantee\w*)\b{CLAIM_MODIFIERS}"
-        rf"{CLAIM_DETERMINERS}\s+(?:assessment|test(?:ing)?)"
-        rf"(?:\s+(?:has|had))?\s+(?:passed|passes|pass|outcome)\b",
-        re.I,
-    ),
-    re.compile(r"\b(?:testing succeeded|assessment succeeded)\b", re.I),
-    re.compile(r"\b(?:covers? the current operational scheme|complete (?:inventory of|for) the current operational scheme|complete current[- ]scheme inventory|current[- ]scheme completeness)\b", re.I),
-    re.compile(r"\bfull[- ]population assurance\b", re.I),
-    re.compile(r"\ball (?:untested )?(?:devices|accounts|services|configurations|systems) are assured\b", re.I),
-    re.compile(r"\b(?:continuous assurance|continuously assures?|assured continuously)\b", re.I),
+OUTCOME_ANCHOR = re.compile(
+    "(?:" + "|".join(pattern.pattern for pattern in PROHIBITED_OUTCOME_PATTERNS) + ")",
+    re.I,
 )
 COORDINATION_BOUNDARY = re.compile(
     r"(?:[.;!\n]+|,\s*(?:but|and|yet|however)\s+|\s+(?:but|and|yet|however)\s+)",
@@ -447,16 +447,30 @@ COORDINATION_BOUNDARY = re.compile(
 )
 NEGATED_AUXILIARY = re.compile(
     r"\b(?:do|does|did|is|are|was|were|has|have|can|could|will|would)\s+not"
-    r"(?:\s+(?:directly|itself|independently|validly|defensibly|conclusively|actually|materially)){0,2}\s*$",
+    r"(?:\s+[a-z]+ly){0,2}(?:\s+[a-z]+)?(?:\s+that)?"
+    r"(?:\s+(?:the|a|an|this|such))?(?:\s+[a-z]+(?:al|ful|ive|ous|ary|ic|ed))?\s*$",
     re.I,
 )
 NEGATED_OPERATOR = re.compile(
     r"\b(?:neither|nor|never|cannot)"
-    r"(?:\s+(?:directly|itself|independently|validly|defensibly|conclusively|actually|materially)){0,2}\s*$",
+    r"(?:\s+[a-z]+ly){0,2}(?:\s+[a-z]+)?(?:\s+that)?"
+    r"(?:\s+(?:the|a|an|this|such))?(?:\s+[a-z]+(?:al|ful|ive|ous|ary|ic|ed))?\s*$",
     re.I,
 )
-NEGATED_NO_LIST = re.compile(
+NEGATED_NO_LIST_START = re.compile(
     r"\b(?:provides?|establishes?|shows?|offers?|confers?)\s+no\b",
+    re.I,
+)
+NEGATED_GOVERNED_LIST_START = re.compile(
+    r"\b(?:(?:do|does|did|is|are|was|were|has|have|can|could|will|would)\s+not"
+    r"|never|cannot)(?:\s+[a-z]+ly){0,2}\s+[a-z]+(?:\s+that)?"
+    r"(?:\s+(?:the|a|an|this|such))?(?:\s+[a-z]+(?:al|ful|ive|ous|ary|ic|ed)\b)?",
+    re.I,
+)
+NEGATED_NEITHER_NOR = re.compile(
+    r"\bneither(?:\s+[a-z]+ly){0,2}\s+[a-z]+(?:\s+(?:the|a|an|this|such))?\s+"
+    + OUTCOME_ANCHOR.pattern
+    + r"\s+nor(?:\s+[a-z]+ly){0,2}(?:\s+[a-z]+)?(?:\s+(?:the|a|an|this|such))?\s*$",
     re.I,
 )
 NEGATED_AFTER_PROPOSITION = re.compile(
@@ -466,6 +480,24 @@ NEGATED_AFTER_PROPOSITION = re.compile(
 )
 
 
+def negative_no_list_governs(clause: str, match: re.Match[str]) -> bool:
+    starts = list(NEGATED_NO_LIST_START.finditer(clause[:match.start()]))
+    if not starts:
+        return False
+    intervening = clause[starts[-1].end():match.start()]
+    remainder = OUTCOME_ANCHOR.sub("", intervening)
+    return bool(re.fullmatch(r"(?:\s|,|\band\b|\bor\b|\bnor\b)*", remainder, re.I))
+
+
+def negative_governed_list_governs(clause: str, match: re.Match[str]) -> bool:
+    starts = list(NEGATED_GOVERNED_LIST_START.finditer(clause[:match.start()]))
+    if not starts:
+        return False
+    intervening = clause[starts[-1].end():match.start()]
+    remainder = OUTCOME_ANCHOR.sub("", intervening)
+    return bool(re.fullmatch(r"(?:\s|,|\band\b|\bor\b|\bnor\b)*", remainder, re.I))
+
+
 def prohibited_proposition_is_negated(clause: str, match: re.Match[str]) -> bool:
     proposition = match.group(0)
     if re.search(r"\b(?:not|no|without|never|neither)\b", proposition, re.I):
@@ -473,8 +505,11 @@ def prohibited_proposition_is_negated(clause: str, match: re.Match[str]) -> bool
     prefix = clause[:match.start()]
     if NEGATED_AUXILIARY.search(prefix) or NEGATED_OPERATOR.search(prefix):
         return True
-    no_list = NEGATED_NO_LIST.search(prefix)
-    if no_list and not COORDINATION_BOUNDARY.search(prefix[no_list.end():]):
+    if negative_no_list_governs(clause, match):
+        return True
+    if negative_governed_list_governs(clause, match):
+        return True
+    if NEGATED_NEITHER_NOR.search(prefix):
         return True
     if re.search(
         r"\bwithout(?:\s+(?:directly|independently|validly|defensibly|conclusively|actually|materially)){0,2}\s*$",
@@ -488,7 +523,7 @@ def prohibited_proposition_is_negated(clause: str, match: re.Match[str]) -> bool
 def prohibited_claim_violations(text: str) -> list[str]:
     violations: list[str] = []
     for clause in COORDINATION_BOUNDARY.split(text):
-        for pattern in PROHIBITED_CLAIM_PATTERNS:
+        for pattern in PROHIBITED_OUTCOME_PATTERNS:
             for match in pattern.finditer(clause):
                 if not prohibited_proposition_is_negated(clause, match):
                     violations.append(match.group(0))
@@ -699,6 +734,21 @@ class MappingValidatorRegressionTests(unittest.TestCase):
         ):
             with self.subTest(tightly_governed=tightly_governed):
                 self.assertEqual(prohibited_claim_violations(tightly_governed), [])
+
+    def test_outcome_anchors_detect_reviewer_examples_with_open_modifiers(self) -> None:
+        examples = (
+            "This analysis guarantees successful certification.",
+            "This analysis demonstrates full compliance.",
+            "This analysis proves organizational compliance.",
+            "The frameworks are functionally equivalent.",
+            "This constitutes official NCSC endorsement.",
+            "The evidence proves that the assessment successfully passed.",
+            "This provides assurance over the full population.",
+            "This provides assurance continuously.",
+        )
+        for example in examples:
+            with self.subTest(example=example):
+                self.assertTrue(prohibited_claim_violations(example))
 
 
 @unittest.skipUnless(MATRIX.is_file() and REVIEW.is_file(), "Task 4 artifacts are absent")
