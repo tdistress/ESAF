@@ -1,3 +1,4 @@
+import json
 import re
 import unittest
 from pathlib import Path
@@ -186,16 +187,50 @@ class ReleaseMetadataTests(unittest.TestCase):
                     f"backlog still queues registered pattern {identifier} ({title})",
                 )
 
-    def test_backlog_preserves_cyber_essentials_plus_next_activity(self) -> None:
+    def test_backlog_queues_only_disposition_authorized_cyber_essentials_plus_work(self) -> None:
         backlog = read_repository_file("project/BACKLOG.md")
-        self.assertIn(
-            "Conduct the Cyber Essentials Plus v3.2 mapping go/no-go review for a separate, "
-            "source-versioned mapping set before any mapping implementation.",
-            backlog,
+        matrix = json.loads(read_repository_file(
+            "docs/superpowers/specs/"
+            "2026-07-15-uk-cyber-essentials-plus-v3.2-mapping-feasibility-matrix.json"
+        ))
+        expected_items: list[str] = []
+        for assessment in matrix["direction_assessments"]:
+            direction = assessment["direction"]
+            disposition = assessment["disposition"]
+            if disposition == "GO":
+                expected = f"Design the Cyber Essentials Plus v3.2 {direction} mapping"
+                expected_items.append(expected)
+                self.assertEqual(1, backlog.count(f"- {expected}."))
+            elif disposition == "HOLD":
+                expected = (
+                    "Resolve the Cyber Essentials Plus v3.2 "
+                    f"{direction} feasibility prerequisites"
+                )
+                expected_items.append(expected)
+                self.assertEqual(1, backlog.count(f"- {expected}."))
+            else:
+                self.assertNotIn(
+                    f"Design the Cyber Essentials Plus v3.2 {direction} mapping",
+                    backlog,
+                )
+
+        plus_items = [
+            item for item in markdown_list_items(backlog)
+            if "Cyber Essentials Plus v3.2" in item
+        ]
+        self.assertEqual(
+            [f"{item}." for item in expected_items],
+            plus_items,
+            "backlog must contain only direction-specific work authorized by the dispositions",
         )
         self.assertNotIn(
-            "Build and independently reconcile the Cyber Essentials Plus v3.2 public-source oracle",
+            "Conduct the Cyber Essentials Plus v3.2 mapping go/no-go review",
             backlog,
+        )
+        self.assertNotRegex(
+            backlog,
+            r"(?im)^- (?:Build|Create|Develop|Implement) (?:a |the )?"
+            r"Cyber Essentials Plus v3\.2 mapping(?: set)?\.$",
         )
 
     def test_release_plan_preserves_readiness_boundaries(self) -> None:
