@@ -425,11 +425,12 @@ COORDINATION_BOUNDARY = re.compile(
 )
 NEGATED_AUXILIARY = re.compile(
     r"\b(?:do|does|did|is|are|was|were|has|have|can|could|will|would)\s+not"
-    r"(?:\s+\w+){0,3}\s*$",
+    r"(?:\s+(?:directly|itself|independently|validly|defensibly|conclusively|actually|materially)){0,2}\s*$",
     re.I,
 )
 NEGATED_OPERATOR = re.compile(
-    r"\b(?:neither|nor|never|cannot)(?:\s+\w+){0,4}\s*$",
+    r"\b(?:neither|nor|never|cannot)"
+    r"(?:\s+(?:directly|itself|independently|validly|defensibly|conclusively|actually|materially)){0,2}\s*$",
     re.I,
 )
 NEGATED_NO_LIST = re.compile(
@@ -453,7 +454,11 @@ def prohibited_proposition_is_negated(clause: str, match: re.Match[str]) -> bool
     no_list = NEGATED_NO_LIST.search(prefix)
     if no_list and not COORDINATION_BOUNDARY.search(prefix[no_list.end():]):
         return True
-    if re.search(r"\bwithout(?:\s+\w+){0,3}\s*$", prefix, re.I):
+    if re.search(
+        r"\bwithout(?:\s+(?:directly|independently|validly|defensibly|conclusively|actually|materially)){0,2}\s*$",
+        prefix,
+        re.I,
+    ):
         return True
     return bool(NEGATED_AFTER_PROPOSITION.search(clause[match.end():]))
 
@@ -653,9 +658,21 @@ class MappingValidatorRegressionTests(unittest.TestCase):
             "The analysis never omits evidence, but it establishes certification.",
             "The analysis cannot inspect the source, and it establishes certification.",
             "The analysis neither establishes certification nor proves compliance; it establishes equivalence.",
+            "The analysis never omits evidence while it establishes certification.",
+            "The analysis cannot inspect evidence while it establishes certification.",
+            "The analysis neither omits evidence nor hides limits whereas it establishes certification.",
+            "The analysis never reviews evidence before it establishes certification.",
+            "The analysis cannot inspect logs although it proves compliance.",
+            "The analysis neither omits facts nor obscures sources even as it proves equivalence.",
         ):
             with self.subTest(mixed=mixed):
                 self.assertTrue(prohibited_claim_violations(mixed))
+        for tightly_governed in (
+            "The analysis never directly establishes certification.",
+            "The analysis cannot defensibly establish certification.",
+        ):
+            with self.subTest(tightly_governed=tightly_governed):
+                self.assertEqual(prohibited_claim_violations(tightly_governed), [])
 
 
 @unittest.skipUnless(MATRIX.is_file() and REVIEW.is_file(), "Task 4 artifacts are absent")
