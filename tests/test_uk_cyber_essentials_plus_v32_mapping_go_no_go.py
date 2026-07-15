@@ -474,13 +474,17 @@ PREFIX_PROPOSITION_BOUNDARY = re.compile(
     re.I,
 )
 PREFIX_COORDINATED_PREDICATE = re.compile(
-    r"\b(?:and|then)\s+[a-z]+(?:s|ed)\b",
+    r"\b(?:and|then)\s+(?:"
+    r"(?:(?:it|they|this|that|the\s+[a-z]+)\s+[a-z]+)"
+    r"|[a-z]+(?:s|ed)|wrote)\b",
     re.I,
 )
-POSTPREDICATE_MODIFIERS = r"(?:(?:[a-z]+ly|very|each|and)\s+)*"
+POSTPREDICATE_CHAIN_TOKEN = (
+    r"(?:all|and|be|been|both|each|had|has|have|now|very|[a-z]+ly)"
+)
 OUTCOME_AFFIRMATIVE_POSTPREDICATE = re.compile(
-    rf"^\s+(?:is|are|was|were|has|have)\s+{POSTPREDICATE_MODIFIERS}"
-    rf"(?:been\s+{POSTPREDICATE_MODIFIERS})?"
+    rf"^\s+(?:is|are|was|were|has|have|had|will|would|can|could|may|must|shall|should)\s+"
+    rf"(?:{POSTPREDICATE_CHAIN_TOKEN}\s+)*"
     r"(?:achieved|confirmed|conferred|demonstrated|established|provided|successful)\b",
     re.I,
 )
@@ -488,18 +492,34 @@ OUTCOME_BOUNDARY_POSTPREDICATE = re.compile(
     r"^\s+(?:"
     r"(?:is|are|was|were)\s+(?:not\s+assessed|neither\b|outside\s+(?:the\s+)?(?:scope|evidence\s+boundary)|"
     r"a\s+prohibited\s+inference|considered\b)"
-    r"|has\s+not\s+been\s+assessed"
-    r"|falls\s+outside\s+(?:the\s+)?scope"
-    r"|should\s+remain\s+(?:a\s+)?customer\s+determination"
-    r"|cannot\s+be\s+inferred"
-    r"|would\s+require\s+separate\s+evidence"
-    r"|still\s+requires?\s+separate\s+evidence"
+    r"|(?:has|have|had)\s+not\s+(?:been\s+)?assessed"
+    r"|(?:falls?|lies?)\s+outside\s+(?:the\s+)?scope"
+    r"|(?:ought\s+to|should)\s+remain\s+(?:a\s+)?customer\s+determination"
+    r"|(?:(?:must|can)\s+not|cannot)\s+(?:be\s+)?inferred"
+    r"|(?:may|would)\s+require\s+separate\s+evidence"
+    r"|(?:continues?\s+to|still)\s+requires?\s+separate\s+evidence"
     r"|remains?\s+(?:a\s+)?customer\s+determination"
     r"|requires?\s+separate\s+evidence)\b",
     re.I,
 )
 OUTCOME_POSTPREDICATE = re.compile(
-    r"^\s+(?:is|are|was|were|has|have|falls|should|cannot|would|still|remains?|requires?)\b",
+    r"^\s+(?:is|are|was|were|has|have|had|will|would|can|could|may|must|shall|should|"
+    r"falls?|lies?|ought|continues?|still|remains?|requires?)\b",
+    re.I,
+)
+RESULT_NEGATIVE_QUANTIFIER = re.compile(
+    r"^\s+(?:(?:for|in|on)\s+)?(?:no\b|zero\b|none\b|neither\b|not\s+a\s+single\b)"
+    r"|^\s+without\b[^.;!\n]*\bany\b",
+    re.I,
+)
+TESTING_MENTION_PREDICATE = re.compile(
+    r"\b(?:discuss(?:es|ed)?|describ(?:e|es|ed)|examin(?:e|es|ed)|review(?:s|ed)?)\b",
+    re.I,
+)
+INHERITED_TESTING_RESULT = re.compile(
+    r"\b(?:assessment|test(?:ing)?)\b[^.;!\n]*?[,;]\s*"
+    r"(?:and|but|then)\s+(?:[a-z]+ly\s+)*"
+    r"(?:pass(?:ed|es)?|succeed(?:ed|s)?|success(?:ful|fully)?)\b",
     re.I,
 )
 COORDINATION_BOUNDARY = re.compile(
@@ -563,15 +583,30 @@ def prohibited_outcome_is_affirmed(clause: str, match: re.Match[str]) -> bool:
     suffix = clause[match.end():]
     if OUTCOME_BOUNDARY_POSTPREDICATE.search(suffix):
         return False
-    if OUTCOME_AFFIRMATIVE_POSTPREDICATE.search(suffix):
-        return True
+    affirmative_postpredicate = OUTCOME_AFFIRMATIVE_POSTPREDICATE.search(suffix)
+    if affirmative_postpredicate:
+        return not RESULT_NEGATIVE_QUANTIFIER.search(suffix[affirmative_postpredicate.end():])
     if OUTCOME_POSTPREDICATE.search(suffix):
         return False
     if TESTING_RESULT.search(match.group(0)):
         local_result = re.split(r"\b(?:and|but)\b", match.group(0), flags=re.I)[-1]
         if re.search(r"\b(?:no|not|never|neither)\b", local_result, re.I):
             return False
-        if re.match(r"^\s+(?:in\s+)?(?:no|neither)\b", suffix, re.I):
+        if TESTING_MENTION_PREDICATE.search(local_result):
+            return False
+        if re.search(r"\bthat\s+(?:is|are|was|were)\b", local_result, re.I):
+            return False
+        result_word = TESTING_RESULT.search(match.group(0)).group(0).strip().lower()
+        if result_word in {"success", "successful"} and not (
+            re.search(
+                r"\b(?:is|are|was|were|has|have|had|will|completed|achieved|constitutes|resulted)\b",
+                local_result,
+                re.I,
+            )
+            or re.match(r"^\s+pass\b", suffix, re.I)
+        ):
+            return False
+        if RESULT_NEGATIVE_QUANTIFIER.search(suffix):
             return False
         return True
     if INHERENTLY_AFFIRMATIVE_OUTCOME.fullmatch(match.group(0)):
@@ -624,6 +659,9 @@ def prohibited_claim_violations(text: str) -> list[str]:
                     and not prohibited_proposition_is_negated(clause, match)
                 ):
                     violations.append(match.group(0))
+    for match in INHERITED_TESTING_RESULT.finditer(text):
+        if not RESULT_NEGATIVE_QUANTIFIER.search(text[match.end():]):
+            violations.append(match.group(0))
     return violations
 
 
@@ -989,6 +1027,77 @@ class MappingValidatorRegressionTests(unittest.TestCase):
             "The assessment passed no controls.",
             "Testing succeeded in no cases.",
             "The test passed neither control.",
+        )
+        for boundary in boundaries:
+            with self.subTest(boundary=boundary):
+                self.assertEqual(prohibited_claim_violations(boundary), [])
+
+    def test_normalized_auxiliary_chains_and_shared_lists_are_detected(self) -> None:
+        claims = (
+            "Certification had been established.",
+            "Compliance has now been demonstrated.",
+            "Equivalence will have been confirmed.",
+            "Predictive sufficiency had clearly been established.",
+            "Full-population assurance will be provided.",
+            "Certification and compliance have both been established.",
+            "Certification, compliance, and equivalence have all been established.",
+        )
+        for claim in claims:
+            with self.subTest(claim=claim):
+                self.assertTrue(prohibited_claim_violations(claim))
+
+    def test_normalized_boundary_predicate_families_are_accepted(self) -> None:
+        boundaries = (
+            "The review shows certification lies outside the scope of this analysis.",
+            "The analysis confirms compliance ought to remain a customer determination.",
+            "The review establishes that equivalence had not been assessed.",
+            "The report indicates endorsement must not be inferred.",
+            "The evidence indicates full-population assurance may require separate evidence.",
+            "The review confirms continuous assurance continues to require separate evidence.",
+        )
+        for boundary in boundaries:
+            with self.subTest(boundary=boundary):
+                self.assertEqual(prohibited_claim_violations(boundary), [])
+
+    def test_explicit_subject_and_irregular_coordinated_propositions_are_isolated(self) -> None:
+        boundaries = (
+            "The review establishes source identity and it documents certification risk.",
+            "The review establishes source identity then the report discusses certification risk.",
+            "The review establishes source identity and wrote about certification risk.",
+        )
+        for boundary in boundaries:
+            with self.subTest(boundary=boundary):
+                self.assertEqual(prohibited_claim_violations(boundary), [])
+
+    def test_testing_mentions_are_neutral_but_punctuation_inherits_subject(self) -> None:
+        boundaries = (
+            "The assessment discusses successful testing methods.",
+            "Testing documentation describes success criteria.",
+            "The test examined successful configurations.",
+            "The assessment reviewed controls that were successful elsewhere.",
+        )
+        for boundary in boundaries:
+            with self.subTest(boundary=boundary):
+                self.assertEqual(prohibited_claim_violations(boundary), [])
+        claims = (
+            "The assessment was reviewed, and successfully passed.",
+            "The assessment was reviewed, but ultimately passed.",
+            "The assessment failed initially; then ultimately passed.",
+        )
+        for claim in claims:
+            with self.subTest(claim=claim):
+                self.assertTrue(prohibited_claim_violations(claim))
+
+    def test_all_outcome_result_quantifiers_are_accepted(self) -> None:
+        boundaries = (
+            "The assessment passed zero controls.",
+            "Testing succeeded in zero cases.",
+            "The test passed none of the controls.",
+            "The test passed not a single control.",
+            "Testing succeeded without passing any controls.",
+            "Certification was established for no applicants.",
+            "Compliance was demonstrated in zero cases.",
+            "Endorsement was conferred on none of the reports.",
         )
         for boundary in boundaries:
             with self.subTest(boundary=boundary):
