@@ -410,7 +410,7 @@ PROHIBITED_CLAIM_PATTERNS = (
     re.compile(r"\b(?:certif(?:y|ies)|is certified|is compliant)\b", re.I),
     re.compile(r"\b(?:is|are|establish\w*|prov(?:e|es))\b[^.;\n]{0,30}\bequivalen(?:t|ce)\b", re.I),
     re.compile(r"\b(?:have|has) equivalent\b", re.I),
-    re.compile(r"\b(?:endors(?:e|es|ed)\b(?: by)?|(?:establish\w*|constitutes?) (?:NCSC )?endorsement)\b", re.I),
+    re.compile(r"\b(?:endors(?:e|es|ed)\b(?: by)?|(?:establish\w*|constitut\w*|guarantee\w*|impl(?:y|ies)|confer\w*) (?:NCSC )?endorsement)\b", re.I),
     re.compile(r"\b(?:predictively sufficient|predictive sufficiency|predicts? future sufficiency)\b", re.I),
     re.compile(r"\b(?:prov(?:e|es)|establish\w*|guarantee\w*)\b[^.;\n]{0,60}\b(?:assessment|test(?:ing)?)\b[^.;\n]{0,30}\b(?:passed|pass|outcome)\b", re.I),
     re.compile(r"\b(?:testing succeeded|assessment succeeded)\b", re.I),
@@ -426,6 +426,10 @@ COORDINATION_BOUNDARY = re.compile(
 NEGATED_AUXILIARY = re.compile(
     r"\b(?:do|does|did|is|are|was|were|has|have|can|could|will|would)\s+not"
     r"(?:\s+\w+){0,3}\s*$",
+    re.I,
+)
+NEGATED_OPERATOR = re.compile(
+    r"\b(?:neither|nor|never|cannot)(?:\s+\w+){0,4}\s*$",
     re.I,
 )
 NEGATED_NO_LIST = re.compile(
@@ -444,7 +448,7 @@ def prohibited_proposition_is_negated(clause: str, match: re.Match[str]) -> bool
     if re.search(r"\b(?:not|no|without|never|neither)\b", proposition, re.I):
         return True
     prefix = clause[:match.start()]
-    if NEGATED_AUXILIARY.search(prefix):
+    if NEGATED_AUXILIARY.search(prefix) or NEGATED_OPERATOR.search(prefix):
         return True
     no_list = NEGATED_NO_LIST.search(prefix)
     if no_list and not COORDINATION_BOUNDARY.search(prefix[no_list.end():]):
@@ -638,9 +642,20 @@ class MappingValidatorRegressionTests(unittest.TestCase):
         for boundary in (
             "The review establishes that certification is not implied.",
             "The analysis proves equivalence is not established.",
+            "The analysis neither establishes certification nor proves compliance.",
+            "The analysis never establishes certification.",
+            "The analysis cannot establish certification.",
         ):
             with self.subTest(boundary=boundary):
                 self.assertEqual(prohibited_claim_violations(boundary), [])
+        for mixed in (
+            "The analysis neither establishes certification nor proves compliance, but it guarantees endorsement.",
+            "The analysis never omits evidence, but it establishes certification.",
+            "The analysis cannot inspect the source, and it establishes certification.",
+            "The analysis neither establishes certification nor proves compliance; it establishes equivalence.",
+        ):
+            with self.subTest(mixed=mixed):
+                self.assertTrue(prohibited_claim_violations(mixed))
 
 
 @unittest.skipUnless(MATRIX.is_file() and REVIEW.is_file(), "Task 4 artifacts are absent")
