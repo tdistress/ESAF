@@ -189,6 +189,24 @@ def submission_payload_sha256(matrix: dict, direction: str) -> str:
     return hashlib.sha256(canonical_json_bytes(payload)).hexdigest()
 
 
+def validate_submission_digest_reference_contract(matrix: dict) -> None:
+    """Bind each submission reference to its recomputed canonical payload digest."""
+    expected_references: list[str] = []
+    for submission in matrix["analysis_provenance"]["submissions"]:
+        recomputed = submission_payload_sha256(matrix, submission["direction"])
+        if submission["payload_sha256"] != recomputed:
+            raise ValueError("submission payload digest mismatch")
+        expected_reference = f"sha256:{recomputed}"
+        if submission["digest_reference"] != expected_reference:
+            raise ValueError("submission digest reference is not payload-derived")
+        expected_references.append(expected_reference)
+    if (
+        matrix["analysis_provenance"]["reconciliation"]["submission_digest_references"]
+        != expected_references
+    ):
+        raise ValueError("reconciliation submission digest references mismatch")
+
+
 def derive_coverage(matrix: dict, direction: str) -> dict[str, set[str]]:
     selected = [probe for probe in matrix["probes"] if probe["direction"] == direction]
     return {
@@ -1132,6 +1150,52 @@ class MappingValidatorRegressionTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     validate_probe_reference_contract(mutated, self.oracle)
 
+    def test_submission_digest_references_are_payload_derived(self) -> None:
+        matrix = {
+            "analysis_provenance": {
+                "submissions": [
+                    {
+                        "direction": direction,
+                        "analyst": f"Analyst {index}",
+                        "payload_sha256": "",
+                        "digest_reference": "",
+                    }
+                    for index, direction in enumerate(DIRECTIONS, 1)
+                ],
+                "reconciliation": {"submission_digest_references": []},
+            },
+            "direction_assessments": [
+                {"direction": direction, "analyst": f"Analyst {index}"}
+                for index, direction in enumerate(DIRECTIONS, 1)
+            ],
+            "probes": [
+                {"probe_id": f"probe-{index}", "direction": direction}
+                for index, direction in enumerate(DIRECTIONS, 1)
+            ],
+        }
+        for submission in matrix["analysis_provenance"]["submissions"]:
+            digest = submission_payload_sha256(matrix, submission["direction"])
+            submission["payload_sha256"] = digest
+            submission["digest_reference"] = f"sha256:{digest}"
+        matrix["analysis_provenance"]["reconciliation"]["submission_digest_references"] = [
+            item["digest_reference"]
+            for item in matrix["analysis_provenance"]["submissions"]
+        ]
+        validate_submission_digest_reference_contract(matrix)
+        invalid_references = (
+            "Certification is established.",
+            "Endorsement was conferred.",
+            "sha256:not-a-digest",
+            f"sha256:{'0' * 64}",
+        )
+        for reference in invalid_references:
+            with self.subTest(reference=reference):
+                mutated = json.loads(json.dumps(matrix))
+                mutated["analysis_provenance"]["submissions"][0]["digest_reference"] = reference
+                mutated["analysis_provenance"]["reconciliation"]["submission_digest_references"][0] = reference
+                with self.assertRaises(ValueError):
+                    validate_submission_digest_reference_contract(mutated)
+
     def test_intrinsic_morphological_anchors_fail_closed(self) -> None:
         claims = (
             "NCSC is endorsing this review.",
@@ -1327,6 +1391,7 @@ class MatrixClosedContractTests(unittest.TestCase):
             self.assertEqual(item["payload_sha256"], submission_payload_sha256(self.matrix, item["direction"]))
             self.assertIs(item["no_output_file_attestation"], True)
             self.assertIs(item["no_sibling_content_attestation"], True)
+        validate_submission_digest_reference_contract(self.matrix)
         self.assertEqual(len({item["payload_sha256"] for item in submissions}), 2)
         self.assertEqual(len({item["digest_reference"] for item in submissions}), 2)
         digests = provenance["direction_content_digests"]
