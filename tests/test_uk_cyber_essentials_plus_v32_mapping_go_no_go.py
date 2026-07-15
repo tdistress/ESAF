@@ -442,9 +442,6 @@ def validate_probe_reference_contract(matrix: dict, oracle: dict) -> None:
         for gate in assessment["gate_results"]:
             for reference in gate["evidence_references"]:
                 validate_evidence_reference(reference, probe_id_set, oracle)
-    for validation in matrix["analysis_provenance"]["reconciliation"]["direction_validations"]:
-        for reference in validation["evidence_references"]:
-            validate_evidence_reference(reference, probe_id_set, oracle)
     for probe in matrix["probes"]:
         for condition in probe["condition_checklist"]:
             for reference in condition["evidence_references"]:
@@ -1461,14 +1458,21 @@ class MatrixClosedContractTests(unittest.TestCase):
         self.assertEqual(reconciliation["packaging_disposition"], "accepted")
         validations = reconciliation["direction_validations"]
         self.assertEqual([item["direction"] for item in validations], list(DIRECTIONS))
+        submissions_by_direction = {item["direction"]: item for item in submissions}
+        direction_digests = {item["direction"]: item["sha256"] for item in digests}
         for item in validations:
             assert_exact_keys(self, item, {"direction", "status", "evidence_references"}, "direction_validation")
             self.assertEqual(item["status"], "ACCEPTED")
             self.assert_nonempty_string(item["direction"], "validation direction")
             self.assert_nonempty_string(item["status"], "validation status")
-            self.assertTrue(item["evidence_references"])
-            for reference in item["evidence_references"]:
-                self.assert_evidence_reference(reference)
+            direction = item["direction"]
+            self.assertEqual(
+                item["evidence_references"],
+                [
+                    submissions_by_direction[direction]["digest_reference"],
+                    f"sha256:{direction_digests[direction]}",
+                ],
+            )
         keys = recursive_keys(self.matrix)
         self.assertFalse({
             key for key in keys
