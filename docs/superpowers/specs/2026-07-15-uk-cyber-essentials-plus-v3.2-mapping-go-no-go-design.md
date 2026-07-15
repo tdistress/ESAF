@@ -150,8 +150,8 @@ The prospective mapping shall provide material traceability value even if most p
 The directional disposition shall be derived mechanically:
 
 - `GO` requires all seven gates to be `PASS`, at least one defensible positive feasibility probe, no unresolved analyst disagreement, and empty prerequisites.
-- `HOLD` requires no `FAIL` gate and at least one `BLOCKED` gate or unresolved analyst disagreement. It shall record one or more specific, externally resolvable prerequisites and the evidence required for re-entry.
-- `NO_GO` requires at least one `FAIL` gate or no defensible positive feasibility probe after the complete adversarial probe set. It shall record the structural reason and a source, methodology, or framework change that could justify reconsideration.
+- `HOLD` requires no `FAIL` gate and at least one `BLOCKED` gate. Any unresolved analyst disagreement shall mark the affected gate `BLOCKED`. `HOLD` shall record one or more specific, externally resolvable prerequisites and the evidence required for re-entry.
+- `NO_GO` requires at least one `FAIL` gate or, when all seven gates are `PASS`, no defensible positive feasibility probe after the complete adversarial probe set. It shall record the structural reason and a source, methodology, or framework change that could justify reconsideration.
 
 A reviewer shall be able to reproduce the disposition from the gate statuses and probe conclusions without relying on unstated judgment.
 
@@ -206,7 +206,7 @@ The milestone shall identify:
 
 Each directional analyst shall receive the approved design, locked oracle, ESAF controls, and ESAF-1600 method. Neither analyst shall see the other direction's provisional disposition, gate statuses, probe conclusions, or counts before submitting their own result.
 
-The reconciler shall disposition every disagreement, missing coverage axis, unsupported citation, and conclusion difference. An unresolved disagreement produces `HOLD` for the affected direction.
+The reconciler shall disposition every disagreement, missing coverage axis, unsupported citation, and conclusion difference. An unresolved disagreement shall mark the affected gate `BLOCKED`, record a re-entry prerequisite, and produce `HOLD` for the affected direction.
 
 The exact-head reviewers shall be independent of the analysts and reconciler. Independent Codex review establishes technical closure only; it does not qualify a future mapping snapshot as reviewed or approved under ESAF-1600.
 
@@ -229,17 +229,17 @@ The top-level object shall contain exactly:
 - `direction_assessments`: array; and
 - `probes`: array.
 
-`source_oracle` shall contain exactly the repository-relative path, SHA-256, source version, expected provision count, atomization-rule version, and public-document-only scope statement.
+`source_oracle` shall contain exactly `path`, `sha256`, `source_version`, `expected_provision_count`, `atomization_rule_version`, and `scope_statement`.
 
-`rights_re_attestation` shall contain exactly record path, record commit, reviewer, review date, prior rights commit, oracle SHA-256, publication basis covered, IASME partition preserved, copied-source prohibition preserved, field classes reviewed, and disposition. Its disposition shall be `approved`. Tests shall prove that the record commit changed only the re-attestation record and is an ancestor of the first commit containing any probe, directional gate result, or provisional disposition.
+`rights_re_attestation` shall contain exactly `record_path`, `record_commit`, `reviewer`, `review_date`, `prior_rights_commit`, `oracle_sha256`, `publication_basis_covered`, `iasme_partition_preserved`, `copied_source_prohibition_preserved`, `field_classes_reviewed`, and `disposition`. Its disposition shall be `approved`. Tests shall prove that the record commit changed only the re-attestation record and is an ancestor of the first commit containing any probe, directional gate result, or provisional disposition.
 
-`roles` shall contain exactly the two directional analysts and reconciler. Tests shall enforce the independence rules in section 9.
+`roles` shall contain exactly `esaf_to_external_analyst`, `external_to_esaf_analyst`, and `reconciler`. Tests shall enforce the independence rules in section 9.
 
-`coverage_contract` shall contain exactly the ordered groups, kinds, actors, and special scenarios in section 8.
+`coverage_contract` shall contain exactly `groups`, `kinds`, `actors`, and `special_scenarios`, using the ordered values in section 8.
 
-`direction_assessments` shall contain exactly two objects in the direction order in section 3.2. Each contains exactly direction, analyst, question, gate results, positive-probe identifiers, disposition, decision rationale, prerequisites, and reconsideration triggers.
+`direction_assessments` shall contain exactly two objects in the direction order in section 3.2. Each contains exactly `direction`, `analyst`, `question`, `gate_results`, `positive_probe_identifiers`, `disposition`, `decision_rationale`, `prerequisites`, and `reconsideration_triggers`.
 
-Each gate-result object contains exactly gate identifier, status, rationale, and evidence references. Evidence references shall resolve to probe identifiers, repository-relative source paths with stable locators, or official URLs already approved as bibliographic facts.
+Each gate-result object contains exactly `gate`, `status`, `rationale`, and `evidence_references`. Evidence references shall resolve to probe identifiers, repository-relative source paths with stable locators, or official URLs already approved as bibliographic facts.
 
 Each probe contains exactly:
 
@@ -258,7 +258,7 @@ Each probe contains exactly:
 - `conclusion`; and
 - `rationale`.
 
-An ESAF normative-basis entry contains exactly control identifier, requirement locator, and original concise relevance analysis. `POSITIVE_FEASIBILITY` requires at least one normative-basis entry. `NO_POSITIVE_BASIS` may use an empty array and shall state the missing outcome. `INDETERMINATE` shall state the blocking prerequisite in the corresponding directional assessment.
+An ESAF normative-basis entry contains exactly `control_id`, `requirement_locator`, and `relevance_analysis`. `POSITIVE_FEASIBILITY` requires at least one normative-basis entry. `NO_POSITIVE_BASIS` may use an empty array and shall state the missing outcome. `INDETERMINATE` shall state the blocking prerequisite in the corresponding directional assessment.
 
 Unknown properties, unknown enum values, duplicate identifiers, empty required strings, invalid references, and unrecognized coverage values are invalid.
 
