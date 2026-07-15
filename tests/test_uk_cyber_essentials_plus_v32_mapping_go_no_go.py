@@ -406,15 +406,13 @@ def validate_probe_scenario_bindings(probe: dict, oracle: dict) -> None:
 
 
 TESTING_POSITIVE_GRAMMAR = (
-    r"(?:assessment|test(?:ing)?)\s+(?:"
-    r"(?:has|had|is|was)\s+(?:(?:[a-z]+ly|very|and)\s+)*"
-    r"(?:been\s+)?(?:(?:[a-z]+ly|very|and)\s+)*(?:pass(?:ed|es)?|successful)"
-    r"|(?:(?:[a-z]+ly|very|and)\s+)*(?:pass(?:ed|es)?|succeed(?:ed|s)?|successful)"
-    r"|completed\s+successfully"
-    r"|(?:achieved|constitutes|resulted\s+in)\s+(?:a\s+|an\s+)?"
-    r"(?:(?:[a-z]+ly|[a-z]+(?:ed|al|ful|ive|ous|ary|ic))\s+)*"
-    r"(?:successful\s+)?pass"
-    r"|success\s+was\s+established)"
+    r"(?:assessment|test(?:ing)?)\b"
+    r"(?:(?![.;!\n])\s+[a-z]+)*?\s+"
+    r"(?:pass(?:ed|es)?|succeed(?:ed|s)?|success(?:ful|fully)?)"
+)
+TESTING_RESULT = re.compile(
+    r"\b(?:pass(?:ed|es)?|succeed(?:ed|s)?|success(?:ful|fully)?)\b\s*$",
+    re.I,
 )
 PROHIBITED_OUTCOME_PATTERNS = (
     re.compile(r"\bcertif(?:ication|ied|y|ies)\b", re.I),
@@ -475,8 +473,14 @@ PREFIX_PROPOSITION_BOUNDARY = re.compile(
     r"unless|until|when|whereas|while|without|yet)\b)",
     re.I,
 )
+PREFIX_COORDINATED_PREDICATE = re.compile(
+    r"\b(?:and|then)\s+[a-z]+(?:s|ed)\b",
+    re.I,
+)
+POSTPREDICATE_MODIFIERS = r"(?:(?:[a-z]+ly|very|each|and)\s+)*"
 OUTCOME_AFFIRMATIVE_POSTPREDICATE = re.compile(
-    r"^\s+(?:is|are|was|were)\s+(?:[a-z]+ly\s+)*"
+    rf"^\s+(?:is|are|was|were|has|have)\s+{POSTPREDICATE_MODIFIERS}"
+    rf"(?:been\s+{POSTPREDICATE_MODIFIERS})?"
     r"(?:achieved|confirmed|conferred|demonstrated|established|provided|successful)\b",
     re.I,
 )
@@ -484,16 +488,22 @@ OUTCOME_BOUNDARY_POSTPREDICATE = re.compile(
     r"^\s+(?:"
     r"(?:is|are|was|were)\s+(?:not\s+assessed|neither\b|outside\s+(?:the\s+)?(?:scope|evidence\s+boundary)|"
     r"a\s+prohibited\s+inference|considered\b)"
+    r"|has\s+not\s+been\s+assessed"
+    r"|falls\s+outside\s+(?:the\s+)?scope"
+    r"|should\s+remain\s+(?:a\s+)?customer\s+determination"
+    r"|cannot\s+be\s+inferred"
+    r"|would\s+require\s+separate\s+evidence"
+    r"|still\s+requires?\s+separate\s+evidence"
     r"|remains?\s+(?:a\s+)?customer\s+determination"
     r"|requires?\s+separate\s+evidence)\b",
     re.I,
 )
 OUTCOME_POSTPREDICATE = re.compile(
-    r"^\s+(?:is|are|was|were|remains?|requires?)\b",
+    r"^\s+(?:is|are|was|were|has|have|falls|should|cannot|would|still|remains?|requires?)\b",
     re.I,
 )
 COORDINATION_BOUNDARY = re.compile(
-    r"(?:[.;!\n]+|,\s*(?:but|and|yet|however)\s+|\s+(?:but|yet|however)\s+)",
+    r"(?:[.;!\n]+|,\s*(?:but|and|yet|however)\s+|\s+(?:yet|however)\s+)",
     re.I,
 )
 NEGATED_AUXILIARY = re.compile(
@@ -557,7 +567,12 @@ def prohibited_outcome_is_affirmed(clause: str, match: re.Match[str]) -> bool:
         return True
     if OUTCOME_POSTPREDICATE.search(suffix):
         return False
-    if re.fullmatch(TESTING_POSITIVE_GRAMMAR, match.group(0), re.I):
+    if TESTING_RESULT.search(match.group(0)):
+        local_result = re.split(r"\b(?:and|but)\b", match.group(0), flags=re.I)[-1]
+        if re.search(r"\b(?:no|not|never|neither)\b", local_result, re.I):
+            return False
+        if re.match(r"^\s+(?:in\s+)?(?:no|neither)\b", suffix, re.I):
+            return False
         return True
     if INHERENTLY_AFFIRMATIVE_OUTCOME.fullmatch(match.group(0)):
         return True
@@ -565,12 +580,19 @@ def prohibited_outcome_is_affirmed(clause: str, match: re.Match[str]) -> bool:
     predicates = list(AFFIRMATIVE_PREFIX_PREDICATE.finditer(prefix))
     if not predicates:
         return False
-    return not PREFIX_PROPOSITION_BOUNDARY.search(prefix[predicates[-1].end():])
+    predicate_tail = prefix[predicates[-1].end():]
+    return not (
+        PREFIX_PROPOSITION_BOUNDARY.search(predicate_tail)
+        or PREFIX_COORDINATED_PREDICATE.search(predicate_tail)
+    )
 
 
 def prohibited_proposition_is_negated(clause: str, match: re.Match[str]) -> bool:
     proposition = match.group(0)
-    if re.search(r"\b(?:not|no|without|never|neither)\b", proposition, re.I):
+    if (
+        not TESTING_RESULT.search(proposition)
+        and re.search(r"\b(?:not|no|without|never|neither)\b", proposition, re.I)
+    ):
         return True
     prefix = clause[:match.start()]
     if re.search(r"\bno\s*$", prefix, re.I):
@@ -915,6 +937,62 @@ class MappingValidatorRegressionTests(unittest.TestCase):
         for claim in claims:
             with self.subTest(claim=claim):
                 self.assertTrue(prohibited_claim_violations(claim))
+
+    def test_auxiliary_and_coordinated_outcome_first_claims_are_detected(self) -> None:
+        claims = (
+            "Certification has been established.",
+            "Compliance has clearly been demonstrated.",
+            "Equivalence is clearly and independently confirmed.",
+            "Endorsement is very clearly conferred.",
+            "Predictive sufficiency has been established.",
+            "The testing outcome has been successful.",
+            "Current-scheme completeness has formally been confirmed.",
+            "Full-population assurance is conclusively and independently provided.",
+            "Continuous assurance has been achieved.",
+            "Certification and compliance are each independently established.",
+            "Certification, compliance, and equivalence have each been established.",
+        )
+        for claim in claims:
+            with self.subTest(claim=claim):
+                self.assertTrue(prohibited_claim_violations(claim))
+
+    def test_modal_boundaries_and_adjacent_propositions_are_accepted(self) -> None:
+        boundaries = (
+            "The review shows certification falls outside the scope of this analysis.",
+            "The analysis confirms compliance should remain a customer determination.",
+            "The review establishes that equivalence has not been assessed.",
+            "The report indicates endorsement cannot be inferred.",
+            "The evidence indicates full-population assurance would require separate evidence.",
+            "The review confirms continuous assurance still requires separate evidence.",
+            "The review establishes source identity and documents certification risk.",
+            "The review establishes source identity then discusses certification risk.",
+        )
+        for boundary in boundaries:
+            with self.subTest(boundary=boundary):
+                self.assertEqual(prohibited_claim_violations(boundary), [])
+
+    def test_testing_results_after_coordination_are_detected(self) -> None:
+        claims = (
+            "The assessment has quite clearly passed.",
+            "The assessment has rather conclusively passed.",
+            "The assessment was independently reviewed and successfully passed.",
+            "The test has been independently reviewed and conclusively passed.",
+            "The assessment failed initially but ultimately passed.",
+            "The assessment did not fail and passed.",
+        )
+        for claim in claims:
+            with self.subTest(claim=claim):
+                self.assertTrue(prohibited_claim_violations(claim))
+
+    def test_post_result_negative_quantifiers_are_accepted(self) -> None:
+        boundaries = (
+            "The assessment passed no controls.",
+            "Testing succeeded in no cases.",
+            "The test passed neither control.",
+        )
+        for boundary in boundaries:
+            with self.subTest(boundary=boundary):
+                self.assertEqual(prohibited_claim_violations(boundary), [])
 
 
 @unittest.skipUnless(MATRIX.is_file() and REVIEW.is_file(), "Task 4 artifacts are absent")
