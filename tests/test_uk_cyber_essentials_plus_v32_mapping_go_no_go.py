@@ -415,8 +415,12 @@ PROHIBITED_OUTCOME_PATTERNS = (
         re.I,
     ),
     re.compile(
-        r"\b(?:assessment|test(?:ing)?)\s+(?:[a-z]+ly\s+)*"
-        r"(?:has\s+|had\s+)?(?:pass(?:ed|es)?|succeed(?:ed|s)?|outcome)\b",
+        r"\b(?:assessment|test(?:ing)?)\s+(?:"
+        r"(?:has|had|is|was)\s+(?:[a-z]+ly\s+)*(?:pass(?:ed|es)?|successful)"
+        r"|(?:[a-z]+ly\s+)*(?:pass(?:ed|es)?|succeed(?:ed|s)?|outcome)"
+        r"|resulted\s+in\s+(?:a\s+)?successful\s+pass"
+        r"|constitutes\s+(?:a\s+)?pass"
+        r"|success\s+was\s+established)\b",
         re.I,
     ),
     re.compile(
@@ -439,6 +443,27 @@ PROHIBITED_OUTCOME_PATTERNS = (
 )
 OUTCOME_ANCHOR = re.compile(
     "(?:" + "|".join(pattern.pattern for pattern in PROHIBITED_OUTCOME_PATTERNS) + ")",
+    re.I,
+)
+INHERENTLY_AFFIRMATIVE_OUTCOME = re.compile(
+    r"^(?:certif(?:ied|y|ies)|endorse(?:d|s)?|predicts?\s+future\s+sufficien\w*"
+    r"|(?:assessment|test(?:ing)?)\s+(?:(?:has|had|is|was)\s+)?"
+    r"(?:[a-z]+ly\s+)*(?:pass(?:ed|es)?|succeed(?:ed|s)?|successful)"
+    r"|(?:assessment|test(?:ing)?)\s+(?:resulted\s+in\s+(?:a\s+)?successful\s+pass"
+    r"|constitutes\s+(?:a\s+)?pass|success\s+was\s+established)"
+    r"|complete\s+(?:inventory\s+(?:of|for)\s+)?the\s+current\s+operational\s+scheme"
+    r"|complete\s+current[- ]scheme\s+inventory"
+    r"|all\s+(?:untested\s+)?(?:devices|accounts|services|configurations|systems)\s+are\s+assured"
+    r"|continuously\s+assures?|assured\s+continuously)$",
+    re.I,
+)
+AFFIRMATIVE_BINDING = re.compile(
+    r"\b(?:achiev\w*|are|certif\w*|confer\w*|confirm\w*|constitut\w*|covers?"
+    r"|demonstrat\w*|endorse\w*|ensur\w*|establish\w*|guarantee\w*|has|have"
+    r"|impl(?:y|ies)|indicat\w*|is|offers?|provides?|prov(?:e|es)|represents?|shows?)\b"
+    r"(?:\s+that)?(?:\s+(?:the|a|an|this|such))?"
+    r"(?:\s+(?!(?:and|but|for|from|in|no|nor|not|of|or|over|to|under|while|without)\b)"
+    r"[a-z][a-z'-]*){0,3}\s*$",
     re.I,
 )
 COORDINATION_BOUNDARY = re.compile(
@@ -498,6 +523,12 @@ def negative_governed_list_governs(clause: str, match: re.Match[str]) -> bool:
     return bool(re.fullmatch(r"(?:\s|,|\band\b|\bor\b|\bnor\b)*", remainder, re.I))
 
 
+def prohibited_outcome_is_affirmed(clause: str, match: re.Match[str]) -> bool:
+    if INHERENTLY_AFFIRMATIVE_OUTCOME.fullmatch(match.group(0)):
+        return True
+    return bool(AFFIRMATIVE_BINDING.search(clause[:match.start()]))
+
+
 def prohibited_proposition_is_negated(clause: str, match: re.Match[str]) -> bool:
     proposition = match.group(0)
     if re.search(r"\b(?:not|no|without|never|neither)\b", proposition, re.I):
@@ -525,7 +556,10 @@ def prohibited_claim_violations(text: str) -> list[str]:
     for clause in COORDINATION_BOUNDARY.split(text):
         for pattern in PROHIBITED_OUTCOME_PATTERNS:
             for match in pattern.finditer(clause):
-                if not prohibited_proposition_is_negated(clause, match):
+                if (
+                    prohibited_outcome_is_affirmed(clause, match)
+                    and not prohibited_proposition_is_negated(clause, match)
+                ):
                     violations.append(match.group(0))
     return violations
 
@@ -749,6 +783,42 @@ class MappingValidatorRegressionTests(unittest.TestCase):
         for example in examples:
             with self.subTest(example=example):
                 self.assertTrue(prohibited_claim_violations(example))
+
+    def test_neutral_outcome_references_are_accepted(self) -> None:
+        boundaries = (
+            "No certification is conferred.",
+            "No compliance is established.",
+            "There is no equivalence between the frameworks.",
+            "Certification and compliance are not established.",
+            "Certification, compliance, and equivalence are not established.",
+            "Certification is neither demonstrated nor implied.",
+            "Certification is outside the scope of this analysis.",
+            "Compliance remains a customer determination.",
+            "Equivalence was not assessed.",
+            "Endorsement is a prohibited inference.",
+            "The risk of certification overclaiming is documented.",
+            "The risk of highly consequential certification overclaiming is documented.",
+            "Full-population assurance is outside the evidence boundary.",
+            "Continuous assurance requires separate evidence.",
+        )
+        for boundary in boundaries:
+            with self.subTest(boundary=boundary):
+                self.assertEqual(prohibited_claim_violations(boundary), [])
+
+    def test_positive_testing_outcomes_are_detected(self) -> None:
+        claims = (
+            "The assessment has demonstrably passed.",
+            "The assessment was successfully passed.",
+            "The test was successful.",
+            "Testing was successful.",
+            "The assessment resulted in a successful pass.",
+            "The assessment constitutes a pass.",
+            "Test success was established.",
+            "This analysis establishes unexpectedly bespoke certification.",
+        )
+        for claim in claims:
+            with self.subTest(claim=claim):
+                self.assertTrue(prohibited_claim_violations(claim))
 
 
 @unittest.skipUnless(MATRIX.is_file() and REVIEW.is_file(), "Task 4 artifacts are absent")
