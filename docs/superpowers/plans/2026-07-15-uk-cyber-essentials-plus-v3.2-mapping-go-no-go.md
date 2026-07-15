@@ -280,6 +280,12 @@ SCENARIOS = (
     "expected-no-direct-esaf-basis",
 )
 PROBE_CONCLUSIONS = {"POSITIVE_FEASIBILITY", "NO_POSITIVE_BASIS", "INDETERMINATE"}
+CONDITION_STATUSES = {"SATISFIED", "NOT_APPLICABLE"}
+EXTERNAL_TO_ESAF_CONDITIONS = (
+    "actor", "scope", "population", "sample", "assessment_date", "evidence_date",
+    "tool", "provenance", "exception", "delivery_partner_discretion",
+    "point_in_time_status",
+)
 PROHIBITED_KEYS = {
     "relationship", "relationships", "coverage", "confidence", "mapping_disposition",
     "snapshot_digest", "lifecycle", "mapper", "approver",
@@ -291,17 +297,20 @@ PROHIBITED_KEYS = {
 Add tests that require:
 
 - exact top-level keys and schema/review identifier values from design section 10.1;
-- exact nested key sets for source, rights, roles, coverage, assessments, gates, probes, and normative bases;
-- exact direction order, unique role identities, and rights reviewer independence;
+- exact nested key sets for source, rights, roles, coverage, analysis provenance, immutable submissions, assessments, prerequisites, reconsideration triggers, gates, probes, scenario bindings, condition entries, and normative bases;
+- exact direction order, unique role identities, rights reviewer independence, and direction-ordered analyst submission identities;
 - the rights record commit to change only the rights file and precede the first probe commit;
+- four true closed isolation attestations, two unique immutable submission digests/timestamps/references, and reconciliation evidence that references both submission digest references;
 - exact gate, group, kind, actor, scenario, status, disposition, and conclusion sets;
 - valid provision IDs and derived group/kind/actor values from the oracle;
 - valid control IDs and normative requirement locators resolved from the pinned ESAF control files;
-- every coverage axis present for each direction independently;
+- every group, kind, and actor derived from direction-local probes and every special scenario derived from a valid same-probe binding, independently per direction;
+- each scenario binding to use exactly its probe's scenario identifier, nonempty provision IDs, and resolving oracle paths; assert every direction against every row of the closed binding oracle in design section 8.2, including `known-source-anomaly` at `known_anomalies[0]` / `cepts32-anomaly-001` and the exact named `assurance_limits` fields, never label unions;
 - `POSITIVE_FEASIBILITY` to have at least one normative basis;
+- every `external_to_esaf` positive probe to have the exact ordered 11-condition checklist, accepted status, and nonempty resolving evidence references, while every other probe has an empty checklist;
 - `NO_POSITIVE_BASIS` to name the missing outcome;
 - `INDETERMINATE` to link a nonempty prerequisite;
-- exact disposition mechanics from design section 7;
+- `positive_probe_identifiers` to equal the ordered positive probe IDs derived directly for that direction, and exact disposition/prerequisite/reconsideration-trigger mechanics from design section 7, including `BLOCKED` for every unresolved disagreement;
 - recursive absence of `PROHIBITED_KEYS` and prohibited claim phrases;
 - no anomaly source literal in the matrix or review;
 - no changed path beneath mapping or registry roots relative to the implementation merge base; and
@@ -338,8 +347,14 @@ def recursive_keys(value: object) -> set[str]:
 def derive_coverage(matrix: dict, direction: str) -> dict[str, set[str]]:
     selected = [probe for probe in matrix["probes"] if probe["direction"] == direction]
     return {
-        field: {value for probe in selected for value in probe[field]}
-        for field in ("groups", "kinds", "actors", "special_scenarios")
+        "groups": {value for probe in selected for value in probe["groups"]},
+        "kinds": {value for probe in selected for value in probe["kinds"]},
+        "actors": {value for probe in selected for value in probe["actors"]},
+        "special_scenarios": {
+            binding["scenario_id"]
+            for probe in selected
+            for binding in probe["special_scenario_bindings"]
+        },
     }
 
 
@@ -348,16 +363,22 @@ def expected_disposition(
     probes_by_id: dict[str, dict],
 ) -> str:
     statuses = {gate["status"] for gate in assessment["gate_results"]}
-    positive = any(
-        probes_by_id[probe_id]["conclusion"] == "POSITIVE_FEASIBILITY"
-        for probe_id in assessment["positive_probe_identifiers"]
-    )
+    derived_positive = [
+        probe_id
+        for probe_id, probe in probes_by_id.items()
+        if probe["direction"] == assessment["direction"]
+        and probe["conclusion"] == "POSITIVE_FEASIBILITY"
+    ]
+    if derived_positive != assessment["positive_probe_identifiers"]:
+        raise ValueError("positive_probe_identifiers do not equal derived positive probes")
     if "FAIL" in statuses:
         return "NO_GO"
     if "BLOCKED" in statuses:
         return "HOLD"
-    return "GO" if positive else "NO_GO"
+    return "GO" if derived_positive else "NO_GO"
 ```
+
+Also assert: `GO` has empty prerequisites and triggers; `HOLD` has nonempty externally resolvable prerequisites and empty triggers; `NO_GO` has empty prerequisites and nonempty reconsideration triggers.
 
 - [ ] **Step 3: Run the focused suite and verify matrix RED**
 
@@ -382,6 +403,22 @@ class RenderMappingGoNoGoTests(unittest.TestCase):
         self.assertEqual(first, second)
         self.assertIn("No mapping snapshot exists", first)
         self.assertIn("design only", first)
+        for label in ("Groups", "Kinds", "Actors", "Special scenarios"):
+            self.assertIn(label, first)
+        for direction in DIRECTIONS:
+            selected = [p for p in self.fixture()["probes"] if p["direction"] == direction]
+            expected = {
+                "Groups": len({v for p in selected for v in p["groups"]}),
+                "Kinds": len({v for p in selected for v in p["kinds"]}),
+                "Actors": len({v for p in selected for v in p["actors"]}),
+                "Special scenarios": len({
+                    b["scenario_id"] for p in selected
+                    for b in p["special_scenario_bindings"]
+                }),
+            }
+            section = first.split(f"## {direction}", 1)[1].split("## ", 1)[0]
+            for label, total in expected.items():
+                self.assertIn(f"| {label} | {total} |", section)
 
     def test_render_rejects_unknown_direction(self) -> None:
         fixture = self.fixture()
@@ -419,6 +456,16 @@ def render(matrix: dict) -> str:
         direction = assessment["direction"]
         selected = [probe for probe in probes if probe["direction"] == direction]
         counts = Counter(probe["conclusion"] for probe in selected)
+        coverage = {
+            "Groups": {value for probe in selected for value in probe["groups"]},
+            "Kinds": {value for probe in selected for value in probe["kinds"]},
+            "Actors": {value for probe in selected for value in probe["actors"]},
+            "Special scenarios": {
+                binding["scenario_id"]
+                for probe in selected
+                for binding in probe["special_scenario_bindings"]
+            },
+        }
         lines.extend([
             f"## {direction}",
             "",
@@ -432,6 +479,10 @@ def render(matrix: dict) -> str:
             "",
             f"Probes: {len(selected)}; positive: {counts['POSITIVE_FEASIBILITY']}; "
             f"no positive basis: {counts['NO_POSITIVE_BASIS']}; indeterminate: {counts['INDETERMINATE']}.",
+            "",
+            "| Coverage axis | Derived total |",
+            "|---|---:|",
+            *[f"| {label} | {len(values)} |" for label, values in coverage.items()],
             "",
         ])
     return "\n".join(lines).rstrip() + "\n"
@@ -463,15 +514,15 @@ git commit -m "Test Cyber Essentials Plus mapping feasibility contract"
 **Files:**
 - Create: `docs/superpowers/specs/2026-07-15-uk-cyber-essentials-plus-v3.2-mapping-feasibility-matrix.json`
 - Create by renderer: `docs/superpowers/reviews/2026-07-15-uk-cyber-essentials-plus-v3.2-mapping-go-no-go-review.md`
-- Create outside repository: `esaf-to-external-analysis.json`, `external-to-esaf-analysis.json`, analyst ledgers, and reconciliation comparison
+- Create outside repository in isolated system-temp children: `esaf-to-external-analysis.json`, `external-to-esaf-analysis.json`, immutable submission attestations, analyst ledgers, and reconciliation comparison
 
 **Interfaces:**
 - Consumes: locked contract, rights-only ancestor commit, oracle, ESAF controls, and ESAF-1600.
 - Produces: the canonical closed matrix and byte-derived review record used by Task 5.
 
-- [ ] **Step 1: Create and verify one system-temporary workspace**
+- [ ] **Step 1: Create and verify isolated system-temporary workspaces**
 
-Create a unique child of `[System.IO.Path]::GetTempPath()`. Resolve the temp root, child, and repository root with `GetFullPath`; require the child prefix to be beneath temp and outside the repository. Record the resolved path only in external session evidence.
+Create a unique coordination child of `[System.IO.Path]::GetTempPath()` and two distinct analyst output children that are not readable or listable by the other analyst process. Resolve the temp root, all children, and repository root with `GetFullPath`; require every child prefix to be beneath temp and outside the repository. Verify the process or permission boundary with an attempted cross-child read from each analyst context and require both attempts to fail. Record resolved paths and command evidence only outside the repository; the matrix records the four closed boolean isolation attestations, not paths.
 
 - [ ] **Step 2: Prove rights ancestry before analysis**
 
@@ -486,30 +537,34 @@ Stop if the record is conditional, rejected, or missing any field class.
 
 - [ ] **Step 3: Dispatch the ESAF-to-external analyst**
 
-The analyst receives the design, oracle, controls, methodology, closed contract, and temporary output path. They shall answer only the section 5.1 question, cover every group/kind/actor/scenario for their direction, and produce provisional gates and probes. They shall not see the other analyst's output or conclusion.
+The analyst receives the design, oracle, controls, methodology, closed contract, and only their verified temporary output child. They shall answer only the section 5.1 question, cover every group/kind/actor/scenario for their direction, create deterministic provision/anomaly/assurance-limit bindings for every scenario, and produce provisional gates and probes. They shall not see or list the other analyst's output or conclusion.
 
 - [ ] **Step 4: Dispatch the external-to-ESAF analyst independently**
 
-The second analyst receives the same common inputs but only the section 5.2 question and a distinct temporary output path. They shall not see the first analyst's output, conclusion, probe count, or gate statuses.
+The second analyst receives the same common inputs but only the section 5.2 question and their separately protected temporary output child. They shall not see or list the first analyst's output, conclusion, probe count, or gate statuses. Each positive probe shall include the exact ordered condition checklist for actor, scope, population, sample, assessment date, evidence date, tool, provenance, exception, Delivery Partner discretion, and point-in-time status, with a status and resolving evidence for every entry.
 
-- [ ] **Step 5: Validate both temporary analyses before comparison**
+- [ ] **Step 5: Seal and attest both submissions before comparison**
 
-For each file, verify exact direction, seven ordered gates, complete coverage axes, valid oracle provisions, valid ESAF control locators, conclusion preconditions, absence of prohibited keys and claims, and analyst identity distinctness. Do not average or select a conclusion yet.
+In each isolated analyst context, serialize the final submission deterministically, compute SHA-256 over the exact bytes, record UTC submission time and the no-other-output-visible attestation, then remove analyst write permission or copy the bytes to a reconciler-owned immutable location. Assign a unique digest reference. Verify the sealed digest immediately before reconciliation. Any correction creates a new timestamped submission with `supersedes_digest_reference`; never overwrite submitted bytes.
 
-- [ ] **Step 6: Reconcile every issue into the canonical matrix**
+- [ ] **Step 6: Validate both temporary analyses before comparison**
 
-Generate a comparison by provision selection, coverage axes, normative basis, semantic conclusion, assurance risk, gate status, prerequisite, and disposition. Record every correction and its source evidence in temporary reconciliation output.
+For each sealed file, verify its recorded digest, exact direction, seven ordered gates, complete direction-local coverage axes, valid deterministic special-scenario bindings, valid oracle provisions, valid ESAF control locators, external-to-ESAF positive condition checklists, conclusion preconditions, absence of prohibited keys and claims, and analyst identity distinctness. Derive its positive IDs from its probes. Do not average or select a conclusion yet.
 
-The reconciler shall create the top-level matrix with exact key sets from the design. `rights_re_attestation.record_commit` shall be the actual 40-character rights commit. The matrix shall record the two analyst identities and a distinct reconciler.
+- [ ] **Step 7: Reconcile every issue into the canonical matrix**
 
-- [ ] **Step 7: Render the review record**
+Only after both submissions are sealed, give the reconciler read access to both immutable copies. Generate a comparison by submission digest reference, provision selection, coverage axes, normative basis, semantic conclusion, assurance risk, gate status, prerequisite, and disposition. Record every correction and its source evidence in temporary reconciliation output. Any unresolved disagreement shall set the affected canonical gate to `BLOCKED`, create an externally resolvable prerequisite, and therefore derive `HOLD`.
+
+The reconciler shall create the top-level matrix with exact key sets from the design. `rights_re_attestation.record_commit` shall be the actual 40-character rights commit. The matrix shall record the two analyst identities, a distinct reconciler, the four isolation attestations, both immutable submission records, and reconciliation evidence references to both submission digests. Derive `positive_probe_identifiers`, disposition, prerequisite emptiness/nonemptiness, and trigger emptiness/nonemptiness mechanically; do not copy provisional declarations.
+
+- [ ] **Step 8: Render the review record**
 
 ```powershell
 $env:PYTHONDONTWRITEBYTECODE='1'
 python tools/render_ce_plus_mapping_go_no_go.py --matrix docs/superpowers/specs/2026-07-15-uk-cyber-essentials-plus-v3.2-mapping-feasibility-matrix.json --output docs/superpowers/reviews/2026-07-15-uk-cyber-essentials-plus-v3.2-mapping-go-no-go-review.md --write
 ```
 
-- [ ] **Step 8: Run all focused tests GREEN**
+- [ ] **Step 9: Run all focused tests GREEN**
 
 ```powershell
 $env:PYTHONDONTWRITEBYTECODE='1'
@@ -519,7 +574,7 @@ python tools/render_ce_plus_mapping_go_no_go.py --matrix docs/superpowers/specs/
 
 Expected: all focused tests pass and the rendered record is current.
 
-- [ ] **Step 9: Commit the reconciled decision artifacts**
+- [ ] **Step 10: Commit the reconciled decision artifacts**
 
 ```powershell
 git add docs/superpowers/specs/2026-07-15-uk-cyber-essentials-plus-v3.2-mapping-feasibility-matrix.json docs/superpowers/reviews/2026-07-15-uk-cyber-essentials-plus-v3.2-mapping-go-no-go-review.md
@@ -630,8 +685,16 @@ python tools/validate_crosswalks.py --check --baseline-ref $base
 python tools/validate_links.py --check
 python tools/render_ce_plus_mapping_go_no_go.py --matrix docs/superpowers/specs/2026-07-15-uk-cyber-essentials-plus-v3.2-mapping-feasibility-matrix.json --output docs/superpowers/reviews/2026-07-15-uk-cyber-essentials-plus-v3.2-mapping-go-no-go-review.md --check
 git diff --check "$base..HEAD"
-Get-ChildItem -Recurse -Directory -Filter __pycache__
-git status --short
+$prohibitedChanges = @(git diff --name-only "$base..HEAD" -- crosswalks/mappings crosswalks/registry)
+if ($LASTEXITCODE -ne 0 -or $prohibitedChanges.Count -ne 0) { throw "Prohibited mapping/registry path changed: $($prohibitedChanges -join ', ')" }
+$caches = @(Get-ChildItem -Recurse -Force | Where-Object { $_.Name -eq '__pycache__' -or $_.Extension -in '.pyc', '.pyo' })
+if ($caches.Count -ne 0) { throw "Python cache artifacts remain: $($caches.FullName -join ', ')" }
+$scratch = @(Get-ChildItem -Recurse -Force | Where-Object { $_.Name -match '(?i)(scratch|analyst-output|source-download)' })
+if ($scratch.Count -ne 0) { throw "Scratch/source-download artifacts remain: $($scratch.FullName -join ', ')" }
+python tools/render_ce_plus_mapping_go_no_go.py --matrix docs/superpowers/specs/2026-07-15-uk-cyber-essentials-plus-v3.2-mapping-feasibility-matrix.json --output docs/superpowers/reviews/2026-07-15-uk-cyber-essentials-plus-v3.2-mapping-go-no-go-review.md --check
+if ($LASTEXITCODE -ne 0) { throw "Generated review drift detected" }
+$dirty = @(git status --porcelain=v1)
+if ($LASTEXITCODE -ne 0 -or $dirty.Count -ne 0) { throw "Worktree is dirty: $($dirty -join '; ')" }
 ```
 
 Require no changed path under `crosswalks/mappings/` or `crosswalks/registry/`, no caches or scratch, current renderer output, and a clean worktree. Record `git rev-parse HEAD` only in external dispatch evidence.
@@ -654,15 +717,17 @@ Record in the PR body the design and issue links, exact reviewed head, both revi
 
 - [ ] **Step 6: Merge only a clean, passing exact head**
 
-Use a true merge commit if required to preserve the rights re-attestation ancestor. Before merge, recheck the PR head, successful checks, clean merge state, and:
+Use a true merge commit unconditionally. Squash and rebase integration are prohibited. Before merge, recheck the PR head, successful checks, clean merge state, and repository/host configuration proving merge-commit integration is enabled; abort if the selected method is not `merge`. Record the base head before integration, then run:
 
 ```powershell
 git merge-base --is-ancestor $rightsCommit $reviewedPrHead
 if ($LASTEXITCODE -ne 0) { throw "Rights ancestry failed" }
+git merge-base --is-ancestor $baseHead $reviewedPrHead
+if ($LASTEXITCODE -ne 0) { throw "Reviewed head is not based on the expected base" }
 ```
 
 - [ ] **Step 7: Validate merged main and clean verified temporary state**
 
-Update local `main`; prove the merge has at least two parents when merge-commit integration is required; prove rights ancestry; rerun focused tests, all domain validators, link validation, and renderer check. Verify a clean checkout.
+Update local `main`; require `git rev-list --parents -n 1 HEAD` to contain exactly the merge commit plus two parents, require the first parent to equal the recorded base head and the reviewed feature head to be the second parent (or an ancestor of that second parent if the host created an equivalent merge parent), and prove rights-record and reviewed-head ancestry to the merge. A one-parent squash/rebase result is a publication failure. Rerun focused tests, all domain validators, link validation, renderer check, and the throwing cache, scratch, prohibited-path, generated-drift, and dirty-status checks. Verify a clean checkout.
 
 Resolve the system-temp root, exact scratch child, repository root, and worktree path before recursive removal. Remove only the verified scratch child beneath system temp and the verified project-owned worktree beneath `.worktrees/`. Then remove the merged local and remote feature branches and confirm `main == origin/main`.

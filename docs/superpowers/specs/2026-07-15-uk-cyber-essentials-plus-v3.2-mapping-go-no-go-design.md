@@ -147,11 +147,13 @@ The prospective mapping shall provide material traceability value even if most p
 
 ## 7. Disposition mechanics
 
-The directional disposition shall be derived mechanically:
+For each direction, validators shall derive `positive_probe_identifiers` as the ordered `probe_id` values of that direction's probes whose conclusion is `POSITIVE_FEASIBILITY`. The recorded array shall equal that derived array exactly; a declared identifier cannot make a probe positive and an omitted positive probe is invalid.
 
-- `GO` requires all seven gates to be `PASS`, at least one defensible positive feasibility probe, no unresolved analyst disagreement, and empty prerequisites.
-- `HOLD` requires no `FAIL` gate and at least one `BLOCKED` gate. Any unresolved analyst disagreement shall mark the affected gate `BLOCKED`. `HOLD` shall record one or more specific, externally resolvable prerequisites and the evidence required for re-entry.
-- `NO_GO` requires at least one `FAIL` gate or, when all seven gates are `PASS`, no defensible positive feasibility probe after the complete adversarial probe set. It shall record the structural reason and a source, methodology, or framework change that could justify reconsideration.
+The directional disposition shall then be derived mechanically:
+
+- `GO` requires all seven gates to be `PASS`, a nonempty derived positive-probe array, no unresolved analyst disagreement, and empty `prerequisites` and `reconsideration_triggers` arrays.
+- `HOLD` requires no `FAIL` gate and at least one `BLOCKED` gate. Every unresolved analyst disagreement shall mark at least one affected gate `BLOCKED`; disagreement represented only in prose is invalid. `HOLD` shall have one or more externally resolvable `prerequisites`, each naming the missing evidence and re-entry test, and an empty `reconsideration_triggers` array.
+- `NO_GO` requires at least one `FAIL` gate or, when all seven gates are `PASS`, an empty derived positive-probe array after the complete adversarial probe set. It shall have empty `prerequisites` and one or more `reconsideration_triggers`, each naming a source, methodology, or framework change and evidence that would justify reconsideration.
 
 A reviewer shall be able to reproduce the disposition from the gate statuses and probe conclusions without relying on unstated judgment.
 
@@ -184,6 +186,22 @@ Each direction shall cover these scenario identifiers exactly:
 
 The known anomaly shall be referenced only by anomaly identifier and oracle path. Its source literal shall not be copied into the feasibility matrix or review record.
 
+Scenario coverage shall be evidence-bound rather than label-counted. Every scenario claimed by a probe shall have one same-probe `special_scenario_binding` with the same identifier, one or more provision IDs where the scenario concerns provisions, and one or more exact oracle JSON paths. Paths shall resolve only to the bound provision records, `scope`, `known_anomalies[0]`, or named fields beneath `assurance_limits`. The `known-source-anomaly` binding shall resolve to anomaly identifier `cepts32-anomaly-001` at `known_anomalies[0]`; assurance scenarios shall resolve to their specific `assurance_limits` fields. A scenario is covered for a direction only when a probe in that direction has a valid binding; unions of unbound labels are invalid.
+
+Validators shall apply this closed binding oracle in each direction:
+
+| Scenario | Required provision/path evidence |
+|---|---|
+| `figure-1-decision-logic` | At least `CEPTS3.2-T1-008` plus the applicable decision/result records from `CEPTS3.2-T1-009` through `CEPTS3.2-T1-016`; provision paths shall resolve by `external_provision_id`. |
+| `sampling-and-population-limits` | At least one sampling provision among `CEPTS3.2-M-006`, `CEPTS3.2-S-005`, `CEPTS3.2-S-007`, or `CEPTS3.2-S-009`, plus `assurance_limits.population_and_sample_boundary`. |
+| `evidence-retention` | `CEPTS3.2-M-011` or `CEPTS3.2-S-008`, plus `assurance_limits.evidence_date_boundary`. |
+| `complete-assessment-file-coverage` | `CEPTS3.2-B-001` and at least one of `CEPTS3.2-B-007`, `CEPTS3.2-B-010`, `CEPTS3.2-B-011`, or `CEPTS3.2-B-012`. |
+| `delivery-partner-discretionary-exception` | `CEPTS3.2-C-008`, `CEPTS3.2-C-010`, and `CEPTS3.2-C-011`, plus `assurance_limits.discretion_owner` and `assurance_limits.discretionary_exception`. |
+| `known-source-anomaly` | At least one bound provision used to test the anomaly's consequence, plus `known_anomalies[0].anomaly_id` resolving to `cepts32-anomaly-001` and `known_anomalies[0].locator`; never the literal. |
+| `point-in-time-versus-continuous-assurance` | At least one bound assessment provision, plus `assurance_limits.assessment_date_boundary`, `assurance_limits.evidence_date_boundary`, and `assurance_limits.point_in_time_boundary`. |
+| `core-v3.3-versus-plus-v3.2-separation` | At least one bound v3.2 provision, plus `scope` and `assurance_limits.scope_boundary`; no core v3.3 provision may be introduced. |
+| `expected-no-direct-esaf-basis` | At least one bound provision whose probe conclusion is `NO_POSITIVE_BASIS`, plus that provision's summary and locator paths. |
+
 ### 8.3 Probe conclusions
 
 Each probe receives exactly one conclusion:
@@ -193,6 +211,10 @@ Each probe receives exactly one conclusion:
 - `INDETERMINATE`: a named resolvable prerequisite prevents a defensible conclusion.
 
 These values are feasibility conclusions, not ESAF-1600 mapping dispositions. The artifacts shall not encode relationship, coverage, or confidence values.
+
+### 8.4 External-to-ESAF positive-probe conditions
+
+Every `external_to_esaf` `POSITIVE_FEASIBILITY` probe shall contain a closed `condition_checklist` with these entries in this exact order: `actor`, `scope`, `population`, `sample`, `assessment_date`, `evidence_date`, `tool`, `provenance`, `exception`, `delivery_partner_discretion`, and `point_in_time_status`. Each entry shall contain exactly `condition`, `status`, and `evidence_references`; status shall be `SATISFIED` or `NOT_APPLICABLE`, and evidence references shall be nonempty and resolve under the same rules as gate evidence. `NOT_APPLICABLE` requires explicit evidence showing why that condition cannot affect the bounded claim. Other probes shall have an empty checklist. Conditions may narrow a supported outcome but shall not create a missing ESAF outcome.
 
 ## 9. Roles and independence
 
@@ -204,7 +226,9 @@ The milestone shall identify:
 - one rights reviewer different from both analysts; and
 - two exact-head reviewers: specification/methodology and security/overclaiming.
 
-Each directional analyst shall receive the approved design, locked oracle, ESAF controls, and ESAF-1600 method. Neither analyst shall see the other direction's provisional disposition, gate statuses, probe conclusions, or counts before submitting their own result.
+Each directional analyst shall receive the approved design, locked oracle, ESAF controls, and ESAF-1600 method. Each shall run in a separately verified child beneath the system temporary directory, with distinct read/write permissions or process boundaries that prevent either analyst from listing or reading the other's output child. Shared output directories and reliance on prompt-only secrecy are invalid. Neither analyst shall see the other direction's provisional disposition, gate statuses, probe conclusions, counts, or files before submitting their own result.
+
+Before reconciliation begins, each analyst shall make an immutable submission and attestation. The provenance record shall capture direction, analyst identity, UTC submission timestamp, SHA-256 of the exact submitted bytes, a digest reference used by reconciliation, and an attestation that the other output was not visible. Submission bytes shall not change after the timestamp; any correction requires a new submission, digest, timestamp, and supersession record before comparison.
 
 The reconciler shall disposition every disagreement, missing coverage axis, unsupported citation, and conclusion difference. An unresolved disagreement shall mark the affected gate `BLOCKED`, record a re-entry prerequisite, and produce `HOLD` for the affected direction.
 
@@ -226,6 +250,7 @@ The top-level object shall contain exactly:
 - `rights_re_attestation`: object;
 - `roles`: object;
 - `coverage_contract`: object;
+- `analysis_provenance`: object;
 - `direction_assessments`: array; and
 - `probes`: array.
 
@@ -237,7 +262,11 @@ The top-level object shall contain exactly:
 
 `coverage_contract` shall contain exactly `groups`, `kinds`, `actors`, and `special_scenarios`, using the ordered values in section 8.
 
+`analysis_provenance` shall contain exactly `isolation`, `submissions`, and `reconciliation_evidence_references`. `isolation` shall contain exactly `system_temp_verified`, `outside_repository_verified`, `distinct_children_verified`, and `no_shared_output_visibility_verified`, all `true`. `submissions` shall contain exactly two direction-ordered objects, each containing exactly `direction`, `analyst`, `submitted_at_utc`, `sha256`, `digest_reference`, `independence_attestation`, and `supersedes_digest_reference`. The SHA-256 shall be lowercase hexadecimal; `digest_reference` shall be unique; `supersedes_digest_reference` shall be JSON `null` for an original immutable submission or the unique digest reference of the immediately superseded submission. `reconciliation_evidence_references` shall contain both and only the current direction-ordered submission digest references.
+
 `direction_assessments` shall contain exactly two objects in the direction order in section 3.2. Each contains exactly `direction`, `analyst`, `question`, `gate_results`, `positive_probe_identifiers`, `disposition`, `decision_rationale`, `prerequisites`, and `reconsideration_triggers`.
+
+Each prerequisite entry shall contain exactly `prerequisite`, `required_evidence`, and `reentry_test`, all nonempty strings that describe an action available outside the completed analysis and an objectively checkable return condition. Each reconsideration-trigger entry shall contain exactly `change` and `required_evidence`, both nonempty strings. Narrative wishes, restatements of disagreement, and analyst-only reconsideration are not externally resolvable.
 
 Each gate-result object contains exactly `gate`, `status`, `rationale`, and `evidence_references`. Evidence references shall resolve to probe identifiers, repository-relative source paths with stable locators, or official URLs already approved as bibliographic facts.
 
@@ -251,6 +280,8 @@ Each probe contains exactly:
 - `kinds`;
 - `actors`;
 - `special_scenarios`;
+- `special_scenario_bindings`;
+- `condition_checklist`;
 - `esaf_normative_bases`;
 - `semantic_fit_analysis`;
 - `assurance_and_overclaiming_risks`;
@@ -259,6 +290,8 @@ Each probe contains exactly:
 - `rationale`.
 
 An ESAF normative-basis entry contains exactly `control_id`, `requirement_locator`, and `relevance_analysis`. `POSITIVE_FEASIBILITY` requires at least one normative-basis entry. `NO_POSITIVE_BASIS` may use an empty array and shall state the missing outcome. `INDETERMINATE` shall state the blocking prerequisite in the corresponding directional assessment.
+
+A special-scenario binding contains exactly `scenario_id`, `provision_ids`, and `oracle_paths`. Its identifier shall occur exactly once in the probe's `special_scenarios`; its provision IDs shall be a nonempty subset of the probe's provision IDs; and every oracle path shall resolve to the deterministic evidence described in section 8.2. A condition-checklist entry contains exactly `condition`, `status`, and `evidence_references` and follows section 8.4.
 
 Unknown properties, unknown enum values, duplicate identifiers, empty required strings, invalid references, and unrecognized coverage values are invalid.
 
@@ -292,7 +325,9 @@ Tests shall fail closed on:
 - disagreement between the source-inventory traceability digest table and LF-normalized tracked artifact bytes;
 - source-derived analysis committed before rights re-attestation;
 - role-identity collisions or analysts seeing the other provisional result before submission;
+- missing or open-ended isolation provenance, mutable or post-reconciliation submissions, invalid submission digests, or reconciliation evidence that omits both submission digest references;
 - missing or extra directions, gates, groups, kinds, actors, or special scenarios;
+- special-scenario claims without direction-local provision/anomaly/assurance-limit bindings;
 - invalid provision, control, probe, evidence, or cross-reference identifiers;
 - a positive result without exact ESAF normative basis;
 - a condition that supplies a missing outcome;
@@ -302,7 +337,8 @@ Tests shall fail closed on:
 - prohibited inference or affirmative overclaiming language;
 - any changed path beneath `crosswalks/mappings/` or `crosswalks/registry/` relative to the branch base;
 - prohibited mapping fields in feasibility artifacts;
-- hand-maintained review totals that disagree with the matrix; or
+- incomplete external-to-ESAF positive condition checklists or checklist evidence that does not resolve;
+- hand-maintained review totals, including per-direction group, kind, actor, or special-scenario totals, that disagree with values derived from valid probe bindings; or
 - broken links, encoding corruption, cache files, source downloads, renderings, or scratch artifacts in the repository.
 
 Source identity or oracle drift stops the review. A rights conflict, unresolved analyst disagreement, or resolvable evidence gap produces `HOLD`; it shall not be guessed through. A structural semantic failure or absence of every defensible positive probe produces `NO_GO`. A new source version requires a new source-versioned review.
@@ -325,7 +361,7 @@ Dispatch two independent reviews on one immutable exact head:
 
 Resolve all Critical and Important findings. Any candidate change invalidates both exact-head reviews and requires full gate reruns and both redispatches.
 
-The pull-request head shall equal the reviewed SHA, required GitHub checks shall pass on that SHA, and merge state shall be clean. Integration shall preserve any rights re-attestation sequencing required by the implementation plan. Post-merge validation shall run on the resulting `main` SHA before temporary branches, worktrees, and verified external scratch material are removed.
+The pull-request head shall equal the reviewed SHA, required GitHub checks shall pass on that SHA, and merge state shall be clean. Integration shall use a true merge commit; squash and rebase integration are prohibited. Immediately before merge, automation shall verify the configured merge method, rights-record ancestry to the reviewed head, and that the resulting integration commit will preserve the feature history. After merge it shall require exactly the expected first-parent/base parent and feature-head parent ancestry before post-merge validation. Post-merge validation shall run on the resulting `main` SHA before temporary branches, worktrees, and verified external scratch material are removed.
 
 ## 13. Acceptance criteria
 
@@ -333,15 +369,15 @@ The milestone is complete when:
 
 1. the exact locked public v3.2 oracle is the only external decision universe;
 2. the source-inventory traceability digest table matches every LF-normalized tracked artifact and is protected by regression coverage;
-3. `esaf_to_external` and `external_to_esaf` have separate, independently authored assessments;
+3. `esaf_to_external` and `external_to_esaf` have separate, independently authored assessments with verified isolated output children, immutable pre-reconciliation attestations, digests, timestamps, and closed provenance;
 4. each direction records all seven gates and one mechanically derived `GO`, `HOLD`, or `NO_GO` disposition;
-5. each direction covers all ten groups, seven kinds, five actors, and nine special scenarios;
+5. each direction covers all ten groups, seven kinds, five actors, and nine special scenarios through valid direction-local evidence bindings, and the renderer derives and displays each per-axis total;
 6. every positive probe cites exact normative ESAF control text through stable locators;
 7. conditions do not create missing outcomes;
 8. rights re-attestation precedes committed source-derived feasibility analysis and preserves the IASME partition;
 9. no mapping snapshot, lifecycle record, mapping record, relationship leg, generated mapping statistic, or authoritative mapping field is created;
 10. a `GO` authorizes only a separate direction-specific mapping design;
-11. `HOLD` and `NO_GO` outcomes record explicit re-entry or reconsideration evidence;
+11. positive identifiers and dispositions are derived from direction-local probes; `GO`, `HOLD`, and `NO_GO` enforce their exact prerequisite and trigger invariants;
 12. narrative and backlog outputs are derived from the matrix and preserve all prohibited-inference boundaries;
 13. focused and full tests, all validators, diff checks, artifact checks, and clean-worktree checks pass;
 14. exact-SHA specification/methodology and security/overclaiming reviews have no unresolved Critical or Important findings; and
