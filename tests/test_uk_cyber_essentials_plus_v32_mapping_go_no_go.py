@@ -59,6 +59,7 @@ PROHIBITED_KEYS = {
     "snapshot_digest", "lifecycle", "mapper", "approver",
 }
 HEX_SHA256 = re.compile(r"^[0-9a-f]{64}$")
+PROBE_IDENTIFIER = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 UTC_ISO_8601 = re.compile(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$")
 SCENARIO_EVIDENCE = {
     "figure-1-decision-logic": {
@@ -405,10 +406,37 @@ def validate_probe_scenario_bindings(probe: dict, oracle: dict) -> None:
         validate_scenario_binding(probe, binding, oracle)
 
 
+def validate_probe_reference_contract(matrix: dict, oracle: dict) -> None:
+    """Close probe identifiers and every matrix field that may reference a probe."""
+    probe_ids = [probe["probe_id"] for probe in matrix["probes"]]
+    if any(
+        not isinstance(probe_id, str) or not PROBE_IDENTIFIER.fullmatch(probe_id)
+        for probe_id in probe_ids
+    ):
+        raise ValueError("invalid probe_id")
+    if len(probe_ids) != len(set(probe_ids)):
+        raise ValueError("duplicate probe_id")
+    probe_id_set = set(probe_ids)
+    for assessment in matrix["direction_assessments"]:
+        for reference in assessment["positive_probe_identifiers"]:
+            if reference not in probe_id_set:
+                raise ValueError(f"invalid positive probe reference: {reference}")
+        for gate in assessment["gate_results"]:
+            for reference in gate["evidence_references"]:
+                validate_evidence_reference(reference, probe_id_set, oracle)
+    for validation in matrix["analysis_provenance"]["reconciliation"]["direction_validations"]:
+        for reference in validation["evidence_references"]:
+            validate_evidence_reference(reference, probe_id_set, oracle)
+    for probe in matrix["probes"]:
+        for condition in probe["condition_checklist"]:
+            for reference in condition["evidence_references"]:
+                validate_evidence_reference(reference, probe_id_set, oracle)
+
+
 CONTROLLED_LANGUAGE_OUTCOME = re.compile(
-    r"\b(?:certif(?:ication|ied|y|ies|ying)|complian(?:ce|t)|equivalen(?:ce|t)|"
-    r"endors(?:e|ement|ed|es|ing)|predictive(?:ly)?\s+sufficien\w*|predicts?\s+future\s+sufficien\w*|"
-    r"testing\s+outcome|pass(?:ed|es|ing)?|succeed(?:ed|s|ing)?|success(?:ful|fully)?|"
+    r"\b(?:certif(?:ications?|ied|y|ies|ying)|complian(?:ce|t)|equivalen(?:ces?|t)|"
+    r"endors(?:e|ements?|ed|es|ing)|predictive(?:ly)?\s+sufficien\w*|predicts?\s+future\s+sufficien\w*|"
+    r"testing\s+outcome|pass(?:ed|es|ing)?|succeed(?:ed|s|ing)?|success(?:es|ful|fully)?|"
     r"current[- ](?:operational[- ])?scheme(?:\s+(?:completeness|inventory))?|"
     r"full[- ]population\s+assurance|assurance\s+(?:over|for|across|of)\s+(?:the\s+)?full\s+population|"
     r"all\s+(?:untested\s+)?(?:devices|accounts|services|configurations|systems)\s+are\s+assured|"
@@ -502,36 +530,53 @@ def prohibited_claim_violations(text: str) -> list[str]:
     return violations
 
 
-def is_non_narrative_key(key: str) -> bool:
-    return key in {
-        "id", "ids", "identifier", "identifiers", "path", "paths", "locator", "locators",
-        "url", "urls", "sha256", "digest", "digests", "commit", "commits", "date", "version",
-        "review_identifier", "schema_version",
-    } or key.endswith(
-        (
-            "_id", "_ids", "_identifier", "_identifiers", "_path", "_paths", "_locator", "_locators",
-            "_url", "_urls", "_sha256", "_digest", "_digests", "_commit", "_commits", "_date", "_version",
-        )
-    )
+MATRIX_NARRATIVE_PATHS = frozenset({
+    ("source_oracle", "scope_statement"),
+    ("direction_assessments", "*", "question"),
+    ("direction_assessments", "*", "decision_rationale"),
+    ("direction_assessments", "*", "gate_results", "*", "rationale"),
+    ("direction_assessments", "*", "prerequisites", "*", "prerequisite"),
+    ("direction_assessments", "*", "prerequisites", "*", "required_evidence"),
+    ("direction_assessments", "*", "prerequisites", "*", "reentry_test"),
+    ("direction_assessments", "*", "reconsideration_triggers", "*", "change"),
+    ("direction_assessments", "*", "reconsideration_triggers", "*", "required_evidence"),
+    ("probes", "*", "selection_basis"),
+    ("probes", "*", "semantic_fit_analysis"),
+    ("probes", "*", "assurance_and_overclaiming_risks"),
+    ("probes", "*", "source_rights_and_operational_limits"),
+    ("probes", "*", "rationale"),
+    ("probes", "*", "esaf_normative_bases", "*", "relevance_analysis"),
+})
 
 
-def controlled_language_violations_in_value(value: object, key: str = "") -> list[str]:
-    """Validate parsed narrative values without scanning serialized JSON syntax."""
-    if is_non_narrative_key(key):
-        return []
+def controlled_language_violations_in_matrix(
+    value: object,
+    path: tuple[str, ...] = (),
+) -> list[str]:
+    """Validate only narrative fields in the closed matrix schema.
+
+    The MatrixClosedContractTests assert exact keys for every object container, so
+    unknown fields cannot enter the artifact. This enumeration is therefore complete
+    for the only schema-proven string locations that contain authored prose; every
+    other string location has a separately closed categorical or reference contract.
+    """
     if isinstance(value, dict):
         return [
             violation
             for child_key, child_value in value.items()
-            for violation in controlled_language_violations_in_value(child_value, child_key)
+            for violation in controlled_language_violations_in_matrix(
+                child_value, (*path, child_key)
+            )
         ]
     if isinstance(value, list):
         return [
             violation
             for child_value in value
-            for violation in controlled_language_violations_in_value(child_value, key)
+            for violation in controlled_language_violations_in_matrix(
+                child_value, (*path, "*")
+            )
         ]
-    if isinstance(value, str):
+    if isinstance(value, str) and path in MATRIX_NARRATIVE_PATHS:
         return prohibited_claim_violations(value)
     return []
 
@@ -545,13 +590,34 @@ def controlled_language_violations_in_review(review: str) -> list[str]:
         for narrative in [
             re.sub(r"\((?:https?://|/?\.\.?/)[^)]+\)", "", cell).strip()
         ]
-        if not re.fullmatch(
-            r"(?:https?://\S+|[a-z0-9_./\\-]+\.(?:json|md)|[0-9a-f]{40,64})",
-            narrative,
-            re.I,
-        )
+        if not review_cell_is_non_narrative(narrative)
         for violation in prohibited_claim_violations(narrative)
     ]
+
+
+def review_cell_is_non_narrative(cell: str) -> bool:
+    """Recognize only closed rendered categorical/reference cell types."""
+    if not cell or re.fullmatch(r":?-{3,}:?", cell):
+        return True
+    if cell in {*ACTORS, *GROUPS, *KINDS, *SCENARIOS}:
+        return True
+    if re.fullmatch(r"\*\*Disposition:\*\*\s+(?:GO|HOLD|NO_GO)", cell):
+        return True
+    if re.fullmatch(r"#{1,6}\s+(?:esaf_to_external|external_to_esaf)", cell):
+        return True
+    if re.fullmatch(r"https?://\S+", cell) or HEX_SHA256.fullmatch(cell):
+        return True
+    if re.fullmatch(r"(?:docs|controls|crosswalks|tools|tests)/[A-Za-z0-9_./#-]+", cell):
+        return True
+    code = re.fullmatch(r"`([^`]+)`", cell)
+    return bool(code and (
+        code.group(1) in {
+            *DIRECTIONS, *DISPOSITIONS, *GATES, *GATE_STATUSES,
+            *PROBE_CONCLUSIONS, *CONDITION_STATUSES,
+        }
+        or PROBE_IDENTIFIER.fullmatch(code.group(1))
+        or HEX_SHA256.fullmatch(code.group(1))
+    ))
 
 
 class MappingGoNoGoTests(unittest.TestCase):
@@ -999,18 +1065,72 @@ class MappingValidatorRegressionTests(unittest.TestCase):
                 self.assertTrue(violations)
                 self.assertTrue(all("controlled-language violation" in item for item in violations))
 
-    def test_parsed_narratives_accept_required_source_boundaries(self) -> None:
-        parsed = {
-            "assurance_and_overclaiming_risks": (
-                "Certification is outside the scope of this analysis."
-            ),
-            "scope_statement": self.oracle["scope"]["statement"],
-            "source_url": "https://example.invalid/certification-process",
-            "review_identifier": "certification-process",
-            "path": "docs/certification-process.md",
-            "identifier": "certification-process",
+    def test_schema_aware_narratives_accept_closed_categorical_values(self) -> None:
+        complete_like = {
+            "source_oracle": {
+                "scope_statement": self.oracle["scope"]["statement"],
+                "path": "docs/certification-process.md",
+            },
+            "coverage_contract": {
+                "groups": ["M"],
+                "kinds": ["decision_rule"],
+                "actors": ["Certification Body", "Certifying Body"],
+                "special_scenarios": ["figure-1-decision-logic"],
+            },
+            "probes": [{
+                "probe_id": "certification-process",
+                "actors": ["Certification Body", "Certifying Body"],
+                "assurance_and_overclaiming_risks": (
+                    "Certification is outside the scope of this analysis."
+                ),
+            }],
         }
-        self.assertEqual(controlled_language_violations_in_value(parsed), [])
+        self.assertEqual(controlled_language_violations_in_matrix(complete_like), [])
+
+    def test_rendered_review_distinguishes_categorical_and_narrative_cells(self) -> None:
+        review = (
+            "| Actor | Certification Body |\n"
+            "| Actor | Certifying Body |\n"
+            "Certification is established.\n"
+        )
+        self.assertEqual(
+            controlled_language_violations_in_review(review),
+            ["controlled-language violation: protected outcome 'certification'"],
+        )
+
+    def test_probe_identifiers_and_references_are_lexically_closed(self) -> None:
+        matrix = {
+            "probes": [{
+                "probe_id": "probe-1",
+                "direction": "esaf_to_external",
+                "conclusion": "POSITIVE_FEASIBILITY",
+                "condition_checklist": [{"evidence_references": ["probe-1"]}],
+            }],
+            "direction_assessments": [{
+                "direction": "esaf_to_external",
+                "positive_probe_identifiers": ["probe-1"],
+                "gate_results": [{"evidence_references": ["probe-1"]}],
+            }],
+            "analysis_provenance": {"reconciliation": {"direction_validations": [
+                {"evidence_references": ["probe-1"]},
+            ]}},
+        }
+        validate_probe_reference_contract(matrix, self.oracle)
+        mutations = (
+            ("probe_id", ("probes", 0, "probe_id")),
+            ("positive probe reference", ("direction_assessments", 0, "positive_probe_identifiers", 0)),
+            ("gate evidence reference", ("direction_assessments", 0, "gate_results", 0, "evidence_references", 0)),
+            ("condition evidence reference", ("probes", 0, "condition_checklist", 0, "evidence_references", 0)),
+        )
+        for label, path in mutations:
+            with self.subTest(label=label):
+                mutated = json.loads(json.dumps(matrix))
+                target = mutated
+                for segment in path[:-1]:
+                    target = target[segment]
+                target[path[-1]] = "Certification is established."
+                with self.assertRaises(ValueError):
+                    validate_probe_reference_contract(mutated, self.oracle)
 
     def test_intrinsic_morphological_anchors_fail_closed(self) -> None:
         claims = (
@@ -1021,6 +1141,26 @@ class MappingValidatorRegressionTests(unittest.TestCase):
         for claim in claims:
             with self.subTest(claim=claim):
                 self.assertTrue(prohibited_claim_violations(claim))
+
+    def test_plural_outcome_anchors_are_bounded(self) -> None:
+        claims = (
+            "Certifications are established.",
+            "Endorsements were conferred.",
+            "The assessment reports successes.",
+            "The frameworks have equivalences.",
+        )
+        for claim in claims:
+            with self.subTest(claim=claim):
+                self.assertTrue(prohibited_claim_violations(claim))
+        unrelated = (
+            "The certificationbody field is categorical.",
+            "The endorsementology label is synthetic.",
+            "The successorship plan is documented.",
+            "The equivalencesystem token is ignored.",
+        )
+        for text in unrelated:
+            with self.subTest(text=text):
+                self.assertEqual(prohibited_claim_violations(text), [])
 
     def test_negative_result_quantifier_does_not_suppress_another_outcome(self) -> None:
         claims = (
@@ -1070,6 +1210,7 @@ class MatrixClosedContractTests(unittest.TestCase):
 
     def test_top_level_source_rights_roles_and_coverage_are_closed(self) -> None:
         validate_nonempty_contract_strings(self.matrix)
+        validate_probe_reference_contract(self.matrix, self.oracle)
         assert_exact_keys(self, self.matrix, {
             "schema_version", "review_identifier", "source_oracle",
             "rights_re_attestation", "roles", "coverage_contract",
@@ -1364,7 +1505,7 @@ class MatrixClosedContractTests(unittest.TestCase):
         self.assertEqual(PROHIBITED_KEYS & recursive_keys(self.matrix), set())
         combined = MATRIX.read_text(encoding="utf-8") + "\n" + self.review
         self.assertNotIn(self.oracle["known_anomalies"][0]["source_literal"], combined)
-        self.assertEqual(controlled_language_violations_in_value(self.matrix), [])
+        self.assertEqual(controlled_language_violations_in_matrix(self.matrix), [])
         self.assertEqual(controlled_language_violations_in_review(self.review), [])
         base = git("merge-base", "HEAD", "origin/main")
         changed = git("diff", "--name-only", base, "--", "crosswalks/mappings", "crosswalks/registry")
