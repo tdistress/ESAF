@@ -9,6 +9,9 @@ from collections import Counter
 from pathlib import Path
 
 from tools.crosswalks.io import parse_front_matter
+from tools.crosswalks.digests import snapshot_digest
+from tools.crosswalks.manifest import build_control_manifest, render_manifest
+from tools.crosswalks.validation import validate
 from tests.test_uk_cyber_essentials_plus_v32_inventory import (
     PERMITTED_SOURCE_IDENTITY_PROSE,
     SOURCE_FIVE_WORD_DIGESTS,
@@ -28,9 +31,75 @@ LEGACY_PDF_SHA256 = "d334c717597a01fab7a362377b7b04c8449568052ed1c4cf48837f6fb3a
 FEASIBILITY_RIGHTS_COMMIT = "4207e1c1e8ff9f743274ebb4b626210cca053458"
 EXPECTED_GROUP_COUNTS = {"M": 24, "T1": 16, "S": 11, "T2": 9, "T3": 37, "T4": 9, "T5": 7, "C": 13, "A": 4, "B": 14}
 COMPLETED_GROUPS: tuple[str, ...] = ()
+CANONICAL_PDF_URL = "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+RESOURCE_PAGE = "https://www.ncsc.gov.uk/cyberessentials/resources"
+MAPPER_ID = "esaf-crosswalk-editorial-team"
+
+
+def record_id(external_id: str) -> str:
+    return external_id.lower().replace(".", "")
+
+
+def oracle_locator(locator: dict[str, object]) -> str:
+    return (
+        f"PDF page {locator['pdf_page']}; printed page {locator['printed_page']}; "
+        f"{locator['section']}; {locator['detail']}"
+    )
+
+
+def record_narratives(record: dict[str, object]):
+    context = record.get("context")
+    if isinstance(context, dict) and isinstance(context.get("summary"), str):
+        yield context["summary"]
+    negative = record.get("negative_rationale")
+    if isinstance(negative, str):
+        yield negative
+    relationships = record.get("relationships", [])
+    if not isinstance(relationships, list):
+        return
+    for relationship in relationships:
+        if not isinstance(relationship, dict):
+            continue
+        rationale = relationship.get("rationale")
+        if isinstance(rationale, str):
+            yield rationale
+        for field in (
+            "conditions",
+            "expected_evidence",
+            "known_gaps",
+            "prohibited_inferences",
+        ):
+            values = relationship.get(field, [])
+            if isinstance(values, list):
+                yield from (value for value in values if isinstance(value, str))
+
+
+def assert_no_copied_source_windows(
+    testcase: unittest.TestCase,
+    narratives: list[str],
+    *,
+    source_window_digests=SOURCE_FIVE_WORD_DIGESTS,
+) -> None:
+    for narrative in narratives:
+        words = re.findall(r"[a-z0-9%]+", narrative.lower())
+        for index in range(len(words) - 4):
+            window = " ".join(words[index:index + 5])
+            if any(window in phrase for phrase in PERMITTED_SOURCE_IDENTITY_PROSE):
+                continue
+            digest = hashlib.sha256(window.encode("utf-8")).digest()
+            testcase.assertNotIn(
+                digest,
+                source_window_digests,
+                f"normalized five-word source window reproduced: {window!r}",
+            )
 
 
 class CyberEssentialsPlusEsafToExternalMappingTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.oracle = json.loads(ORACLE.read_text(encoding="utf-8"))
+        cls.oracle_provisions = cls.oracle["provisions"]
+
     def assert_rights_bindings(self, text: str) -> None:
         lines = text.splitlines()
         for value in (
@@ -120,3 +189,131 @@ class CyberEssentialsPlusEsafToExternalMappingTests(unittest.TestCase):
         else:
             head = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
             self.assertEqual(head, rights_commit, "rights commit must be HEAD before snapshot creation")
+
+    def test_authoritative_empty_scaffold_matches_pinned_oracle_and_rights(self) -> None:
+        self.assertTrue((SNAPSHOT / "README.md").is_file())
+        self.assertTrue((SNAPSHOT / "PROVISION_INVENTORY.md").is_file())
+        self.assertTrue((SNAPSHOT / "ESAF_CONTROL_MANIFEST.json").is_file())
+        self.assertTrue(REGISTRY.is_file())
+
+        mapping, readme = parse_front_matter(SNAPSHOT / "README.md")
+        inventory, _ = parse_front_matter(SNAPSHOT / "PROVISION_INVENTORY.md")
+        lifecycle, lifecycle_body = parse_front_matter(REGISTRY)
+        rights_text = RIGHTS.read_text(encoding="utf-8")
+        rights_reviewer = re.search(r"(?m)^reviewer_id: (\S+)$", rights_text).group(1)
+
+        self.assertEqual(mapping["mapping_set_id"], MAPPING_SET_ID)
+        self.assertEqual(mapping["authority"], {"id": "uk-ncsc", "name": "UK National Cyber Security Centre"})
+        self.assertEqual(mapping["publication"]["id"], "cyber-essentials-plus-test-specification")
+        self.assertEqual(mapping["source_version"], {"id": "3.2", "label": "3.2"})
+        self.assertEqual(mapping["mapping_set_version"], "0.1.0")
+        self.assertEqual(mapping["status"], "draft")
+        self.assertEqual(mapping["source"]["official_url"], CANONICAL_PDF_URL)
+        self.assertEqual(mapping["source"]["publication_date"], "2025-04-28")
+        self.assertEqual(mapping["source"]["access_class"], "public")
+        self.assertEqual(mapping["publication_rights"]["reviewer_id"], rights_reviewer)
+        self.assertNotEqual(rights_reviewer, MAPPER_ID)
+        self.assertEqual(mapping["mapper"]["id"], MAPPER_ID)
+        self.assertEqual(mapping["mapper"]["date"], "2026-07-16")
+        self.assertIs(mapping["mapper"]["authorized_source_access"], True)
+        self.assertEqual(mapping["scope"]["type"], "complete_publication")
+        self.assertEqual(mapping["scope"]["inventory_count"], 144)
+        self.assertEqual(mapping["esaf_release"]["id"], "0.4-alpha")
+        self.assertEqual(mapping["esaf_release"]["source_commit_sha"], BASELINE_SHA)
+
+        for exact in (
+            f"Oracle SHA-256: `{ORACLE_SHA256}`",
+            f"Canonical PDF SHA-256: `{CANONICAL_PDF_SHA256}`",
+            RESOURCE_PAGE,
+            "public NCSC v3.2 technical draft",
+            "not the current operational scheme",
+            "assessment, certification, compliance, equivalence, or endorsement",
+            "Copied requirement or passage text is prohibited",
+            "IASME-authored structure remains outside this snapshot",
+            "marks and imagery are excluded",
+        ):
+            self.assertIn(exact, readme)
+
+        oracle_ids = [item["external_provision_id"] for item in self.oracle_provisions]
+        self.assertEqual(self.oracle["counts"], {"total": 144, "by_group": EXPECTED_GROUP_COUNTS})
+        self.assertEqual(Counter(item["group"] for item in self.oracle_provisions), Counter(EXPECTED_GROUP_COUNTS))
+        self.assertEqual(inventory["mapping_set_id"], MAPPING_SET_ID)
+        self.assertEqual(inventory["scope_type"], "complete_publication")
+        self.assertEqual(inventory["expected_count"], 144)
+        self.assertEqual(inventory["provision_ids"], oracle_ids)
+
+        self.assertEqual(lifecycle["mapping_set_id"], MAPPING_SET_ID)
+        self.assertEqual(lifecycle["events"], [])
+        self.assertEqual(lifecycle["snapshot_digest"], snapshot_digest(ROOT, SNAPSHOT))
+        self.assertIn("state: draft", lifecycle_body)
+        record_files = sorted(
+            path for path in SNAPSHOT.glob("*.md")
+            if path.name not in {"README.md", "PROVISION_INVENTORY.md"}
+        )
+        self.assertEqual(record_files, [])
+        self.assertEqual(validate(ROOT).errors, [])
+
+    def test_manifest_is_deterministic_at_exact_esaf_baseline(self) -> None:
+        expected = build_control_manifest(ROOT, BASELINE_SHA, "0.4-alpha", None)
+        self.assertEqual(len(expected["controls"]), 91)
+        self.assertEqual(
+            (SNAPSHOT / "ESAF_CONTROL_MANIFEST.json").read_text(encoding="utf-8"),
+            render_manifest(expected),
+        )
+
+    def test_empty_draft_catalog_entry_and_counts_are_generated(self) -> None:
+        catalog = json.loads((ROOT / "crosswalks/catalog.json").read_text(encoding="utf-8"))
+        entry = next(item for item in catalog["mapping_sets"] if item["metadata"]["mapping_set_id"] == MAPPING_SET_ID)
+        self.assertEqual(entry["metadata"]["status"], "draft")
+        self.assertEqual(entry["inventory"]["expected_count"], 144)
+        self.assertEqual(entry["provisions"], [])
+        self.assertEqual(entry["lifecycle"]["events"], [])
+        self.assertEqual(catalog["counts"]["mapping_sets"], 2)
+        self.assertEqual(catalog["counts"]["provisions"], 116)
+        self.assertEqual(catalog["counts"]["relationships"], 41)
+        self.assertEqual(catalog["counts"]["negative_dispositions"], 76)
+        catalog_md = (ROOT / "crosswalks/CATALOG.md").read_text(encoding="utf-8")
+        self.assertIn(MAPPING_SET_ID, catalog_md)
+
+    def test_source_copy_guard_rejects_a_surrounded_five_word_window(self) -> None:
+        copied = "assessor observes distinct authentication challenge"
+        supplied = {hashlib.sha256(copied.encode("utf-8")).digest()}
+        with self.assertRaises(AssertionError):
+            assert_no_copied_source_windows(
+                self,
+                [f"Before review, {copied}, during the bounded check."],
+                source_window_digests=supplied,
+            )
+
+    def test_completed_batches_match_oracle_and_manifest(self) -> None:
+        manifest = json.loads((SNAPSHOT / "ESAF_CONTROL_MANIFEST.json").read_text(encoding="utf-8"))
+        controls = {item["id"]: item for item in manifest["controls"]}
+        records = []
+        for path in sorted(SNAPSHOT.glob("*.md")):
+            if path.name in {"README.md", "PROVISION_INVENTORY.md"}:
+                continue
+            record, _ = parse_front_matter(path)
+            if record.get("external_metadata", {}).get("group") in COMPLETED_GROUPS:
+                records.append(record)
+        expected = [item for item in self.oracle_provisions if item["group"] in COMPLETED_GROUPS]
+        self.assertEqual([item["external_provision_id"] for item in records], [item["external_provision_id"] for item in expected])
+        for record, oracle in zip(records, expected):
+            self.assertEqual(record["record_id"], record_id(oracle["external_provision_id"]))
+            self.assertEqual(record["external_provision_id"], oracle["external_provision_id"])
+            self.assertEqual(record["external_metadata"], {field: oracle[field] for field in ("group", "kind", "actors")})
+            self.assertEqual(record["source_locator"]["locator"], oracle_locator(oracle["locator"]))
+            self.assertEqual(record["mapper"], {"id": MAPPER_ID, "date": "2026-07-16", "authorized_source_access": True})
+            self.assertEqual(record["status"], "draft")
+            self.assertNotEqual(record["disposition"], "out_of_scope")
+            narratives = list(record_narratives(record))
+            self.assertTrue(narratives)
+            self.assertTrue(all(value.strip() for value in narratives))
+            assert_no_copied_source_windows(self, narratives)
+            if record["disposition"] == "no_direct_mapping":
+                self.assertIn("Missing outcome:", record["negative_rationale"])
+            for relationship in record["relationships"]:
+                self.assertEqual(relationship["direction"], "esaf_to_external")
+                control = controls[relationship["esaf_control_id"]]
+                self.assertEqual(relationship["esaf_control_path"], control["path"])
+                self.assertEqual(relationship["esaf_control_sha256"], control["record_sha256"])
+                self.assertEqual(relationship["esaf_requirement_locator"], f"controls/{control['path']}#requirement")

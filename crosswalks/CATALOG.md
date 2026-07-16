@@ -12,6 +12,7 @@
 
 | Mapping set | Source version | ESAF release | Editorial status | Lifecycle state |
 |---|---|---|---|---|
+| [uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/README.md) | 3.2 | 0.4-alpha | draft |  |
 | [uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0](mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/README.md) | 3.3 | 0.4-alpha | draft |  |
 
 ## Deprecated and retired history
@@ -22,7 +23,7 @@
 
 ## Coverage and gaps
 
-Mapping sets: 1; provisions: 116; directional relationships: 41; negative dispositions: 76.
+Mapping sets: 2; provisions: 116; directional relationships: 41; negative dispositions: 76.
 
 | Provision record | Disposition | Relationships |
 |---|---|---:|

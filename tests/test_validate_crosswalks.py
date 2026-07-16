@@ -948,6 +948,61 @@ class CrosswalkValidationTests(unittest.TestCase):
         )
         self.assertTrue(error.startswith(expected), error)
 
+    def test_relationship_provenance_triplet_matches_resolved_manifest_control(self) -> None:
+        snapshot = self.fixture.create_valid_snapshot(status="draft", complete=True)
+        manifest = json.loads(
+            (snapshot / "ESAF_CONTROL_MANIFEST.json").read_text(encoding="utf-8")
+        )
+        control = next(item for item in manifest["controls"] if item["id"] == "IAM-100")
+
+        def add_provenance(value: dict[str, object]) -> None:
+            relationship = value["relationships"][0]  # type: ignore[index]
+            relationship.update(
+                {
+                    "esaf_control_path": control["path"],
+                    "esaf_control_sha256": control["record_sha256"],
+                    "esaf_requirement_locator": f"controls/{control['path']}#requirement",
+                }
+            )
+
+        self.fixture._mutate_record(add_provenance)
+        self.fixture.refresh_lifecycle_snapshot_digest()
+        self.assertEqual(validate(self.root).errors, [])
+
+    def test_relationship_provenance_triplet_fails_closed_on_incomplete_or_mismatch(self) -> None:
+        cases = (
+            ("incomplete", None, "incomplete provenance triplet for IAM-100"),
+            ("esaf_control_path", "OTHER/OTHER-100.md", "esaf_control_path mismatch for IAM-100"),
+            ("esaf_control_sha256", "0" * 64, "esaf_control_sha256 mismatch for IAM-100"),
+            ("esaf_requirement_locator", "controls/OTHER/OTHER-100.md#requirement", "esaf_requirement_locator mismatch for IAM-100"),
+        )
+        for field, replacement, expected in cases:
+            with self.subTest(field=field):
+                self.fixture.reset_repository()
+                snapshot = self.fixture.create_valid_snapshot(status="draft", complete=True)
+                manifest = json.loads(
+                    (snapshot / "ESAF_CONTROL_MANIFEST.json").read_text(encoding="utf-8")
+                )
+                control = next(item for item in manifest["controls"] if item["id"] == "IAM-100")
+
+                def mutate(value: dict[str, object]) -> None:
+                    relationship = value["relationships"][0]  # type: ignore[index]
+                    if field == "incomplete":
+                        relationship["esaf_control_path"] = control["path"]
+                        return
+                    relationship.update(
+                        {
+                            "esaf_control_path": control["path"],
+                            "esaf_control_sha256": control["record_sha256"],
+                            "esaf_requirement_locator": f"controls/{control['path']}#requirement",
+                        }
+                    )
+                    relationship[field] = replacement
+
+                self.fixture._mutate_record(mutate)
+                self.fixture.refresh_lifecycle_snapshot_digest()
+                self.assertIn(expected, "\n".join(validate(self.root).errors))
+
     def test_snapshot_and_record_mutation_matrix(self) -> None:
         cases = (
             ("duplicate_mapping_set_id", "duplicate mapping-set id"),

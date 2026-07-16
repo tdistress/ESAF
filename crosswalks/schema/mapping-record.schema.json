@@ -10,6 +10,7 @@
     "mapping_set_id": {"$ref": "#/$defs/mappingSetId"}, "status": {"enum": ["draft", "reviewed"]},
     "external_provision_id": {"type": "string", "minLength": 1}, "granularity": {"enum": ["requirement", "clause", "domain"]},
     "title": {"type": "string", "minLength": 1}, "context": {"$ref": "#/$defs/context"},
+    "external_metadata": {"$ref": "#/$defs/externalMetadata"},
     "source_locator": {"$ref": "#/$defs/sourceLocator"}, "granularity_exception": {"type": "string", "minLength": 1},
     "disposition": {"enum": ["mapped", "no_direct_mapping", "out_of_scope"]},
     "relationships": {"type": "array", "items": {"$ref": "#/$defs/relationship"}},
@@ -45,7 +46,14 @@
     },
     "mapper": {
       "type": "object", "additionalProperties": false, "required": ["id", "date"],
-      "properties": {"id": {"type": "string", "minLength": 1}, "date": {"$ref": "#/$defs/date"}}
+      "properties": {"id": {"type": "string", "minLength": 1}, "date": {"$ref": "#/$defs/date"}, "authorized_source_access": {"const": true}}
+    },
+    "externalMetadata": {
+      "type": "object", "additionalProperties": false, "required": ["group", "kind", "actors"],
+      "properties": {
+        "group": {"type": "string", "minLength": 1}, "kind": {"type": "string", "minLength": 1},
+        "actors": {"$ref": "#/$defs/nonemptyStrings"}
+      }
     },
     "reviewer": {
       "type": "object", "additionalProperties": false, "required": ["id", "qualification", "date", "authorized_source_access", "findings_disposition"],
@@ -59,7 +67,9 @@
         "relationship": {"enum": ["supports", "partially_supports", "complements", "prerequisite", "informs"]},
         "direction": {"enum": ["esaf_to_external", "external_to_esaf"]}, "coverage": {"enum": ["substantial", "partial", "narrow", "contextual"]},
         "confidence": {"enum": ["high", "medium", "low"]}, "rationale": {"type": "string", "minLength": 1},
-        "conditions": {"$ref": "#/$defs/nonemptyStrings"}, "expected_evidence": {"$ref": "#/$defs/nonemptyStrings"}, "known_gaps": {"$ref": "#/$defs/nonemptyStrings"}
+        "conditions": {"$ref": "#/$defs/nonemptyStrings"}, "expected_evidence": {"$ref": "#/$defs/nonemptyStrings"}, "known_gaps": {"$ref": "#/$defs/nonemptyStrings"},
+        "esaf_control_path": {"type": "string", "minLength": 1}, "esaf_control_sha256": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "esaf_requirement_locator": {"type": "string", "minLength": 1}, "prohibited_inferences": {"$ref": "#/$defs/nonemptyStrings"}
       }
     },
     "nonemptyStrings": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "minLength": 1}},

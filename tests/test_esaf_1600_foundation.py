@@ -241,10 +241,10 @@ class Esaf1600FoundationTests(unittest.TestCase):
 
     def test_templates_are_outside_authoritative_mapping_discovery(self) -> None:
         result = validate(ROOT)
-        self.assertEqual(len(result.mapping_sets), 1)
-        self.assertEqual(len(result.lifecycle_records), 1)
-        self.assertNotIn("TEMPLATE", result.mapping_sets[0]["path"])
-        self.assertNotIn("TEMPLATE", result.lifecycle_records[0]["path"])
+        self.assertEqual(len(result.mapping_sets), 2)
+        self.assertEqual(len(result.lifecycle_records), 2)
+        self.assertTrue(all("TEMPLATE" not in item["path"] for item in result.mapping_sets))
+        self.assertTrue(all("TEMPLATE" not in item["path"] for item in result.lifecycle_records))
 
     def test_lifecycle_template_contains_complete_valid_chain(self) -> None:
         metadata, _ = parse_front_matter(ROOT / "crosswalks/LIFECYCLE_RECORD_TEMPLATE.md")

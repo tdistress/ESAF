@@ -811,6 +811,32 @@ def _validate_control_manifest(
                 errors.append(
                     f"{record_path}: ESAF control version mismatch for {control_id}"
                 )
+            if control is None:
+                continue
+            provenance_fields = (
+                "esaf_control_path",
+                "esaf_control_sha256",
+                "esaf_requirement_locator",
+            )
+            present = [field for field in provenance_fields if field in relationship]
+            if present and len(present) != len(provenance_fields):
+                errors.append(
+                    f"{record_path}: incomplete provenance triplet for {control_id}"
+                )
+                continue
+            if not present:
+                continue
+            expected_path = control.get("path")
+            expected_digest = control.get("record_sha256")
+            expected_locator = f"controls/{expected_path}#requirement"
+            expected = {
+                "esaf_control_path": expected_path,
+                "esaf_control_sha256": expected_digest,
+                "esaf_requirement_locator": expected_locator,
+            }
+            for field, expected_value in expected.items():
+                if relationship.get(field) != expected_value:
+                    errors.append(f"{record_path}: {field} mismatch for {control_id}")
     return errors
 
 
