@@ -31,7 +31,7 @@ CANONICAL_PDF_SHA256 = "2adf2703dec3b581e13e39c6a1de230bb1bce6d85f1158bb1eb53108
 LEGACY_PDF_SHA256 = "d334c717597a01fab7a362377b7b04c8449568052ed1c4cf48837f6fb3aca694"
 FEASIBILITY_RIGHTS_COMMIT = "4207e1c1e8ff9f743274ebb4b626210cca053458"
 EXPECTED_GROUP_COUNTS = {"M": 24, "T1": 16, "S": 11, "T2": 9, "T3": 37, "T4": 9, "T5": 7, "C": 13, "A": 4, "B": 14}
-COMPLETED_GROUPS: tuple[str, ...] = ("M", "T1", "S")
+COMPLETED_GROUPS: tuple[str, ...] = ("M", "T1", "S", "T2")
 CANONICAL_PDF_URL = "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
 RESOURCE_PAGE = "https://www.ncsc.gov.uk/cyberessentials/resources"
 MAPPER_ID = "esaf-crosswalk-editorial-team"
@@ -361,12 +361,12 @@ class CyberEssentialsPlusEsafToExternalMappingTests(unittest.TestCase):
         entry = next(item for item in catalog["mapping_sets"] if item["metadata"]["mapping_set_id"] == MAPPING_SET_ID)
         self.assertEqual(entry["metadata"]["status"], "draft")
         self.assertEqual(entry["inventory"]["expected_count"], 144)
-        self.assertEqual(len(entry["provisions"]), 51)
+        self.assertEqual(len(entry["provisions"]), 60)
         self.assertEqual(entry["lifecycle"]["events"], [])
         self.assertEqual(catalog["counts"]["mapping_sets"], 2)
-        self.assertEqual(catalog["counts"]["provisions"], 167)
+        self.assertEqual(catalog["counts"]["provisions"], 176)
         self.assertEqual(catalog["counts"]["relationships"], 46)
-        self.assertEqual(catalog["counts"]["negative_dispositions"], 122)
+        self.assertEqual(catalog["counts"]["negative_dispositions"], 131)
         catalog_md = (ROOT / "crosswalks/CATALOG.md").read_text(encoding="utf-8")
         self.assertIn(MAPPING_SET_ID, catalog_md)
 
@@ -610,6 +610,91 @@ class CyberEssentialsPlusEsafToExternalMappingTests(unittest.TestCase):
         reports = (
             ROOT / "docs/superpowers/reviews/2026-07-15-uk-cyber-essentials-plus-v3.2-s-specification-review.md",
             ROOT / "docs/superpowers/reviews/2026-07-15-uk-cyber-essentials-plus-v3.2-s-overclaiming-review.md",
+        )
+        present = [path.is_file() for path in reports]
+        self.assertIn(present, ([False, False], [True, True]))
+        if not all(present):
+            return
+
+        rights_text = RIGHTS.read_text(encoding="utf-8")
+        rights_reviewer = re.search(r"(?m)^reviewer_id: (\S+)$", rights_text)
+        self.assertIsNotNone(rights_reviewer)
+        reviewer_ids = [MAPPER_ID, rights_reviewer.group(1)]
+        for report in reports:
+            text = report.read_text(encoding="utf-8")
+            reviewer = re.search(r"(?m)^reviewer_id: (\S+)$", text)
+            self.assertIsNotNone(reviewer)
+            self.assertIn("reviewer_authorized_source_access: true", text)
+            reviewer_ids.append(reviewer.group(1))
+        self.assertEqual(len(reviewer_ids), len(set(reviewer_ids)))
+
+    def test_t2_batch_universe_and_counts_are_exact(self) -> None:
+        records = [
+            parse_front_matter(SNAPSHOT / f"cepts32-t2-{number:03d}.md")[0]
+            for number in range(1, 10)
+        ]
+        expected_ids = {
+            f"CEPTS3.2-T2-{number:03d}"
+            for number in range(1, 10)
+        }
+        oracle_ids = {
+            provision["external_provision_id"]
+            for provision in self.oracle_provisions
+            if provision["group"] == "T2"
+        }
+        self.assertEqual(oracle_ids, expected_ids)
+        self.assertEqual(
+            {record["external_provision_id"] for record in records},
+            expected_ids,
+        )
+        self.assertEqual(
+            {
+                record["external_provision_id"]
+                for record in records
+                if record["disposition"] == "mapped"
+            },
+            set(),
+        )
+        self.assertEqual(sum(len(record["relationships"]) for record in records), 0)
+        self.assertEqual(
+            sum(record["disposition"] == "no_direct_mapping" for record in records),
+            9,
+        )
+
+    def test_t2_known_anomaly_is_recorded_without_expansion(self) -> None:
+        self.assertEqual(len(self.oracle["known_anomalies"]), 1)
+        anomaly = self.oracle["known_anomalies"][0]
+        self.assertEqual(anomaly["anomaly_id"], "cepts32-anomaly-001")
+        self.assertEqual(
+            oracle_locator(anomaly["locator"]),
+            "PDF page 6; printed page 5; General prerequisites for testing; "
+            "introductory applicability line",
+        )
+        self.assertEqual(
+            anomaly["treatment"],
+            "Recorded without correction or expansion; the publication itself "
+            "presents only Test cases 1 through 5.",
+        )
+        self.assertNotIn(
+            anomaly["anomaly_id"],
+            {provision["external_provision_id"] for provision in self.oracle_provisions},
+        )
+        self.assertFalse(
+            any(
+                provision["locator"] == anomaly["locator"]
+                for provision in self.oracle_provisions
+            )
+        )
+        t2_text = "\n".join(
+            (SNAPSHOT / f"cepts32-t2-{number:03d}.md").read_text(encoding="utf-8")
+            for number in range(1, 10)
+        )
+        self.assertNotIn(anomaly["source_literal"], t2_text)
+
+    def test_t2_review_identities_are_distinct_when_reports_exist(self) -> None:
+        reports = (
+            ROOT / "docs/superpowers/reviews/2026-07-15-uk-cyber-essentials-plus-v3.2-t2-specification-review.md",
+            ROOT / "docs/superpowers/reviews/2026-07-15-uk-cyber-essentials-plus-v3.2-t2-overclaiming-review.md",
         )
         present = [path.is_file() for path in reports]
         self.assertIn(present, ([False, False], [True, True]))
