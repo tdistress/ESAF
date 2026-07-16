@@ -548,6 +548,23 @@ class CyberEssentialsPlusEsafToExternalMappingTests(unittest.TestCase):
             14,
         )
 
+    def test_t1_013_positive_basis_is_credential_rotation(self) -> None:
+        record = parse_front_matter(SNAPSHOT / "cepts32-t1-013.md")[0]
+        relationship = record["relationships"][0]
+        rationale = relationship["rationale"].lower()
+        self.assertIn("iam-140", rationale)
+        self.assertIn("rotate", rationale)
+        self.assertIn("default-password credential", rationale)
+
+        evidence = [value.lower() for value in relationship["expected_evidence"]]
+        self.assertTrue(
+            any(
+                "default-password credential" in value
+                and ("rotated" in value or "changed" in value)
+                for value in evidence
+            )
+        )
+
     def test_t1_review_identities_are_distinct_when_reports_exist(self) -> None:
         reports = (
             ROOT / "docs/superpowers/reviews/2026-07-15-uk-cyber-essentials-plus-v3.2-t1-specification-review.md",

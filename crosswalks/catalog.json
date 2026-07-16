@@ -207,7 +207,7 @@
         "events": [],
         "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
         "schema_version": "1.0.0",
-        "snapshot_digest": "db4536c34768463bb44dacd2a5ed8b6d2c6cfb64c2f9ee13336f02e6eadf29a8"
+        "snapshot_digest": "c8566bed0a196f319d0406b0863541fb83228b3e87083e7565037025134d1dcc"
       },
       "metadata": {
         "authority": {
@@ -1881,7 +1881,7 @@
                 "esaf_control_version": "0.1.0",
                 "esaf_requirement_locator": "controls/IAM/IAM-140.md#requirement",
                 "expected_evidence": [
-                  "Secrets-management records identify the credential, its approved handling mechanism, and its governed lifecycle."
+                  "A secrets-management record demonstrates that the in-scope default-password credential was rotated or changed."
                 ],
                 "known_gaps": [
                   "IAM-140 does not state when a default password must be changed or establish coverage of every default password.",
@@ -1893,7 +1893,7 @@
                   "No inference that the Assessor executed the flow, observed the credential, or assigned the prescribed branch or failure.",
                   "No inference of procedure execution, testing completion, certification, compliance, equivalence, or endorsement."
                 ],
-                "rationale": "IAM-140 directly requires credentials used by AI capabilities to be governed through approved secrets-management mechanisms, contributing to treatment of a service default password used by such a capability.",
+                "rationale": "IAM-140 directly requires the organization to rotate credentials used by AI capabilities, contributing to changing the default-password credential when it serves such a capability.",
                 "relationship": "partially_supports"
               }
             ],
