@@ -506,9 +506,37 @@ class UkCyberEssentialsV33CrosswalkTests(unittest.TestCase):
             {group.upper(): count for group, count in EXPECTED_GROUPS.items()},
         )
         self.assertEqual(len(inventory["provision_ids"]), 116)
-        self.assertEqual(catalog["counts"]["provisions"], 116)
-        self.assertEqual(catalog["counts"]["relationships"], 41)
-        self.assertEqual(catalog["counts"]["negative_dispositions"], 76)
+        entry = next(
+            item
+            for item in catalog["mapping_sets"]
+            if item["metadata"]["mapping_set_id"] == MAPPING_SET_ID
+        )
+
+        def entry_counts(item: dict[str, object]) -> tuple[int, int, int]:
+            provisions = item["provisions"]
+            relationships = sum(
+                len(provision["metadata"]["relationships"])
+                for provision in provisions
+            )
+            negatives = sum(
+                provision["metadata"]["disposition"] != "mapped"
+                for provision in provisions
+            )
+            return len(provisions), relationships, negatives
+
+        self.assertEqual(entry_counts(entry), (116, 41, 76))
+        derived_global_counts = tuple(
+            sum(entry_counts(item)[index] for item in catalog["mapping_sets"])
+            for index in range(3)
+        )
+        self.assertEqual(
+            derived_global_counts,
+            (
+                catalog["counts"]["provisions"],
+                catalog["counts"]["relationships"],
+                catalog["counts"]["negative_dispositions"],
+            ),
+        )
 
     def test_final_narratives_expose_draft_counts_gaps_and_plus_roadmap(self) -> None:
         landing = (ROOT / "crosswalks/uk-cyber-essentials.md").read_text(

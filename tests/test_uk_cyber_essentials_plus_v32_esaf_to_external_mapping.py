@@ -31,7 +31,7 @@ CANONICAL_PDF_SHA256 = "2adf2703dec3b581e13e39c6a1de230bb1bce6d85f1158bb1eb53108
 LEGACY_PDF_SHA256 = "d334c717597a01fab7a362377b7b04c8449568052ed1c4cf48837f6fb3aca694"
 FEASIBILITY_RIGHTS_COMMIT = "4207e1c1e8ff9f743274ebb4b626210cca053458"
 EXPECTED_GROUP_COUNTS = {"M": 24, "T1": 16, "S": 11, "T2": 9, "T3": 37, "T4": 9, "T5": 7, "C": 13, "A": 4, "B": 14}
-COMPLETED_GROUPS: tuple[str, ...] = ()
+COMPLETED_GROUPS: tuple[str, ...] = ("M",)
 CANONICAL_PDF_URL = "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
 RESOURCE_PAGE = "https://www.ncsc.gov.uk/cyberessentials/resources"
 MAPPER_ID = "esaf-crosswalk-editorial-team"
@@ -117,9 +117,11 @@ def assert_completed_batches_match(
         for path in snapshot.glob("*.md")
         if path.name not in {"README.md", "PROVISION_INVENTORY.md"}
     }
-    testcase.assertEqual(actual_names, expected_names)
+    testcase.assertFalse(actual_names - expected_names)
 
     for oracle in expected:
+        if f"{record_id(oracle['external_provision_id'])}.md" not in actual_names:
+            continue
         path = snapshot / f"{record_id(oracle['external_provision_id'])}.md"
         record, _ = parse_front_matter(path)
         testcase.assertEqual(
@@ -184,6 +186,7 @@ def assert_completed_batches_match(
                         for value in relationship[field]
                     )
                 )
+    testcase.assertEqual(actual_names, expected_names)
 
 
 class CyberEssentialsPlusEsafToExternalMappingTests(unittest.TestCase):
@@ -282,7 +285,7 @@ class CyberEssentialsPlusEsafToExternalMappingTests(unittest.TestCase):
             head = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
             self.assertEqual(head, rights_commit, "rights commit must be HEAD before snapshot creation")
 
-    def test_authoritative_empty_scaffold_matches_pinned_oracle_and_rights(self) -> None:
+    def test_authoritative_snapshot_matches_pinned_oracle_and_rights(self) -> None:
         self.assertTrue((SNAPSHOT / "README.md").is_file())
         self.assertTrue((SNAPSHOT / "PROVISION_INVENTORY.md").is_file())
         self.assertTrue((SNAPSHOT / "ESAF_CONTROL_MANIFEST.json").is_file())
@@ -342,7 +345,7 @@ class CyberEssentialsPlusEsafToExternalMappingTests(unittest.TestCase):
             path for path in SNAPSHOT.glob("*.md")
             if path.name not in {"README.md", "PROVISION_INVENTORY.md"}
         )
-        self.assertEqual(record_files, [])
+        self.assertEqual(len(record_files), sum(EXPECTED_GROUP_COUNTS[group] for group in COMPLETED_GROUPS))
         self.assertEqual(validate(ROOT).errors, [])
 
     def test_manifest_is_deterministic_at_exact_esaf_baseline(self) -> None:
@@ -353,17 +356,17 @@ class CyberEssentialsPlusEsafToExternalMappingTests(unittest.TestCase):
             render_manifest(expected),
         )
 
-    def test_empty_draft_catalog_entry_and_counts_are_generated(self) -> None:
+    def test_draft_catalog_entry_and_counts_are_generated(self) -> None:
         catalog = json.loads((ROOT / "crosswalks/catalog.json").read_text(encoding="utf-8"))
         entry = next(item for item in catalog["mapping_sets"] if item["metadata"]["mapping_set_id"] == MAPPING_SET_ID)
         self.assertEqual(entry["metadata"]["status"], "draft")
         self.assertEqual(entry["inventory"]["expected_count"], 144)
-        self.assertEqual(entry["provisions"], [])
+        self.assertEqual(len(entry["provisions"]), 24)
         self.assertEqual(entry["lifecycle"]["events"], [])
         self.assertEqual(catalog["counts"]["mapping_sets"], 2)
-        self.assertEqual(catalog["counts"]["provisions"], 116)
-        self.assertEqual(catalog["counts"]["relationships"], 41)
-        self.assertEqual(catalog["counts"]["negative_dispositions"], 76)
+        self.assertEqual(catalog["counts"]["provisions"], 140)
+        self.assertEqual(catalog["counts"]["relationships"], 42)
+        self.assertEqual(catalog["counts"]["negative_dispositions"], 99)
         catalog_md = (ROOT / "crosswalks/CATALOG.md").read_text(encoding="utf-8")
         self.assertIn(MAPPING_SET_ID, catalog_md)
 

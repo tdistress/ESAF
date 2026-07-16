@@ -1,0 +1,67 @@
+---
+{
+  "schema_version": "1.0.0",
+  "record_id": "cepts32-m-011",
+  "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
+  "status": "draft",
+  "external_provision_id": "CEPTS3.2-M-011",
+  "granularity": "requirement",
+  "external_metadata": {
+    "group": "M",
+    "kind": "evidence_retention",
+    "actors": [
+      "Certifying Body"
+    ]
+  },
+  "context": {
+    "mode": "paraphrase",
+    "summary": "Retain all evidence from the pre-test verifications for at least the certificate's lifetime."
+  },
+  "source_locator": {
+    "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf",
+    "locator": "PDF page 5; printed page 4; Before you begin; closing retention paragraph"
+  },
+  "disposition": "mapped",
+  "relationships": [
+    {
+      "esaf_control_id": "AUD-120",
+      "esaf_control_version": "0.1.0",
+      "esaf_control_path": "AUD/AUD-120.md",
+      "esaf_control_sha256": "f6aa7dda8b73ee22586eb9728e59d5ec19f357a5c10187cd6c6a1d2c28f34ac0",
+      "esaf_requirement_locator": "controls/AUD/AUD-120.md#requirement",
+      "relationship": "partially_supports",
+      "direction": "esaf_to_external",
+      "coverage": "narrow",
+      "confidence": "high",
+      "rationale": "AUD-120 directly requires retention of evidence sufficient to support each AI assessment procedure, so it contributes to preserving pre-test verification artifacts when those checks form part of an AI assessment.",
+      "conditions": [
+        "The Cyber Essentials Plus activity is governed as an AI assessment under ESAF, and the artifacts support its relevant pre-test verification procedure."
+      ],
+      "expected_evidence": [
+        "An integrity-protected index links retained pre-test artifacts to the applicable assessment procedure, scope, and period."
+      ],
+      "known_gaps": [
+        "AUD-120 does not assign retention to a Certifying Body, require every Cyber Essentials Plus pre-test artifact, or set the certificate lifetime as the minimum period."
+      ],
+      "prohibited_inferences": [
+        "No inference that a Cyber Essentials Plus verification occurred, that the complete artifact population was retained, or that certification was achieved."
+      ]
+    }
+  ],
+  "mapper": {
+    "id": "esaf-crosswalk-editorial-team",
+    "date": "2026-07-16",
+    "authorized_source_access": true
+  },
+  "change_history": [
+    {
+      "version": "0.1.0",
+      "date": "2026-07-16",
+      "change": "Created the draft Cyber Essentials Plus v3.2 methodology mapping record."
+    }
+  ]
+}
+---
+# CEPTS3.2-M-011
+
+Draft derivative mapping analysis for the cited Cyber Essentials Plus v3.2 methodology provision.

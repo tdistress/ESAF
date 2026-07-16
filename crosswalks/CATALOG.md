@@ -23,10 +23,34 @@
 
 ## Coverage and gaps
 
-Mapping sets: 2; provisions: 116; directional relationships: 41; negative dispositions: 76.
+Mapping sets: 2; provisions: 140; directional relationships: 42; negative dispositions: 99.
 
 | Provision record | Disposition | Relationships |
 |---|---|---:|
+| [cepts32-m-001](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-m-001.md) | no_direct_mapping | 0 |
+| [cepts32-m-002](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-m-002.md) | no_direct_mapping | 0 |
+| [cepts32-m-003](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-m-003.md) | no_direct_mapping | 0 |
+| [cepts32-m-004](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-m-004.md) | no_direct_mapping | 0 |
+| [cepts32-m-005](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-m-005.md) | no_direct_mapping | 0 |
+| [cepts32-m-006](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-m-006.md) | no_direct_mapping | 0 |
+| [cepts32-m-007](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-m-007.md) | no_direct_mapping | 0 |
+| [cepts32-m-008](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-m-008.md) | no_direct_mapping | 0 |
+| [cepts32-m-009](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-m-009.md) | no_direct_mapping | 0 |
+| [cepts32-m-010](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-m-010.md) | no_direct_mapping | 0 |
+| [cepts32-m-011](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-m-011.md) | mapped | 1 |
+| [cepts32-m-012](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-m-012.md) | no_direct_mapping | 0 |
+| [cepts32-m-013](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-m-013.md) | no_direct_mapping | 0 |
+| [cepts32-m-014](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-m-014.md) | no_direct_mapping | 0 |
+| [cepts32-m-015](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-m-015.md) | no_direct_mapping | 0 |
+| [cepts32-m-016](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-m-016.md) | no_direct_mapping | 0 |
+| [cepts32-m-017](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-m-017.md) | no_direct_mapping | 0 |
+| [cepts32-m-018](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-m-018.md) | no_direct_mapping | 0 |
+| [cepts32-m-019](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-m-019.md) | no_direct_mapping | 0 |
+| [cepts32-m-020](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-m-020.md) | no_direct_mapping | 0 |
+| [cepts32-m-021](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-m-021.md) | no_direct_mapping | 0 |
+| [cepts32-m-022](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-m-022.md) | no_direct_mapping | 0 |
+| [cepts32-m-023](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-m-023.md) | no_direct_mapping | 0 |
+| [cepts32-m-024](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-m-024.md) | no_direct_mapping | 0 |
 | [ce33-d-001](mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-001.md) | no_direct_mapping | 0 |
 | [ce33-d-002](mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-002.md) | no_direct_mapping | 0 |
 | [ce33-d-003](mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-003.md) | mapped | 1 |

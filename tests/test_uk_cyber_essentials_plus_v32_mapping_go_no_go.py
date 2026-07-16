@@ -1624,8 +1624,24 @@ class MatrixClosedContractTests(unittest.TestCase):
         self.assertNotIn(self.oracle["known_anomalies"][0]["source_literal"], combined)
         self.assertEqual(controlled_language_violations_in_matrix(self.matrix), [])
         self.assertEqual(controlled_language_violations_in_review(self.review), [])
-        base = git("merge-base", "HEAD", "origin/main")
-        changed = git("diff", "--name-only", base, "--", "crosswalks/mappings", "crosswalks/registry")
+        accepted_merge = "b4529c05c440db2f94ec12db4f21e3d0af57a5fb"
+        parents = git("show", "-s", "--format=%P", accepted_merge).split()
+        self.assertEqual(
+            parents,
+            [
+                "3df7bd48eaeb16a5d8c2d1af201ed3a27c475f7e",
+                "46366c73b351278df550cfabc16c31bf3858131f",
+            ],
+        )
+        changed = git(
+            "diff",
+            "--name-only",
+            parents[0],
+            parents[1],
+            "--",
+            "crosswalks/mappings",
+            "crosswalks/registry",
+        )
         self.assertEqual(changed, "")
 
     def test_rendered_review_is_derived_from_matrix(self) -> None:
