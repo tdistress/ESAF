@@ -32,6 +32,7 @@ LEGACY_PDF_SHA256 = "d334c717597a01fab7a362377b7b04c8449568052ed1c4cf48837f6fb3a
 FEASIBILITY_RIGHTS_COMMIT = "4207e1c1e8ff9f743274ebb4b626210cca053458"
 EXPECTED_GROUP_COUNTS = {"M": 24, "T1": 16, "S": 11, "T2": 9, "T3": 37, "T4": 9, "T5": 7, "C": 13, "A": 4, "B": 14}
 COMPLETED_GROUPS: tuple[str, ...] = ("M", "T1", "S", "T2")
+COMPLETED_T3_IDS = tuple(f"CEPTS3.2-T3-{number:03d}" for number in range(1, 20))
 CANONICAL_PDF_URL = "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
 RESOURCE_PAGE = "https://www.ncsc.gov.uk/cyberessentials/resources"
 MAPPER_ID = "esaf-crosswalk-editorial-team"
@@ -101,12 +102,14 @@ def assert_completed_batches_match(
     oracle_provisions: list[dict[str, object]],
     manifest: dict[str, object],
     completed_groups: tuple[str, ...],
+    completed_external_ids: tuple[str, ...] = (),
 ) -> None:
     controls = {item["id"]: item for item in manifest["controls"]}
     expected = [
         provision
         for provision in oracle_provisions
         if provision["group"] in completed_groups
+        or provision["external_provision_id"] in completed_external_ids
     ]
     expected_names = {
         f"{record_id(provision['external_provision_id'])}.md"
@@ -117,7 +120,7 @@ def assert_completed_batches_match(
         for path in snapshot.glob("*.md")
         if path.name not in {"README.md", "PROVISION_INVENTORY.md"}
     }
-    testcase.assertFalse(actual_names - expected_names)
+    testcase.assertEqual(actual_names, expected_names)
 
     for oracle in expected:
         if f"{record_id(oracle['external_provision_id'])}.md" not in actual_names:
@@ -345,7 +348,11 @@ class CyberEssentialsPlusEsafToExternalMappingTests(unittest.TestCase):
             path for path in SNAPSHOT.glob("*.md")
             if path.name not in {"README.md", "PROVISION_INVENTORY.md"}
         )
-        self.assertEqual(len(record_files), sum(EXPECTED_GROUP_COUNTS[group] for group in COMPLETED_GROUPS))
+        self.assertEqual(
+            len(record_files),
+            sum(EXPECTED_GROUP_COUNTS[group] for group in COMPLETED_GROUPS)
+            + len(COMPLETED_T3_IDS),
+        )
         self.assertEqual(validate(ROOT).errors, [])
 
     def test_manifest_is_deterministic_at_exact_esaf_baseline(self) -> None:
@@ -361,12 +368,12 @@ class CyberEssentialsPlusEsafToExternalMappingTests(unittest.TestCase):
         entry = next(item for item in catalog["mapping_sets"] if item["metadata"]["mapping_set_id"] == MAPPING_SET_ID)
         self.assertEqual(entry["metadata"]["status"], "draft")
         self.assertEqual(entry["inventory"]["expected_count"], 144)
-        self.assertEqual(len(entry["provisions"]), 60)
+        self.assertEqual(len(entry["provisions"]), 79)
         self.assertEqual(entry["lifecycle"]["events"], [])
         self.assertEqual(catalog["counts"]["mapping_sets"], 2)
-        self.assertEqual(catalog["counts"]["provisions"], 176)
-        self.assertEqual(catalog["counts"]["relationships"], 46)
-        self.assertEqual(catalog["counts"]["negative_dispositions"], 131)
+        self.assertEqual(catalog["counts"]["provisions"], 195)
+        self.assertEqual(catalog["counts"]["relationships"], 47)
+        self.assertEqual(catalog["counts"]["negative_dispositions"], 149)
         catalog_md = (ROOT / "crosswalks/CATALOG.md").read_text(encoding="utf-8")
         self.assertIn(MAPPING_SET_ID, catalog_md)
 
@@ -510,6 +517,7 @@ class CyberEssentialsPlusEsafToExternalMappingTests(unittest.TestCase):
             self.oracle_provisions,
             manifest,
             COMPLETED_GROUPS,
+            COMPLETED_T3_IDS,
         )
 
     def test_m_batch_positive_set_and_counts_are_exact(self) -> None:
@@ -690,6 +698,47 @@ class CyberEssentialsPlusEsafToExternalMappingTests(unittest.TestCase):
             for number in range(1, 10)
         )
         self.assertNotIn(anomaly["source_literal"], t2_text)
+
+    def test_t3_001_019_batch_positive_set_and_counts_are_exact(self) -> None:
+        records = [
+            parse_front_matter(SNAPSHOT / f"cepts32-t3-{number:03d}.md")[0]
+            for number in range(1, 20)
+        ]
+        self.assertEqual(
+            {
+                record["external_provision_id"]
+                for record in records
+                if record["disposition"] == "mapped"
+            },
+            {"CEPTS3.2-T3-014"},
+        )
+        self.assertEqual(sum(len(record["relationships"]) for record in records), 1)
+        self.assertEqual(
+            sum(record["disposition"] == "no_direct_mapping" for record in records),
+            18,
+        )
+
+    def test_t3_001_019_review_identities_are_distinct_when_reports_exist(self) -> None:
+        reports = (
+            ROOT / "docs/superpowers/reviews/2026-07-15-uk-cyber-essentials-plus-v3.2-t3-001-019-specification-review.md",
+            ROOT / "docs/superpowers/reviews/2026-07-15-uk-cyber-essentials-plus-v3.2-t3-001-019-overclaiming-review.md",
+        )
+        present = [path.is_file() for path in reports]
+        self.assertIn(present, ([False, False], [True, True]))
+        if not all(present):
+            return
+
+        rights_text = RIGHTS.read_text(encoding="utf-8")
+        rights_reviewer = re.search(r"(?m)^reviewer_id: (\S+)$", rights_text)
+        self.assertIsNotNone(rights_reviewer)
+        reviewer_ids = [MAPPER_ID, rights_reviewer.group(1)]
+        for report in reports:
+            text = report.read_text(encoding="utf-8")
+            reviewer = re.search(r"(?m)^reviewer_id: (\S+)$", text)
+            self.assertIsNotNone(reviewer)
+            self.assertIn("reviewer_authorized_source_access: true", text)
+            reviewer_ids.append(reviewer.group(1))
+        self.assertEqual(len(reviewer_ids), len(set(reviewer_ids)))
 
     def test_t2_review_identities_are_distinct_when_reports_exist(self) -> None:
         reports = (
