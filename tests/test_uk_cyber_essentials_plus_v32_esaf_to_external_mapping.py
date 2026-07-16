@@ -365,8 +365,8 @@ class CyberEssentialsPlusEsafToExternalMappingTests(unittest.TestCase):
         self.assertEqual(entry["lifecycle"]["events"], [])
         self.assertEqual(catalog["counts"]["mapping_sets"], 2)
         self.assertEqual(catalog["counts"]["provisions"], 140)
-        self.assertEqual(catalog["counts"]["relationships"], 42)
-        self.assertEqual(catalog["counts"]["negative_dispositions"], 99)
+        self.assertEqual(catalog["counts"]["relationships"], 43)
+        self.assertEqual(catalog["counts"]["negative_dispositions"], 98)
         catalog_md = (ROOT / "crosswalks/CATALOG.md").read_text(encoding="utf-8")
         self.assertIn(MAPPING_SET_ID, catalog_md)
 
@@ -510,4 +510,21 @@ class CyberEssentialsPlusEsafToExternalMappingTests(unittest.TestCase):
             self.oracle_provisions,
             manifest,
             COMPLETED_GROUPS,
+        )
+
+    def test_m_batch_positive_set_and_counts_are_exact(self) -> None:
+        records = [
+            parse_front_matter(SNAPSHOT / f"cepts32-m-{number:03d}.md")[0]
+            for number in range(1, 25)
+        ]
+        positive_ids = {
+            record["external_provision_id"]
+            for record in records
+            if record["disposition"] == "mapped"
+        }
+        self.assertEqual(positive_ids, {"CEPTS3.2-M-010", "CEPTS3.2-M-011"})
+        self.assertEqual(sum(len(record["relationships"]) for record in records), 2)
+        self.assertEqual(
+            sum(record["disposition"] == "no_direct_mapping" for record in records),
+            22,
         )

@@ -4,20 +4,20 @@
       "uk-ncsc": 2
     },
     "by_confidence": {
-      "high": 30,
+      "high": 31,
       "low": 1,
       "medium": 11
     },
     "by_coverage": {
-      "narrow": 40,
+      "narrow": 41,
       "partial": 2
     },
     "by_direction": {
-      "esaf_to_external": 42
+      "esaf_to_external": 43
     },
     "by_disposition": {
-      "mapped": 41,
-      "no_direct_mapping": 99
+      "mapped": 42,
+      "no_direct_mapping": 98
     },
     "by_esaf_release": {
       "0.4-alpha": 2
@@ -31,7 +31,7 @@
       "cyber-essentials-requirements-for-it-infrastructure": 1
     },
     "by_relationship": {
-      "partially_supports": 41,
+      "partially_supports": 42,
       "prerequisite": 1
     },
     "by_snapshot_status": {
@@ -42,9 +42,9 @@
       "3.3": 1
     },
     "mapping_sets": 2,
-    "negative_dispositions": 99,
+    "negative_dispositions": 98,
     "provisions": 140,
-    "relationships": 42
+    "relationships": 43
   },
   "generated_from": "crosswalks/mappings/** and crosswalks/registry/*.md",
   "mapping_sets": [
@@ -207,7 +207,7 @@
         "events": [],
         "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
         "schema_version": "1.0.0",
-        "snapshot_digest": "b98c9bcfffaa01d128827a5c9689ccebfadd15327df3adceb90918e2ade8c62c"
+        "snapshot_digest": "f1e0e956335d15475cfa0fe3fbf8f71b4986fb2eebee613fd09ed6bf270e2db9"
       },
       "metadata": {
         "authority": {
@@ -662,7 +662,7 @@
               "mode": "paraphrase",
               "summary": "Resolve issues found during the listed pre-test checks before Plus testing commences."
             },
-            "disposition": "no_direct_mapping",
+            "disposition": "mapped",
             "external_metadata": {
               "actors": [
                 "Assessor"
@@ -678,9 +678,38 @@
               "id": "esaf-crosswalk-editorial-team"
             },
             "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
-            "negative_rationale": "Missing outcome: ESAF does not require the Assessor to ensure every issue from the preliminary checks is cleared prior to commencement of the external test sequence.",
             "record_id": "cepts32-m-010",
-            "relationships": [],
+            "relationships": [
+              {
+                "conditions": [
+                  "The preliminary issue is formally governed as an AI assessment finding under ESAF and falls within the organization's remediation responsibility."
+                ],
+                "confidence": "high",
+                "coverage": "narrow",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "AUD-130",
+                "esaf_control_path": "AUD/AUD-130.md",
+                "esaf_control_sha256": "cecd8e3e917827670267476d7c35d15b46a51eca4878eff2b5d13f7cdf13eca5",
+                "esaf_control_version": "0.1.0",
+                "esaf_requirement_locator": "controls/AUD/AUD-130.md#requirement",
+                "expected_evidence": [
+                  "A finding record identifies the issue, responsible owner, risk basis, remediation, retest, closure, and retained evidence."
+                ],
+                "known_gaps": [
+                  "AUD-130 does not require every preliminary issue to be cleared.",
+                  "AUD-130 does not impose closure ahead of the external test sequence.",
+                  "AUD-130 does not assign issue resolution to the Assessor.",
+                  "AUD-130 does not establish execution or results for any Cyber Essentials Plus procedure."
+                ],
+                "prohibited_inferences": [
+                  "No inference that preliminary Cyber Essentials Plus checks were executed or produced results.",
+                  "No inference that every issue was cleared before testing.",
+                  "No inference of testing completion, certification, compliance, equivalence, or endorsement."
+                ],
+                "rationale": "AUD-130 directly requires remediation and closure of AI assessment findings, contributing to resolution of a preliminary issue when that issue is governed as such a finding.",
+                "relationship": "partially_supports"
+              }
+            ],
             "schema_version": "1.0.0",
             "source_locator": {
               "locator": "PDF page 5; printed page 4; Before you begin; paragraph following pre-test list",
