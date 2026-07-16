@@ -31,7 +31,7 @@ CANONICAL_PDF_SHA256 = "2adf2703dec3b581e13e39c6a1de230bb1bce6d85f1158bb1eb53108
 LEGACY_PDF_SHA256 = "d334c717597a01fab7a362377b7b04c8449568052ed1c4cf48837f6fb3aca694"
 FEASIBILITY_RIGHTS_COMMIT = "4207e1c1e8ff9f743274ebb4b626210cca053458"
 EXPECTED_GROUP_COUNTS = {"M": 24, "T1": 16, "S": 11, "T2": 9, "T3": 37, "T4": 9, "T5": 7, "C": 13, "A": 4, "B": 14}
-COMPLETED_GROUPS: tuple[str, ...] = ("M",)
+COMPLETED_GROUPS: tuple[str, ...] = ("M", "T1")
 CANONICAL_PDF_URL = "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
 RESOURCE_PAGE = "https://www.ncsc.gov.uk/cyberessentials/resources"
 MAPPER_ID = "esaf-crosswalk-editorial-team"
@@ -361,12 +361,12 @@ class CyberEssentialsPlusEsafToExternalMappingTests(unittest.TestCase):
         entry = next(item for item in catalog["mapping_sets"] if item["metadata"]["mapping_set_id"] == MAPPING_SET_ID)
         self.assertEqual(entry["metadata"]["status"], "draft")
         self.assertEqual(entry["inventory"]["expected_count"], 144)
-        self.assertEqual(len(entry["provisions"]), 24)
+        self.assertEqual(len(entry["provisions"]), 40)
         self.assertEqual(entry["lifecycle"]["events"], [])
         self.assertEqual(catalog["counts"]["mapping_sets"], 2)
-        self.assertEqual(catalog["counts"]["provisions"], 140)
+        self.assertEqual(catalog["counts"]["provisions"], 156)
         self.assertEqual(catalog["counts"]["relationships"], 43)
-        self.assertEqual(catalog["counts"]["negative_dispositions"], 98)
+        self.assertEqual(catalog["counts"]["negative_dispositions"], 114)
         catalog_md = (ROOT / "crosswalks/CATALOG.md").read_text(encoding="utf-8")
         self.assertIn(MAPPING_SET_ID, catalog_md)
 
@@ -528,3 +528,44 @@ class CyberEssentialsPlusEsafToExternalMappingTests(unittest.TestCase):
             sum(record["disposition"] == "no_direct_mapping" for record in records),
             22,
         )
+
+    def test_t1_batch_is_an_exact_negative_set(self) -> None:
+        records = [
+            parse_front_matter(SNAPSHOT / f"cepts32-t1-{number:03d}.md")[0]
+            for number in range(1, 17)
+        ]
+        self.assertEqual(
+            {
+                record["external_provision_id"]
+                for record in records
+                if record["disposition"] == "mapped"
+            },
+            set(),
+        )
+        self.assertEqual(sum(len(record["relationships"]) for record in records), 0)
+        self.assertEqual(
+            sum(record["disposition"] == "no_direct_mapping" for record in records),
+            16,
+        )
+
+    def test_t1_review_identities_are_distinct_when_reports_exist(self) -> None:
+        reports = (
+            ROOT / "docs/superpowers/reviews/2026-07-15-uk-cyber-essentials-plus-v3.2-t1-specification-review.md",
+            ROOT / "docs/superpowers/reviews/2026-07-15-uk-cyber-essentials-plus-v3.2-t1-overclaiming-review.md",
+        )
+        present = [path.is_file() for path in reports]
+        self.assertIn(present, ([False, False], [True, True]))
+        if not all(present):
+            return
+
+        rights_text = RIGHTS.read_text(encoding="utf-8")
+        rights_reviewer = re.search(r"(?m)^reviewer_id: (\S+)$", rights_text)
+        self.assertIsNotNone(rights_reviewer)
+        reviewer_ids = [MAPPER_ID, rights_reviewer.group(1)]
+        for report in reports:
+            text = report.read_text(encoding="utf-8")
+            reviewer = re.search(r"(?m)^reviewer_id: (\S+)$", text)
+            self.assertIsNotNone(reviewer)
+            self.assertIn("reviewer_authorized_source_access: true", text)
+            reviewer_ids.append(reviewer.group(1))
+        self.assertEqual(len(reviewer_ids), len(set(reviewer_ids)))
