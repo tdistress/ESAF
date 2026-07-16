@@ -31,13 +31,16 @@ COMPLETED_GROUPS: tuple[str, ...] = ()
 
 
 class CyberEssentialsPlusEsafToExternalMappingTests(unittest.TestCase):
-    def test_mapping_rights_gate_is_exact_and_precedes_snapshot(self) -> None:
-        self.assertTrue(RIGHTS.is_file())
-        text = RIGHTS.read_text(encoding="utf-8")
+    def assert_rights_bindings(self, text: str) -> None:
+        lines = text.splitlines()
         for value in (
-            ORACLE_SHA256,
-            CANONICAL_PDF_SHA256,
-            LEGACY_PDF_SHA256,
+            f"oracle: {ORACLE.relative_to(ROOT).as_posix()}",
+            f"oracle_sha256: {ORACLE_SHA256}",
+            f"canonical_pdf_sha256: {CANONICAL_PDF_SHA256}",
+            f"legacy_pdf_sha256: {LEGACY_PDF_SHA256}",
+        ):
+            self.assertIn(value, lines)
+        for value in (
             f"feasibility_rights_commit: {FEASIBILITY_RIGHTS_COMMIT}",
             "attribution: National Cyber Security Centre; Crown copyright",
             "Open Government Licence v3.0",
@@ -56,6 +59,28 @@ class CyberEssentialsPlusEsafToExternalMappingTests(unittest.TestCase):
         reviewer = re.search(r"(?m)^reviewer_id: (\S+)$", text)
         self.assertIsNotNone(reviewer)
         self.assertNotEqual(reviewer.group(1), "esaf-crosswalk-editorial-team")
+
+    def test_rights_bindings_reject_rebinding_or_relabeling(self) -> None:
+        text = RIGHTS.read_text(encoding="utf-8")
+        mutations = {
+            "changed oracle path": text.replace(
+                f"oracle: {ORACLE.relative_to(ROOT).as_posix()}",
+                "oracle: docs/superpowers/specs/substitute.json",
+            ),
+            "relabeled oracle digest": text.replace(
+                "oracle_sha256:",
+                "unrelated_sha256:",
+            ),
+        }
+        for label, mutated in mutations.items():
+            with self.subTest(label):
+                with self.assertRaises(AssertionError):
+                    self.assert_rights_bindings(mutated)
+
+    def test_mapping_rights_gate_is_exact_and_precedes_snapshot(self) -> None:
+        self.assertTrue(RIGHTS.is_file())
+        text = RIGHTS.read_text(encoding="utf-8")
+        self.assert_rights_bindings(text)
 
         rights_commit = subprocess.check_output(
             ["git", "log", "-1", "--format=%H", "--", str(RIGHTS.relative_to(ROOT))],
