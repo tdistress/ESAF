@@ -74,6 +74,7 @@ class CyberEssentialsPlusEsafToExternalMappingTests(unittest.TestCase):
         }
         for label, mutated in mutations.items():
             with self.subTest(label):
+                self.assertNotEqual(mutated, text)
                 with self.assertRaises(AssertionError):
                     self.assert_rights_bindings(mutated)
 

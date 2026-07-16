@@ -18,4 +18,4 @@ direction: esaf_to_external
 field_classes: identifiers | titles where used | structural inventory | original paraphrases | derivative mapping analysis | ESAF normative citations | assurance analysis | official links
 disposition: approved
 
-The reviewer authorizes publication of the forward mapping under the stated licence and attribution for only the listed field classes. The record excludes copied source passages, IASME-derived structure, marks, and imagery, and it makes no representation about the current operational scheme.
+The reviewer authorizes publication of the forward mapping under the stated licence and attribution for only the listed field classes. The exact keyed oracle identity and digest lines bind this decision to the reviewed source artifacts. The record excludes copied source passages, IASME-derived structure, marks, and imagery, and it makes no representation about the current operational scheme.
