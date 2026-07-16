@@ -4,6 +4,7 @@ import hashlib
 import json
 import re
 import subprocess
+import tempfile
 import unittest
 from collections import Counter
 from pathlib import Path
@@ -92,6 +93,97 @@ def assert_no_copied_source_windows(
                 source_window_digests,
                 f"normalized five-word source window reproduced: {window!r}",
             )
+
+
+def assert_completed_batches_match(
+    testcase: unittest.TestCase,
+    snapshot: Path,
+    oracle_provisions: list[dict[str, object]],
+    manifest: dict[str, object],
+    completed_groups: tuple[str, ...],
+) -> None:
+    controls = {item["id"]: item for item in manifest["controls"]}
+    expected = [
+        provision
+        for provision in oracle_provisions
+        if provision["group"] in completed_groups
+    ]
+    expected_names = {
+        f"{record_id(provision['external_provision_id'])}.md"
+        for provision in expected
+    }
+    actual_names = {
+        path.name
+        for path in snapshot.glob("*.md")
+        if path.name not in {"README.md", "PROVISION_INVENTORY.md"}
+    }
+    testcase.assertEqual(actual_names, expected_names)
+
+    for oracle in expected:
+        path = snapshot / f"{record_id(oracle['external_provision_id'])}.md"
+        record, _ = parse_front_matter(path)
+        testcase.assertEqual(
+            record["record_id"], record_id(oracle["external_provision_id"])
+        )
+        testcase.assertEqual(
+            record["external_provision_id"], oracle["external_provision_id"]
+        )
+        testcase.assertEqual(
+            record["external_metadata"],
+            {field: oracle[field] for field in ("group", "kind", "actors")},
+        )
+        testcase.assertEqual(record["context"]["summary"], oracle["summary"])
+        testcase.assertEqual(
+            record["source_locator"]["locator"], oracle_locator(oracle["locator"])
+        )
+        testcase.assertEqual(
+            record["mapper"],
+            {
+                "id": MAPPER_ID,
+                "date": "2026-07-16",
+                "authorized_source_access": True,
+            },
+        )
+        testcase.assertEqual(record["status"], "draft")
+        testcase.assertNotEqual(record["disposition"], "out_of_scope")
+        narratives = list(record_narratives(record))
+        testcase.assertTrue(narratives)
+        testcase.assertTrue(all(value.strip() for value in narratives))
+        assert_no_copied_source_windows(testcase, narratives)
+        if record["disposition"] == "no_direct_mapping":
+            testcase.assertIn("Missing outcome:", record["negative_rationale"])
+        for relationship in record["relationships"]:
+            testcase.assertEqual(relationship["direction"], "esaf_to_external")
+            control = controls[relationship["esaf_control_id"]]
+            testcase.assertEqual(
+                relationship["esaf_control_version"], control["version"]
+            )
+            testcase.assertEqual(relationship["esaf_control_path"], control["path"])
+            testcase.assertEqual(
+                relationship["esaf_control_sha256"], control["record_sha256"]
+            )
+            testcase.assertEqual(
+                relationship["esaf_requirement_locator"],
+                f"controls/{control['path']}#requirement",
+            )
+            testcase.assertIn("rationale", relationship)
+            testcase.assertIsInstance(relationship["rationale"], str)
+            testcase.assertTrue(relationship["rationale"].strip())
+            for field in (
+                "conditions",
+                "expected_evidence",
+                "known_gaps",
+                "prohibited_inferences",
+            ):
+                testcase.assertIn(field, relationship)
+                testcase.assertIsInstance(relationship[field], list)
+                testcase.assertTrue(relationship[field])
+                testcase.assertTrue(
+                    all(
+                        isinstance(value, str) and value.strip()
+                        for value in relationship[field]
+                    )
+                )
 
 
 class CyberEssentialsPlusEsafToExternalMappingTests(unittest.TestCase):
@@ -285,35 +377,134 @@ class CyberEssentialsPlusEsafToExternalMappingTests(unittest.TestCase):
                 source_window_digests=supplied,
             )
 
+    def test_completed_batch_helper_is_oracle_ordered_and_fails_closed(self) -> None:
+        manifest = {
+            "controls": [
+                {
+                    "id": "IAM-100",
+                    "version": "0.1.0",
+                    "path": "IAM/IAM-100.md",
+                    "record_sha256": "a" * 64,
+                }
+            ]
+        }
+        provisions = [
+            {
+                "external_provision_id": external_id,
+                "summary": f"Original summary for {external_id}.",
+                "group": "T5",
+                "kind": "result_rule",
+                "actors": ["Assessor"],
+                "locator": {
+                    "pdf_page": 19,
+                    "printed_page": 18,
+                    "section": "Test case 5",
+                    "detail": f"synthetic {external_id}",
+                },
+            }
+            for external_id in ("CEPTS3.2-T5-002", "CEPTS3.2-T5-001")
+        ]
+
+        def record_for(provision: dict[str, object]) -> dict[str, object]:
+            return {
+                "record_id": record_id(provision["external_provision_id"]),
+                "external_provision_id": provision["external_provision_id"],
+                "external_metadata": {
+                    field: provision[field] for field in ("group", "kind", "actors")
+                },
+                "context": {"mode": "paraphrase", "summary": provision["summary"]},
+                "source_locator": {
+                    "official_url": CANONICAL_PDF_URL,
+                    "locator": oracle_locator(provision["locator"]),
+                },
+                "mapper": {
+                    "id": MAPPER_ID,
+                    "date": "2026-07-16",
+                    "authorized_source_access": True,
+                },
+                "status": "draft",
+                "disposition": "mapped",
+                "relationships": [
+                    {
+                        "esaf_control_id": "IAM-100",
+                        "esaf_control_version": "0.1.0",
+                        "direction": "esaf_to_external",
+                        "esaf_control_path": "IAM/IAM-100.md",
+                        "esaf_control_sha256": "a" * 64,
+                        "esaf_requirement_locator": "controls/IAM/IAM-100.md#requirement",
+                        "rationale": "Original bounded mapping rationale.",
+                        "conditions": ["The stated scope applies."],
+                        "expected_evidence": ["A dated assessment record."],
+                        "known_gaps": ["No certification conclusion is implied."],
+                        "prohibited_inferences": ["Certification"],
+                    }
+                ],
+            }
+
+        def write_record(snapshot: Path, record: dict[str, object]) -> None:
+            path = snapshot / f"{record['record_id']}.md"
+            path.write_text(
+                f"---\n{json.dumps(record, indent=2)}\n---\n# Synthetic record\n",
+                encoding="utf-8",
+                newline="\n",
+            )
+
+        with tempfile.TemporaryDirectory() as temporary:
+            snapshot = Path(temporary)
+            records = [record_for(provision) for provision in provisions]
+            for record in records:
+                write_record(snapshot, record)
+
+            assert_completed_batches_match(
+                self, snapshot, provisions, manifest, ("T5",)
+            )
+
+            mutations = [
+                (
+                    "context summary",
+                    lambda record: record["context"].__setitem__(
+                        "summary", "Changed summary."
+                    ),
+                ),
+                (
+                    "control version",
+                    lambda record: record["relationships"][0].__setitem__(
+                        "esaf_control_version", "9.9.9"
+                    ),
+                ),
+            ]
+            for field in (
+                "rationale",
+                "conditions",
+                "expected_evidence",
+                "known_gaps",
+                "prohibited_inferences",
+            ):
+                mutations.append(
+                    (
+                        f"missing {field}",
+                        lambda record, field=field: record["relationships"][0].pop(
+                            field
+                        ),
+                    )
+                )
+            for label, mutation in mutations:
+                with self.subTest(label=label):
+                    changed = record_for(provisions[0])
+                    mutation(changed)
+                    write_record(snapshot, changed)
+                    with self.assertRaises(AssertionError):
+                        assert_completed_batches_match(
+                            self, snapshot, provisions, manifest, ("T5",)
+                        )
+                    write_record(snapshot, records[0])
+
     def test_completed_batches_match_oracle_and_manifest(self) -> None:
         manifest = json.loads((SNAPSHOT / "ESAF_CONTROL_MANIFEST.json").read_text(encoding="utf-8"))
-        controls = {item["id"]: item for item in manifest["controls"]}
-        records = []
-        for path in sorted(SNAPSHOT.glob("*.md")):
-            if path.name in {"README.md", "PROVISION_INVENTORY.md"}:
-                continue
-            record, _ = parse_front_matter(path)
-            if record.get("external_metadata", {}).get("group") in COMPLETED_GROUPS:
-                records.append(record)
-        expected = [item for item in self.oracle_provisions if item["group"] in COMPLETED_GROUPS]
-        self.assertEqual([item["external_provision_id"] for item in records], [item["external_provision_id"] for item in expected])
-        for record, oracle in zip(records, expected):
-            self.assertEqual(record["record_id"], record_id(oracle["external_provision_id"]))
-            self.assertEqual(record["external_provision_id"], oracle["external_provision_id"])
-            self.assertEqual(record["external_metadata"], {field: oracle[field] for field in ("group", "kind", "actors")})
-            self.assertEqual(record["source_locator"]["locator"], oracle_locator(oracle["locator"]))
-            self.assertEqual(record["mapper"], {"id": MAPPER_ID, "date": "2026-07-16", "authorized_source_access": True})
-            self.assertEqual(record["status"], "draft")
-            self.assertNotEqual(record["disposition"], "out_of_scope")
-            narratives = list(record_narratives(record))
-            self.assertTrue(narratives)
-            self.assertTrue(all(value.strip() for value in narratives))
-            assert_no_copied_source_windows(self, narratives)
-            if record["disposition"] == "no_direct_mapping":
-                self.assertIn("Missing outcome:", record["negative_rationale"])
-            for relationship in record["relationships"]:
-                self.assertEqual(relationship["direction"], "esaf_to_external")
-                control = controls[relationship["esaf_control_id"]]
-                self.assertEqual(relationship["esaf_control_path"], control["path"])
-                self.assertEqual(relationship["esaf_control_sha256"], control["record_sha256"])
-                self.assertEqual(relationship["esaf_requirement_locator"], f"controls/{control['path']}#requirement")
+        assert_completed_batches_match(
+            self,
+            SNAPSHOT,
+            self.oracle_provisions,
+            manifest,
+            COMPLETED_GROUPS,
+        )
