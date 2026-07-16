@@ -4,34 +4,34 @@
       "uk-ncsc": 2
     },
     "by_confidence": {
-      "high": 33,
+      "high": 34,
       "low": 1,
       "medium": 11
     },
     "by_coverage": {
-      "narrow": 43,
+      "narrow": 44,
       "partial": 2
     },
     "by_direction": {
-      "esaf_to_external": 45
+      "esaf_to_external": 46
     },
     "by_disposition": {
-      "mapped": 44,
-      "no_direct_mapping": 112
+      "mapped": 45,
+      "no_direct_mapping": 122
     },
     "by_esaf_release": {
       "0.4-alpha": 2
     },
     "by_lifecycle_state": {},
     "by_provision_status": {
-      "draft": 156
+      "draft": 167
     },
     "by_publication": {
       "cyber-essentials-plus-test-specification": 1,
       "cyber-essentials-requirements-for-it-infrastructure": 1
     },
     "by_relationship": {
-      "partially_supports": 44,
+      "partially_supports": 45,
       "prerequisite": 1
     },
     "by_snapshot_status": {
@@ -42,9 +42,9 @@
       "3.3": 1
     },
     "mapping_sets": 2,
-    "negative_dispositions": 112,
-    "provisions": 156,
-    "relationships": 45
+    "negative_dispositions": 122,
+    "provisions": 167,
+    "relationships": 46
   },
   "generated_from": "crosswalks/mappings/** and crosswalks/registry/*.md",
   "mapping_sets": [
@@ -207,7 +207,7 @@
         "events": [],
         "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
         "schema_version": "1.0.0",
-        "snapshot_digest": "c8566bed0a196f319d0406b0863541fb83228b3e87083e7565037025134d1dcc"
+        "snapshot_digest": "bc9dffa101bffd59efec168b67786f0b32ec217290e7af328a98c1c45bf2b9fb"
       },
       "metadata": {
         "authority": {
@@ -1316,6 +1316,483 @@
             "status": "draft"
           },
           "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-m-024.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 methodology mapping record.",
+                "date": "2026-07-16",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Apply the remaining tests to the population of computing devices inside the agreed scope boundary."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "S",
+              "kind": "applicability"
+            },
+            "external_provision_id": "CEPTS3.2-S-001",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-16",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "Missing outcome: ESAF does not require the remaining Cyber Essentials Plus tests to be applied across the computing-device population within the agreed assessment boundary.",
+            "record_id": "cepts32-s-001",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 10; printed page 9; Sample testing; opening population statement",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-s-001.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 methodology mapping record.",
+                "date": "2026-07-16",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Include user devices capable of reaching organisational information or services in the population for the remaining tests."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "S",
+              "kind": "applicability"
+            },
+            "external_provision_id": "CEPTS3.2-S-002",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-16",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "Missing outcome: ESAF does not place user computing devices that reach organizational information or services into the population for the remaining Cyber Essentials Plus tests; AI asset and identity inventories do not supply that testing-population rule.",
+            "record_id": "cepts32-s-002",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 10; printed page 9; Sample testing; population list, end-user devices",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-s-002.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 methodology mapping record.",
+                "date": "2026-07-16",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Include every internally hosted server in the remaining-test population."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "S",
+              "kind": "applicability"
+            },
+            "external_provision_id": "CEPTS3.2-S-003",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-16",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "Missing outcome: ESAF does not require all internally hosted servers to form the population for the remaining Cyber Essentials Plus tests; infrastructure inventory duties do not establish this external population boundary.",
+            "record_id": "cepts32-s-003",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 10; printed page 9; Sample testing; population list, internal servers",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-s-003.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 methodology mapping record.",
+                "date": "2026-07-16",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Include all cloud service types, including infrastructure, platform, and software services, in the remaining-test population."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "S",
+              "kind": "applicability"
+            },
+            "external_provision_id": "CEPTS3.2-S-004",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-16",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "Missing outcome: ESAF does not place every infrastructure, platform, and software cloud service into the population for the remaining Cyber Essentials Plus tests; cloud-service governance does not supply that assessment-population rule.",
+            "record_id": "cepts32-s-004",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 10; printed page 9; Sample testing; population list, cloud services",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-s-004.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 methodology mapping record.",
+                "date": "2026-07-16",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "When every in-scope device cannot practically be tested, select a device sample and take steps to establish that it is representative."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "S",
+              "kind": "procedure_step"
+            },
+            "external_provision_id": "CEPTS3.2-S-005",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-16",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "Missing outcome: ESAF does not direct an Assessor to select a representative device sample when full Cyber Essentials Plus testing is impractical; a general duty to define assessment sampling does not establish this selection or its representativeness.",
+            "record_id": "cepts32-s-005",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 10; printed page 9; Sample testing; representative-device-sample paragraph",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-s-005.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 methodology mapping record.",
+                "date": "2026-07-16",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Seek confidence that the combined testing represents all in-scope devices, accounting for configuration variation and provisioning effectiveness."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "S",
+              "kind": "recommendation"
+            },
+            "external_provision_id": "CEPTS3.2-S-006",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-16",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "Missing outcome: ESAF does not require confidence that combined Cyber Essentials Plus testing represents every in-scope device while accounting for configuration diversity and provisioning effectiveness.",
+            "record_id": "cepts32-s-006",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 10; printed page 9; Sample testing; representativeness recommendation",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-s-006.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 methodology mapping record.",
+                "date": "2026-07-16",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Verify that sample size was calculated correctly using the Delivery Partner's method."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "S",
+              "kind": "procedure_step"
+            },
+            "external_provision_id": "CEPTS3.2-S-007",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-16",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "Missing outcome: ESAF does not require an Assessor to verify a device-sample calculation against the Delivery Partner's method or prescribe that external method.",
+            "record_id": "cepts32-s-007",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 10; printed page 9; Sample testing; sample-size verification item",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-s-007.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 methodology mapping record.",
+                "date": "2026-07-16",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Retain evidence of the sample-size calculation for at least the certificate's lifetime."
+            },
+            "disposition": "mapped",
+            "external_metadata": {
+              "actors": [
+                "Certifying Body"
+              ],
+              "group": "S",
+              "kind": "evidence_retention"
+            },
+            "external_provision_id": "CEPTS3.2-S-008",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-16",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
+            "record_id": "cepts32-s-008",
+            "relationships": [
+              {
+                "conditions": [
+                  "The calculation evidence is an AI record governed by CMP-110, and the certificate-lifetime period is an applicable retention requirement."
+                ],
+                "confidence": "high",
+                "coverage": "narrow",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "CMP-110",
+                "esaf_control_path": "CMP/CMP-110.md",
+                "esaf_control_sha256": "b02bad69b329e16ff1ac0becf9ff7eddfe9a0cdf6033f43045b03359a1aeed68",
+                "esaf_control_version": "0.1.0",
+                "esaf_requirement_locator": "controls/CMP/CMP-110.md#requirement",
+                "expected_evidence": [
+                  "A retention schedule and protected record show preservation of the qualifying calculation evidence for the applicable certificate period."
+                ],
+                "known_gaps": [
+                  "CMP-110 does not require creation or correctness of the sample-size calculation, prescribe the Delivery Partner's method, or assign the Certifying Body's role.",
+                  "CMP-110 does not establish that any sample was selected, tested, representative, or sufficient for its population."
+                ],
+                "prohibited_inferences": [
+                  "No inference that the calculation exists, is correct, or was verified against the external method.",
+                  "No inference of sample or population coverage, procedure execution, observed results, certification, compliance, equivalence, or endorsement."
+                ],
+                "rationale": "CMP-110 directly requires retention of AI evidence according to applicable content and retention requirements, supporting preservation of a qualifying sampling-calculation record for its applicable period.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 10; printed page 9; Sample testing; sample-calculation evidence sentence",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-s-008.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 methodology mapping record.",
+                "date": "2026-07-16",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "For each cloud service, test a user-account sample representative of its population."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "S",
+              "kind": "procedure_step"
+            },
+            "external_provision_id": "CEPTS3.2-S-009",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-16",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "Missing outcome: ESAF does not direct an Assessor to test a user-account subset that represents each cloud-service population; identity inventories and assessment-sampling duties do not create that service-by-service procedure.",
+            "record_id": "cepts32-s-009",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 10; printed page 9; Sample testing; cloud-account sampling paragraph",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-s-009.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 methodology mapping record.",
+                "date": "2026-07-16",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "For each cloud service, include at least one normal account and one administrative account in the sample."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "S",
+              "kind": "applicability"
+            },
+            "external_provision_id": "CEPTS3.2-S-010",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-16",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "Missing outcome: ESAF does not prescribe a per-cloud-service sample containing both a standard user account and an administrative account; role inventories do not supply this minimum composition.",
+            "record_id": "cepts32-s-010",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 10; printed page 9; Sample testing; minimum cloud-account composition",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-s-010.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 methodology mapping record.",
+                "date": "2026-07-16",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "The same sampled users may be reused across multiple cloud services."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "S",
+              "kind": "recommendation"
+            },
+            "external_provision_id": "CEPTS3.2-S-011",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-16",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "Missing outcome: ESAF does not authorize reuse of the same sampled users across different cloud services for this external testing methodology.",
+            "record_id": "cepts32-s-011",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 10; printed page 9; Sample testing; account-reuse sentence",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-s-011.md"
         },
         {
           "metadata": {
