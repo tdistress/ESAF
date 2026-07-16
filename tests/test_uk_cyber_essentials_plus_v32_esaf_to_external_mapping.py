@@ -365,8 +365,8 @@ class CyberEssentialsPlusEsafToExternalMappingTests(unittest.TestCase):
         self.assertEqual(entry["lifecycle"]["events"], [])
         self.assertEqual(catalog["counts"]["mapping_sets"], 2)
         self.assertEqual(catalog["counts"]["provisions"], 156)
-        self.assertEqual(catalog["counts"]["relationships"], 43)
-        self.assertEqual(catalog["counts"]["negative_dispositions"], 114)
+        self.assertEqual(catalog["counts"]["relationships"], 45)
+        self.assertEqual(catalog["counts"]["negative_dispositions"], 112)
         catalog_md = (ROOT / "crosswalks/CATALOG.md").read_text(encoding="utf-8")
         self.assertIn(MAPPING_SET_ID, catalog_md)
 
@@ -529,7 +529,7 @@ class CyberEssentialsPlusEsafToExternalMappingTests(unittest.TestCase):
             22,
         )
 
-    def test_t1_batch_is_an_exact_negative_set(self) -> None:
+    def test_t1_batch_positive_set_and_counts_are_exact(self) -> None:
         records = [
             parse_front_matter(SNAPSHOT / f"cepts32-t1-{number:03d}.md")[0]
             for number in range(1, 17)
@@ -540,12 +540,12 @@ class CyberEssentialsPlusEsafToExternalMappingTests(unittest.TestCase):
                 for record in records
                 if record["disposition"] == "mapped"
             },
-            set(),
+            {"CEPTS3.2-T1-011", "CEPTS3.2-T1-013"},
         )
-        self.assertEqual(sum(len(record["relationships"]) for record in records), 0)
+        self.assertEqual(sum(len(record["relationships"]) for record in records), 2)
         self.assertEqual(
             sum(record["disposition"] == "no_direct_mapping" for record in records),
-            16,
+            14,
         )
 
     def test_t1_review_identities_are_distinct_when_reports_exist(self) -> None:

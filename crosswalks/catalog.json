@@ -4,20 +4,20 @@
       "uk-ncsc": 2
     },
     "by_confidence": {
-      "high": 31,
+      "high": 33,
       "low": 1,
       "medium": 11
     },
     "by_coverage": {
-      "narrow": 41,
+      "narrow": 43,
       "partial": 2
     },
     "by_direction": {
-      "esaf_to_external": 43
+      "esaf_to_external": 45
     },
     "by_disposition": {
-      "mapped": 42,
-      "no_direct_mapping": 114
+      "mapped": 44,
+      "no_direct_mapping": 112
     },
     "by_esaf_release": {
       "0.4-alpha": 2
@@ -31,7 +31,7 @@
       "cyber-essentials-requirements-for-it-infrastructure": 1
     },
     "by_relationship": {
-      "partially_supports": 42,
+      "partially_supports": 44,
       "prerequisite": 1
     },
     "by_snapshot_status": {
@@ -42,9 +42,9 @@
       "3.3": 1
     },
     "mapping_sets": 2,
-    "negative_dispositions": 114,
+    "negative_dispositions": 112,
     "provisions": 156,
-    "relationships": 43
+    "relationships": 45
   },
   "generated_from": "crosswalks/mappings/** and crosswalks/registry/*.md",
   "mapping_sets": [
@@ -207,7 +207,7 @@
         "events": [],
         "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
         "schema_version": "1.0.0",
-        "snapshot_digest": "a38661b35352c96b363780617d99990258d400c90eaac72575ffcfea78b71f3f"
+        "snapshot_digest": "db4536c34768463bb44dacd2a5ed8b6d2c6cfb64c2f9ee13336f02e6eadf29a8"
       },
       "metadata": {
         "authority": {
@@ -1740,7 +1740,7 @@
               "mode": "paraphrase",
               "summary": "Fail a service that does not require user authentication; otherwise continue to decision 4."
             },
-            "disposition": "no_direct_mapping",
+            "disposition": "mapped",
             "external_metadata": {
               "actors": [
                 "Assessor"
@@ -1756,9 +1756,37 @@
               "id": "esaf-crosswalk-editorial-team"
             },
             "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
-            "negative_rationale": "Missing outcome: ESAF does not require this Figure 1 failure for every unauthenticated Internet service or its branch to decision four.",
             "record_id": "cepts32-t1-011",
-            "relationships": [],
+            "relationships": [
+              {
+                "conditions": [
+                  "A user accesses non-public AI assets through the Internet service being assessed."
+                ],
+                "confidence": "high",
+                "coverage": "narrow",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "IAM-110",
+                "esaf_control_path": "IAM/IAM-110.md",
+                "esaf_control_sha256": "c925230601d60255b9c398594d192fd84aaceb179a7fe50dd4ddad93caec1d20",
+                "esaf_control_version": "0.1.0",
+                "esaf_requirement_locator": "controls/IAM/IAM-110.md#requirement",
+                "expected_evidence": [
+                  "Authentication policy and service configuration show that user identity verification precedes access to the non-public AI assets."
+                ],
+                "known_gaps": [
+                  "IAM-110 does not assign evaluation to the Assessor or require Figure 1 to be executed.",
+                  "IAM-110 does not establish authentication for every Internet service or prescribe the decision branch and service result.",
+                  "IAM-110 does not establish execution or results for any Cyber Essentials Plus procedure or test."
+                ],
+                "prohibited_inferences": [
+                  "No inference that the Assessor executed Figure 1 or observed the service.",
+                  "No inference that all Internet services require authentication or receive the prescribed branch or result.",
+                  "No inference of procedure execution, testing completion, certification, compliance, equivalence, or endorsement."
+                ],
+                "rationale": "IAM-110 directly requires identity authentication before access to non-public AI assets, contributing to the authentication predicate for a service that provides such access.",
+                "relationship": "partially_supports"
+              }
+            ],
             "schema_version": "1.0.0",
             "source_locator": {
               "locator": "PDF page 9; printed page 8; Figure 1; decision 3 and its No/Yes branches",
@@ -1822,7 +1850,7 @@
               "mode": "paraphrase",
               "summary": "Fail a service where default passwords remain unchanged; otherwise continue to decision 6."
             },
-            "disposition": "no_direct_mapping",
+            "disposition": "mapped",
             "external_metadata": {
               "actors": [
                 "Assessor"
@@ -1838,9 +1866,37 @@
               "id": "esaf-crosswalk-editorial-team"
             },
             "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
-            "negative_rationale": "Missing outcome: ESAF does not establish this external service failure rule for unchanged default passwords or its continuation to decision six.",
             "record_id": "cepts32-t1-013",
-            "relationships": [],
+            "relationships": [
+              {
+                "conditions": [
+                  "The service default password is a credential used by an AI capability."
+                ],
+                "confidence": "high",
+                "coverage": "narrow",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "IAM-140",
+                "esaf_control_path": "IAM/IAM-140.md",
+                "esaf_control_sha256": "7114bd2b9991d5b42ea4c1f993dec98746e1173b693cffe7303fde80b89ebd57",
+                "esaf_control_version": "0.1.0",
+                "esaf_requirement_locator": "controls/IAM/IAM-140.md#requirement",
+                "expected_evidence": [
+                  "Secrets-management records identify the credential, its approved handling mechanism, and its governed lifecycle."
+                ],
+                "known_gaps": [
+                  "IAM-140 does not state when a default password must be changed or establish coverage of every default password.",
+                  "IAM-140 does not assign evaluation to the Assessor, execute the Figure 1 flow, or prescribe its branch and failure result.",
+                  "IAM-140 does not establish execution or results for any Cyber Essentials Plus procedure or test."
+                ],
+                "prohibited_inferences": [
+                  "No inference that every default password was changed by a specified time.",
+                  "No inference that the Assessor executed the flow, observed the credential, or assigned the prescribed branch or failure.",
+                  "No inference of procedure execution, testing completion, certification, compliance, equivalence, or endorsement."
+                ],
+                "rationale": "IAM-140 directly requires credentials used by AI capabilities to be governed through approved secrets-management mechanisms, contributing to treatment of a service default password used by such a capability.",
+                "relationship": "partially_supports"
+              }
+            ],
             "schema_version": "1.0.0",
             "source_locator": {
               "locator": "PDF page 9; printed page 8; Figure 1; decision 5 and its No/Yes branches",
