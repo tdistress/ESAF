@@ -23,7 +23,7 @@
 
 ## Coverage and gaps
 
-Mapping sets: 2; provisions: 213; directional relationships: 47; negative dispositions: 167.
+Mapping sets: 2; provisions: 222; directional relationships: 47; negative dispositions: 176.
 
 | Provision record | Disposition | Relationships |
 |---|---|---:|
@@ -124,6 +124,15 @@ Mapping sets: 2; provisions: 213; directional relationships: 47; negative dispos
 | [cepts32-t3-035](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-t3-035.md) | no_direct_mapping | 0 |
 | [cepts32-t3-036](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-t3-036.md) | no_direct_mapping | 0 |
 | [cepts32-t3-037](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-t3-037.md) | no_direct_mapping | 0 |
+| [cepts32-t4-001](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-t4-001.md) | no_direct_mapping | 0 |
+| [cepts32-t4-002](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-t4-002.md) | no_direct_mapping | 0 |
+| [cepts32-t4-003](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-t4-003.md) | no_direct_mapping | 0 |
+| [cepts32-t4-004](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-t4-004.md) | no_direct_mapping | 0 |
+| [cepts32-t4-005](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-t4-005.md) | no_direct_mapping | 0 |
+| [cepts32-t4-006](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-t4-006.md) | no_direct_mapping | 0 |
+| [cepts32-t4-007](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-t4-007.md) | no_direct_mapping | 0 |
+| [cepts32-t4-008](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-t4-008.md) | no_direct_mapping | 0 |
+| [cepts32-t4-009](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-t4-009.md) | no_direct_mapping | 0 |
 | [ce33-d-001](mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-001.md) | no_direct_mapping | 0 |
 | [ce33-d-002](mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-002.md) | no_direct_mapping | 0 |
 | [ce33-d-003](mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-003.md) | mapped | 1 |

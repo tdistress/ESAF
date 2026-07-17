@@ -17,14 +17,14 @@
     },
     "by_disposition": {
       "mapped": 46,
-      "no_direct_mapping": 167
+      "no_direct_mapping": 176
     },
     "by_esaf_release": {
       "0.4-alpha": 2
     },
     "by_lifecycle_state": {},
     "by_provision_status": {
-      "draft": 213
+      "draft": 222
     },
     "by_publication": {
       "cyber-essentials-plus-test-specification": 1,
@@ -42,8 +42,8 @@
       "3.3": 1
     },
     "mapping_sets": 2,
-    "negative_dispositions": 167,
-    "provisions": 213,
+    "negative_dispositions": 176,
+    "provisions": 222,
     "relationships": 47
   },
   "generated_from": "crosswalks/mappings/** and crosswalks/registry/*.md",
@@ -207,7 +207,7 @@
         "events": [],
         "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
         "schema_version": "1.0.0",
-        "snapshot_digest": "9aad4168d67369e067e71737119b0081c6afbafb40ced9161128b9e2019b3266"
+        "snapshot_digest": "6bf590bf6c82f883b9b12276eb60b46f2dce79506befc6e60363868819bb80ff"
       },
       "metadata": {
         "authority": {
@@ -4415,6 +4415,375 @@
             "status": "draft"
           },
           "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-t3-037.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 methodology mapping record.",
+                "date": "2026-07-16",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Perform Test case 4 on every cloud service."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "T4",
+              "kind": "applicability"
+            },
+            "external_provision_id": "CEPTS3.2-T4-001",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-16",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "Missing outcome: ESAF does not require an Assessor to perform Test case 4 across every cloud service; controls for AI authentication and supplier boundaries do not establish this external assessment population or procedure.",
+            "record_id": "cepts32-t4-001",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 17; printed page 16; Test case 4; unheaded applicability line",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-t4-001.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 methodology mapping record.",
+                "date": "2026-07-16",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Have users of sampled devices attempt to sign in to organisational cloud services with organisation-issued accounts."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "T4",
+              "kind": "procedure_step"
+            },
+            "external_provision_id": "CEPTS3.2-T4-002",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-16",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "Missing outcome: ESAF does not require an Assessor to direct sampled-device users to attempt cloud-service sign-in with organisation-issued accounts; implemented identity controls do not supply this test-account exercise.",
+            "record_id": "cepts32-t4-002",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 17; printed page 16; Test description; sampled-user login sentence",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-t4-002.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 methodology mapping record.",
+                "date": "2026-07-16",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Test both normal-user and administrator access for each cloud service."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "T4",
+              "kind": "applicability"
+            },
+            "external_provision_id": "CEPTS3.2-T4-003",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-16",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "Missing outcome: ESAF does not require an Assessor to test both ordinary and administrator access for every cloud service; role-based authorization and privileged-access requirements do not create this external coverage rule.",
+            "record_id": "cepts32-t4-003",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 17; printed page 16; Test description; role-coverage sentence",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-t4-003.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 methodology mapping record.",
+                "date": "2026-07-16",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "When cloud services share authentication, perform the test once for each distinct authentication service."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "T4",
+              "kind": "applicability"
+            },
+            "external_provision_id": "CEPTS3.2-T4-004",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-16",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "Missing outcome: ESAF does not require an Assessor to group cloud services by shared authentication and run one test per distinct service; authentication architecture controls do not establish this assessment repetition boundary.",
+            "record_id": "cepts32-t4-004",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 17; printed page 16; Test description; shared-authentication clause",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-t4-004.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 methodology mapping record.",
+                "date": "2026-07-16",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Observe users access cloud services with organisation-issued accounts from an untrusted device or incognito browser session."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "T4",
+              "kind": "procedure_step"
+            },
+            "external_provision_id": "CEPTS3.2-T4-005",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-16",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "Missing outcome: ESAF does not require an Assessor to observe user access from an untrusted device or private-browser session using organisation-issued accounts; authentication safeguards do not supply that observation method.",
+            "record_id": "cepts32-t4-005",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 17; printed page 16; Test case 4; primary observation method",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-t4-005.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 methodology mapping record.",
+                "date": "2026-07-16",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "If the primary method cannot be used, share an Assessor-device private-browser session and observe user access."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "T4",
+              "kind": "recommendation"
+            },
+            "external_provision_id": "CEPTS3.2-T4-006",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-16",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "Missing outcome: ESAF does not recommend sharing an Assessor-device private-browser session as a fallback for observing user access; implemented access controls do not prescribe this external testing method.",
+            "record_id": "cepts32-t4-006",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 17; printed page 16; Test case 4; fallback observation method",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-t4-006.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 methodology mapping record.",
+                "date": "2026-07-16",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Repeat the access test for every authentication service in use."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "T4",
+              "kind": "procedure_step"
+            },
+            "external_provision_id": "CEPTS3.2-T4-007",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-16",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "Missing outcome: ESAF does not require an Assessor to repeat this access test for every authentication service in use; identity-control implementation does not create the external repetition procedure.",
+            "record_id": "cepts32-t4-007",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 17; printed page 16; Test case 4; repetition step",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-t4-007.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 methodology mapping record.",
+                "date": "2026-07-16",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Pass when access first prompts the user or administrator for an MFA form; otherwise fail."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "T4",
+              "kind": "result_rule"
+            },
+            "external_provision_id": "CEPTS3.2-T4-008",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-16",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "Missing outcome: ESAF does not require an Assessor to issue this pass-or-fail result from an observed MFA prompt before user or administrator cloud access; proportional and separate authentication requirements neither prescribe the observed MFA form nor create the verdict.",
+            "record_id": "cepts32-t4-008",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 17; printed page 16; Test case 4; access-result rule",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-t4-008.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 methodology mapping record.",
+                "date": "2026-07-16",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Pass Test case 4 only when all of its sub-tests pass; otherwise fail the case."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "T4",
+              "kind": "result_rule"
+            },
+            "external_provision_id": "CEPTS3.2-T4-009",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-16",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "Missing outcome: ESAF does not require an Assessor to aggregate every Test case 4 sub-test into this pass-or-fail decision; adjacent authentication safeguards do not supply the external result chain.",
+            "record_id": "cepts32-t4-009",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 18; printed page 17; Interpreting the test case results; complete aggregate result rule",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-t4-009.md"
         }
       ]
     },
