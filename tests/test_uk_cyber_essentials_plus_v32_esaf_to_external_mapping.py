@@ -529,6 +529,18 @@ class CyberEssentialsPlusEsafToExternalMappingTests(unittest.TestCase):
         self.assertIn(BASELINE_SHA, traceability)
         self.assertIn(FEASIBILITY_RIGHTS_COMMIT, traceability)
         self.assertIn("validate_crosswalks.py --check --baseline-ref", traceability)
+        self.assertIn(snapshot_digest(ROOT, SNAPSHOT), traceability)
+        for required in (
+            "Pass 1: 35 focused tests passed; 330 full-suite tests passed; 3 skipped.",
+            "Pass 2: 35 focused tests passed; 330 full-suite tests passed; 3 skipped.",
+            "91 controls, 91 objectives, and 16 families",
+            "10 foundation files and 7 reserved patterns",
+            "91 catalog-derived control mapping sections (0 changed)",
+            "2 mapping sets, 260 provisions, 49 relationships, and 213 negative dispositions",
+            "502 tracked Markdown files",
+            "git diff --check: passed",
+        ):
+            self.assertIn(required, traceability)
         self.assertNotIn("qualified review complete", traceability.lower())
         self.assertNotIn(
             "Design the Cyber Essentials Plus v3.2 esaf_to_external mapping.",
