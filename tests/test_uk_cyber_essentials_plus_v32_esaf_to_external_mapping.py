@@ -6,6 +6,7 @@ import re
 import subprocess
 import tempfile
 import unittest
+from copy import deepcopy
 from collections import Counter
 from pathlib import Path
 
@@ -35,6 +36,29 @@ COMPLETED_GROUPS: tuple[str, ...] = ("M", "T1", "S", "T2", "T3", "T4", "T5", "C"
 CANONICAL_PDF_URL = "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
 RESOURCE_PAGE = "https://www.ncsc.gov.uk/cyberessentials/resources"
 MAPPER_ID = "esaf-crosswalk-editorial-team"
+TRACEABILITY = ROOT / "docs/superpowers/reviews/2026-07-15-uk-cyber-essentials-plus-v3.2-esaf-to-external-mapping-traceability.md"
+FINAL_SPECIFICATION_REVIEW = ROOT / "docs/superpowers/reviews/2026-07-15-uk-cyber-essentials-plus-v3.2-esaf-to-external-mapping-specification-review.md"
+FINAL_OVERCLAIMING_REVIEW = ROOT / "docs/superpowers/reviews/2026-07-15-uk-cyber-essentials-plus-v3.2-esaf-to-external-mapping-overclaiming-review.md"
+EXPECTED_KIND_COUNTS = {
+    "procedure_step": 43,
+    "decision_rule": 21,
+    "applicability": 21,
+    "result_rule": 20,
+    "prerequisite": 19,
+    "recommendation": 18,
+    "evidence_retention": 2,
+}
+EXPECTED_CATALOG_COUNTS = {
+    "mapping_sets": 2,
+    "provisions": 260,
+    "relationships": 49,
+    "negative_dispositions": 213,
+}
+GENERIC_NEGATIVE_RATIONALES = {
+    "missing outcome: no direct mapping.",
+    "missing outcome: no direct esaf mapping.",
+    "missing outcome: the esaf baseline does not directly map.",
+}
 
 
 def record_id(external_id: str) -> str:
@@ -126,27 +150,17 @@ def assert_completed_batches_match(
             continue
         path = snapshot / f"{record_id(oracle['external_provision_id'])}.md"
         record, _ = parse_front_matter(path)
-        testcase.assertEqual(
-            record["record_id"], record_id(oracle["external_provision_id"])
-        )
-        testcase.assertEqual(
-            record["external_provision_id"], oracle["external_provision_id"]
-        )
+        testcase.assertEqual(record["record_id"], record_id(oracle["external_provision_id"]))
+        testcase.assertEqual(record["external_provision_id"], oracle["external_provision_id"])
         testcase.assertEqual(
             record["external_metadata"],
             {field: oracle[field] for field in ("group", "kind", "actors")},
         )
         testcase.assertEqual(record["context"]["summary"], oracle["summary"])
-        testcase.assertEqual(
-            record["source_locator"]["locator"], oracle_locator(oracle["locator"])
-        )
+        testcase.assertEqual(record["source_locator"]["locator"], oracle_locator(oracle["locator"]))
         testcase.assertEqual(
             record["mapper"],
-            {
-                "id": MAPPER_ID,
-                "date": "2026-07-16",
-                "authorized_source_access": True,
-            },
+            {"id": MAPPER_ID, "date": "2026-07-16", "authorized_source_access": True},
         )
         testcase.assertEqual(record["status"], "draft")
         testcase.assertNotEqual(record["disposition"], "out_of_scope")
@@ -159,13 +173,9 @@ def assert_completed_batches_match(
         for relationship in record["relationships"]:
             testcase.assertEqual(relationship["direction"], "esaf_to_external")
             control = controls[relationship["esaf_control_id"]]
-            testcase.assertEqual(
-                relationship["esaf_control_version"], control["version"]
-            )
+            testcase.assertEqual(relationship["esaf_control_version"], control["version"])
             testcase.assertEqual(relationship["esaf_control_path"], control["path"])
-            testcase.assertEqual(
-                relationship["esaf_control_sha256"], control["record_sha256"]
-            )
+            testcase.assertEqual(relationship["esaf_control_sha256"], control["record_sha256"])
             testcase.assertEqual(
                 relationship["esaf_requirement_locator"],
                 f"controls/{control['path']}#requirement",
@@ -173,22 +183,124 @@ def assert_completed_batches_match(
             testcase.assertIn("rationale", relationship)
             testcase.assertIsInstance(relationship["rationale"], str)
             testcase.assertTrue(relationship["rationale"].strip())
-            for field in (
-                "conditions",
-                "expected_evidence",
-                "known_gaps",
-                "prohibited_inferences",
-            ):
+            for field in ("conditions", "expected_evidence", "known_gaps", "prohibited_inferences"):
                 testcase.assertIn(field, relationship)
                 testcase.assertIsInstance(relationship[field], list)
                 testcase.assertTrue(relationship[field])
                 testcase.assertTrue(
-                    all(
-                        isinstance(value, str) and value.strip()
-                        for value in relationship[field]
-                    )
+                    all(isinstance(value, str) and value.strip() for value in relationship[field])
                 )
     testcase.assertEqual(actual_names, expected_names)
+
+
+def load_snapshot_records(snapshot: Path = SNAPSHOT) -> list[dict[str, object]]:
+    return [
+        parse_front_matter(path)[0]
+        for path in sorted(snapshot.glob("*.md"))
+        if path.name not in {"README.md", "PROVISION_INVENTORY.md"}
+    ]
+
+
+def assert_reconciled_snapshot(
+    testcase: unittest.TestCase,
+    records: list[dict[str, object]],
+    oracle_provisions: list[dict[str, object]],
+    manifest: dict[str, object],
+    catalog_counts: dict[str, object],
+    *,
+    source_window_digests=SOURCE_FIVE_WORD_DIGESTS,
+) -> None:
+    """Fail closed over the complete candidate and its generated totals."""
+    testcase.assertEqual(len(records), 144)
+    testcase.assertEqual(len(oracle_provisions), 144)
+    oracle_by_id = {item["external_provision_id"]: item for item in oracle_provisions}
+    record_by_id = {item["external_provision_id"]: item for item in records}
+    testcase.assertEqual(set(record_by_id), set(oracle_by_id))
+    testcase.assertEqual(len(record_by_id), len(records), "duplicate external provision record")
+    testcase.assertEqual(
+        Counter(item["external_metadata"]["group"] for item in records),
+        Counter(EXPECTED_GROUP_COUNTS),
+    )
+    testcase.assertEqual(
+        Counter(item["external_metadata"]["kind"] for item in records),
+        Counter(EXPECTED_KIND_COUNTS),
+    )
+    testcase.assertEqual(
+        {item["external_metadata"]["group"] for item in records},
+        set(COMPLETED_GROUPS),
+    )
+
+    controls = {item["id"]: item for item in manifest["controls"]}
+    seen_legs: set[tuple[str, str, str]] = set()
+    narratives: list[str] = []
+    for external_id, record in record_by_id.items():
+        oracle = oracle_by_id[external_id]
+        testcase.assertEqual(
+            record["external_metadata"],
+            {field: oracle[field] for field in ("group", "kind", "actors")},
+        )
+        testcase.assertEqual(record["context"]["summary"], oracle["summary"])
+        testcase.assertEqual(record["source_locator"]["locator"], oracle_locator(oracle["locator"]))
+        narratives.extend(record_narratives(record))
+        relationships = record["relationships"]
+        if record["disposition"] == "no_direct_mapping":
+            rationale = record["negative_rationale"]
+            testcase.assertTrue(rationale.startswith("Missing outcome:"))
+            testcase.assertNotIn(rationale.strip().lower(), GENERIC_NEGATIVE_RATIONALES)
+            testcase.assertEqual(relationships, [])
+        else:
+            testcase.assertEqual(record["disposition"], "mapped")
+            testcase.assertTrue(relationships)
+        for relationship in relationships:
+            testcase.assertEqual(relationship["relationship"], "partially_supports")
+            testcase.assertEqual(relationship["direction"], "esaf_to_external")
+            control = controls[relationship["esaf_control_id"]]
+            testcase.assertEqual(relationship["esaf_control_sha256"], control["record_sha256"])
+            testcase.assertEqual(
+                relationship["esaf_requirement_locator"],
+                f"controls/{control['path']}#requirement",
+            )
+            for field in ("rationale", "conditions", "expected_evidence", "known_gaps", "prohibited_inferences"):
+                testcase.assertIn(field, relationship)
+                testcase.assertTrue(relationship[field])
+            for condition in relationship["conditions"]:
+                testcase.assertNotRegex(
+                    condition.lower(),
+                    r"condition (?:creates|supplies|provides|establishes) (?:the )?missing .*outcome",
+                )
+            leg = (external_id, relationship["esaf_control_id"], relationship["direction"])
+            testcase.assertNotIn(leg, seen_legs, "duplicate control/direction leg")
+            seen_legs.add(leg)
+
+    feasibility = json.loads(
+        (ROOT / "docs/superpowers/specs/2026-07-15-uk-cyber-essentials-plus-v3.2-mapping-feasibility-matrix.json").read_text(encoding="utf-8")
+    )
+    feasibility_t5_text = next(
+        probe["rationale"]
+        for probe in feasibility["probes"]
+        if probe["probe_id"] == "esaf-ext-t5-006-privileged-access"
+    )
+    t5 = record_by_id["CEPTS3.2-T5-006"]
+    testcase.assertNotIn(feasibility_t5_text, list(record_narratives(t5)))
+    assert_no_copied_source_windows(
+        testcase,
+        narratives,
+        source_window_digests=source_window_digests,
+    )
+    for key, value in EXPECTED_CATALOG_COUNTS.items():
+        testcase.assertEqual(catalog_counts[key], value)
+
+
+def review_identity(path: Path) -> tuple[str, bool]:
+    text = path.read_text(encoding="utf-8")
+    match = re.search(r"(?im)^(?:reviewer_id|[- ]*reviewer id):\s*`?([^`\s]+)`?", text)
+    if not match:
+        raise AssertionError(f"reviewer identity missing from {path.name}")
+    authorized = bool(re.search(
+        r"(?im)(?:reviewer_authorized_source_access|authorized_source_access|authorized source access):\s*`?true`?",
+        text,
+    ))
+    return match.group(1), authorized
 
 
 class CyberEssentialsPlusEsafToExternalMappingTests(unittest.TestCase):
@@ -374,6 +486,166 @@ class CyberEssentialsPlusEsafToExternalMappingTests(unittest.TestCase):
         self.assertEqual(catalog["counts"]["negative_dispositions"], 213)
         catalog_md = (ROOT / "crosswalks/CATALOG.md").read_text(encoding="utf-8")
         self.assertIn(MAPPING_SET_ID, catalog_md)
+
+    def test_complete_snapshot_is_reconciled_and_publication_metadata_is_synchronized(self) -> None:
+        records = load_snapshot_records()
+        manifest = json.loads((SNAPSHOT / "ESAF_CONTROL_MANIFEST.json").read_text(encoding="utf-8"))
+        catalog = json.loads((ROOT / "crosswalks/catalog.json").read_text(encoding="utf-8"))
+        assert_reconciled_snapshot(
+            self,
+            records,
+            self.oracle_provisions,
+            manifest,
+            catalog["counts"],
+        )
+
+        readme = (SNAPSHOT / "README.md").read_text(encoding="utf-8")
+        landing = (ROOT / "crosswalks/uk-cyber-essentials.md").read_text(encoding="utf-8")
+        backlog = (ROOT / "project/BACKLOG.md").read_text(encoding="utf-8")
+        traceability = TRACEABILITY.read_text(encoding="utf-8")
+        for text in (readme, landing, traceability):
+            for required in (
+                "144",
+                "8 relationship legs",
+                "7 distinct controls",
+                "137 no-direct-mapping dispositions",
+                "complete-publication",
+                "unqualified technical draft",
+                "not the current operational scheme",
+                "certification",
+                "compliance",
+                "equivalence",
+                "full-population assurance",
+                "continuous assurance",
+            ):
+                self.assertIn(required, text)
+        self.assertIn("authorizes design only", landing)
+        self.assertIn("separate, source-versioned", landing)
+        self.assertIn(
+            "At feasibility-decision time: No Cyber Essentials Plus mapping exists.",
+            landing,
+        )
+        self.assertIn("events: []", traceability)
+        self.assertIn(BASELINE_SHA, traceability)
+        self.assertIn(FEASIBILITY_RIGHTS_COMMIT, traceability)
+        self.assertIn("validate_crosswalks.py --check --baseline-ref", traceability)
+        self.assertNotIn("qualified review complete", traceability.lower())
+        self.assertNotIn(
+            "Design the Cyber Essentials Plus v3.2 esaf_to_external mapping.",
+            backlog,
+        )
+        self.assertIn(
+            "Design the Cyber Essentials Plus v3.2 external_to_esaf mapping.",
+            backlog,
+        )
+
+    def test_all_batch_reviews_are_closed_and_final_review_identities_fail_closed_when_present(self) -> None:
+        batches = ("m", "t1", "s", "t2", "t3-001-019", "t3-020-037", "t4", "t5", "c", "a-b")
+        review_root = ROOT / "docs/superpowers/reviews"
+        for batch in batches:
+            for role in ("specification", "overclaiming"):
+                path = review_root / f"2026-07-15-uk-cyber-essentials-plus-v3.2-{batch}-{role}-review.md"
+                with self.subTest(batch=batch, role=role):
+                    self.assertTrue(path.is_file())
+                    reviewer, authorized = review_identity(path)
+                    self.assertTrue(reviewer)
+                    self.assertTrue(authorized)
+                    text = path.read_text(encoding="utf-8").lower()
+                    self.assertRegex(text, r"approved|approval|technical closure")
+
+        final_paths = (FINAL_SPECIFICATION_REVIEW, FINAL_OVERCLAIMING_REVIEW)
+        if any(path.exists() for path in final_paths):
+            self.assertTrue(all(path.is_file() for path in final_paths))
+            rights_reviewer, rights_authorized = review_identity(RIGHTS)
+            self.assertTrue(rights_authorized)
+            identities = [MAPPER_ID, rights_reviewer]
+            for path in final_paths:
+                reviewer, authorized = review_identity(path)
+                self.assertTrue(authorized)
+                identities.append(reviewer)
+            self.assertEqual(len(identities), len(set(identities)))
+
+    def test_whole_snapshot_mutation_matrix_fails_closed(self) -> None:
+        records = load_snapshot_records()
+        manifest = json.loads((SNAPSHOT / "ESAF_CONTROL_MANIFEST.json").read_text(encoding="utf-8"))
+        catalog = json.loads((ROOT / "crosswalks/catalog.json").read_text(encoding="utf-8"))
+        feasibility = json.loads(
+            (ROOT / "docs/superpowers/specs/2026-07-15-uk-cyber-essentials-plus-v3.2-mapping-feasibility-matrix.json").read_text(encoding="utf-8")
+        )
+        feasibility_t5_text = next(
+            probe["rationale"]
+            for probe in feasibility["probes"]
+            if probe["probe_id"] == "esaf-ext-t5-006-privileged-access"
+        )
+
+        def mutate(label: str):
+            candidate = deepcopy(records)
+            candidate_catalog = deepcopy(catalog["counts"])
+            source_digests = SOURCE_FIVE_WORD_DIGESTS
+            indexed = {item["external_provision_id"]: item for item in candidate}
+            positive = indexed["CEPTS3.2-T5-006"]["relationships"][0]
+            if label == "missing record":
+                candidate.pop()
+            elif label == "extra record":
+                extra = deepcopy(candidate[0])
+                extra["external_provision_id"] = "CEPTS3.2-X-999"
+                candidate.append(extra)
+            elif label == "changed oracle metadata":
+                candidate[0]["external_metadata"]["kind"] = "procedure_step"
+            elif label == "stale control digest":
+                positive["esaf_control_sha256"] = "0" * 64
+            elif label == "wrong requirement locator":
+                positive["esaf_requirement_locator"] = "controls/IAM/IAM-120.md#guidance"
+            elif label == "reverse direction":
+                positive["direction"] = "external_to_esaf"
+            elif label == "wrong relationship taxonomy":
+                positive["relationship"] = "prerequisite"
+            elif label == "empty gap":
+                positive["known_gaps"] = []
+            elif label == "condition-created outcome":
+                positive["conditions"] = ["This condition supplies the missing external outcome."]
+            elif label == "generic negative rationale":
+                negative = next(item for item in candidate if item["disposition"] == "no_direct_mapping")
+                negative["negative_rationale"] = "Missing outcome: no direct mapping."
+            elif label == "copied source window":
+                copied = "synthetic copied source window phrase"
+                positive["rationale"] = copied
+                source_digests = {hashlib.sha256(copied.encode("utf-8")).digest()}
+            elif label == "T5-006 feasibility-text reuse":
+                positive["rationale"] = feasibility_t5_text
+            elif label == "stale catalog":
+                candidate_catalog["relationships"] -= 1
+            else:
+                self.fail(f"unknown mutation: {label}")
+            return candidate, candidate_catalog, source_digests
+
+        mutations = (
+            "missing record",
+            "extra record",
+            "changed oracle metadata",
+            "stale control digest",
+            "wrong requirement locator",
+            "reverse direction",
+            "wrong relationship taxonomy",
+            "empty gap",
+            "condition-created outcome",
+            "generic negative rationale",
+            "copied source window",
+            "T5-006 feasibility-text reuse",
+            "stale catalog",
+        )
+        for label in mutations:
+            with self.subTest(label):
+                candidate, candidate_catalog, source_digests = mutate(label)
+                with self.assertRaises(AssertionError):
+                    assert_reconciled_snapshot(
+                        self,
+                        candidate,
+                        self.oracle_provisions,
+                        manifest,
+                        candidate_catalog,
+                        source_window_digests=source_digests,
+                    )
 
     def test_source_copy_guard_rejects_a_surrounded_five_word_window(self) -> None:
         copied = "assessor observes distinct authentication challenge"

@@ -53,11 +53,11 @@ findings: []
 change_history:
   - version: 0.1.0
     date: "2026-07-16"
-    change: Created the empty authoritative draft scaffold and complete provision inventory.
+    change: Created the authoritative draft scaffold, complete provision inventory, and all forward-mapping records.
 ---
 # Cyber Essentials Plus Test Specification v3.2 forward mapping
 
-This authoritative snapshot is an empty public NCSC v3.2 technical draft for the `esaf_to_external` direction. It is not the current operational scheme and does not constitute assessment, certification, compliance, equivalence, or endorsement. The inventory fixes future record order and scope; no provision record has been created yet.
+This authoritative snapshot is a complete-publication, unqualified technical draft: specifically, a public NCSC v3.2 technical draft for the `esaf_to_external` direction. Complete-publication describes inventory coverage of the pinned source only. It is not the current operational scheme and does not constitute assessment, certification, compliance, equivalence, or endorsement; nor does it establish qualified review, full-population assurance, or continuous assurance.
 
 ## Source and immutable pins
 
@@ -89,4 +89,8 @@ NCSC Crown copyright is attributed to the UK National Cyber Security Centre unde
 | B | 14 |
 | **Total** | **144** |
 
-The snapshot, future provision records, relationship legs, and lifecycle remain draft. The lifecycle event array is empty.
+## Draft mapping results
+
+All 144 inventoried provisions have draft records. Seven records contain 8 relationship legs referencing 7 distinct controls, with 137 no-direct-mapping dispositions. All legs are forward-only `esaf_to_external` and narrowly describe contributions from exact normative ESAF requirements. Conditions narrow applicability and do not create missing external outcomes.
+
+The 144 provision records, 8 relationship legs, snapshot, and lifecycle remain draft. The lifecycle event array is empty. Technical reconciliation and batch review do not qualify or approve the mapping and do not establish testing execution, observed results, aggregate sufficiency, certification, compliance, equivalence, current-scheme completeness, full-population assurance, or continuous assurance.
