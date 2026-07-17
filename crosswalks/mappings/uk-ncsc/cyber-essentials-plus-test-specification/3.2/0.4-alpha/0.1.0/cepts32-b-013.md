@@ -1,0 +1,6 @@
+---
+{"schema_version":"1.0.0","record_id":"cepts32-b-013","mapping_set_id":"uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0","status":"draft","external_provision_id":"CEPTS3.2-B-013","granularity":"requirement","external_metadata":{"group":"B","kind":"recommendation","actors":["Delivery Partner"]},"context":{"mode":"paraphrase","summary":"Use executable test files with conspicuous behavior so execution is quickly and easily observable."},"source_locator":{"official_url":"https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf","locator":"PDF page 23; printed page 22; Appendix B: Types of test file; continued guidance, executable behavior"},"disposition":"no_direct_mapping","relationships":[],"negative_rationale":"Missing outcome: designing an observable test artifact does not show that it was executed or that an exact normative ESAF safeguard produced a result.","mapper":{"id":"esaf-crosswalk-editorial-team","date":"2026-07-16","authorized_source_access":true},"change_history":[{"version":"0.1.0","date":"2026-07-16","change":"Created the draft Cyber Essentials Plus v3.2 methodology mapping record."}]}
+---
+# CEPTS3.2-B-013
+
+Draft derivative mapping analysis for the cited Cyber Essentials Plus v3.2 methodology provision.

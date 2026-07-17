@@ -135,6 +135,25 @@ def valid_record(
     return value
 
 
+def valid_record_with_provenance() -> dict[str, object]:
+    value = valid_record()
+    value["external_metadata"] = {
+        "group": "T5",
+        "kind": "result_rule",
+        "actors": ["Assessor"],
+    }
+    value["mapper"]["authorized_source_access"] = True  # type: ignore[index]
+    value["relationships"][0].update(  # type: ignore[index]
+        {
+            "esaf_control_path": "GOV/GOV-100.md",
+            "esaf_control_sha256": SHA256,
+            "esaf_requirement_locator": "controls/GOV/GOV-100.md#requirement",
+            "prohibited_inferences": ["Certification or equivalence"],
+        }
+    )
+    return value
+
+
 def valid_identifier_only_record() -> dict[str, object]:
     value = valid_record()
     value["context"] = {
@@ -383,6 +402,7 @@ class CrosswalkSchemaTests(unittest.TestCase):
             ("provision-inventory", valid_inventory()),
             ("provision-inventory", valid_inventory("declared_subset")),
             ("mapping-record", valid_record()),
+            ("mapping-record", valid_record_with_provenance()),
             ("mapping-record", valid_record("reviewed", "mapped", "clause")),
             ("mapping-record", valid_record("reviewed", "no_direct_mapping")),
             ("mapping-record", valid_record("reviewed", "out_of_scope", "domain")),
@@ -392,6 +412,26 @@ class CrosswalkSchemaTests(unittest.TestCase):
         for schema, value in variants:
             with self.subTest(schema=schema, status=value.get("status")):
                 self.assert_valid(schema, value)
+
+    def test_mapping_record_provenance_extensions_are_optional_but_strict_when_present(self) -> None:
+        self.assert_valid("mapping-record", valid_record())
+        cases = (
+            ("external metadata requires group", lambda value: value["external_metadata"].pop("group")),
+            ("external metadata rejects extra fields", lambda value: value["external_metadata"].__setitem__("extra", "no")),
+            ("actors must be nonempty", lambda value: value["external_metadata"].__setitem__("actors", [])),
+            ("actors must be unique", lambda value: value["external_metadata"].__setitem__("actors", ["Assessor", "Assessor"])),
+            ("mapper access must be authorized", lambda value: value["mapper"].__setitem__("authorized_source_access", False)),
+            ("control path must be nonempty", lambda value: value["relationships"][0].__setitem__("esaf_control_path", "")),
+            ("control digest must be lowercase sha256", lambda value: value["relationships"][0].__setitem__("esaf_control_sha256", "A" * 64)),
+            ("requirement locator must be nonempty", lambda value: value["relationships"][0].__setitem__("esaf_requirement_locator", "")),
+            ("prohibited inferences must be nonempty", lambda value: value["relationships"][0].__setitem__("prohibited_inferences", [])),
+            ("prohibited inferences must be unique", lambda value: value["relationships"][0].__setitem__("prohibited_inferences", ["No equivalence", "No equivalence"])),
+        )
+        for label, mutation in cases:
+            with self.subTest(label=label):
+                value = valid_record_with_provenance()
+                mutation(value)
+                self.assert_invalid("mapping-record", value)
 
     def test_manifest_path_rejects_parent_traversal(self) -> None:
         manifest = valid_manifest()
@@ -560,6 +600,7 @@ class CrosswalkSchemaTests(unittest.TestCase):
             ("mapping-set", valid_mapping_set_with_finding("resolved")),
             ("provision-inventory", valid_inventory()),
             ("mapping-record", valid_record()),
+            ("mapping-record", valid_record_with_provenance()),
             ("mapping-record", valid_record("reviewed", "mapped", "clause")),
             ("mapping-record", valid_record("reviewed", "no_direct_mapping")),
             ("mapping-record", valid_record("reviewed", "out_of_scope", "domain")),

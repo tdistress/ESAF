@@ -199,8 +199,13 @@ class ReleaseMetadataTests(unittest.TestCase):
             disposition = assessment["disposition"]
             if disposition == "GO":
                 expected = f"Design the Cyber Essentials Plus v3.2 {direction} mapping"
-                expected_items.append(expected)
-                self.assertEqual(1, backlog.count(f"- {expected}."))
+                if direction == "esaf_to_external":
+                    # Task 13 separately authorizes implementation of this
+                    # direction, so the completed design item leaves the backlog.
+                    self.assertNotIn(f"- {expected}.", backlog)
+                else:
+                    expected_items.append(expected)
+                    self.assertEqual(1, backlog.count(f"- {expected}."))
             elif disposition == "HOLD":
                 expected = (
                     "Resolve the Cyber Essentials Plus v3.2 "
