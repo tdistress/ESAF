@@ -1,7 +1,7 @@
 ---
 schema_version: 1.0.0
 mapping_set_id: uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0
-snapshot_digest: 25d0adac7d3e2fe8058681783b53a7372957dd38652383654253f46ad9081039
+snapshot_digest: 82710639b09157052392c3eb1ec8e7195a78d9cb420d917146b8dec1d4388057
 events: []
 ---
 # Cyber Essentials Plus v3.2 lifecycle record

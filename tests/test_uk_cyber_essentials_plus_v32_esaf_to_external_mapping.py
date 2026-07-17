@@ -31,7 +31,7 @@ CANONICAL_PDF_SHA256 = "2adf2703dec3b581e13e39c6a1de230bb1bce6d85f1158bb1eb53108
 LEGACY_PDF_SHA256 = "d334c717597a01fab7a362377b7b04c8449568052ed1c4cf48837f6fb3aca694"
 FEASIBILITY_RIGHTS_COMMIT = "4207e1c1e8ff9f743274ebb4b626210cca053458"
 EXPECTED_GROUP_COUNTS = {"M": 24, "T1": 16, "S": 11, "T2": 9, "T3": 37, "T4": 9, "T5": 7, "C": 13, "A": 4, "B": 14}
-COMPLETED_GROUPS: tuple[str, ...] = ("M", "T1", "S", "T2", "T3", "T4", "T5")
+COMPLETED_GROUPS: tuple[str, ...] = ("M", "T1", "S", "T2", "T3", "T4", "T5", "C")
 CANONICAL_PDF_URL = "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
 RESOURCE_PAGE = "https://www.ncsc.gov.uk/cyberessentials/resources"
 MAPPER_ID = "esaf-crosswalk-editorial-team"
@@ -366,12 +366,12 @@ class CyberEssentialsPlusEsafToExternalMappingTests(unittest.TestCase):
         entry = next(item for item in catalog["mapping_sets"] if item["metadata"]["mapping_set_id"] == MAPPING_SET_ID)
         self.assertEqual(entry["metadata"]["status"], "draft")
         self.assertEqual(entry["inventory"]["expected_count"], 144)
-        self.assertEqual(len(entry["provisions"]), 113)
+        self.assertEqual(len(entry["provisions"]), 126)
         self.assertEqual(entry["lifecycle"]["events"], [])
         self.assertEqual(catalog["counts"]["mapping_sets"], 2)
-        self.assertEqual(catalog["counts"]["provisions"], 229)
+        self.assertEqual(catalog["counts"]["provisions"], 242)
         self.assertEqual(catalog["counts"]["relationships"], 49)
-        self.assertEqual(catalog["counts"]["negative_dispositions"], 182)
+        self.assertEqual(catalog["counts"]["negative_dispositions"], 195)
         catalog_md = (ROOT / "crosswalks/CATALOG.md").read_text(encoding="utf-8")
         self.assertIn(MAPPING_SET_ID, catalog_md)
 
@@ -525,6 +525,70 @@ class CyberEssentialsPlusEsafToExternalMappingTests(unittest.TestCase):
             self.oracle_provisions,
             manifest,
             COMPLETED_GROUPS,
+        )
+
+    def test_c_discretionary_exception_preserves_owner_and_conjunction(self) -> None:
+        for number in (8, 10, 11):
+            self.assertTrue(
+                (SNAPSHOT / f"cepts32-c-{number:03d}.md").is_file(),
+                f"C-{number:03d} discretionary-boundary record is missing",
+            )
+        records = {
+            external_id: parse_front_matter(
+                SNAPSHOT / f"cepts32-c-{number:03d}.md"
+            )[0]
+            for number, external_id in (
+                (8, "CEPTS3.2-C-008"),
+                (10, "CEPTS3.2-C-010"),
+                (11, "CEPTS3.2-C-011"),
+            )
+        }
+        for external_id, record in records.items():
+            with self.subTest(external_id=external_id):
+                self.assertEqual(record["external_metadata"]["actors"], ["Delivery Partner"])
+                self.assertEqual(record["disposition"], "no_direct_mapping")
+                self.assertEqual(record["relationships"], [])
+
+        combined = " ".join(
+            record["negative_rationale"].lower() for record in records.values()
+        )
+        for term in (
+            "delivery partner",
+            "both predicates",
+            "less than five percent",
+            "broader failure",
+            "revise an observation",
+            "overall pass",
+        ):
+            self.assertIn(term, combined)
+
+    def test_c_batch_universe_and_counts_are_exact(self) -> None:
+        records = [
+            parse_front_matter(SNAPSHOT / f"cepts32-c-{number:03d}.md")[0]
+            for number in range(1, 14)
+        ]
+        expected_ids = {f"CEPTS3.2-C-{number:03d}" for number in range(1, 14)}
+        oracle_ids = {
+            provision["external_provision_id"]
+            for provision in self.oracle_provisions
+            if provision["group"] == "C"
+        }
+        self.assertEqual(oracle_ids, expected_ids)
+        self.assertEqual(
+            {record["external_provision_id"] for record in records}, expected_ids
+        )
+        self.assertEqual(
+            {
+                record["external_provision_id"]
+                for record in records
+                if record["disposition"] == "mapped"
+            },
+            set(),
+        )
+        self.assertEqual(sum(len(record["relationships"]) for record in records), 0)
+        self.assertEqual(
+            sum(record["disposition"] == "no_direct_mapping" for record in records),
+            13,
         )
 
     def test_m_batch_positive_set_and_counts_are_exact(self) -> None:
