@@ -4,34 +4,34 @@
       "uk-ncsc": 2
     },
     "by_confidence": {
-      "high": 35,
+      "high": 37,
       "low": 1,
       "medium": 11
     },
     "by_coverage": {
-      "narrow": 45,
+      "narrow": 47,
       "partial": 2
     },
     "by_direction": {
-      "esaf_to_external": 47
+      "esaf_to_external": 49
     },
     "by_disposition": {
-      "mapped": 46,
-      "no_direct_mapping": 176
+      "mapped": 47,
+      "no_direct_mapping": 182
     },
     "by_esaf_release": {
       "0.4-alpha": 2
     },
     "by_lifecycle_state": {},
     "by_provision_status": {
-      "draft": 222
+      "draft": 229
     },
     "by_publication": {
       "cyber-essentials-plus-test-specification": 1,
       "cyber-essentials-requirements-for-it-infrastructure": 1
     },
     "by_relationship": {
-      "partially_supports": 46,
+      "partially_supports": 48,
       "prerequisite": 1
     },
     "by_snapshot_status": {
@@ -42,9 +42,9 @@
       "3.3": 1
     },
     "mapping_sets": 2,
-    "negative_dispositions": 176,
-    "provisions": 222,
-    "relationships": 47
+    "negative_dispositions": 182,
+    "provisions": 229,
+    "relationships": 49
   },
   "generated_from": "crosswalks/mappings/** and crosswalks/registry/*.md",
   "mapping_sets": [
@@ -207,7 +207,7 @@
         "events": [],
         "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
         "schema_version": "1.0.0",
-        "snapshot_digest": "6bf590bf6c82f883b9b12276eb60b46f2dce79506befc6e60363868819bb80ff"
+        "snapshot_digest": "1b941da1a549648c603633a12a506c7ea55753f0762226e1b3bfed2118409f25"
       },
       "metadata": {
         "authority": {
@@ -4784,6 +4784,345 @@
             "status": "draft"
           },
           "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-t4-009.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 methodology mapping record.",
+                "date": "2026-07-16",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Perform Test case 5 on sampled end-user devices, interactive-desktop servers, and cloud environments able to run administrative processes."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "T5",
+              "kind": "applicability"
+            },
+            "external_provision_id": "CEPTS3.2-T5-001",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-16",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "Missing outcome: ESAF does not require the Assessor to perform this external test across the sampled devices and environments able to run administrative processes; access controls do not establish that assessment population or procedure.",
+            "record_id": "cepts32-t5-001",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 19; printed page 18; Test case 5; unheaded applicability line",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-t5-001.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 methodology mapping record.",
+                "date": "2026-07-16",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "While a standard user account is signed in, have the user attempt a defined administrative process."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "T5",
+              "kind": "procedure_step"
+            },
+            "external_provision_id": "CEPTS3.2-T5-002",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-16",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "Missing outcome: ESAF does not require the Assessor to arrange this external exercise from a signed-in standard account or have a user attempt the specified administrative process; authorization safeguards do not demonstrate procedure execution.",
+            "record_id": "cepts32-t5-002",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 19; printed page 18; Test description; standard-account exercise",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-t5-002.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 methodology mapping record.",
+                "date": "2026-07-16",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Test every sampled device."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "T5",
+              "kind": "applicability"
+            },
+            "external_provision_id": "CEPTS3.2-T5-003",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-16",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "Missing outcome: ESAF does not require the Assessor to execute this external test on every sampled device; organizational access requirements do not define or complete the external sample population.",
+            "record_id": "cepts32-t5-003",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 19; printed page 18; Test description; complete sample coverage sentence",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-t5-003.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 methodology mapping record.",
+                "date": "2026-07-16",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Observe a user with the current account attempt an administrative process appropriate to the sampled operating system."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "T5",
+              "kind": "procedure_step"
+            },
+            "external_provision_id": "CEPTS3.2-T5-004",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-16",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "Missing outcome: ESAF does not require the Assessor to observe the current-account user launch an operating-system-specific administrative process; implementation requirements do not establish that the external action or observation occurred.",
+            "record_id": "cepts32-t5-004",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 19; printed page 18; Test case 5; administrative-process observation",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-t5-004.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 methodology mapping record.",
+                "date": "2026-07-16",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Repeat the exercise across all devices sampled for the audit."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "T5",
+              "kind": "procedure_step"
+            },
+            "external_provision_id": "CEPTS3.2-T5-005",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-16",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "Missing outcome: ESAF does not require the Assessor to repeat this external administrative-process exercise across every device in the audit sample; control coverage does not supply procedure repetition or sampled-device completion.",
+            "record_id": "cepts32-t5-005",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 19; printed page 18; Test case 5; repetition step",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-t5-005.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 methodology mapping record.",
+                "date": "2026-07-16",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Pass only if another login is requested and ordinary user credentials cannot run the process; otherwise fail."
+            },
+            "disposition": "mapped",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "T5",
+              "kind": "result_rule"
+            },
+            "external_provision_id": "CEPTS3.2-T5-006",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-16",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
+            "record_id": "cepts32-t5-006",
+            "relationships": [
+              {
+                "conditions": [
+                  "The administrative process is an AI action within IAM-120 and the ordinary user role is not approved to perform it."
+                ],
+                "confidence": "high",
+                "coverage": "narrow",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "IAM-120",
+                "esaf_control_path": "IAM/IAM-120.md",
+                "esaf_control_sha256": "9b411d87ff1355bed1af5aca18313f87ecf0342030484cfe51966cc89a6f4198",
+                "esaf_control_version": "0.1.0",
+                "esaf_requirement_locator": "controls/IAM/IAM-120.md#requirement",
+                "expected_evidence": [
+                  "An authorization policy and enforcement configuration show that the in-scope administrative AI action is denied to the ordinary user role."
+                ],
+                "known_gaps": [
+                  "IAM-120 does not categorically define ordinary user credentials or require a separate-authentication challenge for the process.",
+                  "IAM-120 does not launch or execute the external procedure, select a device or tested population, establish an observed result, or assign the aggregate pass-or-fail verdict."
+                ],
+                "prohibited_inferences": [
+                  "No inference that ordinary credentials were entered, an additional login was requested, or the administrative process was attempted or executed.",
+                  "No inference of device or population coverage, observation, aggregate result, procedure completion, certification, compliance, equivalence, or endorsement."
+                ],
+                "rationale": "IAM-120 directly requires authorization of an administrative AI action according to approved role and least privilege, contributing to restricting that action from a standard user whose role is not approved for it.",
+                "relationship": "partially_supports"
+              },
+              {
+                "conditions": [
+                  "The administrative process uses privileged access capable of changing at least one AI asset enumerated by IAM-130."
+                ],
+                "confidence": "high",
+                "coverage": "narrow",
+                "direction": "esaf_to_external",
+                "esaf_control_id": "IAM-130",
+                "esaf_control_path": "IAM/IAM-130.md",
+                "esaf_control_sha256": "4bc87d20659c2c794c4268f02a2c2699802b2d079c48803601a962853c4c6576",
+                "esaf_control_version": "0.1.0",
+                "esaf_requirement_locator": "controls/IAM/IAM-130.md#requirement",
+                "expected_evidence": [
+                  "Privileged-access policy and authentication configuration demonstrate restriction of the in-scope process and a distinct authentication control for its privileged access."
+                ],
+                "known_gaps": [
+                  "IAM-130 does not prescribe the external meaning of ordinary user credentials or the exact separate-authentication prompt that the Assessor must observe.",
+                  "IAM-130 does not execute the external procedure on a device, cover the tested population, establish the observed attempt and result, or assign the aggregate pass-or-fail verdict."
+                ],
+                "prohibited_inferences": [
+                  "No inference that a user entered ordinary credentials, received an additional login request, or ran the administrative process.",
+                  "No inference of device or population coverage, observed outcome, aggregate result, procedure completion, certification, compliance, equivalence, or endorsement."
+                ],
+                "rationale": "IAM-130 directly requires the organization to restrict and separately authenticate privileged access capable of changing an enumerated AI asset, contributing to both access predicates for such a process.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 19; printed page 18; Test case 5; conjunctive process result",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-t5-006.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 methodology mapping record.",
+                "date": "2026-07-16",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Pass Test case 5 only when all sub-tests pass across every sampled device; otherwise fail the case."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "T5",
+              "kind": "result_rule"
+            },
+            "external_provision_id": "CEPTS3.2-T5-007",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-16",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "Missing outcome: ESAF does not require the Assessor to aggregate all Test case 5 sub-tests across every sampled device into this pass-or-fail decision; access safeguards do not supply the external result chain.",
+            "record_id": "cepts32-t5-007",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 19; printed page 18; Interpreting the test case results; complete aggregate result rule",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-t5-007.md"
         }
       ]
     },
