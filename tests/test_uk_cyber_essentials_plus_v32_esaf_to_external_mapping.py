@@ -35,9 +35,6 @@ COMPLETED_GROUPS: tuple[str, ...] = ("M", "T1", "S", "T2", "T3", "T4", "T5")
 CANONICAL_PDF_URL = "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
 RESOURCE_PAGE = "https://www.ncsc.gov.uk/cyberessentials/resources"
 MAPPER_ID = "esaf-crosswalk-editorial-team"
-PERMITTED_ORACLE_SUMMARY_WINDOW_DIGESTS = {
-    hashlib.sha256(b"test on every sampled device").digest(),
-}
 
 
 def record_id(external_id: str) -> str:
@@ -91,8 +88,6 @@ def assert_no_copied_source_windows(
             if any(window in phrase for phrase in PERMITTED_SOURCE_IDENTITY_PROSE):
                 continue
             digest = hashlib.sha256(window.encode("utf-8")).digest()
-            if digest in PERMITTED_ORACLE_SUMMARY_WINDOW_DIGESTS:
-                continue
             testcase.assertNotIn(
                 digest,
                 source_window_digests,
@@ -387,6 +382,16 @@ class CyberEssentialsPlusEsafToExternalMappingTests(unittest.TestCase):
             assert_no_copied_source_windows(
                 self,
                 [f"Before review, {copied}, during the bounded check."],
+                source_window_digests=supplied,
+            )
+
+    def test_source_copy_guard_rejects_t5_003_derivative_window(self) -> None:
+        copied = "test on every sampled device"
+        supplied = {hashlib.sha256(copied.encode("utf-8")).digest()}
+        with self.assertRaises(AssertionError):
+            assert_no_copied_source_windows(
+                self,
+                [f"The external {copied} before aggregation."],
                 source_window_digests=supplied,
             )
 

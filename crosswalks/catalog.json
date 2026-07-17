@@ -207,7 +207,7 @@
         "events": [],
         "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
         "schema_version": "1.0.0",
-        "snapshot_digest": "1b941da1a549648c603633a12a506c7ea55753f0762226e1b3bfed2118409f25"
+        "snapshot_digest": "25d0adac7d3e2fe8058681783b53a7372957dd38652383654253f46ad9081039"
       },
       "metadata": {
         "authority": {
@@ -4896,7 +4896,7 @@
               "id": "esaf-crosswalk-editorial-team"
             },
             "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
-            "negative_rationale": "Missing outcome: ESAF does not require the Assessor to execute this external test on every sampled device; organizational access requirements do not define or complete the external sample population.",
+            "negative_rationale": "Missing outcome: ESAF does not require the Assessor to execute this external assessment throughout the selected device sample; organizational access requirements do not define or complete that assessment population.",
             "record_id": "cepts32-t5-003",
             "relationships": [],
             "schema_version": "1.0.0",
