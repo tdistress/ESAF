@@ -17,14 +17,14 @@
     },
     "by_disposition": {
       "mapped": 47,
-      "no_direct_mapping": 195
+      "no_direct_mapping": 213
     },
     "by_esaf_release": {
       "0.4-alpha": 2
     },
     "by_lifecycle_state": {},
     "by_provision_status": {
-      "draft": 242
+      "draft": 260
     },
     "by_publication": {
       "cyber-essentials-plus-test-specification": 1,
@@ -42,8 +42,8 @@
       "3.3": 1
     },
     "mapping_sets": 2,
-    "negative_dispositions": 195,
-    "provisions": 242,
+    "negative_dispositions": 213,
+    "provisions": 260,
     "relationships": 49
   },
   "generated_from": "crosswalks/mappings/** and crosswalks/registry/*.md",
@@ -207,7 +207,7 @@
         "events": [],
         "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
         "schema_version": "1.0.0",
-        "snapshot_digest": "82710639b09157052392c3eb1ec8e7195a78d9cb420d917146b8dec1d4388057"
+        "snapshot_digest": "7fd8388923c3ac0e05cbfa7e448ca25161ef2213563d48198288b0f3c9a560dc"
       },
       "metadata": {
         "authority": {
@@ -280,6 +280,744 @@
       },
       "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/README.md",
       "provisions": [
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 methodology mapping record.",
+                "date": "2026-07-16",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "For Plus testing, restrict vulnerability scanners to those the Delivery Partner authorizes."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "A",
+              "kind": "prerequisite"
+            },
+            "external_provision_id": "CEPTS3.2-A-001",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-16",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "Missing outcome: scanner authorization does not establish execution, produce scanner output, or supply an observed result against an exact normative ESAF safeguard.",
+            "record_id": "cepts32-a-001",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 21; printed page 20; Appendix A: Vulnerability scanning; first appendix item",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-a-001.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 methodology mapping record.",
+                "date": "2026-07-16",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Scan every IP address associated with the Applicant."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "A",
+              "kind": "procedure_step"
+            },
+            "external_provision_id": "CEPTS3.2-A-002",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-16",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "Missing outcome: address coverage directs scanner execution but supplies no scanner output, observed result, or evidence that an exact normative ESAF safeguard is implemented.",
+            "record_id": "cepts32-a-002",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 21; printed page 20; Appendix A: Vulnerability scanning; second appendix item, address coverage",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-a-002.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 methodology mapping record.",
+                "date": "2026-07-16",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "A Delivery Partner-specified limited port range may be scanned instead of every port on every address."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "A",
+              "kind": "recommendation"
+            },
+            "external_provision_id": "CEPTS3.2-A-003",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-16",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "Missing outcome: port coverage and Delivery Partner scoping define a scan boundary but provide neither an observed result nor evidence of an exact normative ESAF safeguard.",
+            "record_id": "cepts32-a-003",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 21; printed page 20; Appendix A: Vulnerability scanning; second appendix item, limited-port clause",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-a-003.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 methodology mapping record.",
+                "date": "2026-07-16",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Give Assessors the TCP and UDP port inventory for scanning."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Delivery Partner"
+              ],
+              "group": "A",
+              "kind": "recommendation"
+            },
+            "external_provision_id": "CEPTS3.2-A-004",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-16",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "Missing outcome: supplying a port inventory supports procedure setup only; it does not establish scanner execution, scanner output, or an observed ESAF control result.",
+            "record_id": "cepts32-a-004",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 21; printed page 20; Note for Delivery Partner; port-list recommendation",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-a-004.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 methodology mapping record.",
+                "date": "2026-07-16",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Supply each Certification Body with every assessment file needed for testing."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Delivery Partner"
+              ],
+              "group": "B",
+              "kind": "procedure_step"
+            },
+            "external_provision_id": "CEPTS3.2-B-001",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-16",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "Missing outcome: providing every required file preserves complete-file assembly for assessment preparation but does not show that any exact normative ESAF safeguard is implemented or tested.",
+            "record_id": "cepts32-b-001",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 22; printed page 21; Appendix B: Types of test file; opening responsibility sentence",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-b-001.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 methodology mapping record.",
+                "date": "2026-07-16",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Define an Applicant-appropriate subset of the test-file set for the Assessor to use."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Certification Body"
+              ],
+              "group": "B",
+              "kind": "procedure_step"
+            },
+            "external_provision_id": "CEPTS3.2-B-002",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-16",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "Missing outcome: subset definition tailors assessment inputs but neither performs a technical check nor evidences implementation of an exact normative ESAF safeguard.",
+            "record_id": "cepts32-b-002",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 22; printed page 21; Appendix B: Types of test file; subset-definition responsibility",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-b-002.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 methodology mapping record.",
+                "date": "2026-07-16",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Host the Applicant-specific test-file subset."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Certification Body"
+              ],
+              "group": "B",
+              "kind": "procedure_step"
+            },
+            "external_provision_id": "CEPTS3.2-B-003",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-16",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "Missing outcome: hosting an assessment-file subset establishes availability only; it provides no observed result or normative ESAF implementation evidence.",
+            "record_id": "cepts32-b-003",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 22; printed page 21; Appendix B: Types of test file; subset-hosting responsibility",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-b-003.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 methodology mapping record.",
+                "date": "2026-07-16",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Confirm with the Certification Body that the correct files will be supplied for each test."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "B",
+              "kind": "prerequisite"
+            },
+            "external_provision_id": "CEPTS3.2-B-004",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-16",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "Missing outcome: confirming prospective file supply is a procedural prerequisite, not proof that a test ran or that an exact normative ESAF safeguard is implemented.",
+            "record_id": "cepts32-b-004",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 22; printed page 21; Appendix B: Types of test file; correct-file check",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-b-004.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 methodology mapping record.",
+                "date": "2026-07-16",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Expect anti-malware controls to detect malware test files and prevent user access."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "B",
+              "kind": "decision_rule"
+            },
+            "external_provision_id": "CEPTS3.2-B-005",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-16",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "Missing outcome: this expected external behavior does not record an observation that anti-malware protection exists or materially supports any exact normative ESAF requirement.",
+            "record_id": "cepts32-b-005",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 22; printed page 21; Appendix B: Types of test file; malware-file group criterion",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-b-005.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 methodology mapping record.",
+                "date": "2026-07-16",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Expect executable test files to trigger at least a warning and a user choice before execution."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "B",
+              "kind": "decision_rule"
+            },
+            "external_provision_id": "CEPTS3.2-B-006",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-16",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "Missing outcome: an external evaluation criterion is not an observed warning, user decision, or implementation result for an exact normative ESAF safeguard.",
+            "record_id": "cepts32-b-006",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 22; printed page 21; Appendix B: Types of test file; executable-file group criterion",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-b-006.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 methodology mapping record.",
+                "date": "2026-07-16",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Beforehand, give the Certification Body assessment files covering the file types Applicants are expected to encounter."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Delivery Partner"
+              ],
+              "group": "B",
+              "kind": "procedure_step"
+            },
+            "external_provision_id": "CEPTS3.2-B-007",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-16",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "Missing outcome: providing a representative set supports file availability but cannot prove test execution or implementation of an exact normative ESAF safeguard.",
+            "record_id": "cepts32-b-007",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 22; printed page 21; Note for Delivery Partner; representative-set duty",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-b-007.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 methodology mapping record.",
+                "date": "2026-07-16",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Encourage each Certification Body to customize the Assessor file subset for the Applicant."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Delivery Partner"
+              ],
+              "group": "B",
+              "kind": "recommendation"
+            },
+            "external_provision_id": "CEPTS3.2-B-008",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-16",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "Missing outcome: encouraging tailoring of assessment inputs does not define, execute, or observe an exact normative ESAF implementation outcome.",
+            "record_id": "cepts32-b-008",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 22; printed page 21; Note for Delivery Partner; tailoring recommendation",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-b-008.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 methodology mapping record.",
+                "date": "2026-07-16",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Make each Applicant-specific subset reflect that Applicant's applications and platforms."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Certification Body"
+              ],
+              "group": "B",
+              "kind": "recommendation"
+            },
+            "external_provision_id": "CEPTS3.2-B-009",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-16",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "Missing outcome: Applicant-specific tailoring improves input relevance but is not evidence that testing occurred or that an exact normative ESAF safeguard is implemented.",
+            "record_id": "cepts32-b-009",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 22; printed page 21; Note for Delivery Partner; subset-relevance recommendation",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-b-009.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 methodology mapping record.",
+                "date": "2026-07-16",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Include container formats the Applicant environment can process in the representative full test-file set."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Delivery Partner"
+              ],
+              "group": "B",
+              "kind": "applicability"
+            },
+            "external_provision_id": "CEPTS3.2-B-010",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-16",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "Missing outcome: this complete-file assembly category identifies candidate assessment inputs only and provides no technical observation or normative ESAF implementation evidence.",
+            "record_id": "cepts32-b-010",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 22; printed page 21; Appendix B: Types of test file; full-set list, container formats",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-b-010.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 methodology mapping record.",
+                "date": "2026-07-16",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Include file types that common platforms execute by default, encompassing native programs and script formats."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Delivery Partner"
+              ],
+              "group": "B",
+              "kind": "applicability"
+            },
+            "external_provision_id": "CEPTS3.2-B-011",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-16",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "Missing outcome: an executable-format category contributes to complete-file assembly but neither runs a procedure nor establishes an exact normative ESAF safeguard outcome.",
+            "record_id": "cepts32-b-011",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 22; printed page 21; Appendix B: Types of test file; full-set list, executable formats",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-b-011.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 methodology mapping record.",
+                "date": "2026-07-16",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Include routinely received file types, such as office documents, that contain inert malware samples."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Delivery Partner"
+              ],
+              "group": "B",
+              "kind": "applicability"
+            },
+            "external_provision_id": "CEPTS3.2-B-012",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-16",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "Missing outcome: a routine-format category contributes to complete-file assembly but supplies no observed protection result or exact normative ESAF implementation evidence.",
+            "record_id": "cepts32-b-012",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 22; printed page 21; Appendix B: Types of test file; full-set list, routine file formats",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-b-012.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 methodology mapping record.",
+                "date": "2026-07-16",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Use executable test files with conspicuous behavior so execution is quickly and easily observable."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Delivery Partner"
+              ],
+              "group": "B",
+              "kind": "recommendation"
+            },
+            "external_provision_id": "CEPTS3.2-B-013",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-16",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "Missing outcome: designing an observable test artifact does not show that it was executed or that an exact normative ESAF safeguard produced a result.",
+            "record_id": "cepts32-b-013",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 23; printed page 22; Appendix B: Types of test file; continued guidance, executable behavior",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-b-013.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 methodology mapping record.",
+                "date": "2026-07-16",
+                "version": "0.1.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Use specific inert malware samples known to be detected by most common antivirus products."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Delivery Partner"
+              ],
+              "group": "B",
+              "kind": "recommendation"
+            },
+            "external_provision_id": "CEPTS3.2-B-014",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-16",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
+            "negative_rationale": "Missing outcome: selecting a generally detectable inert sample defines test material only; it is not an observed detection or normative ESAF implementation result.",
+            "record_id": "cepts32-b-014",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 23; printed page 22; Appendix B: Types of test file; continued guidance, malware samples",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-b-014.md"
+        },
         {
           "metadata": {
             "change_history": [

@@ -31,7 +31,7 @@ CANONICAL_PDF_SHA256 = "2adf2703dec3b581e13e39c6a1de230bb1bce6d85f1158bb1eb53108
 LEGACY_PDF_SHA256 = "d334c717597a01fab7a362377b7b04c8449568052ed1c4cf48837f6fb3aca694"
 FEASIBILITY_RIGHTS_COMMIT = "4207e1c1e8ff9f743274ebb4b626210cca053458"
 EXPECTED_GROUP_COUNTS = {"M": 24, "T1": 16, "S": 11, "T2": 9, "T3": 37, "T4": 9, "T5": 7, "C": 13, "A": 4, "B": 14}
-COMPLETED_GROUPS: tuple[str, ...] = ("M", "T1", "S", "T2", "T3", "T4", "T5", "C")
+COMPLETED_GROUPS: tuple[str, ...] = ("M", "T1", "S", "T2", "T3", "T4", "T5", "C", "A", "B")
 CANONICAL_PDF_URL = "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
 RESOURCE_PAGE = "https://www.ncsc.gov.uk/cyberessentials/resources"
 MAPPER_ID = "esaf-crosswalk-editorial-team"
@@ -366,12 +366,12 @@ class CyberEssentialsPlusEsafToExternalMappingTests(unittest.TestCase):
         entry = next(item for item in catalog["mapping_sets"] if item["metadata"]["mapping_set_id"] == MAPPING_SET_ID)
         self.assertEqual(entry["metadata"]["status"], "draft")
         self.assertEqual(entry["inventory"]["expected_count"], 144)
-        self.assertEqual(len(entry["provisions"]), 126)
+        self.assertEqual(len(entry["provisions"]), 144)
         self.assertEqual(entry["lifecycle"]["events"], [])
         self.assertEqual(catalog["counts"]["mapping_sets"], 2)
-        self.assertEqual(catalog["counts"]["provisions"], 242)
+        self.assertEqual(catalog["counts"]["provisions"], 260)
         self.assertEqual(catalog["counts"]["relationships"], 49)
-        self.assertEqual(catalog["counts"]["negative_dispositions"], 195)
+        self.assertEqual(catalog["counts"]["negative_dispositions"], 213)
         catalog_md = (ROOT / "crosswalks/CATALOG.md").read_text(encoding="utf-8")
         self.assertIn(MAPPING_SET_ID, catalog_md)
 
@@ -525,6 +525,74 @@ class CyberEssentialsPlusEsafToExternalMappingTests(unittest.TestCase):
             self.oracle_provisions,
             manifest,
             COMPLETED_GROUPS,
+        )
+
+    def test_a_tool_authorization_and_execution_boundaries_are_preserved(self) -> None:
+        records = [
+            parse_front_matter(SNAPSHOT / f"cepts32-a-{number:03d}.md")[0]
+            for number in range(1, 5)
+        ]
+        self.assertEqual(
+            {record["external_provision_id"] for record in records},
+            {f"CEPTS3.2-A-{number:03d}" for number in range(1, 5)},
+        )
+        self.assertTrue(all(record["disposition"] == "no_direct_mapping" for record in records))
+        self.assertTrue(all(record["relationships"] == [] for record in records))
+        combined = " ".join(record["negative_rationale"].lower() for record in records)
+        for term in (
+            "authorization does not establish execution",
+            "scanner output",
+            "observed result",
+            "address coverage",
+            "port coverage",
+        ):
+            self.assertIn(term, combined)
+
+    def test_b_complete_file_and_tailoring_boundaries_are_preserved(self) -> None:
+        records = {
+            record["external_provision_id"]: record
+            for record in (
+                parse_front_matter(SNAPSHOT / f"cepts32-b-{number:03d}.md")[0]
+                for number in range(1, 15)
+            )
+        }
+        self.assertEqual(
+            set(records), {f"CEPTS3.2-B-{number:03d}" for number in range(1, 15)}
+        )
+        self.assertTrue(all(record["disposition"] == "no_direct_mapping" for record in records.values()))
+        self.assertTrue(all(record["relationships"] == [] for record in records.values()))
+        complete_file_analysis = " ".join(
+            records[external_id]["negative_rationale"].lower()
+            for external_id in ("CEPTS3.2-B-001", "CEPTS3.2-B-007", "CEPTS3.2-B-010", "CEPTS3.2-B-011", "CEPTS3.2-B-012")
+        )
+        for term in ("every required file", "representative set", "complete-file assembly"):
+            self.assertIn(term, complete_file_analysis)
+        tailoring_analysis = " ".join(
+            records[external_id]["negative_rationale"].lower()
+            for external_id in ("CEPTS3.2-B-002", "CEPTS3.2-B-003", "CEPTS3.2-B-008", "CEPTS3.2-B-009")
+        )
+        for term in ("subset definition", "hosting", "tailoring"):
+            self.assertIn(term, tailoring_analysis)
+
+    def test_a_b_batch_counts_complete_the_snapshot(self) -> None:
+        records = [
+            parse_front_matter(SNAPSHOT / path.name)[0]
+            for path in SNAPSHOT.glob("cepts32-*.md")
+        ]
+        self.assertEqual(len(records), 144)
+        self.assertEqual(
+            Counter(record["external_metadata"]["group"] for record in records),
+            Counter(EXPECTED_GROUP_COUNTS),
+        )
+        appendix = [
+            record for record in records
+            if record["external_metadata"]["group"] in {"A", "B"}
+        ]
+        self.assertEqual(len(appendix), 18)
+        self.assertEqual(sum(len(record["relationships"]) for record in appendix), 0)
+        self.assertEqual(
+            sum(record["disposition"] == "no_direct_mapping" for record in appendix),
+            18,
         )
 
     def test_c_discretionary_exception_preserves_owner_and_conjunction(self) -> None:

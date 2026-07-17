@@ -1,0 +1,6 @@
+---
+{"schema_version":"1.0.0","record_id":"cepts32-b-011","mapping_set_id":"uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0","status":"draft","external_provision_id":"CEPTS3.2-B-011","granularity":"requirement","external_metadata":{"group":"B","kind":"applicability","actors":["Delivery Partner"]},"context":{"mode":"paraphrase","summary":"Include file types that common platforms execute by default, encompassing native programs and script formats."},"source_locator":{"official_url":"https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf","locator":"PDF page 22; printed page 21; Appendix B: Types of test file; full-set list, executable formats"},"disposition":"no_direct_mapping","relationships":[],"negative_rationale":"Missing outcome: an executable-format category contributes to complete-file assembly but neither runs a procedure nor establishes an exact normative ESAF safeguard outcome.","mapper":{"id":"esaf-crosswalk-editorial-team","date":"2026-07-16","authorized_source_access":true},"change_history":[{"version":"0.1.0","date":"2026-07-16","change":"Created the draft Cyber Essentials Plus v3.2 methodology mapping record."}]}
+---
+# CEPTS3.2-B-011
+
+Draft derivative mapping analysis for the cited Cyber Essentials Plus v3.2 methodology provision.
