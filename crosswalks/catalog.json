@@ -1,7 +1,7 @@
 {
   "counts": {
     "by_authority": {
-      "uk-ncsc": 2
+      "uk-ncsc": 3
     },
     "by_confidence": {
       "high": 37,
@@ -20,14 +20,14 @@
       "no_direct_mapping": 213
     },
     "by_esaf_release": {
-      "0.4-alpha": 2
+      "0.4-alpha": 3
     },
     "by_lifecycle_state": {},
     "by_provision_status": {
       "draft": 260
     },
     "by_publication": {
-      "cyber-essentials-plus-test-specification": 1,
+      "cyber-essentials-plus-test-specification": 2,
       "cyber-essentials-requirements-for-it-infrastructure": 1
     },
     "by_relationship": {
@@ -35,13 +35,13 @@
       "prerequisite": 1
     },
     "by_snapshot_status": {
-      "draft": 2
+      "draft": 3
     },
     "by_source_version": {
-      "3.2": 1,
+      "3.2": 2,
       "3.3": 1
     },
-    "mapping_sets": 2,
+    "mapping_sets": 3,
     "negative_dispositions": 213,
     "provisions": 260,
     "relationships": 49
@@ -6396,6 +6396,239 @@
           "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-t5-007.md"
         }
       ]
+    },
+    {
+      "inventory": {
+        "expected_count": 144,
+        "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+        "provision_ids": [
+          "CEPTS3.2-M-001",
+          "CEPTS3.2-M-002",
+          "CEPTS3.2-M-003",
+          "CEPTS3.2-M-004",
+          "CEPTS3.2-M-005",
+          "CEPTS3.2-M-006",
+          "CEPTS3.2-M-007",
+          "CEPTS3.2-M-008",
+          "CEPTS3.2-M-009",
+          "CEPTS3.2-M-010",
+          "CEPTS3.2-M-011",
+          "CEPTS3.2-M-012",
+          "CEPTS3.2-M-013",
+          "CEPTS3.2-M-014",
+          "CEPTS3.2-M-015",
+          "CEPTS3.2-M-016",
+          "CEPTS3.2-M-017",
+          "CEPTS3.2-M-018",
+          "CEPTS3.2-M-019",
+          "CEPTS3.2-M-020",
+          "CEPTS3.2-M-021",
+          "CEPTS3.2-M-022",
+          "CEPTS3.2-M-023",
+          "CEPTS3.2-M-024",
+          "CEPTS3.2-T1-001",
+          "CEPTS3.2-T1-002",
+          "CEPTS3.2-T1-003",
+          "CEPTS3.2-T1-004",
+          "CEPTS3.2-T1-005",
+          "CEPTS3.2-T1-006",
+          "CEPTS3.2-T1-007",
+          "CEPTS3.2-T1-008",
+          "CEPTS3.2-T1-009",
+          "CEPTS3.2-T1-010",
+          "CEPTS3.2-T1-011",
+          "CEPTS3.2-T1-012",
+          "CEPTS3.2-T1-013",
+          "CEPTS3.2-T1-014",
+          "CEPTS3.2-T1-015",
+          "CEPTS3.2-T1-016",
+          "CEPTS3.2-S-001",
+          "CEPTS3.2-S-002",
+          "CEPTS3.2-S-003",
+          "CEPTS3.2-S-004",
+          "CEPTS3.2-S-005",
+          "CEPTS3.2-S-006",
+          "CEPTS3.2-S-007",
+          "CEPTS3.2-S-008",
+          "CEPTS3.2-S-009",
+          "CEPTS3.2-S-010",
+          "CEPTS3.2-S-011",
+          "CEPTS3.2-T2-001",
+          "CEPTS3.2-T2-002",
+          "CEPTS3.2-T2-003",
+          "CEPTS3.2-T2-004",
+          "CEPTS3.2-T2-005",
+          "CEPTS3.2-T2-006",
+          "CEPTS3.2-T2-007",
+          "CEPTS3.2-T2-008",
+          "CEPTS3.2-T2-009",
+          "CEPTS3.2-T3-001",
+          "CEPTS3.2-T3-002",
+          "CEPTS3.2-T3-003",
+          "CEPTS3.2-T3-004",
+          "CEPTS3.2-T3-005",
+          "CEPTS3.2-T3-006",
+          "CEPTS3.2-T3-007",
+          "CEPTS3.2-T3-008",
+          "CEPTS3.2-T3-009",
+          "CEPTS3.2-T3-010",
+          "CEPTS3.2-T3-011",
+          "CEPTS3.2-T3-012",
+          "CEPTS3.2-T3-013",
+          "CEPTS3.2-T3-014",
+          "CEPTS3.2-T3-015",
+          "CEPTS3.2-T3-016",
+          "CEPTS3.2-T3-017",
+          "CEPTS3.2-T3-018",
+          "CEPTS3.2-T3-019",
+          "CEPTS3.2-T3-020",
+          "CEPTS3.2-T3-021",
+          "CEPTS3.2-T3-022",
+          "CEPTS3.2-T3-023",
+          "CEPTS3.2-T3-024",
+          "CEPTS3.2-T3-025",
+          "CEPTS3.2-T3-026",
+          "CEPTS3.2-T3-027",
+          "CEPTS3.2-T3-028",
+          "CEPTS3.2-T3-029",
+          "CEPTS3.2-T3-030",
+          "CEPTS3.2-T3-031",
+          "CEPTS3.2-T3-032",
+          "CEPTS3.2-T3-033",
+          "CEPTS3.2-T3-034",
+          "CEPTS3.2-T3-035",
+          "CEPTS3.2-T3-036",
+          "CEPTS3.2-T3-037",
+          "CEPTS3.2-T4-001",
+          "CEPTS3.2-T4-002",
+          "CEPTS3.2-T4-003",
+          "CEPTS3.2-T4-004",
+          "CEPTS3.2-T4-005",
+          "CEPTS3.2-T4-006",
+          "CEPTS3.2-T4-007",
+          "CEPTS3.2-T4-008",
+          "CEPTS3.2-T4-009",
+          "CEPTS3.2-T5-001",
+          "CEPTS3.2-T5-002",
+          "CEPTS3.2-T5-003",
+          "CEPTS3.2-T5-004",
+          "CEPTS3.2-T5-005",
+          "CEPTS3.2-T5-006",
+          "CEPTS3.2-T5-007",
+          "CEPTS3.2-C-001",
+          "CEPTS3.2-C-002",
+          "CEPTS3.2-C-003",
+          "CEPTS3.2-C-004",
+          "CEPTS3.2-C-005",
+          "CEPTS3.2-C-006",
+          "CEPTS3.2-C-007",
+          "CEPTS3.2-C-008",
+          "CEPTS3.2-C-009",
+          "CEPTS3.2-C-010",
+          "CEPTS3.2-C-011",
+          "CEPTS3.2-C-012",
+          "CEPTS3.2-C-013",
+          "CEPTS3.2-A-001",
+          "CEPTS3.2-A-002",
+          "CEPTS3.2-A-003",
+          "CEPTS3.2-A-004",
+          "CEPTS3.2-B-001",
+          "CEPTS3.2-B-002",
+          "CEPTS3.2-B-003",
+          "CEPTS3.2-B-004",
+          "CEPTS3.2-B-005",
+          "CEPTS3.2-B-006",
+          "CEPTS3.2-B-007",
+          "CEPTS3.2-B-008",
+          "CEPTS3.2-B-009",
+          "CEPTS3.2-B-010",
+          "CEPTS3.2-B-011",
+          "CEPTS3.2-B-012",
+          "CEPTS3.2-B-013",
+          "CEPTS3.2-B-014"
+        ],
+        "schema_version": "1.0.0",
+        "scope_statement": "All 144 atomic provisions in the pinned complete-publication oracle for the public NCSC Cyber Essentials Plus Test Specification v3.2 are inventoried in oracle order.",
+        "scope_type": "complete_publication",
+        "source_basis": "Pinned public-v3.2 provision oracle; identifiers and approved structural metadata only, with no copied external requirement prose."
+      },
+      "lifecycle": {
+        "events": [],
+        "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+        "schema_version": "1.0.0",
+        "snapshot_digest": "85aacaa927a38d0b6a2402ee0d96ed25148215f4523fa770e71bb4126f9afa69"
+      },
+      "metadata": {
+        "authority": {
+          "id": "uk-ncsc",
+          "name": "UK National Cyber Security Centre"
+        },
+        "change_history": [
+          {
+            "change": "Created the authoritative draft scaffold, complete provision inventory, and release-pinned manifest for external-to-ESAF authoring.",
+            "date": "2026-07-19",
+            "version": "0.2.0"
+          }
+        ],
+        "esaf_release": {
+          "control_catalog_sha256": "70bbd955a65969d2843b60220ad0aad2850f36ec6d189ecd32c40431b848b398",
+          "control_manifest_path": "ESAF_CONTROL_MANIFEST.json",
+          "id": "0.4-alpha",
+          "label": "ESAF 0.4-alpha",
+          "source_commit_sha": "7461d7137e3faf36b2b73a15f71100fa4ce11159"
+        },
+        "findings": [],
+        "mapper": {
+          "authorized_source_access": true,
+          "date": "2026-07-19",
+          "id": "esaf-crosswalk-editorial-team",
+          "qualification": "ESAF crosswalk editorial team applying the approved public-v3.2 reverse-evidence design and source-rights boundary."
+        },
+        "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+        "mapping_set_version": "0.2.0",
+        "publication": {
+          "id": "cyber-essentials-plus-test-specification",
+          "name": "Cyber Essentials Plus Test Specification"
+        },
+        "publication_rights": {
+          "approved": true,
+          "basis": "The NCSC permits reuse of covered Crown copyright public-sector information under the Open Government Licence v3.0; the committed rights attestation limits this snapshot to approved field classes and original analysis.",
+          "permitted_elements": [
+            "identifiers",
+            "titles",
+            "structural_inventory",
+            "paraphrases",
+            "derivative_mapping_analysis",
+            "official_links"
+          ],
+          "prohibited_elements": [],
+          "publication_basis_reviewed": true,
+          "restrictions": "Attribute NCSC Crown copyright and the Open Government Licence v3.0; prohibit copied requirement or passage text and IASME-derived structure; exclude marks, imagery, and third-party material; do not imply official status, certification, compliance, equivalence, or endorsement.",
+          "review_date": "2026-07-19",
+          "reviewer_authorized_source_access": true,
+          "reviewer_id": "esaf-reverse-mapping-rights-reviewer"
+        },
+        "schema_version": "1.0.0",
+        "scope": {
+          "default_granularity": "requirement",
+          "inventory_count": 144,
+          "statement": "All 144 atomic provisions in the pinned complete-publication oracle for the public NCSC Cyber Essentials Plus Test Specification v3.2 are inventoried in oracle order.",
+          "type": "complete_publication"
+        },
+        "source": {
+          "access_class": "public",
+          "licensing_note": "UK National Cyber Security Centre Crown copyright content reused under the Open Government Licence v3.0.",
+          "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf",
+          "publication_date": "2025-04-28"
+        },
+        "source_version": {
+          "id": "3.2",
+          "label": "3.2"
+        },
+        "status": "draft"
+      },
+      "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/README.md",
+      "provisions": []
     },
     {
       "inventory": {
