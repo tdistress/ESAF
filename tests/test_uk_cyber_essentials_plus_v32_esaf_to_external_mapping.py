@@ -49,7 +49,7 @@ EXPECTED_KIND_COUNTS = {
     "evidence_retention": 2,
 }
 EXPECTED_CATALOG_COUNTS = {
-    "mapping_sets": 2,
+    "mapping_sets": 3,
     "provisions": 260,
     "relationships": 49,
     "negative_dispositions": 213,
@@ -480,7 +480,7 @@ class CyberEssentialsPlusEsafToExternalMappingTests(unittest.TestCase):
         self.assertEqual(entry["inventory"]["expected_count"], 144)
         self.assertEqual(len(entry["provisions"]), 144)
         self.assertEqual(entry["lifecycle"]["events"], [])
-        self.assertEqual(catalog["counts"]["mapping_sets"], 2)
+        self.assertEqual(catalog["counts"]["mapping_sets"], 3)
         self.assertEqual(catalog["counts"]["provisions"], 260)
         self.assertEqual(catalog["counts"]["relationships"], 49)
         self.assertEqual(catalog["counts"]["negative_dispositions"], 213)
