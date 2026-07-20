@@ -21,11 +21,11 @@ Text immediately after `External observation:` shall be one canonical compact JS
 | `assessment_date_boundary` | Exact value `assessment_date_required`. |
 | `control_id` | Exact ESAF control ID cited by the relationship leg. |
 | `evidence_date_boundary` | Exact value `evidence_date_required`. |
-| `predicate` | Closed provision-profile predicate describing the controlled state or measurement. |
+| `predicate` | Closed leg-profile measurement dimension or status question; it shall not encode the observed answer. |
 | `provision_id` | Exact external provision ID of the containing record. |
-| `result` | Closed recorded-result type such as `recorded_boolean`, `recorded_comparison`, `recorded_threshold`, or `recorded_duration`; it shall not invent a pass/fail value. |
-| `result_kind` | Closed result family compatible with the cited ESAF control. |
-| `subject` | Closed concrete security, authentication, evidence, vulnerability, or configuration subject. |
+| `result_kind` | Closed outcome-neutral measurement family compatible with the cited ESAF control. |
+| `result_type` | Closed recorded-result representation such as `recorded_boolean`, `recorded_comparison`, `recorded_threshold`, or `recorded_duration`; it shall not encode the recorded answer. |
+| `subject` | Closed outcome-neutral security, authentication, evidence, vulnerability, or configuration measurement subject. |
 
 The existing prose markers remain mandatory and unchanged:
 
@@ -34,19 +34,24 @@ The existing prose markers remain mandatory and unchanged:
 
 Canonical JSON is human-readable, deterministic, and consistent with the profile’s existing canonical-JSON condition checklist.
 
-## Source-versioned provision registry
+All four semantic fields—`result_kind`, `subject`, `predicate`, and `result_type`—describe only the measurement schema. They shall not contain pass/fail, true/false, compliant/noncompliant, certified/uncertified, success/failure, equivalent/not-equivalent, or close morphological variants. Validation shall tokenize semantic identifiers on underscores, hyphens, and other non-alphanumeric boundaries and reject the closed answer-bearing token families, not arbitrary substrings; for example, `password` remains valid. This prohibition applies across field boundaries so an answer cannot be smuggled into a subject, kind, predicate, or result type.
 
-The exact profile shall own an isolated registry module under `tools/crosswalks/`. The registry shall bind every allowed positive external provision ID to exactly one tuple of:
+## Source-versioned relationship-leg registry
 
-- cited control ID;
+The exact profile shall own an isolated registry module under `tools/crosswalks/`. Its key is the pair `(provision_id, control_id)`, including the cited control ID, and it shall bind every allowed positive relationship leg to exactly one four-field semantic profile of:
+
 - result kind;
 - concrete subject;
 - controlled predicate; and
 - recorded-result type.
 
-Validation shall first bind the JSON `provision_id` and `control_id` to the record and relationship, then require all five registry values to match the source-versioned profile entry exactly. A value permitted for another provision or another control shall not be accepted.
+The registry declaration shall retain its entry sequence long enough to reject duplicate `(provision_id, control_id)` pairs before constructing the lookup map. This permits a provision to have multiple valid legs while preventing duplicate profiles for the same leg.
+
+Validation shall first bind the JSON `provision_id` and `control_id` to the record and relationship leg, then require all four semantic registry values to match the source-versioned leg profile exactly. A value permitted for another provision, another control, or another leg shall not be accepted.
 
 The registry contains no tool, scanner, utility, actor-action, authorization, selection, invocation, execution-procedure, or assessment-performance subjects or outcomes. A tool-produced result remains valid when the structured subject and predicate are the concrete security outcome; tool identity belongs in expected evidence and provenance.
+
+Markdown records remain authoritative for mapping decisions. The registry is only a source-versioned validation allowlist and shall not create, infer, or override a relationship. For this exact mapping set, registry keys shall equal the complete set of mapped `(provision_id, control_id)` relationship legs. Integrity validation shall reject missing mapped legs, orphan keys, keys for negative or unimplemented provisions, and duplicate declarations.
 
 ## Validator behavior
 
@@ -58,9 +63,12 @@ For mapped records in this exact profile, validation shall:
 4. require all eight values to be nonempty strings;
 5. require the two exact date-boundary literals;
 6. require exact record provision and relationship control bindings;
-7. resolve the provision in the source-versioned registry;
-8. require the registry control, result kind, subject, predicate, and recorded-result type to match exactly; and
-9. continue applying the existing supported-outcome, conditions-only-narrow, condition-evidence, prohibited-inference, population-boundary, and manifest-provenance contracts.
+7. resolve the exact `(provision_id, control_id)` leg in the source-versioned registry;
+8. require the registry result kind, subject, predicate, and recorded-result type to match exactly;
+9. reject value-bearing or assurance-bearing terms and their close variants in every semantic field; and
+10. continue applying the existing supported-outcome, conditions-only-narrow, condition-evidence, prohibited-inference, population-boundary, and manifest-provenance contracts.
+
+Snapshot validation shall independently compare the registry key set with the authoritative mapped-leg set. Each leg of a valid multi-leg record is validated through its own pair key. Existing duplicate relationship-pair validation remains mandatory.
 
 The superseded free-form observation predicate, activity detection, tool blacklist, and date-word inference shall be removed. There shall be one observation-validation path.
 
@@ -76,10 +84,13 @@ Regression tests shall prove fail-closed behavior for:
 
 - all reviewer tool/activity synonyms and prior active, passive, and nominal variants after prohibition rebinding;
 - malformed, non-object, duplicate-key, extra-field, missing-field, non-string, and noncanonical structured claims;
-- tool or actor activity used as the subject, predicate, result, or result kind;
+- tool or actor activity used as the subject, predicate, result type, or result kind;
 - unknown registry values;
-- incompatible result-kind/control and provision/profile combinations;
+- incompatible result-kind/control and provision/control profile combinations;
 - wrong provision ID, relationship control ID, assessment-date boundary, and evidence-date boundary;
+- value-bearing or assurance-bearing terms smuggled through each semantic field;
+- a valid multi-leg record, a duplicate relationship pair, and an incompatible pair;
+- registry declarations or key sets with a duplicate, missing mapped leg, orphan, negative-provision, or unimplemented-provision entry;
 - supported-outcome marker drift and existing condition/prohibition failures; and
 - a valid tool-produced concrete authentication/configuration result whose tool identity appears only in evidence.
 
@@ -87,4 +98,4 @@ The focused profile test shall also validate all persisted positives through the
 
 ## Task 5 extension rule
 
-Task 5 may add a registry entry only after its own provision-level analysis produces a positive mapping decision. Each new positive shall add one exact provision/control/result profile and fail-first tests for its canonical observation. Unknown Task 5 provisions remain negative or fail closed; the validator shall never infer or synthesize a profile from free-form text, nearby provisions, or control-level similarity.
+Task 5 may add a registry entry only after its own provision-level analysis justifies a positive relationship leg. Each new positive leg shall add one exact `(provision_id, control_id)` profile and fail-first tests for its canonical observation. Another leg for the same provision requires its own independent profile. Unknown Task 5 legs remain negative or fail closed; the validator shall never infer or synthesize a profile from free-form text, nearby provisions, another leg, or control-level similarity.
