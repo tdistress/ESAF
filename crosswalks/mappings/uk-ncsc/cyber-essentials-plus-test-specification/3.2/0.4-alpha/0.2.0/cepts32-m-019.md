@@ -23,7 +23,7 @@
   },
   "disposition": "no_direct_mapping",
   "relationships": [],
-  "negative_rationale": "Missing outcome: CEPTS3.2-M-019 - external result 'overall assessment as passing only when every test case passes' does not evidence ESAF outcome 'observed state of an exact normative AI safeguard'.",
+  "negative_rationale": "Missing outcome: CEPTS3.2-M-019 - external result 'overall assessment as passing only when every test case passes' does not evidence ESAF outcome 'AUD-100 risk-based AI assessment program scope, criteria, methods, evidence, reporting, and follow-up'.",
   "mapper": {
     "id": "esaf-crosswalk-editorial-team",
     "date": "2026-07-19",

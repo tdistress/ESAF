@@ -23,7 +23,7 @@
   },
   "disposition": "no_direct_mapping",
   "relationships": [],
-  "negative_rationale": "Missing outcome: CEPTS3.2-M-020 - external result 'sub-test failure to its parent case and overall outcome' does not evidence ESAF outcome 'observed state of an exact normative AI safeguard'.",
+  "negative_rationale": "Missing outcome: CEPTS3.2-M-020 - external result 'sub-test failure to its parent case and overall outcome' does not evidence ESAF outcome 'AUD-130 documented, risk-governed remediation, retest, closure, and retained evidence for AI assessment findings'.",
   "mapper": {
     "id": "esaf-crosswalk-editorial-team",
     "date": "2026-07-19",

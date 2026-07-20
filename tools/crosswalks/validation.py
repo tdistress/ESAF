@@ -1170,6 +1170,9 @@ def validate_reverse_evidence_record(
             or match.group("external_result").lower() not in context_summary.lower()
             or "generic" in match.group("esaf_outcome").lower()
             or "direct mapping" in match.group("esaf_outcome").lower()
+            or _reverse_outcome_is_semantic_placeholder(
+                match.group("esaf_outcome")
+            )
         ):
             errors.append(
                 "no_direct_mapping rationale must name a paraphrase-bound external "
@@ -1387,6 +1390,50 @@ def validate_reverse_evidence_record(
                         "corroborating reference"
                     )
     return errors
+
+
+def _reverse_outcome_is_semantic_placeholder(outcome: str) -> bool:
+    """Reject abstract labels that do not identify a concrete ESAF outcome."""
+    semantic_scaffolding = {
+        "a",
+        "an",
+        "and",
+        "ai",
+        "assessed",
+        "condition",
+        "control",
+        "defined",
+        "documented",
+        "esaf",
+        "evidence",
+        "exact",
+        "for",
+        "implementation",
+        "in",
+        "named",
+        "normative",
+        "observed",
+        "of",
+        "on",
+        "or",
+        "outcome",
+        "relevant",
+        "requirement",
+        "result",
+        "safeguard",
+        "specific",
+        "state",
+        "technical",
+        "the",
+        "to",
+        "verified",
+    }
+    concrete_terms = {
+        token
+        for token in re.findall(r"[a-z0-9]+", outcome.lower())
+        if token not in semantic_scaffolding
+    }
+    return len(concrete_terms) < 2
 
 
 def _reverse_evidence_reference_resolves(

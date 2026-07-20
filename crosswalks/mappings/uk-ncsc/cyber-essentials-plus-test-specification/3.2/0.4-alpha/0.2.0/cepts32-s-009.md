@@ -23,7 +23,7 @@
   },
   "disposition": "no_direct_mapping",
   "relationships": [],
-  "negative_rationale": "Missing outcome: CEPTS3.2-S-009 - external result 'test a user-account sample representative of its population' does not evidence ESAF outcome 'observed state of an exact normative AI account safeguard'.",
+  "negative_rationale": "Missing outcome: CEPTS3.2-S-009 - external result 'test a user-account sample representative of its population' does not evidence ESAF outcome 'IAM-100 unique identification, inventory, ownership, and lifecycle management of identities accessing in-scope AI assets'.",
   "mapper": {
     "id": "esaf-crosswalk-editorial-team",
     "date": "2026-07-19",

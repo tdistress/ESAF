@@ -6557,7 +6557,7 @@
         "events": [],
         "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
         "schema_version": "1.0.0",
-        "snapshot_digest": "ff2373f7f4cb31b588a06524e4ad4ecc426fd80a94a19c35b20563fa0bd30e96"
+        "snapshot_digest": "794aa6c1dc507757e6b3fbc7e76178c0d6a9d325941d867f3bf027249a70498f"
       },
       "metadata": {
         "authority": {
@@ -7482,7 +7482,7 @@
               "id": "esaf-crosswalk-editorial-team"
             },
             "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
-            "negative_rationale": "Missing outcome: CEPTS3.2-M-018 - external result 'test case as passing only when each of its sub-tests passes' does not evidence ESAF outcome 'observed state of an exact normative AI safeguard'.",
+            "negative_rationale": "Missing outcome: CEPTS3.2-M-018 - external result 'test case as passing only when each of its sub-tests passes' does not evidence ESAF outcome 'AUD-120 relevant, reliable, complete, timely, attributable, and integrity-protected evidence for each AI assessment determination'.",
             "record_id": "cepts32-m-018",
             "relationships": [],
             "schema_version": "1.0.0",
@@ -7523,7 +7523,7 @@
               "id": "esaf-crosswalk-editorial-team"
             },
             "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
-            "negative_rationale": "Missing outcome: CEPTS3.2-M-019 - external result 'overall assessment as passing only when every test case passes' does not evidence ESAF outcome 'observed state of an exact normative AI safeguard'.",
+            "negative_rationale": "Missing outcome: CEPTS3.2-M-019 - external result 'overall assessment as passing only when every test case passes' does not evidence ESAF outcome 'AUD-100 risk-based AI assessment program scope, criteria, methods, evidence, reporting, and follow-up'.",
             "record_id": "cepts32-m-019",
             "relationships": [],
             "schema_version": "1.0.0",
@@ -7564,7 +7564,7 @@
               "id": "esaf-crosswalk-editorial-team"
             },
             "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
-            "negative_rationale": "Missing outcome: CEPTS3.2-M-020 - external result 'sub-test failure to its parent case and overall outcome' does not evidence ESAF outcome 'observed state of an exact normative AI safeguard'.",
+            "negative_rationale": "Missing outcome: CEPTS3.2-M-020 - external result 'sub-test failure to its parent case and overall outcome' does not evidence ESAF outcome 'AUD-130 documented, risk-governed remediation, retest, closure, and retained evidence for AI assessment findings'.",
             "record_id": "cepts32-m-020",
             "relationships": [],
             "schema_version": "1.0.0",
@@ -8181,7 +8181,7 @@
               "id": "esaf-crosswalk-editorial-team"
             },
             "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
-            "negative_rationale": "Missing outcome: CEPTS3.2-S-009 - external result 'test a user-account sample representative of its population' does not evidence ESAF outcome 'observed state of an exact normative AI account safeguard'.",
+            "negative_rationale": "Missing outcome: CEPTS3.2-S-009 - external result 'test a user-account sample representative of its population' does not evidence ESAF outcome 'IAM-100 unique identification, inventory, ownership, and lifecycle management of identities accessing in-scope AI assets'.",
             "record_id": "cepts32-s-009",
             "relationships": [],
             "schema_version": "1.0.0",
@@ -8591,7 +8591,7 @@
               "id": "esaf-crosswalk-editorial-team"
             },
             "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
-            "negative_rationale": "Missing outcome: CEPTS3.2-T1-008 - external result 'Figure 1 to every discovered Internet-accessible service' does not evidence ESAF outcome 'observed state of an exact normative AI safeguard'.",
+            "negative_rationale": "Missing outcome: CEPTS3.2-T1-008 - external result 'Figure 1 to every discovered Internet-accessible service' does not evidence ESAF outcome 'INF-120 identification, assessment, and risk-based disposition of vulnerabilities affecting AI infrastructure and dependencies'.",
             "record_id": "cepts32-t1-008",
             "relationships": [],
             "schema_version": "1.0.0",
@@ -9171,7 +9171,7 @@
               "id": "esaf-crosswalk-editorial-team"
             },
             "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
-            "negative_rationale": "Missing outcome: CEPTS3.2-T1-016 - external result 'all services examined in Sub-test 1.1 pass' does not evidence ESAF outcome 'observed state of an exact normative AI safeguard'.",
+            "negative_rationale": "Missing outcome: CEPTS3.2-T1-016 - external result 'all services examined in Sub-test 1.1 pass' does not evidence ESAF outcome 'IAM-110 risk-proportionate authentication before access to non-public AI assets'.",
             "record_id": "cepts32-t1-016",
             "relationships": [],
             "schema_version": "1.0.0",

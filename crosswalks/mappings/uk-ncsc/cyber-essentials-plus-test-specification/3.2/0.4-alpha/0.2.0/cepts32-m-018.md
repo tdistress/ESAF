@@ -23,7 +23,7 @@
   },
   "disposition": "no_direct_mapping",
   "relationships": [],
-  "negative_rationale": "Missing outcome: CEPTS3.2-M-018 - external result 'test case as passing only when each of its sub-tests passes' does not evidence ESAF outcome 'observed state of an exact normative AI safeguard'.",
+  "negative_rationale": "Missing outcome: CEPTS3.2-M-018 - external result 'test case as passing only when each of its sub-tests passes' does not evidence ESAF outcome 'AUD-120 relevant, reliable, complete, timely, attributable, and integrity-protected evidence for each AI assessment determination'.",
   "mapper": {
     "id": "esaf-crosswalk-editorial-team",
     "date": "2026-07-19",

@@ -529,6 +529,43 @@ class CyberEssentialsPlusExternalToEsafMappingTests(unittest.TestCase):
                 ),
             )
 
+    def test_reverse_negative_rejects_semantic_esaf_outcome_placeholders(self) -> None:
+        mapping_set, controls = reverse_profile_inputs()
+        record = {
+            "external_provision_id": "CEPTS3.2-M-001",
+            "disposition": "no_direct_mapping",
+            "relationships": [],
+            "context": {
+                "mode": "paraphrase",
+                "summary": (
+                    "The provision produces an administrative sampling plan for "
+                    "the assessment."
+                ),
+            },
+        }
+        placeholders = (
+            "observed state of an exact normative AI safeguard",
+            "verified condition of a specific ESAF control requirement",
+            "evidence for a defined normative AI control outcome",
+            "technical state of a named ESAF safeguard",
+        )
+        for placeholder in placeholders:
+            with self.subTest(placeholder=placeholder):
+                candidate = deepcopy(record)
+                candidate["negative_rationale"] = (
+                    "Missing outcome: CEPTS3.2-M-001 - external result "
+                    "'administrative sampling plan' does not evidence ESAF outcome "
+                    f"'{placeholder}'."
+                )
+                self.assertIn(
+                    "specific ESAF outcome",
+                    "\n".join(
+                        crosswalk_validation.validate_reverse_evidence_record(
+                            candidate, mapping_set, controls
+                        )
+                    ),
+                )
+
     def test_reverse_positive_rejects_prohibited_assurance_claims(self) -> None:
         mapping_set, controls = reverse_profile_inputs()
         claims = (
