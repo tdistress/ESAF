@@ -82,7 +82,8 @@ VALID_SUPPORTED_OUTCOME = (
 )
 TASK3_GROUP_COUNTS = {"M": 24, "T1": 16, "S": 11}
 TASK4_GROUP_COUNTS = {"T2": 9, "T3": 37, "T4": 9}
-AUTHORED_GROUP_COUNTS = TASK3_GROUP_COUNTS | TASK4_GROUP_COUNTS
+TASK5_GROUP_COUNTS = {"T5": 7, "C": 13, "A": 4, "B": 14}
+AUTHORED_GROUP_COUNTS = TASK3_GROUP_COUNTS | TASK4_GROUP_COUNTS | TASK5_GROUP_COUNTS
 TASK3_POSITIVE_TARGETS = {
     "CEPTS3.2-M-004": "AUD-120",
     "CEPTS3.2-M-010": "AUD-130",
@@ -118,6 +119,9 @@ TASK4_POSITIVE_TARGETS = {
     "CEPTS3.2-T3-036": "INF-110",
     "CEPTS3.2-T4-008": "IAM-110",
 }
+TASK5_POSITIVE_TARGETS = {
+    "CEPTS3.2-T5-006": "IAM-130",
+}
 
 EXPECTED_OBSERVATION_PROFILE_ENTRIES = (
     ("CEPTS3.2-M-004", "AUD-120", "assessment_scope", "declared_assessment_boundary", "scope_correspondence_status", "recorded_comparison"),
@@ -151,6 +155,7 @@ EXPECTED_OBSERVATION_PROFILE_ENTRIES = (
     ("CEPTS3.2-T3-035", "INF-110", "code_signing_configuration", "executable_formats", "code_signing_coverage", "recorded_status"),
     ("CEPTS3.2-T3-036", "INF-110", "allowlisting_configuration", "listed_configuration_and_execution_checks", "check_status", "recorded_status"),
     ("CEPTS3.2-T4-008", "IAM-110", "mfa_challenge", "user_or_administrator", "pre_access_challenge_status", "recorded_boolean"),
+    ("CEPTS3.2-T5-006", "IAM-130", "privileged_access_control", "administrative_process_access", "restriction_and_separate_authentication_status", "recorded_status"),
 )
 
 
@@ -181,6 +186,20 @@ def load_task4_records() -> list[dict[str, object]]:
         record["external_provision_id"]: record
         for record in load_snapshot_records()
         if record.get("external_metadata", {}).get("group") in TASK4_GROUP_COUNTS
+    }
+    oracle = json.loads(ORACLE.read_text(encoding="utf-8"))
+    return [
+        by_external_id[item["external_provision_id"]]
+        for item in oracle["provisions"]
+        if item["external_provision_id"] in by_external_id
+    ]
+
+
+def load_task5_records() -> list[dict[str, object]]:
+    by_external_id = {
+        record["external_provision_id"]: record
+        for record in load_snapshot_records()
+        if record.get("external_metadata", {}).get("group") in TASK5_GROUP_COUNTS
     }
     oracle = json.loads(ORACLE.read_text(encoding="utf-8"))
     return [
@@ -354,12 +373,12 @@ class CyberEssentialsPlusExternalToEsafMappingTests(unittest.TestCase):
             hasattr(crosswalk_validation, "validate_reverse_evidence_record")
         )
 
-    def test_all_31_persisted_positives_satisfy_the_structured_contract(self) -> None:
+    def test_all_32_persisted_positives_satisfy_the_structured_contract(self) -> None:
         mapping_set, controls = reverse_profile_inputs()
         records = load_snapshot_records()
         positives = [record for record in records if record.get("disposition") == "mapped"]
         negatives = [record for record in records if record.get("disposition") != "mapped"]
-        self.assertEqual(len(positives), 31)
+        self.assertEqual(len(positives), 32)
         for record in positives:
             with self.subTest(external_id=record["external_provision_id"]):
                 self.assertEqual(
@@ -668,6 +687,136 @@ class CyberEssentialsPlusExternalToEsafMappingTests(unittest.TestCase):
                         f"controls/{control['path']}#requirement",
                     )
 
+    def test_task5_records_are_loaded_once_in_locked_oracle_order(self) -> None:
+        oracle = json.loads(ORACLE.read_text(encoding="utf-8"))
+        expected = [
+            item["external_provision_id"]
+            for item in oracle["provisions"]
+            if item["group"] in TASK5_GROUP_COUNTS
+        ]
+        records = load_task5_records()
+        self.assertEqual(len(records), sum(TASK5_GROUP_COUNTS.values()))
+        self.assertEqual(
+            [record["external_provision_id"] for record in records], expected
+        )
+
+    def test_task5_independent_reassessment_has_one_exact_t5_006_leg(self) -> None:
+        records = load_task5_records()
+        positives = {
+            record["external_provision_id"]: record["relationships"]
+            for record in records
+            if record["disposition"] == "mapped"
+        }
+        self.assertEqual(set(positives), set(TASK5_POSITIVE_TARGETS))
+        relationships = positives["CEPTS3.2-T5-006"]
+        self.assertEqual(len(relationships), 1)
+        leg = relationships[0]
+        self.assertEqual(leg["esaf_control_id"], "IAM-130")
+        self.assertEqual(leg["direction"], "external_to_esaf")
+        self.assertEqual(
+            render_observation_claim("CEPTS3.2-T5-006", "IAM-130"),
+            '{"assessment_date_boundary":"assessment_date_required","control_id":"IAM-130","evidence_date_boundary":"evidence_date_required","predicate":"restriction_and_separate_authentication_status","provision_id":"CEPTS3.2-T5-006","result_kind":"privileged_access_control","result_type":"recorded_status","subject":"administrative_process_access"}',
+        )
+        parsed = [json.loads(item) for item in leg["conditions"]]
+        self.assertEqual(
+            [item["condition"] for item in parsed], list(CONDITION_ORDER)
+        )
+        self.assertTrue(all(item["evidence_references"] for item in parsed))
+
+    def test_t5_006_analysis_does_not_copy_feasibility_probe_text(self) -> None:
+        record = next(
+            record
+            for record in load_task5_records()
+            if record["external_provision_id"] == "CEPTS3.2-T5-006"
+        )
+        matrix = json.loads(
+            (
+                ROOT
+                / "docs/superpowers/specs/2026-07-15-uk-cyber-essentials-plus-v3.2-mapping-feasibility-matrix.json"
+            ).read_text(encoding="utf-8")
+        )
+        probe = next(
+            item
+            for item in matrix["probes"]
+            if item["direction"] == "external_to_esaf"
+            and item["provision_ids"] == ["CEPTS3.2-T5-006"]
+        )
+        authored = json.dumps(record, sort_keys=True)
+        for field in (
+            "rationale",
+            "selection_basis",
+            "semantic_fit_analysis",
+        ):
+            with self.subTest(field=field):
+                self.assertNotIn(probe[field], authored)
+        self.assertNotIn(probe["esaf_normative_bases"][0]["relevance_analysis"], authored)
+        self.assertNotIn("two observed T5-006 facts materially support", authored)
+
+    def test_task5_administrative_artifacts_and_decisions_stay_negative(self) -> None:
+        records = {
+            record["external_provision_id"]: record
+            for record in load_task5_records()
+        }
+        categories = {
+            "discretion": {
+                "CEPTS3.2-C-003", "CEPTS3.2-C-008", "CEPTS3.2-C-010",
+                "CEPTS3.2-C-011",
+            },
+            "aggregate decisions": {
+                "CEPTS3.2-T5-007", "CEPTS3.2-C-005", "CEPTS3.2-C-008",
+                "CEPTS3.2-C-012",
+            },
+            "scanner authorization": {"CEPTS3.2-A-001"},
+            "file supply": {"CEPTS3.2-B-001", "CEPTS3.2-B-004", "CEPTS3.2-B-007"},
+            "file retention": {"CEPTS3.2-B-003"},
+        }
+        for category, provision_ids in categories.items():
+            for provision_id in provision_ids:
+                with self.subTest(category=category, provision_id=provision_id):
+                    record = records[provision_id]
+                    self.assertEqual(record["disposition"], "no_direct_mapping")
+                    self.assertEqual(record["relationships"], [])
+                    self.assertTrue(
+                        record["negative_rationale"].startswith(
+                            f"Missing outcome: {provision_id} - external result '"
+                        )
+                    )
+                    self.assertFalse(
+                        any(pair[0] == provision_id for pair in OBSERVATION_PROFILES)
+                    )
+
+    def test_task5_c_a_and_b_records_are_all_specific_negatives(self) -> None:
+        records = load_task5_records()
+        for record in records:
+            if record["external_metadata"]["group"] not in {"C", "A", "B"}:
+                continue
+            with self.subTest(external_id=record["external_provision_id"]):
+                self.assertEqual(record["disposition"], "no_direct_mapping")
+                self.assertEqual(record["relationships"], [])
+                self.assertTrue(
+                    record["negative_rationale"].startswith(
+                        f"Missing outcome: {record['external_provision_id']} - external result '"
+                    )
+                )
+
+    def test_task5_positive_manifest_provenance_resolves_exactly(self) -> None:
+        _, controls = reverse_profile_inputs()
+        relationships = [
+            leg
+            for record in load_task5_records()
+            for leg in record["relationships"]
+        ]
+        self.assertEqual(len(relationships), 1)
+        leg = relationships[0]
+        control = controls["IAM-130"]
+        self.assertEqual(leg["esaf_control_version"], control["version"])
+        self.assertEqual(leg["esaf_control_path"], control["path"])
+        self.assertEqual(leg["esaf_control_sha256"], control["record_sha256"])
+        self.assertEqual(
+            leg["esaf_requirement_locator"],
+            f"controls/{control['path']}#requirement",
+        )
+
     def test_reverse_contract_mutations_fail_closed(self) -> None:
         mapping_set, controls = reverse_profile_inputs()
         valid = valid_profile_record()
@@ -946,8 +1095,8 @@ class CyberEssentialsPlusExternalToEsafMappingTests(unittest.TestCase):
             for leg in record["relationships"]
         }
         self.assertEqual(set(supported_outcomes), expected_pairs)
-        self.assertEqual(len(supported_outcomes), 31)
-        self.assertEqual(len(set(supported_outcomes.values())), 12)
+        self.assertEqual(len(supported_outcomes), 32)
+        self.assertEqual(len(set(supported_outcomes.values())), 13)
         narrowing = (
             "Conditions only narrow this supported claim; "
             "they do not create either outcome."
@@ -1485,7 +1634,7 @@ class CyberEssentialsPlusStructuredObservationProfileTests(unittest.TestCase):
             (self.provision_id, self.control_id): profile
         }
 
-    def test_registry_declares_the_exact_ordered_31_pair_profiles(self) -> None:
+    def test_registry_declares_the_exact_ordered_32_pair_profiles(self) -> None:
         self.assertEqual(OBSERVATION_PROFILE_ENTRIES, EXPECTED_OBSERVATION_PROFILE_ENTRIES)
         self.assertEqual(
             OBSERVATION_PROFILES,
@@ -1708,10 +1857,10 @@ class CyberEssentialsPlusStructuredObservationProfileTests(unittest.TestCase):
                     validate_observation_claim(claim, provision_id, control_id), []
                 )
 
-    def test_registry_integrity_rejects_duplicate_missing_orphan_negative_and_unimplemented_pairs(self) -> None:
+    def test_registry_integrity_rejects_duplicate_missing_orphan_and_negative_pairs(self) -> None:
         pairs = [(row[0], row[1]) for row in EXPECTED_OBSERVATION_PROFILE_ENTRIES]
         negative = ("CEPTS3.2-M-001", "IAM-110", "authentication_requirement", "user_authentication", "service_access_requirement_status", "recorded_boolean")
-        unimplemented = ("CEPTS3.2-T5-001", "IAM-110", "authentication_requirement", "user_authentication", "service_access_requirement_status", "recorded_boolean")
+        task5_negative = ("CEPTS3.2-T5-001", "IAM-110", "authentication_requirement", "user_authentication", "service_access_requirement_status", "recorded_boolean")
         orphan = ("CEPTS3.2-X-001", "IAM-110", "authentication_requirement", "user_authentication", "service_access_requirement_status", "recorded_boolean")
         cases = {
             "duplicate declared pair": (
@@ -1733,10 +1882,10 @@ class CyberEssentialsPlusStructuredObservationProfileTests(unittest.TestCase):
                 list(EXPECTED_OBSERVATION_PROFILE_ENTRIES) + [negative],
                 "observation profile must not target a known negative provision",
             ),
-            "unimplemented task 5 provision": (
-                pairs + [(unimplemented[0], unimplemented[1])],
-                list(EXPECTED_OBSERVATION_PROFILE_ENTRIES) + [unimplemented],
-                "observation profile must not target an unimplemented Task 5 provision",
+            "known negative task 5 provision": (
+                pairs + [(task5_negative[0], task5_negative[1])],
+                list(EXPECTED_OBSERVATION_PROFILE_ENTRIES) + [task5_negative],
+                "observation profile must not target a known negative provision",
             ),
         }
         for label, (mapped_pairs, entries, diagnostic) in cases.items():

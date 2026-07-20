@@ -42,6 +42,7 @@ OBSERVATION_SEMANTIC_VOCABULARIES = {
         "malware_delivery_control",
         "mfa_challenge",
         "network_access_configuration",
+        "privileged_access_control",
         "sampling_calculation",
         "trust_store_configuration",
         "vulnerability_fix_availability",
@@ -53,6 +54,7 @@ OBSERVATION_SEMANTIC_VOCABULARIES = {
         "anti_malware_installation",
         "anti_malware_installation_and_configuration",
         "anti_malware_updates",
+        "administrative_process_access",
         "assessed_service_vulnerability",
         "authentication_factors",
         "declared_assessment_boundary",
@@ -100,6 +102,7 @@ OBSERVATION_SEMANTIC_VOCABULARIES = {
         "password_change_status",
         "pre_access_challenge_status",
         "pre_test_resolution_status",
+        "restriction_and_separate_authentication_status",
         "retention_duration",
         "root_set_relation",
         "scope_correspondence_status",
@@ -155,7 +158,19 @@ OBSERVATION_PROFILE_ENTRIES = (
     ("CEPTS3.2-T3-035", "INF-110", "code_signing_configuration", "executable_formats", "code_signing_coverage", "recorded_status"),
     ("CEPTS3.2-T3-036", "INF-110", "allowlisting_configuration", "listed_configuration_and_execution_checks", "check_status", "recorded_status"),
     ("CEPTS3.2-T4-008", "IAM-110", "mfa_challenge", "user_or_administrator", "pre_access_challenge_status", "recorded_boolean"),
+    ("CEPTS3.2-T5-006", "IAM-130", "privileged_access_control", "administrative_process_access", "restriction_and_separate_authentication_status", "recorded_status"),
 )
+
+
+_KNOWN_NEGATIVE_PROVISIONS = frozenset({
+    "CEPTS3.2-M-001",
+    "CEPTS3.2-T5-001",
+    "CEPTS3.2-T5-002",
+    "CEPTS3.2-T5-003",
+    "CEPTS3.2-T5-004",
+    "CEPTS3.2-T5-005",
+    "CEPTS3.2-T5-007",
+})
 
 
 class _DuplicateKey(ValueError):
@@ -327,10 +342,8 @@ def validate_observation_registry(
             _SEMANTIC_FIELDS, (result_kind, subject, predicate, result_type), strict=True
         ):
             errors.extend(_semantic_value_errors(field, value))
-        if provision_id == "CEPTS3.2-M-001":
+        if provision_id in _KNOWN_NEGATIVE_PROVISIONS:
             errors.append("observation profile must not target a known negative provision")
-        if provision_id.startswith("CEPTS3.2-T5-"):
-            errors.append("observation profile must not target an unimplemented Task 5 provision")
     mapped_pair_set = set(mapped_pairs)
     for pair in sorted(mapped_pair_set - declared_pairs):
         errors.append(f"missing observation profile for mapped pair: {pair[0]}/{pair[1]}")

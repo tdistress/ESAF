@@ -83,6 +83,11 @@ _OUTCOME_REPLAY_RESISTANT_AUTHENTICATION = (
     "using mechanisms whose strength, context, and resistance to replay or credential "
     "theft are proportionate to risk."
 )
+_OUTCOME_PRIVILEGED_ACCESS_RESTRICTION_AND_AUTHENTICATION = (
+    "requires privileged access capable of changing AI models, data, system "
+    "instructions, safety controls, tools, production configuration, logs, or "
+    "authorization policy to be restricted and separately authenticated."
+)
 
 # Source-versioned prose is deliberately independent of authored Markdown at runtime.
 _UK_CE_PLUS_V32_SUPPORTED_OUTCOME_TEXTS = {
@@ -117,6 +122,9 @@ _UK_CE_PLUS_V32_SUPPORTED_OUTCOME_TEXTS = {
     ("CEPTS3.2-T3-035", "INF-110"): _OUTCOME_INFRASTRUCTURE_HARDENING,
     ("CEPTS3.2-T3-036", "INF-110"): _OUTCOME_INFRASTRUCTURE_HARDENING,
     ("CEPTS3.2-T4-008", "IAM-110"): _OUTCOME_REPLAY_RESISTANT_AUTHENTICATION,
+    ("CEPTS3.2-T5-006", "IAM-130"): (
+        _OUTCOME_PRIVILEGED_ACCESS_RESTRICTION_AND_AUTHENTICATION
+    ),
 }
 
 _REVERSE_NARROWING_STATEMENT = (

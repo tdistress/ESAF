@@ -24,7 +24,7 @@
 
 ## Coverage and gaps
 
-Mapping sets: 3; provisions: 366; directional relationships: 80; negative dispositions: 288.
+Mapping sets: 3; provisions: 404; directional relationships: 81; negative dispositions: 325.
 
 | Provision record | Disposition | Relationships |
 |---|---|---:|
@@ -172,6 +172,37 @@ Mapping sets: 3; provisions: 366; directional relationships: 80; negative dispos
 | [cepts32-t5-005](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-t5-005.md) | no_direct_mapping | 0 |
 | [cepts32-t5-006](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-t5-006.md) | mapped | 2 |
 | [cepts32-t5-007](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-t5-007.md) | no_direct_mapping | 0 |
+| [cepts32-a-001](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-a-001.md) | no_direct_mapping | 0 |
+| [cepts32-a-002](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-a-002.md) | no_direct_mapping | 0 |
+| [cepts32-a-003](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-a-003.md) | no_direct_mapping | 0 |
+| [cepts32-a-004](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-a-004.md) | no_direct_mapping | 0 |
+| [cepts32-b-001](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-b-001.md) | no_direct_mapping | 0 |
+| [cepts32-b-002](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-b-002.md) | no_direct_mapping | 0 |
+| [cepts32-b-003](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-b-003.md) | no_direct_mapping | 0 |
+| [cepts32-b-004](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-b-004.md) | no_direct_mapping | 0 |
+| [cepts32-b-005](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-b-005.md) | no_direct_mapping | 0 |
+| [cepts32-b-006](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-b-006.md) | no_direct_mapping | 0 |
+| [cepts32-b-007](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-b-007.md) | no_direct_mapping | 0 |
+| [cepts32-b-008](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-b-008.md) | no_direct_mapping | 0 |
+| [cepts32-b-009](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-b-009.md) | no_direct_mapping | 0 |
+| [cepts32-b-010](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-b-010.md) | no_direct_mapping | 0 |
+| [cepts32-b-011](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-b-011.md) | no_direct_mapping | 0 |
+| [cepts32-b-012](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-b-012.md) | no_direct_mapping | 0 |
+| [cepts32-b-013](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-b-013.md) | no_direct_mapping | 0 |
+| [cepts32-b-014](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-b-014.md) | no_direct_mapping | 0 |
+| [cepts32-c-001](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-c-001.md) | no_direct_mapping | 0 |
+| [cepts32-c-002](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-c-002.md) | no_direct_mapping | 0 |
+| [cepts32-c-003](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-c-003.md) | no_direct_mapping | 0 |
+| [cepts32-c-004](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-c-004.md) | no_direct_mapping | 0 |
+| [cepts32-c-005](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-c-005.md) | no_direct_mapping | 0 |
+| [cepts32-c-006](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-c-006.md) | no_direct_mapping | 0 |
+| [cepts32-c-007](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-c-007.md) | no_direct_mapping | 0 |
+| [cepts32-c-008](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-c-008.md) | no_direct_mapping | 0 |
+| [cepts32-c-009](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-c-009.md) | no_direct_mapping | 0 |
+| [cepts32-c-010](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-c-010.md) | no_direct_mapping | 0 |
+| [cepts32-c-011](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-c-011.md) | no_direct_mapping | 0 |
+| [cepts32-c-012](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-c-012.md) | no_direct_mapping | 0 |
+| [cepts32-c-013](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-c-013.md) | no_direct_mapping | 0 |
 | [cepts32-m-001](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-m-001.md) | no_direct_mapping | 0 |
 | [cepts32-m-002](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-m-002.md) | no_direct_mapping | 0 |
 | [cepts32-m-003](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-m-003.md) | no_direct_mapping | 0 |
@@ -278,6 +309,13 @@ Mapping sets: 3; provisions: 366; directional relationships: 80; negative dispos
 | [cepts32-t4-007](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-t4-007.md) | no_direct_mapping | 0 |
 | [cepts32-t4-008](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-t4-008.md) | mapped | 1 |
 | [cepts32-t4-009](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-t4-009.md) | no_direct_mapping | 0 |
+| [cepts32-t5-001](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-t5-001.md) | no_direct_mapping | 0 |
+| [cepts32-t5-002](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-t5-002.md) | no_direct_mapping | 0 |
+| [cepts32-t5-003](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-t5-003.md) | no_direct_mapping | 0 |
+| [cepts32-t5-004](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-t5-004.md) | no_direct_mapping | 0 |
+| [cepts32-t5-005](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-t5-005.md) | no_direct_mapping | 0 |
+| [cepts32-t5-006](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-t5-006.md) | mapped | 1 |
+| [cepts32-t5-007](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-t5-007.md) | no_direct_mapping | 0 |
 | [ce33-d-001](mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-001.md) | no_direct_mapping | 0 |
 | [ce33-d-002](mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-002.md) | no_direct_mapping | 0 |
 | [ce33-d-003](mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/ce33-d-003.md) | mapped | 1 |
