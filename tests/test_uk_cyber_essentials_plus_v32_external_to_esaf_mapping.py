@@ -42,6 +42,8 @@ PROHIBITED_INFERENCE_KEYS = (
     "current_scheme_coverage",
 )
 TASK3_GROUP_COUNTS = {"M": 24, "T1": 16, "S": 11}
+TASK4_GROUP_COUNTS = {"T2": 9, "T3": 37, "T4": 9}
+AUTHORED_GROUP_COUNTS = TASK3_GROUP_COUNTS | TASK4_GROUP_COUNTS
 TASK3_POSITIVE_TARGETS = {
     "CEPTS3.2-M-004": "AUD-120",
     "CEPTS3.2-M-010": "AUD-130",
@@ -54,6 +56,28 @@ TASK3_POSITIVE_TARGETS = {
     "CEPTS3.2-T1-015": "APP-150",
     "CEPTS3.2-S-007": "AUD-120",
     "CEPTS3.2-S-008": "CMP-110",
+}
+TASK4_POSITIVE_TARGETS = {
+    "CEPTS3.2-T2-007": "INF-120",
+    "CEPTS3.2-T3-005": "INF-110",
+    "CEPTS3.2-T3-015": "INF-110",
+    "CEPTS3.2-T3-016": "INF-110",
+    "CEPTS3.2-T3-017": "INF-110",
+    "CEPTS3.2-T3-021": "INF-110",
+    "CEPTS3.2-T3-022": "INF-110",
+    "CEPTS3.2-T3-023": "INF-110",
+    "CEPTS3.2-T3-024": "INF-110",
+    "CEPTS3.2-T3-025": "INF-110",
+    "CEPTS3.2-T3-027": "INF-110",
+    "CEPTS3.2-T3-028": "INF-110",
+    "CEPTS3.2-T3-029": "INF-110",
+    "CEPTS3.2-T3-031": "INF-110",
+    "CEPTS3.2-T3-032": "INF-130",
+    "CEPTS3.2-T3-033": "INF-110",
+    "CEPTS3.2-T3-034": "INF-110",
+    "CEPTS3.2-T3-035": "INF-110",
+    "CEPTS3.2-T3-036": "INF-110",
+    "CEPTS3.2-T4-008": "IAM-110",
 }
 
 
@@ -70,6 +94,20 @@ def load_task3_records() -> list[dict[str, object]]:
         record["external_provision_id"]: record
         for record in load_snapshot_records()
         if record.get("external_metadata", {}).get("group") in TASK3_GROUP_COUNTS
+    }
+    oracle = json.loads(ORACLE.read_text(encoding="utf-8"))
+    return [
+        by_external_id[item["external_provision_id"]]
+        for item in oracle["provisions"]
+        if item["external_provision_id"] in by_external_id
+    ]
+
+
+def load_task4_records() -> list[dict[str, object]]:
+    by_external_id = {
+        record["external_provision_id"]: record
+        for record in load_snapshot_records()
+        if record.get("external_metadata", {}).get("group") in TASK4_GROUP_COUNTS
     }
     oracle = json.loads(ORACLE.read_text(encoding="utf-8"))
     return [
@@ -156,7 +194,12 @@ def valid_profile_record() -> dict[str, object]:
                     "Conditions only narrow this supported claim; they do not create either outcome."
                 ),
                 "conditions": [condition_entry(condition) for condition in CONDITION_ORDER],
-                "expected_evidence": ["Recorded authentication observation."],
+                "expected_evidence": [
+                    "A dated attributable assessment workpaper identifies the "
+                    "Assessor, AI service scope, authentication population and "
+                    "sample, approved tool and method, result, provenance, and any "
+                    "exception."
+                ],
                 "known_gaps": ["Population-wide and continuous operation are not established."],
                 "prohibited_inferences": required_prohibited_inferences(
                     "CEPTS3.2-M-001"
@@ -251,7 +294,7 @@ class CyberEssentialsPlusExternalToEsafMappingTests(unittest.TestCase):
         records = load_snapshot_records()
         self.assertEqual(
             Counter(record["external_metadata"]["group"] for record in records),
-            Counter(TASK3_GROUP_COUNTS),
+            Counter(AUTHORED_GROUP_COUNTS),
         )
         self.assertEqual(validate(ROOT).errors, [])
 
@@ -263,12 +306,12 @@ class CyberEssentialsPlusExternalToEsafMappingTests(unittest.TestCase):
             render_manifest(expected),
         )
 
-    def test_draft_catalog_entry_contains_task3_records(self) -> None:
+    def test_draft_catalog_entry_contains_authored_records(self) -> None:
         catalog = json.loads((ROOT / "crosswalks/catalog.json").read_text(encoding="utf-8"))
         entry = next(item for item in catalog["mapping_sets"] if item["metadata"]["mapping_set_id"] == MAPPING_SET_ID)
         self.assertEqual(entry["metadata"]["status"], "draft")
         self.assertEqual(entry["inventory"]["expected_count"], 144)
-        self.assertEqual(len(entry["provisions"]), sum(TASK3_GROUP_COUNTS.values()))
+        self.assertEqual(len(entry["provisions"]), sum(AUTHORED_GROUP_COUNTS.values()))
         self.assertEqual(entry["lifecycle"]["events"], [])
 
     def test_task3_records_are_loaded_once_in_locked_oracle_order(self) -> None:
@@ -346,6 +389,114 @@ class CyberEssentialsPlusExternalToEsafMappingTests(unittest.TestCase):
         self.assertEqual(
             sum(len(record["relationships"]) for record in records),
             len(TASK3_POSITIVE_TARGETS),
+        )
+        for record in records:
+            for leg in record["relationships"]:
+                with self.subTest(
+                    external_id=record["external_provision_id"],
+                    control_id=leg["esaf_control_id"],
+                ):
+                    control = controls[leg["esaf_control_id"]]
+                    self.assertEqual(leg["esaf_control_version"], control["version"])
+                    self.assertEqual(leg["esaf_control_path"], control["path"])
+                    self.assertEqual(
+                        leg["esaf_control_sha256"], control["record_sha256"]
+                    )
+                    self.assertEqual(
+                        leg["esaf_requirement_locator"],
+                        f"controls/{control['path']}#requirement",
+                    )
+
+    def test_task4_records_are_loaded_once_in_locked_oracle_order(self) -> None:
+        oracle = json.loads(ORACLE.read_text(encoding="utf-8"))
+        expected = [
+            item["external_provision_id"]
+            for item in oracle["provisions"]
+            if item["group"] in TASK4_GROUP_COUNTS
+        ]
+        records = load_task4_records()
+        self.assertEqual(len(records), sum(TASK4_GROUP_COUNTS.values()))
+        self.assertEqual(
+            [record["external_provision_id"] for record in records], expected
+        )
+
+    def test_task4_positives_have_exact_targets_and_bounded_evidence(self) -> None:
+        records = load_task4_records()
+        positives = {
+            record["external_provision_id"]: record["relationships"]
+            for record in records
+            if record["disposition"] == "mapped"
+        }
+        self.assertEqual(set(positives), set(TASK4_POSITIVE_TARGETS))
+        for external_id, relationships in positives.items():
+            with self.subTest(external_id=external_id):
+                self.assertEqual(len(relationships), 1)
+                leg = relationships[0]
+                self.assertEqual(
+                    leg["esaf_control_id"], TASK4_POSITIVE_TARGETS[external_id]
+                )
+                self.assertEqual(leg["direction"], "external_to_esaf")
+                parsed = [json.loads(item) for item in leg["conditions"]]
+                self.assertEqual(
+                    [item["condition"] for item in parsed], list(CONDITION_ORDER)
+                )
+                evidence = " ".join(leg["expected_evidence"]).lower()
+                self.assertIn("dated", evidence)
+                self.assertIn("population", evidence)
+                self.assertIn("sample", evidence)
+                self.assertRegex(evidence, r"\b(?:tool|method)\b")
+                self.assertIn("provenance", evidence)
+                self.assertRegex(
+                    " ".join(leg["known_gaps"]).lower(),
+                    r"\b(?:later|point-in-time)\b",
+                )
+
+    def test_task4_negatives_are_specific_and_recommendations_stay_negative(self) -> None:
+        records = load_task4_records()
+        oracle = json.loads(ORACLE.read_text(encoding="utf-8"))
+        expected_ids = {
+            item["external_provision_id"]
+            for item in oracle["provisions"]
+            if item["group"] in TASK4_GROUP_COUNTS
+        }
+        negatives = {
+            record["external_provision_id"]: record
+            for record in records
+            if record["disposition"] == "no_direct_mapping"
+        }
+        self.assertEqual(
+            set(negatives), expected_ids - set(TASK4_POSITIVE_TARGETS)
+        )
+        self.assertEqual(
+            negatives["CEPTS3.2-T2-002"]["negative_rationale"],
+            "Missing outcome: CEPTS3.2-T2-002 - external result 'Delivery "
+            "Partner-approved vulnerability scanner' does not evidence ESAF "
+            "outcome 'identified vulnerability affecting AI infrastructure and "
+            "its risk-based disposition'.",
+        )
+        for external_id, record in negatives.items():
+            with self.subTest(external_id=external_id):
+                self.assertTrue(
+                    record["negative_rationale"].startswith(
+                        f"Missing outcome: {external_id} - external result '"
+                    )
+                )
+                self.assertEqual(record["relationships"], [])
+        recommendation_ids = {
+            item["external_provision_id"]
+            for item in oracle["provisions"]
+            if item["group"] in TASK4_GROUP_COUNTS
+            and item["kind"] == "recommendation"
+        }
+        self.assertTrue(recommendation_ids)
+        self.assertTrue(recommendation_ids <= set(negatives))
+
+    def test_task4_positive_manifest_provenance_resolves_exactly(self) -> None:
+        _, controls = reverse_profile_inputs()
+        records = load_task4_records()
+        self.assertEqual(
+            sum(len(record["relationships"]) for record in records),
+            len(TASK4_POSITIVE_TARGETS),
         )
         for record in records:
             for leg in record["relationships"]:
@@ -626,6 +777,57 @@ class CyberEssentialsPlusExternalToEsafMappingTests(unittest.TestCase):
                         )
                     ),
                 )
+
+    def test_reverse_positive_rejects_tool_name_without_observed_result(self) -> None:
+        mapping_set, controls = reverse_profile_inputs()
+        candidate = valid_profile_record()
+        candidate["relationships"][0]["rationale"] = (
+            "External observation: Nmap was used. Supported ESAF outcome: IAM-130 "
+            "separately authenticates privileged access. Conditions only narrow "
+            "this supported claim; they do not create either outcome."
+        )
+        self.assertIn(
+            "must identify an observed result beyond a tool name",
+            "\n".join(
+                crosswalk_validation.validate_reverse_evidence_record(
+                    candidate, mapping_set, controls
+                )
+            ),
+        )
+
+    def test_reverse_positive_rejects_sample_without_population_boundary(self) -> None:
+        mapping_set, controls = reverse_profile_inputs()
+        candidate = valid_profile_record()
+        candidate["relationships"][0]["expected_evidence"] = [
+            "A dated attributable assessment workpaper identifies the Assessor, AI "
+            "service scope, sample, approved tool and method, result, provenance, "
+            "and any exception."
+        ]
+        self.assertIn(
+            "must identify both population boundary and sample",
+            "\n".join(
+                crosswalk_validation.validate_reverse_evidence_record(
+                    candidate, mapping_set, controls
+                )
+            ),
+        )
+
+    def test_reverse_positive_rejects_date_free_observation(self) -> None:
+        mapping_set, controls = reverse_profile_inputs()
+        candidate = valid_profile_record()
+        candidate["relationships"][0]["expected_evidence"] = [
+            "An attributable assessment workpaper identifies the Assessor, AI "
+            "service scope, authentication population and sample, approved tool "
+            "and method, result, provenance, and any exception."
+        ]
+        self.assertIn(
+            "must identify an assessment or evidence date",
+            "\n".join(
+                crosswalk_validation.validate_reverse_evidence_record(
+                    candidate, mapping_set, controls
+                )
+            ),
+        )
 
     def test_reverse_mapped_record_requires_a_relationship(self) -> None:
         mapping_set, controls = reverse_profile_inputs()

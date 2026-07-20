@@ -1250,6 +1250,18 @@ def validate_reverse_evidence_record(
             rationale = ""
         if "External observation: " not in rationale:
             errors.append(f"{leg_label} must state an external observation independently")
+        else:
+            observation = rationale.split("External observation: ", 1)[1].split(
+                "Supported ESAF outcome:", 1
+            )[0].strip()
+            if re.fullmatch(
+                r"(?i)[^.]{1,80}\b(?:was|were|is|are)\s+"
+                r"(?:used|run|executed|selected|approved)\.?",
+                observation,
+            ):
+                errors.append(
+                    f"{leg_label} must identify an observed result beyond a tool name"
+                )
         if exact_outcome_marker not in rationale:
             errors.append(f"{leg_label} must state the exact supported ESAF outcome")
         if narrowing_statement not in rationale:
@@ -1273,6 +1285,28 @@ def validate_reverse_evidence_record(
         )
         if prohibited_claim.search(rationale):
             errors.append(f"{leg_label} rationale contains prohibited assurance claim")
+
+        expected_evidence = leg.get("expected_evidence")
+        evidence_text = (
+            " ".join(expected_evidence).lower()
+            if isinstance(expected_evidence, list)
+            and all(isinstance(item, str) for item in expected_evidence)
+            else ""
+        )
+        if "sample" in evidence_text and not re.search(
+            r"\b(?:population|universe|inventory)\b", evidence_text
+        ):
+            errors.append(
+                f"{leg_label} expected evidence must identify both population "
+                "boundary and sample"
+            )
+        if not re.search(
+            r"\b(?:dated|assessment date|evidence date)\b", evidence_text
+        ):
+            errors.append(
+                f"{leg_label} expected evidence must identify an assessment or "
+                "evidence date"
+            )
 
         prohibition_explanations = {
             "implementation": "The observation does not establish control implementation.",
