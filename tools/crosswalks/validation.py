@@ -1250,17 +1250,19 @@ def validate_reverse_evidence_record(
             rationale = ""
         if "External observation: " not in rationale:
             errors.append(f"{leg_label} must state an external observation independently")
+            observation = ""
         else:
             observation = rationale.split("External observation: ", 1)[1].split(
                 "Supported ESAF outcome:", 1
             )[0].strip()
-            if re.fullmatch(
-                r"(?i)[^.]{1,80}\b(?:was|were|is|are)\s+"
-                r"(?:used|run|executed|selected|approved)\.?",
-                observation,
-            ):
+            if not _reverse_observation_has_independent_result(observation):
                 errors.append(
-                    f"{leg_label} must identify an observed result beyond a tool name"
+                    f"{leg_label} must identify an independently stated observed result"
+                )
+            if not _reverse_observation_is_date_bound(observation):
+                errors.append(
+                    f"{leg_label} external observation must be bound to assessment "
+                    "or evidence dates"
                 )
         if exact_outcome_marker not in rationale:
             errors.append(f"{leg_label} must state the exact supported ESAF outcome")
@@ -1293,57 +1295,30 @@ def validate_reverse_evidence_record(
             and all(isinstance(item, str) for item in expected_evidence)
             else ""
         )
-        if "sample" in evidence_text and not re.search(
-            r"\b(?:population|universe|inventory)\b", evidence_text
-        ):
+        selection_text = f"{observation} {evidence_text}"
+        if re.search(
+            r"\b(?:sample|sampled|sampling|select|selected|selection)\w*\b",
+            selection_text,
+        ) and not _reverse_evidence_has_population_boundary(evidence_text):
             errors.append(
-                f"{leg_label} expected evidence must identify both population "
-                "boundary and sample"
-            )
-        if not re.search(
-            r"\b(?:dated|assessment date|evidence date)\b", evidence_text
-        ):
-            errors.append(
-                f"{leg_label} expected evidence must identify an assessment or "
-                "evidence date"
+                f"{leg_label} selection or sampling evidence requires an explicit "
+                "population boundary"
             )
 
-        prohibition_explanations = {
-            "implementation": "The observation does not establish control implementation.",
-            "effectiveness": "The observation does not establish control effectiveness.",
-            "sufficiency": (
-                "The observation is not sufficient evidence of the control outcome."
-            ),
-            "compliance": "The observation does not establish ESAF compliance.",
-            "certification": (
-                "The observation does not authorize or establish certification."
-            ),
-            "equivalence": (
-                "The external provision is not equivalent to the ESAF control."
-            ),
-            "continuous_assurance": (
-                "The point-in-time observation is not continuous assurance."
-            ),
-            "population_wide_coverage": (
-                "The sampled observation is not population-wide coverage."
-            ),
-            "current_scheme_coverage": (
-                "The public v3.2 evidence is not current-scheme coverage."
-            ),
-        }
         prohibited_inferences = leg.get("prohibited_inferences")
-        expected_prohibitions = (
-            [
-                f"{external_id} | prohibit {key}: {explanation}"
-                for key, explanation in prohibition_explanations.items()
-            ]
-            if isinstance(external_id, str)
-            else []
-        )
-        if prohibited_inferences != expected_prohibitions:
+        if not _reverse_prohibitions_have_required_categories(
+            prohibited_inferences, external_id
+        ):
             errors.append(
                 f"{leg_label} requires provision-specific prohibited_inferences "
                 "for every binding assurance prohibition"
+            )
+        elif not _reverse_prohibitions_bind_observation_and_outcome(
+            prohibited_inferences, external_id, observation, control_id
+        ):
+            errors.append(
+                f"{leg_label} must bind every prohibited inference to the observed "
+                "result and cited ESAF outcome"
             )
 
         raw_conditions = leg.get("conditions")
@@ -1423,7 +1398,226 @@ def validate_reverse_evidence_record(
                         "explicit condition-specific known-gap justification and "
                         "corroborating reference"
                     )
+            elif status == "SATISFIED" and not _reverse_condition_is_substantiated(
+                name, references, external_id, leg
+            ):
+                errors.append(
+                    f"{leg_label} condition {name} requires provision-specific "
+                    f"evidence for {name}"
+                )
     return errors
+
+
+def _reverse_observation_has_independent_result(observation: str) -> bool:
+    """Require a result-bearing proposition rather than an actor, tool, or activity."""
+    if len(observation.split()) < 6:
+        return False
+    return bool(
+        re.search(
+            r"(?i)\b(?:result|outcome|record|records|recorded|shows?|comparison|"
+            r"workpaper|finding|state|index)\b",
+            observation,
+        )
+        and re.search(
+            r"(?i)\b(?:whether|that|corresponded|resolved|retained|calculated|"
+            r"scored|required|used|remained|throttled|locked|installed|arrived|"
+            r"ran|applied|access|prevented|blocked|downloaded|operating|followed|"
+            r"confirmed|equalled|had|could|prompted|bounded)\b",
+            observation,
+        )
+    )
+
+
+def _reverse_observation_is_date_bound(observation: str) -> bool:
+    """Bind the external result itself to an assessment or evidence date."""
+    return bool(
+        re.search(
+            r"(?i)\b(?:dated|assessment date|evidence date)\b|\b\d{4}-\d{2}-\d{2}\b",
+            observation,
+        )
+    )
+
+
+def _reverse_evidence_has_population_boundary(evidence_text: str) -> bool:
+    """Require selected or sampled evidence to name its bounded population."""
+    return bool(
+        re.search(r"\bpopulation\b", evidence_text)
+        and re.search(
+            r"(?i)\b(?:in-scope|scope|applicable|affected|declared|defined|"
+            r"enumerated|inventory|universe|total|all)\b",
+            evidence_text,
+        )
+    )
+
+
+def _reverse_prohibitions_have_required_categories(
+    prohibited_inferences: object, external_id: object
+) -> bool:
+    """Require one provision-bound entry for each canonical assurance category."""
+    categories = (
+        "implementation",
+        "effectiveness",
+        "sufficiency",
+        "compliance",
+        "certification",
+        "equivalence",
+        "continuous_assurance",
+        "population_wide_coverage",
+        "current_scheme_coverage",
+    )
+    if not isinstance(external_id, str) or not isinstance(prohibited_inferences, list):
+        return False
+    if len(prohibited_inferences) != len(categories):
+        return False
+    return all(
+        isinstance(entry, str)
+        and entry.startswith(f"{external_id} | prohibit {category}: ")
+        for category, entry in zip(categories, prohibited_inferences)
+    )
+
+
+def _reverse_prohibitions_bind_observation_and_outcome(
+    prohibited_inferences: object,
+    external_id: object,
+    observation: str,
+    control_id: object,
+) -> bool:
+    """Bind every prohibition to this observed result and cited ESAF outcome."""
+    if not _reverse_prohibitions_have_required_categories(
+        prohibited_inferences, external_id
+    ) or not isinstance(control_id, str):
+        return False
+    normalized_observation = observation.rstrip(". ").strip()
+    if not normalized_observation:
+        return False
+    categories = (
+        "implementation",
+        "effectiveness",
+        "sufficiency",
+        "compliance",
+        "certification",
+        "equivalence",
+        "continuous_assurance",
+        "population_wide_coverage",
+        "current_scheme_coverage",
+    )
+    required_denials = {
+        "implementation": r"\bdoes not establish control implementation\b",
+        "effectiveness": r"\bdoes not establish control effectiveness\b",
+        "sufficiency": r"\bis not sufficient evidence\b",
+        "compliance": r"\bdoes not establish ESAF compliance\b",
+        "certification": r"\bdoes not authorize or establish certification\b",
+        "equivalence": r"\bis not equivalent\b",
+        "continuous_assurance": r"\bdoes not provide continuous assurance\b",
+        "population_wide_coverage": (
+            r"\bdoes not establish population-wide coverage\b"
+        ),
+        "current_scheme_coverage": r"\bdoes not establish current-scheme coverage\b",
+    }
+    for category, entry in zip(categories, prohibited_inferences):
+        if not isinstance(entry, str):
+            return False
+        explanation = entry.split(": ", 1)[1]
+        if (
+            normalized_observation.casefold() not in explanation.casefold()
+            or control_id.casefold() not in explanation.casefold()
+            or re.search(required_denials[category], explanation, re.IGNORECASE) is None
+        ):
+            return False
+    return True
+
+
+def _reverse_condition_is_substantiated(
+    condition: object,
+    references: list[object],
+    external_id: object,
+    leg: dict[str, object],
+) -> bool:
+    """Require a labeled evidence item that substantively addresses the condition."""
+    if not isinstance(condition, str) or not isinstance(external_id, str):
+        return False
+    expected_evidence = leg.get("expected_evidence")
+    if not isinstance(expected_evidence, list):
+        return False
+    semantic_patterns = {
+        "actor": (
+            r"\b(?:assessor|actor)\b",
+            r"\b(?:responsible|performed|record)\w*\b",
+        ),
+        "scope": (r"\b(?:in-scope|scope)\b", r"\bAI\b"),
+        "population": (
+            r"\bpopulation\b",
+            r"\b(?:applicable|defined|enumerated|inventory|universe|all)\b",
+        ),
+        "sample": (
+            r"\bsample\b",
+            r"\b(?:selected|selection|basis)\b",
+            r"\bpopulation\b",
+        ),
+        "assessment_date": (
+            r"\bassessment date\b",
+            r"\b(?:date|time|timezone)\b",
+        ),
+        "evidence_date": (
+            r"\bevidence(?:-collection)? date\b",
+            r"\b(?:separate|separately)\b",
+        ),
+        "tool": (r"\b(?:tool|manual)\b", r"\b(?:version|method)\b"),
+        "provenance": (
+            r"\b(?:provenance|source artifacts?|source locator)\b",
+            r"\b(?:cited|manifest|requirement)\b",
+        ),
+        "exception": (r"\bexception\b", r"\b(?:no|approval|disposition)\b"),
+        "delivery_partner_discretion": (
+            r"\bdelivery partner\b",
+            r"\b(?:discretion|choice|method|approval)\b",
+            r"\b(?:basis|affect)\w*\b",
+        ),
+        "point_in_time_status": (
+            r"\b(?:point-in-time|assessment and evidence dates)\b",
+            r"\b(?:later state|excluded)\b",
+        ),
+    }
+    patterns = semantic_patterns.get(condition)
+    if patterns is None:
+        return False
+    control_id = leg.get("esaf_control_id")
+    allowed_auxiliary_references = {
+        "actor": {"record:external_metadata"},
+        "scope": {
+            "record:context",
+            f"manifest:{control_id}#requirement",
+        },
+        "provenance": {
+            "record:source_locator",
+            f"manifest:{control_id}#requirement",
+        },
+    }
+    prefix = f"{condition} evidence: {external_id} "
+    found_labeled_evidence = False
+    for reference in references:
+        if not isinstance(reference, str):
+            return False
+        match = re.fullmatch(r"relationship:expected_evidence:([0-9]+)", reference)
+        if match is None:
+            if (
+                reference.startswith("relationship:known_gaps:")
+                and condition == "point_in_time_status"
+            ):
+                continue
+            if reference not in allowed_auxiliary_references.get(condition, set()):
+                return False
+            continue
+        index = int(match.group(1))
+        if index >= len(expected_evidence) or not isinstance(expected_evidence[index], str):
+            return False
+        evidence = expected_evidence[index]
+        if not evidence.startswith(prefix) or not all(
+            re.search(pattern, evidence, re.IGNORECASE) for pattern in patterns
+        ):
+            return False
+        found_labeled_evidence = True
+    return found_labeled_evidence
 
 
 def _reverse_outcome_is_semantic_placeholder(outcome: str) -> bool:
@@ -1494,6 +1688,13 @@ def _reverse_evidence_reference_resolves(
     }
     if reference in relationship_fields:
         return bool(leg.get(relationship_fields[reference]))
+    expected_evidence = re.fullmatch(
+        r"relationship:expected_evidence:([0-9]+)", reference
+    )
+    if expected_evidence:
+        values = leg.get("expected_evidence")
+        index = int(expected_evidence.group(1))
+        return isinstance(values, list) and index < len(values) and bool(values[index])
     known_gap = re.fullmatch(r"relationship:known_gaps:([0-9]+)", reference)
     if known_gap:
         values = leg.get("known_gaps")

@@ -41,6 +41,9 @@ PROHIBITED_INFERENCE_KEYS = (
     "population_wide_coverage",
     "current_scheme_coverage",
 )
+VALID_OBSERVATION = (
+    "the dated assessment result records a bounded authentication outcome"
+)
 TASK3_GROUP_COUNTS = {"M": 24, "T1": 16, "S": 11}
 TASK4_GROUP_COUNTS = {"T2": 9, "T3": 37, "T4": 9}
 AUTHORED_GROUP_COUNTS = TASK3_GROUP_COUNTS | TASK4_GROUP_COUNTS
@@ -146,22 +149,70 @@ def condition_entry(
     )
 
 
-def required_prohibited_inferences(external_id: str) -> list[str]:
+def required_prohibited_inferences(
+    external_id: str,
+    observation: str = VALID_OBSERVATION,
+    control_id: str = "IAM-130",
+) -> list[str]:
     explanations = {
-        "implementation": "The observation does not establish control implementation.",
-        "effectiveness": "The observation does not establish control effectiveness.",
-        "sufficiency": "The observation is not sufficient evidence of the control outcome.",
-        "compliance": "The observation does not establish ESAF compliance.",
-        "certification": "The observation does not authorize or establish certification.",
-        "equivalence": "The external provision is not equivalent to the ESAF control.",
-        "continuous_assurance": "The point-in-time observation is not continuous assurance.",
-        "population_wide_coverage": "The sampled observation is not population-wide coverage.",
-        "current_scheme_coverage": "The public v3.2 evidence is not current-scheme coverage.",
+        "implementation": "does not establish control implementation",
+        "effectiveness": "does not establish control effectiveness",
+        "sufficiency": "is not sufficient evidence",
+        "compliance": "does not establish ESAF compliance",
+        "certification": "does not authorize or establish certification",
+        "equivalence": "is not equivalent",
+        "continuous_assurance": "does not provide continuous assurance",
+        "population_wide_coverage": "does not establish population-wide coverage",
+        "current_scheme_coverage": "does not establish current-scheme coverage",
     }
     return [
-        f"{external_id} | prohibit {key}: {explanations[key]}"
+        f'{external_id} | prohibit {key}: The observed result "{observation}" '
+        f"{explanations[key]} for the cited {control_id} outcome."
         for key in PROHIBITED_INFERENCE_KEYS
     ]
+
+
+def condition_evidence(external_id: str) -> list[str]:
+    return [
+        f"actor evidence: {external_id} identifies the Assessor responsible for the observed result.",
+        f"scope evidence: {external_id} identifies the in-scope AI service and privileged authentication path.",
+        f"population evidence: {external_id} defines the applicable authentication population for the in-scope path.",
+        f"sample evidence: {external_id} identifies the sample selected from that defined population and the selection basis.",
+        f"assessment_date evidence: {external_id} records the assessment date and timezone for the observed result.",
+        f"evidence_date evidence: {external_id} records the evidence-collection date and timezone separately from the assessment date.",
+        f"tool evidence: {external_id} names the approved tool and version or the documented manual observation method.",
+        f"provenance evidence: {external_id} links the source artifacts, source locator, and cited ESAF requirement.",
+        f"exception evidence: {external_id} records that no exception affected the result or identifies its approval and disposition.",
+        f"delivery_partner_discretion evidence: {external_id} records the applicable Delivery Partner choice, method, or approval, or the basis for no discretion affecting the result.",
+        f"point_in_time_status evidence: {external_id} limits the result to the assessment and evidence dates, defined population, and sample; later state is excluded.",
+    ]
+
+
+def condition_references(control_id: str) -> dict[str, list[str]]:
+    return {
+        "actor": ["relationship:expected_evidence:0", "record:external_metadata"],
+        "scope": [
+            "relationship:expected_evidence:1",
+            "record:context",
+            f"manifest:{control_id}#requirement",
+        ],
+        "population": ["relationship:expected_evidence:2"],
+        "sample": ["relationship:expected_evidence:3"],
+        "assessment_date": ["relationship:expected_evidence:4"],
+        "evidence_date": ["relationship:expected_evidence:5"],
+        "tool": ["relationship:expected_evidence:6"],
+        "provenance": [
+            "relationship:expected_evidence:7",
+            "record:source_locator",
+            f"manifest:{control_id}#requirement",
+        ],
+        "exception": ["relationship:expected_evidence:8"],
+        "delivery_partner_discretion": ["relationship:expected_evidence:9"],
+        "point_in_time_status": [
+            "relationship:expected_evidence:10",
+            "relationship:known_gaps:0",
+        ],
+    }
 
 
 def valid_profile_record() -> dict[str, object]:
@@ -189,17 +240,18 @@ def valid_profile_record() -> dict[str, object]:
                 "esaf_requirement_locator": f"controls/{control['path']}#requirement",
                 "direction": "external_to_esaf",
                 "rationale": (
-                    "External observation: the assessment produced a bounded authentication result. "
+                    f"External observation: {VALID_OBSERVATION}. "
                     "Supported ESAF outcome: IAM-130 separately authenticates privileged access. "
                     "Conditions only narrow this supported claim; they do not create either outcome."
                 ),
-                "conditions": [condition_entry(condition) for condition in CONDITION_ORDER],
-                "expected_evidence": [
-                    "A dated attributable assessment workpaper identifies the "
-                    "Assessor, AI service scope, authentication population and "
-                    "sample, approved tool and method, result, provenance, and any "
-                    "exception."
+                "conditions": [
+                    condition_entry(
+                        condition,
+                        evidence_references=condition_references("IAM-130")[condition],
+                    )
+                    for condition in CONDITION_ORDER
                 ],
+                "expected_evidence": condition_evidence("CEPTS3.2-M-001"),
                 "known_gaps": ["Population-wide and continuous operation are not established."],
                 "prohibited_inferences": required_prohibited_inferences(
                     "CEPTS3.2-M-001"
@@ -753,15 +805,29 @@ class CyberEssentialsPlusExternalToEsafMappingTests(unittest.TestCase):
             "binding prohibition for the authored record."
         )
         mutations = {
-            "missing field": None,
-            "missing category": required_prohibited_inferences("CEPTS3.2-M-001")[:-1],
-            "wrong provision": required_prohibited_inferences("CEPTS3.2-M-999"),
-            "generic entry": [
-                "Do not infer implementation, effectiveness, compliance, or assurance."
-            ],
-            "arbitrary prohibition": arbitrary_prohibition,
+            "missing field": (
+                None,
+                "requires provision-specific prohibited_inferences",
+            ),
+            "missing category": (
+                required_prohibited_inferences("CEPTS3.2-M-001")[:-1],
+                "requires provision-specific prohibited_inferences",
+            ),
+            "wrong provision": (
+                required_prohibited_inferences("CEPTS3.2-M-999"),
+                "requires provision-specific prohibited_inferences",
+            ),
+            "generic entry": (
+                ["Do not infer implementation, effectiveness, compliance, or assurance."],
+                "requires provision-specific prohibited_inferences",
+            ),
+            "arbitrary prohibition": (
+                arbitrary_prohibition,
+                "must bind every prohibited inference to the observed result and "
+                "cited ESAF outcome",
+            ),
         }
-        for label, prohibited_inferences in mutations.items():
+        for label, (prohibited_inferences, expected_message) in mutations.items():
             with self.subTest(label=label):
                 candidate = valid_profile_record()
                 leg = candidate["relationships"][0]
@@ -770,7 +836,7 @@ class CyberEssentialsPlusExternalToEsafMappingTests(unittest.TestCase):
                 else:
                     leg["prohibited_inferences"] = prohibited_inferences
                 self.assertIn(
-                    "requires provision-specific prohibited_inferences",
+                    expected_message,
                     "\n".join(
                         crosswalk_validation.validate_reverse_evidence_record(
                             candidate, mapping_set, controls
@@ -778,16 +844,26 @@ class CyberEssentialsPlusExternalToEsafMappingTests(unittest.TestCase):
                     ),
                 )
 
-    def test_reverse_positive_rejects_tool_name_without_observed_result(self) -> None:
+    def test_reverse_positive_rejects_generic_condition_boilerplate(self) -> None:
         mapping_set, controls = reverse_profile_inputs()
         candidate = valid_profile_record()
-        candidate["relationships"][0]["rationale"] = (
-            "External observation: Nmap was used. Supported ESAF outcome: IAM-130 "
-            "separately authenticates privileged access. Conditions only narrow "
-            "this supported claim; they do not create either outcome."
-        )
+        leg = candidate["relationships"][0]
+        leg["expected_evidence"] = [
+            "A dated attributable workpaper identifies actor, scope, population, "
+            "sample, dates, tool, provenance, exception, discretion, and status."
+        ]
+        leg["conditions"] = [
+            condition_entry(
+                condition,
+                evidence_references=[
+                    "relationship:expected_evidence",
+                    "record:source_locator",
+                ],
+            )
+            for condition in CONDITION_ORDER
+        ]
         self.assertIn(
-            "must identify an observed result beyond a tool name",
+            "condition actor requires provision-specific evidence for actor",
             "\n".join(
                 crosswalk_validation.validate_reverse_evidence_record(
                     candidate, mapping_set, controls
@@ -795,16 +871,85 @@ class CyberEssentialsPlusExternalToEsafMappingTests(unittest.TestCase):
             ),
         )
 
+    def test_reverse_positive_rejects_mismatched_condition_evidence(self) -> None:
+        mapping_set, controls = reverse_profile_inputs()
+        mutations = {
+            "exception evidence substituted": ["relationship:expected_evidence:8"],
+            "unrelated generic reference added": [
+                "relationship:expected_evidence:9",
+                "record:source_locator",
+            ],
+        }
+        for label, references in mutations.items():
+            with self.subTest(label=label):
+                candidate = valid_profile_record()
+                leg = candidate["relationships"][0]
+                leg["conditions"][9] = condition_entry(
+                    "delivery_partner_discretion",
+                    evidence_references=references,
+                )
+                self.assertIn(
+                    "condition delivery_partner_discretion requires provision-specific "
+                    "evidence for delivery_partner_discretion",
+                    "\n".join(
+                        crosswalk_validation.validate_reverse_evidence_record(
+                            candidate, mapping_set, controls
+                        )
+                    ),
+                )
+
+    def test_reverse_positive_rejects_generic_prohibited_inference_wording(self) -> None:
+        mapping_set, controls = reverse_profile_inputs()
+        candidate = valid_profile_record()
+        candidate["relationships"][0]["prohibited_inferences"] = [
+            f"{candidate['external_provision_id']} | prohibit {key}: The observation "
+            "does not establish the generic assurance category."
+            for key in PROHIBITED_INFERENCE_KEYS
+        ]
+        self.assertIn(
+            "must bind every prohibited inference to the observed result and cited "
+            "ESAF outcome",
+            "\n".join(
+                crosswalk_validation.validate_reverse_evidence_record(
+                    candidate, mapping_set, controls
+                )
+            ),
+        )
+
+    def test_reverse_positive_rejects_tool_name_without_observed_result(self) -> None:
+        mapping_set, controls = reverse_profile_inputs()
+        for observation in (
+            "Nmap.",
+            "the Assessor ran Nmap.",
+            "Nmap was used.",
+        ):
+            with self.subTest(observation=observation):
+                candidate = valid_profile_record()
+                candidate["relationships"][0]["rationale"] = (
+                    f"External observation: {observation} Supported ESAF outcome: "
+                    "IAM-130 separately authenticates privileged access. Conditions "
+                    "only narrow this supported claim; they do not create either "
+                    "outcome."
+                )
+                self.assertIn(
+                    "must identify an independently stated observed result",
+                    "\n".join(
+                        crosswalk_validation.validate_reverse_evidence_record(
+                            candidate, mapping_set, controls
+                        )
+                    ),
+                )
+
     def test_reverse_positive_rejects_sample_without_population_boundary(self) -> None:
         mapping_set, controls = reverse_profile_inputs()
         candidate = valid_profile_record()
         candidate["relationships"][0]["expected_evidence"] = [
             "A dated attributable assessment workpaper identifies the Assessor, AI "
-            "service scope, sample, approved tool and method, result, provenance, "
-            "and any exception."
+            "service scope, selected devices, approved tool and method, result, "
+            "provenance, and any exception."
         ]
         self.assertIn(
-            "must identify both population boundary and sample",
+            "selection or sampling evidence requires an explicit population boundary",
             "\n".join(
                 crosswalk_validation.validate_reverse_evidence_record(
                     candidate, mapping_set, controls
@@ -815,13 +960,14 @@ class CyberEssentialsPlusExternalToEsafMappingTests(unittest.TestCase):
     def test_reverse_positive_rejects_date_free_observation(self) -> None:
         mapping_set, controls = reverse_profile_inputs()
         candidate = valid_profile_record()
-        candidate["relationships"][0]["expected_evidence"] = [
-            "An attributable assessment workpaper identifies the Assessor, AI "
-            "service scope, authentication population and sample, approved tool "
-            "and method, result, provenance, and any exception."
-        ]
+        candidate["relationships"][0]["rationale"] = (
+            "External observation: the assessment result records a bounded "
+            "authentication outcome. Supported ESAF outcome: IAM-130 separately "
+            "authenticates privileged access. Conditions only narrow this supported "
+            "claim; they do not create either outcome."
+        )
         self.assertIn(
-            "must identify an assessment or evidence date",
+            "external observation must be bound to assessment or evidence dates",
             "\n".join(
                 crosswalk_validation.validate_reverse_evidence_record(
                     candidate, mapping_set, controls
