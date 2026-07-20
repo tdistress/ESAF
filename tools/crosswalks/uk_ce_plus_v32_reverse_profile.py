@@ -22,6 +22,105 @@ _ASSESSMENT_DATE_BOUNDARY = "assessment_date_required"
 _EVIDENCE_DATE_BOUNDARY = "evidence_date_required"
 
 
+# This vocabulary is intentionally independent of OBSERVATION_PROFILE_ENTRIES.
+# Adding a new semantic value therefore requires a separate, deliberate update.
+OBSERVATION_SEMANTIC_VOCABULARIES = {
+    "result_kind": frozenset({
+        "abuse_resistance",
+        "allowlisting_configuration",
+        "assessment_scope",
+        "authentication_requirement",
+        "authentication_strength",
+        "code_signing_configuration",
+        "configuration_change_approval",
+        "credential_configuration",
+        "download_protection",
+        "evidence_retention",
+        "execution_control",
+        "finding_remediation",
+        "host_protection_configuration",
+        "malware_delivery_control",
+        "mfa_challenge",
+        "network_access_configuration",
+        "sampling_calculation",
+        "trust_store_configuration",
+        "vulnerability_fix_availability",
+        "vulnerability_severity",
+    }),
+    "subject": frozenset({
+        "additional_trusted_roots",
+        "anti_malware",
+        "anti_malware_installation",
+        "anti_malware_installation_and_configuration",
+        "anti_malware_updates",
+        "assessed_service_vulnerability",
+        "authentication_factors",
+        "declared_assessment_boundary",
+        "default_password",
+        "defined_malware_delivery_branches",
+        "downloaded_test_file",
+        "executable_formats",
+        "executable_test_file",
+        "listed_configuration_and_execution_checks",
+        "login_attempts",
+        "malware_test_file",
+        "pre_test_findings",
+        "pre_test_verification_evidence",
+        "qualifying_vulnerability",
+        "sample_size",
+        "sample_size_calculation_evidence",
+        "test_file_download",
+        "test_user",
+        "trusted_roots",
+        "unsigned_executable",
+        "untrusted_chain_executable",
+        "user_account",
+        "user_authentication",
+        "user_or_administrator",
+    }),
+    "predicate": frozenset({
+        "activation_and_installation_coverage",
+        "applicant_agreement_status",
+        "branch_applicability_status",
+        "calculation_method_alignment",
+        "check_status",
+        "code_signing_coverage",
+        "configuration_alignment",
+        "delivery_and_access_status",
+        "delivery_execution_interaction_status",
+        "download_access_control_status",
+        "download_and_access_status",
+        "download_execution_interaction_status",
+        "download_prevention_status",
+        "execution_capability",
+        "factor_count",
+        "internet_access_status",
+        "lockout_attempt_threshold",
+        "operational_status",
+        "password_change_status",
+        "pre_access_challenge_status",
+        "pre_test_resolution_status",
+        "retention_duration",
+        "root_set_relation",
+        "scope_correspondence_status",
+        "service_access_requirement_status",
+        "severity_score",
+        "throttling_status",
+        "vendor_fix_age",
+    }),
+    "result_type": frozenset({
+        "recorded_boolean",
+        "recorded_branch",
+        "recorded_calculation",
+        "recorded_comparison",
+        "recorded_count",
+        "recorded_duration",
+        "recorded_status",
+        "recorded_threshold",
+    }),
+}
+
+
 # The tuple form deliberately preserves the source declaration order so duplicate
 # pair declarations cannot be hidden while a lookup is constructed.
 OBSERVATION_PROFILE_ENTRIES = (
@@ -80,25 +179,38 @@ def _semantic_value_errors(field: str, value: object) -> list[str]:
     if not isinstance(value, str) or not value:
         return [f"{field} must be a nonempty string"]
     tokens = _semantic_tokens(value)
-    forbidden = {
-        "true", "false", "compliance", "compliant", "noncompliant", "certification",
-        "certified", "uncertified", "success", "successful", "failure", "equivalence",
-        "equivalent", "nonequivalent", "inequivalent",
-    }
-    if any(token in forbidden or re.fullmatch(r"pass(?:ed|ing)?", token)
-           or re.fullmatch(r"fail(?:ed|ing|ure)?", token) for token in tokens):
+    outcome_family = re.compile(
+        r"(?:true|false|"
+        r"pass(?:es|ed|ing)?|"
+        r"fail(?:s|ed|ing|ure|ures)?|"
+        r"(?:un)?success(?:ful|fully|es)?|"
+        r"(?:non)?compli(?:ance|ant)|"
+        r"(?:un)?certif(?:y|ies|ied|ying|ication|ications)|"
+        r"(?:non|in)?equival(?:ence|ent)|"
+        r"assur(?:e|es|ed|ing|ance|ances)|"
+        r"implement(?:ation|ed|ing)?|"
+        r"effect(?:ive|iveness)?|"
+        r"sufficien(?:cy|t))"
+    )
+    if any(outcome_family.fullmatch(token) for token in tokens):
         return [f"{field} must be outcome-neutral"]
-    if any(tokens[index:index + 2] in (("high", "risk"), ("low", "risk"))
-           for index in range(len(tokens) - 1)):
+    if any(
+        re.fullmatch(r"(?:critical(?:ity)?|high|medium|low)", tokens[index])
+        and re.fullmatch(r"risks?", tokens[index + 1])
+        for index in range(len(tokens) - 1)
+    ):
         return [f"{field} must not encode a threshold classification"]
-    if any(token in {"tool", "scanner", "utility", "assessor", "invocation"}
-           for token in tokens) or (
-        tokens and set(tokens).issubset({"activity", "procedure", "execution"})
+    activity_tokens = {"activity", "execution", "performance", "procedure"}
+    tool_tokens = {"assessor", "invocation", "nmap", "scanner", "tool", "utility"}
+    if any(token in tool_tokens for token in tokens) or (
+        tokens and set(tokens).issubset(activity_tokens)
     ) or (
-        "assessment" in tokens
-        and any(token in {"procedure", "execution", "activity"} for token in tokens)
+        any(token in {"actor", "assessment", "procedure"} for token in tokens)
+        and any(token in activity_tokens for token in tokens)
     ):
         return [f"{field} must not describe mere tool use or assessment procedure activity"]
+    if value not in OBSERVATION_SEMANTIC_VOCABULARIES[field]:
+        return [f"{field} must use the closed source-versioned vocabulary"]
     return []
 
 

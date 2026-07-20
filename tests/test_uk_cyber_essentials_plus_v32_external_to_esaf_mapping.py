@@ -51,9 +51,35 @@ PROHIBITED_INFERENCE_KEYS = (
     "population_wide_coverage",
     "current_scheme_coverage",
 )
+REVIEW_SEMANTIC_BYPASSES = {
+    "unsuccessful_status": "must be outcome-neutral",
+    "failures_recorded": "must be outcome-neutral",
+    "noncompliance_status": "must be outcome-neutral",
+    "certifying_status": "must be outcome-neutral",
+    "passes_status": "must be outcome-neutral",
+    "critical_risk": "must not encode a threshold classification",
+    "medium_risk": "must not encode a threshold classification",
+    "nmap_authorization": (
+        "must not describe mere tool use or assessment procedure activity"
+    ),
+    "actor_activity_status": (
+        "must not describe mere tool use or assessment procedure activity"
+    ),
+    "procedure_performance": (
+        "must not describe mere tool use or assessment procedure activity"
+    ),
+    "assessment_performance": (
+        "must not describe mere tool use or assessment procedure activity"
+    ),
+    "continuous_assurance": "must be outcome-neutral",
+}
 VALID_PROVISION_ID = "CEPTS3.2-T1-011"
 VALID_CONTROL_ID = "IAM-110"
 VALID_OBSERVATION = render_observation_claim(VALID_PROVISION_ID, VALID_CONTROL_ID)
+VALID_SUPPORTED_OUTCOME = (
+    "requires identities to be authenticated before access to non-public AI assets "
+    "using mechanisms whose strength, context, and resistance are proportionate to risk."
+)
 TASK3_GROUP_COUNTS = {"M": 24, "T1": 16, "S": 11}
 TASK4_GROUP_COUNTS = {"T2": 9, "T3": 37, "T4": 9}
 AUTHORED_GROUP_COUNTS = TASK3_GROUP_COUNTS | TASK4_GROUP_COUNTS
@@ -265,7 +291,7 @@ def set_profile_observation(record: dict[str, object], observation: str) -> None
     control_id = leg["esaf_control_id"]
     leg["rationale"] = (
         f"External observation: {normalized_observation}. Supported ESAF outcome: "
-        f"{control_id} separately authenticates privileged access. Conditions only "
+        f"{control_id} {VALID_SUPPORTED_OUTCOME} Conditions only "
         "narrow this supported claim; they do not create either outcome."
     )
     leg["prohibited_inferences"] = required_prohibited_inferences(
@@ -301,8 +327,8 @@ def valid_profile_record() -> dict[str, object]:
                 "direction": "external_to_esaf",
                 "rationale": (
                     f"External observation: {VALID_OBSERVATION}. "
-                    f"Supported ESAF outcome: {VALID_CONTROL_ID} separately "
-                    "authenticates privileged access. "
+                    f"Supported ESAF outcome: {VALID_CONTROL_ID} "
+                    f"{VALID_SUPPORTED_OUTCOME} "
                     "Conditions only narrow this supported claim; they do not create either outcome."
                 ),
                 "conditions": [
@@ -872,6 +898,152 @@ class CyberEssentialsPlusExternalToEsafMappingTests(unittest.TestCase):
                     ),
                 )
 
+    def test_reverse_positive_requires_the_exact_canonical_rationale_template(
+        self,
+    ) -> None:
+        mapping_set, controls = reverse_profile_inputs()
+        canonical = valid_profile_record()["relationships"][0]["rationale"]
+        mutations = {
+            "supported outcome drift": canonical.replace(
+                VALID_SUPPORTED_OUTCOME,
+                "generally relates to privileged access.",
+            ),
+            "contradictory proof suffix": (
+                f"{canonical} This proves the cited control is met."
+            ),
+            "contradictory guarantee suffix": (
+                f"{canonical} This guarantees secure control operation."
+            ),
+            "contradictory conformity suffix": (
+                f"{canonical} This assures conformity with the cited control."
+            ),
+        }
+        for label, rationale in mutations.items():
+            with self.subTest(label=label):
+                candidate = valid_profile_record()
+                candidate["relationships"][0]["rationale"] = rationale
+                self.assertIn(
+                    "rationale must equal the exact canonical reverse-evidence template",
+                    "\n".join(
+                        crosswalk_validation.validate_reverse_evidence_record(
+                            candidate, mapping_set, controls
+                        )
+                    ),
+                )
+
+    def test_supported_outcome_registry_exactly_binds_all_persisted_rationales(
+        self,
+    ) -> None:
+        supported_outcomes = getattr(
+            crosswalk_validation,
+            "_UK_CE_PLUS_V32_SUPPORTED_OUTCOME_TEXTS",
+            {},
+        )
+        expected_pairs = {
+            (record["external_provision_id"], leg["esaf_control_id"])
+            for record in load_snapshot_records()
+            if record.get("disposition") == "mapped"
+            for leg in record["relationships"]
+        }
+        self.assertEqual(set(supported_outcomes), expected_pairs)
+        self.assertEqual(len(supported_outcomes), 31)
+        self.assertEqual(len(set(supported_outcomes.values())), 12)
+        narrowing = (
+            "Conditions only narrow this supported claim; "
+            "they do not create either outcome."
+        )
+        for record in load_snapshot_records():
+            if record.get("disposition") != "mapped":
+                continue
+            provision_id = record["external_provision_id"]
+            for leg in record["relationships"]:
+                control_id = leg["esaf_control_id"]
+                observation = render_observation_claim(provision_id, control_id)
+                expected = (
+                    f"External observation: {observation}. Supported ESAF outcome: "
+                    f"{control_id} {supported_outcomes[(provision_id, control_id)]} "
+                    f"{narrowing}"
+                )
+                self.assertEqual(leg["rationale"], expected)
+
+    def test_reverse_prohibitions_reject_positive_prefix_smuggling_in_each_entry(
+        self,
+    ) -> None:
+        mapping_set, controls = reverse_profile_inputs()
+        for index, category in enumerate(PROHIBITED_INFERENCE_KEYS):
+            with self.subTest(category=category):
+                candidate = valid_profile_record()
+                entry = candidate["relationships"][0]["prohibited_inferences"][index]
+                candidate["relationships"][0]["prohibited_inferences"][index] = (
+                    entry.replace(
+                        ": The observed result ",
+                        ": The observation proves ESAF compliance and equivalence; "
+                        "The observed result ",
+                        1,
+                    )
+                )
+                self.assertIn(
+                    "must bind every prohibited inference to the observed result and "
+                    "cited ESAF outcome",
+                    "\n".join(
+                        crosswalk_validation.validate_reverse_evidence_record(
+                            candidate, mapping_set, controls
+                        )
+                    ),
+                )
+
+    def test_reverse_prohibitions_reject_suffix_and_synonym_smuggling(
+        self,
+    ) -> None:
+        mapping_set, controls = reverse_profile_inputs()
+        mutations = {
+            "suffix": lambda entry: f"{entry} This assures conformity.",
+            "synonym drift": lambda entry: entry.replace(
+                "The observed result ", "The documented observation ", 1
+            ),
+        }
+        for label, mutate in mutations.items():
+            for index, category in enumerate(PROHIBITED_INFERENCE_KEYS):
+                with self.subTest(label=label, category=category):
+                    candidate = valid_profile_record()
+                    entry = candidate["relationships"][0]["prohibited_inferences"][index]
+                    candidate["relationships"][0]["prohibited_inferences"][index] = (
+                        mutate(entry)
+                    )
+                    self.assertIn(
+                        "must bind every prohibited inference to the observed result and "
+                        "cited ESAF outcome",
+                        "\n".join(
+                            crosswalk_validation.validate_reverse_evidence_record(
+                                candidate, mapping_set, controls
+                            )
+                        ),
+                    )
+
+    def test_reverse_prohibitions_require_control_binding_outside_observation_json(
+        self,
+    ) -> None:
+        mapping_set, controls = reverse_profile_inputs()
+        for index, category in enumerate(PROHIBITED_INFERENCE_KEYS):
+            with self.subTest(category=category):
+                candidate = valid_profile_record()
+                entry = candidate["relationships"][0]["prohibited_inferences"][index]
+                candidate["relationships"][0]["prohibited_inferences"][index] = (
+                    entry.replace(
+                        f" for the cited {VALID_CONTROL_ID} outcome.",
+                        " for the cited control outcome.",
+                    )
+                )
+                self.assertIn(
+                    "must bind every prohibited inference to the observed result and "
+                    "cited ESAF outcome",
+                    "\n".join(
+                        crosswalk_validation.validate_reverse_evidence_record(
+                            candidate, mapping_set, controls
+                        )
+                    ),
+                )
+
     def test_reverse_positive_requires_binding_prohibited_inferences(self) -> None:
         mapping_set, controls = reverse_profile_inputs()
         arbitrary_prohibition = required_prohibited_inferences(VALID_PROVISION_ID)
@@ -1110,10 +1282,21 @@ class CyberEssentialsPlusExternalToEsafMappingTests(unittest.TestCase):
                 "result_type": "recorded_boolean",
             },
         }
+        supported_outcomes = {
+            (provision_id, "IAM-110"): "states its independently supported outcome.",
+            (provision_id, "IAM-140"): "states its independently supported outcome.",
+        }
         candidate = valid_profile_record()
         candidate["external_provision_id"] = provision_id
         legs = []
-        with patch.object(reverse_profile, "OBSERVATION_PROFILES", profiles):
+        with patch.object(
+            reverse_profile, "OBSERVATION_PROFILES", profiles
+        ), patch.object(
+            crosswalk_validation,
+            "_UK_CE_PLUS_V32_SUPPORTED_OUTCOME_TEXTS",
+            supported_outcomes,
+            create=True,
+        ):
             for control_id in ("IAM-110", "IAM-140"):
                 leg = deepcopy(candidate["relationships"][0])
                 control = controls[control_id]
@@ -1209,6 +1392,54 @@ class CyberEssentialsPlusExternalToEsafMappingTests(unittest.TestCase):
         self.assertIs(
             validator.call_args.args[1], reverse_profile.OBSERVATION_PROFILE_ENTRIES
         )
+
+    def test_snapshot_validation_rejects_supported_outcome_registry_key_drift(
+        self,
+    ) -> None:
+        supported_outcomes = {}
+        narrowing = (
+            " Conditions only narrow this supported claim; "
+            "they do not create either outcome."
+        )
+        for record in load_snapshot_records():
+            if record.get("disposition") != "mapped":
+                continue
+            provision_id = record["external_provision_id"]
+            for leg in record["relationships"]:
+                control_id = leg["esaf_control_id"]
+                marker = f"Supported ESAF outcome: {control_id} "
+                supported_outcomes[(provision_id, control_id)] = (
+                    leg["rationale"].split(marker, 1)[1].removesuffix(narrowing)
+                )
+        missing_pair = ("CEPTS3.2-M-004", "AUD-120")
+        cases = {
+            "missing": (
+                {
+                    pair: text
+                    for pair, text in supported_outcomes.items()
+                    if pair != missing_pair
+                },
+                "missing supported-outcome text for observation profile pair: "
+                "CEPTS3.2-M-004/AUD-120",
+            ),
+            "orphan": (
+                supported_outcomes
+                | {
+                    ("CEPTS3.2-X-001", "IAM-110"): (
+                        "states an unsupported outcome registry entry."
+                    )
+                },
+                "orphan supported-outcome text pair: CEPTS3.2-X-001/IAM-110",
+            ),
+        }
+        for label, (candidate, diagnostic) in cases.items():
+            with self.subTest(label=label), patch.object(
+                crosswalk_validation,
+                "_UK_CE_PLUS_V32_SUPPORTED_OUTCOME_TEXTS",
+                candidate,
+                create=True,
+            ):
+                self.assertIn(diagnostic, "\n".join(validate(ROOT).errors))
 
     def test_reverse_mapped_record_requires_a_relationship(self) -> None:
         mapping_set, controls = reverse_profile_inputs()
@@ -1336,6 +1567,32 @@ class CyberEssentialsPlusStructuredObservationProfileTests(unittest.TestCase):
                         claim, f"{field} must be outcome-neutral", profiles
                     )
 
+    def test_claim_rejects_matching_profiles_for_the_complete_review_bypass_list(
+        self,
+    ) -> None:
+        for field in ("result_kind", "subject", "predicate", "result_type"):
+            for value, diagnostic in REVIEW_SEMANTIC_BYPASSES.items():
+                with self.subTest(field=field, value=value):
+                    claim, profiles = self.semantic_mutation(field, value)
+                    self.assert_rejected(
+                        claim,
+                        f"{field} {diagnostic}",
+                        profiles,
+                    )
+
+    def test_claim_rejects_novel_neutral_values_even_when_the_profile_matches(
+        self,
+    ) -> None:
+        for field in ("result_kind", "subject", "predicate", "result_type"):
+            with self.subTest(field=field):
+                value = f"novel_{field}_measurement"
+                claim, profiles = self.semantic_mutation(field, value)
+                self.assert_rejected(
+                    claim,
+                    f"{field} must use the closed source-versioned vocabulary",
+                    profiles,
+                )
+
     def test_claim_rejects_a_profile_value_borrowed_from_another_pair(self) -> None:
         self.assert_rejected(
             self.mutated_claim(predicate="factor_count"),
@@ -1382,17 +1639,80 @@ class CyberEssentialsPlusStructuredObservationProfileTests(unittest.TestCase):
                     ):
                         build_observation_profiles([tuple(entry)])
 
+    def test_registry_builder_rejects_the_complete_review_bypass_list(self) -> None:
+        original = list(EXPECTED_OBSERVATION_PROFILE_ENTRIES[6])
+        for position, field in enumerate(
+            ("result_kind", "subject", "predicate", "result_type"), start=2
+        ):
+            for value, diagnostic in REVIEW_SEMANTIC_BYPASSES.items():
+                with self.subTest(field=field, value=value):
+                    entry = original.copy()
+                    entry[position] = value
+                    with self.assertRaisesRegex(
+                        ValueError,
+                        f"{field} {diagnostic}",
+                    ):
+                        build_observation_profiles([tuple(entry)])
+
+    def test_registry_audit_rejects_the_complete_review_bypass_list(self) -> None:
+        original = list(EXPECTED_OBSERVATION_PROFILE_ENTRIES[6])
+        pair = (original[0], original[1])
+        for position, field in enumerate(
+            ("result_kind", "subject", "predicate", "result_type"), start=2
+        ):
+            for value, diagnostic in REVIEW_SEMANTIC_BYPASSES.items():
+                with self.subTest(field=field, value=value):
+                    entry = original.copy()
+                    entry[position] = value
+                    self.assertIn(
+                        f"{field} {diagnostic}",
+                        validate_observation_registry([pair], [tuple(entry)]),
+                    )
+
+    def test_registry_builder_and_audit_reject_novel_neutral_values(self) -> None:
+        original = list(EXPECTED_OBSERVATION_PROFILE_ENTRIES[6])
+        pair = (original[0], original[1])
+        for position, field in enumerate(
+            ("result_kind", "subject", "predicate", "result_type"), start=2
+        ):
+            with self.subTest(field=field):
+                entry = original.copy()
+                entry[position] = f"novel_{field}_measurement"
+                with self.assertRaisesRegex(
+                    ValueError,
+                    f"{field} must use the closed source-versioned vocabulary",
+                ):
+                    build_observation_profiles([tuple(entry)])
+                self.assertIn(
+                    f"{field} must use the closed source-versioned vocabulary",
+                    validate_observation_registry([pair], [tuple(entry)]),
+                )
+
     def test_registry_accepts_configuration_change_approval_measurement(self) -> None:
         claim = render_observation_claim("CEPTS3.2-T3-032", "INF-130")
         self.assertEqual(
             validate_observation_claim(claim, "CEPTS3.2-T3-032", "INF-130"), []
         )
 
+    def test_closed_vocabularies_preserve_approved_assessment_and_execution_terms(
+        self,
+    ) -> None:
+        for provision_id, control_id in (
+            ("CEPTS3.2-M-004", "AUD-120"),
+            ("CEPTS3.2-T3-033", "INF-110"),
+            ("CEPTS3.2-T3-034", "INF-110"),
+        ):
+            with self.subTest(provision_id=provision_id, control_id=control_id):
+                claim = render_observation_claim(provision_id, control_id)
+                self.assertEqual(
+                    validate_observation_claim(claim, provision_id, control_id), []
+                )
+
     def test_registry_integrity_rejects_duplicate_missing_orphan_negative_and_unimplemented_pairs(self) -> None:
         pairs = [(row[0], row[1]) for row in EXPECTED_OBSERVATION_PROFILE_ENTRIES]
         negative = ("CEPTS3.2-M-001", "IAM-110", "authentication_requirement", "user_authentication", "service_access_requirement_status", "recorded_boolean")
         unimplemented = ("CEPTS3.2-T5-001", "IAM-110", "authentication_requirement", "user_authentication", "service_access_requirement_status", "recorded_boolean")
-        orphan = ("CEPTS3.2-X-001", "IAM-110", "measurement_kind", "configuration_subject", "measurement_predicate", "recorded_status")
+        orphan = ("CEPTS3.2-X-001", "IAM-110", "authentication_requirement", "user_authentication", "service_access_requirement_status", "recorded_boolean")
         cases = {
             "duplicate declared pair": (
                 pairs, list(EXPECTED_OBSERVATION_PROFILE_ENTRIES) + [EXPECTED_OBSERVATION_PROFILE_ENTRIES[0]],

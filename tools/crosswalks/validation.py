@@ -24,6 +24,127 @@ _UK_CE_PLUS_V32_REVERSE_PROFILE_ID = (
     "esaf-0.4-alpha--0.2.0"
 )
 
+_OUTCOME_AUD_SCOPE = (
+    "requires relevant, reliable, complete, timely, attributable, and "
+    "integrity-protected evidence for each AI assessment scope and period."
+)
+_OUTCOME_AUD_FINDINGS = (
+    "requires AI assessment findings to be documented, classified, assigned, "
+    "prioritized, remediated, escalated, retested, closed, and retained according "
+    "to the named governance factors."
+)
+_OUTCOME_AUD_RETAINED_PROCEDURE = (
+    "requires relevant, reliable, complete, timely, attributable, and "
+    "integrity-protected evidence to be obtained and retained for each AI "
+    "assessment procedure, determination, scope, and period."
+)
+_OUTCOME_AUD_PROCEDURE = (
+    "requires relevant, reliable, complete, timely, attributable, and "
+    "integrity-protected evidence for each AI assessment procedure, determination, "
+    "scope, and period."
+)
+_OUTCOME_RECORDS = (
+    "requires AI records, notices, registrations, reports, and evidence to be "
+    "created, protected, retained, disclosed, submitted, and disposed of according "
+    "to applicable record requirements."
+)
+_OUTCOME_VULNERABILITIES = (
+    "requires vulnerabilities affecting AI infrastructure and dependencies to be "
+    "identified, assessed, prioritized, remediated, mitigated, or accepted according "
+    "to the named risk factors."
+)
+_OUTCOME_AUTHENTICATION = (
+    "requires identities to be authenticated before access to non-public AI assets "
+    "using mechanisms whose strength, context, and resistance are proportionate to "
+    "risk."
+)
+_OUTCOME_CREDENTIALS = (
+    "requires credentials used by AI capabilities to be generated, stored, "
+    "distributed, used, rotated, revoked, and monitored through approved "
+    "secrets-management mechanisms."
+)
+_OUTCOME_APPLICATION_MISUSE = (
+    "requires AI application misuse, adversarial behavior, automated abuse, denial "
+    "of service, excessive consumption, repeated policy evasion, and out-of-purpose "
+    "use to be detected, constrained, and responded to."
+)
+_OUTCOME_INFRASTRUCTURE_HARDENING = (
+    "requires AI compute, hosts, networks, images, runtimes, and management "
+    "interfaces to be hardened using approved, versioned, and risk-proportionate "
+    "configuration baselines."
+)
+_OUTCOME_CONFIGURATION_CHANGE = (
+    "requires infrastructure affecting AI workloads to be controlled, versioned, "
+    "reviewed, tested, approved, reproducible, and monitored configuration with "
+    "rollback or recovery."
+)
+_OUTCOME_REPLAY_RESISTANT_AUTHENTICATION = (
+    "requires identities to be authenticated before access to non-public AI assets "
+    "using mechanisms whose strength, context, and resistance to replay or credential "
+    "theft are proportionate to risk."
+)
+
+# Source-versioned prose is deliberately independent of authored Markdown at runtime.
+_UK_CE_PLUS_V32_SUPPORTED_OUTCOME_TEXTS = {
+    ("CEPTS3.2-M-004", "AUD-120"): _OUTCOME_AUD_SCOPE,
+    ("CEPTS3.2-M-010", "AUD-130"): _OUTCOME_AUD_FINDINGS,
+    ("CEPTS3.2-M-011", "AUD-120"): _OUTCOME_AUD_RETAINED_PROCEDURE,
+    ("CEPTS3.2-S-007", "AUD-120"): _OUTCOME_AUD_PROCEDURE,
+    ("CEPTS3.2-S-008", "CMP-110"): _OUTCOME_RECORDS,
+    ("CEPTS3.2-T1-009", "INF-120"): _OUTCOME_VULNERABILITIES,
+    ("CEPTS3.2-T1-011", "IAM-110"): _OUTCOME_AUTHENTICATION,
+    ("CEPTS3.2-T1-012", "IAM-110"): _OUTCOME_AUTHENTICATION,
+    ("CEPTS3.2-T1-013", "IAM-140"): _OUTCOME_CREDENTIALS,
+    ("CEPTS3.2-T1-014", "APP-150"): _OUTCOME_APPLICATION_MISUSE,
+    ("CEPTS3.2-T1-015", "APP-150"): _OUTCOME_APPLICATION_MISUSE,
+    ("CEPTS3.2-T2-007", "INF-120"): _OUTCOME_VULNERABILITIES,
+    ("CEPTS3.2-T3-005", "INF-110"): _OUTCOME_INFRASTRUCTURE_HARDENING,
+    ("CEPTS3.2-T3-015", "INF-110"): _OUTCOME_INFRASTRUCTURE_HARDENING,
+    ("CEPTS3.2-T3-016", "INF-110"): _OUTCOME_INFRASTRUCTURE_HARDENING,
+    ("CEPTS3.2-T3-017", "INF-110"): _OUTCOME_INFRASTRUCTURE_HARDENING,
+    ("CEPTS3.2-T3-021", "INF-110"): _OUTCOME_INFRASTRUCTURE_HARDENING,
+    ("CEPTS3.2-T3-022", "INF-110"): _OUTCOME_INFRASTRUCTURE_HARDENING,
+    ("CEPTS3.2-T3-023", "INF-110"): _OUTCOME_INFRASTRUCTURE_HARDENING,
+    ("CEPTS3.2-T3-024", "INF-110"): _OUTCOME_INFRASTRUCTURE_HARDENING,
+    ("CEPTS3.2-T3-025", "INF-110"): _OUTCOME_INFRASTRUCTURE_HARDENING,
+    ("CEPTS3.2-T3-027", "INF-110"): _OUTCOME_INFRASTRUCTURE_HARDENING,
+    ("CEPTS3.2-T3-028", "INF-110"): _OUTCOME_INFRASTRUCTURE_HARDENING,
+    ("CEPTS3.2-T3-029", "INF-110"): _OUTCOME_INFRASTRUCTURE_HARDENING,
+    ("CEPTS3.2-T3-031", "INF-110"): _OUTCOME_INFRASTRUCTURE_HARDENING,
+    ("CEPTS3.2-T3-032", "INF-130"): _OUTCOME_CONFIGURATION_CHANGE,
+    ("CEPTS3.2-T3-033", "INF-110"): _OUTCOME_INFRASTRUCTURE_HARDENING,
+    ("CEPTS3.2-T3-034", "INF-110"): _OUTCOME_INFRASTRUCTURE_HARDENING,
+    ("CEPTS3.2-T3-035", "INF-110"): _OUTCOME_INFRASTRUCTURE_HARDENING,
+    ("CEPTS3.2-T3-036", "INF-110"): _OUTCOME_INFRASTRUCTURE_HARDENING,
+    ("CEPTS3.2-T4-008", "IAM-110"): _OUTCOME_REPLAY_RESISTANT_AUTHENTICATION,
+}
+
+_REVERSE_NARROWING_STATEMENT = (
+    "Conditions only narrow this supported claim; they do not create either outcome."
+)
+_REVERSE_PROHIBITION_CATEGORIES = (
+    "implementation",
+    "effectiveness",
+    "sufficiency",
+    "compliance",
+    "certification",
+    "equivalence",
+    "continuous_assurance",
+    "population_wide_coverage",
+    "current_scheme_coverage",
+)
+_REVERSE_PROHIBITION_DENIALS = {
+    "implementation": "does not establish control implementation",
+    "effectiveness": "does not establish control effectiveness",
+    "sufficiency": "is not sufficient evidence",
+    "compliance": "does not establish ESAF compliance",
+    "certification": "does not authorize or establish certification",
+    "equivalence": "is not equivalent",
+    "continuous_assurance": "does not provide continuous assurance",
+    "population_wide_coverage": "does not establish population-wide coverage",
+    "current_scheme_coverage": "does not establish current-scheme coverage",
+}
+
 
 @dataclass
 class ValidationResult:
@@ -873,6 +994,12 @@ def _validate_control_manifest(
                 uk_ce_plus_v32_reverse_profile.OBSERVATION_PROFILE_ENTRIES,
             )
         )
+        errors.extend(
+            f"{relative}: {message}"
+            for message in _reverse_supported_outcome_registry_errors(
+                uk_ce_plus_v32_reverse_profile.OBSERVATION_PROFILE_ENTRIES
+            )
+        )
     return errors
 
 
@@ -1268,10 +1395,7 @@ def validate_reverse_evidence_record(
 
         rationale = leg.get("rationale")
         exact_outcome_marker = f"Supported ESAF outcome: {control_id} "
-        narrowing_statement = (
-            "Conditions only narrow this supported claim; "
-            "they do not create either outcome."
-        )
+        narrowing_statement = _REVERSE_NARROWING_STATEMENT
         if not isinstance(rationale, str):
             rationale = ""
         if "External observation: " not in rationale:
@@ -1300,6 +1424,26 @@ def validate_reverse_evidence_record(
                     observation, external_id, control_id
                 )
             )
+        supported_outcome_text = (
+            _UK_CE_PLUS_V32_SUPPORTED_OUTCOME_TEXTS.get((external_id, control_id))
+            if isinstance(external_id, str) and isinstance(control_id, str)
+            else None
+        )
+        if supported_outcome_text is None:
+            errors.append(
+                f"{leg_label} requires source-versioned supported-outcome text for "
+                "the exact provision/control pair"
+            )
+        else:
+            canonical_rationale = (
+                f"External observation: {observation}. Supported ESAF outcome: "
+                f"{control_id} {supported_outcome_text} {narrowing_statement}"
+            )
+            if rationale != canonical_rationale:
+                errors.append(
+                    f"{leg_label} rationale must equal the exact canonical "
+                    "reverse-evidence template"
+                )
         if exact_outcome_marker not in rationale:
             errors.append(f"{leg_label} must state the exact supported ESAF outcome")
         if narrowing_statement not in rationale:
@@ -1444,6 +1588,32 @@ def validate_reverse_evidence_record(
     return errors
 
 
+def _reverse_supported_outcome_registry_errors(
+    profile_entries: object,
+) -> list[str]:
+    """Require exact pair coverage between semantic and supported-outcome registries."""
+    if not isinstance(profile_entries, (list, tuple)):
+        return ["observation profile declarations must be an ordered sequence"]
+    profile_pairs = {
+        (entry[0], entry[1])
+        for entry in profile_entries
+        if isinstance(entry, (list, tuple))
+        and len(entry) == 6
+        and isinstance(entry[0], str)
+        and isinstance(entry[1], str)
+    }
+    supported_pairs = set(_UK_CE_PLUS_V32_SUPPORTED_OUTCOME_TEXTS)
+    errors = [
+        f"missing supported-outcome text for observation profile pair: {pair[0]}/{pair[1]}"
+        for pair in sorted(profile_pairs - supported_pairs)
+    ]
+    errors.extend(
+        f"orphan supported-outcome text pair: {pair[0]}/{pair[1]}"
+        for pair in sorted(supported_pairs - profile_pairs)
+    )
+    return errors
+
+
 def _reverse_evidence_has_population_boundary(evidence_text: str) -> bool:
     """Require selected or sampled evidence to name its bounded population."""
     return bool(
@@ -1460,25 +1630,16 @@ def _reverse_prohibitions_have_required_categories(
     prohibited_inferences: object, external_id: object
 ) -> bool:
     """Require one provision-bound entry for each canonical assurance category."""
-    categories = (
-        "implementation",
-        "effectiveness",
-        "sufficiency",
-        "compliance",
-        "certification",
-        "equivalence",
-        "continuous_assurance",
-        "population_wide_coverage",
-        "current_scheme_coverage",
-    )
     if not isinstance(external_id, str) or not isinstance(prohibited_inferences, list):
         return False
-    if len(prohibited_inferences) != len(categories):
+    if len(prohibited_inferences) != len(_REVERSE_PROHIBITION_CATEGORIES):
         return False
     return all(
         isinstance(entry, str)
         and entry.startswith(f"{external_id} | prohibit {category}: ")
-        for category, entry in zip(categories, prohibited_inferences)
+        for category, entry in zip(
+            _REVERSE_PROHIBITION_CATEGORIES, prohibited_inferences, strict=True
+        )
     )
 
 
@@ -1488,7 +1649,7 @@ def _reverse_prohibitions_bind_observation_and_outcome(
     observation: str,
     control_id: object,
 ) -> bool:
-    """Bind every prohibition to this observed result and cited ESAF outcome."""
+    """Require all nine exact observation- and control-bound prohibition strings."""
     if not _reverse_prohibitions_have_required_categories(
         prohibited_inferences, external_id
     ) or not isinstance(control_id, str):
@@ -1496,41 +1657,13 @@ def _reverse_prohibitions_bind_observation_and_outcome(
     normalized_observation = observation.rstrip(". ").strip()
     if not normalized_observation:
         return False
-    categories = (
-        "implementation",
-        "effectiveness",
-        "sufficiency",
-        "compliance",
-        "certification",
-        "equivalence",
-        "continuous_assurance",
-        "population_wide_coverage",
-        "current_scheme_coverage",
-    )
-    required_denials = {
-        "implementation": r"\bdoes not establish control implementation\b",
-        "effectiveness": r"\bdoes not establish control effectiveness\b",
-        "sufficiency": r"\bis not sufficient evidence\b",
-        "compliance": r"\bdoes not establish ESAF compliance\b",
-        "certification": r"\bdoes not authorize or establish certification\b",
-        "equivalence": r"\bis not equivalent\b",
-        "continuous_assurance": r"\bdoes not provide continuous assurance\b",
-        "population_wide_coverage": (
-            r"\bdoes not establish population-wide coverage\b"
-        ),
-        "current_scheme_coverage": r"\bdoes not establish current-scheme coverage\b",
-    }
-    for category, entry in zip(categories, prohibited_inferences):
-        if not isinstance(entry, str):
-            return False
-        explanation = entry.split(": ", 1)[1]
-        if (
-            normalized_observation.casefold() not in explanation.casefold()
-            or control_id.casefold() not in explanation.casefold()
-            or re.search(required_denials[category], explanation, re.IGNORECASE) is None
-        ):
-            return False
-    return True
+    expected = [
+        f'{external_id} | prohibit {category}: The observed result '
+        f'"{normalized_observation}" {_REVERSE_PROHIBITION_DENIALS[category]} '
+        f"for the cited {control_id} outcome."
+        for category in _REVERSE_PROHIBITION_CATEGORIES
+    ]
+    return prohibited_inferences == expected
 
 
 def _reverse_condition_is_substantiated(
