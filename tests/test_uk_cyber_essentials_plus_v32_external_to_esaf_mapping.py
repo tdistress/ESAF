@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import re
 import json
 import unittest
@@ -22,6 +23,10 @@ from tools.crosswalks.uk_ce_plus_v32_reverse_profile import (
     validate_observation_claim,
     validate_observation_registry,
 )
+from tests.test_uk_cyber_essentials_plus_v32_inventory import (
+    PERMITTED_SOURCE_IDENTITY_PROSE,
+    SOURCE_FIVE_WORD_DIGESTS,
+)
 
 ROOT = Path(__file__).parents[1]
 MAPPING_SET_ID = "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0"
@@ -29,6 +34,9 @@ SNAPSHOT = ROOT / "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specif
 REGISTRY = ROOT / "crosswalks/registry" / f"{MAPPING_SET_ID}.md"
 ORACLE = ROOT / "docs/superpowers/specs/2026-07-14-uk-cyber-essentials-plus-v3.2-provision-oracle.json"
 RIGHTS = ROOT / "docs/superpowers/reviews/2026-07-19-uk-cyber-essentials-plus-v3.2-external-to-esaf-mapping-rights-attestation.md"
+TRACEABILITY = ROOT / "docs/superpowers/reviews/2026-07-19-uk-cyber-essentials-plus-v3.2-external-to-esaf-mapping-traceability.md"
+FINAL_SPECIFICATION_REVIEW = ROOT / "docs/superpowers/reviews/2026-07-19-uk-cyber-essentials-plus-v3.2-external-to-esaf-mapping-specification-review.md"
+FINAL_OVERCLAIMING_REVIEW = ROOT / "docs/superpowers/reviews/2026-07-19-uk-cyber-essentials-plus-v3.2-external-to-esaf-mapping-overclaiming-review.md"
 ORACLE_SHA256 = "8a6ad659394130c360205aa8a693b812f6c3a6778bc1395cd93ac6187f8386bc"
 CANONICAL_PDF_SHA256 = "2adf2703dec3b581e13e39c6a1de230bb1bce6d85f1158bb1eb53108e28596e8"
 LEGACY_PDF_SHA256 = "d334c717597a01fab7a362377b7b04c8449568052ed1c4cf48837f6fb3aca694"
@@ -122,6 +130,38 @@ TASK4_POSITIVE_TARGETS = {
 TASK5_POSITIVE_TARGETS = {
     "CEPTS3.2-T5-006": "IAM-130",
 }
+POSITIVE_TARGETS = TASK3_POSITIVE_TARGETS | TASK4_POSITIVE_TARGETS | TASK5_POSITIVE_TARGETS
+EXPECTED_KIND_COUNTS = {
+    "procedure_step": 43,
+    "decision_rule": 21,
+    "applicability": 21,
+    "result_rule": 20,
+    "prerequisite": 19,
+    "recommendation": 18,
+    "evidence_retention": 2,
+}
+EXPECTED_CATALOG_COUNTS = {
+    "mapping_sets": 3,
+    "provisions": 404,
+    "relationships": 81,
+    "negative_dispositions": 325,
+}
+GENERIC_NEGATIVE_RATIONALES = {
+    "missing outcome: no direct mapping.",
+    "missing outcome: no direct esaf mapping.",
+    "missing outcome: the esaf baseline does not directly map.",
+}
+PROHIBITED_POSITIVE_ASSURANCE_CLAIMS = (
+    "proves implementation",
+    "proves effectiveness",
+    "is sufficient evidence",
+    "demonstrates compliance",
+    "supports certification",
+    "establishes equivalence",
+    "provides continuous assurance",
+    "proves population-wide coverage",
+    "proves current-scheme coverage",
+)
 
 EXPECTED_OBSERVATION_PROFILE_ENTRIES = (
     ("CEPTS3.2-M-004", "AUD-120", "assessment_scope", "declared_assessment_boundary", "scope_correspondence_status", "recorded_comparison"),
@@ -165,6 +205,58 @@ def load_snapshot_records() -> list[dict[str, object]]:
         for path in sorted(SNAPSHOT.glob("*.md"))
         if path.name not in {"README.md", "PROVISION_INVENTORY.md"}
     ]
+
+
+def oracle_locator(locator: dict[str, object]) -> str:
+    return (
+        f"PDF page {locator['pdf_page']}; printed page {locator['printed_page']}; "
+        f"{locator['section']}; {locator['detail']}"
+    )
+
+
+def record_narratives(record: dict[str, object]):
+    context = record.get("context")
+    if isinstance(context, dict) and isinstance(context.get("summary"), str):
+        yield context["summary"]
+    negative = record.get("negative_rationale")
+    if isinstance(negative, str):
+        yield negative
+    relationships = record.get("relationships", [])
+    if not isinstance(relationships, list):
+        return
+    for relationship in relationships:
+        if not isinstance(relationship, dict):
+            continue
+        rationale = relationship.get("rationale")
+        if isinstance(rationale, str):
+            yield rationale
+        for field in (
+            "conditions",
+            "expected_evidence",
+            "known_gaps",
+            "prohibited_inferences",
+        ):
+            values = relationship.get(field, [])
+            if isinstance(values, list):
+                yield from (value for value in values if isinstance(value, str))
+
+
+def assert_no_copied_source_windows(
+    testcase: unittest.TestCase,
+    narratives: list[str],
+) -> None:
+    for narrative in narratives:
+        words = re.findall(r"[a-z0-9%]+", narrative.lower())
+        for index in range(len(words) - 4):
+            window = " ".join(words[index:index + 5])
+            if any(window in phrase for phrase in PERMITTED_SOURCE_IDENTITY_PROSE):
+                continue
+            digest = hashlib.sha256(window.encode("utf-8")).digest()
+            testcase.assertNotIn(
+                digest,
+                SOURCE_FIVE_WORD_DIGESTS,
+                f"normalized five-word source window reproduced: {window!r}",
+            )
 
 
 def load_task3_records() -> list[dict[str, object]]:
@@ -485,6 +577,243 @@ class CyberEssentialsPlusExternalToEsafMappingTests(unittest.TestCase):
         self.assertEqual(entry["inventory"]["expected_count"], 144)
         self.assertEqual(len(entry["provisions"]), sum(AUTHORED_GROUP_COUNTS.values()))
         self.assertEqual(entry["lifecycle"]["events"], [])
+
+    def test_complete_reverse_snapshot_is_reconciled_from_records(self) -> None:
+        records = load_snapshot_records()
+        oracle = json.loads(ORACLE.read_text(encoding="utf-8"))["provisions"]
+        manifest = json.loads(
+            (SNAPSHOT / "ESAF_CONTROL_MANIFEST.json").read_text(encoding="utf-8")
+        )
+        controls = {item["id"]: item for item in manifest["controls"]}
+        record_by_id = {record["external_provision_id"]: record for record in records}
+        oracle_by_id = {item["external_provision_id"]: item for item in oracle}
+
+        self.assertEqual(len(records), 144)
+        self.assertEqual(len(record_by_id), 144, "duplicate external provision record")
+        self.assertEqual(set(record_by_id), set(oracle_by_id))
+        self.assertEqual(
+            Counter(record["external_metadata"]["group"] for record in records),
+            Counter(EXPECTED_GROUP_COUNTS),
+        )
+        self.assertEqual(
+            Counter(record["external_metadata"]["kind"] for record in records),
+            Counter(EXPECTED_KIND_COUNTS),
+        )
+
+        positives = [record for record in records if record["disposition"] == "mapped"]
+        negatives = [
+            record for record in records
+            if record["disposition"] == "no_direct_mapping"
+        ]
+        legs = [
+            (record["external_provision_id"], leg)
+            for record in records
+            for leg in record["relationships"]
+        ]
+        self.assertEqual(len(positives), 32)
+        self.assertEqual(len(negatives), 112)
+        self.assertEqual(len(legs), 32)
+        self.assertEqual(
+            {leg["esaf_control_id"] for _, leg in legs},
+            set(POSITIVE_TARGETS.values()),
+        )
+        self.assertEqual(len({leg["esaf_control_id"] for _, leg in legs}), 10)
+        self.assertEqual(
+            {
+                record["external_provision_id"]: record["relationships"][0]["esaf_control_id"]
+                for record in positives
+            },
+            POSITIVE_TARGETS,
+        )
+        self.assertEqual({leg["direction"] for _, leg in legs}, {"external_to_esaf"})
+        self.assertEqual(
+            len({(external_id, leg["esaf_control_id"], leg["direction"]) for external_id, leg in legs}),
+            32,
+        )
+
+        narratives: list[str] = []
+        for external_id, record in record_by_id.items():
+            with self.subTest(external_id=external_id):
+                expected = oracle_by_id[external_id]
+                self.assertEqual(
+                    record["external_metadata"],
+                    {field: expected[field] for field in ("group", "kind", "actors")},
+                )
+                self.assertEqual(record["context"]["summary"], expected["summary"])
+                self.assertEqual(
+                    record["source_locator"]["locator"],
+                    oracle_locator(expected["locator"]),
+                )
+                self.assertEqual(record["status"], "draft")
+                narratives.extend(record_narratives(record))
+                if record["disposition"] == "no_direct_mapping":
+                    rationale = record["negative_rationale"]
+                    self.assertEqual(record["relationships"], [])
+                    self.assertTrue(
+                        rationale.startswith(
+                            f"Missing outcome: {external_id} - external result '"
+                        )
+                    )
+                    self.assertIn("' does not evidence ESAF outcome '", rationale)
+                    self.assertNotIn(rationale.strip().lower(), GENERIC_NEGATIVE_RATIONALES)
+                else:
+                    self.assertEqual(len(record["relationships"]), 1)
+                for leg in record["relationships"]:
+                    self.assertEqual(leg["relationship"], "partially_supports")
+                    control = controls[leg["esaf_control_id"]]
+                    self.assertEqual(leg["esaf_control_version"], control["version"])
+                    self.assertEqual(leg["esaf_control_path"], control["path"])
+                    self.assertEqual(leg["esaf_control_sha256"], control["record_sha256"])
+                    self.assertEqual(
+                        leg["esaf_requirement_locator"],
+                        f"controls/{control['path']}#requirement",
+                    )
+                    parsed_conditions = [json.loads(value) for value in leg["conditions"]]
+                    self.assertEqual(
+                        [item["condition"] for item in parsed_conditions],
+                        list(CONDITION_ORDER),
+                    )
+                    self.assertTrue(
+                        all(item["evidence_references"] for item in parsed_conditions)
+                    )
+                    self.assertEqual(len(leg["expected_evidence"]), len(CONDITION_ORDER))
+                    self.assertTrue(leg["known_gaps"])
+                    self.assertEqual(
+                        len(leg["prohibited_inferences"]),
+                        len(PROHIBITED_INFERENCE_KEYS),
+                    )
+                    self.assertIn(
+                        "Conditions only narrow this supported claim; they do not create either outcome.",
+                        leg["rationale"],
+                    )
+        self.assertEqual(len({record["negative_rationale"] for record in negatives}), 112)
+        assert_no_copied_source_windows(self, narratives)
+        lowered = "\n".join(narratives).lower()
+        for claim in PROHIBITED_POSITIVE_ASSURANCE_CLAIMS:
+            self.assertNotIn(claim, lowered)
+
+    def test_reverse_publication_metadata_uses_derived_totals_and_draft_boundaries(
+        self,
+    ) -> None:
+        records = load_snapshot_records()
+        mapped_count = sum(record["disposition"] == "mapped" for record in records)
+        negative_count = sum(
+            record["disposition"] == "no_direct_mapping" for record in records
+        )
+        legs = [leg for record in records for leg in record["relationships"]]
+        distinct_controls = {leg["esaf_control_id"] for leg in legs}
+
+        mapping, _ = parse_front_matter(SNAPSHOT / "README.md")
+        lifecycle, lifecycle_body = parse_front_matter(REGISTRY)
+        catalog = json.loads(
+            (ROOT / "crosswalks/catalog.json").read_text(encoding="utf-8")
+        )
+        entry = next(
+            item
+            for item in catalog["mapping_sets"]
+            if item["metadata"]["mapping_set_id"] == MAPPING_SET_ID
+        )
+        self.assertEqual(mapping["status"], "draft")
+        self.assertEqual(lifecycle["events"], [])
+        self.assertIn("state: draft", lifecycle_body)
+        self.assertEqual(lifecycle["snapshot_digest"], snapshot_digest(ROOT, SNAPSHOT))
+        self.assertEqual(entry["metadata"], mapping)
+        self.assertEqual(entry["lifecycle"], lifecycle)
+        self.assertEqual(len(entry["provisions"]), len(records))
+        self.assertEqual(
+            {
+                item["metadata"]["external_provision_id"]
+                for item in entry["provisions"]
+            },
+            {record["external_provision_id"] for record in records},
+        )
+        for key, expected in EXPECTED_CATALOG_COUNTS.items():
+            self.assertEqual(catalog["counts"][key], expected)
+
+        readme = (SNAPSHOT / "README.md").read_text(encoding="utf-8")
+        landing = (ROOT / "crosswalks/uk-cyber-essentials.md").read_text(
+            encoding="utf-8"
+        )
+        catalog_md = (ROOT / "crosswalks/CATALOG.md").read_text(encoding="utf-8")
+        backlog = (ROOT / "project/BACKLOG.md").read_text(encoding="utf-8")
+        for text in (readme, landing):
+            for required in (
+                f"{len(records)} records",
+                f"{mapped_count} mapped provisions",
+                f"{len(legs)} relationship legs",
+                f"{len(distinct_controls)} distinct controls",
+                f"{negative_count} no-direct-mapping dispositions",
+                "complete-publication",
+                "unqualified technical draft",
+                "not the current operational scheme",
+                "point-in-time",
+                "certification",
+                "compliance",
+                "equivalence",
+                "continuous assurance",
+            ):
+                self.assertIn(required, text)
+        self.assertIn(MAPPING_SET_ID, catalog_md)
+        self.assertIn(
+            "At feasibility-decision time: No Cyber Essentials Plus mapping exists.",
+            landing,
+        )
+        self.assertIn(
+            "At that feasibility-decision time, the `external_to_esaf` direction "
+            "remained a separate, source-versioned design item and had not been implemented.",
+            landing,
+        )
+        self.assertNotIn(
+            "The `external_to_esaf` direction remains a separate, source-versioned "
+            "design item and has not been implemented.",
+            landing,
+        )
+        self.assertNotIn(
+            "Design the Cyber Essentials Plus v3.2 external_to_esaf mapping.",
+            backlog,
+        )
+        self.assertIn(
+            "Obtain qualified human review for Cyber Essentials core v3.3.",
+            backlog,
+        )
+        final_metadata = (
+            TRACEABILITY,
+            FINAL_SPECIFICATION_REVIEW,
+            FINAL_OVERCLAIMING_REVIEW,
+        )
+        if any(path.exists() for path in final_metadata):
+            self.assertTrue(all(path.is_file() for path in final_metadata))
+
+    def test_final_reverse_review_metadata_is_complete_and_independent_when_present(
+        self,
+    ) -> None:
+        paths = (TRACEABILITY, FINAL_SPECIFICATION_REVIEW, FINAL_OVERCLAIMING_REVIEW)
+        if not any(path.exists() for path in paths):
+            return
+        self.assertTrue(all(path.is_file() for path in paths))
+        traceability = TRACEABILITY.read_text(encoding="utf-8")
+        for required in (
+            MAPPING_SET_ID,
+            BASELINE_SHA,
+            snapshot_digest(ROOT, SNAPSHOT),
+            "144 records",
+            "32 mapped provisions",
+            "32 relationship legs",
+            "10 distinct controls",
+            "112 no-direct-mapping dispositions",
+            "events: []",
+            "validate_crosswalks.py --check --baseline-ref",
+        ):
+            self.assertIn(required, traceability)
+        reviewer_ids = [MAPPER_ID, "esaf-reverse-mapping-rights-reviewer"]
+        for path in (FINAL_SPECIFICATION_REVIEW, FINAL_OVERCLAIMING_REVIEW):
+            text = path.read_text(encoding="utf-8")
+            reviewer = re.search(r"(?m)^reviewer_id: (\S+)$", text)
+            self.assertIsNotNone(reviewer)
+            self.assertIn("reviewer_authorized_source_access: true", text)
+            self.assertRegex(text.lower(), r"approved|approval")
+            reviewer_ids.append(reviewer.group(1))
+        self.assertEqual(len(reviewer_ids), len(set(reviewer_ids)))
 
     def test_task3_records_are_loaded_once_in_locked_oracle_order(self) -> None:
         oracle = json.loads(ORACLE.read_text(encoding="utf-8"))

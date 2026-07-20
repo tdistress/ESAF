@@ -53,11 +53,11 @@ findings: []
 change_history:
   - version: 0.2.0
     date: "2026-07-19"
-    change: Created the authoritative draft scaffold, complete provision inventory, and release-pinned manifest for external-to-ESAF authoring.
+    change: Created the complete draft external-to-ESAF evidence mapping, provision inventory, and release-pinned manifest.
 ---
 # Cyber Essentials Plus Test Specification v3.2 external-to-ESAF mapping
 
-This authoritative snapshot is a complete-publication, unqualified technical draft for the `external_to_esaf` direction. It inventories the pinned public NCSC v3.2 publication only and does not represent the current operational scheme, assessment, certification, compliance, equivalence, endorsement, implementation, effectiveness, or continuous assurance.
+This authoritative snapshot is a complete-publication, unqualified technical draft for the `external_to_esaf` direction. Complete-publication means inventory coverage of the pinned public NCSC v3.2 source only. It is not the current operational scheme and does not establish assessment execution, certification, compliance, equivalence, endorsement, implementation, effectiveness, aggregate sufficiency, population-wide coverage, or continuous assurance.
 
 ## Source and immutable pins
 
@@ -69,6 +69,14 @@ This authoritative snapshot is a complete-publication, unqualified technical dra
 
 NCSC Crown copyright is attributed to the UK National Cyber Security Centre under the [Open Government Licence v3.0](https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/). Copied requirement or passage text is prohibited. IASME-authored structure remains outside this snapshot. Marks and imagery are excluded, as is third-party material without separate permission.
 
-## Draft scaffold
+## Draft mapping results
 
-The ordered inventory fixes all 144 provisions for later provision-first authoring. No provision records or relationship legs have been authored. All snapshot records and lifecycle metadata remain draft; the lifecycle event array is empty.
+The snapshot contains 144 records: 32 mapped provisions, 32 relationship legs referencing 10 distinct controls, and 112 no-direct-mapping dispositions. All relationship legs are reverse-only `external_to_esaf` observations with `partially_supports` taxonomy. Each mapped leg binds a dated external observation to one exact normative ESAF requirement and preserves the full 11-condition evidence contract, expected evidence, known gaps, and prohibited inferences. Conditions narrow the supported claim and do not create a missing external result or ESAF outcome.
+
+Every no-direct-mapping record identifies the provision-specific external result and missing ESAF outcome. Administrative artifacts, assessor activity, decision rules, aggregate results, recommendations, and adjacent technical procedures remain negative unless the provision produces a bounded observation of an exact ESAF requirement.
+
+## Assurance and lifecycle boundary
+
+Every mapped observation is point-in-time evidence limited to its assessment date, evidence date, defined population, selected sample, method, provenance, exceptions, and Delivery Partner discretion. A relationship does not establish ongoing state, full-population coverage, control implementation or effectiveness, evidence sufficiency, certification, compliance, equivalence, current-scheme coverage, or continuous assurance.
+
+All 144 records, 32 relationship legs, and lifecycle metadata remain draft. The lifecycle event array is empty. Independent technical reconciliation and review do not qualify or approve the mapping and do not replace future qualified SME review.
