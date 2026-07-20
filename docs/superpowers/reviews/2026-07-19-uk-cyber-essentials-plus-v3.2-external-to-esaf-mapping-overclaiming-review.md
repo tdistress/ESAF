@@ -44,4 +44,3 @@ This is an independent technical-draft review, not qualified Cyber Essentials SM
 | Critical | 0 | 0 |
 | Important | 0 | 0 |
 | Minor | 0 | 0 |
-
