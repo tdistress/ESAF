@@ -7,6 +7,7 @@ from collections import Counter
 from copy import deepcopy
 from pathlib import Path
 
+import tools.crosswalks.validation as crosswalk_validation
 from tools.crosswalks.digests import snapshot_digest
 from tools.crosswalks.io import parse_front_matter
 from tools.crosswalks.manifest import build_control_manifest, render_manifest
@@ -31,34 +32,98 @@ CONDITION_ORDER = (
 )
 
 
-def assert_reverse_leg_contract(testcase: unittest.TestCase, leg: dict[str, object]) -> None:
-    testcase.assertEqual(leg["direction"], "external_to_esaf")
-    conditions = leg["conditions"]
-    testcase.assertIsInstance(conditions, list)
-    assert isinstance(conditions, list)
-    testcase.assertEqual([item["condition"] for item in conditions], list(CONDITION_ORDER))
-    for item in conditions:
-        testcase.assertIn(item["status"], {"SATISFIED", "NOT_APPLICABLE"})
-        testcase.assertTrue(item["evidence_references"])
-        if item["status"] == "NOT_APPLICABLE":
-            testcase.assertGreaterEqual(len(item["evidence_references"]), 2)
-    for field in ("esaf_control_sha256", "esaf_control_path", "esaf_requirement_locator"):
-        testcase.assertTrue(leg[field])
-    testcase.assertNotRegex(str(leg["rationale"]), r"(?i)conditions?\s+(supply|create).*missing")
+def load_snapshot_records() -> list[dict[str, object]]:
+    return [
+        parse_front_matter(path)[0]
+        for path in sorted(SNAPSHOT.glob("*.md"))
+        if path.name not in {"README.md", "PROVISION_INVENTORY.md"}
+    ]
 
 
-def assert_negative_contract(testcase: unittest.TestCase, record: dict[str, object]) -> None:
-    testcase.assertEqual(record["relationships"], [])
-    rationale = str(record["negative_rationale"]).lower()
-    testcase.assertTrue(rationale.startswith("missing outcome:"))
-    testcase.assertNotIn(rationale, {
-        "missing outcome: no direct mapping.",
-        "missing outcome: no direct esaf mapping.",
-        "missing outcome: the esaf baseline does not directly map.",
-    })
+def reverse_profile_inputs() -> tuple[dict[str, object], dict[str, dict[str, object]]]:
+    mapping_set, _ = parse_front_matter(SNAPSHOT / "README.md")
+    manifest = json.loads(
+        (SNAPSHOT / "ESAF_CONTROL_MANIFEST.json").read_text(encoding="utf-8")
+    )
+    controls = {item["id"]: item for item in manifest["controls"]}
+    return mapping_set, controls
+
+
+def condition_entry(
+    condition: str,
+    status: str = "SATISFIED",
+    evidence_references: list[str] | None = None,
+) -> str:
+    return json.dumps(
+        {
+            "condition": condition,
+            "status": status,
+            "evidence_references": (
+                evidence_references
+                if evidence_references is not None
+                else ["record:source_locator", "manifest:IAM-130#requirement"]
+            ),
+        },
+        separators=(",", ":"),
+        sort_keys=True,
+    )
+
+
+def valid_profile_record() -> dict[str, object]:
+    _, controls = reverse_profile_inputs()
+    control = controls["IAM-130"]
+    return {
+        "external_provision_id": "CEPTS3.2-M-001",
+        "disposition": "mapped",
+        "context": {
+            "mode": "paraphrase",
+            "summary": "Observe a bounded authentication result.",
+        },
+        "source_locator": {"official_url": "https://example.com/source", "locator": "M-001"},
+        "external_metadata": {
+            "group": "M",
+            "kind": "procedure_step",
+            "actors": ["Assessor"],
+        },
+        "relationships": [
+            {
+                "esaf_control_id": "IAM-130",
+                "esaf_control_version": control["version"],
+                "esaf_control_path": control["path"],
+                "esaf_control_sha256": control["record_sha256"],
+                "esaf_requirement_locator": f"controls/{control['path']}#requirement",
+                "direction": "external_to_esaf",
+                "rationale": (
+                    "External observation: the assessment produced a bounded authentication result. "
+                    "Supported ESAF outcome: IAM-130 separately authenticates privileged access. "
+                    "Conditions only narrow this supported claim; they do not create either outcome."
+                ),
+                "conditions": [condition_entry(condition) for condition in CONDITION_ORDER],
+                "expected_evidence": ["Recorded authentication observation."],
+                "known_gaps": ["Population-wide and continuous operation are not established."],
+                "prohibited_inferences": ["Do not infer implementation or continuous effectiveness."],
+            }
+        ],
+    }
 
 
 class CyberEssentialsPlusExternalToEsafMappingTests(unittest.TestCase):
+    def test_production_validator_exposes_reverse_evidence_profile(self) -> None:
+        self.assertTrue(
+            hasattr(crosswalk_validation, "validate_reverse_evidence_record")
+        )
+
+    def test_authored_records_are_loaded_and_checked_by_production_profile(self) -> None:
+        mapping_set, controls = reverse_profile_inputs()
+        errors = [
+            f"{record.get('external_provision_id')}: {message}"
+            for record in load_snapshot_records()
+            for message in crosswalk_validation.validate_reverse_evidence_record(
+                record, mapping_set, controls
+            )
+        ]
+        self.assertEqual(errors, [])
+
     def test_mapping_identity_root_and_oracle_are_locked(self) -> None:
         self.assertEqual(
             MAPPING_SET_ID,
@@ -145,54 +210,146 @@ class CyberEssentialsPlusExternalToEsafMappingTests(unittest.TestCase):
         self.assertEqual(entry["lifecycle"]["events"], [])
 
     def test_reverse_contract_mutations_fail_closed(self) -> None:
-        leg = {
-            "direction": "external_to_esaf",
-            "esaf_control_sha256": "a" * 64,
-            "esaf_control_path": "controls/IAM/IAM-130.md",
-            "esaf_requirement_locator": "controls/IAM/IAM-130.md#requirement",
-            "rationale": "A defined observation materially supports evaluation of one bounded requirement.",
-            "conditions": [
-                {"condition": condition, "status": "SATISFIED", "evidence_references": ["oracle", "observation"]}
-                for condition in CONDITION_ORDER
-            ],
-        }
-        negative = {"relationships": [], "negative_rationale": "Missing outcome: a defined observation of the exact ESAF requirement."}
+        mapping_set, controls = reverse_profile_inputs()
+        valid = valid_profile_record()
+        self.assertEqual(
+            crosswalk_validation.validate_reverse_evidence_record(
+                valid, mapping_set, controls
+            ),
+            [],
+        )
 
-        def mutate_leg(label: str) -> dict[str, object]:
-            candidate = deepcopy(leg)
+        def mutate(label: str) -> dict[str, object]:
+            candidate = deepcopy(valid)
+            leg = candidate["relationships"][0]
             if label == "wrong direction":
-                candidate["direction"] = "esaf_to_external"
+                leg["direction"] = "esaf_to_external"
             elif label == "missing condition":
-                candidate["conditions"] = candidate["conditions"][:-1]
+                leg["conditions"] = leg["conditions"][:-1]
             elif label == "reordered condition":
-                candidate["conditions"] = list(reversed(candidate["conditions"]))
+                leg["conditions"] = list(reversed(leg["conditions"]))
             elif label == "empty evidence refs":
-                candidate["conditions"][0]["evidence_references"] = []
+                leg["conditions"][0] = condition_entry("actor", evidence_references=[])
+            elif label == "unresolved evidence ref":
+                leg["conditions"][0] = condition_entry(
+                    "actor", evidence_references=["record:not-a-field"]
+                )
+            elif label == "malformed condition":
+                leg["conditions"][0] = "actor | SATISFIED | source"
+            elif label == "noncanonical condition":
+                leg["conditions"][0] = json.dumps(
+                    json.loads(leg["conditions"][0]), indent=2
+                )
             elif label == "unjustified NA":
-                candidate["conditions"][0] = {"condition": "actor", "status": "NOT_APPLICABLE", "evidence_references": ["oracle"]}
-            elif label.startswith("missing manifest "):
+                leg["conditions"][0] = condition_entry(
+                    "actor", "NOT_APPLICABLE", ["record:source_locator"]
+                )
+            elif label.startswith("wrong manifest "):
                 field = {
-                    "missing manifest digest": "esaf_control_sha256",
-                    "missing manifest path": "esaf_control_path",
-                    "missing manifest locator": "esaf_requirement_locator",
+                    "wrong manifest id": "esaf_control_id",
+                    "wrong manifest version": "esaf_control_version",
+                    "wrong manifest digest": "esaf_control_sha256",
+                    "wrong manifest path": "esaf_control_path",
+                    "wrong manifest locator": "esaf_requirement_locator",
                 }[label]
-                candidate[field] = ""
+                leg[field] = "0" * 64 if field == "esaf_control_sha256" else "wrong-nonempty"
+            elif label == "duplicate leg":
+                candidate["relationships"].append(deepcopy(leg))
             elif label == "condition-created outcomes":
-                candidate["rationale"] = "Conditions supply the missing outcome."
+                leg["rationale"] = "Conditions supply the missing observation and ESAF outcome."
             else:
                 self.fail(f"unknown mutation: {label}")
             return candidate
 
-        for label in ("wrong direction", "missing condition", "reordered condition", "empty evidence refs", "unjustified NA", "missing manifest digest", "missing manifest path", "missing manifest locator", "condition-created outcomes"):
-            with self.subTest(label=label), self.assertRaises(AssertionError):
-                assert_reverse_leg_contract(self, mutate_leg(label))
+        expected_errors = {
+            "wrong direction": "must use direction external_to_esaf",
+            "missing condition": "exact ordered checklist",
+            "reordered condition": "exact ordered checklist",
+            "empty evidence refs": "requires evidence references",
+            "unresolved evidence ref": "unresolved evidence reference",
+            "malformed condition": "canonical condition/status/evidence_references",
+            "noncanonical condition": "canonical condition/status/evidence_references",
+            "unjustified NA": "condition-specific known-gap justification",
+            "wrong manifest id": "references unresolved manifest control",
+            "wrong manifest version": "esaf_control_version must exactly match",
+            "wrong manifest digest": "esaf_control_sha256 must exactly match",
+            "wrong manifest path": "esaf_control_path must exactly match",
+            "wrong manifest locator": "esaf_requirement_locator must exactly match",
+            "duplicate leg": "duplicate reverse-evidence relationship leg",
+            "condition-created outcomes": "must state an external observation",
+        }
+        for label, expected in expected_errors.items():
+            with self.subTest(label=label):
+                errors = crosswalk_validation.validate_reverse_evidence_record(
+                    mutate(label), mapping_set, controls
+                )
+                self.assertIn(expected, "\n".join(errors))
 
-        for label, candidate in (
-            ("duplicate leg", {"relationships": [leg, deepcopy(leg)], "negative_rationale": ""}),
-            ("generic negative", {"relationships": [], "negative_rationale": "Missing outcome: no direct mapping."}),
+        justified_na = deepcopy(valid)
+        justified_leg = justified_na["relationships"][0]
+        justified_leg["known_gaps"][0] = (
+            "actor not applicable because the bounded result was produced automatically."
+        )
+        justified_leg["conditions"][0] = condition_entry(
+            "actor",
+            "NOT_APPLICABLE",
+            ["relationship:known_gaps:0", "record:source_locator"],
+        )
+        self.assertEqual(
+            crosswalk_validation.validate_reverse_evidence_record(
+                justified_na, mapping_set, controls
+            ),
+            [],
+        )
+
+    def test_reverse_negative_rationale_is_provision_specific(self) -> None:
+        mapping_set, controls = reverse_profile_inputs()
+        valid = {
+            "external_provision_id": "CEPTS3.2-M-001",
+            "disposition": "no_direct_mapping",
+            "relationships": [],
+            "negative_rationale": (
+                "Missing outcome: CEPTS3.2-M-001 - no defined observation of an "
+                "exact ESAF requirement is produced by this provision."
+            ),
+        }
+        self.assertEqual(
+            crosswalk_validation.validate_reverse_evidence_record(
+                valid, mapping_set, controls
+            ),
+            [],
+        )
+        for rationale in (
+            "Missing outcome: no direct mapping.",
+            "Missing outcome: a defined observation is absent.",
+            "Anything may be used as a justification.",
         ):
-            with self.subTest(label=label), self.assertRaises(AssertionError):
-                if label == "duplicate leg":
-                    self.assertEqual(len(candidate["relationships"]), len({item["esaf_requirement_locator"] for item in candidate["relationships"]}))
-                else:
-                    assert_negative_contract(self, candidate)
+            with self.subTest(rationale=rationale):
+                candidate = deepcopy(valid)
+                candidate["negative_rationale"] = rationale
+                self.assertTrue(
+                    crosswalk_validation.validate_reverse_evidence_record(
+                        candidate, mapping_set, controls
+                    )
+                )
+
+        with self.subTest(rationale="negative with relationship"):
+            candidate = deepcopy(valid)
+            candidate["relationships"] = valid_profile_record()["relationships"]
+            self.assertIn(
+                "negative reverse-evidence record must have no relationships",
+                crosswalk_validation.validate_reverse_evidence_record(
+                    candidate, mapping_set, controls
+                ),
+            )
+
+    def test_reverse_mapped_record_requires_a_relationship(self) -> None:
+        mapping_set, controls = reverse_profile_inputs()
+        record = valid_profile_record()
+        record["relationships"] = []
+        self.assertIn(
+            "mapped reverse-evidence record requires at least one relationship",
+            crosswalk_validation.validate_reverse_evidence_record(
+                record, mapping_set, controls
+            ),
+        )

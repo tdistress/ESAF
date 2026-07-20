@@ -794,6 +794,12 @@ def _validate_control_manifest(
         record_path = provision.get("path")
         if not isinstance(record, dict) or not isinstance(record_path, str):
             continue
+        errors.extend(
+            f"{record_path}: {message}"
+            for message in validate_reverse_evidence_record(
+                record, mapping_set, expected_controls
+            )
+        )
         relationships = record.get("relationships", [])
         if not isinstance(relationships, list):
             continue
@@ -1121,6 +1127,249 @@ def validate_record(
         if not isinstance(permitted, list) or required_element not in permitted:
             errors.append("context exceeds permitted publication elements")
     return errors
+
+
+def validate_reverse_evidence_record(
+    record: dict[str, object],
+    mapping_set: dict[str, object],
+    manifest_controls: dict[str, dict[str, object]],
+) -> list[str]:
+    """Validate a source-versioned reverse-evidence authoring profile."""
+    profile_id = (
+        "uk-ncsc--cyber-essentials-plus-test-specification--3.2--"
+        "esaf-0.4-alpha--0.2.0"
+    )
+    if mapping_set.get("mapping_set_id") != profile_id:
+        return []
+
+    errors: list[str] = []
+    external_id = record.get("external_provision_id")
+    relationships = record.get("relationships", [])
+    if not isinstance(relationships, list):
+        relationships = []
+    disposition = record.get("disposition")
+
+    if disposition == "no_direct_mapping":
+        prefix = f"Missing outcome: {external_id} - "
+        rationale = record.get("negative_rationale")
+        if (
+            not isinstance(external_id, str)
+            or not isinstance(rationale, str)
+            or not rationale.startswith(prefix)
+            or len(rationale.removeprefix(prefix).strip()) < 20
+        ):
+            errors.append(
+                "no_direct_mapping rationale must use provision-specific "
+                f"'Missing outcome: {external_id} - <missing observable ESAF outcome>'"
+            )
+        if relationships:
+            errors.append("negative reverse-evidence record must have no relationships")
+        return errors
+    if disposition == "out_of_scope":
+        errors.append("complete-publication reverse profile does not permit out_of_scope")
+        return errors
+    if disposition != "mapped":
+        return errors
+    if not relationships:
+        errors.append(
+            "mapped reverse-evidence record requires at least one relationship"
+        )
+        return errors
+
+    condition_order = (
+        "actor",
+        "scope",
+        "population",
+        "sample",
+        "assessment_date",
+        "evidence_date",
+        "tool",
+        "provenance",
+        "exception",
+        "delivery_partner_discretion",
+        "point_in_time_status",
+    )
+    seen_legs: set[tuple[object, object]] = set()
+    for leg_index, leg in enumerate(relationships):
+        if not isinstance(leg, dict):
+            continue
+        control_id = leg.get("esaf_control_id")
+        direction = leg.get("direction")
+        leg_label = f"relationship {leg_index + 1}"
+        if direction != "external_to_esaf":
+            errors.append(f"{leg_label} must use direction external_to_esaf")
+        duplicate_key = (control_id, direction)
+        if duplicate_key in seen_legs:
+            errors.append(f"duplicate reverse-evidence relationship leg for {control_id}")
+        seen_legs.add(duplicate_key)
+
+        control = manifest_controls.get(control_id) if isinstance(control_id, str) else None
+        if control is None:
+            errors.append(f"{leg_label} references unresolved manifest control {control_id}")
+        else:
+            expected = {
+                "esaf_control_version": control.get("version"),
+                "esaf_control_path": control.get("path"),
+                "esaf_control_sha256": control.get("record_sha256"),
+                "esaf_requirement_locator": (
+                    f"controls/{control.get('path')}#requirement"
+                ),
+            }
+            for field, expected_value in expected.items():
+                if leg.get(field) != expected_value:
+                    errors.append(
+                        f"{leg_label} {field} must exactly match pinned manifest "
+                        f"control {control_id}"
+                    )
+
+        rationale = leg.get("rationale")
+        exact_outcome_marker = f"Supported ESAF outcome: {control_id} "
+        narrowing_statement = (
+            "Conditions only narrow this supported claim; "
+            "they do not create either outcome."
+        )
+        if not isinstance(rationale, str):
+            rationale = ""
+        if "External observation: " not in rationale:
+            errors.append(f"{leg_label} must state an external observation independently")
+        if exact_outcome_marker not in rationale:
+            errors.append(f"{leg_label} must state the exact supported ESAF outcome")
+        if narrowing_statement not in rationale:
+            errors.append(f"{leg_label} must state that conditions only narrow support")
+        if re.search(
+            r"(?is)\bconditions?\b\s+(?:alone\s+)?"
+            r"(?:supply|create|establish|provide)\b",
+            rationale,
+        ) or re.search(
+            r"(?is)\b(?:outcome|observation|result|support)\b\s+(?:is|are)\s+"
+            r"(?:supplied|created|established|provided)\s+by\s+conditions?\b",
+            rationale,
+        ):
+            errors.append(f"{leg_label} conditions must not create an outcome")
+
+        raw_conditions = leg.get("conditions")
+        parsed_conditions: list[dict[str, object]] = []
+        if isinstance(raw_conditions, list):
+            for condition_index, raw_condition in enumerate(raw_conditions):
+                try:
+                    condition = (
+                        json.loads(raw_condition)
+                        if isinstance(raw_condition, str)
+                        else None
+                    )
+                except json.JSONDecodeError:
+                    condition = None
+                if not isinstance(condition, dict) or set(condition) != {
+                    "condition",
+                    "status",
+                    "evidence_references",
+                }:
+                    errors.append(
+                        f"{leg_label} condition {condition_index + 1} must be a canonical "
+                        "condition/status/evidence_references JSON string"
+                    )
+                    continue
+                if raw_condition != json.dumps(
+                    condition, separators=(",", ":"), sort_keys=True
+                ):
+                    errors.append(
+                        f"{leg_label} condition {condition_index + 1} must be a canonical "
+                        "condition/status/evidence_references JSON string"
+                    )
+                parsed_conditions.append(condition)
+        else:
+            errors.append(f"{leg_label} conditions must be a list")
+
+        actual_order = [item.get("condition") for item in parsed_conditions]
+        if actual_order != list(condition_order):
+            errors.append(f"{leg_label} conditions must use the exact ordered checklist")
+        for condition in parsed_conditions:
+            name = condition.get("condition")
+            status = condition.get("status")
+            references = condition.get("evidence_references")
+            if status not in {"SATISFIED", "NOT_APPLICABLE"}:
+                errors.append(f"{leg_label} condition {name} has invalid status")
+            if (
+                not isinstance(references, list)
+                or not references
+                or any(not isinstance(item, str) or not item.strip() for item in references)
+            ):
+                errors.append(f"{leg_label} condition {name} requires evidence references")
+                continue
+            for reference in references:
+                if not _reverse_evidence_reference_resolves(
+                    reference, record, leg, manifest_controls
+                ):
+                    errors.append(
+                        f"{leg_label} condition {name} has unresolved evidence "
+                        f"reference {reference}"
+                    )
+            if status == "NOT_APPLICABLE" and not _has_evidence_based_na(
+                name, references, leg
+            ):
+                errors.append(
+                    f"{leg_label} condition {name} NOT_APPLICABLE requires an explicit "
+                    "condition-specific known-gap justification and corroborating reference"
+                )
+    return errors
+
+
+def _reverse_evidence_reference_resolves(
+    reference: str,
+    record: dict[str, object],
+    leg: dict[str, object],
+    manifest_controls: dict[str, dict[str, object]],
+) -> bool:
+    """Resolve closed reverse-profile evidence references without external I/O."""
+    record_fields = {
+        "record:context": "context",
+        "record:source_locator": "source_locator",
+        "record:external_metadata": "external_metadata",
+    }
+    if reference in record_fields:
+        return bool(record.get(record_fields[reference]))
+    relationship_fields = {
+        "relationship:rationale": "rationale",
+        "relationship:expected_evidence": "expected_evidence",
+        "relationship:prohibited_inferences": "prohibited_inferences",
+    }
+    if reference in relationship_fields:
+        return bool(leg.get(relationship_fields[reference]))
+    known_gap = re.fullmatch(r"relationship:known_gaps:([0-9]+)", reference)
+    if known_gap:
+        values = leg.get("known_gaps")
+        index = int(known_gap.group(1))
+        return isinstance(values, list) and index < len(values) and bool(values[index])
+    manifest = re.fullmatch(r"manifest:([A-Z]{3}-[0-9]{3})#requirement", reference)
+    if manifest:
+        return (
+            manifest.group(1) == leg.get("esaf_control_id")
+            and manifest.group(1) in manifest_controls
+        )
+    return False
+
+
+def _has_evidence_based_na(
+    condition: object, references: list[object], leg: dict[str, object]
+) -> bool:
+    if not isinstance(condition, str) or len(references) < 2:
+        return False
+    gaps = leg.get("known_gaps")
+    if not isinstance(gaps, list):
+        return False
+    prefix = f"{condition} not applicable because "
+    for reference in references:
+        if not isinstance(reference, str):
+            continue
+        match = re.fullmatch(r"relationship:known_gaps:([0-9]+)", reference)
+        if not match:
+            continue
+        index = int(match.group(1))
+        if index < len(gaps) and isinstance(gaps[index], str):
+            remainder = gaps[index].removeprefix(prefix)
+            if gaps[index].startswith(prefix) and len(remainder.strip()) >= 20:
+                return True
+    return False
 
 
 def _complete_reviewer(value: object) -> bool:

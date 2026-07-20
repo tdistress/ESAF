@@ -1003,6 +1003,27 @@ class CrosswalkValidationTests(unittest.TestCase):
                 self.fixture.refresh_lifecycle_snapshot_digest()
                 self.assertIn(expected, "\n".join(validate(self.root).errors))
 
+    def test_source_versioned_reverse_profile_runs_on_persisted_records(self) -> None:
+        self.fixture.create_valid_snapshot(status="draft", complete=True)
+
+        def activate_profile(value: dict[str, object]) -> None:
+            value["mapping_set_id"] = (
+                "uk-ncsc--cyber-essentials-plus-test-specification--3.2--"
+                "esaf-0.4-alpha--0.2.0"
+            )
+
+        self.fixture._mutate_mapping_set(activate_profile)
+        errors = "\n".join(validate(self.root).errors)
+        self.assertIn(
+            "relationship 1 condition 1 must be a canonical "
+            "condition/status/evidence_references JSON string",
+            errors,
+        )
+        self.assertIn(
+            "relationship 1 conditions must use the exact ordered checklist",
+            errors,
+        )
+
     def test_snapshot_and_record_mutation_matrix(self) -> None:
         cases = (
             ("duplicate_mapping_set_id", "duplicate mapping-set id"),
