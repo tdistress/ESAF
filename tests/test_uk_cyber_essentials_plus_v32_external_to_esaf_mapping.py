@@ -30,6 +30,17 @@ CONDITION_ORDER = (
     "actor", "scope", "population", "sample", "assessment_date", "evidence_date",
     "tool", "provenance", "exception", "delivery_partner_discretion", "point_in_time_status",
 )
+PROHIBITED_INFERENCE_KEYS = (
+    "implementation",
+    "effectiveness",
+    "sufficiency",
+    "compliance",
+    "certification",
+    "equivalence",
+    "continuous_assurance",
+    "population_wide_coverage",
+    "current_scheme_coverage",
+)
 
 
 def load_snapshot_records() -> list[dict[str, object]]:
@@ -69,6 +80,24 @@ def condition_entry(
     )
 
 
+def required_prohibited_inferences(external_id: str) -> list[str]:
+    explanations = {
+        "implementation": "The observation does not establish control implementation.",
+        "effectiveness": "The observation does not establish control effectiveness.",
+        "sufficiency": "The observation is not sufficient evidence of the control outcome.",
+        "compliance": "The observation does not establish ESAF compliance.",
+        "certification": "The observation does not authorize or establish certification.",
+        "equivalence": "The external provision is not equivalent to the ESAF control.",
+        "continuous_assurance": "The point-in-time observation is not continuous assurance.",
+        "population_wide_coverage": "The sampled observation is not population-wide coverage.",
+        "current_scheme_coverage": "The public v3.2 evidence is not current-scheme coverage.",
+    }
+    return [
+        f"{external_id} | prohibit {key}: {explanations[key]}"
+        for key in PROHIBITED_INFERENCE_KEYS
+    ]
+
+
 def valid_profile_record() -> dict[str, object]:
     _, controls = reverse_profile_inputs()
     control = controls["IAM-130"]
@@ -101,7 +130,9 @@ def valid_profile_record() -> dict[str, object]:
                 "conditions": [condition_entry(condition) for condition in CONDITION_ORDER],
                 "expected_evidence": ["Recorded authentication observation."],
                 "known_gaps": ["Population-wide and continuous operation are not established."],
-                "prohibited_inferences": ["Do not infer implementation or continuous effectiveness."],
+                "prohibited_inferences": required_prohibited_inferences(
+                    "CEPTS3.2-M-001"
+                ),
             }
         ],
     }
@@ -242,7 +273,9 @@ class CyberEssentialsPlusExternalToEsafMappingTests(unittest.TestCase):
                 )
             elif label == "unjustified NA":
                 leg["conditions"][0] = condition_entry(
-                    "actor", "NOT_APPLICABLE", ["record:source_locator"]
+                    "actor",
+                    "NOT_APPLICABLE",
+                    ["record:source_locator", "manifest:IAM-130#requirement"],
                 )
             elif label.startswith("wrong manifest "):
                 field = {
@@ -302,15 +335,39 @@ class CyberEssentialsPlusExternalToEsafMappingTests(unittest.TestCase):
             [],
         )
 
+        duplicate_na_evidence = deepcopy(justified_na)
+        duplicate_na_leg = duplicate_na_evidence["relationships"][0]
+        duplicate_na_leg["conditions"][0] = condition_entry(
+            "actor",
+            "NOT_APPLICABLE",
+            ["relationship:known_gaps:0", "relationship:known_gaps:0"],
+        )
+        self.assertIn(
+            "distinct evidence references and a separate corroborating reference",
+            "\n".join(
+                crosswalk_validation.validate_reverse_evidence_record(
+                    duplicate_na_evidence, mapping_set, controls
+                )
+            ),
+        )
+
     def test_reverse_negative_rationale_is_provision_specific(self) -> None:
         mapping_set, controls = reverse_profile_inputs()
         valid = {
             "external_provision_id": "CEPTS3.2-M-001",
             "disposition": "no_direct_mapping",
             "relationships": [],
+            "context": {
+                "mode": "paraphrase",
+                "summary": (
+                    "The provision produces an administrative sampling plan for "
+                    "the assessment."
+                ),
+            },
             "negative_rationale": (
-                "Missing outcome: CEPTS3.2-M-001 - no defined observation of an "
-                "exact ESAF requirement is produced by this provision."
+                "Missing outcome: CEPTS3.2-M-001 - external result 'administrative "
+                "sampling plan' does not evidence ESAF outcome 'separate "
+                "authentication of privileged access'."
             ),
         }
         self.assertEqual(
@@ -321,6 +378,11 @@ class CyberEssentialsPlusExternalToEsafMappingTests(unittest.TestCase):
         )
         for rationale in (
             "Missing outcome: no direct mapping.",
+            "Missing outcome: CEPTS3.2-M-001 - no direct mapping is available.",
+            (
+                "Missing outcome: CEPTS3.2-M-001 - external result 'generic external "
+                "result' does not evidence ESAF outcome 'generic ESAF outcome'."
+            ),
             "Missing outcome: a defined observation is absent.",
             "Anything may be used as a justification.",
         ):
@@ -342,6 +404,65 @@ class CyberEssentialsPlusExternalToEsafMappingTests(unittest.TestCase):
                     candidate, mapping_set, controls
                 ),
             )
+
+    def test_reverse_positive_rejects_prohibited_assurance_claims(self) -> None:
+        mapping_set, controls = reverse_profile_inputs()
+        claims = (
+            "This proves implementation.",
+            "This proves effectiveness.",
+            "This is sufficient evidence.",
+            "This demonstrates compliance.",
+            "This supports certification.",
+            "This establishes equivalence.",
+            "This provides continuous assurance.",
+            "This proves population-wide coverage.",
+            "This proves current-scheme coverage.",
+        )
+        for claim in claims:
+            with self.subTest(claim=claim):
+                candidate = valid_profile_record()
+                candidate["relationships"][0]["rationale"] += f" {claim}"
+                self.assertIn(
+                    "rationale contains prohibited assurance claim",
+                    "\n".join(
+                        crosswalk_validation.validate_reverse_evidence_record(
+                            candidate, mapping_set, controls
+                        )
+                    ),
+                )
+
+    def test_reverse_positive_requires_binding_prohibited_inferences(self) -> None:
+        mapping_set, controls = reverse_profile_inputs()
+        arbitrary_prohibition = required_prohibited_inferences("CEPTS3.2-M-001")
+        arbitrary_prohibition[0] = (
+            "CEPTS3.2-M-001 | prohibit implementation: This is not a meaningful "
+            "binding prohibition for the authored record."
+        )
+        mutations = {
+            "missing field": None,
+            "missing category": required_prohibited_inferences("CEPTS3.2-M-001")[:-1],
+            "wrong provision": required_prohibited_inferences("CEPTS3.2-M-999"),
+            "generic entry": [
+                "Do not infer implementation, effectiveness, compliance, or assurance."
+            ],
+            "arbitrary prohibition": arbitrary_prohibition,
+        }
+        for label, prohibited_inferences in mutations.items():
+            with self.subTest(label=label):
+                candidate = valid_profile_record()
+                leg = candidate["relationships"][0]
+                if prohibited_inferences is None:
+                    leg.pop("prohibited_inferences")
+                else:
+                    leg["prohibited_inferences"] = prohibited_inferences
+                self.assertIn(
+                    "requires provision-specific prohibited_inferences",
+                    "\n".join(
+                        crosswalk_validation.validate_reverse_evidence_record(
+                            candidate, mapping_set, controls
+                        )
+                    ),
+                )
 
     def test_reverse_mapped_record_requires_a_relationship(self) -> None:
         mapping_set, controls = reverse_profile_inputs()

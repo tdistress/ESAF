@@ -1150,17 +1150,32 @@ def validate_reverse_evidence_record(
     disposition = record.get("disposition")
 
     if disposition == "no_direct_mapping":
-        prefix = f"Missing outcome: {external_id} - "
         rationale = record.get("negative_rationale")
+        specific_pattern = re.compile(
+            rf"^Missing outcome: {re.escape(str(external_id))} - "
+            r"external result '(?P<external_result>[^']{10,})' does not evidence "
+            r"ESAF outcome '(?P<esaf_outcome>[^']{10,})'\.$"
+        )
+        match = (
+            specific_pattern.fullmatch(rationale)
+            if isinstance(rationale, str)
+            else None
+        )
+        context = record.get("context")
+        context_summary = context.get("summary") if isinstance(context, dict) else None
         if (
             not isinstance(external_id, str)
-            or not isinstance(rationale, str)
-            or not rationale.startswith(prefix)
-            or len(rationale.removeprefix(prefix).strip()) < 20
+            or match is None
+            or not isinstance(context_summary, str)
+            or match.group("external_result").lower() not in context_summary.lower()
+            or "generic" in match.group("esaf_outcome").lower()
+            or "direct mapping" in match.group("esaf_outcome").lower()
         ):
             errors.append(
-                "no_direct_mapping rationale must use provision-specific "
-                f"'Missing outcome: {external_id} - <missing observable ESAF outcome>'"
+                "no_direct_mapping rationale must name a paraphrase-bound external "
+                "result and specific ESAF outcome using "
+                f"'Missing outcome: {external_id} - external result <result> does "
+                "not evidence ESAF outcome <outcome>'"
             )
         if relationships:
             errors.append("negative reverse-evidence record must have no relationships")
@@ -1246,6 +1261,53 @@ def validate_reverse_evidence_record(
             rationale,
         ):
             errors.append(f"{leg_label} conditions must not create an outcome")
+        prohibited_claim = re.compile(
+            r"(?i)\b(?:implementation|implemented|effectiveness|effective|"
+            r"sufficiency|sufficient|compliance|compliant|certification|certified|"
+            r"equivalence|equivalent|continuous[- ]assurance|"
+            r"population[- ]wide(?:\s+coverage)?|"
+            r"current[- ]scheme(?:\s+coverage)?)\b"
+        )
+        if prohibited_claim.search(rationale):
+            errors.append(f"{leg_label} rationale contains prohibited assurance claim")
+
+        prohibition_explanations = {
+            "implementation": "The observation does not establish control implementation.",
+            "effectiveness": "The observation does not establish control effectiveness.",
+            "sufficiency": (
+                "The observation is not sufficient evidence of the control outcome."
+            ),
+            "compliance": "The observation does not establish ESAF compliance.",
+            "certification": (
+                "The observation does not authorize or establish certification."
+            ),
+            "equivalence": (
+                "The external provision is not equivalent to the ESAF control."
+            ),
+            "continuous_assurance": (
+                "The point-in-time observation is not continuous assurance."
+            ),
+            "population_wide_coverage": (
+                "The sampled observation is not population-wide coverage."
+            ),
+            "current_scheme_coverage": (
+                "The public v3.2 evidence is not current-scheme coverage."
+            ),
+        }
+        prohibited_inferences = leg.get("prohibited_inferences")
+        expected_prohibitions = (
+            [
+                f"{external_id} | prohibit {key}: {explanation}"
+                for key, explanation in prohibition_explanations.items()
+            ]
+            if isinstance(external_id, str)
+            else []
+        )
+        if prohibited_inferences != expected_prohibitions:
+            errors.append(
+                f"{leg_label} requires provision-specific prohibited_inferences "
+                "for every binding assurance prohibition"
+            )
 
         raw_conditions = leg.get("conditions")
         parsed_conditions: list[dict[str, object]] = []
@@ -1296,6 +1358,10 @@ def validate_reverse_evidence_record(
             ):
                 errors.append(f"{leg_label} condition {name} requires evidence references")
                 continue
+            if len(set(references)) != len(references):
+                errors.append(
+                    f"{leg_label} condition {name} requires distinct evidence references"
+                )
             for reference in references:
                 if not _reverse_evidence_reference_resolves(
                     reference, record, leg, manifest_controls
@@ -1304,13 +1370,22 @@ def validate_reverse_evidence_record(
                         f"{leg_label} condition {name} has unresolved evidence "
                         f"reference {reference}"
                     )
-            if status == "NOT_APPLICABLE" and not _has_evidence_based_na(
-                name, references, leg
-            ):
-                errors.append(
-                    f"{leg_label} condition {name} NOT_APPLICABLE requires an explicit "
-                    "condition-specific known-gap justification and corroborating reference"
-                )
+            if status == "NOT_APPLICABLE":
+                if len(set(references)) < 2 or not any(
+                    isinstance(reference, str)
+                    and not reference.startswith("relationship:known_gaps:")
+                    for reference in references
+                ):
+                    errors.append(
+                        f"{leg_label} condition {name} NOT_APPLICABLE requires "
+                        "distinct evidence references and a separate corroborating reference"
+                    )
+                elif not _has_evidence_based_na(name, references, leg):
+                    errors.append(
+                        f"{leg_label} condition {name} NOT_APPLICABLE requires an "
+                        "explicit condition-specific known-gap justification and "
+                        "corroborating reference"
+                    )
     return errors
 
 
