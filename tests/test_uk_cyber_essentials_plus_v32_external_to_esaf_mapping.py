@@ -12,6 +12,14 @@ from tools.crosswalks.digests import snapshot_digest
 from tools.crosswalks.io import parse_front_matter
 from tools.crosswalks.manifest import build_control_manifest, render_manifest
 from tools.crosswalks.validation import validate
+from tools.crosswalks.uk_ce_plus_v32_reverse_profile import (
+    OBSERVATION_PROFILE_ENTRIES,
+    OBSERVATION_PROFILES,
+    build_observation_profiles,
+    render_observation_claim,
+    validate_observation_claim,
+    validate_observation_registry,
+)
 
 ROOT = Path(__file__).parents[1]
 MAPPING_SET_ID = "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0"
@@ -82,6 +90,40 @@ TASK4_POSITIVE_TARGETS = {
     "CEPTS3.2-T3-036": "INF-110",
     "CEPTS3.2-T4-008": "IAM-110",
 }
+
+EXPECTED_OBSERVATION_PROFILE_ENTRIES = (
+    ("CEPTS3.2-M-004", "AUD-120", "assessment_scope", "declared_assessment_boundary", "scope_correspondence_status", "recorded_comparison"),
+    ("CEPTS3.2-M-010", "AUD-130", "finding_remediation", "pre_test_findings", "pre_test_resolution_status", "recorded_status"),
+    ("CEPTS3.2-M-011", "AUD-120", "evidence_retention", "pre_test_verification_evidence", "retention_duration", "recorded_duration"),
+    ("CEPTS3.2-S-007", "AUD-120", "sampling_calculation", "sample_size", "calculation_method_alignment", "recorded_calculation"),
+    ("CEPTS3.2-S-008", "CMP-110", "evidence_retention", "sample_size_calculation_evidence", "retention_duration", "recorded_duration"),
+    ("CEPTS3.2-T1-009", "INF-120", "vulnerability_severity", "assessed_service_vulnerability", "severity_score", "recorded_threshold"),
+    ("CEPTS3.2-T1-011", "IAM-110", "authentication_requirement", "user_authentication", "service_access_requirement_status", "recorded_boolean"),
+    ("CEPTS3.2-T1-012", "IAM-110", "authentication_strength", "authentication_factors", "factor_count", "recorded_count"),
+    ("CEPTS3.2-T1-013", "IAM-140", "credential_configuration", "default_password", "password_change_status", "recorded_boolean"),
+    ("CEPTS3.2-T1-014", "APP-150", "abuse_resistance", "login_attempts", "throttling_status", "recorded_boolean"),
+    ("CEPTS3.2-T1-015", "APP-150", "abuse_resistance", "user_account", "lockout_attempt_threshold", "recorded_count"),
+    ("CEPTS3.2-T2-007", "INF-120", "vulnerability_fix_availability", "qualifying_vulnerability", "vendor_fix_age", "recorded_duration"),
+    ("CEPTS3.2-T3-005", "INF-110", "host_protection_configuration", "anti_malware", "activation_and_installation_coverage", "recorded_status"),
+    ("CEPTS3.2-T3-015", "INF-110", "malware_delivery_control", "malware_test_file", "delivery_and_access_status", "recorded_status"),
+    ("CEPTS3.2-T3-016", "INF-110", "execution_control", "executable_test_file", "delivery_execution_interaction_status", "recorded_status"),
+    ("CEPTS3.2-T3-017", "INF-110", "malware_delivery_control", "defined_malware_delivery_branches", "branch_applicability_status", "recorded_branch"),
+    ("CEPTS3.2-T3-021", "INF-110", "network_access_configuration", "test_user", "internet_access_status", "recorded_boolean"),
+    ("CEPTS3.2-T3-022", "INF-110", "download_protection", "test_file_download", "download_prevention_status", "recorded_boolean"),
+    ("CEPTS3.2-T3-023", "INF-110", "download_protection", "downloaded_test_file", "download_access_control_status", "recorded_boolean"),
+    ("CEPTS3.2-T3-024", "INF-110", "malware_delivery_control", "malware_test_file", "download_and_access_status", "recorded_status"),
+    ("CEPTS3.2-T3-025", "INF-110", "execution_control", "executable_test_file", "download_execution_interaction_status", "recorded_status"),
+    ("CEPTS3.2-T3-027", "INF-110", "host_protection_configuration", "anti_malware_installation", "operational_status", "recorded_status"),
+    ("CEPTS3.2-T3-028", "INF-110", "host_protection_configuration", "anti_malware_updates", "configuration_alignment", "recorded_comparison"),
+    ("CEPTS3.2-T3-029", "INF-110", "host_protection_configuration", "anti_malware_installation_and_configuration", "check_status", "recorded_status"),
+    ("CEPTS3.2-T3-031", "INF-110", "trust_store_configuration", "trusted_roots", "root_set_relation", "recorded_comparison"),
+    ("CEPTS3.2-T3-032", "INF-130", "configuration_change_approval", "additional_trusted_roots", "applicant_agreement_status", "recorded_status"),
+    ("CEPTS3.2-T3-033", "INF-110", "execution_control", "unsigned_executable", "execution_capability", "recorded_boolean"),
+    ("CEPTS3.2-T3-034", "INF-110", "execution_control", "untrusted_chain_executable", "execution_capability", "recorded_boolean"),
+    ("CEPTS3.2-T3-035", "INF-110", "code_signing_configuration", "executable_formats", "code_signing_coverage", "recorded_status"),
+    ("CEPTS3.2-T3-036", "INF-110", "allowlisting_configuration", "listed_configuration_and_execution_checks", "check_status", "recorded_status"),
+    ("CEPTS3.2-T4-008", "IAM-110", "mfa_challenge", "user_or_administrator", "pre_access_challenge_status", "recorded_boolean"),
+)
 
 
 def load_snapshot_records() -> list[dict[str, object]]:
@@ -1030,3 +1072,159 @@ class CyberEssentialsPlusExternalToEsafMappingTests(unittest.TestCase):
                 record, mapping_set, controls
             ),
         )
+
+
+class CyberEssentialsPlusStructuredObservationProfileTests(unittest.TestCase):
+    provision_id = "CEPTS3.2-T1-011"
+    control_id = "IAM-110"
+
+    def valid_claim(self) -> str:
+        return render_observation_claim(self.provision_id, self.control_id)
+
+    def mutated_claim(self, **changes: object) -> str:
+        claim = json.loads(self.valid_claim())
+        claim.update(changes)
+        return json.dumps(claim, separators=(",", ":"), sort_keys=True)
+
+    def assert_rejected(self, claim: str, message: str = "") -> None:
+        errors = validate_observation_claim(claim, self.provision_id, self.control_id)
+        self.assertTrue(errors, message or claim)
+
+    def test_registry_declares_the_exact_ordered_31_pair_profiles(self) -> None:
+        self.assertEqual(OBSERVATION_PROFILE_ENTRIES, EXPECTED_OBSERVATION_PROFILE_ENTRIES)
+        self.assertEqual(
+            OBSERVATION_PROFILES,
+            build_observation_profiles(EXPECTED_OBSERVATION_PROFILE_ENTRIES),
+        )
+
+    def test_renderer_produces_the_wished_for_canonical_claim(self) -> None:
+        self.assertEqual(
+            self.valid_claim(),
+            '{"assessment_date_boundary":"assessment_date_required","control_id":"IAM-110","evidence_date_boundary":"evidence_date_required","predicate":"service_access_requirement_status","provision_id":"CEPTS3.2-T1-011","result_kind":"authentication_requirement","result_type":"recorded_boolean","subject":"user_authentication"}',
+        )
+        self.assertEqual(
+            validate_observation_claim(
+                self.valid_claim(), self.provision_id, self.control_id
+            ),
+            [],
+        )
+
+    def test_claim_requires_a_canonical_json_object_with_exact_string_fields(self) -> None:
+        valid = self.valid_claim()
+        duplicate = valid.replace(
+            '"subject":"user_authentication"',
+            '"subject":"user_authentication","subject":"another_subject"',
+        )
+        cases = {
+            "malformed": "{not json}",
+            "non-object": "[]",
+            "duplicate key": duplicate,
+            "extra field": self.mutated_claim(extra="field"),
+            "missing field": self.mutated_claim(subject=None).replace(',"subject":null', ""),
+            "non-string": self.mutated_claim(subject=7),
+            "noncanonical": json.dumps(json.loads(valid), indent=2, sort_keys=True),
+        }
+        for label, claim in cases.items():
+            with self.subTest(label=label):
+                self.assert_rejected(claim)
+
+    def test_claim_requires_exact_pair_and_date_boundaries(self) -> None:
+        cases = {
+            "wrong provision": self.mutated_claim(provision_id="CEPTS3.2-T1-012"),
+            "wrong control": self.mutated_claim(control_id="IAM-140"),
+            "assessment boundary": self.mutated_claim(assessment_date_boundary="optional"),
+            "evidence boundary": self.mutated_claim(evidence_date_boundary="optional"),
+        }
+        for label, claim in cases.items():
+            with self.subTest(label=label):
+                self.assert_rejected(claim)
+
+    def test_claim_rejects_tool_or_assessment_activity_in_every_semantic_field(self) -> None:
+        for field in ("result_kind", "subject", "predicate", "result_type"):
+            for activity in (
+                "scanner_use",
+                "tool_authorization",
+                "assessor_procedure",
+                "assessment_execution",
+            ):
+                with self.subTest(field=field, activity=activity):
+                    self.assert_rejected(self.mutated_claim(**{field: activity}))
+
+    def test_claim_rejects_outcome_bearing_terms_in_every_semantic_field(self) -> None:
+        values = (
+            "pass", "fail", "true", "false", "compliance", "certification",
+            "success", "failure", "equivalence", "non_compliant", "certified",
+            "equivalent", "passed", "failing",
+        )
+        for field in ("result_kind", "subject", "predicate", "result_type"):
+            for value in values:
+                with self.subTest(field=field, value=value):
+                    self.assert_rejected(self.mutated_claim(**{field: value}))
+
+    def test_claim_rejects_a_profile_value_borrowed_from_another_pair(self) -> None:
+        self.assert_rejected(
+            self.mutated_claim(predicate="factor_count"),
+            "another control's profile must not be reusable",
+        )
+
+    def test_identifier_boundary_audit_keeps_password_valid(self) -> None:
+        claim = render_observation_claim("CEPTS3.2-T1-013", "IAM-140")
+        self.assertIn('"subject":"default_password"', claim)
+        self.assertEqual(
+            validate_observation_claim(claim, "CEPTS3.2-T1-013", "IAM-140"), []
+        )
+
+    def test_registry_audit_rejects_threshold_result_classifications_in_every_field(self) -> None:
+        threshold = list(EXPECTED_OBSERVATION_PROFILE_ENTRIES[5])
+        for position, field in enumerate(
+            ("result_kind", "subject", "predicate", "result_type"), start=2
+        ):
+            for value in ("high_risk", "low_risk", "high-risk", "low-risk"):
+                entries = list(EXPECTED_OBSERVATION_PROFILE_ENTRIES)
+                candidate = threshold.copy()
+                candidate[position] = value
+                entries[5] = tuple(candidate)
+                with self.subTest(field=field, value=value):
+                    self.assertTrue(validate_observation_registry(
+                        [(row[0], row[1]) for row in EXPECTED_OBSERVATION_PROFILE_ENTRIES],
+                        entries,
+                    ))
+
+    def test_registry_builder_rejects_mere_tool_or_procedure_profiles(self) -> None:
+        entries = [
+            (
+                "CEPTS3.2-X-001", "IAM-110", "assessment_procedure",
+                "scanner_tool", "tool_authorization", "recorded_status",
+            )
+        ]
+        with self.assertRaises(ValueError):
+            build_observation_profiles(entries)
+
+    def test_registry_accepts_configuration_change_approval_measurement(self) -> None:
+        claim = render_observation_claim("CEPTS3.2-T3-032", "INF-130")
+        self.assertEqual(
+            validate_observation_claim(claim, "CEPTS3.2-T3-032", "INF-130"), []
+        )
+
+    def test_registry_integrity_rejects_duplicate_missing_orphan_negative_and_unimplemented_pairs(self) -> None:
+        pairs = [(row[0], row[1]) for row in EXPECTED_OBSERVATION_PROFILE_ENTRIES]
+        negative = ("CEPTS3.2-M-001", "IAM-110", "authentication_requirement", "user_authentication", "service_access_requirement_status", "recorded_boolean")
+        unimplemented = ("CEPTS3.2-T5-001", "IAM-110", "authentication_requirement", "user_authentication", "service_access_requirement_status", "recorded_boolean")
+        cases = {
+            "duplicate declared pair": (
+                pairs, list(EXPECTED_OBSERVATION_PROFILE_ENTRIES) + [EXPECTED_OBSERVATION_PROFILE_ENTRIES[0]],
+            ),
+            "missing mapped pair": (pairs, list(EXPECTED_OBSERVATION_PROFILE_ENTRIES[1:])),
+            "orphan pair": (pairs, list(EXPECTED_OBSERVATION_PROFILE_ENTRIES) + [negative]),
+            "known negative provision": (
+                pairs + [(negative[0], negative[1])],
+                list(EXPECTED_OBSERVATION_PROFILE_ENTRIES) + [negative],
+            ),
+            "unimplemented task 5 provision": (
+                pairs + [(unimplemented[0], unimplemented[1])],
+                list(EXPECTED_OBSERVATION_PROFILE_ENTRIES) + [unimplemented],
+            ),
+        }
+        for label, (mapped_pairs, entries) in cases.items():
+            with self.subTest(label=label):
+                self.assertTrue(validate_observation_registry(mapped_pairs, entries))
