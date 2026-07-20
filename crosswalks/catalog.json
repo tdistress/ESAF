@@ -4,34 +4,35 @@
       "uk-ncsc": 3
     },
     "by_confidence": {
-      "high": 37,
+      "high": 48,
       "low": 1,
       "medium": 11
     },
     "by_coverage": {
-      "narrow": 47,
+      "narrow": 58,
       "partial": 2
     },
     "by_direction": {
-      "esaf_to_external": 49
+      "esaf_to_external": 49,
+      "external_to_esaf": 11
     },
     "by_disposition": {
-      "mapped": 47,
-      "no_direct_mapping": 213
+      "mapped": 58,
+      "no_direct_mapping": 253
     },
     "by_esaf_release": {
       "0.4-alpha": 3
     },
     "by_lifecycle_state": {},
     "by_provision_status": {
-      "draft": 260
+      "draft": 311
     },
     "by_publication": {
       "cyber-essentials-plus-test-specification": 2,
       "cyber-essentials-requirements-for-it-infrastructure": 1
     },
     "by_relationship": {
-      "partially_supports": 48,
+      "partially_supports": 59,
       "prerequisite": 1
     },
     "by_snapshot_status": {
@@ -42,9 +43,9 @@
       "3.3": 1
     },
     "mapping_sets": 3,
-    "negative_dispositions": 213,
-    "provisions": 260,
-    "relationships": 49
+    "negative_dispositions": 253,
+    "provisions": 311,
+    "relationships": 60
   },
   "generated_from": "crosswalks/mappings/** and crosswalks/registry/*.md",
   "mapping_sets": [
@@ -6556,7 +6557,7 @@
         "events": [],
         "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
         "schema_version": "1.0.0",
-        "snapshot_digest": "85aacaa927a38d0b6a2402ee0d96ed25148215f4523fa770e71bb4126f9afa69"
+        "snapshot_digest": "ff2373f7f4cb31b588a06524e4ad4ecc426fd80a94a19c35b20563fa0bd30e96"
       },
       "metadata": {
         "authority": {
@@ -6628,7 +6629,2561 @@
         "status": "draft"
       },
       "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/README.md",
-      "provisions": []
+      "provisions": [
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 external-to-ESAF evidence record.",
+                "date": "2026-07-19",
+                "version": "0.2.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Settle the assessment boundary with the Applicant before tests begin."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "M",
+              "kind": "prerequisite"
+            },
+            "external_provision_id": "CEPTS3.2-M-001",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-19",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+            "negative_rationale": "Missing outcome: CEPTS3.2-M-001 - external result 'assessment boundary' does not evidence ESAF outcome 'risk-based AI assessment program scope'.",
+            "record_id": "cepts32-m-001",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 4; printed page 3; Purpose; final operative paragraph",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-m-001.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 external-to-ESAF evidence record.",
+                "date": "2026-07-19",
+                "version": "0.2.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Secure suitable written authorization from the Applicant ahead of testing."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "M",
+              "kind": "prerequisite"
+            },
+            "external_provision_id": "CEPTS3.2-M-002",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-19",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+            "negative_rationale": "Missing outcome: CEPTS3.2-M-002 - external result 'written authorization' does not evidence ESAF outcome 'authorized evaluation of an exact AI safeguard'.",
+            "record_id": "cepts32-m-002",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 5; printed page 4; Before you begin; pre-test list, permission item",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-m-002.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 external-to-ESAF evidence record.",
+                "date": "2026-07-19",
+                "version": "0.2.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Confirm the Plus assessment scope matches the scope on the valid self-assessment certificate."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "M",
+              "kind": "prerequisite"
+            },
+            "external_provision_id": "CEPTS3.2-M-003",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-19",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+            "negative_rationale": "Missing outcome: CEPTS3.2-M-003 - external result 'assessment scope matches the scope' does not evidence ESAF outcome 'AI assessment scope supported by attributable technical evidence'.",
+            "record_id": "cepts32-m-003",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 5; printed page 4; Before you begin; pre-test list, certificate-scope item",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-m-003.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 external-to-ESAF evidence record.",
+                "date": "2026-07-19",
+                "version": "0.2.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Technically verify that the Plus boundary corresponds to the assessed environment."
+            },
+            "disposition": "mapped",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "M",
+              "kind": "prerequisite"
+            },
+            "external_provision_id": "CEPTS3.2-M-004",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-19",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+            "record_id": "cepts32-m-004",
+            "relationships": [
+              {
+                "conditions": [
+                  "{\"condition\":\"actor\",\"evidence_references\":[\"record:external_metadata\",\"relationship:expected_evidence\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"scope\",\"evidence_references\":[\"record:context\",\"manifest:AUD-120#requirement\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"population\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:known_gaps:0\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"sample\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:known_gaps:0\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"assessment_date\",\"evidence_references\":[\"relationship:expected_evidence\",\"record:source_locator\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"evidence_date\",\"evidence_references\":[\"relationship:expected_evidence\",\"record:source_locator\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"tool\",\"evidence_references\":[\"relationship:expected_evidence\",\"record:source_locator\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"provenance\",\"evidence_references\":[\"record:source_locator\",\"manifest:AUD-120#requirement\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"exception\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:prohibited_inferences\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"delivery_partner_discretion\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:prohibited_inferences\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"point_in_time_status\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:known_gaps:0\"],\"status\":\"SATISFIED\"}"
+                ],
+                "confidence": "high",
+                "coverage": "narrow",
+                "direction": "external_to_esaf",
+                "esaf_control_id": "AUD-120",
+                "esaf_control_path": "AUD/AUD-120.md",
+                "esaf_control_sha256": "f6aa7dda8b73ee22586eb9728e59d5ec19f357a5c10187cd6c6a1d2c28f34ac0",
+                "esaf_control_version": "0.1.0",
+                "esaf_requirement_locator": "controls/AUD/AUD-120.md#requirement",
+                "expected_evidence": [
+                  "A dated and attributable technical comparison identifies the Assessor, declared boundary, assessed environment, population and sample, method, source artifacts, result, and any exception."
+                ],
+                "known_gaps": [
+                  "The comparison does not establish evidence quality for unexamined environments, other assessment procedures, or later conditions."
+                ],
+                "prohibited_inferences": [
+                  "CEPTS3.2-M-004 | prohibit implementation: The observation does not establish control implementation.",
+                  "CEPTS3.2-M-004 | prohibit effectiveness: The observation does not establish control effectiveness.",
+                  "CEPTS3.2-M-004 | prohibit sufficiency: The observation is not sufficient evidence of the control outcome.",
+                  "CEPTS3.2-M-004 | prohibit compliance: The observation does not establish ESAF compliance.",
+                  "CEPTS3.2-M-004 | prohibit certification: The observation does not authorize or establish certification.",
+                  "CEPTS3.2-M-004 | prohibit equivalence: The external provision is not equivalent to the ESAF control.",
+                  "CEPTS3.2-M-004 | prohibit continuous_assurance: The point-in-time observation is not continuous assurance.",
+                  "CEPTS3.2-M-004 | prohibit population_wide_coverage: The sampled observation is not population-wide coverage.",
+                  "CEPTS3.2-M-004 | prohibit current_scheme_coverage: The public v3.2 evidence is not current-scheme coverage."
+                ],
+                "rationale": "External observation: a technical comparison recorded whether the declared Plus boundary corresponded to the assessed environment. Supported ESAF outcome: AUD-120 requires relevant, reliable, complete, timely, attributable, and integrity-protected evidence for each AI assessment scope and period. Conditions only narrow this supported claim; they do not create either outcome.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 5; printed page 4; Before you begin; pre-test list, technical scope item",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-m-004.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 external-to-ESAF evidence record.",
+                "date": "2026-07-19",
+                "version": "0.2.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Where the declared scope is less than the whole organisation, technically verify effective segregation of its subsets."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "M",
+              "kind": "prerequisite"
+            },
+            "external_provision_id": "CEPTS3.2-M-005",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-19",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+            "negative_rationale": "Missing outcome: CEPTS3.2-M-005 - external result 'effective segregation of its subsets' does not evidence ESAF outcome 'isolation of authorized AI state between identities and tenants'.",
+            "record_id": "cepts32-m-005",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 5; printed page 4; Before you begin; pre-test list, subset-segregation item",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-m-005.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 external-to-ESAF evidence record.",
+                "date": "2026-07-19",
+                "version": "0.2.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Identify the samples that will be tested."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "M",
+              "kind": "prerequisite"
+            },
+            "external_provision_id": "CEPTS3.2-M-006",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-19",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+            "negative_rationale": "Missing outcome: CEPTS3.2-M-006 - external result 'samples that will be tested' does not evidence ESAF outcome 'reliable AI assessment evidence tied to a defined population and sample'.",
+            "record_id": "cepts32-m-006",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 5; printed page 4; Before you begin; pre-test list, sampling item",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-m-006.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 external-to-ESAF evidence record.",
+                "date": "2026-07-19",
+                "version": "0.2.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Determine when the identified sample testing will occur."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "M",
+              "kind": "prerequisite"
+            },
+            "external_provision_id": "CEPTS3.2-M-007",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-19",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+            "negative_rationale": "Missing outcome: CEPTS3.2-M-007 - external result 'identified sample testing will occur' does not evidence ESAF outcome 'timely attributable evidence of an exact AI safeguard result'.",
+            "record_id": "cepts32-m-007",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 5; printed page 4; Before you begin; pre-test list, scheduling portion",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-m-007.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 external-to-ESAF evidence record.",
+                "date": "2026-07-19",
+                "version": "0.2.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Have the correct report template available for the Applicant's assessment report."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "M",
+              "kind": "prerequisite"
+            },
+            "external_provision_id": "CEPTS3.2-M-008",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-19",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+            "negative_rationale": "Missing outcome: CEPTS3.2-M-008 - external result 'correct report template' does not evidence ESAF outcome 'AI assessment reporting supported by exact safeguard evidence'.",
+            "record_id": "cepts32-m-008",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 5; printed page 4; Before you begin; pre-test list, report-template item",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-m-008.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 external-to-ESAF evidence record.",
+                "date": "2026-07-19",
+                "version": "0.2.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Set the format used for the Applicant assessment report."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Delivery Partner"
+              ],
+              "group": "M",
+              "kind": "procedure_step"
+            },
+            "external_provision_id": "CEPTS3.2-M-009",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-19",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+            "negative_rationale": "Missing outcome: CEPTS3.2-M-009 - external result 'format used for the Applicant assessment report' does not evidence ESAF outcome 'AI assessment reporting supported by exact safeguard evidence'.",
+            "record_id": "cepts32-m-009",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 5; printed page 4; Before you begin; report-template item, format assignment",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-m-009.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 external-to-ESAF evidence record.",
+                "date": "2026-07-19",
+                "version": "0.2.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Resolve issues found during the listed pre-test checks before Plus testing commences."
+            },
+            "disposition": "mapped",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "M",
+              "kind": "prerequisite"
+            },
+            "external_provision_id": "CEPTS3.2-M-010",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-19",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+            "record_id": "cepts32-m-010",
+            "relationships": [
+              {
+                "conditions": [
+                  "{\"condition\":\"actor\",\"evidence_references\":[\"record:external_metadata\",\"relationship:expected_evidence\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"scope\",\"evidence_references\":[\"record:context\",\"manifest:AUD-130#requirement\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"population\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:known_gaps:0\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"sample\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:known_gaps:0\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"assessment_date\",\"evidence_references\":[\"relationship:expected_evidence\",\"record:source_locator\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"evidence_date\",\"evidence_references\":[\"relationship:expected_evidence\",\"record:source_locator\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"tool\",\"evidence_references\":[\"relationship:expected_evidence\",\"record:source_locator\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"provenance\",\"evidence_references\":[\"record:source_locator\",\"manifest:AUD-130#requirement\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"exception\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:prohibited_inferences\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"delivery_partner_discretion\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:prohibited_inferences\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"point_in_time_status\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:known_gaps:0\"],\"status\":\"SATISFIED\"}"
+                ],
+                "confidence": "high",
+                "coverage": "narrow",
+                "direction": "external_to_esaf",
+                "esaf_control_id": "AUD-130",
+                "esaf_control_path": "AUD/AUD-130.md",
+                "esaf_control_sha256": "cecd8e3e917827670267476d7c35d15b46a51eca4878eff2b5d13f7cdf13eca5",
+                "esaf_control_version": "0.1.0",
+                "esaf_requirement_locator": "controls/AUD/AUD-130.md#requirement",
+                "expected_evidence": [
+                  "A dated finding record identifies the Assessor, affected AI assessment scope and population, issue, owner, action, retest, closure, source artifacts, and any exception."
+                ],
+                "known_gaps": [
+                  "Issue resolution alone does not establish every required finding activity, risk factor, root-cause analysis, or later state."
+                ],
+                "prohibited_inferences": [
+                  "CEPTS3.2-M-010 | prohibit implementation: The observation does not establish control implementation.",
+                  "CEPTS3.2-M-010 | prohibit effectiveness: The observation does not establish control effectiveness.",
+                  "CEPTS3.2-M-010 | prohibit sufficiency: The observation is not sufficient evidence of the control outcome.",
+                  "CEPTS3.2-M-010 | prohibit compliance: The observation does not establish ESAF compliance.",
+                  "CEPTS3.2-M-010 | prohibit certification: The observation does not authorize or establish certification.",
+                  "CEPTS3.2-M-010 | prohibit equivalence: The external provision is not equivalent to the ESAF control.",
+                  "CEPTS3.2-M-010 | prohibit continuous_assurance: The point-in-time observation is not continuous assurance.",
+                  "CEPTS3.2-M-010 | prohibit population_wide_coverage: The sampled observation is not population-wide coverage.",
+                  "CEPTS3.2-M-010 | prohibit current_scheme_coverage: The public v3.2 evidence is not current-scheme coverage."
+                ],
+                "rationale": "External observation: the pre-test record shows that issues found during the listed checks were resolved before testing began. Supported ESAF outcome: AUD-130 requires AI assessment findings to be documented, classified, assigned, prioritized, remediated, escalated, retested, closed, and retained according to the named governance factors. Conditions only narrow this supported claim; they do not create either outcome.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 5; printed page 4; Before you begin; paragraph following pre-test list",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-m-010.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 external-to-ESAF evidence record.",
+                "date": "2026-07-19",
+                "version": "0.2.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Retain all evidence from the pre-test verifications for at least the certificate's lifetime."
+            },
+            "disposition": "mapped",
+            "external_metadata": {
+              "actors": [
+                "Certifying Body"
+              ],
+              "group": "M",
+              "kind": "evidence_retention"
+            },
+            "external_provision_id": "CEPTS3.2-M-011",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-19",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+            "record_id": "cepts32-m-011",
+            "relationships": [
+              {
+                "conditions": [
+                  "{\"condition\":\"actor\",\"evidence_references\":[\"record:external_metadata\",\"relationship:expected_evidence\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"scope\",\"evidence_references\":[\"record:context\",\"manifest:AUD-120#requirement\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"population\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:known_gaps:0\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"sample\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:known_gaps:0\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"assessment_date\",\"evidence_references\":[\"relationship:expected_evidence\",\"record:source_locator\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"evidence_date\",\"evidence_references\":[\"relationship:expected_evidence\",\"record:source_locator\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"tool\",\"evidence_references\":[\"relationship:expected_evidence\",\"record:source_locator\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"provenance\",\"evidence_references\":[\"record:source_locator\",\"manifest:AUD-120#requirement\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"exception\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:prohibited_inferences\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"delivery_partner_discretion\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:prohibited_inferences\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"point_in_time_status\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:known_gaps:0\"],\"status\":\"SATISFIED\"}"
+                ],
+                "confidence": "high",
+                "coverage": "narrow",
+                "direction": "external_to_esaf",
+                "esaf_control_id": "AUD-120",
+                "esaf_control_path": "AUD/AUD-120.md",
+                "esaf_control_sha256": "f6aa7dda8b73ee22586eb9728e59d5ec19f357a5c10187cd6c6a1d2c28f34ac0",
+                "esaf_control_version": "0.1.0",
+                "esaf_requirement_locator": "controls/AUD/AUD-120.md#requirement",
+                "expected_evidence": [
+                  "A dated integrity-protected evidence index identifies the Certifying Body, AI assessment scope, population and sample, verification artifacts, collection method, provenance, retention period, and any exception."
+                ],
+                "known_gaps": [
+                  "Retention does not establish the quality of each artifact, coverage beyond the recorded assessment, or conditions after the evidence period."
+                ],
+                "prohibited_inferences": [
+                  "CEPTS3.2-M-011 | prohibit implementation: The observation does not establish control implementation.",
+                  "CEPTS3.2-M-011 | prohibit effectiveness: The observation does not establish control effectiveness.",
+                  "CEPTS3.2-M-011 | prohibit sufficiency: The observation is not sufficient evidence of the control outcome.",
+                  "CEPTS3.2-M-011 | prohibit compliance: The observation does not establish ESAF compliance.",
+                  "CEPTS3.2-M-011 | prohibit certification: The observation does not authorize or establish certification.",
+                  "CEPTS3.2-M-011 | prohibit equivalence: The external provision is not equivalent to the ESAF control.",
+                  "CEPTS3.2-M-011 | prohibit continuous_assurance: The point-in-time observation is not continuous assurance.",
+                  "CEPTS3.2-M-011 | prohibit population_wide_coverage: The sampled observation is not population-wide coverage.",
+                  "CEPTS3.2-M-011 | prohibit current_scheme_coverage: The public v3.2 evidence is not current-scheme coverage."
+                ],
+                "rationale": "External observation: the retention record shows that all evidence from the pre-test verifications was retained for at least the certificate lifetime. Supported ESAF outcome: AUD-120 requires relevant, reliable, complete, timely, attributable, and integrity-protected evidence to be obtained and retained for each AI assessment procedure, determination, scope, and period. Conditions only narrow this supported claim; they do not create either outcome.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 5; printed page 4; Before you begin; closing retention paragraph",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-m-011.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 external-to-ESAF evidence record.",
+                "date": "2026-07-19",
+                "version": "0.2.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Have an external, unfiltered, non-deny-listed email system able to send arbitrary messages to an Applicant account."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "M",
+              "kind": "prerequisite"
+            },
+            "external_provision_id": "CEPTS3.2-M-012",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-19",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+            "negative_rationale": "Missing outcome: CEPTS3.2-M-012 - external result 'external, unfiltered, non-deny-listed email system' does not evidence ESAF outcome 'protection of AI communications, credentials, or data'.",
+            "record_id": "cepts32-m-012",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 6; printed page 5; General prerequisites for testing; first prerequisite item",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-m-012.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 external-to-ESAF evidence record.",
+                "date": "2026-07-19",
+                "version": "0.2.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Use assessment files on a Certification Body-owned external site."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "M",
+              "kind": "prerequisite"
+            },
+            "external_provision_id": "CEPTS3.2-M-013",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-19",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+            "negative_rationale": "Missing outcome: CEPTS3.2-M-013 - external result 'Certification Body-owned external site' does not evidence ESAF outcome 'approved protection of AI assessment evidence at the external site'.",
+            "record_id": "cepts32-m-013",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 6; printed page 5; General prerequisites for testing; second prerequisite item, hosting requirement",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-m-013.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 external-to-ESAF evidence record.",
+                "date": "2026-07-19",
+                "version": "0.2.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "When necessary, ask the Applicant to enable reachability of the external assessment-file site, including a suitable allow-list entry."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "M",
+              "kind": "recommendation"
+            },
+            "external_provision_id": "CEPTS3.2-M-014",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-19",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+            "negative_rationale": "Missing outcome: CEPTS3.2-M-014 - external result 'suitable allow-list entry' does not evidence ESAF outcome 'authorized AI access-control configuration'.",
+            "record_id": "cepts32-m-014",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 6; printed page 5; General prerequisites for testing; second prerequisite item, conditional access clause",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-m-014.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 external-to-ESAF evidence record.",
+                "date": "2026-07-19",
+                "version": "0.2.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Have users with credentials suitable for performing the tests."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "M",
+              "kind": "prerequisite"
+            },
+            "external_provision_id": "CEPTS3.2-M-015",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-19",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+            "negative_rationale": "Missing outcome: CEPTS3.2-M-015 - external result 'credentials suitable for performing the tests' does not evidence ESAF outcome 'approved management of credentials used by AI capabilities'.",
+            "record_id": "cepts32-m-015",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 6; printed page 5; General prerequisites for testing; third prerequisite item",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-m-015.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 external-to-ESAF evidence record.",
+                "date": "2026-07-19",
+                "version": "0.2.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Ensure sampled in-scope user devices have functioning mail clients and addresses plus web browsers."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "M",
+              "kind": "prerequisite"
+            },
+            "external_provision_id": "CEPTS3.2-M-016",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-19",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+            "negative_rationale": "Missing outcome: CEPTS3.2-M-016 - external result 'functioning mail clients and addresses plus web browsers' does not evidence ESAF outcome 'secure configuration of in-scope AI infrastructure'.",
+            "record_id": "cepts32-m-016",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 6; printed page 5; General prerequisites for testing; fourth prerequisite item",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-m-016.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 external-to-ESAF evidence record.",
+                "date": "2026-07-19",
+                "version": "0.2.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Assign an outcome to every test case and every sub-test."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "M",
+              "kind": "procedure_step"
+            },
+            "external_provision_id": "CEPTS3.2-M-017",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-19",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+            "negative_rationale": "Missing outcome: CEPTS3.2-M-017 - external result 'outcome to every test case and every sub-test' does not evidence ESAF outcome 'evidence supporting an exact AI control determination'.",
+            "record_id": "cepts32-m-017",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 6; printed page 5; Test results; opening result-marking instruction",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-m-017.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 external-to-ESAF evidence record.",
+                "date": "2026-07-19",
+                "version": "0.2.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Mark a test case as passing only when each of its sub-tests passes, except where this specification states an exception."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "M",
+              "kind": "result_rule"
+            },
+            "external_provision_id": "CEPTS3.2-M-018",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-19",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+            "negative_rationale": "Missing outcome: CEPTS3.2-M-018 - external result 'test case as passing only when each of its sub-tests passes' does not evidence ESAF outcome 'observed state of an exact normative AI safeguard'.",
+            "record_id": "cepts32-m-018",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 6; printed page 5; Pass; first aggregate pass item",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-m-018.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 external-to-ESAF evidence record.",
+                "date": "2026-07-19",
+                "version": "0.2.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Mark the overall assessment as passing only when every test case passes."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "M",
+              "kind": "result_rule"
+            },
+            "external_provision_id": "CEPTS3.2-M-019",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-19",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+            "negative_rationale": "Missing outcome: CEPTS3.2-M-019 - external result 'overall assessment as passing only when every test case passes' does not evidence ESAF outcome 'observed state of an exact normative AI safeguard'.",
+            "record_id": "cepts32-m-019",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 6; printed page 5; Pass; second aggregate pass item",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-m-019.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 external-to-ESAF evidence record.",
+                "date": "2026-07-19",
+                "version": "0.2.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Absent a stated exception, propagate a sub-test failure to its parent case and overall outcome."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "M",
+              "kind": "result_rule"
+            },
+            "external_provision_id": "CEPTS3.2-M-020",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-19",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+            "negative_rationale": "Missing outcome: CEPTS3.2-M-020 - external result 'sub-test failure to its parent case and overall outcome' does not evidence ESAF outcome 'observed state of an exact normative AI safeguard'.",
+            "record_id": "cepts32-m-020",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 6; printed page 5; Fail; failure propagation items",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-m-020.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 external-to-ESAF evidence record.",
+                "date": "2026-07-19",
+                "version": "0.2.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Complete the assessment despite an earlier failure so the Applicant receives a full appraisal."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "M",
+              "kind": "recommendation"
+            },
+            "external_provision_id": "CEPTS3.2-M-021",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-19",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+            "negative_rationale": "Missing outcome: CEPTS3.2-M-021 - external result 'full appraisal' does not evidence ESAF outcome 'evidence supporting each exact AI control determination'.",
+            "record_id": "cepts32-m-021",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 7; printed page 6; Fail; continuation paragraph before Advisory notes",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-m-021.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 external-to-ESAF evidence record.",
+                "date": "2026-07-19",
+                "version": "0.2.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Optionally attach an advisory note to any result."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "M",
+              "kind": "recommendation"
+            },
+            "external_provision_id": "CEPTS3.2-M-022",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-19",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+            "negative_rationale": "Missing outcome: CEPTS3.2-M-022 - external result 'advisory note to any result' does not evidence ESAF outcome 'governed remediation of a specific AI assessment finding'.",
+            "record_id": "cepts32-m-022",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 7; printed page 6; Advisory notes; opening authorization",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-m-022.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 external-to-ESAF evidence record.",
+                "date": "2026-07-19",
+                "version": "0.2.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Use advisory notes to identify practical cybersecurity improvements for the Applicant."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "M",
+              "kind": "recommendation"
+            },
+            "external_provision_id": "CEPTS3.2-M-023",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-19",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+            "negative_rationale": "Missing outcome: CEPTS3.2-M-023 - external result 'practical cybersecurity improvements' does not evidence ESAF outcome 'governed remediation of a specific AI assessment finding'.",
+            "record_id": "cepts32-m-023",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 7; printed page 6; Advisory notes; first stated use",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-m-023.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 external-to-ESAF evidence record.",
+                "date": "2026-07-19",
+                "version": "0.2.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Use advisory notes to explain the basis for particular test decisions."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "M",
+              "kind": "recommendation"
+            },
+            "external_provision_id": "CEPTS3.2-M-024",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-19",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+            "negative_rationale": "Missing outcome: CEPTS3.2-M-024 - external result 'basis for particular test decisions' does not evidence ESAF outcome 'relevant attributable evidence for an exact AI assessment determination'.",
+            "record_id": "cepts32-m-024",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 7; printed page 6; Advisory notes; second stated use",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-m-024.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 external-to-ESAF evidence record.",
+                "date": "2026-07-19",
+                "version": "0.2.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Apply the remaining tests to the population of computing devices inside the agreed scope boundary."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "S",
+              "kind": "applicability"
+            },
+            "external_provision_id": "CEPTS3.2-S-001",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-19",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+            "negative_rationale": "Missing outcome: CEPTS3.2-S-001 - external result 'population of computing devices inside the agreed scope boundary' does not evidence ESAF outcome 'risk-based AI assessment evidence tied to a defined population and sample'.",
+            "record_id": "cepts32-s-001",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 10; printed page 9; Sample testing; opening population statement",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-s-001.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 external-to-ESAF evidence record.",
+                "date": "2026-07-19",
+                "version": "0.2.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Include user devices capable of reaching organisational information or services in the population for the remaining tests."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "S",
+              "kind": "applicability"
+            },
+            "external_provision_id": "CEPTS3.2-S-002",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-19",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+            "negative_rationale": "Missing outcome: CEPTS3.2-S-002 - external result 'user devices capable of reaching organisational information or services' does not evidence ESAF outcome 'population of assets that access in-scope AI capabilities'.",
+            "record_id": "cepts32-s-002",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 10; printed page 9; Sample testing; population list, end-user devices",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-s-002.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 external-to-ESAF evidence record.",
+                "date": "2026-07-19",
+                "version": "0.2.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Include every internally hosted server in the remaining-test population."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "S",
+              "kind": "applicability"
+            },
+            "external_provision_id": "CEPTS3.2-S-003",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-19",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+            "negative_rationale": "Missing outcome: CEPTS3.2-S-003 - external result 'every internally hosted server' does not evidence ESAF outcome 'population of infrastructure supporting in-scope AI workloads'.",
+            "record_id": "cepts32-s-003",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 10; printed page 9; Sample testing; population list, internal servers",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-s-003.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 external-to-ESAF evidence record.",
+                "date": "2026-07-19",
+                "version": "0.2.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Include all cloud service types, including infrastructure, platform, and software services, in the remaining-test population."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "S",
+              "kind": "applicability"
+            },
+            "external_provision_id": "CEPTS3.2-S-004",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-19",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+            "negative_rationale": "Missing outcome: CEPTS3.2-S-004 - external result 'all cloud service types' does not evidence ESAF outcome 'population of cloud services supporting in-scope AI capabilities'.",
+            "record_id": "cepts32-s-004",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 10; printed page 9; Sample testing; population list, cloud services",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-s-004.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 external-to-ESAF evidence record.",
+                "date": "2026-07-19",
+                "version": "0.2.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "When every in-scope device cannot practically be tested, select a device sample and take steps to establish that it is representative."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "S",
+              "kind": "procedure_step"
+            },
+            "external_provision_id": "CEPTS3.2-S-005",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-19",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+            "negative_rationale": "Missing outcome: CEPTS3.2-S-005 - external result 'select a device sample and take steps to establish that it is representative' does not evidence ESAF outcome 'reliable evidence for a defined AI assessment population'.",
+            "record_id": "cepts32-s-005",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 10; printed page 9; Sample testing; representative-device-sample paragraph",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-s-005.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 external-to-ESAF evidence record.",
+                "date": "2026-07-19",
+                "version": "0.2.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Seek confidence that the combined testing represents all in-scope devices, accounting for configuration variation and provisioning effectiveness."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "S",
+              "kind": "recommendation"
+            },
+            "external_provision_id": "CEPTS3.2-S-006",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-19",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+            "negative_rationale": "Missing outcome: CEPTS3.2-S-006 - external result 'combined testing represents all in-scope devices' does not evidence ESAF outcome 'reliable evidence for a defined AI assessment population'.",
+            "record_id": "cepts32-s-006",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 10; printed page 9; Sample testing; representativeness recommendation",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-s-006.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 external-to-ESAF evidence record.",
+                "date": "2026-07-19",
+                "version": "0.2.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Verify that sample size was calculated correctly using the Delivery Partner's method."
+            },
+            "disposition": "mapped",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "S",
+              "kind": "procedure_step"
+            },
+            "external_provision_id": "CEPTS3.2-S-007",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-19",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+            "record_id": "cepts32-s-007",
+            "relationships": [
+              {
+                "conditions": [
+                  "{\"condition\":\"actor\",\"evidence_references\":[\"record:external_metadata\",\"relationship:expected_evidence\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"scope\",\"evidence_references\":[\"record:context\",\"manifest:AUD-120#requirement\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"population\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:known_gaps:0\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"sample\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:known_gaps:0\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"assessment_date\",\"evidence_references\":[\"relationship:expected_evidence\",\"record:source_locator\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"evidence_date\",\"evidence_references\":[\"relationship:expected_evidence\",\"record:source_locator\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"tool\",\"evidence_references\":[\"relationship:expected_evidence\",\"record:source_locator\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"provenance\",\"evidence_references\":[\"record:source_locator\",\"manifest:AUD-120#requirement\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"exception\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:prohibited_inferences\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"delivery_partner_discretion\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:prohibited_inferences\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"point_in_time_status\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:known_gaps:0\"],\"status\":\"SATISFIED\"}"
+                ],
+                "confidence": "high",
+                "coverage": "narrow",
+                "direction": "external_to_esaf",
+                "esaf_control_id": "AUD-120",
+                "esaf_control_path": "AUD/AUD-120.md",
+                "esaf_control_sha256": "f6aa7dda8b73ee22586eb9728e59d5ec19f357a5c10187cd6c6a1d2c28f34ac0",
+                "esaf_control_version": "0.1.0",
+                "esaf_requirement_locator": "controls/AUD/AUD-120.md#requirement",
+                "expected_evidence": [
+                  "A dated attributable sampling workpaper identifies the Assessor, AI assessment scope, population and sample, approved calculation method, inputs, result, provenance, and any exception."
+                ],
+                "known_gaps": [
+                  "Calculation correctness under the named method does not establish method suitability, sample representativeness, other evidence properties, or later conditions."
+                ],
+                "prohibited_inferences": [
+                  "CEPTS3.2-S-007 | prohibit implementation: The observation does not establish control implementation.",
+                  "CEPTS3.2-S-007 | prohibit effectiveness: The observation does not establish control effectiveness.",
+                  "CEPTS3.2-S-007 | prohibit sufficiency: The observation is not sufficient evidence of the control outcome.",
+                  "CEPTS3.2-S-007 | prohibit compliance: The observation does not establish ESAF compliance.",
+                  "CEPTS3.2-S-007 | prohibit certification: The observation does not authorize or establish certification.",
+                  "CEPTS3.2-S-007 | prohibit equivalence: The external provision is not equivalent to the ESAF control.",
+                  "CEPTS3.2-S-007 | prohibit continuous_assurance: The point-in-time observation is not continuous assurance.",
+                  "CEPTS3.2-S-007 | prohibit population_wide_coverage: The sampled observation is not population-wide coverage.",
+                  "CEPTS3.2-S-007 | prohibit current_scheme_coverage: The public v3.2 evidence is not current-scheme coverage."
+                ],
+                "rationale": "External observation: the sampling workpaper records whether sample size was calculated correctly using the Delivery Partner method. Supported ESAF outcome: AUD-120 requires relevant, reliable, complete, timely, attributable, and integrity-protected evidence for each AI assessment procedure, determination, scope, and period. Conditions only narrow this supported claim; they do not create either outcome.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 10; printed page 9; Sample testing; sample-size verification item",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-s-007.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 external-to-ESAF evidence record.",
+                "date": "2026-07-19",
+                "version": "0.2.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Retain evidence of the sample-size calculation for at least the certificate's lifetime."
+            },
+            "disposition": "mapped",
+            "external_metadata": {
+              "actors": [
+                "Certifying Body"
+              ],
+              "group": "S",
+              "kind": "evidence_retention"
+            },
+            "external_provision_id": "CEPTS3.2-S-008",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-19",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+            "record_id": "cepts32-s-008",
+            "relationships": [
+              {
+                "conditions": [
+                  "{\"condition\":\"actor\",\"evidence_references\":[\"record:external_metadata\",\"relationship:expected_evidence\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"scope\",\"evidence_references\":[\"record:context\",\"manifest:CMP-110#requirement\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"population\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:known_gaps:0\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"sample\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:known_gaps:0\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"assessment_date\",\"evidence_references\":[\"relationship:expected_evidence\",\"record:source_locator\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"evidence_date\",\"evidence_references\":[\"relationship:expected_evidence\",\"record:source_locator\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"tool\",\"evidence_references\":[\"relationship:expected_evidence\",\"record:source_locator\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"provenance\",\"evidence_references\":[\"record:source_locator\",\"manifest:CMP-110#requirement\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"exception\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:prohibited_inferences\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"delivery_partner_discretion\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:prohibited_inferences\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"point_in_time_status\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:known_gaps:0\"],\"status\":\"SATISFIED\"}"
+                ],
+                "confidence": "high",
+                "coverage": "narrow",
+                "direction": "external_to_esaf",
+                "esaf_control_id": "CMP-110",
+                "esaf_control_path": "CMP/CMP-110.md",
+                "esaf_control_sha256": "b02bad69b329e16ff1ac0becf9ff7eddfe9a0cdf6033f43045b03359a1aeed68",
+                "esaf_control_version": "0.1.0",
+                "esaf_requirement_locator": "controls/CMP/CMP-110.md#requirement",
+                "expected_evidence": [
+                  "A dated integrity-protected retention index identifies the Certifying Body, AI assessment scope, population and sample, calculation record, source, retention period, provenance, and any exception."
+                ],
+                "known_gaps": [
+                  "Retention of the calculation record does not establish its creation or accuracy, protection beyond the recorded controls, other record duties, or later conditions."
+                ],
+                "prohibited_inferences": [
+                  "CEPTS3.2-S-008 | prohibit implementation: The observation does not establish control implementation.",
+                  "CEPTS3.2-S-008 | prohibit effectiveness: The observation does not establish control effectiveness.",
+                  "CEPTS3.2-S-008 | prohibit sufficiency: The observation is not sufficient evidence of the control outcome.",
+                  "CEPTS3.2-S-008 | prohibit compliance: The observation does not establish ESAF compliance.",
+                  "CEPTS3.2-S-008 | prohibit certification: The observation does not authorize or establish certification.",
+                  "CEPTS3.2-S-008 | prohibit equivalence: The external provision is not equivalent to the ESAF control.",
+                  "CEPTS3.2-S-008 | prohibit continuous_assurance: The point-in-time observation is not continuous assurance.",
+                  "CEPTS3.2-S-008 | prohibit population_wide_coverage: The sampled observation is not population-wide coverage.",
+                  "CEPTS3.2-S-008 | prohibit current_scheme_coverage: The public v3.2 evidence is not current-scheme coverage."
+                ],
+                "rationale": "External observation: the retention record shows that sample-size calculation evidence was retained for at least the certificate lifetime. Supported ESAF outcome: CMP-110 requires AI records, notices, registrations, reports, and evidence to be created, protected, retained, disclosed, submitted, and disposed of according to applicable record requirements. Conditions only narrow this supported claim; they do not create either outcome.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 10; printed page 9; Sample testing; sample-calculation evidence sentence",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-s-008.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 external-to-ESAF evidence record.",
+                "date": "2026-07-19",
+                "version": "0.2.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "For each cloud service, test a user-account sample representative of its population."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "S",
+              "kind": "procedure_step"
+            },
+            "external_provision_id": "CEPTS3.2-S-009",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-19",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+            "negative_rationale": "Missing outcome: CEPTS3.2-S-009 - external result 'test a user-account sample representative of its population' does not evidence ESAF outcome 'observed state of an exact normative AI account safeguard'.",
+            "record_id": "cepts32-s-009",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 10; printed page 9; Sample testing; cloud-account sampling paragraph",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-s-009.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 external-to-ESAF evidence record.",
+                "date": "2026-07-19",
+                "version": "0.2.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "For each cloud service, include at least one normal account and one administrative account in the sample."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "S",
+              "kind": "applicability"
+            },
+            "external_provision_id": "CEPTS3.2-S-010",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-19",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+            "negative_rationale": "Missing outcome: CEPTS3.2-S-010 - external result 'one normal account and one administrative account' does not evidence ESAF outcome 'observed restriction or separate authentication of privileged AI access'.",
+            "record_id": "cepts32-s-010",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 10; printed page 9; Sample testing; minimum cloud-account composition",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-s-010.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 external-to-ESAF evidence record.",
+                "date": "2026-07-19",
+                "version": "0.2.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "The same sampled users may be reused across multiple cloud services."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "S",
+              "kind": "recommendation"
+            },
+            "external_provision_id": "CEPTS3.2-S-011",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-19",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+            "negative_rationale": "Missing outcome: CEPTS3.2-S-011 - external result 'sampled users may be reused across multiple cloud services' does not evidence ESAF outcome 'independent evidence for an exact AI safeguard in each cloud service'.",
+            "record_id": "cepts32-s-011",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 10; printed page 9; Sample testing; account-reuse sentence",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-s-011.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 external-to-ESAF evidence record.",
+                "date": "2026-07-19",
+                "version": "0.2.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Use a Delivery Partner-approved vulnerability scanner."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "T1",
+              "kind": "prerequisite"
+            },
+            "external_provision_id": "CEPTS3.2-T1-001",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-19",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+            "negative_rationale": "Missing outcome: CEPTS3.2-T1-001 - external result 'Delivery Partner-approved vulnerability scanner' does not evidence ESAF outcome 'vulnerability finding affecting AI infrastructure and its disposition'.",
+            "record_id": "cepts32-t1-001",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 8; printed page 7; Prerequisites; first prerequisite item",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-t1-001.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 external-to-ESAF evidence record.",
+                "date": "2026-07-19",
+                "version": "0.2.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Identify the IP addresses that will be scanned."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "T1",
+              "kind": "prerequisite"
+            },
+            "external_provision_id": "CEPTS3.2-T1-002",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-19",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+            "negative_rationale": "Missing outcome: CEPTS3.2-T1-002 - external result 'IP addresses that will be scanned' does not evidence ESAF outcome 'inventory of infrastructure supporting an in-scope AI capability'.",
+            "record_id": "cepts32-t1-002",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 8; printed page 7; Prerequisites; second prerequisite item",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-t1-002.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 external-to-ESAF evidence record.",
+                "date": "2026-07-19",
+                "version": "0.2.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "For a dynamically addressed Internet connection, optionally define scope using appropriate DNS entries."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "T1",
+              "kind": "recommendation"
+            },
+            "external_provision_id": "CEPTS3.2-T1-003",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-19",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+            "negative_rationale": "Missing outcome: CEPTS3.2-T1-003 - external result 'scope using appropriate DNS entries' does not evidence ESAF outcome 'approved boundary for an in-scope AI service'.",
+            "record_id": "cepts32-t1-003",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 8; printed page 7; Prerequisites; dynamic-address paragraph",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-t1-003.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 external-to-ESAF evidence record.",
+                "date": "2026-07-19",
+                "version": "0.2.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Check dynamic-address arrangements so assessment traffic is not sent to an unintended destination, including through carrier-grade NAT."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "T1",
+              "kind": "recommendation"
+            },
+            "external_provision_id": "CEPTS3.2-T1-004",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-19",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+            "negative_rationale": "Missing outcome: CEPTS3.2-T1-004 - external result 'assessment traffic is not sent to an unintended destination' does not evidence ESAF outcome 'protected routing or isolation for an in-scope AI service'.",
+            "record_id": "cepts32-t1-004",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 8; printed page 7; Prerequisites; address-safety paragraph",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-t1-004.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 external-to-ESAF evidence record.",
+                "date": "2026-07-19",
+                "version": "0.2.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Identify every IP address currently used by the Applicant."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "T1",
+              "kind": "procedure_step"
+            },
+            "external_provision_id": "CEPTS3.2-T1-005",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-19",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+            "negative_rationale": "Missing outcome: CEPTS3.2-T1-005 - external result 'every IP address currently used by the Applicant' does not evidence ESAF outcome 'complete inventory of infrastructure supporting AI workloads'.",
+            "record_id": "cepts32-t1-005",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 8; printed page 7; Test case 1; address-discovery action",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-t1-005.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 external-to-ESAF evidence record.",
+                "date": "2026-07-19",
+                "version": "0.2.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Include Applicant IaaS addresses in the discovered address population where IaaS is used."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "T1",
+              "kind": "applicability"
+            },
+            "external_provision_id": "CEPTS3.2-T1-006",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-19",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+            "negative_rationale": "Missing outcome: CEPTS3.2-T1-006 - external result 'Applicant IaaS addresses in the discovered address population' does not evidence ESAF outcome 'complete inventory of infrastructure supporting AI workloads'.",
+            "record_id": "cepts32-t1-006",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 8; printed page 7; Test case 1; IaaS coverage clause",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-t1-006.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 external-to-ESAF evidence record.",
+                "date": "2026-07-19",
+                "version": "0.2.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Scan every identified address over the recommended TCP and UDP port set."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "T1",
+              "kind": "procedure_step"
+            },
+            "external_provision_id": "CEPTS3.2-T1-007",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-19",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+            "negative_rationale": "Missing outcome: CEPTS3.2-T1-007 - external result 'identified address over the recommended TCP and UDP port set' does not evidence ESAF outcome 'defined vulnerability finding affecting AI infrastructure'.",
+            "record_id": "cepts32-t1-007",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 8; printed page 7; Test case 1; address-scan action",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-t1-007.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 external-to-ESAF evidence record.",
+                "date": "2026-07-19",
+                "version": "0.2.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Apply Figure 1 to every discovered Internet-accessible service to determine its result."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "T1",
+              "kind": "procedure_step"
+            },
+            "external_provision_id": "CEPTS3.2-T1-008",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-19",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+            "negative_rationale": "Missing outcome: CEPTS3.2-T1-008 - external result 'Figure 1 to every discovered Internet-accessible service' does not evidence ESAF outcome 'observed state of an exact normative AI safeguard'.",
+            "record_id": "cepts32-t1-008",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 8; printed page 7; Test case 1; per-service flow-evaluation action continuing onto the next page",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-t1-008.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 external-to-ESAF evidence record.",
+                "date": "2026-07-19",
+                "version": "0.2.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Fail a service containing a high-risk vulnerability with a score of at least 7.0; otherwise continue to decision 2."
+            },
+            "disposition": "mapped",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "T1",
+              "kind": "decision_rule"
+            },
+            "external_provision_id": "CEPTS3.2-T1-009",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-19",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+            "record_id": "cepts32-t1-009",
+            "relationships": [
+              {
+                "conditions": [
+                  "{\"condition\":\"actor\",\"evidence_references\":[\"record:external_metadata\",\"relationship:expected_evidence\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"scope\",\"evidence_references\":[\"record:context\",\"manifest:INF-120#requirement\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"population\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:known_gaps:0\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"sample\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:known_gaps:0\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"assessment_date\",\"evidence_references\":[\"relationship:expected_evidence\",\"record:source_locator\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"evidence_date\",\"evidence_references\":[\"relationship:expected_evidence\",\"record:source_locator\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"tool\",\"evidence_references\":[\"relationship:expected_evidence\",\"record:source_locator\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"provenance\",\"evidence_references\":[\"record:source_locator\",\"manifest:INF-120#requirement\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"exception\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:prohibited_inferences\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"delivery_partner_discretion\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:prohibited_inferences\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"point_in_time_status\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:known_gaps:0\"],\"status\":\"SATISFIED\"}"
+                ],
+                "confidence": "high",
+                "coverage": "narrow",
+                "direction": "external_to_esaf",
+                "esaf_control_id": "INF-120",
+                "esaf_control_path": "INF/INF-120.md",
+                "esaf_control_sha256": "f5d177f853309b77acfb8a32cef7e07f40e62153e5fa9fa077e196a6b1f513e0",
+                "esaf_control_version": "0.1.0",
+                "esaf_requirement_locator": "controls/INF/INF-120.md#requirement",
+                "expected_evidence": [
+                  "A dated attributable scanner workpaper identifies the Assessor, in-scope AI service, address population and sample, approved tool, vulnerability, score, result, provenance, and any exception."
+                ],
+                "known_gaps": [
+                  "The score result does not establish risk prioritization or disposition, unscanned infrastructure, other vulnerability sources, or later state."
+                ],
+                "prohibited_inferences": [
+                  "CEPTS3.2-T1-009 | prohibit implementation: The observation does not establish control implementation.",
+                  "CEPTS3.2-T1-009 | prohibit effectiveness: The observation does not establish control effectiveness.",
+                  "CEPTS3.2-T1-009 | prohibit sufficiency: The observation is not sufficient evidence of the control outcome.",
+                  "CEPTS3.2-T1-009 | prohibit compliance: The observation does not establish ESAF compliance.",
+                  "CEPTS3.2-T1-009 | prohibit certification: The observation does not authorize or establish certification.",
+                  "CEPTS3.2-T1-009 | prohibit equivalence: The external provision is not equivalent to the ESAF control.",
+                  "CEPTS3.2-T1-009 | prohibit continuous_assurance: The point-in-time observation is not continuous assurance.",
+                  "CEPTS3.2-T1-009 | prohibit population_wide_coverage: The sampled observation is not population-wide coverage.",
+                  "CEPTS3.2-T1-009 | prohibit current_scheme_coverage: The public v3.2 evidence is not current-scheme coverage."
+                ],
+                "rationale": "External observation: the dated service result records whether a high-risk vulnerability scored at least 7.0. Supported ESAF outcome: INF-120 requires vulnerabilities affecting AI infrastructure and dependencies to be identified, assessed, prioritized, remediated, mitigated, or accepted according to the named risk factors. Conditions only narrow this supported claim; they do not create either outcome.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 9; printed page 8; Figure 1; decision 1 and its Yes/No branches",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-t1-009.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 external-to-ESAF evidence record.",
+                "date": "2026-07-19",
+                "version": "0.2.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Pass a service that exposes only information that is both public and read-only; otherwise continue to decision 3."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "T1",
+              "kind": "decision_rule"
+            },
+            "external_provision_id": "CEPTS3.2-T1-010",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-19",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+            "negative_rationale": "Missing outcome: CEPTS3.2-T1-010 - external result 'information that is both public and read-only' does not evidence ESAF outcome 'risk-proportionate authentication for non-public AI assets'.",
+            "record_id": "cepts32-t1-010",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 9; printed page 8; Figure 1; decision 2 and its Yes/No branches",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-t1-010.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 external-to-ESAF evidence record.",
+                "date": "2026-07-19",
+                "version": "0.2.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Fail a service that does not require user authentication; otherwise continue to decision 4."
+            },
+            "disposition": "mapped",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "T1",
+              "kind": "decision_rule"
+            },
+            "external_provision_id": "CEPTS3.2-T1-011",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-19",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+            "record_id": "cepts32-t1-011",
+            "relationships": [
+              {
+                "conditions": [
+                  "{\"condition\":\"actor\",\"evidence_references\":[\"record:external_metadata\",\"relationship:expected_evidence\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"scope\",\"evidence_references\":[\"record:context\",\"manifest:IAM-110#requirement\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"population\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:known_gaps:0\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"sample\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:known_gaps:0\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"assessment_date\",\"evidence_references\":[\"relationship:expected_evidence\",\"record:source_locator\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"evidence_date\",\"evidence_references\":[\"relationship:expected_evidence\",\"record:source_locator\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"tool\",\"evidence_references\":[\"relationship:expected_evidence\",\"record:source_locator\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"provenance\",\"evidence_references\":[\"record:source_locator\",\"manifest:IAM-110#requirement\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"exception\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:prohibited_inferences\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"delivery_partner_discretion\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:prohibited_inferences\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"point_in_time_status\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:known_gaps:0\"],\"status\":\"SATISFIED\"}"
+                ],
+                "confidence": "high",
+                "coverage": "narrow",
+                "direction": "external_to_esaf",
+                "esaf_control_id": "IAM-110",
+                "esaf_control_path": "IAM/IAM-110.md",
+                "esaf_control_sha256": "c925230601d60255b9c398594d192fd84aaceb179a7fe50dd4ddad93caec1d20",
+                "esaf_control_version": "0.1.0",
+                "esaf_requirement_locator": "controls/IAM/IAM-110.md#requirement",
+                "expected_evidence": [
+                  "A dated attributable service workpaper identifies the Assessor, non-public AI asset, access-path population and sample, observation method, authentication result, provenance, and any exception."
+                ],
+                "known_gaps": [
+                  "The service result does not establish authentication properties for other access paths, identities, mechanisms, threats, or later conditions."
+                ],
+                "prohibited_inferences": [
+                  "CEPTS3.2-T1-011 | prohibit implementation: The observation does not establish control implementation.",
+                  "CEPTS3.2-T1-011 | prohibit effectiveness: The observation does not establish control effectiveness.",
+                  "CEPTS3.2-T1-011 | prohibit sufficiency: The observation is not sufficient evidence of the control outcome.",
+                  "CEPTS3.2-T1-011 | prohibit compliance: The observation does not establish ESAF compliance.",
+                  "CEPTS3.2-T1-011 | prohibit certification: The observation does not authorize or establish certification.",
+                  "CEPTS3.2-T1-011 | prohibit equivalence: The external provision is not equivalent to the ESAF control.",
+                  "CEPTS3.2-T1-011 | prohibit continuous_assurance: The point-in-time observation is not continuous assurance.",
+                  "CEPTS3.2-T1-011 | prohibit population_wide_coverage: The sampled observation is not population-wide coverage.",
+                  "CEPTS3.2-T1-011 | prohibit current_scheme_coverage: The public v3.2 evidence is not current-scheme coverage."
+                ],
+                "rationale": "External observation: the service result records whether user authentication was required. Supported ESAF outcome: IAM-110 requires identities to be authenticated before access to non-public AI assets using mechanisms whose strength, context, and resistance are proportionate to risk. Conditions only narrow this supported claim; they do not create either outcome.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 9; printed page 8; Figure 1; decision 3 and its No/Yes branches",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-t1-011.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 external-to-ESAF evidence record.",
+                "date": "2026-07-19",
+                "version": "0.2.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Pass a service whose authentication uses at least two factors; otherwise continue to decision 5."
+            },
+            "disposition": "mapped",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "T1",
+              "kind": "decision_rule"
+            },
+            "external_provision_id": "CEPTS3.2-T1-012",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-19",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+            "record_id": "cepts32-t1-012",
+            "relationships": [
+              {
+                "conditions": [
+                  "{\"condition\":\"actor\",\"evidence_references\":[\"record:external_metadata\",\"relationship:expected_evidence\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"scope\",\"evidence_references\":[\"record:context\",\"manifest:IAM-110#requirement\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"population\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:known_gaps:0\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"sample\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:known_gaps:0\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"assessment_date\",\"evidence_references\":[\"relationship:expected_evidence\",\"record:source_locator\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"evidence_date\",\"evidence_references\":[\"relationship:expected_evidence\",\"record:source_locator\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"tool\",\"evidence_references\":[\"relationship:expected_evidence\",\"record:source_locator\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"provenance\",\"evidence_references\":[\"record:source_locator\",\"manifest:IAM-110#requirement\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"exception\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:prohibited_inferences\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"delivery_partner_discretion\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:prohibited_inferences\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"point_in_time_status\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:known_gaps:0\"],\"status\":\"SATISFIED\"}"
+                ],
+                "confidence": "high",
+                "coverage": "narrow",
+                "direction": "external_to_esaf",
+                "esaf_control_id": "IAM-110",
+                "esaf_control_path": "IAM/IAM-110.md",
+                "esaf_control_sha256": "c925230601d60255b9c398594d192fd84aaceb179a7fe50dd4ddad93caec1d20",
+                "esaf_control_version": "0.1.0",
+                "esaf_requirement_locator": "controls/IAM/IAM-110.md#requirement",
+                "expected_evidence": [
+                  "A dated attributable service workpaper identifies the Assessor, non-public AI asset, access-path population and sample, observation method, factor result, provenance, and any exception."
+                ],
+                "known_gaps": [
+                  "The factor result does not establish risk proportionality, replay or credential-theft resistance, other access paths, or later conditions."
+                ],
+                "prohibited_inferences": [
+                  "CEPTS3.2-T1-012 | prohibit implementation: The observation does not establish control implementation.",
+                  "CEPTS3.2-T1-012 | prohibit effectiveness: The observation does not establish control effectiveness.",
+                  "CEPTS3.2-T1-012 | prohibit sufficiency: The observation is not sufficient evidence of the control outcome.",
+                  "CEPTS3.2-T1-012 | prohibit compliance: The observation does not establish ESAF compliance.",
+                  "CEPTS3.2-T1-012 | prohibit certification: The observation does not authorize or establish certification.",
+                  "CEPTS3.2-T1-012 | prohibit equivalence: The external provision is not equivalent to the ESAF control.",
+                  "CEPTS3.2-T1-012 | prohibit continuous_assurance: The point-in-time observation is not continuous assurance.",
+                  "CEPTS3.2-T1-012 | prohibit population_wide_coverage: The sampled observation is not population-wide coverage.",
+                  "CEPTS3.2-T1-012 | prohibit current_scheme_coverage: The public v3.2 evidence is not current-scheme coverage."
+                ],
+                "rationale": "External observation: the service result records whether authentication used at least two factors. Supported ESAF outcome: IAM-110 requires identities to be authenticated before access to non-public AI assets using mechanisms whose strength, context, and resistance are proportionate to risk. Conditions only narrow this supported claim; they do not create either outcome.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 9; printed page 8; Figure 1; decision 4 and its Yes/No branches",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-t1-012.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 external-to-ESAF evidence record.",
+                "date": "2026-07-19",
+                "version": "0.2.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Fail a service where default passwords remain unchanged; otherwise continue to decision 6."
+            },
+            "disposition": "mapped",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "T1",
+              "kind": "decision_rule"
+            },
+            "external_provision_id": "CEPTS3.2-T1-013",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-19",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+            "record_id": "cepts32-t1-013",
+            "relationships": [
+              {
+                "conditions": [
+                  "{\"condition\":\"actor\",\"evidence_references\":[\"record:external_metadata\",\"relationship:expected_evidence\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"scope\",\"evidence_references\":[\"record:context\",\"manifest:IAM-140#requirement\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"population\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:known_gaps:0\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"sample\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:known_gaps:0\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"assessment_date\",\"evidence_references\":[\"relationship:expected_evidence\",\"record:source_locator\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"evidence_date\",\"evidence_references\":[\"relationship:expected_evidence\",\"record:source_locator\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"tool\",\"evidence_references\":[\"relationship:expected_evidence\",\"record:source_locator\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"provenance\",\"evidence_references\":[\"record:source_locator\",\"manifest:IAM-140#requirement\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"exception\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:prohibited_inferences\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"delivery_partner_discretion\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:prohibited_inferences\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"point_in_time_status\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:known_gaps:0\"],\"status\":\"SATISFIED\"}"
+                ],
+                "confidence": "high",
+                "coverage": "narrow",
+                "direction": "external_to_esaf",
+                "esaf_control_id": "IAM-140",
+                "esaf_control_path": "IAM/IAM-140.md",
+                "esaf_control_sha256": "7114bd2b9991d5b42ea4c1f993dec98746e1173b693cffe7303fde80b89ebd57",
+                "esaf_control_version": "0.1.0",
+                "esaf_requirement_locator": "controls/IAM/IAM-140.md#requirement",
+                "expected_evidence": [
+                  "A dated attributable service workpaper identifies the Assessor, AI capability credential, credential population and sample, observation method, default-password result, provenance, and any exception."
+                ],
+                "known_gaps": [
+                  "The default-password result does not establish approved secret storage, the remaining credential lifecycle, other credentials, or later conditions."
+                ],
+                "prohibited_inferences": [
+                  "CEPTS3.2-T1-013 | prohibit implementation: The observation does not establish control implementation.",
+                  "CEPTS3.2-T1-013 | prohibit effectiveness: The observation does not establish control effectiveness.",
+                  "CEPTS3.2-T1-013 | prohibit sufficiency: The observation is not sufficient evidence of the control outcome.",
+                  "CEPTS3.2-T1-013 | prohibit compliance: The observation does not establish ESAF compliance.",
+                  "CEPTS3.2-T1-013 | prohibit certification: The observation does not authorize or establish certification.",
+                  "CEPTS3.2-T1-013 | prohibit equivalence: The external provision is not equivalent to the ESAF control.",
+                  "CEPTS3.2-T1-013 | prohibit continuous_assurance: The point-in-time observation is not continuous assurance.",
+                  "CEPTS3.2-T1-013 | prohibit population_wide_coverage: The sampled observation is not population-wide coverage.",
+                  "CEPTS3.2-T1-013 | prohibit current_scheme_coverage: The public v3.2 evidence is not current-scheme coverage."
+                ],
+                "rationale": "External observation: the service result records whether default passwords remained unchanged. Supported ESAF outcome: IAM-140 requires credentials used by AI capabilities to be generated, stored, distributed, used, rotated, revoked, and monitored through approved secrets-management mechanisms. Conditions only narrow this supported claim; they do not create either outcome.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 9; printed page 8; Figure 1; decision 5 and its No/Yes branches",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-t1-013.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 external-to-ESAF evidence record.",
+                "date": "2026-07-19",
+                "version": "0.2.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Pass a service that throttles login attempts to resist brute-force password guessing; otherwise continue to decision 7."
+            },
+            "disposition": "mapped",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "T1",
+              "kind": "decision_rule"
+            },
+            "external_provision_id": "CEPTS3.2-T1-014",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-19",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+            "record_id": "cepts32-t1-014",
+            "relationships": [
+              {
+                "conditions": [
+                  "{\"condition\":\"actor\",\"evidence_references\":[\"record:external_metadata\",\"relationship:expected_evidence\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"scope\",\"evidence_references\":[\"record:context\",\"manifest:APP-150#requirement\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"population\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:known_gaps:0\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"sample\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:known_gaps:0\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"assessment_date\",\"evidence_references\":[\"relationship:expected_evidence\",\"record:source_locator\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"evidence_date\",\"evidence_references\":[\"relationship:expected_evidence\",\"record:source_locator\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"tool\",\"evidence_references\":[\"relationship:expected_evidence\",\"record:source_locator\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"provenance\",\"evidence_references\":[\"record:source_locator\",\"manifest:APP-150#requirement\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"exception\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:prohibited_inferences\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"delivery_partner_discretion\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:prohibited_inferences\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"point_in_time_status\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:known_gaps:0\"],\"status\":\"SATISFIED\"}"
+                ],
+                "confidence": "high",
+                "coverage": "narrow",
+                "direction": "external_to_esaf",
+                "esaf_control_id": "APP-150",
+                "esaf_control_path": "APP/APP-150.md",
+                "esaf_control_sha256": "6bf36d1cca704c06238dd2fc0b2f51b6d1e884ab3b94c3d1a87f0ec5d13d8f77",
+                "esaf_control_version": "0.1.0",
+                "esaf_requirement_locator": "controls/APP/APP-150.md#requirement",
+                "expected_evidence": [
+                  "A dated attributable service workpaper identifies the Assessor, AI application login path, path population and sample, observation method, throttle result, provenance, and any exception."
+                ],
+                "known_gaps": [
+                  "The throttle result does not establish detection or response for other abuse patterns, other paths, bypass resistance, or later conditions."
+                ],
+                "prohibited_inferences": [
+                  "CEPTS3.2-T1-014 | prohibit implementation: The observation does not establish control implementation.",
+                  "CEPTS3.2-T1-014 | prohibit effectiveness: The observation does not establish control effectiveness.",
+                  "CEPTS3.2-T1-014 | prohibit sufficiency: The observation is not sufficient evidence of the control outcome.",
+                  "CEPTS3.2-T1-014 | prohibit compliance: The observation does not establish ESAF compliance.",
+                  "CEPTS3.2-T1-014 | prohibit certification: The observation does not authorize or establish certification.",
+                  "CEPTS3.2-T1-014 | prohibit equivalence: The external provision is not equivalent to the ESAF control.",
+                  "CEPTS3.2-T1-014 | prohibit continuous_assurance: The point-in-time observation is not continuous assurance.",
+                  "CEPTS3.2-T1-014 | prohibit population_wide_coverage: The sampled observation is not population-wide coverage.",
+                  "CEPTS3.2-T1-014 | prohibit current_scheme_coverage: The public v3.2 evidence is not current-scheme coverage."
+                ],
+                "rationale": "External observation: the service result records whether login attempts were throttled to resist brute-force password guessing. Supported ESAF outcome: APP-150 requires AI application misuse, adversarial behavior, automated abuse, denial of service, excessive consumption, repeated policy evasion, and out-of-purpose use to be detected, constrained, and responded to. Conditions only narrow this supported claim; they do not create either outcome.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 9; printed page 8; Figure 1; decision 6 and its Yes/No branches",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-t1-014.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 external-to-ESAF evidence record.",
+                "date": "2026-07-19",
+                "version": "0.2.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Pass a service that locks users out after no more than ten failed login attempts; otherwise fail it."
+            },
+            "disposition": "mapped",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "T1",
+              "kind": "decision_rule"
+            },
+            "external_provision_id": "CEPTS3.2-T1-015",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-19",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+            "record_id": "cepts32-t1-015",
+            "relationships": [
+              {
+                "conditions": [
+                  "{\"condition\":\"actor\",\"evidence_references\":[\"record:external_metadata\",\"relationship:expected_evidence\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"scope\",\"evidence_references\":[\"record:context\",\"manifest:APP-150#requirement\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"population\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:known_gaps:0\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"sample\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:known_gaps:0\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"assessment_date\",\"evidence_references\":[\"relationship:expected_evidence\",\"record:source_locator\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"evidence_date\",\"evidence_references\":[\"relationship:expected_evidence\",\"record:source_locator\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"tool\",\"evidence_references\":[\"relationship:expected_evidence\",\"record:source_locator\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"provenance\",\"evidence_references\":[\"record:source_locator\",\"manifest:APP-150#requirement\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"exception\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:prohibited_inferences\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"delivery_partner_discretion\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:prohibited_inferences\"],\"status\":\"SATISFIED\"}",
+                  "{\"condition\":\"point_in_time_status\",\"evidence_references\":[\"relationship:expected_evidence\",\"relationship:known_gaps:0\"],\"status\":\"SATISFIED\"}"
+                ],
+                "confidence": "high",
+                "coverage": "narrow",
+                "direction": "external_to_esaf",
+                "esaf_control_id": "APP-150",
+                "esaf_control_path": "APP/APP-150.md",
+                "esaf_control_sha256": "6bf36d1cca704c06238dd2fc0b2f51b6d1e884ab3b94c3d1a87f0ec5d13d8f77",
+                "esaf_control_version": "0.1.0",
+                "esaf_requirement_locator": "controls/APP/APP-150.md#requirement",
+                "expected_evidence": [
+                  "A dated attributable service workpaper identifies the Assessor, AI application login path, path population and sample, observation method, lockout result, provenance, and any exception."
+                ],
+                "known_gaps": [
+                  "The lockout result does not establish detection or response for other abuse patterns, other paths, bypass resistance, or later conditions."
+                ],
+                "prohibited_inferences": [
+                  "CEPTS3.2-T1-015 | prohibit implementation: The observation does not establish control implementation.",
+                  "CEPTS3.2-T1-015 | prohibit effectiveness: The observation does not establish control effectiveness.",
+                  "CEPTS3.2-T1-015 | prohibit sufficiency: The observation is not sufficient evidence of the control outcome.",
+                  "CEPTS3.2-T1-015 | prohibit compliance: The observation does not establish ESAF compliance.",
+                  "CEPTS3.2-T1-015 | prohibit certification: The observation does not authorize or establish certification.",
+                  "CEPTS3.2-T1-015 | prohibit equivalence: The external provision is not equivalent to the ESAF control.",
+                  "CEPTS3.2-T1-015 | prohibit continuous_assurance: The point-in-time observation is not continuous assurance.",
+                  "CEPTS3.2-T1-015 | prohibit population_wide_coverage: The sampled observation is not population-wide coverage.",
+                  "CEPTS3.2-T1-015 | prohibit current_scheme_coverage: The public v3.2 evidence is not current-scheme coverage."
+                ],
+                "rationale": "External observation: the service result records whether users were locked out after no more than ten failed login attempts. Supported ESAF outcome: APP-150 requires AI application misuse, adversarial behavior, automated abuse, denial of service, excessive consumption, repeated policy evasion, and out-of-purpose use to be detected, constrained, and responded to. Conditions only narrow this supported claim; they do not create either outcome.",
+                "relationship": "partially_supports"
+              }
+            ],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 9; printed page 8; Figure 1; decision 7 and its Yes/No branches",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-t1-015.md"
+        },
+        {
+          "metadata": {
+            "change_history": [
+              {
+                "change": "Created the draft Cyber Essentials Plus v3.2 external-to-ESAF evidence record.",
+                "date": "2026-07-19",
+                "version": "0.2.0"
+              }
+            ],
+            "context": {
+              "mode": "paraphrase",
+              "summary": "Pass Test case 1 only if all services examined in Sub-test 1.1 pass; otherwise fail it."
+            },
+            "disposition": "no_direct_mapping",
+            "external_metadata": {
+              "actors": [
+                "Assessor"
+              ],
+              "group": "T1",
+              "kind": "result_rule"
+            },
+            "external_provision_id": "CEPTS3.2-T1-016",
+            "granularity": "requirement",
+            "mapper": {
+              "authorized_source_access": true,
+              "date": "2026-07-19",
+              "id": "esaf-crosswalk-editorial-team"
+            },
+            "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+            "negative_rationale": "Missing outcome: CEPTS3.2-T1-016 - external result 'all services examined in Sub-test 1.1 pass' does not evidence ESAF outcome 'observed state of an exact normative AI safeguard'.",
+            "record_id": "cepts32-t1-016",
+            "relationships": [],
+            "schema_version": "1.0.0",
+            "source_locator": {
+              "locator": "PDF page 10; printed page 9; Interpreting the test case results; complete aggregate result rule",
+              "official_url": "https://www.ncsc.gov.uk/sites/default/files/2026-05/cyber-essentials-plus-test-specification-v3-2%20english.pdf"
+            },
+            "status": "draft"
+          },
+          "path": "crosswalks/mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/cepts32-t1-016.md"
+        }
+      ]
     },
     {
       "inventory": {

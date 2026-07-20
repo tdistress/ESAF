@@ -41,6 +41,20 @@ PROHIBITED_INFERENCE_KEYS = (
     "population_wide_coverage",
     "current_scheme_coverage",
 )
+TASK3_GROUP_COUNTS = {"M": 24, "T1": 16, "S": 11}
+TASK3_POSITIVE_TARGETS = {
+    "CEPTS3.2-M-004": "AUD-120",
+    "CEPTS3.2-M-010": "AUD-130",
+    "CEPTS3.2-M-011": "AUD-120",
+    "CEPTS3.2-T1-009": "INF-120",
+    "CEPTS3.2-T1-011": "IAM-110",
+    "CEPTS3.2-T1-012": "IAM-110",
+    "CEPTS3.2-T1-013": "IAM-140",
+    "CEPTS3.2-T1-014": "APP-150",
+    "CEPTS3.2-T1-015": "APP-150",
+    "CEPTS3.2-S-007": "AUD-120",
+    "CEPTS3.2-S-008": "CMP-110",
+}
 
 
 def load_snapshot_records() -> list[dict[str, object]]:
@@ -48,6 +62,20 @@ def load_snapshot_records() -> list[dict[str, object]]:
         parse_front_matter(path)[0]
         for path in sorted(SNAPSHOT.glob("*.md"))
         if path.name not in {"README.md", "PROVISION_INVENTORY.md"}
+    ]
+
+
+def load_task3_records() -> list[dict[str, object]]:
+    by_external_id = {
+        record["external_provision_id"]: record
+        for record in load_snapshot_records()
+        if record.get("external_metadata", {}).get("group") in TASK3_GROUP_COUNTS
+    }
+    oracle = json.loads(ORACLE.read_text(encoding="utf-8"))
+    return [
+        by_external_id[item["external_provision_id"]]
+        for item in oracle["provisions"]
+        if item["external_provision_id"] in by_external_id
     ]
 
 
@@ -196,7 +224,7 @@ class CyberEssentialsPlusExternalToEsafMappingTests(unittest.TestCase):
         self.assertNotEqual(reviewer.group(1), MAPPER_ID)
         self.assertNotIn("conditional approval", text.lower())
 
-    def test_draft_scaffold_has_locked_empty_complete_publication_shape(self) -> None:
+    def test_draft_scaffold_has_locked_complete_publication_shape(self) -> None:
         self.assertTrue((SNAPSHOT / "README.md").is_file())
         self.assertTrue((SNAPSHOT / "PROVISION_INVENTORY.md").is_file())
         self.assertTrue((SNAPSHOT / "ESAF_CONTROL_MANIFEST.json").is_file())
@@ -220,8 +248,11 @@ class CyberEssentialsPlusExternalToEsafMappingTests(unittest.TestCase):
         self.assertEqual(lifecycle["events"], [])
         self.assertIn("state: draft", lifecycle_body)
         self.assertEqual(lifecycle["snapshot_digest"], snapshot_digest(ROOT, SNAPSHOT))
-        records = [path for path in SNAPSHOT.glob("*.md") if path.name not in {"README.md", "PROVISION_INVENTORY.md"}]
-        self.assertEqual(records, [])
+        records = load_snapshot_records()
+        self.assertEqual(
+            Counter(record["external_metadata"]["group"] for record in records),
+            Counter(TASK3_GROUP_COUNTS),
+        )
         self.assertEqual(validate(ROOT).errors, [])
 
     def test_manifest_is_deterministic_at_pinned_esaf_commit(self) -> None:
@@ -232,13 +263,106 @@ class CyberEssentialsPlusExternalToEsafMappingTests(unittest.TestCase):
             render_manifest(expected),
         )
 
-    def test_draft_catalog_entry_is_generated_with_zero_records(self) -> None:
+    def test_draft_catalog_entry_contains_task3_records(self) -> None:
         catalog = json.loads((ROOT / "crosswalks/catalog.json").read_text(encoding="utf-8"))
         entry = next(item for item in catalog["mapping_sets"] if item["metadata"]["mapping_set_id"] == MAPPING_SET_ID)
         self.assertEqual(entry["metadata"]["status"], "draft")
         self.assertEqual(entry["inventory"]["expected_count"], 144)
-        self.assertEqual(entry["provisions"], [])
+        self.assertEqual(len(entry["provisions"]), sum(TASK3_GROUP_COUNTS.values()))
         self.assertEqual(entry["lifecycle"]["events"], [])
+
+    def test_task3_records_are_loaded_once_in_locked_oracle_order(self) -> None:
+        oracle = json.loads(ORACLE.read_text(encoding="utf-8"))
+        expected = [
+            item["external_provision_id"]
+            for item in oracle["provisions"]
+            if item["group"] in TASK3_GROUP_COUNTS
+        ]
+        records = load_task3_records()
+        self.assertEqual(len(records), sum(TASK3_GROUP_COUNTS.values()))
+        self.assertEqual(
+            [record["external_provision_id"] for record in records], expected
+        )
+
+    def test_task3_positives_have_exact_targets_and_condition_contract(self) -> None:
+        records = load_task3_records()
+        positives = {
+            record["external_provision_id"]: record["relationships"]
+            for record in records
+            if record["disposition"] == "mapped"
+        }
+        self.assertEqual(set(positives), set(TASK3_POSITIVE_TARGETS))
+        for external_id, relationships in positives.items():
+            with self.subTest(external_id=external_id):
+                self.assertEqual(len(relationships), 1)
+                leg = relationships[0]
+                self.assertEqual(
+                    leg["esaf_control_id"], TASK3_POSITIVE_TARGETS[external_id]
+                )
+                self.assertEqual(leg["direction"], "external_to_esaf")
+                parsed = [json.loads(item) for item in leg["conditions"]]
+                self.assertEqual(
+                    [item["condition"] for item in parsed], list(CONDITION_ORDER)
+                )
+                self.assertTrue(
+                    all(item["evidence_references"] for item in parsed)
+                )
+
+    def test_task3_negatives_use_exact_provision_specific_missing_outcomes(self) -> None:
+        records = load_task3_records()
+        oracle = json.loads(ORACLE.read_text(encoding="utf-8"))
+        expected_task3_ids = {
+            item["external_provision_id"]
+            for item in oracle["provisions"]
+            if item["group"] in TASK3_GROUP_COUNTS
+        }
+        negatives = {
+            record["external_provision_id"]: record
+            for record in records
+            if record["disposition"] == "no_direct_mapping"
+        }
+        self.assertEqual(
+            set(negatives),
+            expected_task3_ids - set(TASK3_POSITIVE_TARGETS),
+        )
+        self.assertEqual(
+            negatives["CEPTS3.2-M-001"]["negative_rationale"],
+            "Missing outcome: CEPTS3.2-M-001 - external result 'assessment "
+            "boundary' does not evidence ESAF outcome 'risk-based AI assessment "
+            "program scope'.",
+        )
+        for external_id, record in negatives.items():
+            with self.subTest(external_id=external_id):
+                self.assertTrue(
+                    record["negative_rationale"].startswith(
+                        f"Missing outcome: {external_id} - external result '"
+                    )
+                )
+                self.assertEqual(record["relationships"], [])
+
+    def test_task3_positive_manifest_provenance_resolves_exactly(self) -> None:
+        _, controls = reverse_profile_inputs()
+        records = load_task3_records()
+        self.assertEqual(
+            sum(len(record["relationships"]) for record in records),
+            len(TASK3_POSITIVE_TARGETS),
+        )
+        for record in records:
+            for leg in record["relationships"]:
+                with self.subTest(
+                    external_id=record["external_provision_id"],
+                    control_id=leg["esaf_control_id"],
+                ):
+                    control = controls[leg["esaf_control_id"]]
+                    self.assertEqual(leg["esaf_control_version"], control["version"])
+                    self.assertEqual(leg["esaf_control_path"], control["path"])
+                    self.assertEqual(
+                        leg["esaf_control_sha256"], control["record_sha256"]
+                    )
+                    self.assertEqual(
+                        leg["esaf_requirement_locator"],
+                        f"controls/{control['path']}#requirement",
+                    )
 
     def test_reverse_contract_mutations_fail_closed(self) -> None:
         mapping_set, controls = reverse_profile_inputs()
