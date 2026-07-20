@@ -546,7 +546,7 @@ class CyberEssentialsPlusEsafToExternalMappingTests(unittest.TestCase):
             "Design the Cyber Essentials Plus v3.2 esaf_to_external mapping.",
             backlog,
         )
-        self.assertIn(
+        self.assertNotIn(
             "Design the Cyber Essentials Plus v3.2 external_to_esaf mapping.",
             backlog,
         )
