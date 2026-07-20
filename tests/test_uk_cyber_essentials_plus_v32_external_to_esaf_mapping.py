@@ -776,21 +776,19 @@ class CyberEssentialsPlusExternalToEsafMappingTests(unittest.TestCase):
             "Obtain qualified human review for Cyber Essentials core v3.3.",
             backlog,
         )
-        final_metadata = (
-            TRACEABILITY,
-            FINAL_SPECIFICATION_REVIEW,
-            FINAL_OVERCLAIMING_REVIEW,
-        )
-        if any(path.exists() for path in final_metadata):
-            self.assertTrue(all(path.is_file() for path in final_metadata))
+        self.assertTrue(TRACEABILITY.is_file())
+        final_reviews = (FINAL_SPECIFICATION_REVIEW, FINAL_OVERCLAIMING_REVIEW)
+        if any(path.exists() for path in final_reviews):
+            self.assertTrue(all(path.is_file() for path in final_reviews))
 
     def test_final_reverse_review_metadata_is_complete_and_independent_when_present(
         self,
     ) -> None:
-        paths = (TRACEABILITY, FINAL_SPECIFICATION_REVIEW, FINAL_OVERCLAIMING_REVIEW)
-        if not any(path.exists() for path in paths):
+        self.assertTrue(TRACEABILITY.is_file())
+        review_paths = (FINAL_SPECIFICATION_REVIEW, FINAL_OVERCLAIMING_REVIEW)
+        if not any(path.exists() for path in review_paths):
             return
-        self.assertTrue(all(path.is_file() for path in paths))
+        self.assertTrue(all(path.is_file() for path in review_paths))
         traceability = TRACEABILITY.read_text(encoding="utf-8")
         for required in (
             MAPPING_SET_ID,
