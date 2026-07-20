@@ -1086,9 +1086,25 @@ class CyberEssentialsPlusStructuredObservationProfileTests(unittest.TestCase):
         claim.update(changes)
         return json.dumps(claim, separators=(",", ":"), sort_keys=True)
 
-    def assert_rejected(self, claim: str, message: str = "") -> None:
-        errors = validate_observation_claim(claim, self.provision_id, self.control_id)
+    def assert_rejected(
+        self,
+        claim: str,
+        message: str = "",
+        profiles: dict[tuple[str, str], dict[str, str]] | None = None,
+    ) -> None:
+        errors = validate_observation_claim(
+            claim, self.provision_id, self.control_id, profiles
+        )
         self.assertTrue(errors, message or claim)
+        if message:
+            self.assertIn(message, errors)
+
+    def semantic_mutation(self, field: str, value: str) -> tuple[str, dict[tuple[str, str], dict[str, str]]]:
+        profile = dict(OBSERVATION_PROFILES[(self.provision_id, self.control_id)])
+        profile[field] = value
+        return self.mutated_claim(**{field: value}), {
+            (self.provision_id, self.control_id): profile
+        }
 
     def test_registry_declares_the_exact_ordered_31_pair_profiles(self) -> None:
         self.assertEqual(OBSERVATION_PROFILE_ENTRIES, EXPECTED_OBSERVATION_PROFILE_ENTRIES)
@@ -1146,9 +1162,17 @@ class CyberEssentialsPlusStructuredObservationProfileTests(unittest.TestCase):
                 "tool_authorization",
                 "assessor_procedure",
                 "assessment_execution",
+                "activity",
+                "procedure",
+                "execution",
             ):
                 with self.subTest(field=field, activity=activity):
-                    self.assert_rejected(self.mutated_claim(**{field: activity}))
+                    claim, profiles = self.semantic_mutation(field, activity)
+                    self.assert_rejected(
+                        claim,
+                        f"{field} must not describe mere tool use or assessment procedure activity",
+                        profiles,
+                    )
 
     def test_claim_rejects_outcome_bearing_terms_in_every_semantic_field(self) -> None:
         values = (
@@ -1159,12 +1183,15 @@ class CyberEssentialsPlusStructuredObservationProfileTests(unittest.TestCase):
         for field in ("result_kind", "subject", "predicate", "result_type"):
             for value in values:
                 with self.subTest(field=field, value=value):
-                    self.assert_rejected(self.mutated_claim(**{field: value}))
+                    claim, profiles = self.semantic_mutation(field, value)
+                    self.assert_rejected(
+                        claim, f"{field} must be outcome-neutral", profiles
+                    )
 
     def test_claim_rejects_a_profile_value_borrowed_from_another_pair(self) -> None:
         self.assert_rejected(
             self.mutated_claim(predicate="factor_count"),
-            "another control's profile must not be reusable",
+            "observation predicate must exactly match the registered pair profile",
         )
 
     def test_identifier_boundary_audit_keeps_password_valid(self) -> None:
@@ -1191,14 +1218,21 @@ class CyberEssentialsPlusStructuredObservationProfileTests(unittest.TestCase):
                     ))
 
     def test_registry_builder_rejects_mere_tool_or_procedure_profiles(self) -> None:
-        entries = [
-            (
-                "CEPTS3.2-X-001", "IAM-110", "assessment_procedure",
-                "scanner_tool", "tool_authorization", "recorded_status",
-            )
-        ]
-        with self.assertRaises(ValueError):
-            build_observation_profiles(entries)
+        for position, field in enumerate(
+            ("result_kind", "subject", "predicate", "result_type"), start=2
+        ):
+            for value in ("activity", "procedure", "execution"):
+                entry = [
+                    "CEPTS3.2-X-001", "IAM-110", "measurement_kind",
+                    "configuration_subject", "measurement_predicate", "recorded_status",
+                ]
+                entry[position] = value
+                with self.subTest(field=field, value=value):
+                    with self.assertRaisesRegex(
+                        ValueError,
+                        f"{field} must not describe mere tool use or assessment procedure activity",
+                    ):
+                        build_observation_profiles([tuple(entry)])
 
     def test_registry_accepts_configuration_change_approval_measurement(self) -> None:
         claim = render_observation_claim("CEPTS3.2-T3-032", "INF-130")
@@ -1210,21 +1244,35 @@ class CyberEssentialsPlusStructuredObservationProfileTests(unittest.TestCase):
         pairs = [(row[0], row[1]) for row in EXPECTED_OBSERVATION_PROFILE_ENTRIES]
         negative = ("CEPTS3.2-M-001", "IAM-110", "authentication_requirement", "user_authentication", "service_access_requirement_status", "recorded_boolean")
         unimplemented = ("CEPTS3.2-T5-001", "IAM-110", "authentication_requirement", "user_authentication", "service_access_requirement_status", "recorded_boolean")
+        orphan = ("CEPTS3.2-X-001", "IAM-110", "measurement_kind", "configuration_subject", "measurement_predicate", "recorded_status")
         cases = {
             "duplicate declared pair": (
                 pairs, list(EXPECTED_OBSERVATION_PROFILE_ENTRIES) + [EXPECTED_OBSERVATION_PROFILE_ENTRIES[0]],
+                "duplicate observation profile pair: CEPTS3.2-M-004/AUD-120",
             ),
-            "missing mapped pair": (pairs, list(EXPECTED_OBSERVATION_PROFILE_ENTRIES[1:])),
-            "orphan pair": (pairs, list(EXPECTED_OBSERVATION_PROFILE_ENTRIES) + [negative]),
+            "missing mapped pair": (
+                pairs,
+                list(EXPECTED_OBSERVATION_PROFILE_ENTRIES[1:]),
+                "missing observation profile for mapped pair: CEPTS3.2-M-004/AUD-120",
+            ),
+            "orphan pair": (
+                pairs,
+                list(EXPECTED_OBSERVATION_PROFILE_ENTRIES) + [orphan],
+                "orphan observation profile pair: CEPTS3.2-X-001/IAM-110",
+            ),
             "known negative provision": (
                 pairs + [(negative[0], negative[1])],
                 list(EXPECTED_OBSERVATION_PROFILE_ENTRIES) + [negative],
+                "observation profile must not target a known negative provision",
             ),
             "unimplemented task 5 provision": (
                 pairs + [(unimplemented[0], unimplemented[1])],
                 list(EXPECTED_OBSERVATION_PROFILE_ENTRIES) + [unimplemented],
+                "observation profile must not target an unimplemented Task 5 provision",
             ),
         }
-        for label, (mapped_pairs, entries) in cases.items():
+        for label, (mapped_pairs, entries, diagnostic) in cases.items():
             with self.subTest(label=label):
-                self.assertTrue(validate_observation_registry(mapped_pairs, entries))
+                self.assertEqual(
+                    validate_observation_registry(mapped_pairs, entries), [diagnostic]
+                )

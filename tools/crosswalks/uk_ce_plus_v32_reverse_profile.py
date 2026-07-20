@@ -93,6 +93,8 @@ def _semantic_value_errors(field: str, value: object) -> list[str]:
         return [f"{field} must not encode a threshold classification"]
     if any(token in {"tool", "scanner", "utility", "assessor", "invocation"}
            for token in tokens) or (
+        tokens and set(tokens).issubset({"activity", "procedure", "execution"})
+    ) or (
         "assessment" in tokens
         and any(token in {"procedure", "execution", "activity"} for token in tokens)
     ):
