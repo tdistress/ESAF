@@ -1428,10 +1428,13 @@ def _reverse_outcome_is_semantic_placeholder(outcome: str) -> bool:
         "to",
         "verified",
     }
+    outcome_without_control_ids = re.sub(
+        r"\b[a-z]{3}(?:[-_ ./]?\d{3})\b", " ", outcome.lower()
+    )
     concrete_terms = {
         token
-        for token in re.findall(r"[a-z0-9]+", outcome.lower())
-        if token not in semantic_scaffolding
+        for token in re.findall(r"[a-z0-9]+", outcome_without_control_ids)
+        if token not in semantic_scaffolding and not token.isdigit()
     }
     return len(concrete_terms) < 2
 

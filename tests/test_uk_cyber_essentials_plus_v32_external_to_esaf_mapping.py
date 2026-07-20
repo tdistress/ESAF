@@ -548,6 +548,8 @@ class CyberEssentialsPlusExternalToEsafMappingTests(unittest.TestCase):
             "verified condition of a specific ESAF control requirement",
             "evidence for a defined normative AI control outcome",
             "technical state of a named ESAF safeguard",
+            "AUD-120 exact normative AI safeguard",
+            "IAM 110 specific ESAF control requirement",
         )
         for placeholder in placeholders:
             with self.subTest(placeholder=placeholder):
