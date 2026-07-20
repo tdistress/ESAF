@@ -1412,6 +1412,12 @@ def _reverse_observation_has_independent_result(observation: str) -> bool:
     """Require a result-bearing proposition rather than an actor, tool, or activity."""
     if len(observation.split()) < 6:
         return False
+    asserted_fact = _reverse_observation_asserted_fact(observation)
+    if (
+        _reverse_fact_contains_tool_activity(asserted_fact)
+        and not _reverse_fact_has_concrete_non_tool_outcome(asserted_fact)
+    ):
+        return False
     return bool(
         re.search(
             r"(?i)\b(?:result|outcome|record|records|recorded|shows?|comparison|"
@@ -1425,6 +1431,66 @@ def _reverse_observation_has_independent_result(observation: str) -> bool:
             r"confirmed|equalled|had|could|prompted|bounded)\b",
             observation,
         )
+    )
+
+
+def _reverse_observation_asserted_fact(observation: str) -> str:
+    """Remove reporting scaffolding so semantic checks inspect the asserted fact."""
+    match = re.search(
+        r"(?is)\b(?:records?|recorded|shows?|showed)\s+(?:that|whether)\s+(.+?)\.?$",
+        observation.strip(),
+    )
+    return match.group(1).strip() if match else observation.strip()
+
+
+def _reverse_fact_contains_tool_activity(asserted_fact: str) -> bool:
+    """Detect tool invocation, execution, selection, or authorization activity."""
+    activity = (
+        r"(?:use[ds]?|ran|run|execut(?:e[ds]?|ing)|invok(?:e[ds]?|ing)|"
+        r"launch(?:e[ds]?|ing)|operat(?:e[ds]?|ing)|authoriz(?:e[ds]?|ing)|"
+        r"approv(?:e[ds]?|ing)|select(?:e[ds]?|ing)|active|passive)"
+    )
+    tool_noun = r"(?:tool|scanner|utility|software|application|program)"
+    actor = r"(?:assessor|tester|operator|engineer|reviewer)"
+    return bool(
+        re.search(
+            rf"(?i)\b{actor}\b[^.;]{{0,80}}\b{activity}\b",
+            asserted_fact,
+        )
+        or re.search(
+            rf"(?i)\b{tool_noun}\b[^.;]{{0,40}}\b"
+            rf"(?:(?:was|were|is|are)\s+)?{activity}\b",
+            asserted_fact,
+        )
+        or re.search(
+            rf"^[A-Z][A-Za-z0-9_.-]*\s+(?:(?:was|were|is|are)\s+)?"
+            rf"{activity}\b",
+            asserted_fact,
+        )
+        or re.search(
+            rf"(?i)\b(?:use|execution|invocation|operation|selection|authorization)"
+            rf"\s+of\s+[^.;]{{1,80}}\b(?:(?:was|were|is|are)\s+)?{activity}\b",
+            asserted_fact,
+        )
+    )
+
+
+def _reverse_fact_has_concrete_non_tool_outcome(asserted_fact: str) -> bool:
+    """Require an observed security/configuration state beyond tool activity."""
+    outcome_predicate = (
+        r"(?:arrived|blocked|calculated|closed|configured|confirmed|corresponded|"
+        r"detected|disabled|downloaded|enabled|equalled|exposed|found|identified|"
+        r"installed|locked|measured|open|operating|prevented|prompted|reported|"
+        r"required|resolved|retained|scored|showed|throttled|verified)"
+    )
+    non_tool_object = (
+        r"(?:access|account|authentication|boundary|certificate|chain|configuration|"
+        r"control|credential|device|evidence|executable|factor|file|identity|login|"
+        r"malware|password|port|privilege|root|service|setting|state|vulnerability)"
+    )
+    return bool(
+        re.search(rf"(?i)\b{outcome_predicate}\b", asserted_fact)
+        and re.search(rf"(?i)\b{non_tool_object}s?\b", asserted_fact)
     )
 
 

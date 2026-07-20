@@ -215,6 +215,22 @@ def condition_references(control_id: str) -> dict[str, list[str]]:
     }
 
 
+def set_profile_observation(record: dict[str, object], observation: str) -> None:
+    normalized_observation = observation.rstrip(". ")
+    leg = record["relationships"][0]
+    control_id = leg["esaf_control_id"]
+    leg["rationale"] = (
+        f"External observation: {normalized_observation}. Supported ESAF outcome: "
+        f"{control_id} separately authenticates privileged access. Conditions only "
+        "narrow this supported claim; they do not create either outcome."
+    )
+    leg["prohibited_inferences"] = required_prohibited_inferences(
+        record["external_provision_id"],
+        normalized_observation,
+        control_id,
+    )
+
+
 def valid_profile_record() -> dict[str, object]:
     _, controls = reverse_profile_inputs()
     control = controls["IAM-130"]
@@ -916,21 +932,34 @@ class CyberEssentialsPlusExternalToEsafMappingTests(unittest.TestCase):
             ),
         )
 
-    def test_reverse_positive_rejects_tool_name_without_observed_result(self) -> None:
+    def test_reverse_positive_rejects_tool_activity_without_observed_result(
+        self,
+    ) -> None:
         mapping_set, controls = reverse_profile_inputs()
         for observation in (
             "Nmap.",
             "the Assessor ran Nmap.",
             "Nmap was used.",
+            "the dated assessment result records that Nmap was used.",
+            "the dated assessment result records that the Assessor ran Nmap.",
+            "the dated assessment result records that the Assessor executed a "
+            "generic vulnerability scanner.",
+            "the dated assessment result records that a generic vulnerability "
+            "scanner was executed by the Assessor.",
+            "the dated assessment result records that an active scanning tool was "
+            "used.",
+            "the dated assessment result records that a passive scanning tool was "
+            "used.",
+            "the dated assessment result records that the Assessor authorized a "
+            "scanning tool.",
+            "the dated assessment result records that a scanning tool was authorized.",
+            "the dated assessment result records that use of Nmap was authorized.",
+            "the dated assessment result records that execution of a generic scanner "
+            "was approved.",
         ):
             with self.subTest(observation=observation):
                 candidate = valid_profile_record()
-                candidate["relationships"][0]["rationale"] = (
-                    f"External observation: {observation} Supported ESAF outcome: "
-                    "IAM-130 separately authenticates privileged access. Conditions "
-                    "only narrow this supported claim; they do not create either "
-                    "outcome."
-                )
+                set_profile_observation(candidate, observation)
                 self.assertIn(
                     "must identify an independently stated observed result",
                     "\n".join(
@@ -939,6 +968,22 @@ class CyberEssentialsPlusExternalToEsafMappingTests(unittest.TestCase):
                         )
                     ),
                 )
+
+    def test_reverse_positive_accepts_tool_produced_concrete_state(self) -> None:
+        mapping_set, controls = reverse_profile_inputs()
+        candidate = valid_profile_record()
+        set_profile_observation(
+            candidate,
+            "the dated assessment result records that the Assessor ran an "
+            "authentication test tool and it found privileged access required a "
+            "second authentication factor",
+        )
+        self.assertEqual(
+            crosswalk_validation.validate_reverse_evidence_record(
+                candidate, mapping_set, controls
+            ),
+            [],
+        )
 
     def test_reverse_positive_rejects_sample_without_population_boundary(self) -> None:
         mapping_set, controls = reverse_profile_inputs()
