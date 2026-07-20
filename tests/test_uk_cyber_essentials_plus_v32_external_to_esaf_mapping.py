@@ -328,7 +328,7 @@ class CyberEssentialsPlusExternalToEsafMappingTests(unittest.TestCase):
             hasattr(crosswalk_validation, "validate_reverse_evidence_record")
         )
 
-    def test_all_31_persisted_legacy_positives_fail_the_structured_contract(self) -> None:
+    def test_all_31_persisted_positives_satisfy_the_structured_contract(self) -> None:
         mapping_set, controls = reverse_profile_inputs()
         records = load_snapshot_records()
         positives = [record for record in records if record.get("disposition") == "mapped"]
@@ -340,10 +340,7 @@ class CyberEssentialsPlusExternalToEsafMappingTests(unittest.TestCase):
                     crosswalk_validation.validate_reverse_evidence_record(
                         record, mapping_set, controls
                     ),
-                    [
-                        "relationship 1 observation contract: observation claim "
-                        "must be valid JSON"
-                    ],
+                    [],
                 )
         self.assertEqual(
             [
@@ -426,16 +423,7 @@ class CyberEssentialsPlusExternalToEsafMappingTests(unittest.TestCase):
             Counter(record["external_metadata"]["group"] for record in records),
             Counter(AUTHORED_GROUP_COUNTS),
         )
-        validation_errors = validate(ROOT).errors
-        self.assertEqual(len(validation_errors), 31)
-        self.assertTrue(
-            all(
-                error.endswith(
-                    "relationship 1 observation contract: observation claim must be valid JSON"
-                )
-                for error in validation_errors
-            )
-        )
+        self.assertEqual(validate(ROOT).errors, [])
 
     def test_manifest_is_deterministic_at_pinned_esaf_commit(self) -> None:
         expected = build_control_manifest(ROOT, BASELINE_SHA, "0.4-alpha", None)
