@@ -34,7 +34,7 @@ The existing prose markers remain mandatory and unchanged:
 
 Canonical JSON is human-readable, deterministic, and consistent with the profile’s existing canonical-JSON condition checklist.
 
-All four semantic fields—`result_kind`, `subject`, `predicate`, and `result_type`—describe only the measurement schema. They shall not contain pass/fail, true/false, compliant/noncompliant, certified/uncertified, success/failure, equivalent/not-equivalent, or close morphological variants. Validation shall tokenize semantic identifiers on underscores, hyphens, and other non-alphanumeric boundaries and reject the closed answer-bearing token families, not arbitrary substrings; for example, `password` remains valid. This prohibition applies across field boundaries so an answer cannot be smuggled into a subject, kind, predicate, or result type.
+All four semantic fields—`result_kind`, `subject`, `predicate`, and `result_type`—describe only the measurement schema. They shall not contain pass/fail, true/false, compliant/noncompliant, certified/uncertified, success/failure, equivalent/not-equivalent, or close morphological variants. For a threshold measurement, severity classifications such as `high_risk` and `low_risk` encode the measured answer and are likewise prohibited in every semantic field. Validation shall tokenize semantic identifiers on underscores, hyphens, and other non-alphanumeric boundaries and reject the closed answer-bearing token families and contextual severity classifications, not arbitrary substrings; for example, `password` remains valid. This prohibition applies across field boundaries so an answer cannot be smuggled into a subject, kind, predicate, or result type.
 
 ## Source-versioned relationship-leg registry
 
@@ -49,7 +49,9 @@ The registry declaration shall retain its entry sequence long enough to reject d
 
 Validation shall first bind the JSON `provision_id` and `control_id` to the record and relationship leg, then require all four semantic registry values to match the source-versioned leg profile exactly. A value permitted for another provision, another control, or another leg shall not be accepted.
 
-The registry contains no tool, scanner, utility, actor-action, authorization, selection, invocation, execution-procedure, or assessment-performance subjects or outcomes. A tool-produced result remains valid when the structured subject and predicate are the concrete security outcome; tool identity belongs in expected evidence and provenance.
+The registry shall not treat mere tool, scanner, or utility use; tool-use authorization, selection, or invocation; actor procedure activity; execution of an assessment procedure; or assessment-procedure performance as an observation when it lacks an independently defined security or control measurement. Those administrative or procedural facts are insufficient by themselves. A tool-produced result remains valid when the structured subject and predicate define the concrete security measurement, and a control measurement such as required configuration-change approval remains valid when it directly measures the control rather than merely authorizing tool use. Tool identity belongs in expected evidence and provenance.
+
+Registry construction and integrity validation shall audit all four semantic values under the same outcome-neutral rules as claim validation. It shall reject an answer-bearing value regardless of which semantic field contains it, including a threshold profile whose result classification is disguised as a subject, kind, predicate, or result type.
 
 Markdown records remain authoritative for mapping decisions. The registry is only a source-versioned validation allowlist and shall not create, infer, or override a relationship. For this exact mapping set, registry keys shall equal the complete set of mapped `(provision_id, control_id)` relationship legs. Integrity validation shall reject missing mapped legs, orphan keys, keys for negative or unimplemented provisions, and duplicate declarations.
 
@@ -88,11 +90,12 @@ Regression tests shall prove fail-closed behavior for:
 - unknown registry values;
 - incompatible result-kind/control and provision/control profile combinations;
 - wrong provision ID, relationship control ID, assessment-date boundary, and evidence-date boundary;
-- value-bearing or assurance-bearing terms smuggled through each semantic field;
+- value-bearing or assurance-bearing terms smuggled through each semantic field, including `high_risk` and `low_risk` severity classifications in every field of a threshold profile during registry audit;
 - a valid multi-leg record, a duplicate relationship pair, and an incompatible pair;
 - registry declarations or key sets with a duplicate, missing mapped leg, orphan, negative-provision, or unimplemented-provision entry;
 - supported-outcome marker drift and existing condition/prohibition failures; and
-- a valid tool-produced concrete authentication/configuration result whose tool identity appears only in evidence.
+- a valid tool-produced concrete authentication/configuration result whose tool identity appears only in evidence; and
+- a valid configuration-change approval measurement, proving that the tool-use authorization exclusion does not categorically reject independently defined control measurements.
 
 The focused profile test shall also validate all persisted positives through the production validator.
 
