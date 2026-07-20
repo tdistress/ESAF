@@ -16,6 +16,13 @@ from tools.crosswalks.io import load_yaml_mapping, parse_front_matter
 from tools.crosswalks.digests import event_digest, snapshot_digest
 from tools.crosswalks.manifest import build_control_manifest, render_manifest
 from tools.crosswalks.schemas import load_schemas, schema_errors
+import tools.crosswalks.uk_ce_plus_v32_reverse_profile as uk_ce_plus_v32_reverse_profile
+
+
+_UK_CE_PLUS_V32_REVERSE_PROFILE_ID = (
+    "uk-ncsc--cyber-essentials-plus-test-specification--3.2--"
+    "esaf-0.4-alpha--0.2.0"
+)
 
 
 @dataclass
@@ -843,6 +850,29 @@ def _validate_control_manifest(
             for field, expected_value in expected.items():
                 if relationship.get(field) != expected_value:
                     errors.append(f"{record_path}: {field} mismatch for {control_id}")
+    if mapping_set.get("mapping_set_id") == _UK_CE_PLUS_V32_REVERSE_PROFILE_ID:
+        mapped_pairs: list[tuple[str, str]] = []
+        for provision in provisions:
+            record = provision.get("metadata")
+            if not isinstance(record, dict) or record.get("disposition") != "mapped":
+                continue
+            provision_id = record.get("external_provision_id")
+            relationships = record.get("relationships", [])
+            if not isinstance(provision_id, str) or not isinstance(relationships, list):
+                continue
+            for relationship in relationships:
+                if not isinstance(relationship, dict):
+                    continue
+                control_id = relationship.get("esaf_control_id")
+                if isinstance(control_id, str):
+                    mapped_pairs.append((provision_id, control_id))
+        errors.extend(
+            f"{relative}: {message}"
+            for message in uk_ce_plus_v32_reverse_profile.validate_observation_registry(
+                mapped_pairs,
+                uk_ce_plus_v32_reverse_profile.OBSERVATION_PROFILE_ENTRIES,
+            )
+        )
     return errors
 
 
@@ -1135,11 +1165,7 @@ def validate_reverse_evidence_record(
     manifest_controls: dict[str, dict[str, object]],
 ) -> list[str]:
     """Validate a source-versioned reverse-evidence authoring profile."""
-    profile_id = (
-        "uk-ncsc--cyber-essentials-plus-test-specification--3.2--"
-        "esaf-0.4-alpha--0.2.0"
-    )
-    if mapping_set.get("mapping_set_id") != profile_id:
+    if mapping_set.get("mapping_set_id") != _UK_CE_PLUS_V32_REVERSE_PROFILE_ID:
         return []
 
     errors: list[str] = []
@@ -1252,18 +1278,28 @@ def validate_reverse_evidence_record(
             errors.append(f"{leg_label} must state an external observation independently")
             observation = ""
         else:
-            observation = rationale.split("External observation: ", 1)[1].split(
+            observation_segment = rationale.split("External observation: ", 1)[1].split(
                 "Supported ESAF outcome:", 1
             )[0].strip()
-            if not _reverse_observation_has_independent_result(observation):
+            has_one_terminal_period = observation_segment.endswith(".") and not (
+                observation_segment.endswith("..")
+            )
+            if not has_one_terminal_period:
                 errors.append(
-                    f"{leg_label} must identify an independently stated observed result"
+                    f"{leg_label} observation contract: external observation must be "
+                    "one canonical JSON object followed by one terminal period"
                 )
-            if not _reverse_observation_is_date_bound(observation):
-                errors.append(
-                    f"{leg_label} external observation must be bound to assessment "
-                    "or evidence dates"
+            observation = (
+                observation_segment[:-1]
+                if observation_segment.endswith(".")
+                else observation_segment
+            )
+            errors.extend(
+                f"{leg_label} observation contract: {message}"
+                for message in uk_ce_plus_v32_reverse_profile.validate_observation_claim(
+                    observation, external_id, control_id
                 )
+            )
         if exact_outcome_marker not in rationale:
             errors.append(f"{leg_label} must state the exact supported ESAF outcome")
         if narrowing_statement not in rationale:
@@ -1406,102 +1442,6 @@ def validate_reverse_evidence_record(
                     f"evidence for {name}"
                 )
     return errors
-
-
-def _reverse_observation_has_independent_result(observation: str) -> bool:
-    """Require a result-bearing proposition rather than an actor, tool, or activity."""
-    if len(observation.split()) < 6:
-        return False
-    asserted_fact = _reverse_observation_asserted_fact(observation)
-    if (
-        _reverse_fact_contains_tool_activity(asserted_fact)
-        and not _reverse_fact_has_concrete_non_tool_outcome(asserted_fact)
-    ):
-        return False
-    return bool(
-        re.search(
-            r"(?i)\b(?:result|outcome|record|records|recorded|shows?|comparison|"
-            r"workpaper|finding|state|index)\b",
-            observation,
-        )
-        and re.search(
-            r"(?i)\b(?:whether|that|corresponded|resolved|retained|calculated|"
-            r"scored|required|used|remained|throttled|locked|installed|arrived|"
-            r"ran|applied|access|prevented|blocked|downloaded|operating|followed|"
-            r"confirmed|equalled|had|could|prompted|bounded)\b",
-            observation,
-        )
-    )
-
-
-def _reverse_observation_asserted_fact(observation: str) -> str:
-    """Remove reporting scaffolding so semantic checks inspect the asserted fact."""
-    match = re.search(
-        r"(?is)\b(?:records?|recorded|shows?|showed)\s+(?:that|whether)\s+(.+?)\.?$",
-        observation.strip(),
-    )
-    return match.group(1).strip() if match else observation.strip()
-
-
-def _reverse_fact_contains_tool_activity(asserted_fact: str) -> bool:
-    """Detect tool invocation, execution, selection, or authorization activity."""
-    activity = (
-        r"(?:use[ds]?|ran|run|execut(?:e[ds]?|ing)|invok(?:e[ds]?|ing)|"
-        r"launch(?:e[ds]?|ing)|operat(?:e[ds]?|ing)|authoriz(?:e[ds]?|ing)|"
-        r"approv(?:e[ds]?|ing)|select(?:e[ds]?|ing)|active|passive)"
-    )
-    tool_noun = r"(?:tool|scanner|utility|software|application|program)"
-    actor = r"(?:assessor|tester|operator|engineer|reviewer)"
-    return bool(
-        re.search(
-            rf"(?i)\b{actor}\b[^.;]{{0,80}}\b{activity}\b",
-            asserted_fact,
-        )
-        or re.search(
-            rf"(?i)\b{tool_noun}\b[^.;]{{0,40}}\b"
-            rf"(?:(?:was|were|is|are)\s+)?{activity}\b",
-            asserted_fact,
-        )
-        or re.search(
-            rf"^[A-Z][A-Za-z0-9_.-]*\s+(?:(?:was|were|is|are)\s+)?"
-            rf"{activity}\b",
-            asserted_fact,
-        )
-        or re.search(
-            rf"(?i)\b(?:use|execution|invocation|operation|selection|authorization)"
-            rf"\s+of\s+[^.;]{{1,80}}\b(?:(?:was|were|is|are)\s+)?{activity}\b",
-            asserted_fact,
-        )
-    )
-
-
-def _reverse_fact_has_concrete_non_tool_outcome(asserted_fact: str) -> bool:
-    """Require an observed security/configuration state beyond tool activity."""
-    outcome_predicate = (
-        r"(?:arrived|blocked|calculated|closed|configured|confirmed|corresponded|"
-        r"detected|disabled|downloaded|enabled|equalled|exposed|found|identified|"
-        r"installed|locked|measured|open|operating|prevented|prompted|reported|"
-        r"required|resolved|retained|scored|showed|throttled|verified)"
-    )
-    non_tool_object = (
-        r"(?:access|account|authentication|boundary|certificate|chain|configuration|"
-        r"control|credential|device|evidence|executable|factor|file|identity|login|"
-        r"malware|password|port|privilege|root|service|setting|state|vulnerability)"
-    )
-    return bool(
-        re.search(rf"(?i)\b{outcome_predicate}\b", asserted_fact)
-        and re.search(rf"(?i)\b{non_tool_object}s?\b", asserted_fact)
-    )
-
-
-def _reverse_observation_is_date_bound(observation: str) -> bool:
-    """Bind the external result itself to an assessment or evidence date."""
-    return bool(
-        re.search(
-            r"(?i)\b(?:dated|assessment date|evidence date)\b|\b\d{4}-\d{2}-\d{2}\b",
-            observation,
-        )
-    )
 
 
 def _reverse_evidence_has_population_boundary(evidence_text: str) -> bool:

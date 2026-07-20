@@ -6,7 +6,9 @@ import unittest
 from collections import Counter
 from copy import deepcopy
 from pathlib import Path
+from unittest.mock import patch
 
+import tools.crosswalks.uk_ce_plus_v32_reverse_profile as reverse_profile
 import tools.crosswalks.validation as crosswalk_validation
 from tools.crosswalks.digests import snapshot_digest
 from tools.crosswalks.io import parse_front_matter
@@ -49,9 +51,9 @@ PROHIBITED_INFERENCE_KEYS = (
     "population_wide_coverage",
     "current_scheme_coverage",
 )
-VALID_OBSERVATION = (
-    "the dated assessment result records a bounded authentication outcome"
-)
+VALID_PROVISION_ID = "CEPTS3.2-T1-011"
+VALID_CONTROL_ID = "IAM-110"
+VALID_OBSERVATION = render_observation_claim(VALID_PROVISION_ID, VALID_CONTROL_ID)
 TASK3_GROUP_COUNTS = {"M": 24, "T1": 16, "S": 11}
 TASK4_GROUP_COUNTS = {"T2": 9, "T3": 37, "T4": 9}
 AUTHORED_GROUP_COUNTS = TASK3_GROUP_COUNTS | TASK4_GROUP_COUNTS
@@ -194,7 +196,7 @@ def condition_entry(
 def required_prohibited_inferences(
     external_id: str,
     observation: str = VALID_OBSERVATION,
-    control_id: str = "IAM-130",
+    control_id: str = VALID_CONTROL_ID,
 ) -> list[str]:
     explanations = {
         "implementation": "does not establish control implementation",
@@ -275,9 +277,9 @@ def set_profile_observation(record: dict[str, object], observation: str) -> None
 
 def valid_profile_record() -> dict[str, object]:
     _, controls = reverse_profile_inputs()
-    control = controls["IAM-130"]
+    control = controls[VALID_CONTROL_ID]
     return {
-        "external_provision_id": "CEPTS3.2-M-001",
+        "external_provision_id": VALID_PROVISION_ID,
         "disposition": "mapped",
         "context": {
             "mode": "paraphrase",
@@ -291,7 +293,7 @@ def valid_profile_record() -> dict[str, object]:
         },
         "relationships": [
             {
-                "esaf_control_id": "IAM-130",
+                "esaf_control_id": VALID_CONTROL_ID,
                 "esaf_control_version": control["version"],
                 "esaf_control_path": control["path"],
                 "esaf_control_sha256": control["record_sha256"],
@@ -299,20 +301,21 @@ def valid_profile_record() -> dict[str, object]:
                 "direction": "external_to_esaf",
                 "rationale": (
                     f"External observation: {VALID_OBSERVATION}. "
-                    "Supported ESAF outcome: IAM-130 separately authenticates privileged access. "
+                    f"Supported ESAF outcome: {VALID_CONTROL_ID} separately "
+                    "authenticates privileged access. "
                     "Conditions only narrow this supported claim; they do not create either outcome."
                 ),
                 "conditions": [
                     condition_entry(
                         condition,
-                        evidence_references=condition_references("IAM-130")[condition],
+                        evidence_references=condition_references(VALID_CONTROL_ID)[condition],
                     )
                     for condition in CONDITION_ORDER
                 ],
-                "expected_evidence": condition_evidence("CEPTS3.2-M-001"),
+                "expected_evidence": condition_evidence(VALID_PROVISION_ID),
                 "known_gaps": ["Population-wide and continuous operation are not established."],
                 "prohibited_inferences": required_prohibited_inferences(
-                    "CEPTS3.2-M-001"
+                    VALID_PROVISION_ID
                 ),
             }
         ],
@@ -325,16 +328,33 @@ class CyberEssentialsPlusExternalToEsafMappingTests(unittest.TestCase):
             hasattr(crosswalk_validation, "validate_reverse_evidence_record")
         )
 
-    def test_authored_records_are_loaded_and_checked_by_production_profile(self) -> None:
+    def test_all_31_persisted_legacy_positives_fail_the_structured_contract(self) -> None:
         mapping_set, controls = reverse_profile_inputs()
-        errors = [
-            f"{record.get('external_provision_id')}: {message}"
-            for record in load_snapshot_records()
-            for message in crosswalk_validation.validate_reverse_evidence_record(
-                record, mapping_set, controls
-            )
-        ]
-        self.assertEqual(errors, [])
+        records = load_snapshot_records()
+        positives = [record for record in records if record.get("disposition") == "mapped"]
+        negatives = [record for record in records if record.get("disposition") != "mapped"]
+        self.assertEqual(len(positives), 31)
+        for record in positives:
+            with self.subTest(external_id=record["external_provision_id"]):
+                self.assertEqual(
+                    crosswalk_validation.validate_reverse_evidence_record(
+                        record, mapping_set, controls
+                    ),
+                    [
+                        "relationship 1 observation contract: observation claim "
+                        "must be valid JSON"
+                    ],
+                )
+        self.assertEqual(
+            [
+                message
+                for record in negatives
+                for message in crosswalk_validation.validate_reverse_evidence_record(
+                    record, mapping_set, controls
+                )
+            ],
+            [],
+        )
 
     def test_mapping_identity_root_and_oracle_are_locked(self) -> None:
         self.assertEqual(
@@ -406,7 +426,16 @@ class CyberEssentialsPlusExternalToEsafMappingTests(unittest.TestCase):
             Counter(record["external_metadata"]["group"] for record in records),
             Counter(AUTHORED_GROUP_COUNTS),
         )
-        self.assertEqual(validate(ROOT).errors, [])
+        validation_errors = validate(ROOT).errors
+        self.assertEqual(len(validation_errors), 31)
+        self.assertTrue(
+            all(
+                error.endswith(
+                    "relationship 1 observation contract: observation claim must be valid JSON"
+                )
+                for error in validation_errors
+            )
+        )
 
     def test_manifest_is_deterministic_at_pinned_esaf_commit(self) -> None:
         expected = build_control_manifest(ROOT, BASELINE_SHA, "0.4-alpha", None)
@@ -660,7 +689,7 @@ class CyberEssentialsPlusExternalToEsafMappingTests(unittest.TestCase):
                 leg["conditions"][0] = condition_entry(
                     "actor",
                     "NOT_APPLICABLE",
-                    ["record:source_locator", "manifest:IAM-130#requirement"],
+                    ["record:source_locator", f"manifest:{VALID_CONTROL_ID}#requirement"],
                 )
             elif label.startswith("wrong manifest "):
                 field = {
@@ -857,9 +886,9 @@ class CyberEssentialsPlusExternalToEsafMappingTests(unittest.TestCase):
 
     def test_reverse_positive_requires_binding_prohibited_inferences(self) -> None:
         mapping_set, controls = reverse_profile_inputs()
-        arbitrary_prohibition = required_prohibited_inferences("CEPTS3.2-M-001")
+        arbitrary_prohibition = required_prohibited_inferences(VALID_PROVISION_ID)
         arbitrary_prohibition[0] = (
-            "CEPTS3.2-M-001 | prohibit implementation: This is not a meaningful "
+            f"{VALID_PROVISION_ID} | prohibit implementation: This is not a meaningful "
             "binding prohibition for the authored record."
         )
         mutations = {
@@ -868,7 +897,7 @@ class CyberEssentialsPlusExternalToEsafMappingTests(unittest.TestCase):
                 "requires provision-specific prohibited_inferences",
             ),
             "missing category": (
-                required_prohibited_inferences("CEPTS3.2-M-001")[:-1],
+                required_prohibited_inferences(VALID_PROVISION_ID)[:-1],
                 "requires provision-specific prohibited_inferences",
             ),
             "wrong provision": (
@@ -998,28 +1027,32 @@ class CyberEssentialsPlusExternalToEsafMappingTests(unittest.TestCase):
             "the dated assessment result records that use of Nmap was authorized.",
             "the dated assessment result records that execution of a generic scanner "
             "was approved.",
+            "scanner performed the scan",
+            "Assessor employed a scanning tool",
+            "utility completed execution",
+            "permission to run Nmap granted",
+            "Nmap authorized to run",
         ):
             with self.subTest(observation=observation):
                 candidate = valid_profile_record()
                 set_profile_observation(candidate, observation)
-                self.assertIn(
-                    "must identify an independently stated observed result",
-                    "\n".join(
-                        crosswalk_validation.validate_reverse_evidence_record(
-                            candidate, mapping_set, controls
-                        )
-                    ),
+                errors = crosswalk_validation.validate_reverse_evidence_record(
+                    candidate, mapping_set, controls
                 )
+                diagnostics = "\n".join(errors)
+                self.assertIn("observation contract", diagnostics)
+                self.assertNotIn("must bind every prohibited inference", diagnostics)
 
     def test_reverse_positive_accepts_tool_produced_concrete_state(self) -> None:
         mapping_set, controls = reverse_profile_inputs()
         candidate = valid_profile_record()
-        set_profile_observation(
-            candidate,
-            "the dated assessment result records that the Assessor ran an "
-            "authentication test tool and it found privileged access required a "
-            "second authentication factor",
+        leg = candidate["relationships"][0]
+        leg["expected_evidence"][6] = (
+            f"tool evidence: {VALID_PROVISION_ID} names Nmap version 7.94 and its approved "
+            "authentication-test configuration."
         )
+        self.assertNotIn("Nmap", leg["rationale"])
+        self.assertIn("Nmap", leg["expected_evidence"][6])
         self.assertEqual(
             crosswalk_validation.validate_reverse_evidence_record(
                 candidate, mapping_set, controls
@@ -1044,22 +1077,149 @@ class CyberEssentialsPlusExternalToEsafMappingTests(unittest.TestCase):
             ),
         )
 
-    def test_reverse_positive_rejects_date_free_observation(self) -> None:
+    def test_reverse_positive_requires_exact_json_isolation_and_one_terminal_period(self) -> None:
         mapping_set, controls = reverse_profile_inputs()
-        candidate = valid_profile_record()
-        candidate["relationships"][0]["rationale"] = (
-            "External observation: the assessment result records a bounded "
-            "authentication outcome. Supported ESAF outcome: IAM-130 separately "
-            "authenticates privileged access. Conditions only narrow this supported "
-            "claim; they do not create either outcome."
-        )
-        self.assertIn(
-            "external observation must be bound to assessment or evidence dates",
-            "\n".join(
-                crosswalk_validation.validate_reverse_evidence_record(
+        mutations = {
+            "missing terminal period": f"{VALID_OBSERVATION} ",
+            "double terminal period": f"{VALID_OBSERVATION}.. ",
+            "leading prose": f"claim {VALID_OBSERVATION}. ",
+            "trailing prose": f"{VALID_OBSERVATION} extra. ",
+        }
+        for label, observation_segment in mutations.items():
+            with self.subTest(label=label):
+                candidate = valid_profile_record()
+                leg = candidate["relationships"][0]
+                leg["rationale"] = (
+                    f"External observation: {observation_segment}Supported ESAF outcome: "
+                    f"{VALID_CONTROL_ID} separately authenticates privileged access. "
+                    "Conditions only narrow this supported claim; they do not create either outcome."
+                )
+                normalized = observation_segment.strip().rstrip(".")
+                leg["prohibited_inferences"] = required_prohibited_inferences(
+                    VALID_PROVISION_ID, normalized, VALID_CONTROL_ID
+                )
+                errors = crosswalk_validation.validate_reverse_evidence_record(
                     candidate, mapping_set, controls
                 )
-            ),
+                diagnostics = "\n".join(errors)
+                self.assertIn("observation contract", diagnostics)
+                self.assertNotIn("must bind every prohibited inference", diagnostics)
+
+    def test_reverse_positive_validates_each_pair_of_a_two_leg_record(self) -> None:
+        mapping_set, controls = reverse_profile_inputs()
+        provision_id = "CEPTS3.2-X-001"
+        profiles = {
+            (provision_id, "IAM-110"): {
+                "result_kind": "authentication_requirement",
+                "subject": "user_authentication",
+                "predicate": "service_access_requirement_status",
+                "result_type": "recorded_boolean",
+            },
+            (provision_id, "IAM-140"): {
+                "result_kind": "credential_configuration",
+                "subject": "default_password",
+                "predicate": "password_change_status",
+                "result_type": "recorded_boolean",
+            },
+        }
+        candidate = valid_profile_record()
+        candidate["external_provision_id"] = provision_id
+        legs = []
+        with patch.object(reverse_profile, "OBSERVATION_PROFILES", profiles):
+            for control_id in ("IAM-110", "IAM-140"):
+                leg = deepcopy(candidate["relationships"][0])
+                control = controls[control_id]
+                leg.update(
+                    esaf_control_id=control_id,
+                    esaf_control_version=control["version"],
+                    esaf_control_path=control["path"],
+                    esaf_control_sha256=control["record_sha256"],
+                    esaf_requirement_locator=f"controls/{control['path']}#requirement",
+                )
+                observation = reverse_profile.render_observation_claim(
+                    provision_id, control_id
+                )
+                leg["rationale"] = (
+                    f"External observation: {observation}. Supported ESAF outcome: "
+                    f"{control_id} states its independently supported outcome. "
+                    "Conditions only narrow this supported claim; they do not create either outcome."
+                )
+                leg["conditions"] = [
+                    condition_entry(
+                        condition,
+                        evidence_references=condition_references(control_id)[condition],
+                    )
+                    for condition in CONDITION_ORDER
+                ]
+                leg["expected_evidence"] = condition_evidence(provision_id)
+                leg["prohibited_inferences"] = required_prohibited_inferences(
+                    provision_id, observation, control_id
+                )
+                legs.append(leg)
+            candidate["relationships"] = legs
+            with patch.object(
+                reverse_profile,
+                "validate_observation_claim",
+                wraps=reverse_profile.validate_observation_claim,
+            ) as validator:
+                self.assertEqual(
+                    crosswalk_validation.validate_reverse_evidence_record(
+                        candidate, mapping_set, controls
+                    ),
+                    [],
+                )
+                self.assertEqual(
+                    [call.args[1:] for call in validator.call_args_list],
+                    [(provision_id, "IAM-110"), (provision_id, "IAM-140")],
+                )
+
+            duplicate = deepcopy(candidate)
+            duplicate["relationships"].append(deepcopy(legs[1]))
+            self.assertIn(
+                "duplicate reverse-evidence relationship leg for IAM-140",
+                crosswalk_validation.validate_reverse_evidence_record(
+                    duplicate, mapping_set, controls
+                ),
+            )
+
+            incompatible = deepcopy(candidate)
+            first_claim = reverse_profile.render_observation_claim(
+                provision_id, "IAM-110"
+            )
+            incompatible_leg = incompatible["relationships"][1]
+            incompatible_leg["rationale"] = (
+                f"External observation: {first_claim}. Supported ESAF outcome: IAM-140 "
+                "states its independently supported outcome. Conditions only narrow this "
+                "supported claim; they do not create either outcome."
+            )
+            incompatible_leg["prohibited_inferences"] = (
+                required_prohibited_inferences(provision_id, first_claim, "IAM-140")
+            )
+            self.assertIn(
+                "relationship 2 observation contract: observation control_id must equal "
+                "the relationship control ID",
+                crosswalk_validation.validate_reverse_evidence_record(
+                    incompatible, mapping_set, controls
+                ),
+            )
+
+    def test_snapshot_validation_audits_authoritative_mapped_leg_pairs(self) -> None:
+        expected_pairs = {
+            (record["external_provision_id"], leg["esaf_control_id"])
+            for record in load_snapshot_records()
+            if record.get("disposition") == "mapped"
+            for leg in record["relationships"]
+        }
+        with patch.object(
+            reverse_profile,
+            "validate_observation_registry",
+            wraps=reverse_profile.validate_observation_registry,
+        ) as validator:
+            validate(ROOT)
+        validator.assert_called_once()
+        self.assertEqual(set(validator.call_args.args[0]), expected_pairs)
+        self.assertIs(
+            validator.call_args.args[1], reverse_profile.OBSERVATION_PROFILE_ENTRIES
         )
 
     def test_reverse_mapped_record_requires_a_relationship(self) -> None:
