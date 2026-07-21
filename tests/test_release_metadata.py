@@ -3,6 +3,8 @@ import re
 import unittest
 from pathlib import Path
 
+from tools.release_gates import load_front_matter
+
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -147,6 +149,31 @@ class ReleaseMetadataTests(unittest.TestCase):
             len(re.findall(rf"^{re.escape(heading)}$", changelog, re.MULTILINE)),
             f"CHANGELOG.md must contain exactly one {heading!r} heading",
         )
+
+    def test_current_changelog_names_all_three_draft_mapping_snapshots(self) -> None:
+        section = current_changelog_section(current_version())
+        required = (
+            "Cyber Essentials v3.3",
+            "Cyber Essentials Plus v3.2 `esaf_to_external`",
+            "Cyber Essentials Plus v3.2 `external_to_esaf`",
+        )
+        for label in required:
+            with self.subTest(label=label):
+                self.assertIn(label, section)
+
+    def test_evidence_candidate_remains_unreleased_and_untagged(self) -> None:
+        record = load_front_matter(
+            ROOT / "docs/superpowers/reviews/2026-07-21-v04-alpha-publication-readiness.md"
+        )
+        self.assertEqual("evidence_candidate", record["phase"])
+        self.assertIsNone(record["publication"]["date"])
+        changelog = read_repository_file("CHANGELOG.md")
+        self.assertEqual(1, changelog.count(f"## {current_version()} - Unreleased"))
+
+    def test_repository_workflow_runs_release_and_link_validation(self) -> None:
+        workflow = read_repository_file(".github/workflows/catalog-validation.yml")
+        self.assertIn("python tools/release_gates.py --check", workflow)
+        self.assertIn("python tools/validate_links.py --check", workflow)
 
     def test_current_changelog_names_all_draft_architecture_patterns(self) -> None:
         patterns = draft_architecture_patterns()

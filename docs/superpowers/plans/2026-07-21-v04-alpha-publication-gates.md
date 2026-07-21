@@ -730,7 +730,7 @@ Expected: failures for missing two Cyber Essentials Plus changelog entries and m
 Under `CHANGELOG.md` 0.4-alpha Added, add exactly:
 
 ```markdown
-- Added the Draft Cyber Essentials Plus v3.2 `esaf_to_external` snapshot with 144 records and 49 forward-only relationship legs.
+- Added the Draft Cyber Essentials Plus v3.2 `esaf_to_external` snapshot with 144 records and 8 forward-only relationship legs.
 - Added the separate Draft Cyber Essentials Plus v3.2 `external_to_esaf` snapshot with 144 records, 32 reverse-only relationship legs, and 112 specific no-direct-mapping dispositions.
 ```
 
