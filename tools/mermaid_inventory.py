@@ -9,8 +9,10 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+import tempfile
 
 MERMAID_RE = re.compile(r"```mermaid\r?\n(.*?)\r?\n```", re.DOTALL)
+RELEASE_LEDGER = Path("docs/superpowers/reviews/2026-07-21-v04-alpha-mermaid-rendering.md")
 LEDGER_ROW_RE = re.compile(
     r"^\| `(?P<path>[^`]+)` \| (?P<index>\d+) \| `(?P<digest>[0-9a-f]{64})` \| "
     r"(?P<render>[^|]+) \| (?P<readability>[^|]+) \| (?P<reviewer>[^|]+) \|$"
@@ -70,6 +72,11 @@ def write_render_inputs(blocks: list[MermaidBlock], output_dir: Path) -> Path:
     ).resolve()
     if output_dir == root or output_dir.is_relative_to(root):
         raise ValueError("renderer output shall be outside the repository")
+    temporary_root = Path(tempfile.gettempdir()).resolve()
+    if not output_dir.is_relative_to(temporary_root):
+        raise ValueError("renderer output shall be beneath the system temporary directory")
+    if output_dir.exists() and (not output_dir.is_dir() or any(output_dir.iterdir())):
+        raise ValueError("renderer output directory shall be empty")
     output_dir.mkdir(parents=True, exist_ok=True)
     rows = []
     for ordinal, block in enumerate(blocks, start=1):
@@ -124,13 +131,18 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(sys.argv[1:] if argv is None else argv)
     root = Path(__file__).resolve().parents[1]
+    if args.check_record:
+        expected_record = (root / RELEASE_LEDGER).resolve()
+        if expected_record.relative_to(root).as_posix() not in tracked_markdown(root):
+            raise ValueError("the exact tracked release ledger is unavailable")
+        if args.check_record.resolve() != expected_record:
+            print("--check-record requires the exact tracked release ledger", file=sys.stderr)
+            return 2
     blocks = discover(root)
     if args.record_template:
         print(ledger_rows(blocks))
     if args.write:
         output_dir = args.output_dir.resolve()
-        if output_dir.exists() and any(output_dir.iterdir()):
-            raise ValueError("renderer output directory shall be empty")
         inventory = write_render_inputs(blocks, output_dir)
         print(f"Wrote {len(blocks)} Mermaid blocks to {inventory.parent}")
     if args.check_record:

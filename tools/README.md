@@ -66,10 +66,11 @@ external temporary JSON file; they are never written into the tracked record.
 
 ## Mermaid publication rendering
 
-Inventory every tracked Mermaid block and write temporary renderer inputs outside the repository:
+Inventory every tracked Mermaid block and write temporary renderer inputs beneath the system temporary directory, outside the repository:
 
-```shell
-python tools/mermaid_inventory.py --output-dir /tmp/esaf-v04-mermaid --write
+```powershell
+$renderDirectory = python -c "import tempfile; print(tempfile.mkdtemp(prefix='esaf-v04-mermaid-'))"
+python tools/mermaid_inventory.py --output-dir $renderDirectory --write
 ```
 
 Render each input with `@mermaid-js/mermaid-cli@11.16.0`, then record parse and readability dispositions in the tracked release ledger. Parser success does not replace visual review.
