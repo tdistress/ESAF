@@ -1,0 +1,352 @@
+"""Closed observation-claim registry for Cyber Essentials Plus v3.2 reverse evidence."""
+
+from __future__ import annotations
+
+import json
+import re
+from collections.abc import Iterable, Mapping
+
+
+_SEMANTIC_FIELDS = ("result_kind", "subject", "predicate", "result_type")
+_CLAIM_FIELDS = (
+    "assessment_date_boundary",
+    "control_id",
+    "evidence_date_boundary",
+    "predicate",
+    "provision_id",
+    "result_kind",
+    "result_type",
+    "subject",
+)
+_ASSESSMENT_DATE_BOUNDARY = "assessment_date_required"
+_EVIDENCE_DATE_BOUNDARY = "evidence_date_required"
+
+
+# This vocabulary is intentionally independent of OBSERVATION_PROFILE_ENTRIES.
+# Adding a new semantic value therefore requires a separate, deliberate update.
+OBSERVATION_SEMANTIC_VOCABULARIES = {
+    "result_kind": frozenset({
+        "abuse_resistance",
+        "allowlisting_configuration",
+        "assessment_scope",
+        "authentication_requirement",
+        "authentication_strength",
+        "code_signing_configuration",
+        "configuration_change_approval",
+        "credential_configuration",
+        "download_protection",
+        "evidence_retention",
+        "execution_control",
+        "finding_remediation",
+        "host_protection_configuration",
+        "malware_delivery_control",
+        "mfa_challenge",
+        "network_access_configuration",
+        "privileged_access_control",
+        "sampling_calculation",
+        "trust_store_configuration",
+        "vulnerability_fix_availability",
+        "vulnerability_severity",
+    }),
+    "subject": frozenset({
+        "additional_trusted_roots",
+        "anti_malware",
+        "anti_malware_installation",
+        "anti_malware_installation_and_configuration",
+        "anti_malware_updates",
+        "administrative_process_access",
+        "assessed_service_vulnerability",
+        "authentication_factors",
+        "declared_assessment_boundary",
+        "default_password",
+        "defined_malware_delivery_branches",
+        "downloaded_test_file",
+        "executable_formats",
+        "executable_test_file",
+        "listed_configuration_and_execution_checks",
+        "login_attempts",
+        "malware_test_file",
+        "pre_test_findings",
+        "pre_test_verification_evidence",
+        "qualifying_vulnerability",
+        "sample_size",
+        "sample_size_calculation_evidence",
+        "test_file_download",
+        "test_user",
+        "trusted_roots",
+        "unsigned_executable",
+        "untrusted_chain_executable",
+        "user_account",
+        "user_authentication",
+        "user_or_administrator",
+    }),
+    "predicate": frozenset({
+        "activation_and_installation_coverage",
+        "applicant_agreement_status",
+        "branch_applicability_status",
+        "calculation_method_alignment",
+        "check_status",
+        "code_signing_coverage",
+        "configuration_alignment",
+        "delivery_and_access_status",
+        "delivery_execution_interaction_status",
+        "download_access_control_status",
+        "download_and_access_status",
+        "download_execution_interaction_status",
+        "download_prevention_status",
+        "execution_capability",
+        "factor_count",
+        "internet_access_status",
+        "lockout_attempt_threshold",
+        "operational_status",
+        "password_change_status",
+        "pre_access_challenge_status",
+        "pre_test_resolution_status",
+        "restriction_and_separate_authentication_status",
+        "retention_duration",
+        "root_set_relation",
+        "scope_correspondence_status",
+        "service_access_requirement_status",
+        "severity_score",
+        "throttling_status",
+        "vendor_fix_age",
+    }),
+    "result_type": frozenset({
+        "recorded_boolean",
+        "recorded_branch",
+        "recorded_calculation",
+        "recorded_comparison",
+        "recorded_count",
+        "recorded_duration",
+        "recorded_status",
+        "recorded_threshold",
+    }),
+}
+
+
+# The tuple form deliberately preserves the source declaration order so duplicate
+# pair declarations cannot be hidden while a lookup is constructed.
+OBSERVATION_PROFILE_ENTRIES = (
+    ("CEPTS3.2-M-004", "AUD-120", "assessment_scope", "declared_assessment_boundary", "scope_correspondence_status", "recorded_comparison"),
+    ("CEPTS3.2-M-010", "AUD-130", "finding_remediation", "pre_test_findings", "pre_test_resolution_status", "recorded_status"),
+    ("CEPTS3.2-M-011", "AUD-120", "evidence_retention", "pre_test_verification_evidence", "retention_duration", "recorded_duration"),
+    ("CEPTS3.2-S-007", "AUD-120", "sampling_calculation", "sample_size", "calculation_method_alignment", "recorded_calculation"),
+    ("CEPTS3.2-S-008", "CMP-110", "evidence_retention", "sample_size_calculation_evidence", "retention_duration", "recorded_duration"),
+    ("CEPTS3.2-T1-009", "INF-120", "vulnerability_severity", "assessed_service_vulnerability", "severity_score", "recorded_threshold"),
+    ("CEPTS3.2-T1-011", "IAM-110", "authentication_requirement", "user_authentication", "service_access_requirement_status", "recorded_boolean"),
+    ("CEPTS3.2-T1-012", "IAM-110", "authentication_strength", "authentication_factors", "factor_count", "recorded_count"),
+    ("CEPTS3.2-T1-013", "IAM-140", "credential_configuration", "default_password", "password_change_status", "recorded_boolean"),
+    ("CEPTS3.2-T1-014", "APP-150", "abuse_resistance", "login_attempts", "throttling_status", "recorded_boolean"),
+    ("CEPTS3.2-T1-015", "APP-150", "abuse_resistance", "user_account", "lockout_attempt_threshold", "recorded_count"),
+    ("CEPTS3.2-T2-007", "INF-120", "vulnerability_fix_availability", "qualifying_vulnerability", "vendor_fix_age", "recorded_duration"),
+    ("CEPTS3.2-T3-005", "INF-110", "host_protection_configuration", "anti_malware", "activation_and_installation_coverage", "recorded_status"),
+    ("CEPTS3.2-T3-015", "INF-110", "malware_delivery_control", "malware_test_file", "delivery_and_access_status", "recorded_status"),
+    ("CEPTS3.2-T3-016", "INF-110", "execution_control", "executable_test_file", "delivery_execution_interaction_status", "recorded_status"),
+    ("CEPTS3.2-T3-017", "INF-110", "malware_delivery_control", "defined_malware_delivery_branches", "branch_applicability_status", "recorded_branch"),
+    ("CEPTS3.2-T3-021", "INF-110", "network_access_configuration", "test_user", "internet_access_status", "recorded_boolean"),
+    ("CEPTS3.2-T3-022", "INF-110", "download_protection", "test_file_download", "download_prevention_status", "recorded_boolean"),
+    ("CEPTS3.2-T3-023", "INF-110", "download_protection", "downloaded_test_file", "download_access_control_status", "recorded_boolean"),
+    ("CEPTS3.2-T3-024", "INF-110", "malware_delivery_control", "malware_test_file", "download_and_access_status", "recorded_status"),
+    ("CEPTS3.2-T3-025", "INF-110", "execution_control", "executable_test_file", "download_execution_interaction_status", "recorded_status"),
+    ("CEPTS3.2-T3-027", "INF-110", "host_protection_configuration", "anti_malware_installation", "operational_status", "recorded_status"),
+    ("CEPTS3.2-T3-028", "INF-110", "host_protection_configuration", "anti_malware_updates", "configuration_alignment", "recorded_comparison"),
+    ("CEPTS3.2-T3-029", "INF-110", "host_protection_configuration", "anti_malware_installation_and_configuration", "check_status", "recorded_status"),
+    ("CEPTS3.2-T3-031", "INF-110", "trust_store_configuration", "trusted_roots", "root_set_relation", "recorded_comparison"),
+    ("CEPTS3.2-T3-032", "INF-130", "configuration_change_approval", "additional_trusted_roots", "applicant_agreement_status", "recorded_status"),
+    ("CEPTS3.2-T3-033", "INF-110", "execution_control", "unsigned_executable", "execution_capability", "recorded_boolean"),
+    ("CEPTS3.2-T3-034", "INF-110", "execution_control", "untrusted_chain_executable", "execution_capability", "recorded_boolean"),
+    ("CEPTS3.2-T3-035", "INF-110", "code_signing_configuration", "executable_formats", "code_signing_coverage", "recorded_status"),
+    ("CEPTS3.2-T3-036", "INF-110", "allowlisting_configuration", "listed_configuration_and_execution_checks", "check_status", "recorded_status"),
+    ("CEPTS3.2-T4-008", "IAM-110", "mfa_challenge", "user_or_administrator", "pre_access_challenge_status", "recorded_boolean"),
+    ("CEPTS3.2-T5-006", "IAM-130", "privileged_access_control", "administrative_process_access", "restriction_and_separate_authentication_status", "recorded_status"),
+)
+
+
+_KNOWN_NEGATIVE_PROVISIONS = frozenset({
+    "CEPTS3.2-M-001",
+    "CEPTS3.2-T5-001",
+    "CEPTS3.2-T5-002",
+    "CEPTS3.2-T5-003",
+    "CEPTS3.2-T5-004",
+    "CEPTS3.2-T5-005",
+    "CEPTS3.2-T5-007",
+})
+
+
+class _DuplicateKey(ValueError):
+    """Raised by the JSON parser when an object repeats a member name."""
+
+
+def _parse_object_pairs(pairs: list[tuple[str, object]]) -> dict[str, object]:
+    result: dict[str, object] = {}
+    for key, value in pairs:
+        if key in result:
+            raise _DuplicateKey(key)
+        result[key] = value
+    return result
+
+
+def _semantic_tokens(value: str) -> tuple[str, ...]:
+    return tuple(token for token in re.split(r"[^a-z0-9]+", value.casefold()) if token)
+
+
+def _semantic_value_errors(field: str, value: object) -> list[str]:
+    if not isinstance(value, str) or not value:
+        return [f"{field} must be a nonempty string"]
+    tokens = _semantic_tokens(value)
+    outcome_family = re.compile(
+        r"(?:true|false|"
+        r"pass(?:es|ed|ing)?|"
+        r"fail(?:s|ed|ing|ure|ures)?|"
+        r"(?:un)?success(?:ful|fully|es)?|"
+        r"(?:non)?compli(?:ance|ant)|"
+        r"(?:un)?certif(?:y|ies|ied|ying|ication|ications)|"
+        r"(?:non|in)?equival(?:ence|ent)|"
+        r"assur(?:e|es|ed|ing|ance|ances)|"
+        r"implement(?:ation|ed|ing)?|"
+        r"effect(?:ive|iveness)?|"
+        r"sufficien(?:cy|t))"
+    )
+    if any(outcome_family.fullmatch(token) for token in tokens):
+        return [f"{field} must be outcome-neutral"]
+    if any(
+        re.fullmatch(r"(?:critical(?:ity)?|high|medium|low)", tokens[index])
+        and re.fullmatch(r"risks?", tokens[index + 1])
+        for index in range(len(tokens) - 1)
+    ):
+        return [f"{field} must not encode a threshold classification"]
+    activity_tokens = {"activity", "execution", "performance", "procedure"}
+    tool_tokens = {"assessor", "invocation", "nmap", "scanner", "tool", "utility"}
+    if any(token in tool_tokens for token in tokens) or (
+        tokens and set(tokens).issubset(activity_tokens)
+    ) or (
+        any(token in {"actor", "assessment", "procedure"} for token in tokens)
+        and any(token in activity_tokens for token in tokens)
+    ):
+        return [f"{field} must not describe mere tool use or assessment procedure activity"]
+    if value not in OBSERVATION_SEMANTIC_VOCABULARIES[field]:
+        return [f"{field} must use the closed source-versioned vocabulary"]
+    return []
+
+
+def build_observation_profiles(
+    entries: Iterable[tuple[str, str, str, str, str, str]],
+) -> dict[tuple[str, str], dict[str, str]]:
+    """Build the pair-keyed lookup, rejecting duplicate or answer-bearing declarations."""
+    profiles: dict[tuple[str, str], dict[str, str]] = {}
+    for entry in entries:
+        if len(entry) != 6:
+            raise ValueError("observation profile entry must contain six strings")
+        provision_id, control_id, result_kind, subject, predicate, result_type = entry
+        if not all(isinstance(value, str) and value for value in entry):
+            raise ValueError("observation profile entry values must be nonempty strings")
+        pair = (provision_id, control_id)
+        if pair in profiles:
+            raise ValueError(f"duplicate observation profile pair: {provision_id}/{control_id}")
+        semantic = {
+            "result_kind": result_kind,
+            "subject": subject,
+            "predicate": predicate,
+            "result_type": result_type,
+        }
+        semantic_errors = [
+            error for field, value in semantic.items()
+            for error in _semantic_value_errors(field, value)
+        ]
+        if semantic_errors:
+            raise ValueError("; ".join(semantic_errors))
+        profiles[pair] = semantic
+    return profiles
+
+
+OBSERVATION_PROFILES = build_observation_profiles(OBSERVATION_PROFILE_ENTRIES)
+
+
+def render_observation_claim(provision_id: str, control_id: str) -> str:
+    """Render the one canonical JSON observation allowed for an exact leg pair."""
+    profile = OBSERVATION_PROFILES[(provision_id, control_id)]
+    claim = {
+        "assessment_date_boundary": _ASSESSMENT_DATE_BOUNDARY,
+        "control_id": control_id,
+        "evidence_date_boundary": _EVIDENCE_DATE_BOUNDARY,
+        "provision_id": provision_id,
+        **profile,
+    }
+    return json.dumps(claim, separators=(",", ":"), sort_keys=True)
+
+
+def validate_observation_claim(
+    claim_text: str,
+    provision_id: object,
+    control_id: object,
+    profiles: Mapping[tuple[str, str], Mapping[str, str]] | None = None,
+) -> list[str]:
+    """Fail closed unless *claim_text* is the canonical registered pair claim."""
+    if not isinstance(claim_text, str):
+        return ["observation claim must be a canonical JSON object string"]
+    try:
+        claim = json.loads(claim_text, object_pairs_hook=_parse_object_pairs)
+    except _DuplicateKey:
+        return ["observation claim must not contain duplicate keys"]
+    except json.JSONDecodeError:
+        return ["observation claim must be valid JSON"]
+    if not isinstance(claim, dict):
+        return ["observation claim must be a JSON object"]
+    if set(claim) != set(_CLAIM_FIELDS):
+        return ["observation claim must contain exactly the eight design fields"]
+    if any(not isinstance(claim[field], str) or not claim[field] for field in _CLAIM_FIELDS):
+        return ["observation claim fields must be nonempty strings"]
+    if json.dumps(claim, separators=(",", ":"), sort_keys=True) != claim_text:
+        return ["observation claim must use canonical compact JSON serialization"]
+    errors: list[str] = []
+    if claim["assessment_date_boundary"] != _ASSESSMENT_DATE_BOUNDARY:
+        errors.append("assessment_date_boundary must equal assessment_date_required")
+    if claim["evidence_date_boundary"] != _EVIDENCE_DATE_BOUNDARY:
+        errors.append("evidence_date_boundary must equal evidence_date_required")
+    if claim["provision_id"] != provision_id:
+        errors.append("observation provision_id must equal the record provision ID")
+    if claim["control_id"] != control_id:
+        errors.append("observation control_id must equal the relationship control ID")
+    for field in _SEMANTIC_FIELDS:
+        errors.extend(_semantic_value_errors(field, claim[field]))
+    active_profiles = OBSERVATION_PROFILES if profiles is None else profiles
+    pair = (claim["provision_id"], claim["control_id"])
+    profile = active_profiles.get(pair)
+    if profile is None:
+        errors.append("observation pair is not declared in the source-versioned registry")
+    else:
+        for field in _SEMANTIC_FIELDS:
+            if claim[field] != profile.get(field):
+                errors.append(f"observation {field} must exactly match the registered pair profile")
+    return errors
+
+
+def validate_observation_registry(
+    mapped_pairs: Iterable[tuple[str, str]],
+    entries: Iterable[tuple[str, str, str, str, str, str]] = OBSERVATION_PROFILE_ENTRIES,
+) -> list[str]:
+    """Check that declarations are neutral, unique, and exactly cover mapped legs."""
+    declared_entries = list(entries)
+    errors: list[str] = []
+    declared_pairs: set[tuple[str, str]] = set()
+    for entry in declared_entries:
+        if len(entry) != 6:
+            errors.append("observation profile entry must contain six strings")
+            continue
+        provision_id, control_id, result_kind, subject, predicate, result_type = entry
+        pair = (provision_id, control_id)
+        if pair in declared_pairs:
+            errors.append(f"duplicate observation profile pair: {provision_id}/{control_id}")
+        declared_pairs.add(pair)
+        for field, value in zip(
+            _SEMANTIC_FIELDS, (result_kind, subject, predicate, result_type), strict=True
+        ):
+            errors.extend(_semantic_value_errors(field, value))
+        if provision_id in _KNOWN_NEGATIVE_PROVISIONS:
+            errors.append("observation profile must not target a known negative provision")
+    mapped_pair_set = set(mapped_pairs)
+    for pair in sorted(mapped_pair_set - declared_pairs):
+        errors.append(f"missing observation profile for mapped pair: {pair[0]}/{pair[1]}")
+    for pair in sorted(declared_pairs - mapped_pair_set):
+        errors.append(f"orphan observation profile pair: {pair[0]}/{pair[1]}")
+    return errors

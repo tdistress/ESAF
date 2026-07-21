@@ -6,7 +6,6 @@ Cyber Essentials core and Cyber Essentials Plus remain separate mapping sets.
 
 - Complete open 0.4-alpha publication gates.
 - Obtain qualified human review for Cyber Essentials core v3.3.
-- Design the Cyber Essentials Plus v3.2 external_to_esaf mapping.
 - Establish substantive PCI DSS and HITRUST CSF mapping sets.
 - Define assessment evidence and maturity scoring.
 - Establish planned industry profiles.

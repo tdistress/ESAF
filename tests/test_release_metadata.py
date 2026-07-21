@@ -199,9 +199,9 @@ class ReleaseMetadataTests(unittest.TestCase):
             disposition = assessment["disposition"]
             if disposition == "GO":
                 expected = f"Design the Cyber Essentials Plus v3.2 {direction} mapping"
-                if direction == "esaf_to_external":
-                    # Task 13 separately authorizes implementation of this
-                    # direction, so the completed design item leaves the backlog.
+                if direction in {"esaf_to_external", "external_to_esaf"}:
+                    # Separately authorized implementations completed both
+                    # directional designs, so both items leave the backlog.
                     self.assertNotIn(f"- {expected}.", backlog)
                 else:
                     expected_items.append(expected)

@@ -49,10 +49,10 @@ EXPECTED_KIND_COUNTS = {
     "evidence_retention": 2,
 }
 EXPECTED_CATALOG_COUNTS = {
-    "mapping_sets": 2,
-    "provisions": 260,
-    "relationships": 49,
-    "negative_dispositions": 213,
+    "mapping_sets": 3,
+    "provisions": 404,
+    "relationships": 81,
+    "negative_dispositions": 325,
 }
 GENERIC_NEGATIVE_RATIONALES = {
     "missing outcome: no direct mapping.",
@@ -480,10 +480,10 @@ class CyberEssentialsPlusEsafToExternalMappingTests(unittest.TestCase):
         self.assertEqual(entry["inventory"]["expected_count"], 144)
         self.assertEqual(len(entry["provisions"]), 144)
         self.assertEqual(entry["lifecycle"]["events"], [])
-        self.assertEqual(catalog["counts"]["mapping_sets"], 2)
-        self.assertEqual(catalog["counts"]["provisions"], 260)
-        self.assertEqual(catalog["counts"]["relationships"], 49)
-        self.assertEqual(catalog["counts"]["negative_dispositions"], 213)
+        self.assertEqual(catalog["counts"]["mapping_sets"], 3)
+        self.assertEqual(catalog["counts"]["provisions"], 404)
+        self.assertEqual(catalog["counts"]["relationships"], 81)
+        self.assertEqual(catalog["counts"]["negative_dispositions"], 325)
         catalog_md = (ROOT / "crosswalks/CATALOG.md").read_text(encoding="utf-8")
         self.assertIn(MAPPING_SET_ID, catalog_md)
 
@@ -546,7 +546,7 @@ class CyberEssentialsPlusEsafToExternalMappingTests(unittest.TestCase):
             "Design the Cyber Essentials Plus v3.2 esaf_to_external mapping.",
             backlog,
         )
-        self.assertIn(
+        self.assertNotIn(
             "Design the Cyber Essentials Plus v3.2 external_to_esaf mapping.",
             backlog,
         )

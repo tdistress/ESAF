@@ -16,6 +16,142 @@ from tools.crosswalks.io import load_yaml_mapping, parse_front_matter
 from tools.crosswalks.digests import event_digest, snapshot_digest
 from tools.crosswalks.manifest import build_control_manifest, render_manifest
 from tools.crosswalks.schemas import load_schemas, schema_errors
+import tools.crosswalks.uk_ce_plus_v32_reverse_profile as uk_ce_plus_v32_reverse_profile
+
+
+_UK_CE_PLUS_V32_REVERSE_PROFILE_ID = (
+    "uk-ncsc--cyber-essentials-plus-test-specification--3.2--"
+    "esaf-0.4-alpha--0.2.0"
+)
+
+_OUTCOME_AUD_SCOPE = (
+    "requires relevant, reliable, complete, timely, attributable, and "
+    "integrity-protected evidence for each AI assessment scope and period."
+)
+_OUTCOME_AUD_FINDINGS = (
+    "requires AI assessment findings to be documented, classified, assigned, "
+    "prioritized, remediated, escalated, retested, closed, and retained according "
+    "to the named governance factors."
+)
+_OUTCOME_AUD_RETAINED_PROCEDURE = (
+    "requires relevant, reliable, complete, timely, attributable, and "
+    "integrity-protected evidence to be obtained and retained for each AI "
+    "assessment procedure, determination, scope, and period."
+)
+_OUTCOME_AUD_PROCEDURE = (
+    "requires relevant, reliable, complete, timely, attributable, and "
+    "integrity-protected evidence for each AI assessment procedure, determination, "
+    "scope, and period."
+)
+_OUTCOME_RECORDS = (
+    "requires AI records, notices, registrations, reports, and evidence to be "
+    "created, protected, retained, disclosed, submitted, and disposed of according "
+    "to applicable record requirements."
+)
+_OUTCOME_VULNERABILITIES = (
+    "requires vulnerabilities affecting AI infrastructure and dependencies to be "
+    "identified, assessed, prioritized, remediated, mitigated, or accepted according "
+    "to the named risk factors."
+)
+_OUTCOME_AUTHENTICATION = (
+    "requires identities to be authenticated before access to non-public AI assets "
+    "using mechanisms whose strength, context, and resistance are proportionate to "
+    "risk."
+)
+_OUTCOME_CREDENTIALS = (
+    "requires credentials used by AI capabilities to be generated, stored, "
+    "distributed, used, rotated, revoked, and monitored through approved "
+    "secrets-management mechanisms."
+)
+_OUTCOME_APPLICATION_MISUSE = (
+    "requires AI application misuse, adversarial behavior, automated abuse, denial "
+    "of service, excessive consumption, repeated policy evasion, and out-of-purpose "
+    "use to be detected, constrained, and responded to."
+)
+_OUTCOME_INFRASTRUCTURE_HARDENING = (
+    "requires AI compute, hosts, networks, images, runtimes, and management "
+    "interfaces to be hardened using approved, versioned, and risk-proportionate "
+    "configuration baselines."
+)
+_OUTCOME_CONFIGURATION_CHANGE = (
+    "requires infrastructure affecting AI workloads to be controlled, versioned, "
+    "reviewed, tested, approved, reproducible, and monitored configuration with "
+    "rollback or recovery."
+)
+_OUTCOME_REPLAY_RESISTANT_AUTHENTICATION = (
+    "requires identities to be authenticated before access to non-public AI assets "
+    "using mechanisms whose strength, context, and resistance to replay or credential "
+    "theft are proportionate to risk."
+)
+_OUTCOME_PRIVILEGED_ACCESS_RESTRICTION_AND_AUTHENTICATION = (
+    "requires privileged access capable of changing AI models, data, system "
+    "instructions, safety controls, tools, production configuration, logs, or "
+    "authorization policy to be restricted and separately authenticated."
+)
+
+# Source-versioned prose is deliberately independent of authored Markdown at runtime.
+_UK_CE_PLUS_V32_SUPPORTED_OUTCOME_TEXTS = {
+    ("CEPTS3.2-M-004", "AUD-120"): _OUTCOME_AUD_SCOPE,
+    ("CEPTS3.2-M-010", "AUD-130"): _OUTCOME_AUD_FINDINGS,
+    ("CEPTS3.2-M-011", "AUD-120"): _OUTCOME_AUD_RETAINED_PROCEDURE,
+    ("CEPTS3.2-S-007", "AUD-120"): _OUTCOME_AUD_PROCEDURE,
+    ("CEPTS3.2-S-008", "CMP-110"): _OUTCOME_RECORDS,
+    ("CEPTS3.2-T1-009", "INF-120"): _OUTCOME_VULNERABILITIES,
+    ("CEPTS3.2-T1-011", "IAM-110"): _OUTCOME_AUTHENTICATION,
+    ("CEPTS3.2-T1-012", "IAM-110"): _OUTCOME_AUTHENTICATION,
+    ("CEPTS3.2-T1-013", "IAM-140"): _OUTCOME_CREDENTIALS,
+    ("CEPTS3.2-T1-014", "APP-150"): _OUTCOME_APPLICATION_MISUSE,
+    ("CEPTS3.2-T1-015", "APP-150"): _OUTCOME_APPLICATION_MISUSE,
+    ("CEPTS3.2-T2-007", "INF-120"): _OUTCOME_VULNERABILITIES,
+    ("CEPTS3.2-T3-005", "INF-110"): _OUTCOME_INFRASTRUCTURE_HARDENING,
+    ("CEPTS3.2-T3-015", "INF-110"): _OUTCOME_INFRASTRUCTURE_HARDENING,
+    ("CEPTS3.2-T3-016", "INF-110"): _OUTCOME_INFRASTRUCTURE_HARDENING,
+    ("CEPTS3.2-T3-017", "INF-110"): _OUTCOME_INFRASTRUCTURE_HARDENING,
+    ("CEPTS3.2-T3-021", "INF-110"): _OUTCOME_INFRASTRUCTURE_HARDENING,
+    ("CEPTS3.2-T3-022", "INF-110"): _OUTCOME_INFRASTRUCTURE_HARDENING,
+    ("CEPTS3.2-T3-023", "INF-110"): _OUTCOME_INFRASTRUCTURE_HARDENING,
+    ("CEPTS3.2-T3-024", "INF-110"): _OUTCOME_INFRASTRUCTURE_HARDENING,
+    ("CEPTS3.2-T3-025", "INF-110"): _OUTCOME_INFRASTRUCTURE_HARDENING,
+    ("CEPTS3.2-T3-027", "INF-110"): _OUTCOME_INFRASTRUCTURE_HARDENING,
+    ("CEPTS3.2-T3-028", "INF-110"): _OUTCOME_INFRASTRUCTURE_HARDENING,
+    ("CEPTS3.2-T3-029", "INF-110"): _OUTCOME_INFRASTRUCTURE_HARDENING,
+    ("CEPTS3.2-T3-031", "INF-110"): _OUTCOME_INFRASTRUCTURE_HARDENING,
+    ("CEPTS3.2-T3-032", "INF-130"): _OUTCOME_CONFIGURATION_CHANGE,
+    ("CEPTS3.2-T3-033", "INF-110"): _OUTCOME_INFRASTRUCTURE_HARDENING,
+    ("CEPTS3.2-T3-034", "INF-110"): _OUTCOME_INFRASTRUCTURE_HARDENING,
+    ("CEPTS3.2-T3-035", "INF-110"): _OUTCOME_INFRASTRUCTURE_HARDENING,
+    ("CEPTS3.2-T3-036", "INF-110"): _OUTCOME_INFRASTRUCTURE_HARDENING,
+    ("CEPTS3.2-T4-008", "IAM-110"): _OUTCOME_REPLAY_RESISTANT_AUTHENTICATION,
+    ("CEPTS3.2-T5-006", "IAM-130"): (
+        _OUTCOME_PRIVILEGED_ACCESS_RESTRICTION_AND_AUTHENTICATION
+    ),
+}
+
+_REVERSE_NARROWING_STATEMENT = (
+    "Conditions only narrow this supported claim; they do not create either outcome."
+)
+_REVERSE_PROHIBITION_CATEGORIES = (
+    "implementation",
+    "effectiveness",
+    "sufficiency",
+    "compliance",
+    "certification",
+    "equivalence",
+    "continuous_assurance",
+    "population_wide_coverage",
+    "current_scheme_coverage",
+)
+_REVERSE_PROHIBITION_DENIALS = {
+    "implementation": "does not establish control implementation",
+    "effectiveness": "does not establish control effectiveness",
+    "sufficiency": "is not sufficient evidence",
+    "compliance": "does not establish ESAF compliance",
+    "certification": "does not authorize or establish certification",
+    "equivalence": "is not equivalent",
+    "continuous_assurance": "does not provide continuous assurance",
+    "population_wide_coverage": "does not establish population-wide coverage",
+    "current_scheme_coverage": "does not establish current-scheme coverage",
+}
 
 
 @dataclass
@@ -794,6 +930,12 @@ def _validate_control_manifest(
         record_path = provision.get("path")
         if not isinstance(record, dict) or not isinstance(record_path, str):
             continue
+        errors.extend(
+            f"{record_path}: {message}"
+            for message in validate_reverse_evidence_record(
+                record, mapping_set, expected_controls
+            )
+        )
         relationships = record.get("relationships", [])
         if not isinstance(relationships, list):
             continue
@@ -837,6 +979,35 @@ def _validate_control_manifest(
             for field, expected_value in expected.items():
                 if relationship.get(field) != expected_value:
                     errors.append(f"{record_path}: {field} mismatch for {control_id}")
+    if mapping_set.get("mapping_set_id") == _UK_CE_PLUS_V32_REVERSE_PROFILE_ID:
+        mapped_pairs: list[tuple[str, str]] = []
+        for provision in provisions:
+            record = provision.get("metadata")
+            if not isinstance(record, dict) or record.get("disposition") != "mapped":
+                continue
+            provision_id = record.get("external_provision_id")
+            relationships = record.get("relationships", [])
+            if not isinstance(provision_id, str) or not isinstance(relationships, list):
+                continue
+            for relationship in relationships:
+                if not isinstance(relationship, dict):
+                    continue
+                control_id = relationship.get("esaf_control_id")
+                if isinstance(control_id, str):
+                    mapped_pairs.append((provision_id, control_id))
+        errors.extend(
+            f"{relative}: {message}"
+            for message in uk_ce_plus_v32_reverse_profile.validate_observation_registry(
+                mapped_pairs,
+                uk_ce_plus_v32_reverse_profile.OBSERVATION_PROFILE_ENTRIES,
+            )
+        )
+        errors.extend(
+            f"{relative}: {message}"
+            for message in _reverse_supported_outcome_registry_errors(
+                uk_ce_plus_v32_reverse_profile.OBSERVATION_PROFILE_ENTRIES
+            )
+        )
     return errors
 
 
@@ -1121,6 +1292,591 @@ def validate_record(
         if not isinstance(permitted, list) or required_element not in permitted:
             errors.append("context exceeds permitted publication elements")
     return errors
+
+
+def validate_reverse_evidence_record(
+    record: dict[str, object],
+    mapping_set: dict[str, object],
+    manifest_controls: dict[str, dict[str, object]],
+) -> list[str]:
+    """Validate a source-versioned reverse-evidence authoring profile."""
+    if mapping_set.get("mapping_set_id") != _UK_CE_PLUS_V32_REVERSE_PROFILE_ID:
+        return []
+
+    errors: list[str] = []
+    external_id = record.get("external_provision_id")
+    relationships = record.get("relationships", [])
+    if not isinstance(relationships, list):
+        relationships = []
+    disposition = record.get("disposition")
+
+    if disposition == "no_direct_mapping":
+        rationale = record.get("negative_rationale")
+        specific_pattern = re.compile(
+            rf"^Missing outcome: {re.escape(str(external_id))} - "
+            r"external result '(?P<external_result>[^']{10,})' does not evidence "
+            r"ESAF outcome '(?P<esaf_outcome>[^']{10,})'\.$"
+        )
+        match = (
+            specific_pattern.fullmatch(rationale)
+            if isinstance(rationale, str)
+            else None
+        )
+        context = record.get("context")
+        context_summary = context.get("summary") if isinstance(context, dict) else None
+        if (
+            not isinstance(external_id, str)
+            or match is None
+            or not isinstance(context_summary, str)
+            or match.group("external_result").lower() not in context_summary.lower()
+            or "generic" in match.group("esaf_outcome").lower()
+            or "direct mapping" in match.group("esaf_outcome").lower()
+            or _reverse_outcome_is_semantic_placeholder(
+                match.group("esaf_outcome")
+            )
+        ):
+            errors.append(
+                "no_direct_mapping rationale must name a paraphrase-bound external "
+                "result and specific ESAF outcome using "
+                f"'Missing outcome: {external_id} - external result <result> does "
+                "not evidence ESAF outcome <outcome>'"
+            )
+        if relationships:
+            errors.append("negative reverse-evidence record must have no relationships")
+        return errors
+    if disposition == "out_of_scope":
+        errors.append("complete-publication reverse profile does not permit out_of_scope")
+        return errors
+    if disposition != "mapped":
+        return errors
+    if not relationships:
+        errors.append(
+            "mapped reverse-evidence record requires at least one relationship"
+        )
+        return errors
+
+    condition_order = (
+        "actor",
+        "scope",
+        "population",
+        "sample",
+        "assessment_date",
+        "evidence_date",
+        "tool",
+        "provenance",
+        "exception",
+        "delivery_partner_discretion",
+        "point_in_time_status",
+    )
+    seen_legs: set[tuple[object, object]] = set()
+    for leg_index, leg in enumerate(relationships):
+        if not isinstance(leg, dict):
+            continue
+        control_id = leg.get("esaf_control_id")
+        direction = leg.get("direction")
+        leg_label = f"relationship {leg_index + 1}"
+        if direction != "external_to_esaf":
+            errors.append(f"{leg_label} must use direction external_to_esaf")
+        duplicate_key = (control_id, direction)
+        if duplicate_key in seen_legs:
+            errors.append(f"duplicate reverse-evidence relationship leg for {control_id}")
+        seen_legs.add(duplicate_key)
+
+        control = manifest_controls.get(control_id) if isinstance(control_id, str) else None
+        if control is None:
+            errors.append(f"{leg_label} references unresolved manifest control {control_id}")
+        else:
+            expected = {
+                "esaf_control_version": control.get("version"),
+                "esaf_control_path": control.get("path"),
+                "esaf_control_sha256": control.get("record_sha256"),
+                "esaf_requirement_locator": (
+                    f"controls/{control.get('path')}#requirement"
+                ),
+            }
+            for field, expected_value in expected.items():
+                if leg.get(field) != expected_value:
+                    errors.append(
+                        f"{leg_label} {field} must exactly match pinned manifest "
+                        f"control {control_id}"
+                    )
+
+        rationale = leg.get("rationale")
+        exact_outcome_marker = f"Supported ESAF outcome: {control_id} "
+        narrowing_statement = _REVERSE_NARROWING_STATEMENT
+        if not isinstance(rationale, str):
+            rationale = ""
+        if "External observation: " not in rationale:
+            errors.append(f"{leg_label} must state an external observation independently")
+            observation = ""
+        else:
+            observation_segment = rationale.split("External observation: ", 1)[1].split(
+                "Supported ESAF outcome:", 1
+            )[0].strip()
+            has_one_terminal_period = observation_segment.endswith(".") and not (
+                observation_segment.endswith("..")
+            )
+            if not has_one_terminal_period:
+                errors.append(
+                    f"{leg_label} observation contract: external observation must be "
+                    "one canonical JSON object followed by one terminal period"
+                )
+            observation = (
+                observation_segment[:-1]
+                if observation_segment.endswith(".")
+                else observation_segment
+            )
+            errors.extend(
+                f"{leg_label} observation contract: {message}"
+                for message in uk_ce_plus_v32_reverse_profile.validate_observation_claim(
+                    observation, external_id, control_id
+                )
+            )
+        supported_outcome_text = (
+            _UK_CE_PLUS_V32_SUPPORTED_OUTCOME_TEXTS.get((external_id, control_id))
+            if isinstance(external_id, str) and isinstance(control_id, str)
+            else None
+        )
+        if supported_outcome_text is None:
+            errors.append(
+                f"{leg_label} requires source-versioned supported-outcome text for "
+                "the exact provision/control pair"
+            )
+        else:
+            canonical_rationale = (
+                f"External observation: {observation}. Supported ESAF outcome: "
+                f"{control_id} {supported_outcome_text} {narrowing_statement}"
+            )
+            if rationale != canonical_rationale:
+                errors.append(
+                    f"{leg_label} rationale must equal the exact canonical "
+                    "reverse-evidence template"
+                )
+        if exact_outcome_marker not in rationale:
+            errors.append(f"{leg_label} must state the exact supported ESAF outcome")
+        if narrowing_statement not in rationale:
+            errors.append(f"{leg_label} must state that conditions only narrow support")
+        if re.search(
+            r"(?is)\bconditions?\b\s+(?:alone\s+)?"
+            r"(?:supply|create|establish|provide)\b",
+            rationale,
+        ) or re.search(
+            r"(?is)\b(?:outcome|observation|result|support)\b\s+(?:is|are)\s+"
+            r"(?:supplied|created|established|provided)\s+by\s+conditions?\b",
+            rationale,
+        ):
+            errors.append(f"{leg_label} conditions must not create an outcome")
+        prohibited_claim = re.compile(
+            r"(?i)\b(?:implementation|implemented|effectiveness|effective|"
+            r"sufficiency|sufficient|compliance|compliant|certification|certified|"
+            r"equivalence|equivalent|continuous[- ]assurance|"
+            r"population[- ]wide(?:\s+coverage)?|"
+            r"current[- ]scheme(?:\s+coverage)?)\b"
+        )
+        if prohibited_claim.search(rationale):
+            errors.append(f"{leg_label} rationale contains prohibited assurance claim")
+
+        expected_evidence = leg.get("expected_evidence")
+        evidence_text = (
+            " ".join(expected_evidence).lower()
+            if isinstance(expected_evidence, list)
+            and all(isinstance(item, str) for item in expected_evidence)
+            else ""
+        )
+        selection_text = f"{observation} {evidence_text}"
+        if re.search(
+            r"\b(?:sample|sampled|sampling|select|selected|selection)\w*\b",
+            selection_text,
+        ) and not _reverse_evidence_has_population_boundary(evidence_text):
+            errors.append(
+                f"{leg_label} selection or sampling evidence requires an explicit "
+                "population boundary"
+            )
+
+        prohibited_inferences = leg.get("prohibited_inferences")
+        if not _reverse_prohibitions_have_required_categories(
+            prohibited_inferences, external_id
+        ):
+            errors.append(
+                f"{leg_label} requires provision-specific prohibited_inferences "
+                "for every binding assurance prohibition"
+            )
+        elif not _reverse_prohibitions_bind_observation_and_outcome(
+            prohibited_inferences, external_id, observation, control_id
+        ):
+            errors.append(
+                f"{leg_label} must bind every prohibited inference to the observed "
+                "result and cited ESAF outcome"
+            )
+
+        raw_conditions = leg.get("conditions")
+        parsed_conditions: list[dict[str, object]] = []
+        if isinstance(raw_conditions, list):
+            for condition_index, raw_condition in enumerate(raw_conditions):
+                try:
+                    condition = (
+                        json.loads(raw_condition)
+                        if isinstance(raw_condition, str)
+                        else None
+                    )
+                except json.JSONDecodeError:
+                    condition = None
+                if not isinstance(condition, dict) or set(condition) != {
+                    "condition",
+                    "status",
+                    "evidence_references",
+                }:
+                    errors.append(
+                        f"{leg_label} condition {condition_index + 1} must be a canonical "
+                        "condition/status/evidence_references JSON string"
+                    )
+                    continue
+                if raw_condition != json.dumps(
+                    condition, separators=(",", ":"), sort_keys=True
+                ):
+                    errors.append(
+                        f"{leg_label} condition {condition_index + 1} must be a canonical "
+                        "condition/status/evidence_references JSON string"
+                    )
+                parsed_conditions.append(condition)
+        else:
+            errors.append(f"{leg_label} conditions must be a list")
+
+        actual_order = [item.get("condition") for item in parsed_conditions]
+        if actual_order != list(condition_order):
+            errors.append(f"{leg_label} conditions must use the exact ordered checklist")
+        for condition in parsed_conditions:
+            name = condition.get("condition")
+            status = condition.get("status")
+            references = condition.get("evidence_references")
+            if status not in {"SATISFIED", "NOT_APPLICABLE"}:
+                errors.append(f"{leg_label} condition {name} has invalid status")
+            if (
+                not isinstance(references, list)
+                or not references
+                or any(not isinstance(item, str) or not item.strip() for item in references)
+            ):
+                errors.append(f"{leg_label} condition {name} requires evidence references")
+                continue
+            if len(set(references)) != len(references):
+                errors.append(
+                    f"{leg_label} condition {name} requires distinct evidence references"
+                )
+            for reference in references:
+                if not _reverse_evidence_reference_resolves(
+                    reference, record, leg, manifest_controls
+                ):
+                    errors.append(
+                        f"{leg_label} condition {name} has unresolved evidence "
+                        f"reference {reference}"
+                    )
+            if status == "NOT_APPLICABLE":
+                if len(set(references)) < 2 or not any(
+                    isinstance(reference, str)
+                    and not reference.startswith("relationship:known_gaps:")
+                    for reference in references
+                ):
+                    errors.append(
+                        f"{leg_label} condition {name} NOT_APPLICABLE requires "
+                        "distinct evidence references and a separate corroborating reference"
+                    )
+                elif not _has_evidence_based_na(name, references, leg):
+                    errors.append(
+                        f"{leg_label} condition {name} NOT_APPLICABLE requires an "
+                        "explicit condition-specific known-gap justification and "
+                        "corroborating reference"
+                    )
+            elif status == "SATISFIED" and not _reverse_condition_is_substantiated(
+                name, references, external_id, leg
+            ):
+                errors.append(
+                    f"{leg_label} condition {name} requires provision-specific "
+                    f"evidence for {name}"
+                )
+    return errors
+
+
+def _reverse_supported_outcome_registry_errors(
+    profile_entries: object,
+) -> list[str]:
+    """Require exact pair coverage between semantic and supported-outcome registries."""
+    if not isinstance(profile_entries, (list, tuple)):
+        return ["observation profile declarations must be an ordered sequence"]
+    profile_pairs = {
+        (entry[0], entry[1])
+        for entry in profile_entries
+        if isinstance(entry, (list, tuple))
+        and len(entry) == 6
+        and isinstance(entry[0], str)
+        and isinstance(entry[1], str)
+    }
+    supported_pairs = set(_UK_CE_PLUS_V32_SUPPORTED_OUTCOME_TEXTS)
+    errors = [
+        f"missing supported-outcome text for observation profile pair: {pair[0]}/{pair[1]}"
+        for pair in sorted(profile_pairs - supported_pairs)
+    ]
+    errors.extend(
+        f"orphan supported-outcome text pair: {pair[0]}/{pair[1]}"
+        for pair in sorted(supported_pairs - profile_pairs)
+    )
+    return errors
+
+
+def _reverse_evidence_has_population_boundary(evidence_text: str) -> bool:
+    """Require selected or sampled evidence to name its bounded population."""
+    return bool(
+        re.search(r"\bpopulation\b", evidence_text)
+        and re.search(
+            r"(?i)\b(?:in-scope|scope|applicable|affected|declared|defined|"
+            r"enumerated|inventory|universe|total|all)\b",
+            evidence_text,
+        )
+    )
+
+
+def _reverse_prohibitions_have_required_categories(
+    prohibited_inferences: object, external_id: object
+) -> bool:
+    """Require one provision-bound entry for each canonical assurance category."""
+    if not isinstance(external_id, str) or not isinstance(prohibited_inferences, list):
+        return False
+    if len(prohibited_inferences) != len(_REVERSE_PROHIBITION_CATEGORIES):
+        return False
+    return all(
+        isinstance(entry, str)
+        and entry.startswith(f"{external_id} | prohibit {category}: ")
+        for category, entry in zip(
+            _REVERSE_PROHIBITION_CATEGORIES, prohibited_inferences, strict=True
+        )
+    )
+
+
+def _reverse_prohibitions_bind_observation_and_outcome(
+    prohibited_inferences: object,
+    external_id: object,
+    observation: str,
+    control_id: object,
+) -> bool:
+    """Require all nine exact observation- and control-bound prohibition strings."""
+    if not _reverse_prohibitions_have_required_categories(
+        prohibited_inferences, external_id
+    ) or not isinstance(control_id, str):
+        return False
+    normalized_observation = observation.rstrip(". ").strip()
+    if not normalized_observation:
+        return False
+    expected = [
+        f'{external_id} | prohibit {category}: The observed result '
+        f'"{normalized_observation}" {_REVERSE_PROHIBITION_DENIALS[category]} '
+        f"for the cited {control_id} outcome."
+        for category in _REVERSE_PROHIBITION_CATEGORIES
+    ]
+    return prohibited_inferences == expected
+
+
+def _reverse_condition_is_substantiated(
+    condition: object,
+    references: list[object],
+    external_id: object,
+    leg: dict[str, object],
+) -> bool:
+    """Require a labeled evidence item that substantively addresses the condition."""
+    if not isinstance(condition, str) or not isinstance(external_id, str):
+        return False
+    expected_evidence = leg.get("expected_evidence")
+    if not isinstance(expected_evidence, list):
+        return False
+    semantic_patterns = {
+        "actor": (
+            r"\b(?:assessor|actor)\b",
+            r"\b(?:responsible|performed|record)\w*\b",
+        ),
+        "scope": (r"\b(?:in-scope|scope)\b", r"\bAI\b"),
+        "population": (
+            r"\bpopulation\b",
+            r"\b(?:applicable|defined|enumerated|inventory|universe|all)\b",
+        ),
+        "sample": (
+            r"\bsample\b",
+            r"\b(?:selected|selection|basis)\b",
+            r"\bpopulation\b",
+        ),
+        "assessment_date": (
+            r"\bassessment date\b",
+            r"\b(?:date|time|timezone)\b",
+        ),
+        "evidence_date": (
+            r"\bevidence(?:-collection)? date\b",
+            r"\b(?:separate|separately)\b",
+        ),
+        "tool": (r"\b(?:tool|manual)\b", r"\b(?:version|method)\b"),
+        "provenance": (
+            r"\b(?:provenance|source artifacts?|source locator)\b",
+            r"\b(?:cited|manifest|requirement)\b",
+        ),
+        "exception": (r"\bexception\b", r"\b(?:no|approval|disposition)\b"),
+        "delivery_partner_discretion": (
+            r"\bdelivery partner\b",
+            r"\b(?:discretion|choice|method|approval)\b",
+            r"\b(?:basis|affect)\w*\b",
+        ),
+        "point_in_time_status": (
+            r"\b(?:point-in-time|assessment and evidence dates)\b",
+            r"\b(?:later state|excluded)\b",
+        ),
+    }
+    patterns = semantic_patterns.get(condition)
+    if patterns is None:
+        return False
+    control_id = leg.get("esaf_control_id")
+    allowed_auxiliary_references = {
+        "actor": {"record:external_metadata"},
+        "scope": {
+            "record:context",
+            f"manifest:{control_id}#requirement",
+        },
+        "provenance": {
+            "record:source_locator",
+            f"manifest:{control_id}#requirement",
+        },
+    }
+    prefix = f"{condition} evidence: {external_id} "
+    found_labeled_evidence = False
+    for reference in references:
+        if not isinstance(reference, str):
+            return False
+        match = re.fullmatch(r"relationship:expected_evidence:([0-9]+)", reference)
+        if match is None:
+            if (
+                reference.startswith("relationship:known_gaps:")
+                and condition == "point_in_time_status"
+            ):
+                continue
+            if reference not in allowed_auxiliary_references.get(condition, set()):
+                return False
+            continue
+        index = int(match.group(1))
+        if index >= len(expected_evidence) or not isinstance(expected_evidence[index], str):
+            return False
+        evidence = expected_evidence[index]
+        if not evidence.startswith(prefix) or not all(
+            re.search(pattern, evidence, re.IGNORECASE) for pattern in patterns
+        ):
+            return False
+        found_labeled_evidence = True
+    return found_labeled_evidence
+
+
+def _reverse_outcome_is_semantic_placeholder(outcome: str) -> bool:
+    """Reject abstract labels that do not identify a concrete ESAF outcome."""
+    semantic_scaffolding = {
+        "a",
+        "an",
+        "and",
+        "ai",
+        "assessed",
+        "condition",
+        "control",
+        "defined",
+        "documented",
+        "esaf",
+        "evidence",
+        "exact",
+        "for",
+        "implementation",
+        "in",
+        "named",
+        "normative",
+        "observed",
+        "of",
+        "on",
+        "or",
+        "outcome",
+        "relevant",
+        "requirement",
+        "result",
+        "safeguard",
+        "specific",
+        "state",
+        "technical",
+        "the",
+        "to",
+        "verified",
+    }
+    outcome_without_control_ids = re.sub(
+        r"\b[a-z]{3}(?:[-_ ./]?\d{3})\b", " ", outcome.lower()
+    )
+    concrete_terms = {
+        token
+        for token in re.findall(r"[a-z0-9]+", outcome_without_control_ids)
+        if token not in semantic_scaffolding and not token.isdigit()
+    }
+    return len(concrete_terms) < 2
+
+
+def _reverse_evidence_reference_resolves(
+    reference: str,
+    record: dict[str, object],
+    leg: dict[str, object],
+    manifest_controls: dict[str, dict[str, object]],
+) -> bool:
+    """Resolve closed reverse-profile evidence references without external I/O."""
+    record_fields = {
+        "record:context": "context",
+        "record:source_locator": "source_locator",
+        "record:external_metadata": "external_metadata",
+    }
+    if reference in record_fields:
+        return bool(record.get(record_fields[reference]))
+    relationship_fields = {
+        "relationship:rationale": "rationale",
+        "relationship:expected_evidence": "expected_evidence",
+        "relationship:prohibited_inferences": "prohibited_inferences",
+    }
+    if reference in relationship_fields:
+        return bool(leg.get(relationship_fields[reference]))
+    expected_evidence = re.fullmatch(
+        r"relationship:expected_evidence:([0-9]+)", reference
+    )
+    if expected_evidence:
+        values = leg.get("expected_evidence")
+        index = int(expected_evidence.group(1))
+        return isinstance(values, list) and index < len(values) and bool(values[index])
+    known_gap = re.fullmatch(r"relationship:known_gaps:([0-9]+)", reference)
+    if known_gap:
+        values = leg.get("known_gaps")
+        index = int(known_gap.group(1))
+        return isinstance(values, list) and index < len(values) and bool(values[index])
+    manifest = re.fullmatch(r"manifest:([A-Z]{3}-[0-9]{3})#requirement", reference)
+    if manifest:
+        return (
+            manifest.group(1) == leg.get("esaf_control_id")
+            and manifest.group(1) in manifest_controls
+        )
+    return False
+
+
+def _has_evidence_based_na(
+    condition: object, references: list[object], leg: dict[str, object]
+) -> bool:
+    if not isinstance(condition, str) or len(references) < 2:
+        return False
+    gaps = leg.get("known_gaps")
+    if not isinstance(gaps, list):
+        return False
+    prefix = f"{condition} not applicable because "
+    for reference in references:
+        if not isinstance(reference, str):
+            continue
+        match = re.fullmatch(r"relationship:known_gaps:([0-9]+)", reference)
+        if not match:
+            continue
+        index = int(match.group(1))
+        if index < len(gaps) and isinstance(gaps[index], str):
+            remainder = gaps[index].removeprefix(prefix)
+            if gaps[index].startswith(prefix) and len(remainder.strip()) >= 20:
+                return True
+    return False
 
 
 def _complete_reviewer(value: object) -> bool:

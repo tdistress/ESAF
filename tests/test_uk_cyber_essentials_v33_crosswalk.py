@@ -681,7 +681,7 @@ class UkCyberEssentialsV33CrosswalkTests(unittest.TestCase):
             or "snapshot path disagrees with metadata" in error
         ]
         self.assertEqual(path_errors, [])
-        self.assertEqual(build_catalog(result)["counts"]["mapping_sets"], 2)
+        self.assertEqual(build_catalog(result)["counts"]["mapping_sets"], 3)
 
     def test_landing_page_freezes_source_rights_and_draft_boundary(self) -> None:
         text = (ROOT / "crosswalks/uk-cyber-essentials.md").read_text(encoding="utf-8")
