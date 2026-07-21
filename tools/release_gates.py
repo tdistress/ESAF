@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import argparse
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 import json
 from pathlib import Path
 import re
@@ -50,6 +50,17 @@ POST_MERGE_COMMANDS = (
     "cache_count",
     "clean_status",
 )
+REPOSITORY_SCOPE = "complete_git_tracked_repository"
+REQUIRED_SCOPE_INPUTS = (
+    "VERSION.md",
+    "project/RELEASE_PLAN.md",
+    "crosswalks/catalog.json",
+)
+RELEASE_PLAN_MARKERS = (
+    "## 0.4-alpha readiness",
+    "Architecture content is complete only at Draft level. Publication gates remain Open.",
+    "0.4-alpha must not be tagged or represented as released.",
+)
 
 
 def load_front_matter(path: Path) -> dict[str, object]:
@@ -75,6 +86,22 @@ def flattened_items(value: object, prefix: str = ""):
             yield from flattened_items(child, f"{prefix}[{index}]")
 
 
+def _date_text(value: object) -> str | None:
+    if isinstance(value, datetime):
+        return value.date().isoformat()
+    if isinstance(value, date):
+        return value.isoformat()
+    return value if isinstance(value, str) else None
+
+
+def _tracked_paths(root: Path) -> set[str]:
+    result = subprocess.run(
+        ["git", "ls-files", "-z"], cwd=root, check=True,
+        capture_output=True,
+    )
+    return {path for path in result.stdout.decode("utf-8").split("\0") if path}
+
+
 def validate_record(root: Path, record: dict[str, object]) -> list[str]:
     errors: list[str] = []
     if record.get("release") != "0.4-alpha":
@@ -83,6 +110,8 @@ def validate_record(root: Path, record: dict[str, object]) -> list[str]:
         errors.append("tag shall equal v0.4-alpha")
     if record.get("issue") != 39:
         errors.append("issue shall equal 39")
+    if record.get("repository_scope") != REPOSITORY_SCOPE:
+        errors.append("repository scope shall equal complete_git_tracked_repository")
     if record.get("phase") not in {"evidence_candidate", "closure_candidate"}:
         errors.append("phase shall be evidence_candidate or closure_candidate")
     publication = record.get("publication")
@@ -90,8 +119,19 @@ def validate_record(root: Path, record: dict[str, object]) -> list[str]:
         errors.append("publication condition is invalid")
     elif record.get("phase") == "evidence_candidate" and publication.get("date") is not None:
         errors.append("evidence candidate shall not have a publication date")
-    elif record.get("phase") == "closure_candidate" and not re.fullmatch(r"\d{4}-\d{2}-\d{2}", str(publication.get("date", ""))):
+    elif record.get("phase") == "closure_candidate" and not re.fullmatch(r"\d{4}-\d{2}-\d{2}", _date_text(publication.get("date")) or ""):
         errors.append("closure candidate shall have an ISO publication date")
+    version = (root / "VERSION.md").read_text(encoding="utf-8")
+    if "Current Version: **0.4-alpha**" not in version or "Status: **Working Draft**" not in version:
+        errors.append("VERSION.md current version shall equal 0.4-alpha")
+    release_plan = (root / "project/RELEASE_PLAN.md").read_text(encoding="utf-8")
+    if not all(marker in release_plan for marker in RELEASE_PLAN_MARKERS):
+        errors.append("project/RELEASE_PLAN.md shall preserve the 0.4-alpha Draft release plan")
+    try:
+        if not set(REQUIRED_SCOPE_INPUTS).issubset(_tracked_paths(root)):
+            errors.append("required release-scope inputs shall be Git-tracked")
+    except (OSError, subprocess.CalledProcessError, UnicodeDecodeError):
+        errors.append("repository scope cannot be verified from Git-tracked files")
     if tuple(sorted(record.get("mapping_sets", []))) != tuple(sorted(EXPECTED_MAPPING_SETS)):
         errors.append("mapping_sets shall equal the three unique Draft snapshots")
     gates = record.get("gates")
@@ -159,9 +199,10 @@ def _candidate_verdict(
         return
     if value.get("sha") != closure_head:
         errors.append(f"{name} approval is not bound to closure head")
-    reviewer = value.get("reviewer")
-    if not isinstance(reviewer, str) or not reviewer.strip():
-        errors.append(f"{name} reviewer shall be named")
+    identity_field = "approver" if scope or governance else "reviewer"
+    identity = value.get(identity_field)
+    if not isinstance(identity, str) or not identity.strip():
+        errors.append(f"{name} {identity_field} shall be named")
     if scope:
         role = value.get("role")
         if not isinstance(role, str) or not role.strip():
@@ -190,7 +231,7 @@ def validate_external_evidence(
     publication = record.get("publication")
     if not isinstance(publication, dict) or publication.get("condition") != PUBLICATION_CONDITION:
         errors.append("publication condition is invalid")
-    elif publication.get("date") != _today():
+    elif _date_text(publication.get("date")) != _today():
         errors.append("conditional publication date shall equal current UTC date")
     gates = record.get("gates")
     if not isinstance(gates, dict):
@@ -340,6 +381,8 @@ def main(argv: list[str] | None = None) -> int:
     record_path = root / "docs/superpowers/reviews/2026-07-21-v04-alpha-publication-readiness.md"
     record = load_front_matter(record_path)
     errors = validate_record(root, record)
+    if record.get("phase") == "closure_candidate" and not args.baseline_ref:
+        errors.append("baseline-ref is required for closure candidate")
     if args.baseline_ref:
         try:
             errors.extend(validate_transition(_load_baseline(root, args.baseline_ref), record))

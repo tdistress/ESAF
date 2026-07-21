@@ -1,9 +1,14 @@
 from copy import deepcopy
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 import json
 from pathlib import Path
+import shutil
+import subprocess
+import sys
 import tempfile
 import unittest
+
+import yaml
 
 from tools.release_gates import (
     EXPECTED_MAPPING_SETS,
@@ -18,12 +23,24 @@ ROOT = Path(__file__).resolve().parents[1]
 RECORD = ROOT / "docs/superpowers/reviews/2026-07-21-v04-alpha-publication-readiness.md"
 
 
+def write_release_scope_fixture(root: Path) -> None:
+    (root / "crosswalks").mkdir(parents=True)
+    (root / "project").mkdir(parents=True)
+    shutil.copy2(ROOT / "VERSION.md", root / "VERSION.md")
+    shutil.copy2(ROOT / "project/RELEASE_PLAN.md", root / "project/RELEASE_PLAN.md")
+    shutil.copy2(ROOT / "crosswalks/catalog.json", root / "crosswalks/catalog.json")
+    subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+    subprocess.run(["git", "config", "core.autocrlf", "false"], cwd=root, check=True)
+    subprocess.run(["git", "add", "VERSION.md", "project/RELEASE_PLAN.md", "crosswalks/catalog.json"], cwd=root, check=True)
+
+
 def valid_record() -> dict[str, object]:
     return {
         "release": "0.4-alpha",
         "phase": "evidence_candidate",
         "tag": "v0.4-alpha",
         "issue": 39,
+        "repository_scope": "complete_git_tracked_repository",
         "publication": {
             "date": None,
             "condition": "remote_annotated_tag_matches_exact_validated_commit",
@@ -70,12 +87,17 @@ def approved_external_evidence(closure: str, merge: str | None = None) -> dict[s
 
     evidence: dict[str, object] = {
         "closure_head": closure,
-        "scope": {**verdict("scope-approver", 1), "role": "release-scope approver"},
+        "scope": {
+            **verdict("scope-reviewer", 1),
+            "approver": "scope-approver",
+            "role": "release-scope approver",
+        },
         "technical": verdict("technical-reviewer", 2),
         "editorial": verdict("editorial-reviewer", 3),
         "rendering": verdict("rendering-reviewer", 4),
         "governance": {
-            **verdict("governance-approver", 5),
+            **verdict("governance-reviewer", 5),
+            "approver": "governance-approver",
             "authority": "Steering Committee",
         },
         "mapping_reviews": [
@@ -121,6 +143,70 @@ def approved_external_evidence(closure: str, merge: str | None = None) -> dict[s
 class ReleaseGateTests(unittest.TestCase):
     def test_authoritative_record_is_valid(self) -> None:
         self.assertEqual(validate_record(ROOT, load_front_matter(RECORD)), [])
+
+    def test_record_requires_complete_release_scope_inputs(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_release_scope_fixture(root)
+            cases = (
+                (
+                    "version",
+                    lambda record: (root / "VERSION.md").write_text("# ESAF Version\n\nCurrent Version: **0.5-alpha**\n", encoding="utf-8"),
+                    "VERSION.md current version shall equal 0.4-alpha",
+                ),
+                (
+                    "plan",
+                    lambda record: (root / "project/RELEASE_PLAN.md").write_text("# Release Plan\n", encoding="utf-8"),
+                    "project/RELEASE_PLAN.md shall preserve the 0.4-alpha Draft release plan",
+                ),
+                (
+                    "scope",
+                    lambda record: record.__setitem__("repository_scope", "mapping_sets_only"),
+                    "repository scope shall equal complete_git_tracked_repository",
+                ),
+            )
+            for name, mutate, diagnostic in cases:
+                with self.subTest(name=name):
+                    record = valid_record()
+                    shutil.copy2(ROOT / "VERSION.md", root / "VERSION.md")
+                    shutil.copy2(ROOT / "project/RELEASE_PLAN.md", root / "project/RELEASE_PLAN.md")
+                    mutate(record)
+                    self.assertIn(diagnostic, validate_record(root, record))
+
+    def test_unquoted_yaml_closure_date_is_normalized_for_record_and_evidence(self) -> None:
+        record = closure_record()
+        date_text = datetime.now(timezone.utc).date().isoformat()
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "record.md"
+            path.write_text(
+                "---\n" + yaml.safe_dump(record, sort_keys=False).replace(f"'{date_text}'", date_text) + "---\n",
+                encoding="utf-8",
+            )
+            loaded = load_front_matter(path)
+        self.assertIsInstance(loaded["publication"]["date"], date)
+        self.assertEqual(validate_record(ROOT, loaded), [])
+        self.assertEqual(
+            validate_external_evidence(loaded, approved_external_evidence("d" * 40), "d" * 40, "closure"),
+            [],
+        )
+
+    def test_closure_cli_requires_baseline_ref(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_release_scope_fixture(root)
+            (root / "tools").mkdir()
+            (root / "docs/superpowers/reviews").mkdir(parents=True)
+            shutil.copy2(ROOT / "tools/release_gates.py", root / "tools/release_gates.py")
+            record_path = root / "docs/superpowers/reviews/2026-07-21-v04-alpha-publication-readiness.md"
+            record_path.write_text("---\n" + yaml.safe_dump(closure_record(), sort_keys=False) + "---\n", encoding="utf-8")
+            result = subprocess.run(
+                [sys.executable, str(root / "tools/release_gates.py"), "--check"],
+                cwd=root,
+                capture_output=True,
+                text=True,
+            )
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("baseline-ref is required for closure candidate", result.stdout)
 
     def test_record_rejects_self_referential_sha_fields_and_values(self) -> None:
         for key, value in (
@@ -170,6 +256,17 @@ class ReleaseGateTests(unittest.TestCase):
         errors = validate_external_evidence(record, evidence, expected_merge, "taggable")
         self.assertIn("governance approval is not bound to closure head", errors)
         self.assertIn("three qualified mapping reviews are required", errors)
+
+    def test_scope_and_governance_require_named_approvers(self) -> None:
+        closure = "d" * 40
+        for name, mutate, diagnostic in (
+            ("scope", lambda evidence: evidence["scope"].__setitem__("approver", ""), "scope approver shall be named"),
+            ("governance", lambda evidence: evidence["governance"].pop("approver"), "governance approver shall be named"),
+        ):
+            with self.subTest(name=name):
+                evidence = approved_external_evidence(closure)
+                mutate(evidence)
+                self.assertIn(diagnostic, validate_external_evidence(closure_record(), evidence, closure, "closure"))
 
     def test_taggable_phase_preserves_distinct_candidate_and_merge_domains(self) -> None:
         record = closure_record()

@@ -3,6 +3,7 @@ release: 0.4-alpha
 phase: evidence_candidate
 tag: v0.4-alpha
 issue: 39
+repository_scope: complete_git_tracked_repository
 publication:
   date: null
   condition: remote_annotated_tag_matches_exact_validated_commit
@@ -28,6 +29,7 @@ gates:
 This readiness record covers 91 controls in 16 families, 7 Draft architecture
 patterns, and 3 Draft mapping sets. The mapping inventory contains 404
 provisions, 81 relationships, and 325 negative dispositions.
+It applies to the complete Git-tracked ESAF repository, not a selected subset.
 
 ## Lifecycle limitations
 
