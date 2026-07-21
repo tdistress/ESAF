@@ -27,6 +27,23 @@ class MermaidInventoryTests(unittest.TestCase):
         for item in first:
             self.assertEqual(item.digest, sha256(item.source.encode("utf-8")).hexdigest())
 
+    def test_arc_p110_recovery_paths_do_not_use_opposing_labeled_edges(self) -> None:
+        blocks = extract_blocks((ROOT / "architectures/patterns/ARC-P110.md").read_text(encoding="utf-8"))
+        degraded_mode = blocks[4]
+        self.assertNotIn("Recovery --> SafeStop:", degraded_mode)
+        self.assertIn("Recovery --> RecoveryValidation:", degraded_mode)
+        self.assertIn("RecoveryValidation --> SafeStop:", degraded_mode)
+
+    def test_arc_p150_subplane_edges_terminate_at_named_nodes(self) -> None:
+        blocks = extract_blocks((ROOT / "architectures/patterns/ARC-P150.md").read_text(encoding="utf-8"))
+        component_view = blocks[2]
+        self.assertNotIn('subgraph OPS["Operations, administration, and evidence plane"]', component_view)
+        self.assertIn('OPS["Operations, administration, and evidence plane"]', component_view)
+        self.assertIn('OPS --- AD', component_view)
+        self.assertIn('OPS --- EV', component_view)
+        self.assertIn('AD -. "configuration, continuity, containment" .-> G', component_view)
+        self.assertIn('O -. "minimized event" .-> EV', component_view)
+
     def test_render_inputs_are_outside_repository_and_exact(self) -> None:
         blocks = discover(ROOT)
         with tempfile.TemporaryDirectory() as directory:

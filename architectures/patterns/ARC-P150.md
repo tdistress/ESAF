@@ -109,13 +109,13 @@ flowchart TB
   X["Execution and adapter plane: contract validator, dispatch, adapters"]
   D["Durable delivery and state plane: durable state, queues, idempotency"]
   O["Output and delivery plane: output validator and delivery controller"]
+  OPS["Operations, administration, and evidence plane"]
+  AD["Operations and administration subplane: privileged interface and trust root"]
+  EV["Evidence export subplane: one-way constrained interface and independent trust root"]
   G --> A --> X --> D --> O
   X --> O
-  subgraph OPS["Operations, administration, and evidence plane"]
-    direction LR
-    AD["Operations and administration subplane: privileged interface and trust root"]
-    EV["Evidence export subplane: one-way constrained interface and independent trust root"]
-  end
+  OPS --- AD
+  OPS --- EV
   AD -. "configuration, continuity, containment" .-> G
   AD -. "separately protected administration" .-> A
   A -. "minimized event" .-> EV
