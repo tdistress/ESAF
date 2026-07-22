@@ -15,6 +15,11 @@ MERMAID_RE = re.compile(r"```mermaid\r?\n(.*?)\r?\n```", re.DOTALL)
 RELEASE_LEDGER = Path("docs/superpowers/reviews/2026-07-21-v04-alpha-mermaid-rendering.md")
 APPROVED_STATUS = "Approved on candidate content; pending final exact-head recheck"
 PINNED_RENDERER = "@mermaid-js/mermaid-cli@11.16.0"
+STATUS_FIELD_RE = re.compile(r"^Status:\s*(?P<value>.*?)\s*$", re.MULTILINE)
+RENDERER_FIELD_RE = re.compile(
+    r"^Renderer version:\s*`(?P<value>[^`]+)`\s*$", re.MULTILINE
+)
+PLACEHOLDER_REVIEWERS = {"", "pending", "tbd", "todo", "unknown", "n/a", "na", "reviewer"}
 LEDGER_ROW_RE = re.compile(
     r"^\| `(?P<path>[^`]+)` \| (?P<index>\d+) \| `(?P<digest>[0-9a-f]{64})` \| "
     r"(?P<diagram_type>[^|]+) \| (?P<render>[^|]+) \| (?P<readability>[^|]+) \| "
@@ -125,16 +130,18 @@ def check_record(blocks: list[MermaidBlock], record: Path) -> list[str]:
         for row in observed
     ]
     failures = []
-    if text.count(f"Status: {APPROVED_STATUS}") != 1:
+    statuses = [match.group("value") for match in STATUS_FIELD_RE.finditer(text)]
+    if statuses != [APPROVED_STATUS]:
         failures.append("ledger status is not approved on candidate content")
-    if text.count(f"Renderer version: `{PINNED_RENDERER}`") != 1:
+    renderers = [match.group("value") for match in RENDERER_FIELD_RE.finditer(text)]
+    if renderers != [PINNED_RENDERER]:
         failures.append("renderer version is not pinned to the publication candidate")
     if actual != expected:
         failures.append("ledger rows do not exactly match the current Mermaid inventory")
     for row in observed:
         if row["render"].strip() != "Pass" or row["readability"].strip() != "Pass":
             failures.append(f"{row['path']} block {row['index']} is not fully reviewed")
-        if row["reviewer"].strip() in {"", "Pending"}:
+        if row["reviewer"].strip().casefold() in PLACEHOLDER_REVIEWERS:
             failures.append(f"{row['path']} block {row['index']} reviewer identity is missing")
     return failures
 

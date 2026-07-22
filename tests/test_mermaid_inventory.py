@@ -163,6 +163,32 @@ class MermaidInventoryTests(unittest.TestCase):
                     record.write_text(passing_record(blocks).replace(before, after), encoding="utf-8")
                     self.assertIn(diagnostic, "\n".join(check_record(blocks, record)))
 
+    def test_check_record_rejects_conflicting_metadata_and_placeholder_reviewers(self) -> None:
+        blocks = discover(ROOT)[:1]
+        mutations = (
+            (
+                f"Status: {APPROVED_STATUS}",
+                f"Status: Pending exact-head rendering review\nStatus: {APPROVED_STATUS}",
+                "ledger status is not approved",
+            ),
+            (
+                f"Renderer version: `{PINNED_RENDERER}`",
+                "Renderer version: `@mermaid-js/mermaid-cli@11.15.0`\n"
+                f"Renderer version: `{PINNED_RENDERER}`",
+                "renderer version is not pinned",
+            ),
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            record = Path(directory) / "ledger.md"
+            for before, after, diagnostic in mutations:
+                with self.subTest(diagnostic=diagnostic):
+                    record.write_text(passing_record(blocks).replace(before, after), encoding="utf-8")
+                    self.assertIn(diagnostic, "\n".join(check_record(blocks, record)))
+            for placeholder in ("Pending", "TBD", "TODO", "unknown", "n/a", "Reviewer"):
+                with self.subTest(placeholder=placeholder):
+                    record.write_text(passing_record(blocks, placeholder), encoding="utf-8")
+                    self.assertIn("reviewer identity is missing", "\n".join(check_record(blocks, record)))
+
     def test_check_record_rejects_mismatched_diagram_type(self) -> None:
         blocks = discover(ROOT)[:1]
         with tempfile.TemporaryDirectory() as directory:
