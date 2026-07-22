@@ -13,9 +13,9 @@ mapping_sets:
   - uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0
 gates:
   scope: {state: in_review, evidence: []}
-  technical: {state: open, evidence: []}
-  editorial: {state: open, evidence: []}
-  cross_reference_rendering: {state: open, evidence: []}
+  technical: {state: in_review, evidence: []}
+  editorial: {state: in_review, evidence: []}
+  cross_reference_rendering: {state: in_review, evidence: []}
   standards_mapping: {state: open, evidence: []}
   release_metadata: {state: in_review, evidence: []}
   governance: {state: open, evidence: []}
@@ -52,3 +52,8 @@ reassessed.
 
 The record is an evidence candidate. It remains open until every required gate
 is ready or closed and independently evidenced for a closure candidate.
+
+Candidate-content technical, editorial, and rendering reviews are complete.
+Their gates remain `in_review` until exact-head external evidence is bound to a
+closure candidate. Qualified mapping, authorized scope, governance, post-merge,
+publication, and tag conditions remain outstanding.
