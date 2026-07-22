@@ -13,9 +13,10 @@ LEDGER = ROOT / "docs/superpowers/reviews/2026-07-21-v04-alpha-mermaid-rendering
 SCRIPT = ROOT / "tools/mermaid_inventory.py"
 APPROVED_STATUS = "Approved on candidate content; pending final exact-head recheck"
 PINNED_RENDERER = "@mermaid-js/mermaid-cli@11.16.0"
+SYNTHETIC_REVIEWER = "Avery Chen (synthetic reviewer)"
 
 
-def passing_record(blocks, reviewer: str = "Independent reviewer") -> str:
+def passing_record(blocks, reviewer: str = SYNTHETIC_REVIEWER) -> str:
     rows = ledger_rows(blocks).replace(
         "| Pending | Pending | Pending |",
         f"| Pass | Pass | {reviewer} |",
@@ -144,7 +145,7 @@ class MermaidInventoryTests(unittest.TestCase):
             record = Path(directory) / "ledger.md"
             for disposition in ("| Pass | Pending | Reviewer |", "| Pending | Pass | Reviewer |"):
                 record.write_text(
-                    passing_record(block).replace("| Pass | Pass | Independent reviewer |", disposition),
+                    passing_record(block).replace(f"| Pass | Pass | {SYNTHETIC_REVIEWER} |", disposition),
                     encoding="utf-8",
                 )
                 self.assertIn("not fully reviewed", "\n".join(check_record(block, record)))
@@ -154,7 +155,7 @@ class MermaidInventoryTests(unittest.TestCase):
         mutations = (
             (APPROVED_STATUS, "Pending exact-head rendering review", "ledger status is not approved"),
             (PINNED_RENDERER, "@mermaid-js/mermaid-cli@11.15.0", "renderer version is not pinned"),
-            ("Independent reviewer", "Pending", "reviewer identity is missing"),
+            (SYNTHETIC_REVIEWER, "Pending", "reviewer identity is missing"),
         )
         with tempfile.TemporaryDirectory() as directory:
             record = Path(directory) / "ledger.md"
@@ -184,7 +185,20 @@ class MermaidInventoryTests(unittest.TestCase):
                 with self.subTest(diagnostic=diagnostic):
                     record.write_text(passing_record(blocks).replace(before, after), encoding="utf-8")
                     self.assertIn(diagnostic, "\n".join(check_record(blocks, record)))
-            for placeholder in ("Pending", "TBD", "TODO", "unknown", "n/a", "Reviewer"):
+            for placeholder in (
+                "Pending",
+                "TBD",
+                "TODO",
+                "unknown",
+                "n/a",
+                "Reviewer",
+                "Independent reviewer",
+                "INDEPENDENT REVIEWER",
+                "Technical reviewer",
+                "Independent technical reviewer",
+                "Senior rendering reviewer",
+                "Reviewer 1",
+            ):
                 with self.subTest(placeholder=placeholder):
                     record.write_text(passing_record(blocks, placeholder), encoding="utf-8")
                     self.assertIn("reviewer identity is missing", "\n".join(check_record(blocks, record)))

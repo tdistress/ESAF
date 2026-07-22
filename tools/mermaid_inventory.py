@@ -20,6 +20,10 @@ RENDERER_FIELD_RE = re.compile(
     r"^Renderer version:\s*`(?P<value>[^`]+)`\s*$", re.MULTILINE
 )
 PLACEHOLDER_REVIEWERS = {"", "pending", "tbd", "todo", "unknown", "n/a", "na", "reviewer"}
+GENERIC_REVIEWER_RE = re.compile(
+    r"^(?:(?:independent|lead|senior|technical|editorial|renderer|rendering|publication|evidence)\s+)*"
+    r"reviewer(?:\s+\d+)?$"
+)
 LEDGER_ROW_RE = re.compile(
     r"^\| `(?P<path>[^`]+)` \| (?P<index>\d+) \| `(?P<digest>[0-9a-f]{64})` \| "
     r"(?P<diagram_type>[^|]+) \| (?P<render>[^|]+) \| (?P<readability>[^|]+) \| "
@@ -141,7 +145,8 @@ def check_record(blocks: list[MermaidBlock], record: Path) -> list[str]:
     for row in observed:
         if row["render"].strip() != "Pass" or row["readability"].strip() != "Pass":
             failures.append(f"{row['path']} block {row['index']} is not fully reviewed")
-        if row["reviewer"].strip().casefold() in PLACEHOLDER_REVIEWERS:
+        reviewer = " ".join(row["reviewer"].split()).casefold()
+        if reviewer in PLACEHOLDER_REVIEWERS or GENERIC_REVIEWER_RE.fullmatch(reviewer):
             failures.append(f"{row['path']} block {row['index']} reviewer identity is missing")
     return failures
 
