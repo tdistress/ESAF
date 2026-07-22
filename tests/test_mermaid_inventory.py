@@ -115,7 +115,7 @@ class MermaidInventoryTests(unittest.TestCase):
                     }
                 )
             self.assertEqual(json.loads(inventory.read_text(encoding="utf-8")), expected_rows)
-            self.assertEqual(list(output.glob("*.mmd")), [output / row["input"] for row in expected_rows])
+            self.assertEqual(sorted(output.glob("*.mmd"), key=lambda path: path.name), [output / row["input"] for row in expected_rows])
 
     def test_check_record_accepts_exact_passing_rows(self) -> None:
         blocks = discover(ROOT)[:2]
