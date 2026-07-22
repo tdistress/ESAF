@@ -59,7 +59,7 @@ REQUIRED_SCOPE_INPUTS = (
 RELEASE_PLAN_MARKERS = (
     "## 0.4-alpha readiness",
     "Architecture content is complete only at Draft level. Publication gates remain Open.",
-    "0.4-alpha must not be tagged or represented as released.",
+    "0.4-alpha shall not be tagged or represented as released.",
 )
 
 
@@ -263,9 +263,7 @@ def validate_external_evidence(
     _candidate_verdict(errors, "governance", evidence.get("governance"), closure_head, governance=True)
     governance = evidence.get("governance")
     if isinstance(governance, dict):
-        authority = governance.get("authority")
-        delegated = authority == "documented delegate" and _https(governance.get("delegation_url")) and "governance.md" in str(governance.get("delegation_url")).casefold()
-        if authority != "Steering Committee" and not delegated:
+        if governance.get("authority") != "Steering Committee":
             errors.append("governance authority is not authorized")
 
     mapping_reviews = evidence.get("mapping_reviews")

@@ -268,6 +268,18 @@ class ReleaseGateTests(unittest.TestCase):
                 mutate(evidence)
                 self.assertIn(diagnostic, validate_external_evidence(closure_record(), evidence, closure, "closure"))
 
+    def test_governance_rejects_undocumented_delegate_authority(self) -> None:
+        closure = "d" * 40
+        evidence = approved_external_evidence(closure)
+        evidence["governance"]["authority"] = "documented delegate"
+        evidence["governance"]["delegation_url"] = (
+            "https://github.com/tdistress/ESAF/blob/main/GOVERNANCE.md"
+        )
+        self.assertIn(
+            "governance authority is not authorized",
+            validate_external_evidence(closure_record(), evidence, closure, "closure"),
+        )
+
     def test_taggable_phase_preserves_distinct_candidate_and_merge_domains(self) -> None:
         record = closure_record()
         closure = "d" * 40

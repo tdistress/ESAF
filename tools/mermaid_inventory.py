@@ -13,9 +13,12 @@ import tempfile
 
 MERMAID_RE = re.compile(r"```mermaid\r?\n(.*?)\r?\n```", re.DOTALL)
 RELEASE_LEDGER = Path("docs/superpowers/reviews/2026-07-21-v04-alpha-mermaid-rendering.md")
+APPROVED_STATUS = "Approved on candidate content; pending final exact-head recheck"
+PINNED_RENDERER = "@mermaid-js/mermaid-cli@11.16.0"
 LEDGER_ROW_RE = re.compile(
     r"^\| `(?P<path>[^`]+)` \| (?P<index>\d+) \| `(?P<digest>[0-9a-f]{64})` \| "
-    r"(?P<render>[^|]+) \| (?P<readability>[^|]+) \| (?P<reviewer>[^|]+) \|$"
+    r"(?P<diagram_type>[^|]+) \| (?P<render>[^|]+) \| (?P<readability>[^|]+) \| "
+    r"(?P<reviewer>[^|]+) \|$"
 )
 
 
@@ -24,11 +27,20 @@ class MermaidBlock:
     path: str
     index: int
     digest: str
+    diagram_type: str
     source: str
 
 
 def extract_blocks(text: str) -> list[str]:
     return [match.group(1).replace("\r\n", "\n") for match in MERMAID_RE.finditer(text)]
+
+
+def diagram_type(source: str) -> str:
+    for line in source.splitlines():
+        candidate = line.strip()
+        if candidate and not candidate.startswith("%%"):
+            return candidate.split(maxsplit=1)[0]
+    raise ValueError("Mermaid block does not declare a diagram type")
 
 
 def tracked_markdown(root: Path) -> list[str]:
@@ -53,6 +65,7 @@ def discover(root: Path) -> list[MermaidBlock]:
                     relative.replace("\\", "/"),
                     index,
                     sha256(source.encode("utf-8")).hexdigest(),
+                    diagram_type(source),
                     source,
                 )
             )
@@ -90,25 +103,39 @@ def write_render_inputs(blocks: list[MermaidBlock], output_dir: Path) -> Path:
 
 def ledger_rows(blocks: list[MermaidBlock]) -> str:
     return "\n".join(
-        f"| `{block.path}` | {block.index} | `{block.digest}` | Pending | Pending | Pending |"
+        f"| `{block.path}` | {block.index} | `{block.digest}` | {block.diagram_type} | "
+        "Pending | Pending | Pending |"
         for block in blocks
     )
 
 
 def check_record(blocks: list[MermaidBlock], record: Path) -> list[str]:
+    text = record.read_text(encoding="utf-8")
     observed = []
-    for line in record.read_text(encoding="utf-8").splitlines():
+    for line in text.splitlines():
         match = LEDGER_ROW_RE.match(line)
         if match:
             observed.append(match.groupdict())
-    expected = [(block.path, str(block.index), block.digest) for block in blocks]
-    actual = [(row["path"], row["index"], row["digest"]) for row in observed]
+    expected = [
+        (block.path, str(block.index), block.digest, block.diagram_type)
+        for block in blocks
+    ]
+    actual = [
+        (row["path"], row["index"], row["digest"], row["diagram_type"].strip())
+        for row in observed
+    ]
     failures = []
+    if text.count(f"Status: {APPROVED_STATUS}") != 1:
+        failures.append("ledger status is not approved on candidate content")
+    if text.count(f"Renderer version: `{PINNED_RENDERER}`") != 1:
+        failures.append("renderer version is not pinned to the publication candidate")
     if actual != expected:
         failures.append("ledger rows do not exactly match the current Mermaid inventory")
     for row in observed:
         if row["render"].strip() != "Pass" or row["readability"].strip() != "Pass":
             failures.append(f"{row['path']} block {row['index']} is not fully reviewed")
+        if row["reviewer"].strip() in {"", "Pending"}:
+            failures.append(f"{row['path']} block {row['index']} reviewer identity is missing")
     return failures
 
 

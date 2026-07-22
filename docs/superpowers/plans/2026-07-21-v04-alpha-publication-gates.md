@@ -18,7 +18,7 @@
 - Set `PYTHONDONTWRITEBYTECODE=1` for every Python gate and leave no `__pycache__`, renderer output, or scratch evidence in the repository.
 - Pin Mermaid rendering to exactly `@mermaid-js/mermaid-cli@11.16.0` and render all 23 baseline blocks; any added block increases that exact candidate count.
 - Store renderer outputs and external evidence JSON beneath a verified system temporary directory outside the repository.
-- Do not treat repository ownership as governance authority. Publication approval shall identify the Steering Committee role or a documented authorized delegate under `GOVERNANCE.md`.
+- Do not treat repository ownership as governance authority. Publication approval shall identify the Steering Committee role assigned by `GOVERNANCE.md`.
 - Qualified mapping review shall identify reviewer, qualification, scope, exact closure SHA, date, and disposition; digest-backed reaffirmation is allowed only when all mapping-controlled bytes are identical.
 - Any tracked candidate change invalidates affected exact-head results and requires the specified reviews and gates to be rerun.
 - Resolve every Critical and Important finding before merge. Record accepted Minor findings with owner and rationale.
@@ -414,7 +414,7 @@ Candidate-bound evidence shall contain:
 - `closure_head`;
 - `scope` with `sha`, named approver, role, UTC date, `disposition: approved`, and HTTPS URL;
 - `technical`, `editorial`, and `rendering` objects with `sha`, reviewer, UTC date, `disposition: approved`, HTTPS URL, `critical: 0`, and `important: 0`;
-- `governance` with `sha`, named approver, UTC date, `disposition: approved`, and HTTPS URL; `authority` shall equal `Steering Committee`, or shall equal `documented delegate` with a separate HTTPS `delegation_url` resolving to the delegation under `GOVERNANCE.md`;
+- `governance` with `sha`, named approver, UTC date, `disposition: approved`, and HTTPS URL; `authority` shall equal `Steering Committee` as assigned by `GOVERNANCE.md`;
 - exactly three qualified `mapping_reviews`, one per `EXPECTED_MAPPING_SETS`, each with candidate SHA, reviewer, qualification, UTC date, `disposition: approved`, and HTTPS URL;
 - `github_checks.expected` equal to `['Validate ESAF sources']` and `github_checks.observed` containing exactly that named check with candidate SHA, `conclusion: success`, and HTTPS URL; and
 - `merge_state` with candidate SHA, `mergeable: true`, and `state: clean`.
@@ -454,7 +454,7 @@ gates:
 ---
 ```
 
-The prose shall state the derived baseline totals: 91 controls, 16 families, 7 Draft architecture patterns, 3 Draft mapping sets, 404 provisions, 81 relationships, and 325 negative dispositions. It shall not include a candidate, reviewed, merge, or tag commit ID.
+The prose shall state the derived baseline totals: 91 controls, 16 families, 7 Draft architecture patterns, 3 Draft mapping sets, 404 provisions, 81 relationship legs, and 325 negative dispositions. It shall not include a candidate, reviewed, merge, or tag commit ID.
 
 - [ ] **Step 5: Document the validator and run GREEN**
 
@@ -501,7 +501,7 @@ git commit -m "Define 0.4-alpha release gate contract"
 
 **Interfaces:**
 - Consumes: all Git-tracked `*.md` files returned by `git ls-files`.
-- Produces: immutable `MermaidBlock(path: str, index: int, digest: str, source: str)`.
+- Produces: immutable `MermaidBlock(path: str, index: int, digest: str, diagram_type: str, source: str)`.
 - Produces: `discover(root: Path) -> list[MermaidBlock]` sorted by path then block index.
 - Produces: `write_render_inputs(blocks: list[MermaidBlock], output_dir: Path) -> Path` with one `.mmd` per block and `inventory.json`.
 - Produces CLI: `python tools/mermaid_inventory.py --output-dir DIR --write` and `--check-record PATH`.
@@ -579,11 +579,20 @@ class MermaidBlock:
     path: str
     index: int
     digest: str
+    diagram_type: str
     source: str
 
 
 def extract_blocks(text: str) -> list[str]:
     return [match.group(1).replace("\r\n", "\n") for match in MERMAID_RE.finditer(text)]
+
+
+def diagram_type(source: str) -> str:
+    for line in source.splitlines():
+        candidate = line.strip()
+        if candidate and not candidate.startswith("%%"):
+            return candidate.split(maxsplit=1)[0]
+    raise ValueError("Mermaid block does not declare a diagram type")
 
 
 def tracked_markdown(root: Path) -> list[str]:
@@ -603,7 +612,7 @@ def discover(root: Path) -> list[MermaidBlock]:
     for relative in tracked_markdown(root):
         text = (root / relative).read_text(encoding="utf-8")
         for index, source in enumerate(extract_blocks(text), start=1):
-            blocks.append(MermaidBlock(relative.replace("\\", "/"), index, sha256(source.encode("utf-8")).hexdigest(), source))
+            blocks.append(MermaidBlock(relative.replace("\\", "/"), index, sha256(source.encode("utf-8")).hexdigest(), diagram_type(source), source))
     return blocks
 
 
@@ -623,16 +632,16 @@ def write_render_inputs(blocks: list[MermaidBlock], output_dir: Path) -> Path:
     return inventory
 ```
 
-The CLI shall require `--write`, reject a pre-existing nonempty output directory, call `discover`, call `write_render_inputs`, and print the derived block count with the resolved output directory. `--check-record` shall parse the tracked Markdown ledger table and require exact `(path, index, digest)` equality plus `Render == Pass` and `Readability == Pass` for every current block.
+The CLI shall require `--write`, reject a pre-existing nonempty output directory, call `discover`, call `write_render_inputs`, and print the derived block count with the resolved output directory. `--check-record` shall parse the tracked Markdown ledger table and require exact `(path, index, digest, diagram type)` equality, the approved candidate-content status, the pinned renderer version, a non-placeholder reviewer identity, `Render == Pass`, and `Readability == Pass` for every current block.
 
 - [ ] **Step 4: Create the pending exhaustive rendering ledger**
 
 Create `docs/superpowers/reviews/2026-07-21-v04-alpha-mermaid-rendering.md` with status `Pending exact-head rendering review`, renderer version `11.16.0`, and one row per discovered block:
 
 ```markdown
-| Path | Block | SHA-256 | Render | Readability | Reviewer |
-|---|---:|---|---|---|---|
-| `architectures/patterns/ARC-P110.md` | 1 | `c0806f3c6906762383359c293f8eaf34ef4f8c3b13950bc1addbc20a2b670322` | Pending | Pending | Pending |
+| Path | Block | SHA-256 | Diagram type | Render | Readability | Reviewer |
+|---|---:|---|---|---|---|---|
+| `architectures/patterns/ARC-P110.md` | 1 | `c0806f3c6906762383359c293f8eaf34ef4f8c3b13950bc1addbc20a2b670322` | flowchart | Pending | Pending | Pending |
 ```
 
 Generate the 23 exact rows mechanically from `discover(ROOT)`; do not hand-copy paths or digests. The implementation may add a `--record-template` CLI argument that emits those rows, but it shall not overwrite any non-Pending human disposition.
@@ -772,7 +781,7 @@ python -c "import yaml; yaml.safe_load(open('.github/workflows/catalog-validatio
 git diff --check
 ```
 
-Expected: all focused tests and validators pass; workflow YAML parses; 3 mapping sets, 404 provisions, 81 relationships, and 325 negative dispositions remain unchanged.
+Expected: all focused tests and validators pass; workflow YAML parses; 3 mapping sets, 404 provisions, 81 relationship legs, and 325 negative dispositions remain unchanged.
 
 - [ ] **Step 6: Commit the evidence-candidate reconciliation**
 
@@ -1156,7 +1165,7 @@ gh pr create --repo tdistress/ESAF --base main --head agent/v04-alpha-publicatio
 $closurePr = gh pr view --repo tdistress/ESAF agent/v04-alpha-publication-gates-closure --json number --jq '.number'
 ```
 
-The authorized Steering Committee approver or documented delegate shall comment with role/authority, exact `$closureHead`, the current UTC date, disposition `approved for publication when the remote annotated tag condition and post-merge gates pass`, and limitations. Repository ownership without the governance role is insufficient.
+The authorized Steering Committee approver shall comment with role/authority, exact `$closureHead`, the current UTC date, disposition `approved`, the condition that publication remains contingent on the remote annotated tag and post-merge gates, and limitations. Repository ownership without the governance role is insufficient.
 
 - [ ] **Step 5: Validate external closure evidence before merge**
 
@@ -1248,9 +1257,10 @@ $currentMain = (git rev-parse HEAD).Trim()
 $closurePr = gh pr view --repo tdistress/ESAF agent/v04-alpha-publication-gates-closure --json number --jq '.number'
 $closureHead = gh pr view --repo tdistress/ESAF $closurePr --json headRefOid --jq '.headRefOid'
 $externalEvidence = Join-Path ([IO.Path]::GetTempPath()) 'esaf-v04-closure-external-evidence.json'
+$evidenceMerge = (git rev-parse 'HEAD^1').Trim()
 $validatedMerge = ((Get-Content -Raw -LiteralPath $externalEvidence | ConvertFrom-Json).merge_head).Trim()
 if ($currentMain -ne $validatedMerge) { throw 'Current main differs from the merge SHA recorded in external evidence' }
-python tools/release_gates.py --check --external-evidence $externalEvidence --expected-head $validatedMerge --phase taggable
+python tools/release_gates.py --check --baseline-ref $evidenceMerge --external-evidence $externalEvidence --expected-head $validatedMerge --phase taggable
 ```
 
 Expected: pass only when the pre-merge and post-merge SHA domains are each internally exact and all required evidence is present.
@@ -1262,6 +1272,7 @@ $gitCommon = (git rev-parse --path-format=absolute --git-common-dir).Trim()
 $mainRoot = Split-Path -Parent $gitCommon
 Set-Location -LiteralPath $mainRoot
 $externalEvidence = Join-Path ([IO.Path]::GetTempPath()) 'esaf-v04-closure-external-evidence.json'
+$evidenceMerge = (git rev-parse 'HEAD^1').Trim()
 $validatedMerge = ((Get-Content -Raw -LiteralPath $externalEvidence | ConvertFrom-Json).merge_head).Trim()
 if ([string]::IsNullOrWhiteSpace($validatedMerge)) { throw 'External evidence does not contain the validated merge SHA' }
 git fetch origin main
@@ -1271,7 +1282,7 @@ if ($currentMain -ne $validatedMerge -or $remoteMain -ne $validatedMerge) { thro
 if (@(git status --porcelain).Count -ne 0) { throw 'Main worktree changed after validation' }
 $publicationDate = python -c "from pathlib import Path; from tools.release_gates import load_front_matter; print(load_front_matter(Path('docs/superpowers/reviews/2026-07-21-v04-alpha-publication-readiness.md'))['publication']['date'])"
 if ((Get-Date).ToUniversalTime().ToString('yyyy-MM-dd') -ne $publicationDate.Trim()) { throw 'Conditional publication date expired; create and review a new closure candidate' }
-python tools/release_gates.py --check --external-evidence $externalEvidence --expected-head $validatedMerge --phase taggable
+python tools/release_gates.py --check --baseline-ref $evidenceMerge --external-evidence $externalEvidence --expected-head $validatedMerge --phase taggable
 if (git tag --list 'v0.4-alpha') { throw 'Local v0.4-alpha tag already exists' }
 if (git ls-remote --tags origin 'refs/tags/v0.4-alpha') { throw 'Remote v0.4-alpha tag already exists' }
 $tagMessage = @"

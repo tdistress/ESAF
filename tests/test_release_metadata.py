@@ -273,11 +273,48 @@ class ReleaseMetadataTests(unittest.TestCase):
             "every Mermaid diagram",
             "qualified contributors",
             "governance approval",
-            "must not be tagged or represented as released",
+            "shall not be tagged or represented as released",
         )
         for boundary in boundaries:
             with self.subTest(boundary=boundary):
                 self.assertIn(boundary, release_plan)
+
+    def test_taggable_release_gate_commands_include_the_evidence_baseline(self) -> None:
+        plan = read_repository_file(
+            "docs/superpowers/plans/2026-07-21-v04-alpha-publication-gates.md"
+        )
+        commands = re.findall(
+            r"^python tools/release_gates\.py --check .+ --phase taggable$",
+            plan,
+            re.MULTILINE,
+        )
+        self.assertEqual(2, len(commands))
+        for command in commands:
+            self.assertIn("--baseline-ref $evidenceMerge", command)
+
+    def test_release_plan_requires_only_governance_documented_authority(self) -> None:
+        plan = read_repository_file(
+            "docs/superpowers/plans/2026-07-21-v04-alpha-publication-gates.md"
+        )
+        self.assertNotIn("documented delegate", plan)
+        self.assertIn("disposition `approved`", plan)
+
+    def test_internal_publication_content_uses_shall_for_mandatory_language(self) -> None:
+        paths = (
+            "project/RELEASE_PLAN.md",
+            "architectures/patterns/ARC-P140.md",
+            "crosswalks/LIFECYCLE_RECORD_TEMPLATE.md",
+            "controls/AGT/AGT-120.md",
+            "controls/APP/APP-100.md",
+            "controls/CMP/CMP-100.md",
+            "controls/DAT/DAT-110.md",
+            "controls/EDU/EDU-120.md",
+            "controls/MON/MON-130.md",
+            "controls/OPS/OPS-130.md",
+        )
+        for path in paths:
+            with self.subTest(path=path):
+                self.assertNotRegex(read_repository_file(path), r"(?i)\bmust(?:n['’]t| not)?\b")
 
     def test_release_readiness_gates_remain_open(self) -> None:
         expected_gates = (

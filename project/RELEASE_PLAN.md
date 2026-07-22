@@ -29,4 +29,4 @@ Pre-merge evidence shall be tied to the exact reviewed PR-head/candidate SHA. Po
 
 Structural validators do not replace renderer, qualified-review, or governance evidence.
 
-Until every applicable pre-merge gate is closed on the exact reviewed candidate SHA and post-merge validation passes on the exact resulting merged-main SHA, 0.4-alpha must not be tagged or represented as released.
+Until every applicable pre-merge gate is closed on the exact reviewed candidate SHA and post-merge validation passes on the exact resulting merged-main SHA, 0.4-alpha shall not be tagged or represented as released.

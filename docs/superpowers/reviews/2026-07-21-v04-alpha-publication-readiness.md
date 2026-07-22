@@ -28,7 +28,7 @@ gates:
 
 This readiness record covers 91 controls in 16 families, 7 Draft architecture
 patterns, and 3 Draft mapping sets. The mapping inventory contains 404
-provisions, 81 relationships, and 325 negative dispositions.
+provisions, 81 relationship legs, and 325 negative dispositions.
 It applies to the complete Git-tracked ESAF repository, not a selected subset.
 
 ## Lifecycle limitations

@@ -11,6 +11,23 @@ from tools.mermaid_inventory import check_record, discover, extract_blocks, ledg
 ROOT = Path(__file__).resolve().parents[1]
 LEDGER = ROOT / "docs/superpowers/reviews/2026-07-21-v04-alpha-mermaid-rendering.md"
 SCRIPT = ROOT / "tools/mermaid_inventory.py"
+APPROVED_STATUS = "Approved on candidate content; pending final exact-head recheck"
+PINNED_RENDERER = "@mermaid-js/mermaid-cli@11.16.0"
+
+
+def passing_record(blocks, reviewer: str = "Independent reviewer") -> str:
+    rows = ledger_rows(blocks).replace(
+        "| Pending | Pending | Pending |",
+        f"| Pass | Pass | {reviewer} |",
+    )
+    return (
+        "# Rendering ledger\n\n"
+        f"Status: {APPROVED_STATUS}\n\n"
+        f"Renderer version: `{PINNED_RENDERER}`\n\n"
+        "| Path | Block | SHA-256 | Diagram type | Render | Readability | Reviewer |\n"
+        "|---|---:|---|---|---|---|---|\n"
+        f"{rows}\n"
+    )
 
 
 class MermaidInventoryTests(unittest.TestCase):
@@ -26,6 +43,7 @@ class MermaidInventoryTests(unittest.TestCase):
         self.assertEqual([(item.path, item.index) for item in first], sorted((item.path, item.index) for item in first))
         for item in first:
             self.assertEqual(item.digest, sha256(item.source.encode("utf-8")).hexdigest())
+            self.assertEqual(item.diagram_type, item.source.splitlines()[0].split()[0])
 
     def test_arc_p110_recovery_paths_do_not_use_opposing_labeled_edges(self) -> None:
         blocks = extract_blocks((ROOT / "architectures/patterns/ARC-P110.md").read_text(encoding="utf-8"))
@@ -87,25 +105,32 @@ class MermaidInventoryTests(unittest.TestCase):
                 name = f"{ordinal:03d}-{Path(block.path).stem}-{block.index}.mmd"
                 self.assertEqual((output / name).read_bytes(), (block.source + "\n").encode("utf-8"))
                 expected_rows.append(
-                    {"path": block.path, "index": block.index, "digest": block.digest, "source": None, "input": name}
+                    {
+                        "path": block.path,
+                        "index": block.index,
+                        "digest": block.digest,
+                        "diagram_type": block.diagram_type,
+                        "source": None,
+                        "input": name,
+                    }
                 )
             self.assertEqual(json.loads(inventory.read_text(encoding="utf-8")), expected_rows)
             self.assertEqual(list(output.glob("*.mmd")), [output / row["input"] for row in expected_rows])
 
     def test_check_record_accepts_exact_passing_rows(self) -> None:
         blocks = discover(ROOT)[:2]
-        text = ledger_rows(blocks).replace("| Pending | Pending | Pending |", "| Pass | Pass | Reviewer |")
         with tempfile.TemporaryDirectory() as directory:
             record = Path(directory) / "ledger.md"
-            record.write_text(text + "\n", encoding="utf-8")
+            record.write_text(passing_record(blocks), encoding="utf-8")
             self.assertEqual(check_record(blocks, record), [])
 
     def test_check_record_rejects_mismatched_and_duplicate_rows(self) -> None:
         blocks = discover(ROOT)[:2]
-        rows = ledger_rows(blocks).replace("| Pending | Pending | Pending |", "| Pass | Pass | Reviewer |").splitlines()
+        rows = passing_record(blocks).splitlines()
         mismatched = rows.copy()
-        mismatched[0] = mismatched[0].replace(blocks[0].digest, "0" * 64)
-        duplicated = rows + [rows[0]]
+        first_row = next(index for index, line in enumerate(rows) if blocks[0].digest in line)
+        mismatched[first_row] = mismatched[first_row].replace(blocks[0].digest, "0" * 64)
+        duplicated = rows + [rows[first_row]]
         with tempfile.TemporaryDirectory() as directory:
             record = Path(directory) / "ledger.md"
             record.write_text("\n".join(mismatched) + "\n", encoding="utf-8")
@@ -115,14 +140,40 @@ class MermaidInventoryTests(unittest.TestCase):
 
     def test_check_record_requires_both_render_and_readability_pass(self) -> None:
         block = discover(ROOT)[:1]
-        rows = ledger_rows(block)
         with tempfile.TemporaryDirectory() as directory:
             record = Path(directory) / "ledger.md"
             for disposition in ("| Pass | Pending | Reviewer |", "| Pending | Pass | Reviewer |"):
-                record.write_text(rows.replace("| Pending | Pending | Pending |", disposition) + "\n", encoding="utf-8")
+                record.write_text(
+                    passing_record(block).replace("| Pass | Pass | Independent reviewer |", disposition),
+                    encoding="utf-8",
+                )
                 self.assertIn("not fully reviewed", "\n".join(check_record(block, record)))
 
-    def test_cli_check_record_reports_pending_canonical_ledger(self) -> None:
+    def test_check_record_requires_approved_metadata_and_reviewer(self) -> None:
+        blocks = discover(ROOT)[:1]
+        mutations = (
+            (APPROVED_STATUS, "Pending exact-head rendering review", "ledger status is not approved"),
+            (PINNED_RENDERER, "@mermaid-js/mermaid-cli@11.15.0", "renderer version is not pinned"),
+            ("Independent reviewer", "Pending", "reviewer identity is missing"),
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            record = Path(directory) / "ledger.md"
+            for before, after, diagnostic in mutations:
+                with self.subTest(after=after):
+                    record.write_text(passing_record(blocks).replace(before, after), encoding="utf-8")
+                    self.assertIn(diagnostic, "\n".join(check_record(blocks, record)))
+
+    def test_check_record_rejects_mismatched_diagram_type(self) -> None:
+        blocks = discover(ROOT)[:1]
+        with tempfile.TemporaryDirectory() as directory:
+            record = Path(directory) / "ledger.md"
+            record.write_text(
+                passing_record(blocks).replace(f"| {blocks[0].diagram_type} |", "| unknownDiagram |"),
+                encoding="utf-8",
+            )
+            self.assertIn("ledger rows do not exactly match", "\n".join(check_record(blocks, record)))
+
+    def test_cli_check_record_accepts_approved_canonical_ledger(self) -> None:
         result = subprocess.run(
             [sys.executable, str(SCRIPT), "--check-record", str(LEDGER)],
             cwd=ROOT,
@@ -130,14 +181,16 @@ class MermaidInventoryTests(unittest.TestCase):
             text=True,
             encoding="utf-8",
         )
-        self.assertEqual(result.returncode, 1, result.stderr)
-        self.assertNotIn("ledger rows do not exactly match", result.stderr)
-        self.assertEqual(result.stderr.count("is not fully reviewed"), 23)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("Validated 23 Mermaid ledger rows", result.stdout)
 
     def test_cli_check_record_rejects_fabricated_external_ledger(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             record = Path(directory) / "ledger.md"
-            record.write_text("| `x.md` | 1 | `" + "0" * 64 + "` | Pass | Pass | Reviewer |\n", encoding="utf-8")
+            record.write_text(
+                "| `x.md` | 1 | `" + "0" * 64 + "` | flowchart | Pass | Pass | Reviewer |\n",
+                encoding="utf-8",
+            )
             result = subprocess.run(
                 [sys.executable, str(SCRIPT), "--check-record", str(record)],
                 cwd=ROOT,
