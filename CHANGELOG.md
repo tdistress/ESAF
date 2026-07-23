@@ -2,9 +2,9 @@
 
 All notable changes to ESAF are documented in this file.
 
-Versions 0.2-alpha through 0.4-alpha are unreleased working-draft stages unless their section records a release date.
+Versions 0.2-alpha through 0.4-alpha are unreleased working-draft stages unless their section records an explicitly conditional date that does not imply a release.
 
-## 0.4-alpha - Unreleased
+## 0.4-alpha - 2026-07-23 (conditional)
 
 ### Added
 
@@ -31,6 +31,11 @@ Versions 0.2-alpha through 0.4-alpha are unreleased working-draft stages unless 
 ### Changed
 
 - Advanced release metadata to the Initial Reference Architecture Draft Library stage.
+- Marked the 0.4-alpha Working Draft closure candidate conditionally dated,
+  subject to a remote annotated tag resolving to the exact validated commit.
+- Recorded repository-owner risk acceptance as the Working Draft publication
+  basis while qualified mapping review remains deferred and all mapping
+  snapshots remain Draft.
 
 ## 0.3-alpha - Unreleased
 
