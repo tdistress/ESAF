@@ -25,6 +25,8 @@ Versions 0.2-alpha through 0.4-alpha are unreleased working-draft stages unless 
 - Added the machine-validated draft Cyber Essentials v3.3 crosswalk with 116 atomic provision records, 41 forward-only relationship legs, and 76 specific no-direct-mapping dispositions.
 - Added source-rights evidence, deterministic catalogs, focused semantic tests, and acceptance traceability for the Cyber Essentials v3.3 validated draft.
 - Recorded the Cyber Essentials snapshot as early Draft 0.5-beta work; it does not complete that milestone.
+- Added the Draft Cyber Essentials Plus v3.2 `esaf_to_external` snapshot with 144 records and 8 forward-only relationship legs.
+- Added the separate Draft Cyber Essentials Plus v3.2 `external_to_esaf` snapshot with 144 records, 32 reverse-only relationship legs, and 112 specific no-direct-mapping dispositions.
 
 ### Changed
 

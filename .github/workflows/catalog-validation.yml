@@ -4,11 +4,19 @@ on:
   pull_request:
     paths:
       - ".github/workflows/catalog-validation.yml"
+      - "CHANGELOG.md"
+      - "VERSION.md"
+      - "ROADMAP.md"
+      - "project/**"
+      - "docs/superpowers/reviews/**"
       - "architectures/**"
       - "controls/**"
       - "crosswalks/**"
       - "tests/**"
       - "tools/crosswalks/**"
+      - "tools/release_gates.py"
+      - "tools/mermaid_inventory.py"
+      - "tools/validate_links.py"
       - "tools/validate_architectures.py"
       - "tools/validate_controls.py"
       - "tools/validate_crosswalks.py"
@@ -17,11 +25,19 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/catalog-validation.yml"
+      - "CHANGELOG.md"
+      - "VERSION.md"
+      - "ROADMAP.md"
+      - "project/**"
+      - "docs/superpowers/reviews/**"
       - "architectures/**"
       - "controls/**"
       - "crosswalks/**"
       - "tests/**"
       - "tools/crosswalks/**"
+      - "tools/release_gates.py"
+      - "tools/mermaid_inventory.py"
+      - "tools/validate_links.py"
       - "tools/validate_architectures.py"
       - "tools/validate_controls.py"
       - "tools/validate_crosswalks.py"
@@ -62,3 +78,7 @@ jobs:
       - name: Validate crosswalk history on protected-branch push
         if: github.event_name == 'push' && github.event.before != '0000000000000000000000000000000000000000'
         run: python tools/validate_crosswalks.py --check --baseline-ref "${{ github.event.before }}"
+      - name: Validate release gate record
+        run: python tools/release_gates.py --check
+      - name: Validate repository-local links
+        run: python tools/validate_links.py --check

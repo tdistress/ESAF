@@ -422,11 +422,19 @@ class Esaf1600FoundationTests(unittest.TestCase):
         self.assertEqual(set(triggers), {"pull_request", "push", "workflow_dispatch"})
         expected_paths = [
             ".github/workflows/catalog-validation.yml",
+            "CHANGELOG.md",
+            "VERSION.md",
+            "ROADMAP.md",
+            "project/**",
+            "docs/superpowers/reviews/**",
             "architectures/**",
             "controls/**",
             "crosswalks/**",
             "tests/**",
             "tools/crosswalks/**",
+            "tools/release_gates.py",
+            "tools/mermaid_inventory.py",
+            "tools/validate_links.py",
             "tools/validate_architectures.py",
             "tools/validate_controls.py",
             "tools/validate_crosswalks.py",
@@ -471,6 +479,18 @@ class Esaf1600FoundationTests(unittest.TestCase):
             push["run"],
             'python tools/validate_crosswalks.py --check --baseline-ref "${{ github.event.before }}"',
         )
+
+        release_gate = unique_step("Validate release gate record")
+        self.assertEqual(release_gate, {
+            "name": "Validate release gate record",
+            "run": "python tools/release_gates.py --check",
+        })
+
+        links = unique_step("Validate repository-local links")
+        self.assertEqual(links, {
+            "name": "Validate repository-local links",
+            "run": "python tools/validate_links.py --check",
+        })
 
         active_runs = [step.get("run") for step in steps]
         self.assertEqual(active_runs.count("python tools/validate_architectures.py"), 1)

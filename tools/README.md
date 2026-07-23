@@ -52,3 +52,25 @@ python tools/validate_architectures.py
 ```
 
 Architecture validation requires linked pattern records to match registry status, contain the complete pattern contract, and reference existing ESAF controls. It intentionally checks structural rules only. Technical reviewers remain responsible for the correctness of architecture decisions, diagrams, control allocation, and implementation guidance.
+
+## Release-gate validation
+
+Validate the authoritative 0.4-alpha readiness record without changing files:
+
+```shell
+python tools/release_gates.py --check
+```
+
+Exact candidate, approval, merge, and tag SHAs remain in GitHub evidence and an
+external temporary JSON file; they are never written into the tracked record.
+
+## Mermaid publication rendering
+
+Inventory every tracked Mermaid block and write temporary renderer inputs beneath the system temporary directory, outside the repository:
+
+```powershell
+$renderDirectory = python -c "import tempfile; print(tempfile.mkdtemp(prefix='esaf-v04-mermaid-'))"
+python tools/mermaid_inventory.py --output-dir $renderDirectory --write
+```
+
+Render each input with `@mermaid-js/mermaid-cli@11.16.0`, then record parse and readability dispositions in the tracked release ledger. Parser success does not replace visual review.

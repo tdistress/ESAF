@@ -146,6 +146,7 @@ flowchart TD
 
 ```mermaid
 stateDiagram-v2
+  state "Recovery validation" as RecoveryValidation
   [*] --> Normal
   Normal --> Assessing: model, source, authorization, policy, evidence, or target failure
   Assessing --> VisibleDegraded: preapproved lower-risk capability remains
@@ -153,8 +154,9 @@ stateDiagram-v2
   VisibleDegraded --> SafeStop: tier, duration, buffer, or approved boundary exceeded
   VisibleDegraded --> Recovery: cause resolved
   SafeStop --> Recovery: cause resolved and state reconciled
-  Recovery --> Normal: evidence validated, users notified as needed, return authorized
-  Recovery --> SafeStop: validation or reconciliation fails
+  Recovery --> RecoveryValidation: validate evidence and authorization
+  RecoveryValidation --> Normal: evidence validated, users notified as needed, return authorized
+  RecoveryValidation --> SafeStop: validation or reconciliation fails
 ```
 
 The responsibility view is the component table and CP1-CP18 matrix below. Deployment places enforcement centrally, regionally, application-adjacent, or channel-adjacent only when policy authority, identity, context, evidence, bypass protection, residency, and recovery remain explicit.
