@@ -245,8 +245,18 @@ class OwnerRiskEvidenceTests(unittest.TestCase):
             ("schema", lambda e: e.pop("mapping_decision_schema")),
             ("mapping_decisions", lambda e: e.__setitem__("mapping_decisions", [])),
             ("mapping_binding", lambda e: e["mapping_decisions"][0].__setitem__("sha", "a" * 40)),
+            ("mapping_missing_lifecycle", lambda e: e["mapping_decisions"][0]["limitations"].pop("lifecycle")),
+            ("mapping_wrong_lifecycle", lambda e: e["mapping_decisions"][0]["limitations"].__setitem__("lifecycle", "released")),
+            ("mapping_missing_claims", lambda e: e["mapping_decisions"][0]["limitations"].pop("claims_not_made")),
+            ("mapping_extra_claim", lambda e: e["mapping_decisions"][0]["limitations"]["claims_not_made"].append("extra")),
+            ("mapping_duplicate_claim", lambda e: e["mapping_decisions"][0]["limitations"]["claims_not_made"].__setitem__(-1, e["mapping_decisions"][0]["limitations"]["claims_not_made"][0])),
             ("scope", lambda e: e.pop("scope")),
             ("scope_binding", lambda e: e["scope"].__setitem__("sha", "a" * 40)),
+            ("scope_missing_lifecycle", lambda e: e["scope"]["limitations"].pop("lifecycle")),
+            ("scope_wrong_lifecycle", lambda e: e["scope"]["limitations"].__setitem__("lifecycle", "released")),
+            ("scope_missing_claims", lambda e: e["scope"]["limitations"].pop("claims_not_made")),
+            ("scope_extra_claim", lambda e: e["scope"]["limitations"]["claims_not_made"].append("extra")),
+            ("scope_duplicate_claim", lambda e: e["scope"]["limitations"]["claims_not_made"].__setitem__(-1, e["scope"]["limitations"]["claims_not_made"][0])),
             ("technical", lambda e: e.pop("technical")),
             ("technical_binding", lambda e: e["technical"].__setitem__("sha", "a" * 40)),
             ("editorial", lambda e: e.pop("editorial")),
@@ -257,6 +267,7 @@ class OwnerRiskEvidenceTests(unittest.TestCase):
             ("merge_state", lambda e: e.pop("merge_state")),
             ("merge_binding", lambda e: e["merge_state"].__setitem__("sha", "a" * 40)),
             ("merge_evidence", lambda e: e.__setitem__("merge_head", MERGE)),
+            ("legacy_mapping_reviews", lambda e: e.__setitem__("mapping_reviews", [])),
         )
         for name, mutate in cases:
             with self.subTest(name=name):
@@ -264,6 +275,20 @@ class OwnerRiskEvidenceTests(unittest.TestCase):
                 mutate(candidate)
                 with self.assertRaises(ValueError):
                     refresh_taggable_evidence(candidate, source, MERGE, post_merge())
+
+    def test_refresh_taggable_evidence_rejects_every_preserved_verdict_date_mutation(self) -> None:
+        source = verify_owner_comment(owner_comment(), HEAD, PUBLICATION_DATE, TIMESTAMP)
+        base = build_external_evidence(source, HEAD, verdicts(), pr_state())
+        for verdict in ("technical", "editorial", "rendering", "governance"):
+            for name, value in (("missing", None), ("stale", "2000-01-01"), ("malformed", "today")):
+                with self.subTest(verdict=verdict, name=name):
+                    candidate = deepcopy(base)
+                    if value is None:
+                        candidate[verdict].pop("date")
+                    else:
+                        candidate[verdict]["date"] = value
+                    with self.assertRaises(ValueError):
+                        refresh_taggable_evidence(candidate, source, MERGE, post_merge())
 
     def test_refresh_taggable_evidence_rejects_invalid_post_merge_commands(self) -> None:
         source = verify_owner_comment(owner_comment(), HEAD, PUBLICATION_DATE, TIMESTAMP)

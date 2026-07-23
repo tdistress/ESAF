@@ -175,12 +175,17 @@ def _owner_scope(source: dict[str, object], closure_head: str) -> dict[str, obje
     }
 
 
-def _validate_verdicts(verdict_comments: dict[str, dict[str, object]], closure_head: str) -> None:
+def _validate_verdicts(
+    verdict_comments: dict[str, dict[str, object]], closure_head: str,
+    publication_date: str | None = None,
+) -> None:
     _require(isinstance(verdict_comments, dict), "verdict comments are required")
     for name in ("technical", "editorial", "rendering", "governance"):
         value = verdict_comments.get(name)
         _require(isinstance(value, dict), f"{name} verdict is required")
         _require(value.get("sha") == closure_head, f"{name} verdict shall be bound to closure head")
+        if publication_date is not None:
+            _require(value.get("date") == publication_date, f"{name} verdict date shall equal closure publication date")
         _require(value.get("disposition") == "approved", f"{name} verdict disposition shall be approved")
         _require(isinstance(value.get("url"), str) and value["url"].startswith("https://"), f"{name} verdict URL shall use HTTPS")
         _require(isinstance(value.get("reviewer"), str) and value["reviewer"].strip(), f"{name} verdict reviewer shall be named")
@@ -191,6 +196,20 @@ def _validate_verdicts(verdict_comments: dict[str, dict[str, object]], closure_h
             _require(value.get("authority") == "Steering Committee", "governance authority shall be Steering Committee")
         else:
             _require(value.get("critical") == 0 and value.get("important") == 0, f"{name} verdict findings shall be zero")
+
+
+def _validate_limitations(value: object, name: str) -> None:
+    _require(isinstance(value, dict), f"{name} limitations are required")
+    _require(value.get("lifecycle") == "draft", f"{name} lifecycle shall equal draft")
+    claims = value.get("claims_not_made")
+    _require(
+        isinstance(claims, list)
+        and len(claims) == len(CLAIMS_NOT_MADE)
+        and all(isinstance(claim, str) for claim in claims)
+        and len(set(claims)) == len(claims)
+        and set(claims) == CLAIMS_NOT_MADE,
+        f"{name} prohibited claims shall equal the required set",
+    )
 
 
 def _checks_and_merge_state(pr_state: dict[str, object], closure_head: str) -> tuple[dict[str, object], dict[str, object]]:
@@ -240,6 +259,7 @@ def _validate_owner_decision_base(value: object, closure_head: str) -> dict[str,
     _require(value.get("author_association") == "OWNER", "base mapping decision association shall be OWNER")
     _require(value.get("disposition") == "accepted_for_working_draft", "base mapping decision disposition shall be accepted_for_working_draft")
     _require(value.get("qualified_review_status") == "deferred", "base mapping decision review status shall be deferred")
+    _validate_limitations(value.get("limitations"), "base mapping decision")
     source = value.get("source")
     _require(isinstance(source, dict), "base mapping decision source is required")
     _source_is_valid(source, closure_head)
@@ -252,6 +272,7 @@ def _validate_owner_decision_base(value: object, closure_head: str) -> dict[str,
 def _validate_closure_base(base_evidence: dict[str, object], closure_head: str) -> None:
     _require(base_evidence.get("mapping_decision_schema") == MAPPING_DECISION_SCHEMA, "base evidence shall use the v1 mapping decision schema")
     _require("merge_head" not in base_evidence and "post_merge" not in base_evidence, "base evidence shall not contain merge evidence")
+    _require("mapping_reviews" not in base_evidence, "base evidence shall not contain legacy mapping_reviews")
     decisions = base_evidence.get("mapping_decisions")
     _require(isinstance(decisions, list) and len(decisions) == len(EXPECTED_MAPPING_SETS), "base evidence shall contain exactly three mapping decisions")
     decision_ids = [item.get("mapping_set_id") for item in decisions if isinstance(item, dict)]
@@ -269,14 +290,18 @@ def _validate_closure_base(base_evidence: dict[str, object], closure_head: str) 
     _require(scope.get("sha") == closure_head, "base owner scope shall be bound to closure head")
     _require(scope.get("scope") == REPOSITORY_SCOPE, "base owner scope shall be complete")
     _require(scope.get("role") == "repository_owner" and scope.get("author_association") == "OWNER", "base owner scope identity is invalid")
+    _validate_limitations(scope.get("limitations"), "base owner scope")
     scope_source = scope.get("source")
     _require(isinstance(scope_source, dict), "base owner scope source is required")
     _source_is_valid(scope_source, closure_head)
     _require(scope_source == sources[0], "base owner scope source shall match mapping decisions")
     _require(scope.get("owner_login") == scope_source.get("author_login") and scope.get("owner_user_id") == scope_source.get("author_user_id"), "base owner scope identity shall match source")
     _require(scope.get("decided_at") == scope_source.get("created_at"), "base owner scope timestamp shall match source")
+    verified_at = _rfc3339(sources[0].get("source_verified_at"))
+    _require(verified_at is not None, "base owner source verification timestamp shall be RFC 3339")
+    publication_date = verified_at.astimezone(timezone.utc).date().isoformat()
     verdicts = {name: base_evidence.get(name) for name in ("technical", "editorial", "rendering", "governance")}
-    _validate_verdicts(verdicts, closure_head)
+    _validate_verdicts(verdicts, closure_head, publication_date)
     checks = base_evidence.get("github_checks")
     _require(isinstance(checks, dict), "base GitHub checks are required")
     observed = checks.get("observed")
