@@ -516,6 +516,32 @@ class Esaf1600FoundationTests(unittest.TestCase):
             "run": 'python tools/release_gates.py --check --baseline-ref "HEAD^"',
         })
 
+        release_gate_runs = [
+            (step["run"], step.get("if", ""))
+            for step in steps
+            if "release_gates.py" in step.get("run", "")
+        ]
+        self.assertEqual(
+            release_gate_runs,
+            [
+                (
+                    "python tools/release_gates.py --check --baseline-ref "
+                    '"${{ github.event.pull_request.base.sha }}"',
+                    "github.event_name == 'pull_request'",
+                ),
+                (
+                    "python tools/release_gates.py --check --baseline-ref "
+                    '"${{ github.event.before }}"',
+                    "github.event_name == 'push' && "
+                    "github.event.before != '0000000000000000000000000000000000000000'",
+                ),
+                (
+                    'python tools/release_gates.py --check --baseline-ref "HEAD^"',
+                    "github.event_name == 'workflow_dispatch'",
+                ),
+            ],
+        )
+
         links = unique_step("Validate repository-local links")
         self.assertEqual(links, {
             "name": "Validate repository-local links",
@@ -587,6 +613,13 @@ class Esaf1600FoundationTests(unittest.TestCase):
             extra_path = deepcopy(workflow)
             extra_path["on"][event]["paths"].append("docs/**")
             mutations.append((f"extra path: {event}", extra_path))
+
+        generic_release_gate = deepcopy(workflow)
+        generic_release_gate["jobs"]["validate"]["steps"].append({
+            "name": "Prohibited generic release gate validation",
+            "run": "python tools/release_gates.py --check",
+        })
+        mutations.append(("generic release gate validation", generic_release_gate))
 
         for name, mutation in mutations:
             with self.subTest(mutation=name):
