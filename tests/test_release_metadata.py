@@ -1,6 +1,7 @@
 import json
 import re
 import unittest
+from datetime import datetime, timezone
 from pathlib import Path
 
 from tools.release_gates import load_front_matter
@@ -40,12 +41,15 @@ def current_version() -> str:
 
 def current_changelog_section(version: str) -> str:
     changelog = read_repository_file("CHANGELOG.md")
-    heading = f"## {version} - Unreleased"
-    heading_matches = list(
-        re.finditer(rf"^{re.escape(heading)}$", changelog, re.MULTILINE)
-    )
+    heading_matches = list(re.finditer(
+        rf"^## {re.escape(version)} - (?:Unreleased|\d{{4}}-\d{{2}}-\d{{2}} \(conditional\))$",
+        changelog,
+        re.MULTILINE,
+    ))
     if len(heading_matches) != 1:
-        raise AssertionError(f"CHANGELOG.md must contain exactly one {heading!r} heading")
+        raise AssertionError(
+            f"CHANGELOG.md must contain exactly one current {version!r} release heading"
+        )
     section_start = heading_matches[0].end()
     next_release = re.search(r"^## .+$", changelog[section_start:], re.MULTILINE)
     section_end = section_start + next_release.start() if next_release else len(changelog)
@@ -152,14 +156,25 @@ class ReleaseMetadataTests(unittest.TestCase):
             version_text,
         )
 
-    def test_current_changelog_section_is_unreleased(self) -> None:
+    def test_current_changelog_section_is_conditionally_dated(self) -> None:
         version = current_version()
         changelog = read_repository_file("CHANGELOG.md")
-        heading = f"## {version} - Unreleased"
+        expected_date = datetime.now(timezone.utc).date().isoformat()
         self.assertEqual(
             1,
-            len(re.findall(rf"^{re.escape(heading)}$", changelog, re.MULTILINE)),
-            f"CHANGELOG.md must contain exactly one {heading!r} heading",
+            len(re.findall(
+                rf"^## {re.escape(version)} - {re.escape(expected_date)} \(conditional\)$",
+                changelog,
+                re.MULTILINE,
+            )),
+            "CHANGELOG.md must contain exactly one conditionally dated current-release heading",
+        )
+
+    def test_conditionally_dated_changelog_heading_does_not_imply_a_release(self) -> None:
+        changelog = read_repository_file("CHANGELOG.md").casefold()
+        self.assertIn(
+            "unless their section records an explicitly conditional date that does not imply a release",
+            changelog,
         )
 
     def test_current_changelog_names_all_three_draft_mapping_snapshots(self) -> None:
@@ -173,14 +188,40 @@ class ReleaseMetadataTests(unittest.TestCase):
             with self.subTest(label=label):
                 self.assertIn(label, section)
 
-    def test_evidence_candidate_remains_unreleased_and_untagged(self) -> None:
+    def test_closure_candidate_uses_owner_risk_acceptance_and_current_utc_date(self) -> None:
         record = load_front_matter(
             ROOT / "docs/superpowers/reviews/2026-07-21-v04-alpha-publication-readiness.md"
         )
-        self.assertEqual("evidence_candidate", record["phase"])
-        self.assertIsNone(record["publication"]["date"])
-        changelog = read_repository_file("CHANGELOG.md")
-        self.assertEqual(1, changelog.count(f"## {current_version()} - Unreleased"))
+        self.assertEqual("closure_candidate", record["phase"])
+        self.assertEqual("owner_risk_acceptance", record["mapping_decision_basis"])
+        self.assertEqual(datetime.now(timezone.utc).date(), record["publication"]["date"])
+        for gate, value in record["gates"].items():
+            with self.subTest(gate=gate):
+                self.assertEqual("ready", value["state"])
+                self.assertTrue(value["evidence"])
+                self.assertTrue(all(locator.startswith("https://") for locator in value["evidence"]))
+
+    def test_closure_wording_retains_owner_risk_and_draft_limitations(self) -> None:
+        readiness = read_repository_file(
+            "docs/superpowers/reviews/2026-07-21-v04-alpha-publication-readiness.md"
+        ).casefold()
+        for required in (
+            "owner risk acceptance",
+            "qualified mapping review is deferred",
+            "draft snapshots",
+            "does not assert assurance",
+            "certification",
+            "compliance",
+            "equivalence",
+            "endorsement",
+            "external-scheme approval",
+            "production readiness",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, readiness)
+        for path in ("CHANGELOG.md", "project/RELEASE_PLAN.md"):
+            with self.subTest(path=path):
+                self.assertNotIn("qualified mapping review completed", read_repository_file(path).casefold())
 
     def test_release_plan_allows_one_uniform_mapping_decision_basis(self) -> None:
         release_plan = read_repository_file("project/RELEASE_PLAN.md")
@@ -630,7 +671,7 @@ class ReleaseMetadataTests(unittest.TestCase):
             with self.subTest(path=path):
                 self.assertNotRegex(read_repository_file(path), r"(?i)\bmust(?:n['’]t| not)?\b")
 
-    def test_release_readiness_gates_remain_open(self) -> None:
+    def test_release_readiness_gates_are_ready_for_conditional_closure(self) -> None:
         expected_gates = (
             "Scope and milestone approval",
             "Normative and technical review",
@@ -643,9 +684,10 @@ class ReleaseMetadataTests(unittest.TestCase):
         )
         rows = release_readiness_rows()
         self.assertEqual(expected_gates, tuple(gate for gate, _, _ in rows))
-        for gate, state, _ in rows:
+        for gate, state, evidence in rows:
             with self.subTest(gate=gate):
-                self.assertEqual("Open", state)
+                self.assertEqual("Ready", state)
+                self.assertIn("https://", evidence)
 
 
 if __name__ == "__main__":

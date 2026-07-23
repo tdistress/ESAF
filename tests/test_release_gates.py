@@ -212,6 +212,18 @@ def approved_external_evidence(
 
 
 class ReleaseGateTests(unittest.TestCase):
+    def test_tracked_closure_record_has_ready_https_gates_and_owner_risk_basis(self) -> None:
+        record = load_front_matter(RECORD)
+        self.assertEqual("closure_candidate", record["phase"])
+        self.assertEqual("owner_risk_acceptance", record["mapping_decision_basis"])
+        self.assertEqual(datetime.now(timezone.utc).date(), record["publication"]["date"])
+        self.assertEqual(validate_record(ROOT, record), [])
+        for gate, value in record["gates"].items():
+            with self.subTest(gate=gate):
+                self.assertEqual("ready", value["state"])
+                self.assertTrue(value["evidence"])
+                self.assertTrue(all(locator.startswith("https://") for locator in value["evidence"]))
+
     def test_authoritative_record_is_valid(self) -> None:
         self.assertEqual(validate_record(ROOT, load_front_matter(RECORD)), [])
 
