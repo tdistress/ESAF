@@ -539,6 +539,8 @@ class ReleaseGateTests(unittest.TestCase):
             (lambda e: e["mapping_decisions"][0].__setitem__("disposition", "approved"), "owner mapping disposition shall be accepted_for_working_draft"),
             (lambda e: e["mapping_decisions"][0].__setitem__("qualified_review_status", "completed"), "owner mapping qualified review status shall be deferred"),
             (lambda e: e["mapping_decisions"][0]["source"].__setitem__("body_sha256", "edited"), "owner mapping source body digest shall be a SHA-256"),
+            (lambda e: [source.__setitem__("author_login", "attacker") for source in [*(item["source"] for item in e["mapping_decisions"]), e["scope"]["source"]]], "owner mapping source login shall equal tdistress"),
+            (lambda e: [source.__setitem__("comment_url", "https://example.invalid/not-a-github-comment") for source in [*(item["source"] for item in e["mapping_decisions"]), e["scope"]["source"]]], "owner mapping source comment URL shall use GitHub HTTPS"),
             (lambda e: e["scope"].__setitem__("scope", "mapping_sets_only"), "owner scope shall equal complete_git_tracked_repository"),
             (lambda e: e["scope"]["limitations"].__setitem__("claims_not_made", []), "scope prohibited claims shall equal the required set"),
         )

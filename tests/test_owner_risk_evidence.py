@@ -224,9 +224,7 @@ class OwnerRiskEvidenceTests(unittest.TestCase):
     def test_refresh_taggable_evidence_preserves_closure_objects(self) -> None:
         source = verify_owner_comment(owner_comment(), HEAD, PUBLICATION_DATE, TIMESTAMP)
         base = build_external_evidence(source, HEAD, verdicts(), pr_state())
-        refreshed_comment = owner_comment()
-        refreshed_comment["updated_at"] = f"{PUBLICATION_DATE}T13:00:00Z"
-        refreshed = verify_owner_comment(refreshed_comment, HEAD, PUBLICATION_DATE, f"{PUBLICATION_DATE}T13:00:00Z")
+        refreshed = verify_owner_comment(owner_comment(), HEAD, PUBLICATION_DATE, f"{PUBLICATION_DATE}T13:00:00Z")
         results = post_merge()
         evidence = refresh_taggable_evidence(base, refreshed, MERGE, results)
         self.assertEqual(evidence["closure_head"], HEAD)
@@ -237,6 +235,21 @@ class OwnerRiskEvidenceTests(unittest.TestCase):
         self.assertEqual(evidence["scope"]["source"], refreshed)
         self.assertEqual(evidence["merge_head"], MERGE)
         self.assertEqual(evidence["post_merge"], results)
+
+    def test_refresh_taggable_evidence_rejects_changed_owner_source(self) -> None:
+        source = verify_owner_comment(owner_comment(), HEAD, PUBLICATION_DATE, TIMESTAMP)
+        base = build_external_evidence(source, HEAD, verdicts(), pr_state())
+        cases = (
+            ("updated_at", lambda c: c.__setitem__("updated_at", f"{PUBLICATION_DATE}T13:00:00Z")),
+            ("body", lambda c: c.__setitem__("body", c["body"] + "\nEdited.")),
+        )
+        for name, mutate in cases:
+            with self.subTest(name=name):
+                comment = owner_comment()
+                mutate(comment)
+                refreshed = verify_owner_comment(comment, HEAD, PUBLICATION_DATE, f"{PUBLICATION_DATE}T13:00:00Z")
+                with self.assertRaises(ValueError):
+                    refresh_taggable_evidence(base, refreshed, MERGE, post_merge())
 
     def test_refresh_taggable_evidence_rejects_incomplete_or_invalid_closure_base(self) -> None:
         source = verify_owner_comment(owner_comment(), HEAD, PUBLICATION_DATE, TIMESTAMP)
@@ -340,12 +353,19 @@ class OwnerRiskEvidenceTests(unittest.TestCase):
                 "--base-evidence", str(closure_path),
                 "--merge-head", MERGE,
                 "--post-merge-json", str(post_merge_path),
+                "--expected-head", HEAD,
                 "--publication-date", PUBLICATION_DATE,
                 "--verified-at", TIMESTAMP,
                 "--output", str(taggable_path),
             ]
             self.assertEqual(main(refresh_args), 0)
             self.assertEqual(json.loads(taggable_path.read_text(encoding="utf-8"))["merge_head"], MERGE)
+            wrong_head_args = [*refresh_args]
+            wrong_head_args[wrong_head_args.index("--expected-head") + 1] = "a" * 40
+            stderr = io.StringIO()
+            with redirect_stderr(stderr):
+                self.assertEqual(main(wrong_head_args), 1)
+            self.assertIn("expected head shall equal base evidence closure head", stderr.getvalue())
 
     def test_cli_refuses_repository_output(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

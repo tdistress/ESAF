@@ -46,6 +46,7 @@ CLAIMS_NOT_MADE = {
     "production_readiness",
 }
 OWNER_REPOSITORY = "tdistress/ESAF"
+OWNER_LOGIN = "tdistress"
 RFC3339_RE = re.compile(
     r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$"
 )
@@ -218,6 +219,18 @@ def _https(value: object) -> bool:
     return isinstance(value, str) and value.startswith("https://")
 
 
+def _owner_comment_url(value: object, comment_id: object) -> bool:
+    return (
+        isinstance(value, str)
+        and isinstance(comment_id, int)
+        and not isinstance(comment_id, bool)
+        and re.fullmatch(
+            rf"https://github\.com/{re.escape(OWNER_REPOSITORY)}/(?:issues|pull)/\d+#issuecomment-{comment_id}",
+            value,
+        ) is not None
+    )
+
+
 def _today() -> str:
     return datetime.now(timezone.utc).date().isoformat()
 
@@ -275,14 +288,14 @@ def _source_value(errors: list[str], source: object, record: dict[str, object], 
         return None
     if source.get("repository") != OWNER_REPOSITORY:
         errors.append(f"{prefix} source repository shall equal tdistress/ESAF")
-    if not _https(source.get("comment_url")):
-        errors.append(f"{prefix} source comment URL shall use HTTPS")
     for field, message in (("comment_id", "comment ID"), ("author_user_id", "user ID")):
         value = source.get(field)
         if not isinstance(value, int) or isinstance(value, bool):
             errors.append(f"{prefix} source {message} shall be numeric")
-    if not isinstance(source.get("author_login"), str) or not source["author_login"].strip():
-        errors.append(f"{prefix} source login shall be named")
+    if not _owner_comment_url(source.get("comment_url"), source.get("comment_id")):
+        errors.append(f"{prefix} source comment URL shall use GitHub HTTPS")
+    if source.get("author_login") != OWNER_LOGIN:
+        errors.append(f"{prefix} source login shall equal {OWNER_LOGIN}")
     if source.get("author_association") != "OWNER":
         errors.append(f"{prefix} source author association shall be OWNER")
     for field in ("created_at", "updated_at", "source_verified_at"):

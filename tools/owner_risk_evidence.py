@@ -16,10 +16,12 @@ from tools.release_gates import (
     CLAIMS_NOT_MADE,
     EXPECTED_MAPPING_SETS,
     MAPPING_DECISION_SCHEMA,
+    OWNER_LOGIN,
     OWNER_REPOSITORY,
     POST_MERGE_COMMANDS,
     REPOSITORY_SCOPE,
     SHA_RE,
+    _owner_comment_url,
     _rfc3339,
 )
 
@@ -101,11 +103,11 @@ def verify_owner_comment(
     decision = parse_owner_decision(body)
     _validate_decision(decision, expected_head)
     comment_url = comment.get("html_url")
-    _require(isinstance(comment_url, str) and comment_url.startswith("https://github.com/tdistress/ESAF/"), "owner comment URL shall use GitHub HTTPS")
     _require(_numeric(comment.get("id")), "owner comment ID shall be numeric")
+    _require(_owner_comment_url(comment_url, comment["id"]), "owner comment URL shall use GitHub HTTPS")
     user = comment.get("user")
     _require(isinstance(user, dict), "owner comment author is required")
-    _require(user.get("login") == "tdistress", "owner comment login shall equal tdistress")
+    _require(user.get("login") == OWNER_LOGIN, f"owner comment login shall equal {OWNER_LOGIN}")
     _require(_numeric(user.get("id")), "owner comment user ID shall be numeric")
     _require(comment.get("author_association") == "OWNER", "owner comment association shall be OWNER")
     created_at = _timestamp_for_date(comment.get("created_at"), publication_date, "owner comment creation timestamp")
@@ -127,9 +129,9 @@ def verify_owner_comment(
 def _source_is_valid(source: dict[str, object], closure_head: str) -> None:
     _require(isinstance(source, dict), "owner source is required")
     _require(source.get("repository") == OWNER_REPOSITORY, "owner source repository shall equal tdistress/ESAF")
-    _require(isinstance(source.get("comment_url"), str) and str(source["comment_url"]).startswith("https://"), "owner source comment URL shall use HTTPS")
     _require(_numeric(source.get("comment_id")), "owner source comment ID shall be numeric")
-    _require(source.get("author_login") == "tdistress", "owner source login shall equal tdistress")
+    _require(_owner_comment_url(source.get("comment_url"), source["comment_id"]), "owner source comment URL shall use GitHub HTTPS")
+    _require(source.get("author_login") == OWNER_LOGIN, f"owner source login shall equal {OWNER_LOGIN}")
     _require(_numeric(source.get("author_user_id")), "owner source user ID shall be numeric")
     _require(source.get("author_association") == "OWNER", "owner source association shall be OWNER")
     for field in ("created_at", "updated_at", "source_verified_at"):
@@ -336,6 +338,13 @@ def refresh_taggable_evidence(
     _require(isinstance(merge_head, str) and bool(SHA_RE.fullmatch(merge_head)), "merge head shall be a 40-character SHA")
     _validate_closure_base(base_evidence, closure_head)
     _source_is_valid(owner_source, closure_head)
+    base_source = base_evidence["mapping_decisions"][0]["source"]
+    _require(isinstance(base_source, dict), "base owner source is required")
+    prior_source = deepcopy(base_source)
+    refreshed_source = deepcopy(owner_source)
+    prior_source.pop("source_verified_at", None)
+    refreshed_source.pop("source_verified_at", None)
+    _require(prior_source == refreshed_source, "owner source shall remain unchanged except verification timestamp")
     _validate_post_merge(post_merge, merge_head)
     evidence = deepcopy(base_evidence)
     evidence["mapping_decisions"] = _owner_decisions(owner_source, closure_head)
@@ -392,6 +401,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.base_evidence:
             _require(args.merge_head is not None and args.post_merge_json is not None, "taggable refresh requires --merge-head and --post-merge-json")
             base = _load_json(args.base_evidence)
+            _require(args.expected_head is None or args.expected_head == base.get("closure_head"), "expected head shall equal base evidence closure head")
             source = verify_owner_comment(_load_json(args.comment_json), str(base.get("closure_head")), str(args.publication_date), str(args.verified_at))
             evidence = refresh_taggable_evidence(base, source, args.merge_head, _load_json(args.post_merge_json))
         else:
