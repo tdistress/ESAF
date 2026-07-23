@@ -13,6 +13,18 @@ BACKLOG_PATTERN_ALIASES = {
     "ARC-P150": ("AI integration",),
 }
 
+EXPECTED_MAPPING_SET_IDS = (
+    "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+    "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
+    "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+)
+
+PROHIBITED_CONTROLLER_CLAIMS = (
+    "three qualified mapping reaffirmations",
+    "Pending: qualified mapping-set and scope approvals",
+    "mapping_reviews",
+)
+
 
 def read_repository_file(relative_path: str) -> str:
     return (ROOT / relative_path).read_text(encoding="utf-8")
@@ -169,6 +181,308 @@ class ReleaseMetadataTests(unittest.TestCase):
         self.assertIsNone(record["publication"]["date"])
         changelog = read_repository_file("CHANGELOG.md")
         self.assertEqual(1, changelog.count(f"## {current_version()} - Unreleased"))
+
+    def test_release_plan_allows_one_uniform_mapping_decision_basis(self) -> None:
+        release_plan = read_repository_file("project/RELEASE_PLAN.md")
+        self.assertIn(
+            "exactly one uniform mapping decision basis: `qualified_approval` or "
+            "`owner_risk_acceptance`",
+            release_plan,
+        )
+        self.assertIn(
+            "Owner risk acceptance defers qualified review; it does not complete or "
+            "qualify that review.",
+            release_plan,
+        )
+        self.assertIn(
+            "Steering Committee governance approval remains a separate gate",
+            release_plan,
+        )
+
+    def test_owner_risk_acceptance_retains_exact_mapping_review_backlog(self) -> None:
+        backlog = read_repository_file("project/BACKLOG.md")
+        item = next(
+            value for value in markdown_list_items(backlog)
+            if "Complete deferred qualified review for the 0.4-alpha mapping snapshots" in value
+        )
+        for mapping_set_id in EXPECTED_MAPPING_SET_IDS:
+            with self.subTest(mapping_set_id=mapping_set_id):
+                self.assertIn(mapping_set_id, item)
+
+    def test_publication_controller_uses_two_basis_owner_risk_contract(self) -> None:
+        plan = read_repository_file(
+            "docs/superpowers/plans/2026-07-21-v04-alpha-publication-gates.md"
+        )
+        for required in (
+            "mapping_decision_schema: esaf-mapping-decisions-v1",
+            "mapping_decision_basis",
+            "owner_risk_acceptance",
+            "qualified_approval",
+            "new closure-head owner comment",
+            "GitHub source immediately before construction, immediately before merge, and immediately before tag",
+            "SHA-256 body comparison",
+            "separate Steering Committee approval",
+            "exact-head technical, editorial, and rendering verdicts with HTTPS locators",
+            "tools/owner_risk_evidence.py",
+            "owner, technical, editorial, rendering, governance, CI, merge-state, and post-merge evidence",
+            "original five-file evidence-only closure allowlist",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, plan)
+        for mapping_set_id in EXPECTED_MAPPING_SET_IDS:
+            with self.subTest(mapping_set_id=mapping_set_id):
+                self.assertIn(mapping_set_id, plan)
+        for prohibited in PROHIBITED_CONTROLLER_CLAIMS:
+            with self.subTest(prohibited=prohibited):
+                self.assertNotIn(prohibited, plan)
+
+    def test_owner_risk_controller_rebuilds_live_evidence_at_each_required_point(self) -> None:
+        plan = read_repository_file(
+            "docs/superpowers/plans/2026-07-21-v04-alpha-publication-gates.md"
+        )
+        for fetched_path in (
+            "esaf-v04-$suffix.json",
+            "esaf-v04-$name-prefetch-merge.json",
+            "esaf-v04-owner-prefetch-tag.json",
+        ):
+            with self.subTest(fetched_path=fetched_path):
+                self.assertIn(fetched_path, plan)
+        self.assertGreaterEqual(
+            plan.count('gh api "repos/tdistress/ESAF/issues/comments/$commentId"'),
+            2,
+        )
+        self.assertGreaterEqual(plan.count("--technical-comment-json"), 2)
+        self.assertGreaterEqual(plan.count("--editorial-comment-json"), 2)
+        self.assertGreaterEqual(plan.count("--rendering-comment-json"), 2)
+        self.assertGreaterEqual(plan.count("--governance-comment-json"), 2)
+        self.assertGreaterEqual(plan.count("--pr-state-json"), 2)
+        self.assertIn("--base-evidence $externalEvidence", plan)
+        self.assertIn("Remove-Item -LiteralPath $externalEvidence", plan)
+        self.assertIn("Remove-Item -LiteralPath $taggableEvidence", plan)
+        for operation in (
+            "Assert-NativeSuccess 'Rebuild closure evidence'",
+            "Assert-NativeSuccess 'Validate refreshed closure evidence'",
+            "Assert-NativeSuccess 'Build refreshed taggable evidence'",
+            "Assert-NativeSuccess 'Validate refreshed taggable evidence'",
+        ):
+            with self.subTest(operation=operation):
+                self.assertIn(operation, plan)
+
+    def test_controller_resolves_basis_and_summary_inside_each_consumer_block(self) -> None:
+        plan = read_repository_file(
+            "docs/superpowers/plans/2026-07-21-v04-alpha-publication-gates.md"
+        )
+        self.assertNotIn("@ownerRiskRefreshArgs", plan)
+        summary_definition = "$mappingDecisionSummary ="
+        tag_block = plan[
+            plan.index("- [ ] **Step 4: Create and push the annotated tag atomically after validation**"):
+            plan.index("- [ ] **Step 5: Resolve the remote annotated tag to the exact commit**")
+        ]
+        issue_block = plan[
+            plan.index("- [ ] **Step 6: Record publication evidence and close issue #39**"):
+            plan.index("- [ ] **Step 7: Clean branches/worktrees and verify final repository state**")
+        ]
+        for block, use in (
+            (tag_block, "Mapping decision basis: $mappingDecisionBasis. $mappingDecisionSummary"),
+            (issue_block, "- Mapping decision: $mappingDecisionBasis; $mappingDecisionSummary"),
+        ):
+            with self.subTest(use=use):
+                self.assertIn(use, block)
+                self.assertLess(block.index("$mappingDecisionBasis ="), block.index(use))
+                self.assertLess(block.index(summary_definition), block.index(use))
+
+    def test_owner_risk_refreshes_compare_exact_fetched_comment_digests(self) -> None:
+        plan = read_repository_file(
+            "docs/superpowers/plans/2026-07-21-v04-alpha-publication-gates.md"
+        )
+        self.assertGreaterEqual(plan.count("[Security.Cryptography.SHA256]::HashData"), 3)
+        self.assertGreaterEqual(plan.count("Assert-OwnerSourceUnchanged"), 3)
+        for required in (
+            "Owner source digest differs from the prior validated source",
+            "Owner source comment identity differs from the prior validated source",
+            "Owner source author identity differs from the prior validated source",
+            "Owner source timestamps differ from the prior validated source",
+            "body_sha256",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, plan)
+
+    def test_controller_constructs_and_validates_both_mapping_decision_bases(self) -> None:
+        plan = read_repository_file(
+            "docs/superpowers/plans/2026-07-21-v04-alpha-publication-gates.md"
+        )
+        self.assertGreaterEqual(
+            plan.count("elseif ($mappingDecisionBasis -eq 'qualified_approval')"),
+            3,
+        )
+        for required in (
+            "function New-QualifiedClosureEvidence",
+            "mapping_decision_schema = 'esaf-mapping-decisions-v1'",
+            "qualified_review_status='completed'",
+            "claims_not_made = @(",
+            "mapping_decisions = $qualifiedDecisions",
+            "scope=$qualifiedScope",
+            "Unsupported mapping decision basis",
+            "--phase closure",
+            "--phase taggable",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, plan)
+
+    def test_final_owner_issue_evidence_reports_digest_comparison(self) -> None:
+        plan = read_repository_file(
+            "docs/superpowers/plans/2026-07-21-v04-alpha-publication-gates.md"
+        )
+        issue_block = plan[
+            plan.index("- [ ] **Step 6: Record publication evidence and close issue #39**"):
+            plan.index("- [ ] **Step 7: Clean branches/worktrees and verify final repository state**")
+        ]
+        for required in (
+            "$owner.comment_url",
+            "$owner.comment_id",
+            "$owner.body_sha256",
+            "$ownerComparison",
+            "Owner source live comparison: $ownerComparison",
+            "Qualified approval is completed",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, issue_block)
+
+    def test_qualified_approval_acquisition_requires_three_live_structured_decisions(self) -> None:
+        plan = read_repository_file(
+            "docs/superpowers/plans/2026-07-21-v04-alpha-publication-gates.md"
+        )
+        for required in (
+            "function New-QualifiedInputFromSources",
+            "qualified decision comment shall contain a JSON object",
+            "decision_type -ne 'qualified_approval'",
+            "decided_at -notmatch '^\\d{4}-\\d{2}-\\d{2}T",
+            "qualified_review_status -ne 'completed'",
+            "claims_not_made -join ','",
+            "Qualified decision evidence URL shall equal fetched comment URL",
+            "esaf-v04-qualified-$index-response.json",
+            "Capture qualified decision comment IDs",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, plan)
+        self.assertGreaterEqual(
+            plan.count('gh api "repos/tdistress/ESAF/issues/comments/$qualifiedCommentId"'),
+            3,
+        )
+        for mapping_set_id in EXPECTED_MAPPING_SET_IDS:
+            with self.subTest(mapping_set_id=mapping_set_id):
+                self.assertIn(mapping_set_id, plan)
+        self.assertNotIn("equivalently complete basis-specific builder", plan)
+        acquisition = plan[
+            plan.index("For \x60qualified_approval\x60, acquire the three reviewer decisions"):
+            plan.index("- [ ] **Step 4: Push and open closure PR B")
+        ]
+        for required in (
+            "$expectedClaims",
+            "[DateTimeOffset]::Parse([string]$decision.decided_at)",
+            "$decision.reviewer",
+            "$decision.qualification",
+            "$decision.limitations.lifecycle -eq 'draft'",
+            "$decision.limitations.claims_not_made -join ','",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, acquisition)
+
+    def test_qualified_inputs_are_produced_from_fresh_live_sources_before_each_consumer(self) -> None:
+        plan = read_repository_file(
+            "docs/superpowers/plans/2026-07-21-v04-alpha-publication-gates.md"
+        )
+        sections = (
+            (
+                "- [ ] **Step 5: Fetch sources and build complete closure evidence before merge**",
+                "- [ ] **Step 6: Immediately refresh every live source and merge PR B**",
+                "esaf-v04-qualified-closure-input.json",
+                "New-QualifiedClosureEvidence $qualifiedInputsPath $closureHead",
+            ),
+            (
+                "- [ ] **Step 6: Immediately refresh every live source and merge PR B**",
+                "### Task 7:",
+                "esaf-v04-qualified-prefetch-merge-input.json",
+                "New-QualifiedClosureEvidence $qualifiedInputsPath $closureHead",
+            ),
+            (
+                "- [ ] **Step 4: Create and push the annotated tag atomically after validation**",
+                "- [ ] **Step 5: Resolve the remote annotated tag to the exact commit**",
+                "esaf-v04-qualified-taggable-input.json",
+                "New-QualifiedTaggableEvidence $qualifiedInputsPath $closureHead $closureMerge $postMergePath",
+            ),
+        )
+        for start, end, input_name, consumer in sections:
+            with self.subTest(input_name=input_name):
+                block = plan[plan.index(start):plan.index(end)]
+                producer = "Set-Content -LiteralPath $qualifiedInputsPath -Encoding utf8"
+                self.assertIn(input_name, block)
+                self.assertIn(producer, block)
+                self.assertIn(consumer, block)
+                self.assertLess(block.index(producer), block.index(consumer))
+                self.assertIn("New-QualifiedInputFromSources", block)
+                self.assertIn("ConvertFrom-Json", block)
+                self.assertIn("gh api", block)
+        self.assertGreaterEqual(plan.count("exactly three fixed qualified comment IDs"), 3)
+        self.assertIn("$priorEvidence.mapping_decisions.source.comment_id", plan)
+        self.assertIn("$baseEvidence.mapping_decisions.source.comment_id", plan)
+
+    def test_qualified_evidence_builder_revalidates_produced_decisions(self) -> None:
+        plan = read_repository_file(
+            "docs/superpowers/plans/2026-07-21-v04-alpha-publication-gates.md"
+        )
+        builder = plan[
+            plan.index("function New-QualifiedClosureEvidence"):
+            plan.index("function New-QualifiedTaggableEvidence")
+        ]
+        for required in (
+            "$expectedMappingIds",
+            "Qualified mapping decision decided_at shall be RFC3339",
+            "Qualified mapping decisions shall contain exactly the three expected mapping-set IDs",
+            "Qualified mapping decision source is incomplete",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, builder)
+
+    def test_qualified_input_producer_emits_every_builder_decision_field(self) -> None:
+        plan = read_repository_file(
+            "docs/superpowers/plans/2026-07-21-v04-alpha-publication-gates.md"
+        )
+        producer = plan[
+            plan.index("function New-QualifiedInputFromSources"):
+            plan.index("function New-QualifiedClosureEvidence")
+        ]
+        builder_required_fields = {
+            "mapping_set_id": "$body.mapping_set_id",
+            "decision_type": "decision_type='qualified_approval'",
+            "sha": "$body.sha",
+            "decided_at": "$body.decided_at",
+            "reviewer": "$body.reviewer",
+            "qualification": "$body.qualification",
+            "disposition": "$body.disposition",
+            "qualified_review_status": "$body.qualified_review_status",
+            "url": "$body.url",
+            "source": "comment_id=[long]$comment.id",
+        }
+        for field, value in builder_required_fields.items():
+            with self.subTest(field=field):
+                self.assertIn(field, producer)
+                self.assertIn(value, producer)
+
+    def test_qualified_acquisition_defines_native_guard_before_its_first_call(self) -> None:
+        plan = read_repository_file(
+            "docs/superpowers/plans/2026-07-21-v04-alpha-publication-gates.md"
+        )
+        acquisition = plan[
+            plan.index("For \x60qualified_approval\x60, acquire the three reviewer decisions"):
+            plan.index("- [ ] **Step 4: Push and open closure PR B")
+        ]
+        definition = "function Assert-NativeSuccess([string]$operation)"
+        self.assertIn(definition, acquisition)
+        self.assertLess(
+            acquisition.index(definition),
+            acquisition.index("Assert-NativeSuccess '"),
+        )
 
     def test_repository_workflow_runs_release_and_link_validation(self) -> None:
         workflow = read_repository_file(".github/workflows/catalog-validation.yml")

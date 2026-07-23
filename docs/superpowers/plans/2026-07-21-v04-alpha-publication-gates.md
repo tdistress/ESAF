@@ -19,14 +19,144 @@
 - Pin Mermaid rendering to exactly `@mermaid-js/mermaid-cli@11.16.0` and render all 23 baseline blocks; any added block increases that exact candidate count.
 - Store renderer outputs and external evidence JSON beneath a verified system temporary directory outside the repository.
 - Do not treat repository ownership as governance authority. Publication approval shall identify the Steering Committee role assigned by `GOVERNANCE.md`.
-- Qualified mapping review shall identify reviewer, qualification, scope, exact closure SHA, date, and disposition; digest-backed reaffirmation is allowed only when all mapping-controlled bytes are identical.
+- Mapping decisions shall use exactly one uniform basis for all three snapshots: `qualified_approval` or `owner_risk_acceptance`. Qualified approval identifies reviewer, qualification, scope, exact closure SHA, date, and disposition; owner-risk acceptance is a disclosed Working Draft risk acceptance that defers, rather than completes, qualified review.
 - Any tracked candidate change invalidates affected exact-head results and requires the specified reviews and gates to be rerun.
 - Resolve every Critical and Important finding before merge. Record accepted Minor findings with owner and rationale.
 - No tag shall be created or pushed until the closure merge commit passes every post-merge gate and the conditional publication date is the current UTC date.
 
+### Task 2 amendment precedence: two-basis publication controller
+
+This amendment controls every conflicting clause below. The external-evidence schema is `mapping_decision_schema: esaf-mapping-decisions-v1`; it shall contain `mapping_decision_basis` and exactly three `mapping_decisions`, all using one basis. `qualified_approval` records independently qualified approval. `owner_risk_acceptance` records the repository owner's disclosed Working Draft acceptance and `qualified_review_status: deferred`; it never represents completed qualified review. A separate Steering Committee approval remains mandatory governance evidence.
+
+For owner-risk acceptance, construct evidence with `tools/owner_risk_evidence.py` from temporary fetched JSON inputs and a new closure-head owner comment. Fetch and verify the GitHub source immediately before construction, immediately before merge, and immediately before tag; require a SHA-256 body comparison each time. The controller shall require owner, technical, editorial, rendering, governance, CI, merge-state, and post-merge evidence with the exact fields enforced by `tools/release_gates.py`. The technical, editorial, and rendering evidence shall be exact-head technical, editorial, and rendering verdicts with HTTPS locators.
+
+Retain the exact three-ID deferred-review backlog item for every owner-risk decision: `uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0`, `uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0`, and `uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0`. Task 5 shall create a fresh closure branch from amended `main` and retain the original five-file evidence-only closure allowlist.
+
+The following controller helpers are executable PowerShell contracts. Each
+qualified input file is assembled from the freshly fetched exact-head
+scope/technical/editorial/rendering/governance/reviewer/check/merge-state
+sources before this helper runs; it is temporary and outside the repository.
+
+```powershell
+function Assert-OwnerSourceUnchanged($PriorSource, $FetchedComment) {
+  $bodyBytes = [Text.Encoding]::UTF8.GetBytes([string]$FetchedComment.body)
+  $digest = ([Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bodyBytes))).ToLowerInvariant()
+  if ($digest -ne [string]$PriorSource.body_sha256) { throw 'Owner source digest differs from the prior validated source' }
+  if ($FetchedComment.id -ne $PriorSource.comment_id -or $FetchedComment.html_url -ne $PriorSource.comment_url) { throw 'Owner source comment identity differs from the prior validated source' }
+  if ($FetchedComment.user.login -ne $PriorSource.author_login -or $FetchedComment.user.id -ne $PriorSource.author_user_id -or $FetchedComment.author_association -ne 'OWNER') { throw 'Owner source author identity differs from the prior validated source' }
+  if ($FetchedComment.created_at -ne $PriorSource.created_at -or $FetchedComment.updated_at -ne $PriorSource.updated_at) { throw 'Owner source timestamps differ from the prior validated source' }
+  return $digest
+}
+
+function Get-StructuredCommentBody($Path, $Name) {
+  $comment = Get-Content -Raw -LiteralPath $Path | ConvertFrom-Json
+  # A qualified decision comment shall contain a JSON object; prose is not evidence.
+  try { $body = [string]$comment.body | ConvertFrom-Json }
+  catch { throw "$Name comment shall contain a JSON object" }
+  if ($comment.id -isnot [long] -or $comment.html_url -notmatch '^https://') {
+    throw "$Name comment identity is invalid"
+  }
+  return [ordered]@{ comment=$comment; body=$body }
+}
+
+function New-QualifiedInputFromSources($QualifiedFetchedPaths, $ExpectedCommentIds, $ClosureHead, $PublicationDate, $ScopePath, $TechnicalPath, $EditorialPath, $RenderingPath, $GovernancePath, $PrStatePath, $BaseEvidence = $null) {
+  $expectedMappingIds = @(
+    'uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0',
+    'uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0',
+    'uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0'
+  )
+  $expectedClaims = @('compliance','certification','equivalence','endorsement','external_scheme_approval','assurance','production_readiness')
+  if (@($QualifiedFetchedPaths).Count -ne 3 -or @($ExpectedCommentIds).Count -ne 3 -or @($ExpectedCommentIds | Select-Object -Unique).Count -ne 3) {
+    throw 'Qualified evidence shall use exactly three fixed qualified comment IDs'
+  }
+  $qualifiedReviews = @($QualifiedFetchedPaths | ForEach-Object {
+    $source = Get-StructuredCommentBody $_ 'qualified decision'
+    $comment = $source.comment
+    $body = $source.body
+    if ([long]$comment.id -notin @($ExpectedCommentIds | ForEach-Object { [long]$_ })) { throw 'Qualified decision comment ID is not one of the fixed response IDs' }
+    if ($body.mapping_set_id -notin $expectedMappingIds -or $body.decision_type -ne 'qualified_approval' -or $body.sha -ne $ClosureHead) {
+      throw 'Qualified decision mapping ID, type, or closure SHA is invalid'
+    }
+    if ($body.decided_at -notmatch '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$') {
+      throw 'Qualified decision decided_at shall be RFC3339'
+    }
+    if ([DateTimeOffset]::Parse([string]$body.decided_at).ToUniversalTime().ToString('yyyy-MM-dd') -ne $PublicationDate) {
+      throw 'Qualified decision date shall equal the current publication date'
+    }
+    if ([string]::IsNullOrWhiteSpace([string]$body.reviewer) -or [string]::IsNullOrWhiteSpace([string]$body.qualification) -or $body.disposition -ne 'approved' -or $body.qualified_review_status -ne 'completed') {
+      throw 'Qualified decision reviewer, qualification, disposition, or completion status is invalid'
+    }
+    if ($body.url -ne $comment.html_url -or $body.url -notmatch '^https://') { throw 'Qualified decision evidence URL shall equal fetched comment URL' }
+    if ($body.limitations.lifecycle -ne 'draft' -or (($body.limitations.claims_not_made -join ',') -ne ($expectedClaims -join ','))) {
+      throw 'Qualified decision limitations shall be the exact Draft claims_not_made set'
+    }
+    [ordered]@{ mapping_set_id=$body.mapping_set_id; decision_type='qualified_approval'; sha=$body.sha; decided_at=$body.decided_at; reviewer=$body.reviewer; qualification=$body.qualification; disposition=$body.disposition; qualified_review_status=$body.qualified_review_status; url=$body.url; source=[ordered]@{comment_id=[long]$comment.id; comment_url=$comment.html_url} }
+  })
+  $actualMappingIds = @($qualifiedReviews.mapping_set_id | Sort-Object) -join ','
+  $expectedMappingIdList = @($expectedMappingIds | Sort-Object) -join ','
+  if ($actualMappingIds -ne $expectedMappingIdList) { throw 'Qualified decisions shall contain exactly the three expected mapping-set IDs' }
+  if ($null -ne $BaseEvidence) {
+    if ($BaseEvidence.closure_head -ne $ClosureHead) { throw 'Taggable qualified evidence closure head differs from retained closure evidence' }
+    $scope = $BaseEvidence.scope; $technical = $BaseEvidence.technical; $editorial = $BaseEvidence.editorial
+    $rendering = $BaseEvidence.rendering; $governance = $BaseEvidence.governance
+    $githubChecks = $BaseEvidence.github_checks; $mergeState = $BaseEvidence.merge_state
+  } else {
+    $scope = (Get-StructuredCommentBody $ScopePath 'scope').body
+    $technical = (Get-StructuredCommentBody $TechnicalPath 'technical').body
+    $editorial = (Get-StructuredCommentBody $EditorialPath 'editorial').body
+    $rendering = (Get-StructuredCommentBody $RenderingPath 'rendering').body
+    $governance = (Get-StructuredCommentBody $GovernancePath 'governance').body
+    $state = Get-Content -Raw -LiteralPath $PrStatePath | ConvertFrom-Json
+    if ($state.headRefOid -ne $ClosureHead) { throw 'Qualified evidence PR state is not bound to closure head' }
+    $githubChecks = [ordered]@{ expected=@('Validate ESAF sources'); observed=@($state.statusCheckRollup | ForEach-Object { [ordered]@{name=$_.name; sha=$ClosureHead; conclusion=([string]$_.conclusion).ToLowerInvariant(); url=$_.detailsUrl} }) }
+    $mergeState = [ordered]@{sha=$ClosureHead; mergeable=($state.mergeable -eq 'MERGEABLE'); state=([string]$state.mergeStateStatus).ToLowerInvariant()}
+  }
+  return [ordered]@{
+    qualified_reviews=$qualifiedReviews; scope=$scope; technical=$technical; editorial=$editorial; rendering=$rendering; governance=$governance
+    github_checks=$githubChecks; merge_state=$mergeState
+  }
+}
+
+function New-QualifiedClosureEvidence($InputPath, $ClosureHead) {
+  $input = Get-Content -Raw -LiteralPath $InputPath | ConvertFrom-Json
+  $expectedMappingIds = @(
+    'uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0',
+    'uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0',
+    'uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0'
+  )
+  $limitations = [ordered]@{
+    lifecycle = 'draft'
+    claims_not_made = @('compliance','certification','equivalence','endorsement','external_scheme_approval','assurance','production_readiness')
+  }
+  $qualifiedDecisions = @($input.qualified_reviews | ForEach-Object {
+    if ($_.mapping_set_id -notin $expectedMappingIds -or $_.sha -ne $ClosureHead -or $_.decision_type -ne 'qualified_approval' -or $_.disposition -ne 'approved' -or $_.qualified_review_status -ne 'completed' -or $_.url -notmatch '^https://' -or [string]::IsNullOrWhiteSpace([string]$_.reviewer) -or [string]::IsNullOrWhiteSpace([string]$_.qualification)) { throw 'Qualified mapping decision is incomplete or not bound to closure head' }
+    if ($_.decided_at -notmatch '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$') { throw 'Qualified mapping decision decided_at shall be RFC3339' }
+    if ($_.source.comment_id -isnot [long] -or $_.source.comment_url -ne $_.url) { throw 'Qualified mapping decision source is incomplete' }
+    [ordered]@{ mapping_set_id=$_.mapping_set_id; decision_type='qualified_approval'; sha=$ClosureHead; decided_at=$_.decided_at; reviewer=$_.reviewer; qualification=$_.qualification; disposition='approved'; qualified_review_status='completed'; url=$_.url; limitations=$limitations; source=$_.source }
+  })
+  if ($qualifiedDecisions.Count -ne 3) { throw 'Qualified evidence shall contain exactly three mapping decisions' }
+  if ((@($qualifiedDecisions.mapping_set_id | Sort-Object) -join ',') -ne (@($expectedMappingIds | Sort-Object) -join ',')) { throw 'Qualified mapping decisions shall contain exactly the three expected mapping-set IDs' }
+  $qualifiedScope = [ordered]@{ sha=$ClosureHead; approver=$input.scope.approver; role='release-scope approver'; date=$input.scope.date; disposition='approved'; url=$input.scope.url }
+  return [ordered]@{
+    closure_head=$ClosureHead; scope=$qualifiedScope; technical=$input.technical; editorial=$input.editorial; rendering=$input.rendering; governance=$input.governance
+    mapping_decision_schema = 'esaf-mapping-decisions-v1'; mapping_decision_basis='qualified_approval'; mapping_decisions = $qualifiedDecisions
+    github_checks=$input.github_checks; merge_state=$input.merge_state
+  }
+}
+
+function New-QualifiedTaggableEvidence($InputPath, $ClosureHead, $MergeHead, $PostMergePath) {
+  $evidence = New-QualifiedClosureEvidence $InputPath $ClosureHead
+  $evidence.merge_head = $MergeHead
+  $evidence.post_merge = Get-Content -Raw -LiteralPath $PostMergePath | ConvertFrom-Json
+  if ($evidence.post_merge.sha -ne $MergeHead) { throw 'Qualified post-merge evidence is not bound to merged main' }
+  return $evidence
+}
+```
+
 ## File and interface map
 
 - `tools/release_gates.py` — parse the authoritative publication-readiness Markdown front matter, validate scope/gates/transitions, reject self-referential SHA fields, and validate external exact-SHA evidence before merge or tag.
+- `tools/owner_risk_evidence.py` — verify the fetched repository-owner comment and construct the two-basis external-evidence object without committing temporary source JSON.
 - `tests/test_release_gates.py` — unit and mutation tests for release record parsing, four-state transitions, scope, Draft preservation, external approval binding, and tag prohibition.
 - `tools/mermaid_inventory.py` — discover every Git-tracked Markdown Mermaid block in deterministic order and emit source digests plus temporary render inputs.
 - `tests/test_mermaid_inventory.py` — inventory ordering, digest, fence parsing, mutation, and repository-count tests without invoking the external renderer.
@@ -137,8 +267,11 @@ def approved_external_evidence(closure: str, merge: str | None = None) -> dict[s
         "editorial": verdict("editorial-reviewer", 3),
         "rendering": verdict("rendering-reviewer", 4),
         "governance": {**verdict("governance-approver", 5), "authority": "Steering Committee"},
-        "mapping_reviews": [
+        "mapping_decision_schema": "esaf-mapping-decisions-v1",
+        "mapping_decision_basis": "qualified_approval",
+        "mapping_decisions": [
             {
+                "decision_type": "qualified_approval",
                 "mapping_set_id": mapping_set_id,
                 "sha": closure,
                 "reviewer": f"qualified-reviewer-{index}",
@@ -215,10 +348,10 @@ class ReleaseGateTests(unittest.TestCase):
         expected_merge = "f" * 40
         evidence = approved_external_evidence(closure, expected_merge)
         evidence["governance"]["sha"] = "e" * 40
-        evidence["mapping_reviews"] = []
+        evidence["mapping_decisions"] = []
         errors = validate_external_evidence(record, evidence, expected_merge, "taggable")
         self.assertIn("governance approval is not bound to closure head", errors)
-        self.assertIn("three qualified mapping reviews are required", errors)
+        self.assertIn("mapping decisions shall contain each expected mapping set exactly once", errors)
 
     def test_taggable_phase_preserves_distinct_candidate_and_merge_domains(self) -> None:
         record = closure_record()
@@ -258,7 +391,7 @@ class ReleaseGateTests(unittest.TestCase):
             ("disposition", lambda e: e["technical"].__setitem__("disposition", "rejected"), "technical disposition shall be approved"),
             ("url", lambda e: e["editorial"].__setitem__("url", "http://example.invalid"), "editorial URL shall use HTTPS"),
             ("findings", lambda e: e["rendering"].__setitem__("important", 1), "rendering Important findings shall be zero"),
-            ("duplicate_mapping", lambda e: e["mapping_reviews"].append(deepcopy(e["mapping_reviews"][0])), "mapping reviews shall contain each expected mapping set exactly once"),
+            ("duplicate_mapping", lambda e: e["mapping_decisions"].append(deepcopy(e["mapping_decisions"][0])), "mapping decisions shall contain each expected mapping set exactly once"),
             ("duplicate_check", lambda e: e["github_checks"]["observed"].append(deepcopy(e["github_checks"]["observed"][0])), "observed GitHub checks shall exactly match expected checks"),
             ("exit_code", lambda e: e["post_merge"]["commands"][0].__setitem__("exit_code", 1), "full_suite command failed"),
             ("authority", lambda e: e["governance"].__setitem__("authority", "repository owner"), "governance authority is not authorized"),
@@ -415,13 +548,13 @@ Candidate-bound evidence shall contain:
 - `scope` with `sha`, named approver, role, UTC date, `disposition: approved`, and HTTPS URL;
 - `technical`, `editorial`, and `rendering` objects with `sha`, reviewer, UTC date, `disposition: approved`, HTTPS URL, `critical: 0`, and `important: 0`;
 - `governance` with `sha`, named approver, UTC date, `disposition: approved`, and HTTPS URL; `authority` shall equal `Steering Committee` as assigned by `GOVERNANCE.md`;
-- exactly three qualified `mapping_reviews`, one per `EXPECTED_MAPPING_SETS`, each with candidate SHA, reviewer, qualification, UTC date, `disposition: approved`, and HTTPS URL;
+- `mapping_decision_schema: esaf-mapping-decisions-v1`, one `mapping_decision_basis`, and exactly three `mapping_decisions`, one per `EXPECTED_MAPPING_SETS`; every decision shall match that one basis. Qualified decisions carry candidate SHA, reviewer, qualification, UTC date, `disposition: approved`, and HTTPS URL. Owner-risk decisions carry candidate SHA, owner identity and association, `accepted_for_working_draft`, `qualified_review_status: deferred`, limitations, and the verified fetched-comment source;
 - `github_checks.expected` equal to `['Validate ESAF sources']` and `github_checks.observed` containing exactly that named check with candidate SHA, `conclusion: success`, and HTTPS URL; and
 - `merge_state` with candidate SHA, `mergeable: true`, and `state: clean`.
 
 For both external phases, the tracked record shall have `phase: closure_candidate`, publication condition exactly `remote_annotated_tag_matches_exact_validated_commit`, a current ISO UTC publication date, and every gate in `ready` or `closed`; any `open` or `in_review` gate blocks closure and tagging.
 
-In phase `closure`, `expected_head == closure_head` and every candidate-bound SHA shall equal it; `merge_head` and `post_merge` shall be absent. In phase `taggable`, the same candidate-bound objects shall remain bound to the separately recorded `closure_head`, while `expected_head == merge_head == post_merge.sha`. The taggable `post_merge.commands` shall contain exactly one successful entry for each of `full_suite`, `controls`, `architectures`, `migration`, `crosswalk_current`, `crosswalk_baseline`, `links`, `release_record`, `mermaid_inventory`, `whole_range_diff`, `cache_count`, and `clean_status`; every exit code shall be 0 and every result shall be nonempty. Missing fields, extra or duplicate mapping sets/checks/commands, non-HTTPS URLs, non-approved dispositions, nonzero findings/exit codes, unqualified reviewers, unauthorized governance, non-clean merge state, and any SHA-domain mismatch shall each produce the exact diagnostics asserted by the mutation tests above.
+In phase `closure`, `expected_head == closure_head` and every candidate-bound SHA shall equal it; `merge_head` and `post_merge` shall be absent. In phase `taggable`, the same candidate-bound objects shall remain bound to the separately recorded `closure_head`, while `expected_head == merge_head == post_merge.sha`. The taggable `post_merge.commands` shall contain exactly one successful entry for each of `full_suite`, `controls`, `architectures`, `migration`, `crosswalk_current`, `crosswalk_baseline`, `links`, `release_record`, `mermaid_inventory`, `whole_range_diff`, `cache_count`, and `clean_status`; every exit code shall be 0 and every result shall be nonempty. Missing fields, extra or duplicate mapping sets/checks/commands, non-HTTPS URLs, non-approved dispositions, nonzero findings/exit codes, invalid decision basis, unauthorized governance, non-clean merge state, and any SHA-domain mismatch shall each produce the exact diagnostics asserted by the mutation tests above.
 
 The CLI shall load the tracked record, run `validate_record`, optionally load its baseline form with `git show "$baselineRef:docs/superpowers/reviews/2026-07-21-v04-alpha-publication-readiness.md"` and run `validate_transition`, optionally load external JSON and run `validate_external_evidence`, print one diagnostic per line, and return 0 only when no diagnostic exists. A missing baseline record is allowed only when the current record phase is `evidence_candidate`; closure and taggable phases shall fail if the baseline record cannot be loaded.
 
@@ -805,7 +938,7 @@ Before committing, unstage any of the four conditional metadata files whose byte
 
 **Interfaces:**
 - Consumes: Tasks 1–3 candidate, pinned renderer, all 23 discovered blocks, and full release scope.
-- Produces: immutable evidence-candidate head, complete rendering ledger, two independent tracked review reports, qualified mapping review evidence in GitHub, and draft PR A linked to issue #39.
+- Produces: immutable evidence-candidate head, complete rendering ledger, two independent tracked review reports, two-basis mapping-decision evidence in GitHub, and draft PR A linked to issue #39.
 
 - [ ] **Step 1: Create a verified temporary rendering directory and render all blocks**
 
@@ -844,7 +977,7 @@ Expected: exact 23-row inventory and all dispositions pass.
 
 Dispatch two distinct reviewers who did not implement Tasks 1–3. Technical review shall cover the complete branch range from merge base through all normative content, controls, architecture, mapping boundaries, validators, and release logic. Editorial review shall cover terminology, `shall`/`should`/`may`, numbering, links, cross-references, changelog, roadmap, version, backlog, release plan, generated catalogs, and all renderer-to-prose pairings.
 
-Each tracked report shall contain scope, merge base, candidate content commit before report creation, methods, exact derived counts, findings, dispositions, reviewer identity, independence statement, and explicit limitation that technical review is not governance or qualified mapping approval. Resolve Critical and Important findings, commit corrections, and redispatch both reviewers after any candidate change.
+Each tracked report shall contain scope, merge base, candidate content commit before report creation, methods, exact derived counts, findings, dispositions, reviewer identity, independence statement, and explicit limitation that technical review is neither governance nor a mapping decision. Resolve Critical and Important findings, commit corrections, and redispatch both reviewers after any candidate change.
 
 - [ ] **Step 4: Commit reports, then run exact-head read-only re-reviews**
 
@@ -893,7 +1026,7 @@ Scope: complete tracked repository, including 91 controls, 7 Draft architecture 
 Renderer: all 23 Mermaid blocks rendered with @mermaid-js/mermaid-cli@11.16.0 and passed readability review.
 Validation: include the exact Task 4 Step 5 command outputs and counts in this paragraph before submitting.
 Reviews: include the exact technical, editorial, and renderer reviewer identities and dispositions before submitting.
-Pending: qualified mapping-set and scope approvals on this exact head.
+Pending: one uniform mapping-decision basis and scope evidence on this exact head.
 
 This PR does not authorize publication or tag creation. Draft artifacts remain Draft, with no compliance, certification, equivalence, endorsement, or production-readiness claim.
 "@
@@ -901,11 +1034,11 @@ gh pr create --repo tdistress/ESAF --base main --head agent/v04-alpha-publicatio
 $prNumber = gh pr view --repo tdistress/ESAF agent/v04-alpha-publication-gates-design --json number --jq '.number'
 ```
 
-The PR body file shall identify issue #39, exact `$candidateSha`, full scope, lifecycle limitations, every command/result, renderer 23/23 result, reviewer identities/dispositions, and pending qualified mapping/scope approval. It shall state that no release or tag is authorized by PR A.
+The PR body file shall identify issue #39, exact `$candidateSha`, full scope, lifecycle limitations, every command/result, renderer 23/23 result, reviewer identities/dispositions, and the pending uniform mapping-decision/scope evidence. It shall state that no release or tag is authorized by PR A.
 
-- [ ] **Step 7: Obtain qualified mapping and scope approval on exact PR A head**
+- [ ] **Step 7: Obtain one uniform mapping decision and scope evidence on exact PR A head**
 
-Require a qualified contributor for each mapping snapshot to comment with reviewer identity, qualification, exact `$candidateSha`, mapping-set ID, date, disposition, and limitations. One person may review multiple snapshots only when their qualification covers each scheme and ESAF requirements. Require the authorized scope approver to approve the complete repository scope on the same SHA. Do not infer qualification from repository ownership.
+Choose exactly one uniform basis for all mapping snapshots. For `qualified_approval`, require qualified contributor comments with reviewer identity, qualification, exact `$candidateSha`, mapping-set ID, date, disposition, and limitations. For `owner_risk_acceptance`, obtain a repository-owner comment with the three exact mapping IDs, exact `$candidateSha`, Working Draft limitations, deferred qualified-review status, and all prohibited claims; never treat it as governance. In either case, obtain exact-head scope evidence. Do not infer mapping qualification from repository ownership.
 
 After approvals, verify:
 
@@ -930,7 +1063,7 @@ Expected: head equals `$candidateSha`, all required checks pass, PR is mergeable
 
 **Interfaces:**
 - Consumes: merged PR A, exact PR A merge SHA, external PR A evidence, and byte-identical mapping/Mermaid inventories.
-- Produces: `agent/v04-alpha-publication-gates-closure`, conditional changelog state for the UTC date observed when the closure candidate is created, and closure PR B whose diff is evidence-only.
+- Produces: a fresh `agent/v04-alpha-publication-gates-closure` branch from amended, validated `main`, conditional changelog state for the UTC date observed when the closure candidate is created, and closure PR B whose diff is evidence-only.
 
 - [ ] **Step 1: Merge approved PR A and validate exact resulting main**
 
@@ -978,7 +1111,7 @@ if (@(git status --porcelain).Count -ne 0) { throw 'Merged evidence main is not 
 
 Post the exact results to PR A and issue #39. Do not create the closure branch until all commands pass.
 
-- [ ] **Step 2: Create the isolated closure worktree from validated main**
+- [ ] **Step 2: Create the fresh isolated closure worktree from amended, validated main**
 
 ```powershell
 $gitCommon = (git rev-parse --path-format=absolute --git-common-dir).Trim()
@@ -992,7 +1125,7 @@ if ((git branch --show-current).Trim() -ne 'agent/v04-alpha-publication-gates-cl
 if ((git rev-parse HEAD).Trim() -ne (git -C $mainRoot rev-parse main).Trim()) { throw 'Closure branch did not start from validated main' }
 ```
 
-Verify `.worktrees` is ignored before this command and run the full baseline suite in the new worktree with bytecode disabled.
+Verify `.worktrees` is ignored before this command, verify `main` contains the two-basis amendment, and run the full baseline suite in the new worktree with bytecode disabled.
 
 - [ ] **Step 3: Write fail-first conditional-publication and allowlist tests**
 
@@ -1107,7 +1240,7 @@ Expected: focused tests and validators pass; commit contains exactly the five al
 
 **Interfaces:**
 - Consumes: exact closure head, PR A evidence, mapping-controlled and Mermaid digests, authorized reviewers, and GitHub checks.
-- Produces: exact-head scope/technical/editorial/rendering reapproval, three qualified mapping reaffirmations, authorized governance approval, passing CI, clean merge state, and merged PR B.
+- Produces: exact-head scope/technical/editorial/rendering verdicts, one uniform three-snapshot mapping-decision record, separate Steering Committee approval, passing CI, clean merge state, and merged PR B.
 
 - [ ] **Step 1: Prove closure diff and controlled-content digest identity**
 
@@ -1123,16 +1256,17 @@ Expected: exactly the five allowed evidence paths changed; all Mermaid and mappi
 
 - [ ] **Step 2: Run full closure gates and independent exact-head reviews**
 
-Run the complete Task 4 Step 5 command set on `$closureHead`. Redispatch the authorized scope approver plus the technical and editorial reviewers to the complete closure range. The scope approver shall state that the complete tracked release scope, three distinct Draft mapping snapshots, lifecycle limitations, and conditional publication boundary remain approved on exact `$closureHead`; record the approver's name, role, date, disposition, and stable comment URL. The rendering reviewer may reapprove via exact inventory digest equality because no Mermaid source changed. All verdicts shall name `$closureHead` externally and report zero unresolved Critical or Important findings.
+Run the complete Task 4 Step 5 command set on `$closureHead`. Redispatch the scope approver plus technical, editorial, and rendering reviewers to the complete closure range. For `qualified_approval`, the scope approver shall state that the complete tracked release scope, three distinct Draft mapping snapshots, lifecycle limitations, and conditional publication boundary remain approved on exact `$closureHead`; record the approver's name, role, date, disposition, and stable comment URL. For `owner_risk_acceptance`, the verified owner source supplies the source-bound owner scope required by `tools/release_gates.py`. The rendering reviewer may use exact inventory digest equality because no Mermaid source changed. All verdicts shall name `$closureHead` externally, use HTTPS locators, and report zero unresolved Critical or Important findings.
 
-- [ ] **Step 3: Obtain qualified mapping reaffirmations on `$closureHead`**
+- [ ] **Step 3: Construct one uniform mapping-decision record on `$closureHead`**
 
-Each qualified reviewer shall state that the mapping-controlled digests are identical to approved PR A content and explicitly reaffirm their mapping-set disposition for `$closureHead`. Record one evidence object per mapping set by constructing it with resolved execution values:
+Use exactly one basis for the three mapping snapshots. A `qualified_approval` basis requires qualified reviewers to state that mapping-controlled digests are identical to approved PR A content and state their exact-head dispositions. An `owner_risk_acceptance` basis requires a new closure-head owner comment that accepts the disclosed Working Draft risk, defers qualified review, includes all three mapping IDs and limitations, and does not claim qualification. Construct either set of three decision objects with resolved execution values:
 
 ```powershell
 $publicationDate = (Get-Date).ToUniversalTime().ToString('yyyy-MM-dd')
 $closureHead = (git rev-parse HEAD).Trim()
-$mappingReview = [ordered]@{
+$mappingDecision = [ordered]@{
+    decision_type = $mappingDecisionBasis
     mapping_set_id = 'uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0'
     sha = $closureHead
     reviewer = $resolvedReviewerName
@@ -1143,7 +1277,67 @@ $mappingReview = [ordered]@{
 }
 ```
 
-The controller shall supply `$resolvedReviewerName`, `$resolvedQualification`, and `$resolvedCommentUrl` from the actual GitHub approval. Repeat the object for the other two exact mapping-set IDs. Never commit the temporary JSON.
+The controller shall supply the basis-specific resolved identity and HTTPS locator from the actual GitHub source. Repeat the object for the other two exact mapping-set IDs. For owner risk, use `tools/owner_risk_evidence.py` with a freshly fetched comment JSON source and do not commit any temporary JSON. Governance remains a separate Steering Committee approval.
+
+For `qualified_approval`, acquire the three reviewer decisions as structured
+JSON, not prose. Each reviewer comment body shall be exactly one JSON object
+with `mapping_set_id`, `decision_type: qualified_approval`, exact
+`$closureHead`, RFC3339 `decided_at`, nonempty `reviewer` and
+`qualification`, `disposition: approved`,
+`qualified_review_status: completed`, an HTTPS `url` equal to that
+fetched comment's `html_url`, and limitations exactly
+`lifecycle: draft` plus the seven `claims_not_made` values enforced by
+the controller helper. Capture qualified decision comment IDs in fixed
+temporary response files; later controller steps shall fetch those numeric IDs
+again and reject any changed or incomplete source.
+
+```powershell
+function Assert-NativeSuccess([string]$operation) {
+  if ($LASTEXITCODE -ne 0) { throw "$operation failed with exit $LASTEXITCODE" }
+}
+$temp = [IO.Path]::GetTempPath()
+$closurePr = gh pr view --repo tdistress/ESAF agent/v04-alpha-publication-gates-closure --json number --jq '.number'
+Assert-NativeSuccess 'Resolve closure PR for qualified decision acquisition'
+$closureHead = gh pr view --repo tdistress/ESAF $closurePr --json headRefOid --jq '.headRefOid'
+Assert-NativeSuccess 'Resolve closure head for qualified decision acquisition'
+$publicationDate = (Get-Date).ToUniversalTime().ToString('yyyy-MM-dd')
+$expectedMappingIds = @(
+  'uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0',
+  'uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0',
+  'uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0'
+)
+$expectedClaims = @('compliance','certification','equivalence','endorsement','external_scheme_approval','assurance','production_readiness')
+$commentFeedPath = Join-Path $temp 'esaf-v04-qualified-comment-feed.json'
+gh api "repos/tdistress/ESAF/issues/$closurePr/comments?per_page=100" |
+  Set-Content -LiteralPath $commentFeedPath -Encoding utf8
+Assert-NativeSuccess 'Fetch qualified decision comments'
+$commentFeed = Get-Content -Raw -LiteralPath $commentFeedPath | ConvertFrom-Json
+for ($index = 0; $index -lt $expectedMappingIds.Count; $index++) {
+  $mappingSetId = $expectedMappingIds[$index]
+  $matches = @($commentFeed | Where-Object {
+    try {
+      $decision = [string]$_.body | ConvertFrom-Json
+        $decision.mapping_set_id -eq $mappingSetId -and
+        $decision.decision_type -eq 'qualified_approval' -and
+        $decision.sha -eq $closureHead -and
+        $decision.decided_at -match '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$' -and
+        [DateTimeOffset]::Parse([string]$decision.decided_at).ToUniversalTime().ToString('yyyy-MM-dd') -eq $publicationDate -and
+        -not [string]::IsNullOrWhiteSpace([string]$decision.reviewer) -and
+        -not [string]::IsNullOrWhiteSpace([string]$decision.qualification) -and
+        $decision.disposition -eq 'approved' -and
+        $decision.qualified_review_status -eq 'completed' -and
+        $decision.url -eq $_.html_url -and
+        $decision.url -match '^https://' -and
+        $decision.limitations.lifecycle -eq 'draft' -and
+        ($decision.limitations.claims_not_made -join ',') -eq ($expectedClaims -join ',')
+    } catch { $false }
+  })
+  if ($matches.Count -ne 1) { throw "Expected one structured qualified decision for $mappingSetId" }
+  $responsePath = Join-Path $temp "esaf-v04-qualified-$index-response.json"
+  [ordered]@{id=[long]$matches[0].id; url=$matches[0].html_url; mapping_set_id=$mappingSetId} |
+    ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $responsePath -Encoding utf8
+}
+```
 
 - [ ] **Step 4: Push and open closure PR B, then obtain governance approval**
 
@@ -1157,7 +1351,7 @@ Closure candidate: $closureHead
 Diff boundary: CHANGELOG.md, project/RELEASE_PLAN.md, the publication-readiness record, and two focused test modules only.
 Publication condition: the recorded UTC date becomes effective only when remote annotated tag v0.4-alpha resolves to the exact post-merge validated commit.
 Validation and reviews: include the exact Task 6 Step 2 outputs, reviewer identities, and dispositions before submitting.
-Pending: exact-head scope approval, qualified mapping reaffirmations, and authorized governance approval on this exact head.
+Pending: exact-head scope evidence, the chosen uniform mapping-decision basis, and separate authorized governance approval on this exact head.
 
 Draft artifacts remain Draft, with no compliance, certification, equivalence, endorsement, or production-readiness claim.
 "@
@@ -1167,28 +1361,190 @@ $closurePr = gh pr view --repo tdistress/ESAF agent/v04-alpha-publication-gates-
 
 The authorized Steering Committee approver shall comment with role/authority, exact `$closureHead`, the current UTC date, disposition `approved`, the condition that publication remains contingent on the remote annotated tag and post-merge gates, and limitations. Repository ownership without the governance role is insufficient.
 
-- [ ] **Step 5: Validate external closure evidence before merge**
+- [ ] **Step 5: Fetch sources and build complete closure evidence before merge**
 
-Build `closure-external-evidence.json` at the exact system-temporary path below with `$closureHead`, the separate scope object derived from the actual Step 2 scope-approval comment, passing GitHub check URL/conclusion, governance object, three mapping review objects, technical/editorial/rendering verdict objects, and no merge/post-merge object yet. The scope object shall contain the actual approver name, role `release-scope approver`, `$closureHead`, current UTC date, disposition `approved`, and that comment's HTTPS URL. Refuse to reuse stale content from a prior attempt or to rebind PR A's earlier scope approval. Then run:
+For `owner_risk_acceptance`, run this self-contained block immediately before
+initial closure validation. It fetches immutable comment sources by numeric ID,
+removes stale output, rebuilds evidence, and validates the rebuilt file. The
+qualified branch below fetches and produces its own complete input before use.
 
 ```powershell
-$closureHead = (git rev-parse HEAD).Trim()
-$closureBase = (git merge-base HEAD main).Trim()
-$closurePr = gh pr view --repo tdistress/ESAF agent/v04-alpha-publication-gates-closure --json number --jq '.number'
-$externalEvidence = Join-Path ([IO.Path]::GetTempPath()) 'esaf-v04-closure-external-evidence.json'
-python tools/release_gates.py --check --baseline-ref $closureBase --external-evidence $externalEvidence --expected-head $closureHead --phase closure
-gh pr checks --repo tdistress/ESAF $closurePr
-gh pr view --repo tdistress/ESAF $closurePr --json state,isDraft,mergeable,headRefOid,statusCheckRollup
+function Assert-NativeSuccess([string]$operation) {
+  if ($LASTEXITCODE -ne 0) { throw "$operation failed with exit $LASTEXITCODE" }
+}
+$temp = [IO.Path]::GetTempPath()
+$closurePr = gh pr view --repo tdistress/ESAF `
+  agent/v04-alpha-publication-gates-closure --json number --jq '.number'
+Assert-NativeSuccess 'Resolve closure PR for evidence construction'
+$closureHead = gh pr view --repo tdistress/ESAF $closurePr `
+  --json headRefOid --jq '.headRefOid'
+Assert-NativeSuccess 'Resolve closure head for evidence construction'
+$responseNames = @('owner','scope','technical','editorial','rendering','governance')
+$fetched = @{}
+foreach ($name in $responseNames) {
+  $responsePath = Join-Path $temp "esaf-v04-$name-response.json"
+  $commentId = [long](Get-Content -Raw -LiteralPath $responsePath | ConvertFrom-Json).id
+  $suffix = if ($name -eq 'owner') { 'owner-fetched' } else { "$name-fetched" }
+  $fetchedPath = Join-Path $temp "esaf-v04-$suffix.json"
+  gh api "repos/tdistress/ESAF/issues/comments/$commentId" |
+    Set-Content -LiteralPath $fetchedPath -Encoding utf8
+  Assert-NativeSuccess "Fetch $name comment for closure evidence"
+  $fetched[$name] = $fetchedPath
+}
+$ownerFetchedPath = $fetched.owner
+$technicalFetchedPath = $fetched.technical
+$editorialFetchedPath = $fetched.editorial
+$renderingFetchedPath = $fetched.rendering
+$governanceFetchedPath = $fetched.governance
+$prStatePath = Join-Path $temp 'esaf-v04-pr-state.json'
+gh pr view --repo tdistress/ESAF $closurePr `
+  --json headRefOid,mergeable,mergeStateStatus,statusCheckRollup |
+  Set-Content -LiteralPath $prStatePath -Encoding utf8
+Assert-NativeSuccess 'Fetch closure PR state for evidence construction'
+$state = Get-Content -Raw -LiteralPath $prStatePath | ConvertFrom-Json
+if ($state.headRefOid -ne $closureHead) { throw 'PR head changed during evidence construction' }
+$publicationDate = python -c "from pathlib import Path; from tools.release_gates import load_front_matter; print(load_front_matter(Path('docs/superpowers/reviews/2026-07-21-v04-alpha-publication-readiness.md'))['publication']['date'])"
+Assert-NativeSuccess 'Read conditional publication date'
+$verifiedAt = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
+$externalEvidence = Join-Path $temp 'esaf-v04-closure-external-evidence.json'
+if (Test-Path -LiteralPath $externalEvidence) { Remove-Item -LiteralPath $externalEvidence }
+$mappingDecisionBasis = python -c "from pathlib import Path; from tools.release_gates import load_front_matter; print(load_front_matter(Path('docs/superpowers/reviews/2026-07-21-v04-alpha-publication-readiness.md'))['mapping_decision_basis'])"
+Assert-NativeSuccess 'Resolve closure mapping decision basis'
+if ($mappingDecisionBasis -eq 'owner_risk_acceptance') {
+  $ownerFetched = Get-Content -Raw -LiteralPath $ownerFetchedPath | ConvertFrom-Json
+  $ownerDigest = ([Convert]::ToHexString([Security.Cryptography.SHA256]::HashData([Text.Encoding]::UTF8.GetBytes([string]$ownerFetched.body)))).ToLowerInvariant()
+  python tools/owner_risk_evidence.py --comment-json $ownerFetchedPath `
+    --technical-comment-json $technicalFetchedPath `
+    --editorial-comment-json $editorialFetchedPath `
+    --rendering-comment-json $renderingFetchedPath `
+    --governance-comment-json $governanceFetchedPath `
+    --pr-state-json $prStatePath --expected-head $closureHead `
+    --publication-date $publicationDate --verified-at $verifiedAt --output $externalEvidence
+  Assert-NativeSuccess 'Build owner-risk closure evidence'
+  $builtEvidence = Get-Content -Raw -LiteralPath $externalEvidence | ConvertFrom-Json
+  if ($builtEvidence.mapping_decisions[0].source.body_sha256 -ne $ownerDigest) { throw 'Built owner evidence digest does not match fetched UTF-8 body' }
+} elseif ($mappingDecisionBasis -eq 'qualified_approval') {
+  $qualifiedInputsPath = Join-Path $temp 'esaf-v04-qualified-closure-input.json'
+  $qualifiedResponsePaths = @(0..2 | ForEach-Object { Join-Path $temp "esaf-v04-qualified-$_-response.json" })
+  $qualifiedCommentIds = @($qualifiedResponsePaths | ForEach-Object { [long](Get-Content -Raw -LiteralPath $_ | ConvertFrom-Json).id })
+  if ($qualifiedCommentIds.Count -ne 3 -or @($qualifiedCommentIds | Select-Object -Unique).Count -ne 3) { throw 'Qualified closure input shall use exactly three fixed qualified comment IDs' }
+  $qualifiedFetchedPaths = @()
+  for ($index = 0; $index -lt $qualifiedCommentIds.Count; $index++) {
+    $qualifiedCommentId = $qualifiedCommentIds[$index]
+    $qualifiedFetchedPath = Join-Path $temp "esaf-v04-qualified-$index-fetched.json"
+    gh api "repos/tdistress/ESAF/issues/comments/$qualifiedCommentId" |
+      Set-Content -LiteralPath $qualifiedFetchedPath -Encoding utf8
+    Assert-NativeSuccess "Fetch qualified decision $index for closure evidence"
+    $qualifiedFetchedPaths += $qualifiedFetchedPath
+  }
+  $qualifiedInput = New-QualifiedInputFromSources $qualifiedFetchedPaths $qualifiedCommentIds $closureHead $publicationDate $fetched.scope $fetched.technical $fetched.editorial $fetched.rendering $fetched.governance $prStatePath
+  $qualifiedInput | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $qualifiedInputsPath -Encoding utf8
+  $qualifiedEvidence = New-QualifiedClosureEvidence $qualifiedInputsPath $closureHead
+  $qualifiedEvidence | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $externalEvidence -Encoding utf8
+} else { throw "Unsupported mapping decision basis: $mappingDecisionBasis" }
+Assert-NativeSuccess 'Build closure evidence'
+$closureBase = (git merge-base HEAD origin/main).Trim()
+Assert-NativeSuccess 'Resolve closure baseline'
+python tools/release_gates.py --check --baseline-ref $closureBase `
+  --external-evidence $externalEvidence --expected-head $closureHead --phase closure
+Assert-NativeSuccess 'Validate closure evidence'
 ```
 
 Expected: release validator passes, GitHub checks pass, PR head equals `$closureHead`, PR is mergeable, and no tracked byte changed after approval.
 
-- [ ] **Step 6: Merge PR B without deleting its worktree-owned branch**
+- [ ] **Step 6: Immediately refresh every live source and merge PR B**
+
+Run this uninterrupted fail-closed block. It refetches owner, technical,
+editorial, rendering, governance, CI, and merge-state sources before rebuild
+and merge; any changed source or failed validation stops before merge.
 
 ```powershell
-$closurePr = gh pr view --repo tdistress/ESAF agent/v04-alpha-publication-gates-closure --json number --jq '.number'
+function Assert-NativeSuccess([string]$operation) {
+  if ($LASTEXITCODE -ne 0) { throw "$operation failed with exit $LASTEXITCODE" }
+}
+$closurePr = gh pr view --repo tdistress/ESAF `
+  agent/v04-alpha-publication-gates-closure --json number --jq '.number'
+Assert-NativeSuccess 'Resolve closure PR before merge'
+$localClosureHead = (git rev-parse HEAD).Trim()
+Assert-NativeSuccess 'Resolve immutable local closure head'
+$closureHead = gh pr view --repo tdistress/ESAF $closurePr `
+  --json headRefOid --jq '.headRefOid'
+Assert-NativeSuccess 'Resolve remote closure head'
+if ($closureHead -ne $localClosureHead) { throw 'PR head differs from reviewed head' }
+$temp = [IO.Path]::GetTempPath()
+$responseNames = @('owner','scope','technical','editorial','rendering','governance')
+$fetched = @{}
+foreach ($name in $responseNames) {
+  $responsePath = Join-Path $temp "esaf-v04-$name-response.json"
+  $commentId = [long](Get-Content -Raw -LiteralPath $responsePath | ConvertFrom-Json).id
+  $fetchedPath = Join-Path $temp "esaf-v04-$name-prefetch-merge.json"
+  gh api "repos/tdistress/ESAF/issues/comments/$commentId" |
+    Set-Content -LiteralPath $fetchedPath -Encoding utf8
+  Assert-NativeSuccess "Refetch $name comment"
+  $fetched[$name] = $fetchedPath
+}
+$prStatePath = Join-Path $temp 'esaf-v04-pr-state-prefetch-merge.json'
+gh pr view --repo tdistress/ESAF $closurePr `
+  --json headRefOid,mergeable,mergeStateStatus,statusCheckRollup |
+  Set-Content -LiteralPath $prStatePath -Encoding utf8
+Assert-NativeSuccess 'Refetch closure PR state'
+$state = Get-Content -Raw -LiteralPath $prStatePath | ConvertFrom-Json
+if ($state.headRefOid -ne $closureHead) { throw 'PR head changed' }
+if ($state.mergeable -ne 'MERGEABLE') { throw 'PR is not mergeable' }
+if ($state.mergeStateStatus -ne 'CLEAN') { throw 'PR merge state is not clean' }
+$publicationDate = python -c "from pathlib import Path; from tools.release_gates import load_front_matter; print(load_front_matter(Path('docs/superpowers/reviews/2026-07-21-v04-alpha-publication-readiness.md'))['publication']['date'])"
+Assert-NativeSuccess 'Read conditional publication date'
+$verifiedAt = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
+$externalEvidence = Join-Path $temp 'esaf-v04-closure-external-evidence.json'
+$priorEvidence = Get-Content -Raw -LiteralPath $externalEvidence | ConvertFrom-Json
+$mappingDecisionBasis = [string]$priorEvidence.mapping_decision_basis
+if (Test-Path -LiteralPath $externalEvidence) { Remove-Item -LiteralPath $externalEvidence }
+if ($mappingDecisionBasis -eq 'owner_risk_acceptance') {
+  $ownerFetched = Get-Content -Raw -LiteralPath $fetched.owner | ConvertFrom-Json
+  $fetchedOwnerDigest = ([Convert]::ToHexString([Security.Cryptography.SHA256]::HashData([Text.Encoding]::UTF8.GetBytes([string]$ownerFetched.body)))).ToLowerInvariant()
+  $ownerDigest = Assert-OwnerSourceUnchanged $priorEvidence.mapping_decisions[0].source $ownerFetched
+  if ($ownerDigest -ne $fetchedOwnerDigest) { throw 'Owner source digest differs from the prior validated source' }
+  python tools/owner_risk_evidence.py --comment-json $fetched.owner `
+    --technical-comment-json $fetched.technical `
+    --editorial-comment-json $fetched.editorial `
+    --rendering-comment-json $fetched.rendering `
+    --governance-comment-json $fetched.governance `
+    --pr-state-json $prStatePath --expected-head $closureHead `
+    --publication-date $publicationDate --verified-at $verifiedAt --output $externalEvidence
+  Assert-NativeSuccess 'Rebuild owner-risk closure evidence'
+  $rebuiltEvidence = Get-Content -Raw -LiteralPath $externalEvidence | ConvertFrom-Json
+  if ($rebuiltEvidence.mapping_decisions[0].source.body_sha256 -ne $ownerDigest) { throw 'Rebuilt owner evidence digest differs from live source' }
+} elseif ($mappingDecisionBasis -eq 'qualified_approval') {
+  $qualifiedInputsPath = Join-Path $temp 'esaf-v04-qualified-prefetch-merge-input.json'
+  $qualifiedCommentIds = @($priorEvidence.mapping_decisions.source.comment_id | ForEach-Object { [long]$_ })
+  if ($qualifiedCommentIds.Count -ne 3 -or @($qualifiedCommentIds | Select-Object -Unique).Count -ne 3) { throw 'Qualified pre-merge input shall use exactly three fixed qualified comment IDs' }
+  $qualifiedFetchedPaths = @()
+  for ($index = 0; $index -lt $qualifiedCommentIds.Count; $index++) {
+    $qualifiedCommentId = $qualifiedCommentIds[$index]
+    $qualifiedFetchedPath = Join-Path $temp "esaf-v04-qualified-$index-prefetch-merge.json"
+    gh api "repos/tdistress/ESAF/issues/comments/$qualifiedCommentId" |
+      Set-Content -LiteralPath $qualifiedFetchedPath -Encoding utf8
+    Assert-NativeSuccess "Refetch qualified decision $index before merge"
+    $qualifiedFetchedPaths += $qualifiedFetchedPath
+  }
+  $qualifiedInput = New-QualifiedInputFromSources $qualifiedFetchedPaths $qualifiedCommentIds $closureHead $publicationDate $fetched.scope $fetched.technical $fetched.editorial $fetched.rendering $fetched.governance $prStatePath
+  $qualifiedInput | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $qualifiedInputsPath -Encoding utf8
+  $qualifiedEvidence = New-QualifiedClosureEvidence $qualifiedInputsPath $closureHead
+  $qualifiedEvidence | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $externalEvidence -Encoding utf8
+} else { throw "Unsupported mapping decision basis: $mappingDecisionBasis" }
+Assert-NativeSuccess 'Rebuild closure evidence'
+$closureBase = (git merge-base HEAD origin/main).Trim()
+Assert-NativeSuccess 'Resolve closure baseline'
+python tools/release_gates.py --check --baseline-ref $closureBase `
+  --external-evidence $externalEvidence --expected-head $closureHead --phase closure
+Assert-NativeSuccess 'Validate refreshed closure evidence'
+if (@(git status --porcelain).Count -ne 0) { throw 'Closure worktree changed after approval' }
 gh pr merge --repo tdistress/ESAF $closurePr --merge
-gh pr view --repo tdistress/ESAF $closurePr --json state,mergedAt,mergeCommit,headRefOid
+Assert-NativeSuccess 'Merge closure PR'
+$mergedState = gh pr view --repo tdistress/ESAF $closurePr `
+  --json state,mergedAt,mergeCommit,headRefOid | ConvertFrom-Json
+Assert-NativeSuccess 'Verify closure merge'
+if ($mergedState.state -ne 'MERGED') { throw 'Closure PR did not merge' }
 ```
 
 Expected: PR state `MERGED`; capture the exact merge commit as `$closureMerge`. Do not create the tag yet.
@@ -1245,7 +1601,9 @@ Rerender all Mermaid blocks only if the inventory digest differs from the exact 
 
 - [ ] **Step 3: Complete external taggable evidence and validate it**
 
-Add `merge_head: $closureMerge` and a `post_merge` object to the temporary JSON. Its `commands` array shall contain the exact command, exit code, and concise result for the full suite plus controls, architectures, migration, crosswalks in both modes, links, release gate, Mermaid inventory, diff, cache, and status checks. Bind every post-merge `sha` field to `$closureMerge` while retaining GitHub check, governance, and mapping approvals bound to `$closureHead` as the reviewed pre-merge candidate. Task 1 tests enforce these two successive SHA domains.
+Create the post-merge JSON from the exact Task 7 Step 2 results. Do not mutate
+the validated closure evidence; the next step rebuilds a separate taggable
+evidence file from a fresh fetched owner source.
 
 Run:
 
@@ -1254,46 +1612,113 @@ $gitCommon = (git rev-parse --path-format=absolute --git-common-dir).Trim()
 $mainRoot = Split-Path -Parent $gitCommon
 Set-Location -LiteralPath $mainRoot
 $currentMain = (git rev-parse HEAD).Trim()
-$closurePr = gh pr view --repo tdistress/ESAF agent/v04-alpha-publication-gates-closure --json number --jq '.number'
-$closureHead = gh pr view --repo tdistress/ESAF $closurePr --json headRefOid --jq '.headRefOid'
-$externalEvidence = Join-Path ([IO.Path]::GetTempPath()) 'esaf-v04-closure-external-evidence.json'
-$evidenceMerge = (git rev-parse 'HEAD^1').Trim()
-$validatedMerge = ((Get-Content -Raw -LiteralPath $externalEvidence | ConvertFrom-Json).merge_head).Trim()
-if ($currentMain -ne $validatedMerge) { throw 'Current main differs from the merge SHA recorded in external evidence' }
-python tools/release_gates.py --check --baseline-ref $evidenceMerge --external-evidence $externalEvidence --expected-head $validatedMerge --phase taggable
+$postMergePath = Join-Path ([IO.Path]::GetTempPath()) 'esaf-v04-post-merge.json'
+@{sha=$currentMain; commands=$commands} | ConvertTo-Json -Depth 6 |
+  Set-Content -LiteralPath $postMergePath -Encoding utf8
 ```
 
-Expected: pass only when the pre-merge and post-merge SHA domains are each internally exact and all required evidence is present.
+Expected: the post-merge input is ready for the fresh taggable-evidence rebuild.
 
 - [ ] **Step 4: Create and push the annotated tag atomically after validation**
 
 ```powershell
-$gitCommon = (git rev-parse --path-format=absolute --git-common-dir).Trim()
-$mainRoot = Split-Path -Parent $gitCommon
-Set-Location -LiteralPath $mainRoot
-$externalEvidence = Join-Path ([IO.Path]::GetTempPath()) 'esaf-v04-closure-external-evidence.json'
+function Assert-NativeSuccess([string]$operation) {
+  if ($LASTEXITCODE -ne 0) { throw "$operation failed with exit $LASTEXITCODE" }
+}
+$externalEvidence = Join-Path ([IO.Path]::GetTempPath()) `
+  'esaf-v04-closure-external-evidence.json'
+$taggableEvidence = Join-Path ([IO.Path]::GetTempPath()) `
+  'esaf-v04-taggable-external-evidence.json'
+$postMergePath = Join-Path ([IO.Path]::GetTempPath()) `
+  'esaf-v04-post-merge.json'
+$baseEvidence = Get-Content -Raw -LiteralPath $externalEvidence | ConvertFrom-Json
+$closureHead = [string]$baseEvidence.closure_head
+$mappingDecisionBasis = [string]$baseEvidence.mapping_decision_basis
+$closureMerge = (git rev-parse HEAD).Trim()
+Assert-NativeSuccess 'Resolve closure merge before tag'
 $evidenceMerge = (git rev-parse 'HEAD^1').Trim()
-$validatedMerge = ((Get-Content -Raw -LiteralPath $externalEvidence | ConvertFrom-Json).merge_head).Trim()
-if ([string]::IsNullOrWhiteSpace($validatedMerge)) { throw 'External evidence does not contain the validated merge SHA' }
-git fetch origin main
-$currentMain = (git rev-parse HEAD).Trim()
-$remoteMain = (git rev-parse origin/main).Trim()
-if ($currentMain -ne $validatedMerge -or $remoteMain -ne $validatedMerge) { throw 'HEAD, origin/main, and the validated merge SHA are not identical' }
-if (@(git status --porcelain).Count -ne 0) { throw 'Main worktree changed after validation' }
+Assert-NativeSuccess 'Resolve evidence baseline before tag'
 $publicationDate = python -c "from pathlib import Path; from tools.release_gates import load_front_matter; print(load_front_matter(Path('docs/superpowers/reviews/2026-07-21-v04-alpha-publication-readiness.md'))['publication']['date'])"
-if ((Get-Date).ToUniversalTime().ToString('yyyy-MM-dd') -ne $publicationDate.Trim()) { throw 'Conditional publication date expired; create and review a new closure candidate' }
-python tools/release_gates.py --check --baseline-ref $evidenceMerge --external-evidence $externalEvidence --expected-head $validatedMerge --phase taggable
-if (git tag --list 'v0.4-alpha') { throw 'Local v0.4-alpha tag already exists' }
-if (git ls-remote --tags origin 'refs/tags/v0.4-alpha') { throw 'Remote v0.4-alpha tag already exists' }
+Assert-NativeSuccess 'Read publication date before tag'
+$verifiedAt = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
+if (Test-Path -LiteralPath $taggableEvidence) { Remove-Item -LiteralPath $taggableEvidence }
+if ($mappingDecisionBasis -eq 'owner_risk_acceptance') {
+  $ownerCommentId = [long]$baseEvidence.mapping_decisions[0].source.comment_id
+  $ownerFetchedPath = Join-Path ([IO.Path]::GetTempPath()) 'esaf-v04-owner-prefetch-tag.json'
+  gh api "repos/tdistress/ESAF/issues/comments/$ownerCommentId" |
+    Set-Content -LiteralPath $ownerFetchedPath -Encoding utf8
+  Assert-NativeSuccess 'Refetch owner source before tag'
+  $ownerFetched = Get-Content -Raw -LiteralPath $ownerFetchedPath | ConvertFrom-Json
+  $fetchedOwnerDigest = ([Convert]::ToHexString([Security.Cryptography.SHA256]::HashData([Text.Encoding]::UTF8.GetBytes([string]$ownerFetched.body)))).ToLowerInvariant()
+  $ownerDigest = Assert-OwnerSourceUnchanged $baseEvidence.mapping_decisions[0].source $ownerFetched
+  if ($ownerDigest -ne $fetchedOwnerDigest) { throw 'Owner source digest differs from the prior validated source' }
+  python tools/owner_risk_evidence.py --comment-json $ownerFetchedPath `
+    --base-evidence $externalEvidence --expected-head $closureHead `
+    --publication-date $publicationDate --verified-at $verifiedAt `
+    --merge-head $closureMerge --post-merge-json $postMergePath --output $taggableEvidence
+  Assert-NativeSuccess 'Build refreshed owner-risk taggable evidence'
+  $rebuiltEvidence = Get-Content -Raw -LiteralPath $taggableEvidence | ConvertFrom-Json
+  if ($rebuiltEvidence.mapping_decisions[0].source.body_sha256 -ne $ownerDigest) { throw 'Taggable owner evidence digest differs from live source' }
+} elseif ($mappingDecisionBasis -eq 'qualified_approval') {
+  $qualifiedInputsPath = Join-Path ([IO.Path]::GetTempPath()) 'esaf-v04-qualified-taggable-input.json'
+  $qualifiedCommentIds = @($baseEvidence.mapping_decisions.source.comment_id | ForEach-Object { [long]$_ })
+  if ($qualifiedCommentIds.Count -ne 3 -or @($qualifiedCommentIds | Select-Object -Unique).Count -ne 3) { throw 'Qualified taggable input shall use exactly three fixed qualified comment IDs' }
+  $qualifiedFetchedPaths = @()
+  for ($index = 0; $index -lt $qualifiedCommentIds.Count; $index++) {
+    $qualifiedCommentId = $qualifiedCommentIds[$index]
+    $qualifiedFetchedPath = Join-Path ([IO.Path]::GetTempPath()) "esaf-v04-qualified-$index-prefetch-tag.json"
+    gh api "repos/tdistress/ESAF/issues/comments/$qualifiedCommentId" |
+      Set-Content -LiteralPath $qualifiedFetchedPath -Encoding utf8
+    Assert-NativeSuccess "Refetch qualified decision $index before tag"
+    $qualifiedFetchedPaths += $qualifiedFetchedPath
+  }
+  $qualifiedInput = New-QualifiedInputFromSources -QualifiedFetchedPaths $qualifiedFetchedPaths -ExpectedCommentIds $qualifiedCommentIds -ClosureHead $closureHead -PublicationDate $publicationDate -BaseEvidence $baseEvidence
+  $qualifiedInput | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $qualifiedInputsPath -Encoding utf8
+  $qualifiedEvidence = New-QualifiedTaggableEvidence $qualifiedInputsPath $closureHead $closureMerge $postMergePath
+  $qualifiedEvidence | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $taggableEvidence -Encoding utf8
+} else { throw "Unsupported mapping decision basis: $mappingDecisionBasis" }
+Assert-NativeSuccess 'Build refreshed taggable evidence'
+python tools/release_gates.py --check --baseline-ref $evidenceMerge --external-evidence $taggableEvidence --expected-head $closureMerge --phase taggable
+Assert-NativeSuccess 'Validate refreshed taggable evidence'
+$validatedEvidence = Get-Content -Raw -LiteralPath $taggableEvidence | ConvertFrom-Json
+$validatedMerge = [string]$validatedEvidence.merge_head
+$mappingDecisionBasis = [string]$validatedEvidence.mapping_decision_basis
+$mappingIds = ($validatedEvidence.mapping_decisions.mapping_set_id -join ', ')
+if ($mappingDecisionBasis -eq 'owner_risk_acceptance') {
+  $mappingDecisionSummary = "Repository-owner risk acceptance for $mappingIds; qualified review is deferred and backlog retention covers all three mapping-set IDs."
+  $owner = $validatedEvidence.mapping_decisions[0].source
+  $ownerComparison = 'passed: live fetched comment matched the validated ID, URL, author, association, timestamps, and SHA-256 body digest'
+  $ownerDetail = "Owner source: $($owner.comment_url); comment $($owner.comment_id); body SHA-256 $($owner.body_sha256)."
+} elseif ($mappingDecisionBasis -eq 'qualified_approval') {
+  $mappingDecisionSummary = "Qualified approval is completed for $mappingIds."
+  $ownerComparison = 'not applicable: qualified approval basis'
+  $ownerDetail = 'Owner source: not applicable for qualified approval.'
+} else { throw "Unsupported mapping decision basis: $mappingDecisionBasis" }
+git fetch origin main
+Assert-NativeSuccess 'Fetch origin main before tag'
+$currentMain = (git rev-parse HEAD).Trim()
+Assert-NativeSuccess 'Resolve local main before tag'
+$remoteMain = (git rev-parse origin/main).Trim()
+Assert-NativeSuccess 'Resolve remote main before tag'
+if ($currentMain -ne $validatedMerge -or $remoteMain -ne $validatedMerge) { throw 'HEAD, origin/main, and validated merge differ' }
+if (@(git status --porcelain).Count -ne 0) { throw 'Main worktree is not clean' }
+if ((Get-Date).ToUniversalTime().ToString('yyyy-MM-dd') -ne $publicationDate.Trim()) { throw 'Conditional publication date expired' }
+if (@(git tag --list 'v0.4-alpha').Count -ne 0) { throw 'Local v0.4-alpha already exists' }
+if (@(git ls-remote --tags origin 'refs/tags/v0.4-alpha').Count -ne 0) { throw 'Remote v0.4-alpha already exists' }
+python tools/release_gates.py --check --baseline-ref $evidenceMerge --external-evidence $taggableEvidence --expected-head $closureMerge --phase taggable
+Assert-NativeSuccess 'Revalidate refreshed taggable evidence before tag'
 $tagMessage = @"
 ESAF 0.4-alpha Working Draft
 
 Validated commit: $validatedMerge
 Evidence: https://github.com/tdistress/ESAF/issues/39
+Mapping decision basis: $mappingDecisionBasis. $mappingDecisionSummary
 Lifecycle boundary: Draft artifacts remain Draft; this tag does not claim compliance, certification, equivalence, endorsement, or production readiness.
 "@
 git tag -a v0.4-alpha $validatedMerge -m $tagMessage
+Assert-NativeSuccess 'Create annotated v0.4-alpha tag'
 git push origin refs/tags/v0.4-alpha
+Assert-NativeSuccess 'Push annotated v0.4-alpha tag'
 ```
 
 Do not move or recreate the tag if push verification fails. Diagnose the exact remote state first.
@@ -1304,8 +1729,9 @@ Do not move or recreate the tag if push verification fails. Diagnose the exact r
 $gitCommon = (git rev-parse --path-format=absolute --git-common-dir).Trim()
 $mainRoot = Split-Path -Parent $gitCommon
 Set-Location -LiteralPath $mainRoot
-$externalEvidence = Join-Path ([IO.Path]::GetTempPath()) 'esaf-v04-closure-external-evidence.json'
-$validatedMerge = ((Get-Content -Raw -LiteralPath $externalEvidence | ConvertFrom-Json).merge_head).Trim()
+$taggableEvidence = Join-Path ([IO.Path]::GetTempPath()) 'esaf-v04-taggable-external-evidence.json'
+$evidence = Get-Content -Raw -LiteralPath $taggableEvidence | ConvertFrom-Json
+$validatedMerge = [string]$evidence.merge_head
 git fetch origin tag v0.4-alpha --force
 $localPeeled = (git rev-parse 'v0.4-alpha^{commit}').Trim()
 $remoteRows = @(git ls-remote --tags origin 'refs/tags/v0.4-alpha' 'refs/tags/v0.4-alpha^{}')
@@ -1315,7 +1741,7 @@ if ($localPeeled -ne $validatedMerge -or $remotePeeled -ne $validatedMerge) { th
 
 - [ ] **Step 6: Record publication evidence and close issue #39**
 
-Post one consolidated issue comment containing PR A head/merge, PR B head/merge, tag object and peeled commit, every command/count, 23/23 renderer result, technical/editorial/rendering verdicts, three qualified mapping approvals, governance approval, GitHub check URLs, clean merge state, lifecycle limitations, and zero unresolved Critical/Important findings. Replace any superseded result rather than appending contradictory totals.
+Post one consolidated issue comment containing PR A head/merge, PR B head/merge, tag object and peeled commit, every command/count, 23/23 renderer result, technical/editorial/rendering verdicts, the uniform mapping decision basis and three exact decisions, separate governance approval, GitHub check URLs, clean merge state, lifecycle limitations, and zero unresolved Critical/Important findings. When the basis is owner risk, include the deferred-review backlog IDs and fetched-comment SHA-256 body comparison. Replace any superseded result rather than appending contradictory totals.
 
 The controller shall supply `$finalGateSummary` from the exact Task 7 Steps 2–3 outputs and `$finalReviewSummary` from the approved external-evidence objects. Use those resolved values to post the consolidated comment, then close the issue:
 
@@ -1323,8 +1749,25 @@ The controller shall supply `$finalGateSummary` from the exact Task 7 Steps 2–
 $gitCommon = (git rev-parse --path-format=absolute --git-common-dir).Trim()
 $mainRoot = Split-Path -Parent $gitCommon
 Set-Location -LiteralPath $mainRoot
-$externalEvidence = Join-Path ([IO.Path]::GetTempPath()) 'esaf-v04-closure-external-evidence.json'
-$validatedMerge = ((Get-Content -Raw -LiteralPath $externalEvidence | ConvertFrom-Json).merge_head).Trim()
+$taggableEvidence = Join-Path ([IO.Path]::GetTempPath()) 'esaf-v04-taggable-external-evidence.json'
+$evidence = Get-Content -Raw -LiteralPath $taggableEvidence | ConvertFrom-Json
+$validatedMerge = [string]$evidence.merge_head
+$mappingDecisionBasis = [string]$evidence.mapping_decision_basis
+$mappingIds = ($evidence.mapping_decisions.mapping_set_id -join ', ')
+if ($mappingDecisionBasis -eq 'owner_risk_acceptance') {
+  $mappingDecisionSummary = "Repository-owner risk acceptance for $mappingIds; qualified review is deferred and backlog retention covers all three mapping-set IDs."
+  $owner = $evidence.mapping_decisions[0].source
+  $ownerComparison = 'passed: live fetched comment matched the validated ID, URL, author, association, timestamps, and SHA-256 body digest'
+  $ownerDetail = "Owner source: $($owner.comment_url); comment $($owner.comment_id); body SHA-256 $($owner.body_sha256)."
+} elseif ($mappingDecisionBasis -eq 'qualified_approval') {
+  $mappingDecisionSummary = "Qualified approval is completed for $mappingIds."
+  $ownerComparison = 'not applicable: qualified approval basis'
+  $ownerDetail = 'Owner source: not applicable for qualified approval.'
+} else { throw "Unsupported mapping decision basis: $mappingDecisionBasis" }
+$finalGateSummary = ($evidence.post_merge.commands | ForEach-Object {
+  "$($_.name): $($_.result)"
+}) -join '; '
+$finalReviewSummary = "technical $($evidence.technical.url); editorial $($evidence.editorial.url); rendering $($evidence.rendering.url); governance $($evidence.governance.url)"
 $closurePr = gh pr view --repo tdistress/ESAF agent/v04-alpha-publication-gates-closure --json number --jq '.number'
 $closureHead = gh pr view --repo tdistress/ESAF $closurePr --json headRefOid --jq '.headRefOid'
 $evidencePr = gh pr view --repo tdistress/ESAF agent/v04-alpha-publication-gates-design --json number --jq '.number'
@@ -1342,11 +1785,14 @@ $evidenceComment = @"
 - Renderer: 23/23 Mermaid blocks parsed and passed readability review with @mermaid-js/mermaid-cli@11.16.0.
 - Repository gates: $finalGateSummary
 - Reviews: $finalReviewSummary
+- Mapping decision: $mappingDecisionBasis; $mappingDecisionSummary
+- $ownerDetail
+- Owner source live comparison: $ownerComparison
 - Findings: Critical 0; Important 0; every accepted Minor includes its owner and rationale.
 - Lifecycle: all architecture, control, and mapping artifacts retain their existing Draft state. Publication claims no compliance, certification, equivalence, endorsement, external-scheme approval, or production readiness.
 "@
 gh issue comment 39 --repo tdistress/ESAF --body $evidenceComment
-gh issue close 39 --repo tdistress/ESAF --comment "0.4-alpha publication gates are closed. Remote annotated tag v0.4-alpha resolves to validated commit $validatedMerge. See the preceding consolidated evidence comment for exact results and lifecycle limitations."
+gh issue close 39 --repo tdistress/ESAF --comment "0.4-alpha publication gates are closed. Basis: $mappingDecisionBasis. Remote annotated tag v0.4-alpha resolves to validated commit $validatedMerge. See the preceding consolidated evidence comment for exact results, deferred-review status where applicable, and lifecycle limitations."
 ```
 
 - [ ] **Step 7: Clean branches/worktrees and verify final repository state**

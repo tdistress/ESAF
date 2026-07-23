@@ -11,6 +11,7 @@ import unittest
 import yaml
 
 from tools.release_gates import (
+    CLAIMS_NOT_MADE,
     EXPECTED_MAPPING_SETS,
     GATE_IDS,
     load_front_matter,
@@ -54,7 +55,7 @@ def valid_record() -> dict[str, object]:
     }
 
 
-def closure_record() -> dict[str, object]:
+def closure_record(basis: str = "qualified_approval") -> dict[str, object]:
     record = valid_record()
     record["phase"] = "closure_candidate"
     record["publication"] = {
@@ -68,10 +69,75 @@ def closure_record() -> dict[str, object]:
         }
         for gate in GATE_IDS
     }
+    record["mapping_decision_basis"] = basis
     return record
 
 
-def approved_external_evidence(closure: str, merge: str | None = None) -> dict[str, object]:
+def publication_timestamp() -> str:
+    return f"{datetime.now(timezone.utc).date().isoformat()}T12:00:00Z"
+
+
+def owner_source(created_at: str) -> dict[str, object]:
+    return {
+        "repository": "tdistress/ESAF",
+        "comment_url": "https://github.com/tdistress/ESAF/pull/51#issuecomment-1001",
+        "comment_id": 1001,
+        "author_login": "tdistress",
+        "author_user_id": 2001,
+        "author_association": "OWNER",
+        "created_at": created_at,
+        "updated_at": created_at,
+        "body_sha256": "a" * 64,
+        "source_verified_at": publication_timestamp(),
+    }
+
+
+def limitations() -> dict[str, object]:
+    return {"lifecycle": "draft", "claims_not_made": sorted(CLAIMS_NOT_MADE)}
+
+
+def mapping_decisions(closure: str, basis: str) -> list[dict[str, object]]:
+    decided_at = publication_timestamp()
+    if basis == "qualified_approval":
+        return [
+            {
+                "mapping_set_id": mapping_set_id,
+                "decision_type": basis,
+                "sha": closure,
+                "decided_at": decided_at,
+                "url": f"https://github.com/tdistress/ESAF/pull/51#issuecomment-{1100 + index}",
+                "reviewer": f"qualified-reviewer-{index}",
+                "qualification": "documented scheme and ESAF qualification",
+                "disposition": "approved",
+                "qualified_review_status": "completed",
+                "limitations": limitations(),
+            }
+            for index, mapping_set_id in enumerate(EXPECTED_MAPPING_SETS, start=1)
+        ]
+    source = owner_source(decided_at)
+    return [
+        {
+            "mapping_set_id": mapping_set_id,
+            "decision_type": basis,
+            "sha": closure,
+            "decided_at": decided_at,
+            "url": source["comment_url"],
+            "owner_login": source["author_login"],
+            "owner_user_id": source["author_user_id"],
+            "role": "repository_owner",
+            "author_association": "OWNER",
+            "disposition": "accepted_for_working_draft",
+            "qualified_review_status": "deferred",
+            "limitations": limitations(),
+            "source": deepcopy(source),
+        }
+        for mapping_set_id in EXPECTED_MAPPING_SETS
+    ]
+
+
+def approved_external_evidence(
+    closure: str, merge: str | None = None, basis: str = "qualified_approval",
+) -> dict[str, object]:
     date = datetime.now(timezone.utc).date().isoformat()
 
     def verdict(role: str, suffix: int) -> dict[str, object]:
@@ -100,18 +166,9 @@ def approved_external_evidence(closure: str, merge: str | None = None) -> dict[s
             "approver": "governance-approver",
             "authority": "Steering Committee",
         },
-        "mapping_reviews": [
-            {
-                "mapping_set_id": mapping_set_id,
-                "sha": closure,
-                "reviewer": f"qualified-reviewer-{index}",
-                "qualification": "documented scheme and ESAF qualification",
-                "date": date,
-                "disposition": "approved",
-                "url": f"https://github.com/tdistress/ESAF/pull/50#issuecomment-{index + 10}",
-            }
-            for index, mapping_set_id in enumerate(EXPECTED_MAPPING_SETS, start=1)
-        ],
+        "mapping_decision_schema": "esaf-mapping-decisions-v1",
+        "mapping_decision_basis": basis,
+        "mapping_decisions": mapping_decisions(closure, basis),
         "github_checks": {
             "expected": ["Validate ESAF sources"],
             "observed": [{
@@ -123,6 +180,20 @@ def approved_external_evidence(closure: str, merge: str | None = None) -> dict[s
         },
         "merge_state": {"sha": closure, "mergeable": True, "state": "clean"},
     }
+    if basis == "owner_risk_acceptance":
+        source = owner_source(publication_timestamp())
+        evidence["scope"] = {
+            "approval_basis": basis,
+            "sha": closure,
+            "owner_login": source["author_login"],
+            "owner_user_id": source["author_user_id"],
+            "role": "repository_owner",
+            "author_association": "OWNER",
+            "decided_at": source["created_at"],
+            "scope": "complete_git_tracked_repository",
+            "limitations": limitations(),
+            "source": deepcopy(source),
+        }
     if merge is not None:
         command_names = (
             "full_suite", "controls", "architectures", "migration",
@@ -252,10 +323,10 @@ class ReleaseGateTests(unittest.TestCase):
         expected_merge = "f" * 40
         evidence = approved_external_evidence(closure, expected_merge)
         evidence["governance"]["sha"] = "e" * 40
-        evidence["mapping_reviews"] = []
+        evidence["mapping_decisions"] = []
         errors = validate_external_evidence(record, evidence, expected_merge, "taggable")
         self.assertIn("governance approval is not bound to closure head", errors)
-        self.assertIn("three qualified mapping reviews are required", errors)
+        self.assertIn("mapping decisions shall contain each expected mapping set exactly once", errors)
 
     def test_scope_and_governance_require_named_approvers(self) -> None:
         closure = "d" * 40
@@ -334,7 +405,7 @@ class ReleaseGateTests(unittest.TestCase):
             ("disposition", lambda e: e["technical"].__setitem__("disposition", "rejected"), "technical disposition shall be approved"),
             ("url", lambda e: e["editorial"].__setitem__("url", "http://example.invalid"), "editorial URL shall use HTTPS"),
             ("findings", lambda e: e["rendering"].__setitem__("important", 1), "rendering Important findings shall be zero"),
-            ("duplicate_mapping", lambda e: e["mapping_reviews"].append(deepcopy(e["mapping_reviews"][0])), "mapping reviews shall contain each expected mapping set exactly once"),
+            ("duplicate_mapping", lambda e: e["mapping_decisions"].append(deepcopy(e["mapping_decisions"][0])), "mapping decisions shall contain each expected mapping set exactly once"),
             ("duplicate_check", lambda e: e["github_checks"]["observed"].append(deepcopy(e["github_checks"]["observed"][0])), "observed GitHub checks shall exactly match expected checks"),
             ("exit_code", lambda e: e["post_merge"]["commands"][0].__setitem__("exit_code", 1), "full_suite command failed"),
             ("authority", lambda e: e["governance"].__setitem__("authority", "repository owner"), "governance authority is not authorized"),
@@ -347,3 +418,145 @@ class ReleaseGateTests(unittest.TestCase):
                 evidence = approved_external_evidence(closure, merge)
                 mutate(evidence)
                 self.assertIn(diagnostic, validate_external_evidence(closure_record(), evidence, merge, "taggable"))
+
+    def test_closure_record_requires_supported_mapping_decision_basis(self) -> None:
+        for value in (None, "legacy"):
+            with self.subTest(value=value):
+                record = closure_record()
+                if value is None:
+                    record.pop("mapping_decision_basis")
+                else:
+                    record["mapping_decision_basis"] = value
+                self.assertIn(
+                    "closure candidate mapping_decision_basis shall be supported",
+                    validate_record(ROOT, record),
+                )
+        self.assertEqual(validate_record(ROOT, valid_record()), [])
+
+    def test_both_uniform_mapping_decision_bases_pass_closure_and_taggable(self) -> None:
+        closure = "d" * 40
+        merge = "f" * 40
+        for basis in ("qualified_approval", "owner_risk_acceptance"):
+            with self.subTest(basis=basis, phase="closure"):
+                self.assertEqual(
+                    validate_external_evidence(
+                        closure_record(basis), approved_external_evidence(closure, basis=basis), closure, "closure"
+                    ), [],
+                )
+            with self.subTest(basis=basis, phase="taggable"):
+                self.assertEqual(
+                    validate_external_evidence(
+                        closure_record(basis), approved_external_evidence(closure, merge, basis), merge, "taggable"
+                    ), [],
+                )
+
+    def test_mapping_decisions_require_v1_schema_and_uniform_basis(self) -> None:
+        closure = "d" * 40
+        cases = (
+            ("schema", lambda e: e.__setitem__("mapping_decision_schema", "legacy"), "mapping decision schema shall equal esaf-mapping-decisions-v1"),
+            ("mixed", lambda e: e["mapping_decisions"][0].__setitem__("decision_type", "owner_risk_acceptance"), "mapping decisions shall uniformly match mapping_decision_basis"),
+            ("duplicate", lambda e: e["mapping_decisions"].append(deepcopy(e["mapping_decisions"][0])), "mapping decisions shall contain each expected mapping set exactly once"),
+        )
+        for name, mutate, diagnostic in cases:
+            with self.subTest(name=name):
+                evidence = approved_external_evidence(closure)
+                mutate(evidence)
+                self.assertIn(diagnostic, validate_external_evidence(closure_record(), evidence, closure, "closure"))
+
+    def test_legacy_mapping_reviews_are_rejected(self) -> None:
+        closure = "d" * 40
+        evidence = approved_external_evidence(closure)
+        evidence["mapping_reviews"] = []
+        self.assertIn(
+            "legacy mapping_reviews are not accepted",
+            validate_external_evidence(closure_record(), evidence, closure, "closure"),
+        )
+
+    def test_closure_record_and_external_evidence_require_the_same_basis(self) -> None:
+        closure = "d" * 40
+        self.assertIn(
+            "external mapping decision basis shall match the closure record",
+            validate_external_evidence(
+                closure_record("owner_risk_acceptance"), approved_external_evidence(closure), closure, "closure"
+            ),
+        )
+
+    def test_global_mutations_apply_to_both_bases_and_phases(self) -> None:
+        closure, merge = "d" * 40, "f" * 40
+        mutations = (
+            ("missing_check", lambda e: e.pop("github_checks"), "GitHub checks are required"),
+            ("failed_check", lambda e: e["github_checks"]["observed"][0].__setitem__("conclusion", "failure"), "GitHub check conclusion shall be success"),
+            ("dirty_merge", lambda e: e["merge_state"].__setitem__("state", "dirty"), "merge state shall be clean"),
+            ("unmergeable", lambda e: e["merge_state"].__setitem__("mergeable", False), "merge state shall be mergeable"),
+            ("governance_authority", lambda e: e["governance"].__setitem__("authority", "repository owner"), "governance authority is not authorized"),
+            ("stale_closure_sha", lambda e: e["mapping_decisions"][0].__setitem__("sha", "a" * 40), "mapping decision is not bound to closure head"),
+        )
+        for basis in ("qualified_approval", "owner_risk_acceptance"):
+            for phase, expected, merged in (("closure", closure, None), ("taggable", merge, merge)):
+                for name, mutate, diagnostic in mutations:
+                    with self.subTest(basis=basis, phase=phase, name=name):
+                        evidence = approved_external_evidence(closure, merged, basis)
+                        mutate(evidence)
+                        self.assertIn(diagnostic, validate_external_evidence(closure_record(basis), evidence, expected, phase))
+
+    def test_qualified_mapping_decision_fields_are_strict(self) -> None:
+        closure = "d" * 40
+        mutations = (
+            (lambda d: d.__setitem__("reviewer", ""), "qualified mapping reviewer shall be named"),
+            (lambda d: d.__setitem__("qualification", ""), "qualified mapping reviewer shall be qualified"),
+            (lambda d: d.__setitem__("disposition", "deferred"), "qualified mapping disposition shall be approved"),
+            (lambda d: d.__setitem__("qualified_review_status", "deferred"), "qualified review status shall be completed"),
+            (lambda d: d.__setitem__("decided_at", "today"), "mapping decision timestamp shall be RFC 3339"),
+            (lambda d: d.__setitem__("url", "http://example.invalid"), "mapping decision URL shall use HTTPS"),
+            (lambda d: d["limitations"].__setitem__("lifecycle", "released"), "mapping decision lifecycle shall equal draft"),
+            (lambda d: d["limitations"].__setitem__("claims_not_made", []), "mapping decision prohibited claims shall equal the required set"),
+            (lambda d: d.__setitem__("owner_risk_wording", "owner_risk_acceptance deferred repository owner publication basis"), "qualified mapping decision shall not contain owner-risk wording"),
+        )
+        for mutate, diagnostic in mutations:
+            evidence = approved_external_evidence(closure)
+            mutate(evidence["mapping_decisions"][0])
+            self.assertIn(diagnostic, validate_external_evidence(closure_record(), evidence, closure, "closure"))
+
+    def test_mapping_timestamp_uses_utc_publication_date(self) -> None:
+        closure = "d" * 40
+        record = closure_record()
+        record["publication"]["date"] = "2026-07-24"
+        evidence = approved_external_evidence(closure)
+        for item in evidence["mapping_decisions"]:
+            item["decided_at"] = "2026-07-23T23:30:00-02:00"
+        self.assertNotIn(
+            "mapping decision UTC date shall equal conditional publication date",
+            validate_external_evidence(record, evidence, closure, "closure"),
+        )
+
+    def test_owner_risk_fields_and_scope_are_strict(self) -> None:
+        closure = "d" * 40
+        mutations = (
+            (lambda e: e["mapping_decisions"][0].__setitem__("author_association", "MEMBER"), "owner mapping author association shall be OWNER"),
+            (lambda e: e["mapping_decisions"][0].__setitem__("owner_login", ""), "owner mapping login shall be named"),
+            (lambda e: e["mapping_decisions"][0].__setitem__("owner_user_id", True), "owner mapping user ID shall be numeric"),
+            (lambda e: e["mapping_decisions"][0].__setitem__("role", "reviewer"), "owner mapping role shall equal repository_owner"),
+            (lambda e: e["mapping_decisions"][0].__setitem__("disposition", "approved"), "owner mapping disposition shall be accepted_for_working_draft"),
+            (lambda e: e["mapping_decisions"][0].__setitem__("qualified_review_status", "completed"), "owner mapping qualified review status shall be deferred"),
+            (lambda e: e["mapping_decisions"][0]["source"].__setitem__("body_sha256", "edited"), "owner mapping source body digest shall be a SHA-256"),
+            (lambda e: [source.__setitem__("author_login", "attacker") for source in [*(item["source"] for item in e["mapping_decisions"]), e["scope"]["source"]]], "owner mapping source login shall equal tdistress"),
+            (lambda e: [source.__setitem__("comment_url", "https://example.invalid/not-a-github-comment") for source in [*(item["source"] for item in e["mapping_decisions"]), e["scope"]["source"]]], "owner mapping source comment URL shall use GitHub HTTPS"),
+            (lambda e: e["scope"].__setitem__("scope", "mapping_sets_only"), "owner scope shall equal complete_git_tracked_repository"),
+            (lambda e: e["scope"]["limitations"].__setitem__("claims_not_made", []), "scope prohibited claims shall equal the required set"),
+        )
+        for mutate, diagnostic in mutations:
+            evidence = approved_external_evidence(closure, basis="owner_risk_acceptance")
+            mutate(evidence)
+            self.assertIn(diagnostic, validate_external_evidence(closure_record("owner_risk_acceptance"), evidence, closure, "closure"))
+
+    def test_owner_risk_rejects_pr_a_head_rebinding_in_both_phases(self) -> None:
+        closure, merge, old_pr_a_head = "d" * 40, "f" * 40, "a" * 40
+        for phase, expected in (("closure", closure), ("taggable", merge)):
+            with self.subTest(phase=phase):
+                evidence = approved_external_evidence(closure, merge if phase == "taggable" else None, "owner_risk_acceptance")
+                evidence["scope"]["sha"] = old_pr_a_head
+                for decision in evidence["mapping_decisions"]:
+                    decision["sha"] = old_pr_a_head
+                errors = validate_external_evidence(closure_record("owner_risk_acceptance"), evidence, expected, phase)
+                self.assertIn("scope approval is not bound to closure head", errors)
+                self.assertIn("mapping decision is not bound to closure head", errors)
