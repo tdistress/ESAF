@@ -291,6 +291,63 @@ class ReleaseMetadataTests(unittest.TestCase):
                 self.assertLess(block.index("$mappingDecisionBasis ="), block.index(use))
                 self.assertLess(block.index(summary_definition), block.index(use))
 
+    def test_owner_risk_refreshes_compare_exact_fetched_comment_digests(self) -> None:
+        plan = read_repository_file(
+            "docs/superpowers/plans/2026-07-21-v04-alpha-publication-gates.md"
+        )
+        self.assertGreaterEqual(plan.count("[Security.Cryptography.SHA256]::HashData"), 3)
+        self.assertGreaterEqual(plan.count("Assert-OwnerSourceUnchanged"), 3)
+        for required in (
+            "Owner source digest differs from the prior validated source",
+            "Owner source comment identity differs from the prior validated source",
+            "Owner source author identity differs from the prior validated source",
+            "Owner source timestamps differ from the prior validated source",
+            "body_sha256",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, plan)
+
+    def test_controller_constructs_and_validates_both_mapping_decision_bases(self) -> None:
+        plan = read_repository_file(
+            "docs/superpowers/plans/2026-07-21-v04-alpha-publication-gates.md"
+        )
+        self.assertGreaterEqual(
+            plan.count("elseif ($mappingDecisionBasis -eq 'qualified_approval')"),
+            3,
+        )
+        for required in (
+            "function New-QualifiedClosureEvidence",
+            "mapping_decision_schema = 'esaf-mapping-decisions-v1'",
+            "qualified_review_status='completed'",
+            "claims_not_made = @(",
+            "mapping_decisions = $qualifiedDecisions",
+            "scope=$qualifiedScope",
+            "Unsupported mapping decision basis",
+            "--phase closure",
+            "--phase taggable",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, plan)
+
+    def test_final_owner_issue_evidence_reports_digest_comparison(self) -> None:
+        plan = read_repository_file(
+            "docs/superpowers/plans/2026-07-21-v04-alpha-publication-gates.md"
+        )
+        issue_block = plan[
+            plan.index("- [ ] **Step 6: Record publication evidence and close issue #39**"):
+            plan.index("- [ ] **Step 7: Clean branches/worktrees and verify final repository state**")
+        ]
+        for required in (
+            "$owner.comment_url",
+            "$owner.comment_id",
+            "$owner.body_sha256",
+            "$ownerComparison",
+            "Owner source live comparison: $ownerComparison",
+            "Qualified approval is completed",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, issue_block)
+
     def test_repository_workflow_runs_release_and_link_validation(self) -> None:
         workflow = read_repository_file(".github/workflows/catalog-validation.yml")
         self.assertIn("python tools/release_gates.py --check", workflow)

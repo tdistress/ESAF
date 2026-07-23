@@ -32,6 +32,50 @@ For owner-risk acceptance, construct evidence with `tools/owner_risk_evidence.py
 
 Retain the exact three-ID deferred-review backlog item for every owner-risk decision: `uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0`, `uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0`, and `uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0`. Task 5 shall create a fresh closure branch from amended `main` and retain the original five-file evidence-only closure allowlist.
 
+The following controller helpers are executable PowerShell contracts. Each
+qualified input file is assembled from the freshly fetched exact-head
+scope/technical/editorial/rendering/governance/reviewer/check/merge-state
+sources before this helper runs; it is temporary and outside the repository.
+
+```powershell
+function Assert-OwnerSourceUnchanged($PriorSource, $FetchedComment) {
+  $bodyBytes = [Text.Encoding]::UTF8.GetBytes([string]$FetchedComment.body)
+  $digest = ([Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($bodyBytes))).ToLowerInvariant()
+  if ($digest -ne [string]$PriorSource.body_sha256) { throw 'Owner source digest differs from the prior validated source' }
+  if ($FetchedComment.id -ne $PriorSource.comment_id -or $FetchedComment.html_url -ne $PriorSource.comment_url) { throw 'Owner source comment identity differs from the prior validated source' }
+  if ($FetchedComment.user.login -ne $PriorSource.author_login -or $FetchedComment.user.id -ne $PriorSource.author_user_id -or $FetchedComment.author_association -ne 'OWNER') { throw 'Owner source author identity differs from the prior validated source' }
+  if ($FetchedComment.created_at -ne $PriorSource.created_at -or $FetchedComment.updated_at -ne $PriorSource.updated_at) { throw 'Owner source timestamps differ from the prior validated source' }
+  return $digest
+}
+
+function New-QualifiedClosureEvidence($InputPath, $ClosureHead) {
+  $input = Get-Content -Raw -LiteralPath $InputPath | ConvertFrom-Json
+  $limitations = [ordered]@{
+    lifecycle = 'draft'
+    claims_not_made = @('compliance','certification','equivalence','endorsement','external_scheme_approval','assurance','production_readiness')
+  }
+  $qualifiedDecisions = @($input.qualified_reviews | ForEach-Object {
+    if ($_.sha -ne $ClosureHead -or $_.disposition -ne 'approved' -or $_.qualified_review_status -ne 'completed' -or $_.url -notmatch '^https://') { throw 'Qualified mapping decision is incomplete or not bound to closure head' }
+    [ordered]@{ mapping_set_id=$_.mapping_set_id; decision_type='qualified_approval'; sha=$ClosureHead; decided_at=$_.decided_at; reviewer=$_.reviewer; qualification=$_.qualification; disposition='approved'; qualified_review_status='completed'; url=$_.url; limitations=$limitations }
+  })
+  if ($qualifiedDecisions.Count -ne 3) { throw 'Qualified evidence shall contain exactly three mapping decisions' }
+  $qualifiedScope = [ordered]@{ sha=$ClosureHead; approver=$input.scope.approver; role='release-scope approver'; date=$input.scope.date; disposition='approved'; url=$input.scope.url }
+  return [ordered]@{
+    closure_head=$ClosureHead; scope=$qualifiedScope; technical=$input.technical; editorial=$input.editorial; rendering=$input.rendering; governance=$input.governance
+    mapping_decision_schema = 'esaf-mapping-decisions-v1'; mapping_decision_basis='qualified_approval'; mapping_decisions = $qualifiedDecisions
+    github_checks=$input.github_checks; merge_state=$input.merge_state
+  }
+}
+
+function New-QualifiedTaggableEvidence($InputPath, $ClosureHead, $MergeHead, $PostMergePath) {
+  $evidence = New-QualifiedClosureEvidence $InputPath $ClosureHead
+  $evidence.merge_head = $MergeHead
+  $evidence.post_merge = Get-Content -Raw -LiteralPath $PostMergePath | ConvertFrom-Json
+  if ($evidence.post_merge.sha -ne $MergeHead) { throw 'Qualified post-merge evidence is not bound to merged main' }
+  return $evidence
+}
+```
+
 ## File and interface map
 
 - `tools/release_gates.py` — parse the authoritative publication-readiness Markdown front matter, validate scope/gates/transitions, reject self-referential SHA fields, and validate external exact-SHA evidence before merge or tag.
@@ -1227,14 +1271,26 @@ Assert-NativeSuccess 'Read conditional publication date'
 $verifiedAt = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
 $externalEvidence = Join-Path $temp 'esaf-v04-closure-external-evidence.json'
 if (Test-Path -LiteralPath $externalEvidence) { Remove-Item -LiteralPath $externalEvidence }
-python tools/owner_risk_evidence.py --comment-json $ownerFetchedPath `
-  --technical-comment-json $technicalFetchedPath `
-  --editorial-comment-json $editorialFetchedPath `
-  --rendering-comment-json $renderingFetchedPath `
-  --governance-comment-json $governanceFetchedPath `
-  --pr-state-json $prStatePath --expected-head $closureHead `
-  --publication-date $publicationDate --verified-at $verifiedAt `
-  --output $externalEvidence
+$mappingDecisionBasis = python -c "from pathlib import Path; from tools.release_gates import load_front_matter; print(load_front_matter(Path('docs/superpowers/reviews/2026-07-21-v04-alpha-publication-readiness.md'))['mapping_decision_basis'])"
+Assert-NativeSuccess 'Resolve closure mapping decision basis'
+if ($mappingDecisionBasis -eq 'owner_risk_acceptance') {
+  $ownerFetched = Get-Content -Raw -LiteralPath $ownerFetchedPath | ConvertFrom-Json
+  $ownerDigest = ([Convert]::ToHexString([Security.Cryptography.SHA256]::HashData([Text.Encoding]::UTF8.GetBytes([string]$ownerFetched.body)))).ToLowerInvariant()
+  python tools/owner_risk_evidence.py --comment-json $ownerFetchedPath `
+    --technical-comment-json $technicalFetchedPath `
+    --editorial-comment-json $editorialFetchedPath `
+    --rendering-comment-json $renderingFetchedPath `
+    --governance-comment-json $governanceFetchedPath `
+    --pr-state-json $prStatePath --expected-head $closureHead `
+    --publication-date $publicationDate --verified-at $verifiedAt --output $externalEvidence
+  Assert-NativeSuccess 'Build owner-risk closure evidence'
+  $builtEvidence = Get-Content -Raw -LiteralPath $externalEvidence | ConvertFrom-Json
+  if ($builtEvidence.mapping_decisions[0].source.body_sha256 -ne $ownerDigest) { throw 'Built owner evidence digest does not match fetched UTF-8 body' }
+} elseif ($mappingDecisionBasis -eq 'qualified_approval') {
+  $qualifiedInputsPath = Join-Path $temp 'esaf-v04-qualified-closure-input.json'
+  $qualifiedEvidence = New-QualifiedClosureEvidence $qualifiedInputsPath $closureHead
+  $qualifiedEvidence | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $externalEvidence -Encoding utf8
+} else { throw "Unsupported mapping decision basis: $mappingDecisionBasis" }
 Assert-NativeSuccess 'Build closure evidence'
 $closureBase = (git merge-base HEAD origin/main).Trim()
 Assert-NativeSuccess 'Resolve closure baseline'
@@ -1289,15 +1345,29 @@ $publicationDate = python -c "from pathlib import Path; from tools.release_gates
 Assert-NativeSuccess 'Read conditional publication date'
 $verifiedAt = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
 $externalEvidence = Join-Path $temp 'esaf-v04-closure-external-evidence.json'
+$priorEvidence = Get-Content -Raw -LiteralPath $externalEvidence | ConvertFrom-Json
+$mappingDecisionBasis = [string]$priorEvidence.mapping_decision_basis
 if (Test-Path -LiteralPath $externalEvidence) { Remove-Item -LiteralPath $externalEvidence }
-python tools/owner_risk_evidence.py --comment-json $fetched.owner `
-  --technical-comment-json $fetched.technical `
-  --editorial-comment-json $fetched.editorial `
-  --rendering-comment-json $fetched.rendering `
-  --governance-comment-json $fetched.governance `
-  --pr-state-json $prStatePath --expected-head $closureHead `
-  --publication-date $publicationDate --verified-at $verifiedAt `
-  --output $externalEvidence
+if ($mappingDecisionBasis -eq 'owner_risk_acceptance') {
+  $ownerFetched = Get-Content -Raw -LiteralPath $fetched.owner | ConvertFrom-Json
+  $fetchedOwnerDigest = ([Convert]::ToHexString([Security.Cryptography.SHA256]::HashData([Text.Encoding]::UTF8.GetBytes([string]$ownerFetched.body)))).ToLowerInvariant()
+  $ownerDigest = Assert-OwnerSourceUnchanged $priorEvidence.mapping_decisions[0].source $ownerFetched
+  if ($ownerDigest -ne $fetchedOwnerDigest) { throw 'Owner source digest differs from the prior validated source' }
+  python tools/owner_risk_evidence.py --comment-json $fetched.owner `
+    --technical-comment-json $fetched.technical `
+    --editorial-comment-json $fetched.editorial `
+    --rendering-comment-json $fetched.rendering `
+    --governance-comment-json $fetched.governance `
+    --pr-state-json $prStatePath --expected-head $closureHead `
+    --publication-date $publicationDate --verified-at $verifiedAt --output $externalEvidence
+  Assert-NativeSuccess 'Rebuild owner-risk closure evidence'
+  $rebuiltEvidence = Get-Content -Raw -LiteralPath $externalEvidence | ConvertFrom-Json
+  if ($rebuiltEvidence.mapping_decisions[0].source.body_sha256 -ne $ownerDigest) { throw 'Rebuilt owner evidence digest differs from live source' }
+} elseif ($mappingDecisionBasis -eq 'qualified_approval') {
+  $qualifiedInputsPath = Join-Path $temp 'esaf-v04-qualified-prefetch-merge-input.json'
+  $qualifiedEvidence = New-QualifiedClosureEvidence $qualifiedInputsPath $closureHead
+  $qualifiedEvidence | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $externalEvidence -Encoding utf8
+} else { throw "Unsupported mapping decision basis: $mappingDecisionBasis" }
 Assert-NativeSuccess 'Rebuild closure evidence'
 $closureBase = (git merge-base HEAD origin/main).Trim()
 Assert-NativeSuccess 'Resolve closure baseline'
@@ -1399,12 +1469,7 @@ $postMergePath = Join-Path ([IO.Path]::GetTempPath()) `
   'esaf-v04-post-merge.json'
 $baseEvidence = Get-Content -Raw -LiteralPath $externalEvidence | ConvertFrom-Json
 $closureHead = [string]$baseEvidence.closure_head
-$ownerCommentId = [long]$baseEvidence.mapping_decisions[0].source.comment_id
-$ownerFetchedPath = Join-Path ([IO.Path]::GetTempPath()) `
-  'esaf-v04-owner-prefetch-tag.json'
-gh api "repos/tdistress/ESAF/issues/comments/$ownerCommentId" |
-  Set-Content -LiteralPath $ownerFetchedPath -Encoding utf8
-Assert-NativeSuccess 'Refetch owner source before tag'
+$mappingDecisionBasis = [string]$baseEvidence.mapping_decision_basis
 $closureMerge = (git rev-parse HEAD).Trim()
 Assert-NativeSuccess 'Resolve closure merge before tag'
 $evidenceMerge = (git rev-parse 'HEAD^1').Trim()
@@ -1413,11 +1478,28 @@ $publicationDate = python -c "from pathlib import Path; from tools.release_gates
 Assert-NativeSuccess 'Read publication date before tag'
 $verifiedAt = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
 if (Test-Path -LiteralPath $taggableEvidence) { Remove-Item -LiteralPath $taggableEvidence }
-python tools/owner_risk_evidence.py --comment-json $ownerFetchedPath `
-  --base-evidence $externalEvidence --expected-head $closureHead `
-  --publication-date $publicationDate --verified-at $verifiedAt `
-  --merge-head $closureMerge --post-merge-json $postMergePath `
-  --output $taggableEvidence
+if ($mappingDecisionBasis -eq 'owner_risk_acceptance') {
+  $ownerCommentId = [long]$baseEvidence.mapping_decisions[0].source.comment_id
+  $ownerFetchedPath = Join-Path ([IO.Path]::GetTempPath()) 'esaf-v04-owner-prefetch-tag.json'
+  gh api "repos/tdistress/ESAF/issues/comments/$ownerCommentId" |
+    Set-Content -LiteralPath $ownerFetchedPath -Encoding utf8
+  Assert-NativeSuccess 'Refetch owner source before tag'
+  $ownerFetched = Get-Content -Raw -LiteralPath $ownerFetchedPath | ConvertFrom-Json
+  $fetchedOwnerDigest = ([Convert]::ToHexString([Security.Cryptography.SHA256]::HashData([Text.Encoding]::UTF8.GetBytes([string]$ownerFetched.body)))).ToLowerInvariant()
+  $ownerDigest = Assert-OwnerSourceUnchanged $baseEvidence.mapping_decisions[0].source $ownerFetched
+  if ($ownerDigest -ne $fetchedOwnerDigest) { throw 'Owner source digest differs from the prior validated source' }
+  python tools/owner_risk_evidence.py --comment-json $ownerFetchedPath `
+    --base-evidence $externalEvidence --expected-head $closureHead `
+    --publication-date $publicationDate --verified-at $verifiedAt `
+    --merge-head $closureMerge --post-merge-json $postMergePath --output $taggableEvidence
+  Assert-NativeSuccess 'Build refreshed owner-risk taggable evidence'
+  $rebuiltEvidence = Get-Content -Raw -LiteralPath $taggableEvidence | ConvertFrom-Json
+  if ($rebuiltEvidence.mapping_decisions[0].source.body_sha256 -ne $ownerDigest) { throw 'Taggable owner evidence digest differs from live source' }
+} elseif ($mappingDecisionBasis -eq 'qualified_approval') {
+  $qualifiedInputsPath = Join-Path ([IO.Path]::GetTempPath()) 'esaf-v04-qualified-taggable-input.json'
+  $qualifiedEvidence = New-QualifiedTaggableEvidence $qualifiedInputsPath $closureHead $closureMerge $postMergePath
+  $qualifiedEvidence | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $taggableEvidence -Encoding utf8
+} else { throw "Unsupported mapping decision basis: $mappingDecisionBasis" }
 Assert-NativeSuccess 'Build refreshed taggable evidence'
 python tools/release_gates.py --check --baseline-ref $evidenceMerge --external-evidence $taggableEvidence --expected-head $closureMerge --phase taggable
 Assert-NativeSuccess 'Validate refreshed taggable evidence'
@@ -1427,8 +1509,13 @@ $mappingDecisionBasis = [string]$validatedEvidence.mapping_decision_basis
 $mappingIds = ($validatedEvidence.mapping_decisions.mapping_set_id -join ', ')
 if ($mappingDecisionBasis -eq 'owner_risk_acceptance') {
   $mappingDecisionSummary = "Repository-owner risk acceptance for $mappingIds; qualified review is deferred and backlog retention covers all three mapping-set IDs."
+  $owner = $validatedEvidence.mapping_decisions[0].source
+  $ownerComparison = 'passed: live fetched comment matched the validated ID, URL, author, association, timestamps, and SHA-256 body digest'
+  $ownerDetail = "Owner source: $($owner.comment_url); comment $($owner.comment_id); body SHA-256 $($owner.body_sha256)."
 } elseif ($mappingDecisionBasis -eq 'qualified_approval') {
   $mappingDecisionSummary = "Qualified approval is completed for $mappingIds."
+  $ownerComparison = 'not applicable: qualified approval basis'
+  $ownerDetail = 'Owner source: not applicable for qualified approval.'
 } else { throw "Unsupported mapping decision basis: $mappingDecisionBasis" }
 git fetch origin main
 Assert-NativeSuccess 'Fetch origin main before tag'
@@ -1492,8 +1579,13 @@ $mappingDecisionBasis = [string]$evidence.mapping_decision_basis
 $mappingIds = ($evidence.mapping_decisions.mapping_set_id -join ', ')
 if ($mappingDecisionBasis -eq 'owner_risk_acceptance') {
   $mappingDecisionSummary = "Repository-owner risk acceptance for $mappingIds; qualified review is deferred and backlog retention covers all three mapping-set IDs."
+  $owner = $evidence.mapping_decisions[0].source
+  $ownerComparison = 'passed: live fetched comment matched the validated ID, URL, author, association, timestamps, and SHA-256 body digest'
+  $ownerDetail = "Owner source: $($owner.comment_url); comment $($owner.comment_id); body SHA-256 $($owner.body_sha256)."
 } elseif ($mappingDecisionBasis -eq 'qualified_approval') {
   $mappingDecisionSummary = "Qualified approval is completed for $mappingIds."
+  $ownerComparison = 'not applicable: qualified approval basis'
+  $ownerDetail = 'Owner source: not applicable for qualified approval.'
 } else { throw "Unsupported mapping decision basis: $mappingDecisionBasis" }
 $finalGateSummary = ($evidence.post_merge.commands | ForEach-Object {
   "$($_.name): $($_.result)"
@@ -1517,6 +1609,8 @@ $evidenceComment = @"
 - Repository gates: $finalGateSummary
 - Reviews: $finalReviewSummary
 - Mapping decision: $mappingDecisionBasis; $mappingDecisionSummary
+- $ownerDetail
+- Owner source live comparison: $ownerComparison
 - Findings: Critical 0; Important 0; every accepted Minor includes its owner and rationale.
 - Lifecycle: all architecture, control, and mapping artifacts retain their existing Draft state. Publication claims no compliance, certification, equivalence, endorsement, external-scheme approval, or production readiness.
 "@
