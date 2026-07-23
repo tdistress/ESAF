@@ -78,7 +78,14 @@ jobs:
       - name: Validate crosswalk history on protected-branch push
         if: github.event_name == 'push' && github.event.before != '0000000000000000000000000000000000000000'
         run: python tools/validate_crosswalks.py --check --baseline-ref "${{ github.event.before }}"
-      - name: Validate release gate record
-        run: python tools/release_gates.py --check
+      - name: Validate release gate record on pull request
+        if: github.event_name == 'pull_request'
+        run: python tools/release_gates.py --check --baseline-ref "${{ github.event.pull_request.base.sha }}"
+      - name: Validate release gate record on protected-branch push
+        if: github.event_name == 'push' && github.event.before != '0000000000000000000000000000000000000000'
+        run: python tools/release_gates.py --check --baseline-ref "${{ github.event.before }}"
+      - name: Validate release gate record on workflow dispatch
+        if: github.event_name == 'workflow_dispatch'
+        run: python tools/release_gates.py --check --baseline-ref "HEAD^"
       - name: Validate repository-local links
         run: python tools/validate_links.py --check
