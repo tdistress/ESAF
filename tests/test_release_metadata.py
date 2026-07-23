@@ -444,6 +444,46 @@ class ReleaseMetadataTests(unittest.TestCase):
             with self.subTest(required=required):
                 self.assertIn(required, builder)
 
+    def test_qualified_input_producer_emits_every_builder_decision_field(self) -> None:
+        plan = read_repository_file(
+            "docs/superpowers/plans/2026-07-21-v04-alpha-publication-gates.md"
+        )
+        producer = plan[
+            plan.index("function New-QualifiedInputFromSources"):
+            plan.index("function New-QualifiedClosureEvidence")
+        ]
+        builder_required_fields = {
+            "mapping_set_id": "$body.mapping_set_id",
+            "decision_type": "decision_type='qualified_approval'",
+            "sha": "$body.sha",
+            "decided_at": "$body.decided_at",
+            "reviewer": "$body.reviewer",
+            "qualification": "$body.qualification",
+            "disposition": "$body.disposition",
+            "qualified_review_status": "$body.qualified_review_status",
+            "url": "$body.url",
+            "source": "comment_id=[long]$comment.id",
+        }
+        for field, value in builder_required_fields.items():
+            with self.subTest(field=field):
+                self.assertIn(field, producer)
+                self.assertIn(value, producer)
+
+    def test_qualified_acquisition_defines_native_guard_before_its_first_call(self) -> None:
+        plan = read_repository_file(
+            "docs/superpowers/plans/2026-07-21-v04-alpha-publication-gates.md"
+        )
+        acquisition = plan[
+            plan.index("For \x60qualified_approval\x60, acquire the three reviewer decisions"):
+            plan.index("- [ ] **Step 4: Push and open closure PR B")
+        ]
+        definition = "function Assert-NativeSuccess([string]$operation)"
+        self.assertIn(definition, acquisition)
+        self.assertLess(
+            acquisition.index(definition),
+            acquisition.index("Assert-NativeSuccess '"),
+        )
+
     def test_repository_workflow_runs_release_and_link_validation(self) -> None:
         workflow = read_repository_file(".github/workflows/catalog-validation.yml")
         self.assertIn("python tools/release_gates.py --check", workflow)

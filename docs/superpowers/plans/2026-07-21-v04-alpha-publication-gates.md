@@ -90,7 +90,7 @@ function New-QualifiedInputFromSources($QualifiedFetchedPaths, $ExpectedCommentI
     if ($body.limitations.lifecycle -ne 'draft' -or (($body.limitations.claims_not_made -join ',') -ne ($expectedClaims -join ','))) {
       throw 'Qualified decision limitations shall be the exact Draft claims_not_made set'
     }
-    [ordered]@{ mapping_set_id=$body.mapping_set_id; sha=$body.sha; decided_at=$body.decided_at; reviewer=$body.reviewer; qualification=$body.qualification; disposition=$body.disposition; qualified_review_status=$body.qualified_review_status; url=$body.url; source=[ordered]@{comment_id=[long]$comment.id; comment_url=$comment.html_url} }
+    [ordered]@{ mapping_set_id=$body.mapping_set_id; decision_type='qualified_approval'; sha=$body.sha; decided_at=$body.decided_at; reviewer=$body.reviewer; qualification=$body.qualification; disposition=$body.disposition; qualified_review_status=$body.qualified_review_status; url=$body.url; source=[ordered]@{comment_id=[long]$comment.id; comment_url=$comment.html_url} }
   })
   $actualMappingIds = @($qualifiedReviews.mapping_set_id | Sort-Object) -join ','
   $expectedMappingIdList = @($expectedMappingIds | Sort-Object) -join ','
@@ -1292,6 +1292,9 @@ temporary response files; later controller steps shall fetch those numeric IDs
 again and reject any changed or incomplete source.
 
 ```powershell
+function Assert-NativeSuccess([string]$operation) {
+  if ($LASTEXITCODE -ne 0) { throw "$operation failed with exit $LASTEXITCODE" }
+}
 $temp = [IO.Path]::GetTempPath()
 $closurePr = gh pr view --repo tdistress/ESAF agent/v04-alpha-publication-gates-closure --json number --jq '.number'
 Assert-NativeSuccess 'Resolve closure PR for qualified decision acquisition'
