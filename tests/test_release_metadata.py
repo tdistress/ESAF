@@ -13,6 +13,18 @@ BACKLOG_PATTERN_ALIASES = {
     "ARC-P150": ("AI integration",),
 }
 
+EXPECTED_MAPPING_SET_IDS = (
+    "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+    "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
+    "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+)
+
+PROHIBITED_CONTROLLER_CLAIMS = (
+    "three qualified mapping reaffirmations",
+    "Pending: qualified mapping-set and scope approvals",
+    "mapping_reviews",
+)
+
 
 def read_repository_file(relative_path: str) -> str:
     return (ROOT / relative_path).read_text(encoding="utf-8")
@@ -169,6 +181,60 @@ class ReleaseMetadataTests(unittest.TestCase):
         self.assertIsNone(record["publication"]["date"])
         changelog = read_repository_file("CHANGELOG.md")
         self.assertEqual(1, changelog.count(f"## {current_version()} - Unreleased"))
+
+    def test_release_plan_allows_one_uniform_mapping_decision_basis(self) -> None:
+        release_plan = read_repository_file("project/RELEASE_PLAN.md")
+        self.assertIn(
+            "exactly one uniform mapping decision basis: `qualified_approval` or "
+            "`owner_risk_acceptance`",
+            release_plan,
+        )
+        self.assertIn(
+            "Owner risk acceptance defers qualified review; it does not complete or "
+            "qualify that review.",
+            release_plan,
+        )
+        self.assertIn(
+            "Steering Committee governance approval remains a separate gate",
+            release_plan,
+        )
+
+    def test_owner_risk_acceptance_retains_exact_mapping_review_backlog(self) -> None:
+        backlog = read_repository_file("project/BACKLOG.md")
+        item = next(
+            value for value in markdown_list_items(backlog)
+            if "Complete deferred qualified review for the 0.4-alpha mapping snapshots" in value
+        )
+        for mapping_set_id in EXPECTED_MAPPING_SET_IDS:
+            with self.subTest(mapping_set_id=mapping_set_id):
+                self.assertIn(mapping_set_id, item)
+
+    def test_publication_controller_uses_two_basis_owner_risk_contract(self) -> None:
+        plan = read_repository_file(
+            "docs/superpowers/plans/2026-07-21-v04-alpha-publication-gates.md"
+        )
+        for required in (
+            "mapping_decision_schema: esaf-mapping-decisions-v1",
+            "mapping_decision_basis",
+            "owner_risk_acceptance",
+            "qualified_approval",
+            "new closure-head owner comment",
+            "GitHub source immediately before construction, immediately before merge, and immediately before tag",
+            "SHA-256 body comparison",
+            "separate Steering Committee approval",
+            "exact-head technical, editorial, and rendering verdicts with HTTPS locators",
+            "tools/owner_risk_evidence.py",
+            "owner, technical, editorial, rendering, governance, CI, merge-state, and post-merge evidence",
+            "original five-file evidence-only closure allowlist",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, plan)
+        for mapping_set_id in EXPECTED_MAPPING_SET_IDS:
+            with self.subTest(mapping_set_id=mapping_set_id):
+                self.assertIn(mapping_set_id, plan)
+        for prohibited in PROHIBITED_CONTROLLER_CLAIMS:
+            with self.subTest(prohibited=prohibited):
+                self.assertNotIn(prohibited, plan)
 
     def test_repository_workflow_runs_release_and_link_validation(self) -> None:
         workflow = read_repository_file(".github/workflows/catalog-validation.yml")

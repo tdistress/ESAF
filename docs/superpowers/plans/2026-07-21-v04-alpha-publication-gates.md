@@ -19,14 +19,23 @@
 - Pin Mermaid rendering to exactly `@mermaid-js/mermaid-cli@11.16.0` and render all 23 baseline blocks; any added block increases that exact candidate count.
 - Store renderer outputs and external evidence JSON beneath a verified system temporary directory outside the repository.
 - Do not treat repository ownership as governance authority. Publication approval shall identify the Steering Committee role assigned by `GOVERNANCE.md`.
-- Qualified mapping review shall identify reviewer, qualification, scope, exact closure SHA, date, and disposition; digest-backed reaffirmation is allowed only when all mapping-controlled bytes are identical.
+- Mapping decisions shall use exactly one uniform basis for all three snapshots: `qualified_approval` or `owner_risk_acceptance`. Qualified approval identifies reviewer, qualification, scope, exact closure SHA, date, and disposition; owner-risk acceptance is a disclosed Working Draft risk acceptance that defers, rather than completes, qualified review.
 - Any tracked candidate change invalidates affected exact-head results and requires the specified reviews and gates to be rerun.
 - Resolve every Critical and Important finding before merge. Record accepted Minor findings with owner and rationale.
 - No tag shall be created or pushed until the closure merge commit passes every post-merge gate and the conditional publication date is the current UTC date.
 
+### Task 2 amendment precedence: two-basis publication controller
+
+This amendment controls every conflicting clause below. The external-evidence schema is `mapping_decision_schema: esaf-mapping-decisions-v1`; it shall contain `mapping_decision_basis` and exactly three `mapping_decisions`, all using one basis. `qualified_approval` records independently qualified approval. `owner_risk_acceptance` records the repository owner's disclosed Working Draft acceptance and `qualified_review_status: deferred`; it never represents completed qualified review. A separate Steering Committee approval remains mandatory governance evidence.
+
+For owner-risk acceptance, construct evidence with `tools/owner_risk_evidence.py` from temporary fetched JSON inputs and a new closure-head owner comment. Fetch and verify the GitHub source immediately before construction, immediately before merge, and immediately before tag; require a SHA-256 body comparison each time. The controller shall require owner, technical, editorial, rendering, governance, CI, merge-state, and post-merge evidence with the exact fields enforced by `tools/release_gates.py`. The technical, editorial, and rendering evidence shall be exact-head technical, editorial, and rendering verdicts with HTTPS locators.
+
+Retain the exact three-ID deferred-review backlog item for every owner-risk decision: `uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0`, `uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0`, and `uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0`. Task 5 shall create a fresh closure branch from amended `main` and retain the original five-file evidence-only closure allowlist.
+
 ## File and interface map
 
 - `tools/release_gates.py` — parse the authoritative publication-readiness Markdown front matter, validate scope/gates/transitions, reject self-referential SHA fields, and validate external exact-SHA evidence before merge or tag.
+- `tools/owner_risk_evidence.py` — verify the fetched repository-owner comment and construct the two-basis external-evidence object without committing temporary source JSON.
 - `tests/test_release_gates.py` — unit and mutation tests for release record parsing, four-state transitions, scope, Draft preservation, external approval binding, and tag prohibition.
 - `tools/mermaid_inventory.py` — discover every Git-tracked Markdown Mermaid block in deterministic order and emit source digests plus temporary render inputs.
 - `tests/test_mermaid_inventory.py` — inventory ordering, digest, fence parsing, mutation, and repository-count tests without invoking the external renderer.
@@ -137,8 +146,11 @@ def approved_external_evidence(closure: str, merge: str | None = None) -> dict[s
         "editorial": verdict("editorial-reviewer", 3),
         "rendering": verdict("rendering-reviewer", 4),
         "governance": {**verdict("governance-approver", 5), "authority": "Steering Committee"},
-        "mapping_reviews": [
+        "mapping_decision_schema": "esaf-mapping-decisions-v1",
+        "mapping_decision_basis": "qualified_approval",
+        "mapping_decisions": [
             {
+                "decision_type": "qualified_approval",
                 "mapping_set_id": mapping_set_id,
                 "sha": closure,
                 "reviewer": f"qualified-reviewer-{index}",
@@ -215,10 +227,10 @@ class ReleaseGateTests(unittest.TestCase):
         expected_merge = "f" * 40
         evidence = approved_external_evidence(closure, expected_merge)
         evidence["governance"]["sha"] = "e" * 40
-        evidence["mapping_reviews"] = []
+        evidence["mapping_decisions"] = []
         errors = validate_external_evidence(record, evidence, expected_merge, "taggable")
         self.assertIn("governance approval is not bound to closure head", errors)
-        self.assertIn("three qualified mapping reviews are required", errors)
+        self.assertIn("mapping decisions shall contain each expected mapping set exactly once", errors)
 
     def test_taggable_phase_preserves_distinct_candidate_and_merge_domains(self) -> None:
         record = closure_record()
@@ -258,7 +270,7 @@ class ReleaseGateTests(unittest.TestCase):
             ("disposition", lambda e: e["technical"].__setitem__("disposition", "rejected"), "technical disposition shall be approved"),
             ("url", lambda e: e["editorial"].__setitem__("url", "http://example.invalid"), "editorial URL shall use HTTPS"),
             ("findings", lambda e: e["rendering"].__setitem__("important", 1), "rendering Important findings shall be zero"),
-            ("duplicate_mapping", lambda e: e["mapping_reviews"].append(deepcopy(e["mapping_reviews"][0])), "mapping reviews shall contain each expected mapping set exactly once"),
+            ("duplicate_mapping", lambda e: e["mapping_decisions"].append(deepcopy(e["mapping_decisions"][0])), "mapping decisions shall contain each expected mapping set exactly once"),
             ("duplicate_check", lambda e: e["github_checks"]["observed"].append(deepcopy(e["github_checks"]["observed"][0])), "observed GitHub checks shall exactly match expected checks"),
             ("exit_code", lambda e: e["post_merge"]["commands"][0].__setitem__("exit_code", 1), "full_suite command failed"),
             ("authority", lambda e: e["governance"].__setitem__("authority", "repository owner"), "governance authority is not authorized"),
@@ -415,13 +427,13 @@ Candidate-bound evidence shall contain:
 - `scope` with `sha`, named approver, role, UTC date, `disposition: approved`, and HTTPS URL;
 - `technical`, `editorial`, and `rendering` objects with `sha`, reviewer, UTC date, `disposition: approved`, HTTPS URL, `critical: 0`, and `important: 0`;
 - `governance` with `sha`, named approver, UTC date, `disposition: approved`, and HTTPS URL; `authority` shall equal `Steering Committee` as assigned by `GOVERNANCE.md`;
-- exactly three qualified `mapping_reviews`, one per `EXPECTED_MAPPING_SETS`, each with candidate SHA, reviewer, qualification, UTC date, `disposition: approved`, and HTTPS URL;
+- `mapping_decision_schema: esaf-mapping-decisions-v1`, one `mapping_decision_basis`, and exactly three `mapping_decisions`, one per `EXPECTED_MAPPING_SETS`; every decision shall match that one basis. Qualified decisions carry candidate SHA, reviewer, qualification, UTC date, `disposition: approved`, and HTTPS URL. Owner-risk decisions carry candidate SHA, owner identity and association, `accepted_for_working_draft`, `qualified_review_status: deferred`, limitations, and the verified fetched-comment source;
 - `github_checks.expected` equal to `['Validate ESAF sources']` and `github_checks.observed` containing exactly that named check with candidate SHA, `conclusion: success`, and HTTPS URL; and
 - `merge_state` with candidate SHA, `mergeable: true`, and `state: clean`.
 
 For both external phases, the tracked record shall have `phase: closure_candidate`, publication condition exactly `remote_annotated_tag_matches_exact_validated_commit`, a current ISO UTC publication date, and every gate in `ready` or `closed`; any `open` or `in_review` gate blocks closure and tagging.
 
-In phase `closure`, `expected_head == closure_head` and every candidate-bound SHA shall equal it; `merge_head` and `post_merge` shall be absent. In phase `taggable`, the same candidate-bound objects shall remain bound to the separately recorded `closure_head`, while `expected_head == merge_head == post_merge.sha`. The taggable `post_merge.commands` shall contain exactly one successful entry for each of `full_suite`, `controls`, `architectures`, `migration`, `crosswalk_current`, `crosswalk_baseline`, `links`, `release_record`, `mermaid_inventory`, `whole_range_diff`, `cache_count`, and `clean_status`; every exit code shall be 0 and every result shall be nonempty. Missing fields, extra or duplicate mapping sets/checks/commands, non-HTTPS URLs, non-approved dispositions, nonzero findings/exit codes, unqualified reviewers, unauthorized governance, non-clean merge state, and any SHA-domain mismatch shall each produce the exact diagnostics asserted by the mutation tests above.
+In phase `closure`, `expected_head == closure_head` and every candidate-bound SHA shall equal it; `merge_head` and `post_merge` shall be absent. In phase `taggable`, the same candidate-bound objects shall remain bound to the separately recorded `closure_head`, while `expected_head == merge_head == post_merge.sha`. The taggable `post_merge.commands` shall contain exactly one successful entry for each of `full_suite`, `controls`, `architectures`, `migration`, `crosswalk_current`, `crosswalk_baseline`, `links`, `release_record`, `mermaid_inventory`, `whole_range_diff`, `cache_count`, and `clean_status`; every exit code shall be 0 and every result shall be nonempty. Missing fields, extra or duplicate mapping sets/checks/commands, non-HTTPS URLs, non-approved dispositions, nonzero findings/exit codes, invalid decision basis, unauthorized governance, non-clean merge state, and any SHA-domain mismatch shall each produce the exact diagnostics asserted by the mutation tests above.
 
 The CLI shall load the tracked record, run `validate_record`, optionally load its baseline form with `git show "$baselineRef:docs/superpowers/reviews/2026-07-21-v04-alpha-publication-readiness.md"` and run `validate_transition`, optionally load external JSON and run `validate_external_evidence`, print one diagnostic per line, and return 0 only when no diagnostic exists. A missing baseline record is allowed only when the current record phase is `evidence_candidate`; closure and taggable phases shall fail if the baseline record cannot be loaded.
 
@@ -805,7 +817,7 @@ Before committing, unstage any of the four conditional metadata files whose byte
 
 **Interfaces:**
 - Consumes: Tasks 1–3 candidate, pinned renderer, all 23 discovered blocks, and full release scope.
-- Produces: immutable evidence-candidate head, complete rendering ledger, two independent tracked review reports, qualified mapping review evidence in GitHub, and draft PR A linked to issue #39.
+- Produces: immutable evidence-candidate head, complete rendering ledger, two independent tracked review reports, two-basis mapping-decision evidence in GitHub, and draft PR A linked to issue #39.
 
 - [ ] **Step 1: Create a verified temporary rendering directory and render all blocks**
 
@@ -844,7 +856,7 @@ Expected: exact 23-row inventory and all dispositions pass.
 
 Dispatch two distinct reviewers who did not implement Tasks 1–3. Technical review shall cover the complete branch range from merge base through all normative content, controls, architecture, mapping boundaries, validators, and release logic. Editorial review shall cover terminology, `shall`/`should`/`may`, numbering, links, cross-references, changelog, roadmap, version, backlog, release plan, generated catalogs, and all renderer-to-prose pairings.
 
-Each tracked report shall contain scope, merge base, candidate content commit before report creation, methods, exact derived counts, findings, dispositions, reviewer identity, independence statement, and explicit limitation that technical review is not governance or qualified mapping approval. Resolve Critical and Important findings, commit corrections, and redispatch both reviewers after any candidate change.
+Each tracked report shall contain scope, merge base, candidate content commit before report creation, methods, exact derived counts, findings, dispositions, reviewer identity, independence statement, and explicit limitation that technical review is neither governance nor a mapping decision. Resolve Critical and Important findings, commit corrections, and redispatch both reviewers after any candidate change.
 
 - [ ] **Step 4: Commit reports, then run exact-head read-only re-reviews**
 
@@ -893,7 +905,7 @@ Scope: complete tracked repository, including 91 controls, 7 Draft architecture 
 Renderer: all 23 Mermaid blocks rendered with @mermaid-js/mermaid-cli@11.16.0 and passed readability review.
 Validation: include the exact Task 4 Step 5 command outputs and counts in this paragraph before submitting.
 Reviews: include the exact technical, editorial, and renderer reviewer identities and dispositions before submitting.
-Pending: qualified mapping-set and scope approvals on this exact head.
+Pending: one uniform mapping-decision basis and scope evidence on this exact head.
 
 This PR does not authorize publication or tag creation. Draft artifacts remain Draft, with no compliance, certification, equivalence, endorsement, or production-readiness claim.
 "@
@@ -901,11 +913,11 @@ gh pr create --repo tdistress/ESAF --base main --head agent/v04-alpha-publicatio
 $prNumber = gh pr view --repo tdistress/ESAF agent/v04-alpha-publication-gates-design --json number --jq '.number'
 ```
 
-The PR body file shall identify issue #39, exact `$candidateSha`, full scope, lifecycle limitations, every command/result, renderer 23/23 result, reviewer identities/dispositions, and pending qualified mapping/scope approval. It shall state that no release or tag is authorized by PR A.
+The PR body file shall identify issue #39, exact `$candidateSha`, full scope, lifecycle limitations, every command/result, renderer 23/23 result, reviewer identities/dispositions, and the pending uniform mapping-decision/scope evidence. It shall state that no release or tag is authorized by PR A.
 
-- [ ] **Step 7: Obtain qualified mapping and scope approval on exact PR A head**
+- [ ] **Step 7: Obtain one uniform mapping decision and scope evidence on exact PR A head**
 
-Require a qualified contributor for each mapping snapshot to comment with reviewer identity, qualification, exact `$candidateSha`, mapping-set ID, date, disposition, and limitations. One person may review multiple snapshots only when their qualification covers each scheme and ESAF requirements. Require the authorized scope approver to approve the complete repository scope on the same SHA. Do not infer qualification from repository ownership.
+Choose exactly one uniform basis for all mapping snapshots. For `qualified_approval`, require qualified contributor comments with reviewer identity, qualification, exact `$candidateSha`, mapping-set ID, date, disposition, and limitations. For `owner_risk_acceptance`, obtain a repository-owner comment with the three exact mapping IDs, exact `$candidateSha`, Working Draft limitations, deferred qualified-review status, and all prohibited claims; never treat it as governance. In either case, obtain exact-head scope evidence. Do not infer mapping qualification from repository ownership.
 
 After approvals, verify:
 
@@ -930,7 +942,7 @@ Expected: head equals `$candidateSha`, all required checks pass, PR is mergeable
 
 **Interfaces:**
 - Consumes: merged PR A, exact PR A merge SHA, external PR A evidence, and byte-identical mapping/Mermaid inventories.
-- Produces: `agent/v04-alpha-publication-gates-closure`, conditional changelog state for the UTC date observed when the closure candidate is created, and closure PR B whose diff is evidence-only.
+- Produces: a fresh `agent/v04-alpha-publication-gates-closure` branch from amended, validated `main`, conditional changelog state for the UTC date observed when the closure candidate is created, and closure PR B whose diff is evidence-only.
 
 - [ ] **Step 1: Merge approved PR A and validate exact resulting main**
 
@@ -978,7 +990,7 @@ if (@(git status --porcelain).Count -ne 0) { throw 'Merged evidence main is not 
 
 Post the exact results to PR A and issue #39. Do not create the closure branch until all commands pass.
 
-- [ ] **Step 2: Create the isolated closure worktree from validated main**
+- [ ] **Step 2: Create the fresh isolated closure worktree from amended, validated main**
 
 ```powershell
 $gitCommon = (git rev-parse --path-format=absolute --git-common-dir).Trim()
@@ -992,7 +1004,7 @@ if ((git branch --show-current).Trim() -ne 'agent/v04-alpha-publication-gates-cl
 if ((git rev-parse HEAD).Trim() -ne (git -C $mainRoot rev-parse main).Trim()) { throw 'Closure branch did not start from validated main' }
 ```
 
-Verify `.worktrees` is ignored before this command and run the full baseline suite in the new worktree with bytecode disabled.
+Verify `.worktrees` is ignored before this command, verify `main` contains the two-basis amendment, and run the full baseline suite in the new worktree with bytecode disabled.
 
 - [ ] **Step 3: Write fail-first conditional-publication and allowlist tests**
 
@@ -1107,7 +1119,7 @@ Expected: focused tests and validators pass; commit contains exactly the five al
 
 **Interfaces:**
 - Consumes: exact closure head, PR A evidence, mapping-controlled and Mermaid digests, authorized reviewers, and GitHub checks.
-- Produces: exact-head scope/technical/editorial/rendering reapproval, three qualified mapping reaffirmations, authorized governance approval, passing CI, clean merge state, and merged PR B.
+- Produces: exact-head scope/technical/editorial/rendering verdicts, one uniform three-snapshot mapping-decision record, separate Steering Committee approval, passing CI, clean merge state, and merged PR B.
 
 - [ ] **Step 1: Prove closure diff and controlled-content digest identity**
 
@@ -1123,16 +1135,17 @@ Expected: exactly the five allowed evidence paths changed; all Mermaid and mappi
 
 - [ ] **Step 2: Run full closure gates and independent exact-head reviews**
 
-Run the complete Task 4 Step 5 command set on `$closureHead`. Redispatch the authorized scope approver plus the technical and editorial reviewers to the complete closure range. The scope approver shall state that the complete tracked release scope, three distinct Draft mapping snapshots, lifecycle limitations, and conditional publication boundary remain approved on exact `$closureHead`; record the approver's name, role, date, disposition, and stable comment URL. The rendering reviewer may reapprove via exact inventory digest equality because no Mermaid source changed. All verdicts shall name `$closureHead` externally and report zero unresolved Critical or Important findings.
+Run the complete Task 4 Step 5 command set on `$closureHead`. Redispatch the scope approver plus technical, editorial, and rendering reviewers to the complete closure range. For `qualified_approval`, the scope approver shall state that the complete tracked release scope, three distinct Draft mapping snapshots, lifecycle limitations, and conditional publication boundary remain approved on exact `$closureHead`; record the approver's name, role, date, disposition, and stable comment URL. For `owner_risk_acceptance`, the verified owner source supplies the source-bound owner scope required by `tools/release_gates.py`. The rendering reviewer may use exact inventory digest equality because no Mermaid source changed. All verdicts shall name `$closureHead` externally, use HTTPS locators, and report zero unresolved Critical or Important findings.
 
-- [ ] **Step 3: Obtain qualified mapping reaffirmations on `$closureHead`**
+- [ ] **Step 3: Construct one uniform mapping-decision record on `$closureHead`**
 
-Each qualified reviewer shall state that the mapping-controlled digests are identical to approved PR A content and explicitly reaffirm their mapping-set disposition for `$closureHead`. Record one evidence object per mapping set by constructing it with resolved execution values:
+Use exactly one basis for the three mapping snapshots. A `qualified_approval` basis requires qualified reviewers to state that mapping-controlled digests are identical to approved PR A content and state their exact-head dispositions. An `owner_risk_acceptance` basis requires a new closure-head owner comment that accepts the disclosed Working Draft risk, defers qualified review, includes all three mapping IDs and limitations, and does not claim qualification. Construct either set of three decision objects with resolved execution values:
 
 ```powershell
 $publicationDate = (Get-Date).ToUniversalTime().ToString('yyyy-MM-dd')
 $closureHead = (git rev-parse HEAD).Trim()
-$mappingReview = [ordered]@{
+$mappingDecision = [ordered]@{
+    decision_type = $mappingDecisionBasis
     mapping_set_id = 'uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0'
     sha = $closureHead
     reviewer = $resolvedReviewerName
@@ -1143,7 +1156,7 @@ $mappingReview = [ordered]@{
 }
 ```
 
-The controller shall supply `$resolvedReviewerName`, `$resolvedQualification`, and `$resolvedCommentUrl` from the actual GitHub approval. Repeat the object for the other two exact mapping-set IDs. Never commit the temporary JSON.
+The controller shall supply the basis-specific resolved identity and HTTPS locator from the actual GitHub source. Repeat the object for the other two exact mapping-set IDs. For owner risk, use `tools/owner_risk_evidence.py` with a freshly fetched comment JSON source and do not commit any temporary JSON. Governance remains a separate Steering Committee approval.
 
 - [ ] **Step 4: Push and open closure PR B, then obtain governance approval**
 
@@ -1157,7 +1170,7 @@ Closure candidate: $closureHead
 Diff boundary: CHANGELOG.md, project/RELEASE_PLAN.md, the publication-readiness record, and two focused test modules only.
 Publication condition: the recorded UTC date becomes effective only when remote annotated tag v0.4-alpha resolves to the exact post-merge validated commit.
 Validation and reviews: include the exact Task 6 Step 2 outputs, reviewer identities, and dispositions before submitting.
-Pending: exact-head scope approval, qualified mapping reaffirmations, and authorized governance approval on this exact head.
+Pending: exact-head scope evidence, the chosen uniform mapping-decision basis, and separate authorized governance approval on this exact head.
 
 Draft artifacts remain Draft, with no compliance, certification, equivalence, endorsement, or production-readiness claim.
 "@
@@ -1169,7 +1182,7 @@ The authorized Steering Committee approver shall comment with role/authority, ex
 
 - [ ] **Step 5: Validate external closure evidence before merge**
 
-Build `closure-external-evidence.json` at the exact system-temporary path below with `$closureHead`, the separate scope object derived from the actual Step 2 scope-approval comment, passing GitHub check URL/conclusion, governance object, three mapping review objects, technical/editorial/rendering verdict objects, and no merge/post-merge object yet. The scope object shall contain the actual approver name, role `release-scope approver`, `$closureHead`, current UTC date, disposition `approved`, and that comment's HTTPS URL. Refuse to reuse stale content from a prior attempt or to rebind PR A's earlier scope approval. Then run:
+Build `closure-external-evidence.json` at the exact system-temporary path below with `$closureHead`, the basis-specific `mapping_decision_schema`, `mapping_decision_basis`, and three decision objects; scope, passing GitHub check URL/conclusion, governance, technical/editorial/rendering verdicts; and no merge/post-merge object yet. The controller shall fetch the new closure-head owner comment immediately before construction when the basis is owner risk, verify its SHA-256 body comparison, and construct the source-bound owner scope and mapping decisions through `tools/owner_risk_evidence.py`. A qualified basis instead requires the actual `release-scope approver` object with `$closureHead`, current UTC date, disposition `approved`, and that comment's HTTPS URL. Refuse to reuse stale content from a prior attempt or to rebind PR A's earlier scope evidence. Then run:
 
 ```powershell
 $closureHead = (git rev-parse HEAD).Trim()
@@ -1184,6 +1197,8 @@ gh pr view --repo tdistress/ESAF $closurePr --json state,isDraft,mergeable,headR
 Expected: release validator passes, GitHub checks pass, PR head equals `$closureHead`, PR is mergeable, and no tracked byte changed after approval.
 
 - [ ] **Step 6: Merge PR B without deleting its worktree-owned branch**
+
+Immediately before merge, when the basis is `owner_risk_acceptance`, fetch the GitHub source comment again, compare its SHA-256 body digest with the source captured in the temporary evidence, and rebuild/validate the temporary evidence through `tools/owner_risk_evidence.py`. A changed source body, identity, association, timestamp, or exact closure SHA blocks merge.
 
 ```powershell
 $closurePr = gh pr view --repo tdistress/ESAF agent/v04-alpha-publication-gates-closure --json number --jq '.number'
@@ -1245,7 +1260,7 @@ Rerender all Mermaid blocks only if the inventory digest differs from the exact 
 
 - [ ] **Step 3: Complete external taggable evidence and validate it**
 
-Add `merge_head: $closureMerge` and a `post_merge` object to the temporary JSON. Its `commands` array shall contain the exact command, exit code, and concise result for the full suite plus controls, architectures, migration, crosswalks in both modes, links, release gate, Mermaid inventory, diff, cache, and status checks. Bind every post-merge `sha` field to `$closureMerge` while retaining GitHub check, governance, and mapping approvals bound to `$closureHead` as the reviewed pre-merge candidate. Task 1 tests enforce these two successive SHA domains.
+Add `merge_head: $closureMerge` and a `post_merge` object to the temporary JSON. Its `commands` array shall contain the exact command, exit code, and concise result for the full suite plus controls, architectures, migration, crosswalks in both modes, links, release gate, Mermaid inventory, diff, cache, and status checks. Bind every post-merge `sha` field to `$closureMerge` while retaining GitHub check, governance, and mapping decisions bound to `$closureHead` as the reviewed pre-merge candidate. Before taggable validation, fetch an owner-risk source again when applicable and compare its SHA-256 body digest; Task 1 tests enforce these two successive SHA domains.
 
 Run:
 
@@ -1258,7 +1273,9 @@ $closurePr = gh pr view --repo tdistress/ESAF agent/v04-alpha-publication-gates-
 $closureHead = gh pr view --repo tdistress/ESAF $closurePr --json headRefOid --jq '.headRefOid'
 $externalEvidence = Join-Path ([IO.Path]::GetTempPath()) 'esaf-v04-closure-external-evidence.json'
 $evidenceMerge = (git rev-parse 'HEAD^1').Trim()
-$validatedMerge = ((Get-Content -Raw -LiteralPath $externalEvidence | ConvertFrom-Json).merge_head).Trim()
+$externalRecord = Get-Content -Raw -LiteralPath $externalEvidence | ConvertFrom-Json
+$validatedMerge = $externalRecord.merge_head.Trim()
+$mappingDecisionBasis = $externalRecord.mapping_decision_basis.Trim()
 if ($currentMain -ne $validatedMerge) { throw 'Current main differs from the merge SHA recorded in external evidence' }
 python tools/release_gates.py --check --baseline-ref $evidenceMerge --external-evidence $externalEvidence --expected-head $validatedMerge --phase taggable
 ```
@@ -1282,6 +1299,7 @@ if ($currentMain -ne $validatedMerge -or $remoteMain -ne $validatedMerge) { thro
 if (@(git status --porcelain).Count -ne 0) { throw 'Main worktree changed after validation' }
 $publicationDate = python -c "from pathlib import Path; from tools.release_gates import load_front_matter; print(load_front_matter(Path('docs/superpowers/reviews/2026-07-21-v04-alpha-publication-readiness.md'))['publication']['date'])"
 if ((Get-Date).ToUniversalTime().ToString('yyyy-MM-dd') -ne $publicationDate.Trim()) { throw 'Conditional publication date expired; create and review a new closure candidate' }
+if ($mappingDecisionBasis -eq 'owner_risk_acceptance') { & python tools/owner_risk_evidence.py @ownerRiskRefreshArgs }
 python tools/release_gates.py --check --baseline-ref $evidenceMerge --external-evidence $externalEvidence --expected-head $validatedMerge --phase taggable
 if (git tag --list 'v0.4-alpha') { throw 'Local v0.4-alpha tag already exists' }
 if (git ls-remote --tags origin 'refs/tags/v0.4-alpha') { throw 'Remote v0.4-alpha tag already exists' }
@@ -1290,6 +1308,7 @@ ESAF 0.4-alpha Working Draft
 
 Validated commit: $validatedMerge
 Evidence: https://github.com/tdistress/ESAF/issues/39
+Mapping decision basis: $mappingDecisionBasis. $mappingDecisionSummary
 Lifecycle boundary: Draft artifacts remain Draft; this tag does not claim compliance, certification, equivalence, endorsement, or production readiness.
 "@
 git tag -a v0.4-alpha $validatedMerge -m $tagMessage
@@ -1315,7 +1334,7 @@ if ($localPeeled -ne $validatedMerge -or $remotePeeled -ne $validatedMerge) { th
 
 - [ ] **Step 6: Record publication evidence and close issue #39**
 
-Post one consolidated issue comment containing PR A head/merge, PR B head/merge, tag object and peeled commit, every command/count, 23/23 renderer result, technical/editorial/rendering verdicts, three qualified mapping approvals, governance approval, GitHub check URLs, clean merge state, lifecycle limitations, and zero unresolved Critical/Important findings. Replace any superseded result rather than appending contradictory totals.
+Post one consolidated issue comment containing PR A head/merge, PR B head/merge, tag object and peeled commit, every command/count, 23/23 renderer result, technical/editorial/rendering verdicts, the uniform mapping decision basis and three exact decisions, separate governance approval, GitHub check URLs, clean merge state, lifecycle limitations, and zero unresolved Critical/Important findings. When the basis is owner risk, include the deferred-review backlog IDs and fetched-comment SHA-256 body comparison. Replace any superseded result rather than appending contradictory totals.
 
 The controller shall supply `$finalGateSummary` from the exact Task 7 Steps 2–3 outputs and `$finalReviewSummary` from the approved external-evidence objects. Use those resolved values to post the consolidated comment, then close the issue:
 
@@ -1342,11 +1361,12 @@ $evidenceComment = @"
 - Renderer: 23/23 Mermaid blocks parsed and passed readability review with @mermaid-js/mermaid-cli@11.16.0.
 - Repository gates: $finalGateSummary
 - Reviews: $finalReviewSummary
+- Mapping decision: $mappingDecisionBasis; $mappingDecisionSummary
 - Findings: Critical 0; Important 0; every accepted Minor includes its owner and rationale.
 - Lifecycle: all architecture, control, and mapping artifacts retain their existing Draft state. Publication claims no compliance, certification, equivalence, endorsement, external-scheme approval, or production readiness.
 "@
 gh issue comment 39 --repo tdistress/ESAF --body $evidenceComment
-gh issue close 39 --repo tdistress/ESAF --comment "0.4-alpha publication gates are closed. Remote annotated tag v0.4-alpha resolves to validated commit $validatedMerge. See the preceding consolidated evidence comment for exact results and lifecycle limitations."
+gh issue close 39 --repo tdistress/ESAF --comment "0.4-alpha publication gates are closed. Basis: $mappingDecisionBasis. Remote annotated tag v0.4-alpha resolves to validated commit $validatedMerge. See the preceding consolidated evidence comment for exact results, deferred-review status where applicable, and lifecycle limitations."
 ```
 
 - [ ] **Step 7: Clean branches/worktrees and verify final repository state**
