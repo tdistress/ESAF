@@ -348,6 +348,102 @@ class ReleaseMetadataTests(unittest.TestCase):
             with self.subTest(required=required):
                 self.assertIn(required, issue_block)
 
+    def test_qualified_approval_acquisition_requires_three_live_structured_decisions(self) -> None:
+        plan = read_repository_file(
+            "docs/superpowers/plans/2026-07-21-v04-alpha-publication-gates.md"
+        )
+        for required in (
+            "function New-QualifiedInputFromSources",
+            "qualified decision comment shall contain a JSON object",
+            "decision_type -ne 'qualified_approval'",
+            "decided_at -notmatch '^\\d{4}-\\d{2}-\\d{2}T",
+            "qualified_review_status -ne 'completed'",
+            "claims_not_made -join ','",
+            "Qualified decision evidence URL shall equal fetched comment URL",
+            "esaf-v04-qualified-$index-response.json",
+            "Capture qualified decision comment IDs",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, plan)
+        self.assertGreaterEqual(
+            plan.count('gh api "repos/tdistress/ESAF/issues/comments/$qualifiedCommentId"'),
+            3,
+        )
+        for mapping_set_id in EXPECTED_MAPPING_SET_IDS:
+            with self.subTest(mapping_set_id=mapping_set_id):
+                self.assertIn(mapping_set_id, plan)
+        self.assertNotIn("equivalently complete basis-specific builder", plan)
+        acquisition = plan[
+            plan.index("For \x60qualified_approval\x60, acquire the three reviewer decisions"):
+            plan.index("- [ ] **Step 4: Push and open closure PR B")
+        ]
+        for required in (
+            "$expectedClaims",
+            "[DateTimeOffset]::Parse([string]$decision.decided_at)",
+            "$decision.reviewer",
+            "$decision.qualification",
+            "$decision.limitations.lifecycle -eq 'draft'",
+            "$decision.limitations.claims_not_made -join ','",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, acquisition)
+
+    def test_qualified_inputs_are_produced_from_fresh_live_sources_before_each_consumer(self) -> None:
+        plan = read_repository_file(
+            "docs/superpowers/plans/2026-07-21-v04-alpha-publication-gates.md"
+        )
+        sections = (
+            (
+                "- [ ] **Step 5: Fetch sources and build complete closure evidence before merge**",
+                "- [ ] **Step 6: Immediately refresh every live source and merge PR B**",
+                "esaf-v04-qualified-closure-input.json",
+                "New-QualifiedClosureEvidence $qualifiedInputsPath $closureHead",
+            ),
+            (
+                "- [ ] **Step 6: Immediately refresh every live source and merge PR B**",
+                "### Task 7:",
+                "esaf-v04-qualified-prefetch-merge-input.json",
+                "New-QualifiedClosureEvidence $qualifiedInputsPath $closureHead",
+            ),
+            (
+                "- [ ] **Step 4: Create and push the annotated tag atomically after validation**",
+                "- [ ] **Step 5: Resolve the remote annotated tag to the exact commit**",
+                "esaf-v04-qualified-taggable-input.json",
+                "New-QualifiedTaggableEvidence $qualifiedInputsPath $closureHead $closureMerge $postMergePath",
+            ),
+        )
+        for start, end, input_name, consumer in sections:
+            with self.subTest(input_name=input_name):
+                block = plan[plan.index(start):plan.index(end)]
+                producer = "Set-Content -LiteralPath $qualifiedInputsPath -Encoding utf8"
+                self.assertIn(input_name, block)
+                self.assertIn(producer, block)
+                self.assertIn(consumer, block)
+                self.assertLess(block.index(producer), block.index(consumer))
+                self.assertIn("New-QualifiedInputFromSources", block)
+                self.assertIn("ConvertFrom-Json", block)
+                self.assertIn("gh api", block)
+        self.assertGreaterEqual(plan.count("exactly three fixed qualified comment IDs"), 3)
+        self.assertIn("$priorEvidence.mapping_decisions.source.comment_id", plan)
+        self.assertIn("$baseEvidence.mapping_decisions.source.comment_id", plan)
+
+    def test_qualified_evidence_builder_revalidates_produced_decisions(self) -> None:
+        plan = read_repository_file(
+            "docs/superpowers/plans/2026-07-21-v04-alpha-publication-gates.md"
+        )
+        builder = plan[
+            plan.index("function New-QualifiedClosureEvidence"):
+            plan.index("function New-QualifiedTaggableEvidence")
+        ]
+        for required in (
+            "$expectedMappingIds",
+            "Qualified mapping decision decided_at shall be RFC3339",
+            "Qualified mapping decisions shall contain exactly the three expected mapping-set IDs",
+            "Qualified mapping decision source is incomplete",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, builder)
+
     def test_repository_workflow_runs_release_and_link_validation(self) -> None:
         workflow = read_repository_file(".github/workflows/catalog-validation.yml")
         self.assertIn("python tools/release_gates.py --check", workflow)

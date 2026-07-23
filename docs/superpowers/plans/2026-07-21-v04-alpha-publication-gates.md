@@ -48,17 +48,94 @@ function Assert-OwnerSourceUnchanged($PriorSource, $FetchedComment) {
   return $digest
 }
 
+function Get-StructuredCommentBody($Path, $Name) {
+  $comment = Get-Content -Raw -LiteralPath $Path | ConvertFrom-Json
+  # A qualified decision comment shall contain a JSON object; prose is not evidence.
+  try { $body = [string]$comment.body | ConvertFrom-Json }
+  catch { throw "$Name comment shall contain a JSON object" }
+  if ($comment.id -isnot [long] -or $comment.html_url -notmatch '^https://') {
+    throw "$Name comment identity is invalid"
+  }
+  return [ordered]@{ comment=$comment; body=$body }
+}
+
+function New-QualifiedInputFromSources($QualifiedFetchedPaths, $ExpectedCommentIds, $ClosureHead, $PublicationDate, $ScopePath, $TechnicalPath, $EditorialPath, $RenderingPath, $GovernancePath, $PrStatePath, $BaseEvidence = $null) {
+  $expectedMappingIds = @(
+    'uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0',
+    'uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0',
+    'uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0'
+  )
+  $expectedClaims = @('compliance','certification','equivalence','endorsement','external_scheme_approval','assurance','production_readiness')
+  if (@($QualifiedFetchedPaths).Count -ne 3 -or @($ExpectedCommentIds).Count -ne 3 -or @($ExpectedCommentIds | Select-Object -Unique).Count -ne 3) {
+    throw 'Qualified evidence shall use exactly three fixed qualified comment IDs'
+  }
+  $qualifiedReviews = @($QualifiedFetchedPaths | ForEach-Object {
+    $source = Get-StructuredCommentBody $_ 'qualified decision'
+    $comment = $source.comment
+    $body = $source.body
+    if ([long]$comment.id -notin @($ExpectedCommentIds | ForEach-Object { [long]$_ })) { throw 'Qualified decision comment ID is not one of the fixed response IDs' }
+    if ($body.mapping_set_id -notin $expectedMappingIds -or $body.decision_type -ne 'qualified_approval' -or $body.sha -ne $ClosureHead) {
+      throw 'Qualified decision mapping ID, type, or closure SHA is invalid'
+    }
+    if ($body.decided_at -notmatch '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$') {
+      throw 'Qualified decision decided_at shall be RFC3339'
+    }
+    if ([DateTimeOffset]::Parse([string]$body.decided_at).ToUniversalTime().ToString('yyyy-MM-dd') -ne $PublicationDate) {
+      throw 'Qualified decision date shall equal the current publication date'
+    }
+    if ([string]::IsNullOrWhiteSpace([string]$body.reviewer) -or [string]::IsNullOrWhiteSpace([string]$body.qualification) -or $body.disposition -ne 'approved' -or $body.qualified_review_status -ne 'completed') {
+      throw 'Qualified decision reviewer, qualification, disposition, or completion status is invalid'
+    }
+    if ($body.url -ne $comment.html_url -or $body.url -notmatch '^https://') { throw 'Qualified decision evidence URL shall equal fetched comment URL' }
+    if ($body.limitations.lifecycle -ne 'draft' -or (($body.limitations.claims_not_made -join ',') -ne ($expectedClaims -join ','))) {
+      throw 'Qualified decision limitations shall be the exact Draft claims_not_made set'
+    }
+    [ordered]@{ mapping_set_id=$body.mapping_set_id; sha=$body.sha; decided_at=$body.decided_at; reviewer=$body.reviewer; qualification=$body.qualification; disposition=$body.disposition; qualified_review_status=$body.qualified_review_status; url=$body.url; source=[ordered]@{comment_id=[long]$comment.id; comment_url=$comment.html_url} }
+  })
+  $actualMappingIds = @($qualifiedReviews.mapping_set_id | Sort-Object) -join ','
+  $expectedMappingIdList = @($expectedMappingIds | Sort-Object) -join ','
+  if ($actualMappingIds -ne $expectedMappingIdList) { throw 'Qualified decisions shall contain exactly the three expected mapping-set IDs' }
+  if ($null -ne $BaseEvidence) {
+    if ($BaseEvidence.closure_head -ne $ClosureHead) { throw 'Taggable qualified evidence closure head differs from retained closure evidence' }
+    $scope = $BaseEvidence.scope; $technical = $BaseEvidence.technical; $editorial = $BaseEvidence.editorial
+    $rendering = $BaseEvidence.rendering; $governance = $BaseEvidence.governance
+    $githubChecks = $BaseEvidence.github_checks; $mergeState = $BaseEvidence.merge_state
+  } else {
+    $scope = (Get-StructuredCommentBody $ScopePath 'scope').body
+    $technical = (Get-StructuredCommentBody $TechnicalPath 'technical').body
+    $editorial = (Get-StructuredCommentBody $EditorialPath 'editorial').body
+    $rendering = (Get-StructuredCommentBody $RenderingPath 'rendering').body
+    $governance = (Get-StructuredCommentBody $GovernancePath 'governance').body
+    $state = Get-Content -Raw -LiteralPath $PrStatePath | ConvertFrom-Json
+    if ($state.headRefOid -ne $ClosureHead) { throw 'Qualified evidence PR state is not bound to closure head' }
+    $githubChecks = [ordered]@{ expected=@('Validate ESAF sources'); observed=@($state.statusCheckRollup | ForEach-Object { [ordered]@{name=$_.name; sha=$ClosureHead; conclusion=([string]$_.conclusion).ToLowerInvariant(); url=$_.detailsUrl} }) }
+    $mergeState = [ordered]@{sha=$ClosureHead; mergeable=($state.mergeable -eq 'MERGEABLE'); state=([string]$state.mergeStateStatus).ToLowerInvariant()}
+  }
+  return [ordered]@{
+    qualified_reviews=$qualifiedReviews; scope=$scope; technical=$technical; editorial=$editorial; rendering=$rendering; governance=$governance
+    github_checks=$githubChecks; merge_state=$mergeState
+  }
+}
+
 function New-QualifiedClosureEvidence($InputPath, $ClosureHead) {
   $input = Get-Content -Raw -LiteralPath $InputPath | ConvertFrom-Json
+  $expectedMappingIds = @(
+    'uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0',
+    'uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0',
+    'uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0'
+  )
   $limitations = [ordered]@{
     lifecycle = 'draft'
     claims_not_made = @('compliance','certification','equivalence','endorsement','external_scheme_approval','assurance','production_readiness')
   }
   $qualifiedDecisions = @($input.qualified_reviews | ForEach-Object {
-    if ($_.sha -ne $ClosureHead -or $_.disposition -ne 'approved' -or $_.qualified_review_status -ne 'completed' -or $_.url -notmatch '^https://') { throw 'Qualified mapping decision is incomplete or not bound to closure head' }
-    [ordered]@{ mapping_set_id=$_.mapping_set_id; decision_type='qualified_approval'; sha=$ClosureHead; decided_at=$_.decided_at; reviewer=$_.reviewer; qualification=$_.qualification; disposition='approved'; qualified_review_status='completed'; url=$_.url; limitations=$limitations }
+    if ($_.mapping_set_id -notin $expectedMappingIds -or $_.sha -ne $ClosureHead -or $_.decision_type -ne 'qualified_approval' -or $_.disposition -ne 'approved' -or $_.qualified_review_status -ne 'completed' -or $_.url -notmatch '^https://' -or [string]::IsNullOrWhiteSpace([string]$_.reviewer) -or [string]::IsNullOrWhiteSpace([string]$_.qualification)) { throw 'Qualified mapping decision is incomplete or not bound to closure head' }
+    if ($_.decided_at -notmatch '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$') { throw 'Qualified mapping decision decided_at shall be RFC3339' }
+    if ($_.source.comment_id -isnot [long] -or $_.source.comment_url -ne $_.url) { throw 'Qualified mapping decision source is incomplete' }
+    [ordered]@{ mapping_set_id=$_.mapping_set_id; decision_type='qualified_approval'; sha=$ClosureHead; decided_at=$_.decided_at; reviewer=$_.reviewer; qualification=$_.qualification; disposition='approved'; qualified_review_status='completed'; url=$_.url; limitations=$limitations; source=$_.source }
   })
   if ($qualifiedDecisions.Count -ne 3) { throw 'Qualified evidence shall contain exactly three mapping decisions' }
+  if ((@($qualifiedDecisions.mapping_set_id | Sort-Object) -join ',') -ne (@($expectedMappingIds | Sort-Object) -join ',')) { throw 'Qualified mapping decisions shall contain exactly the three expected mapping-set IDs' }
   $qualifiedScope = [ordered]@{ sha=$ClosureHead; approver=$input.scope.approver; role='release-scope approver'; date=$input.scope.date; disposition='approved'; url=$input.scope.url }
   return [ordered]@{
     closure_head=$ClosureHead; scope=$qualifiedScope; technical=$input.technical; editorial=$input.editorial; rendering=$input.rendering; governance=$input.governance
@@ -1202,6 +1279,63 @@ $mappingDecision = [ordered]@{
 
 The controller shall supply the basis-specific resolved identity and HTTPS locator from the actual GitHub source. Repeat the object for the other two exact mapping-set IDs. For owner risk, use `tools/owner_risk_evidence.py` with a freshly fetched comment JSON source and do not commit any temporary JSON. Governance remains a separate Steering Committee approval.
 
+For `qualified_approval`, acquire the three reviewer decisions as structured
+JSON, not prose. Each reviewer comment body shall be exactly one JSON object
+with `mapping_set_id`, `decision_type: qualified_approval`, exact
+`$closureHead`, RFC3339 `decided_at`, nonempty `reviewer` and
+`qualification`, `disposition: approved`,
+`qualified_review_status: completed`, an HTTPS `url` equal to that
+fetched comment's `html_url`, and limitations exactly
+`lifecycle: draft` plus the seven `claims_not_made` values enforced by
+the controller helper. Capture qualified decision comment IDs in fixed
+temporary response files; later controller steps shall fetch those numeric IDs
+again and reject any changed or incomplete source.
+
+```powershell
+$temp = [IO.Path]::GetTempPath()
+$closurePr = gh pr view --repo tdistress/ESAF agent/v04-alpha-publication-gates-closure --json number --jq '.number'
+Assert-NativeSuccess 'Resolve closure PR for qualified decision acquisition'
+$closureHead = gh pr view --repo tdistress/ESAF $closurePr --json headRefOid --jq '.headRefOid'
+Assert-NativeSuccess 'Resolve closure head for qualified decision acquisition'
+$publicationDate = (Get-Date).ToUniversalTime().ToString('yyyy-MM-dd')
+$expectedMappingIds = @(
+  'uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0',
+  'uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0',
+  'uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0'
+)
+$expectedClaims = @('compliance','certification','equivalence','endorsement','external_scheme_approval','assurance','production_readiness')
+$commentFeedPath = Join-Path $temp 'esaf-v04-qualified-comment-feed.json'
+gh api "repos/tdistress/ESAF/issues/$closurePr/comments?per_page=100" |
+  Set-Content -LiteralPath $commentFeedPath -Encoding utf8
+Assert-NativeSuccess 'Fetch qualified decision comments'
+$commentFeed = Get-Content -Raw -LiteralPath $commentFeedPath | ConvertFrom-Json
+for ($index = 0; $index -lt $expectedMappingIds.Count; $index++) {
+  $mappingSetId = $expectedMappingIds[$index]
+  $matches = @($commentFeed | Where-Object {
+    try {
+      $decision = [string]$_.body | ConvertFrom-Json
+        $decision.mapping_set_id -eq $mappingSetId -and
+        $decision.decision_type -eq 'qualified_approval' -and
+        $decision.sha -eq $closureHead -and
+        $decision.decided_at -match '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$' -and
+        [DateTimeOffset]::Parse([string]$decision.decided_at).ToUniversalTime().ToString('yyyy-MM-dd') -eq $publicationDate -and
+        -not [string]::IsNullOrWhiteSpace([string]$decision.reviewer) -and
+        -not [string]::IsNullOrWhiteSpace([string]$decision.qualification) -and
+        $decision.disposition -eq 'approved' -and
+        $decision.qualified_review_status -eq 'completed' -and
+        $decision.url -eq $_.html_url -and
+        $decision.url -match '^https://' -and
+        $decision.limitations.lifecycle -eq 'draft' -and
+        ($decision.limitations.claims_not_made -join ',') -eq ($expectedClaims -join ',')
+    } catch { $false }
+  })
+  if ($matches.Count -ne 1) { throw "Expected one structured qualified decision for $mappingSetId" }
+  $responsePath = Join-Path $temp "esaf-v04-qualified-$index-response.json"
+  [ordered]@{id=[long]$matches[0].id; url=$matches[0].html_url; mapping_set_id=$mappingSetId} |
+    ConvertTo-Json -Depth 4 | Set-Content -LiteralPath $responsePath -Encoding utf8
+}
+```
+
 - [ ] **Step 4: Push and open closure PR B, then obtain governance approval**
 
 ```powershell
@@ -1228,8 +1362,8 @@ The authorized Steering Committee approver shall comment with role/authority, ex
 
 For `owner_risk_acceptance`, run this self-contained block immediately before
 initial closure validation. It fetches immutable comment sources by numeric ID,
-removes stale output, rebuilds evidence, and validates the rebuilt file. A
-qualified basis shall use an equivalently complete basis-specific builder.
+removes stale output, rebuilds evidence, and validates the rebuilt file. The
+qualified branch below fetches and produces its own complete input before use.
 
 ```powershell
 function Assert-NativeSuccess([string]$operation) {
@@ -1242,7 +1376,7 @@ Assert-NativeSuccess 'Resolve closure PR for evidence construction'
 $closureHead = gh pr view --repo tdistress/ESAF $closurePr `
   --json headRefOid --jq '.headRefOid'
 Assert-NativeSuccess 'Resolve closure head for evidence construction'
-$responseNames = @('owner','technical','editorial','rendering','governance')
+$responseNames = @('owner','scope','technical','editorial','rendering','governance')
 $fetched = @{}
 foreach ($name in $responseNames) {
   $responsePath = Join-Path $temp "esaf-v04-$name-response.json"
@@ -1288,6 +1422,20 @@ if ($mappingDecisionBasis -eq 'owner_risk_acceptance') {
   if ($builtEvidence.mapping_decisions[0].source.body_sha256 -ne $ownerDigest) { throw 'Built owner evidence digest does not match fetched UTF-8 body' }
 } elseif ($mappingDecisionBasis -eq 'qualified_approval') {
   $qualifiedInputsPath = Join-Path $temp 'esaf-v04-qualified-closure-input.json'
+  $qualifiedResponsePaths = @(0..2 | ForEach-Object { Join-Path $temp "esaf-v04-qualified-$_-response.json" })
+  $qualifiedCommentIds = @($qualifiedResponsePaths | ForEach-Object { [long](Get-Content -Raw -LiteralPath $_ | ConvertFrom-Json).id })
+  if ($qualifiedCommentIds.Count -ne 3 -or @($qualifiedCommentIds | Select-Object -Unique).Count -ne 3) { throw 'Qualified closure input shall use exactly three fixed qualified comment IDs' }
+  $qualifiedFetchedPaths = @()
+  for ($index = 0; $index -lt $qualifiedCommentIds.Count; $index++) {
+    $qualifiedCommentId = $qualifiedCommentIds[$index]
+    $qualifiedFetchedPath = Join-Path $temp "esaf-v04-qualified-$index-fetched.json"
+    gh api "repos/tdistress/ESAF/issues/comments/$qualifiedCommentId" |
+      Set-Content -LiteralPath $qualifiedFetchedPath -Encoding utf8
+    Assert-NativeSuccess "Fetch qualified decision $index for closure evidence"
+    $qualifiedFetchedPaths += $qualifiedFetchedPath
+  }
+  $qualifiedInput = New-QualifiedInputFromSources $qualifiedFetchedPaths $qualifiedCommentIds $closureHead $publicationDate $fetched.scope $fetched.technical $fetched.editorial $fetched.rendering $fetched.governance $prStatePath
+  $qualifiedInput | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $qualifiedInputsPath -Encoding utf8
   $qualifiedEvidence = New-QualifiedClosureEvidence $qualifiedInputsPath $closureHead
   $qualifiedEvidence | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $externalEvidence -Encoding utf8
 } else { throw "Unsupported mapping decision basis: $mappingDecisionBasis" }
@@ -1321,7 +1469,7 @@ $closureHead = gh pr view --repo tdistress/ESAF $closurePr `
 Assert-NativeSuccess 'Resolve remote closure head'
 if ($closureHead -ne $localClosureHead) { throw 'PR head differs from reviewed head' }
 $temp = [IO.Path]::GetTempPath()
-$responseNames = @('owner','technical','editorial','rendering','governance')
+$responseNames = @('owner','scope','technical','editorial','rendering','governance')
 $fetched = @{}
 foreach ($name in $responseNames) {
   $responsePath = Join-Path $temp "esaf-v04-$name-response.json"
@@ -1365,6 +1513,19 @@ if ($mappingDecisionBasis -eq 'owner_risk_acceptance') {
   if ($rebuiltEvidence.mapping_decisions[0].source.body_sha256 -ne $ownerDigest) { throw 'Rebuilt owner evidence digest differs from live source' }
 } elseif ($mappingDecisionBasis -eq 'qualified_approval') {
   $qualifiedInputsPath = Join-Path $temp 'esaf-v04-qualified-prefetch-merge-input.json'
+  $qualifiedCommentIds = @($priorEvidence.mapping_decisions.source.comment_id | ForEach-Object { [long]$_ })
+  if ($qualifiedCommentIds.Count -ne 3 -or @($qualifiedCommentIds | Select-Object -Unique).Count -ne 3) { throw 'Qualified pre-merge input shall use exactly three fixed qualified comment IDs' }
+  $qualifiedFetchedPaths = @()
+  for ($index = 0; $index -lt $qualifiedCommentIds.Count; $index++) {
+    $qualifiedCommentId = $qualifiedCommentIds[$index]
+    $qualifiedFetchedPath = Join-Path $temp "esaf-v04-qualified-$index-prefetch-merge.json"
+    gh api "repos/tdistress/ESAF/issues/comments/$qualifiedCommentId" |
+      Set-Content -LiteralPath $qualifiedFetchedPath -Encoding utf8
+    Assert-NativeSuccess "Refetch qualified decision $index before merge"
+    $qualifiedFetchedPaths += $qualifiedFetchedPath
+  }
+  $qualifiedInput = New-QualifiedInputFromSources $qualifiedFetchedPaths $qualifiedCommentIds $closureHead $publicationDate $fetched.scope $fetched.technical $fetched.editorial $fetched.rendering $fetched.governance $prStatePath
+  $qualifiedInput | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $qualifiedInputsPath -Encoding utf8
   $qualifiedEvidence = New-QualifiedClosureEvidence $qualifiedInputsPath $closureHead
   $qualifiedEvidence | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $externalEvidence -Encoding utf8
 } else { throw "Unsupported mapping decision basis: $mappingDecisionBasis" }
@@ -1497,6 +1658,19 @@ if ($mappingDecisionBasis -eq 'owner_risk_acceptance') {
   if ($rebuiltEvidence.mapping_decisions[0].source.body_sha256 -ne $ownerDigest) { throw 'Taggable owner evidence digest differs from live source' }
 } elseif ($mappingDecisionBasis -eq 'qualified_approval') {
   $qualifiedInputsPath = Join-Path ([IO.Path]::GetTempPath()) 'esaf-v04-qualified-taggable-input.json'
+  $qualifiedCommentIds = @($baseEvidence.mapping_decisions.source.comment_id | ForEach-Object { [long]$_ })
+  if ($qualifiedCommentIds.Count -ne 3 -or @($qualifiedCommentIds | Select-Object -Unique).Count -ne 3) { throw 'Qualified taggable input shall use exactly three fixed qualified comment IDs' }
+  $qualifiedFetchedPaths = @()
+  for ($index = 0; $index -lt $qualifiedCommentIds.Count; $index++) {
+    $qualifiedCommentId = $qualifiedCommentIds[$index]
+    $qualifiedFetchedPath = Join-Path ([IO.Path]::GetTempPath()) "esaf-v04-qualified-$index-prefetch-tag.json"
+    gh api "repos/tdistress/ESAF/issues/comments/$qualifiedCommentId" |
+      Set-Content -LiteralPath $qualifiedFetchedPath -Encoding utf8
+    Assert-NativeSuccess "Refetch qualified decision $index before tag"
+    $qualifiedFetchedPaths += $qualifiedFetchedPath
+  }
+  $qualifiedInput = New-QualifiedInputFromSources -QualifiedFetchedPaths $qualifiedFetchedPaths -ExpectedCommentIds $qualifiedCommentIds -ClosureHead $closureHead -PublicationDate $publicationDate -BaseEvidence $baseEvidence
+  $qualifiedInput | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $qualifiedInputsPath -Encoding utf8
   $qualifiedEvidence = New-QualifiedTaggableEvidence $qualifiedInputsPath $closureHead $closureMerge $postMergePath
   $qualifiedEvidence | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $taggableEvidence -Encoding utf8
 } else { throw "Unsupported mapping decision basis: $mappingDecisionBasis" }
