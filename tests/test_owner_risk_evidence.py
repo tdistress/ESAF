@@ -1,13 +1,18 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from contextlib import redirect_stderr
 from datetime import datetime, timezone
 import hashlib
+import io
 import json
+from pathlib import Path
+import tempfile
 import unittest
 
 from tools.owner_risk_evidence import (
     build_external_evidence,
+    main,
     parse_owner_decision,
     refresh_taggable_evidence,
     verify_owner_comment,
@@ -59,6 +64,8 @@ def verdicts() -> dict[str, dict[str, object]]:
             "url": f"https://github.com/tdistress/ESAF/pull/51#issuecomment-{number}",
             "critical": 0,
             "important": 0,
+            "method": "independent review",
+            "result": "passed",
         }
     return {
         "technical": review("technical", 2),
@@ -83,6 +90,19 @@ def pr_state() -> dict[str, object]:
             "detailsUrl": "https://github.com/tdistress/ESAF/actions/runs/1",
         }],
     }
+
+
+def verdict_comment(name: str, number: int) -> dict[str, object]:
+    body = deepcopy(verdicts()[name])
+    body.pop("url")
+    return {
+        "html_url": f"https://github.com/tdistress/ESAF/pull/51#issuecomment-{number}",
+        "body": "```json\n" + json.dumps(body) + "\n```\n",
+    }
+
+
+def write_json(path: Path, value: object) -> None:
+    path.write_text(json.dumps(value), encoding="utf-8")
 
 
 class OwnerRiskEvidenceTests(unittest.TestCase):
@@ -121,6 +141,49 @@ class OwnerRiskEvidenceTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     verify_owner_comment(comment, HEAD, PUBLICATION_DATE, TIMESTAMP)
 
+    def test_verify_owner_comment_rejects_every_structured_decision_mutation(self) -> None:
+        def set_decision(comment: dict[str, object], **changes: object) -> None:
+            comment["body"] = "```json\n" + json.dumps({**decision(), **changes}) + "\n```"
+
+        cases = (
+            ("missing_mapping", lambda c: set_decision(c, mapping_set_ids=list(EXPECTED_MAPPING_SETS[:-1]))),
+            ("duplicate_mapping", lambda c: set_decision(c, mapping_set_ids=[EXPECTED_MAPPING_SETS[0]] * 3)),
+            ("extra_mapping", lambda c: set_decision(c, mapping_set_ids=[*EXPECTED_MAPPING_SETS[:2], "extra"])),
+            ("scope", lambda c: set_decision(c, scope="mapping_sets_only")),
+            ("lifecycle", lambda c: set_decision(c, lifecycle="released")),
+            ("incomplete_claims", lambda c: set_decision(c, claims_not_made=sorted(CLAIMS_NOT_MADE)[:-1])),
+            ("extra_claim", lambda c: set_decision(c, claims_not_made=[*sorted(CLAIMS_NOT_MADE)[:-1], "extra"])),
+            ("type", lambda c: set_decision(c, decision_type="qualified_approval")),
+            ("disposition", lambda c: set_decision(c, disposition="approved")),
+            ("review_status", lambda c: set_decision(c, qualified_review_status="completed")),
+        )
+        for name, mutate in cases:
+            with self.subTest(name=name):
+                comment = owner_comment()
+                mutate(comment)
+                with self.assertRaises(ValueError):
+                    verify_owner_comment(comment, HEAD, PUBLICATION_DATE, TIMESTAMP)
+
+    def test_verify_owner_comment_tracks_updated_and_edited_body_digest(self) -> None:
+        original = verify_owner_comment(owner_comment(), HEAD, PUBLICATION_DATE, TIMESTAMP)
+        edited = owner_comment()
+        edited["updated_at"] = f"{PUBLICATION_DATE}T13:00:00Z"
+        edited["body"] += "\nEditorial clarification."
+        refreshed = verify_owner_comment(edited, HEAD, PUBLICATION_DATE, f"{PUBLICATION_DATE}T13:00:00Z")
+        self.assertEqual(refreshed["updated_at"], edited["updated_at"])
+        self.assertEqual(refreshed["source_verified_at"], f"{PUBLICATION_DATE}T13:00:00Z")
+        self.assertNotEqual(refreshed["body_sha256"], original["body_sha256"])
+        for field in ("updated_at", "source_verified_at"):
+            with self.subTest(field=field):
+                comment = owner_comment()
+                if field == "updated_at":
+                    comment[field] = "not-a-timestamp"
+                    verified_at = TIMESTAMP
+                else:
+                    verified_at = "not-a-timestamp"
+                with self.assertRaises(ValueError):
+                    verify_owner_comment(comment, HEAD, PUBLICATION_DATE, verified_at)
+
     def test_build_external_evidence_assembles_complete_v1_contract(self) -> None:
         source = verify_owner_comment(owner_comment(), HEAD, PUBLICATION_DATE, TIMESTAMP)
         evidence = build_external_evidence(source, HEAD, verdicts(), pr_state())
@@ -157,8 +220,109 @@ class OwnerRiskEvidenceTests(unittest.TestCase):
         post_merge = {"sha": MERGE, "commands": [{"name": "full_suite", "exit_code": 0, "result": "passed"}]}
         evidence = refresh_taggable_evidence(base, refreshed, MERGE, post_merge)
         self.assertEqual(evidence["closure_head"], HEAD)
-        self.assertEqual(evidence["technical"], base["technical"])
-        self.assertEqual(evidence["mapping_decisions"][0]["source"], refreshed)
+        for name in ("technical", "editorial", "rendering", "governance", "github_checks", "merge_state"):
+            with self.subTest(name=name):
+                self.assertEqual(evidence[name], base[name])
+        self.assertTrue(all(item["source"] == refreshed for item in evidence["mapping_decisions"]))
         self.assertEqual(evidence["scope"]["source"], refreshed)
         self.assertEqual(evidence["merge_head"], MERGE)
         self.assertEqual(evidence["post_merge"], post_merge)
+
+    def test_cli_build_and_taggable_refresh_modes_write_external_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            owner_path = directory / "owner.json"
+            write_json(owner_path, owner_comment())
+            for name, number in (("technical", 2), ("editorial", 3), ("rendering", 4), ("governance", 5)):
+                write_json(directory / f"{name}.json", verdict_comment(name, number))
+            pr_path = directory / "pr.json"
+            write_json(pr_path, pr_state())
+            closure_path = directory / "closure.json"
+            build_args = [
+                "--comment-json", str(owner_path),
+                "--technical-comment-json", str(directory / "technical.json"),
+                "--editorial-comment-json", str(directory / "editorial.json"),
+                "--rendering-comment-json", str(directory / "rendering.json"),
+                "--governance-comment-json", str(directory / "governance.json"),
+                "--pr-state-json", str(pr_path),
+                "--expected-head", HEAD,
+                "--publication-date", PUBLICATION_DATE,
+                "--verified-at", TIMESTAMP,
+                "--output", str(closure_path),
+            ]
+            self.assertEqual(main(build_args), 0)
+            closure = json.loads(closure_path.read_text(encoding="utf-8"))
+            self.assertEqual(closure["closure_head"], HEAD)
+            post_merge_path = directory / "post-merge.json"
+            post_merge = {"sha": MERGE, "commands": [{"name": "full_suite", "exit_code": 0, "result": "passed"}]}
+            write_json(post_merge_path, post_merge)
+            taggable_path = directory / "taggable.json"
+            refresh_args = [
+                "--comment-json", str(owner_path),
+                "--base-evidence", str(closure_path),
+                "--merge-head", MERGE,
+                "--post-merge-json", str(post_merge_path),
+                "--publication-date", PUBLICATION_DATE,
+                "--verified-at", TIMESTAMP,
+                "--output", str(taggable_path),
+            ]
+            self.assertEqual(main(refresh_args), 0)
+            self.assertEqual(json.loads(taggable_path.read_text(encoding="utf-8"))["merge_head"], MERGE)
+
+    def test_cli_refuses_repository_output(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            owner_path = directory / "owner.json"
+            write_json(owner_path, owner_comment())
+            for name, number in (("technical", 2), ("editorial", 3), ("rendering", 4), ("governance", 5)):
+                comment = verdict_comment(name, number)
+                write_json(directory / f"{name}.json", comment)
+            pr_path = directory / "pr.json"
+            write_json(pr_path, pr_state())
+            arguments = [
+                "--comment-json", str(owner_path),
+                "--technical-comment-json", str(directory / "technical.json"),
+                "--editorial-comment-json", str(directory / "editorial.json"),
+                "--rendering-comment-json", str(directory / "rendering.json"),
+                "--governance-comment-json", str(directory / "governance.json"),
+                "--pr-state-json", str(pr_path),
+                "--expected-head", HEAD,
+                "--publication-date", PUBLICATION_DATE,
+                "--verified-at", TIMESTAMP,
+                "--output", str(Path(__file__).resolve().parents[1] / "evidence.json"),
+            ]
+            stderr = io.StringIO()
+            with redirect_stderr(stderr):
+                self.assertEqual(main(arguments), 1)
+            self.assertIn("external evidence output shall be outside the repository", stderr.getvalue())
+
+    def test_cli_build_rejects_incomplete_verdict_body(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            owner_path = directory / "owner.json"
+            write_json(owner_path, owner_comment())
+            for name, number in (("technical", 2), ("editorial", 3), ("rendering", 4), ("governance", 5)):
+                comment = verdict_comment(name, number)
+                if name == "technical":
+                    payload = json.loads(comment["body"].split("\n", 1)[1].rsplit("\n```", 1)[0])
+                    payload.pop("method")
+                    comment["body"] = "```json\n" + json.dumps(payload) + "\n```"
+                write_json(directory / f"{name}.json", comment)
+            pr_path = directory / "pr.json"
+            write_json(pr_path, pr_state())
+            arguments = [
+                "--comment-json", str(owner_path),
+                "--technical-comment-json", str(directory / "technical.json"),
+                "--editorial-comment-json", str(directory / "editorial.json"),
+                "--rendering-comment-json", str(directory / "rendering.json"),
+                "--governance-comment-json", str(directory / "governance.json"),
+                "--pr-state-json", str(pr_path),
+                "--expected-head", HEAD,
+                "--publication-date", PUBLICATION_DATE,
+                "--verified-at", TIMESTAMP,
+                "--output", str(directory / "external-evidence.json"),
+            ]
+            stderr = io.StringIO()
+            with redirect_stderr(stderr):
+                self.assertEqual(main(arguments), 1)
+            self.assertIn("technical verdict method shall be named", stderr.getvalue())

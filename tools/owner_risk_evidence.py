@@ -182,7 +182,11 @@ def _validate_verdicts(verdict_comments: dict[str, dict[str, object]], closure_h
         _require(value.get("sha") == closure_head, f"{name} verdict shall be bound to closure head")
         _require(value.get("disposition") == "approved", f"{name} verdict disposition shall be approved")
         _require(isinstance(value.get("url"), str) and value["url"].startswith("https://"), f"{name} verdict URL shall use HTTPS")
+        _require(isinstance(value.get("reviewer"), str) and value["reviewer"].strip(), f"{name} verdict reviewer shall be named")
+        _require(isinstance(value.get("method"), str) and value["method"].strip(), f"{name} verdict method shall be named")
+        _require(isinstance(value.get("result"), str) and value["result"].strip(), f"{name} verdict result shall be nonempty")
         if name == "governance":
+            _require(isinstance(value.get("approver"), str) and value["approver"].strip(), "governance approver shall be named")
             _require(value.get("authority") == "Steering Committee", "governance authority shall be Steering Committee")
         else:
             _require(value.get("critical") == 0 and value.get("important") == 0, f"{name} verdict findings shall be zero")
