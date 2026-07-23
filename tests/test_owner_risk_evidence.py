@@ -17,7 +17,7 @@ from tools.owner_risk_evidence import (
     refresh_taggable_evidence,
     verify_owner_comment,
 )
-from tools.release_gates import CLAIMS_NOT_MADE, EXPECTED_MAPPING_SETS
+from tools.release_gates import CLAIMS_NOT_MADE, EXPECTED_MAPPING_SETS, POST_MERGE_COMMANDS
 
 
 HEAD = "d" * 40
@@ -89,6 +89,16 @@ def pr_state() -> dict[str, object]:
             "conclusion": "SUCCESS",
             "detailsUrl": "https://github.com/tdistress/ESAF/actions/runs/1",
         }],
+    }
+
+
+def post_merge() -> dict[str, object]:
+    return {
+        "sha": MERGE,
+        "commands": [
+            {"name": name, "exit_code": 0, "result": "passed"}
+            for name in POST_MERGE_COMMANDS
+        ],
     }
 
 
@@ -217,8 +227,8 @@ class OwnerRiskEvidenceTests(unittest.TestCase):
         refreshed_comment = owner_comment()
         refreshed_comment["updated_at"] = f"{PUBLICATION_DATE}T13:00:00Z"
         refreshed = verify_owner_comment(refreshed_comment, HEAD, PUBLICATION_DATE, f"{PUBLICATION_DATE}T13:00:00Z")
-        post_merge = {"sha": MERGE, "commands": [{"name": "full_suite", "exit_code": 0, "result": "passed"}]}
-        evidence = refresh_taggable_evidence(base, refreshed, MERGE, post_merge)
+        results = post_merge()
+        evidence = refresh_taggable_evidence(base, refreshed, MERGE, results)
         self.assertEqual(evidence["closure_head"], HEAD)
         for name in ("technical", "editorial", "rendering", "governance", "github_checks", "merge_state"):
             with self.subTest(name=name):
@@ -226,7 +236,51 @@ class OwnerRiskEvidenceTests(unittest.TestCase):
         self.assertTrue(all(item["source"] == refreshed for item in evidence["mapping_decisions"]))
         self.assertEqual(evidence["scope"]["source"], refreshed)
         self.assertEqual(evidence["merge_head"], MERGE)
-        self.assertEqual(evidence["post_merge"], post_merge)
+        self.assertEqual(evidence["post_merge"], results)
+
+    def test_refresh_taggable_evidence_rejects_incomplete_or_invalid_closure_base(self) -> None:
+        source = verify_owner_comment(owner_comment(), HEAD, PUBLICATION_DATE, TIMESTAMP)
+        base = build_external_evidence(source, HEAD, verdicts(), pr_state())
+        cases = (
+            ("schema", lambda e: e.pop("mapping_decision_schema")),
+            ("mapping_decisions", lambda e: e.__setitem__("mapping_decisions", [])),
+            ("mapping_binding", lambda e: e["mapping_decisions"][0].__setitem__("sha", "a" * 40)),
+            ("scope", lambda e: e.pop("scope")),
+            ("scope_binding", lambda e: e["scope"].__setitem__("sha", "a" * 40)),
+            ("technical", lambda e: e.pop("technical")),
+            ("technical_binding", lambda e: e["technical"].__setitem__("sha", "a" * 40)),
+            ("editorial", lambda e: e.pop("editorial")),
+            ("rendering", lambda e: e.pop("rendering")),
+            ("governance", lambda e: e.pop("governance")),
+            ("checks", lambda e: e.pop("github_checks")),
+            ("check_binding", lambda e: e["github_checks"]["observed"][0].__setitem__("sha", "a" * 40)),
+            ("merge_state", lambda e: e.pop("merge_state")),
+            ("merge_binding", lambda e: e["merge_state"].__setitem__("sha", "a" * 40)),
+            ("merge_evidence", lambda e: e.__setitem__("merge_head", MERGE)),
+        )
+        for name, mutate in cases:
+            with self.subTest(name=name):
+                candidate = deepcopy(base)
+                mutate(candidate)
+                with self.assertRaises(ValueError):
+                    refresh_taggable_evidence(candidate, source, MERGE, post_merge())
+
+    def test_refresh_taggable_evidence_rejects_invalid_post_merge_commands(self) -> None:
+        source = verify_owner_comment(owner_comment(), HEAD, PUBLICATION_DATE, TIMESTAMP)
+        base = build_external_evidence(source, HEAD, verdicts(), pr_state())
+        cases = (
+            ("missing", lambda p: p["commands"].pop()),
+            ("duplicate", lambda p: p["commands"].append(deepcopy(p["commands"][0]))),
+            ("extra", lambda p: p["commands"].append({"name": "extra", "exit_code": 0, "result": "passed"})),
+            ("failed", lambda p: p["commands"][0].__setitem__("exit_code", 1)),
+            ("empty_result", lambda p: p["commands"][0].__setitem__("result", "")),
+        )
+        for name, mutate in cases:
+            with self.subTest(name=name):
+                results = post_merge()
+                mutate(results)
+                with self.assertRaises(ValueError):
+                    refresh_taggable_evidence(base, source, MERGE, results)
 
     def test_cli_build_and_taggable_refresh_modes_write_external_evidence(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
@@ -254,8 +308,7 @@ class OwnerRiskEvidenceTests(unittest.TestCase):
             closure = json.loads(closure_path.read_text(encoding="utf-8"))
             self.assertEqual(closure["closure_head"], HEAD)
             post_merge_path = directory / "post-merge.json"
-            post_merge = {"sha": MERGE, "commands": [{"name": "full_suite", "exit_code": 0, "result": "passed"}]}
-            write_json(post_merge_path, post_merge)
+            write_json(post_merge_path, post_merge())
             taggable_path = directory / "taggable.json"
             refresh_args = [
                 "--comment-json", str(owner_path),

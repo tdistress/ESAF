@@ -17,6 +17,7 @@ from tools.release_gates import (
     EXPECTED_MAPPING_SETS,
     MAPPING_DECISION_SCHEMA,
     OWNER_REPOSITORY,
+    POST_MERGE_COMMANDS,
     REPOSITORY_SCOPE,
     SHA_RE,
     _rfc3339,
@@ -231,6 +232,75 @@ def build_external_evidence(
     }
 
 
+def _validate_owner_decision_base(value: object, closure_head: str) -> dict[str, object]:
+    _require(isinstance(value, dict), "base mapping decision shall be an object")
+    _require(value.get("decision_type") == "owner_risk_acceptance", "base mapping decision shall use owner_risk_acceptance")
+    _require(value.get("sha") == closure_head, "base mapping decision shall be bound to closure head")
+    _require(value.get("role") == "repository_owner", "base mapping decision role shall be repository_owner")
+    _require(value.get("author_association") == "OWNER", "base mapping decision association shall be OWNER")
+    _require(value.get("disposition") == "accepted_for_working_draft", "base mapping decision disposition shall be accepted_for_working_draft")
+    _require(value.get("qualified_review_status") == "deferred", "base mapping decision review status shall be deferred")
+    source = value.get("source")
+    _require(isinstance(source, dict), "base mapping decision source is required")
+    _source_is_valid(source, closure_head)
+    _require(value.get("url") == source.get("comment_url"), "base mapping decision URL shall match source")
+    _require(value.get("owner_login") == source.get("author_login") and value.get("owner_user_id") == source.get("author_user_id"), "base mapping decision identity shall match source")
+    _require(value.get("decided_at") == source.get("created_at"), "base mapping decision timestamp shall match source")
+    return source
+
+
+def _validate_closure_base(base_evidence: dict[str, object], closure_head: str) -> None:
+    _require(base_evidence.get("mapping_decision_schema") == MAPPING_DECISION_SCHEMA, "base evidence shall use the v1 mapping decision schema")
+    _require("merge_head" not in base_evidence and "post_merge" not in base_evidence, "base evidence shall not contain merge evidence")
+    decisions = base_evidence.get("mapping_decisions")
+    _require(isinstance(decisions, list) and len(decisions) == len(EXPECTED_MAPPING_SETS), "base evidence shall contain exactly three mapping decisions")
+    decision_ids = [item.get("mapping_set_id") for item in decisions if isinstance(item, dict)]
+    _require(
+        len(decision_ids) == len(EXPECTED_MAPPING_SETS)
+        and all(isinstance(identifier, str) for identifier in decision_ids)
+        and sorted(decision_ids) == sorted(EXPECTED_MAPPING_SETS),
+        "base mapping decisions shall contain each expected mapping set exactly once",
+    )
+    sources = [_validate_owner_decision_base(item, closure_head) for item in decisions]
+    _require(all(source == sources[0] for source in sources[1:]), "base mapping decisions shall use the same source")
+    scope = base_evidence.get("scope")
+    _require(isinstance(scope, dict), "base owner scope is required")
+    _require(scope.get("approval_basis") == "owner_risk_acceptance", "base owner scope shall use owner_risk_acceptance")
+    _require(scope.get("sha") == closure_head, "base owner scope shall be bound to closure head")
+    _require(scope.get("scope") == REPOSITORY_SCOPE, "base owner scope shall be complete")
+    _require(scope.get("role") == "repository_owner" and scope.get("author_association") == "OWNER", "base owner scope identity is invalid")
+    scope_source = scope.get("source")
+    _require(isinstance(scope_source, dict), "base owner scope source is required")
+    _source_is_valid(scope_source, closure_head)
+    _require(scope_source == sources[0], "base owner scope source shall match mapping decisions")
+    _require(scope.get("owner_login") == scope_source.get("author_login") and scope.get("owner_user_id") == scope_source.get("author_user_id"), "base owner scope identity shall match source")
+    _require(scope.get("decided_at") == scope_source.get("created_at"), "base owner scope timestamp shall match source")
+    verdicts = {name: base_evidence.get(name) for name in ("technical", "editorial", "rendering", "governance")}
+    _validate_verdicts(verdicts, closure_head)
+    checks = base_evidence.get("github_checks")
+    _require(isinstance(checks, dict), "base GitHub checks are required")
+    observed = checks.get("observed")
+    _require(checks.get("expected") == ["Validate ESAF sources"], "base GitHub expected checks are invalid")
+    _require(isinstance(observed, list) and len(observed) == 1 and isinstance(observed[0], dict), "base GitHub observed checks are invalid")
+    check = observed[0]
+    _require(check.get("name") == "Validate ESAF sources" and check.get("sha") == closure_head and check.get("conclusion") == "success", "base GitHub check shall be a successful closure-head check")
+    _require(isinstance(check.get("url"), str) and check["url"].startswith("https://"), "base GitHub check URL shall use HTTPS")
+    merge_state = base_evidence.get("merge_state")
+    _require(isinstance(merge_state, dict), "base merge state is required")
+    _require(merge_state.get("sha") == closure_head and merge_state.get("mergeable") is True and merge_state.get("state") == "clean", "base merge state shall be a clean closure-head state")
+
+
+def _validate_post_merge(post_merge: object, merge_head: str) -> None:
+    _require(isinstance(post_merge, dict) and post_merge.get("sha") == merge_head, "post-merge evidence shall be bound to merge head")
+    commands = post_merge.get("commands")
+    _require(isinstance(commands, list) and len(commands) == len(POST_MERGE_COMMANDS) and all(isinstance(command, dict) for command in commands), "post-merge commands shall contain each required command exactly once")
+    names = [command.get("name") for command in commands]
+    _require(all(isinstance(name, str) for name in names) and sorted(names) == sorted(POST_MERGE_COMMANDS), "post-merge commands shall contain each required command exactly once")
+    for command in commands:
+        _require(command.get("exit_code") == 0, f"{command['name']} command failed")
+        _require(isinstance(command.get("result"), str) and command["result"].strip(), f"{command['name']} command result shall be nonempty")
+
+
 def refresh_taggable_evidence(
     base_evidence: dict[str, object], owner_source: dict[str, object], merge_head: str, post_merge: dict[str, object],
 ) -> dict[str, object]:
@@ -239,8 +309,9 @@ def refresh_taggable_evidence(
     _require(isinstance(closure_head, str) and bool(SHA_RE.fullmatch(closure_head)), "base evidence closure head shall be a 40-character SHA")
     _require(base_evidence.get("mapping_decision_basis") == "owner_risk_acceptance", "base evidence shall use owner_risk_acceptance")
     _require(isinstance(merge_head, str) and bool(SHA_RE.fullmatch(merge_head)), "merge head shall be a 40-character SHA")
+    _validate_closure_base(base_evidence, closure_head)
     _source_is_valid(owner_source, closure_head)
-    _require(isinstance(post_merge, dict) and post_merge.get("sha") == merge_head, "post-merge evidence shall be bound to merge head")
+    _validate_post_merge(post_merge, merge_head)
     evidence = deepcopy(base_evidence)
     evidence["mapping_decisions"] = _owner_decisions(owner_source, closure_head)
     evidence["scope"] = _owner_scope(owner_source, closure_head)
