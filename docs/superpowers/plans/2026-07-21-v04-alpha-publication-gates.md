@@ -1180,30 +1180,137 @@ $closurePr = gh pr view --repo tdistress/ESAF agent/v04-alpha-publication-gates-
 
 The authorized Steering Committee approver shall comment with role/authority, exact `$closureHead`, the current UTC date, disposition `approved`, the condition that publication remains contingent on the remote annotated tag and post-merge gates, and limitations. Repository ownership without the governance role is insufficient.
 
-- [ ] **Step 5: Validate external closure evidence before merge**
+- [ ] **Step 5: Fetch sources and build complete closure evidence before merge**
 
-Build `closure-external-evidence.json` at the exact system-temporary path below with `$closureHead`, the basis-specific `mapping_decision_schema`, `mapping_decision_basis`, and three decision objects; scope, passing GitHub check URL/conclusion, governance, technical/editorial/rendering verdicts; and no merge/post-merge object yet. The controller shall fetch the new closure-head owner comment immediately before construction when the basis is owner risk, verify its SHA-256 body comparison, and construct the source-bound owner scope and mapping decisions through `tools/owner_risk_evidence.py`. A qualified basis instead requires the actual `release-scope approver` object with `$closureHead`, current UTC date, disposition `approved`, and that comment's HTTPS URL. Refuse to reuse stale content from a prior attempt or to rebind PR A's earlier scope evidence. Then run:
+For `owner_risk_acceptance`, run this self-contained block immediately before
+initial closure validation. It fetches immutable comment sources by numeric ID,
+removes stale output, rebuilds evidence, and validates the rebuilt file. A
+qualified basis shall use an equivalently complete basis-specific builder.
 
 ```powershell
-$closureHead = (git rev-parse HEAD).Trim()
-$closureBase = (git merge-base HEAD main).Trim()
-$closurePr = gh pr view --repo tdistress/ESAF agent/v04-alpha-publication-gates-closure --json number --jq '.number'
-$externalEvidence = Join-Path ([IO.Path]::GetTempPath()) 'esaf-v04-closure-external-evidence.json'
-python tools/release_gates.py --check --baseline-ref $closureBase --external-evidence $externalEvidence --expected-head $closureHead --phase closure
-gh pr checks --repo tdistress/ESAF $closurePr
-gh pr view --repo tdistress/ESAF $closurePr --json state,isDraft,mergeable,headRefOid,statusCheckRollup
+function Assert-NativeSuccess([string]$operation) {
+  if ($LASTEXITCODE -ne 0) { throw "$operation failed with exit $LASTEXITCODE" }
+}
+$temp = [IO.Path]::GetTempPath()
+$closurePr = gh pr view --repo tdistress/ESAF `
+  agent/v04-alpha-publication-gates-closure --json number --jq '.number'
+Assert-NativeSuccess 'Resolve closure PR for evidence construction'
+$closureHead = gh pr view --repo tdistress/ESAF $closurePr `
+  --json headRefOid --jq '.headRefOid'
+Assert-NativeSuccess 'Resolve closure head for evidence construction'
+$responseNames = @('owner','technical','editorial','rendering','governance')
+$fetched = @{}
+foreach ($name in $responseNames) {
+  $responsePath = Join-Path $temp "esaf-v04-$name-response.json"
+  $commentId = [long](Get-Content -Raw -LiteralPath $responsePath | ConvertFrom-Json).id
+  $suffix = if ($name -eq 'owner') { 'owner-fetched' } else { "$name-fetched" }
+  $fetchedPath = Join-Path $temp "esaf-v04-$suffix.json"
+  gh api "repos/tdistress/ESAF/issues/comments/$commentId" |
+    Set-Content -LiteralPath $fetchedPath -Encoding utf8
+  Assert-NativeSuccess "Fetch $name comment for closure evidence"
+  $fetched[$name] = $fetchedPath
+}
+$ownerFetchedPath = $fetched.owner
+$technicalFetchedPath = $fetched.technical
+$editorialFetchedPath = $fetched.editorial
+$renderingFetchedPath = $fetched.rendering
+$governanceFetchedPath = $fetched.governance
+$prStatePath = Join-Path $temp 'esaf-v04-pr-state.json'
+gh pr view --repo tdistress/ESAF $closurePr `
+  --json headRefOid,mergeable,mergeStateStatus,statusCheckRollup |
+  Set-Content -LiteralPath $prStatePath -Encoding utf8
+Assert-NativeSuccess 'Fetch closure PR state for evidence construction'
+$state = Get-Content -Raw -LiteralPath $prStatePath | ConvertFrom-Json
+if ($state.headRefOid -ne $closureHead) { throw 'PR head changed during evidence construction' }
+$publicationDate = python -c "from pathlib import Path; from tools.release_gates import load_front_matter; print(load_front_matter(Path('docs/superpowers/reviews/2026-07-21-v04-alpha-publication-readiness.md'))['publication']['date'])"
+Assert-NativeSuccess 'Read conditional publication date'
+$verifiedAt = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
+$externalEvidence = Join-Path $temp 'esaf-v04-closure-external-evidence.json'
+if (Test-Path -LiteralPath $externalEvidence) { Remove-Item -LiteralPath $externalEvidence }
+python tools/owner_risk_evidence.py --comment-json $ownerFetchedPath `
+  --technical-comment-json $technicalFetchedPath `
+  --editorial-comment-json $editorialFetchedPath `
+  --rendering-comment-json $renderingFetchedPath `
+  --governance-comment-json $governanceFetchedPath `
+  --pr-state-json $prStatePath --expected-head $closureHead `
+  --publication-date $publicationDate --verified-at $verifiedAt `
+  --output $externalEvidence
+Assert-NativeSuccess 'Build closure evidence'
+$closureBase = (git merge-base HEAD origin/main).Trim()
+Assert-NativeSuccess 'Resolve closure baseline'
+python tools/release_gates.py --check --baseline-ref $closureBase `
+  --external-evidence $externalEvidence --expected-head $closureHead --phase closure
+Assert-NativeSuccess 'Validate closure evidence'
 ```
 
 Expected: release validator passes, GitHub checks pass, PR head equals `$closureHead`, PR is mergeable, and no tracked byte changed after approval.
 
-- [ ] **Step 6: Merge PR B without deleting its worktree-owned branch**
+- [ ] **Step 6: Immediately refresh every live source and merge PR B**
 
-Immediately before merge, when the basis is `owner_risk_acceptance`, fetch the GitHub source comment again, compare its SHA-256 body digest with the source captured in the temporary evidence, and rebuild/validate the temporary evidence through `tools/owner_risk_evidence.py`. A changed source body, identity, association, timestamp, or exact closure SHA blocks merge.
+Run this uninterrupted fail-closed block. It refetches owner, technical,
+editorial, rendering, governance, CI, and merge-state sources before rebuild
+and merge; any changed source or failed validation stops before merge.
 
 ```powershell
-$closurePr = gh pr view --repo tdistress/ESAF agent/v04-alpha-publication-gates-closure --json number --jq '.number'
+function Assert-NativeSuccess([string]$operation) {
+  if ($LASTEXITCODE -ne 0) { throw "$operation failed with exit $LASTEXITCODE" }
+}
+$closurePr = gh pr view --repo tdistress/ESAF `
+  agent/v04-alpha-publication-gates-closure --json number --jq '.number'
+Assert-NativeSuccess 'Resolve closure PR before merge'
+$localClosureHead = (git rev-parse HEAD).Trim()
+Assert-NativeSuccess 'Resolve immutable local closure head'
+$closureHead = gh pr view --repo tdistress/ESAF $closurePr `
+  --json headRefOid --jq '.headRefOid'
+Assert-NativeSuccess 'Resolve remote closure head'
+if ($closureHead -ne $localClosureHead) { throw 'PR head differs from reviewed head' }
+$temp = [IO.Path]::GetTempPath()
+$responseNames = @('owner','technical','editorial','rendering','governance')
+$fetched = @{}
+foreach ($name in $responseNames) {
+  $responsePath = Join-Path $temp "esaf-v04-$name-response.json"
+  $commentId = [long](Get-Content -Raw -LiteralPath $responsePath | ConvertFrom-Json).id
+  $fetchedPath = Join-Path $temp "esaf-v04-$name-prefetch-merge.json"
+  gh api "repos/tdistress/ESAF/issues/comments/$commentId" |
+    Set-Content -LiteralPath $fetchedPath -Encoding utf8
+  Assert-NativeSuccess "Refetch $name comment"
+  $fetched[$name] = $fetchedPath
+}
+$prStatePath = Join-Path $temp 'esaf-v04-pr-state-prefetch-merge.json'
+gh pr view --repo tdistress/ESAF $closurePr `
+  --json headRefOid,mergeable,mergeStateStatus,statusCheckRollup |
+  Set-Content -LiteralPath $prStatePath -Encoding utf8
+Assert-NativeSuccess 'Refetch closure PR state'
+$state = Get-Content -Raw -LiteralPath $prStatePath | ConvertFrom-Json
+if ($state.headRefOid -ne $closureHead) { throw 'PR head changed' }
+if ($state.mergeable -ne 'MERGEABLE') { throw 'PR is not mergeable' }
+if ($state.mergeStateStatus -ne 'CLEAN') { throw 'PR merge state is not clean' }
+$publicationDate = python -c "from pathlib import Path; from tools.release_gates import load_front_matter; print(load_front_matter(Path('docs/superpowers/reviews/2026-07-21-v04-alpha-publication-readiness.md'))['publication']['date'])"
+Assert-NativeSuccess 'Read conditional publication date'
+$verifiedAt = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
+$externalEvidence = Join-Path $temp 'esaf-v04-closure-external-evidence.json'
+if (Test-Path -LiteralPath $externalEvidence) { Remove-Item -LiteralPath $externalEvidence }
+python tools/owner_risk_evidence.py --comment-json $fetched.owner `
+  --technical-comment-json $fetched.technical `
+  --editorial-comment-json $fetched.editorial `
+  --rendering-comment-json $fetched.rendering `
+  --governance-comment-json $fetched.governance `
+  --pr-state-json $prStatePath --expected-head $closureHead `
+  --publication-date $publicationDate --verified-at $verifiedAt `
+  --output $externalEvidence
+Assert-NativeSuccess 'Rebuild closure evidence'
+$closureBase = (git merge-base HEAD origin/main).Trim()
+Assert-NativeSuccess 'Resolve closure baseline'
+python tools/release_gates.py --check --baseline-ref $closureBase `
+  --external-evidence $externalEvidence --expected-head $closureHead --phase closure
+Assert-NativeSuccess 'Validate refreshed closure evidence'
+if (@(git status --porcelain).Count -ne 0) { throw 'Closure worktree changed after approval' }
 gh pr merge --repo tdistress/ESAF $closurePr --merge
-gh pr view --repo tdistress/ESAF $closurePr --json state,mergedAt,mergeCommit,headRefOid
+Assert-NativeSuccess 'Merge closure PR'
+$mergedState = gh pr view --repo tdistress/ESAF $closurePr `
+  --json state,mergedAt,mergeCommit,headRefOid | ConvertFrom-Json
+Assert-NativeSuccess 'Verify closure merge'
+if ($mergedState.state -ne 'MERGED') { throw 'Closure PR did not merge' }
 ```
 
 Expected: PR state `MERGED`; capture the exact merge commit as `$closureMerge`. Do not create the tag yet.
@@ -1260,7 +1367,9 @@ Rerender all Mermaid blocks only if the inventory digest differs from the exact 
 
 - [ ] **Step 3: Complete external taggable evidence and validate it**
 
-Add `merge_head: $closureMerge` and a `post_merge` object to the temporary JSON. Its `commands` array shall contain the exact command, exit code, and concise result for the full suite plus controls, architectures, migration, crosswalks in both modes, links, release gate, Mermaid inventory, diff, cache, and status checks. Bind every post-merge `sha` field to `$closureMerge` while retaining GitHub check, governance, and mapping decisions bound to `$closureHead` as the reviewed pre-merge candidate. Before taggable validation, fetch an owner-risk source again when applicable and compare its SHA-256 body digest; Task 1 tests enforce these two successive SHA domains.
+Create the post-merge JSON from the exact Task 7 Step 2 results. Do not mutate
+the validated closure evidence; the next step rebuilds a separate taggable
+evidence file from a fresh fetched owner source.
 
 Run:
 
@@ -1269,40 +1378,71 @@ $gitCommon = (git rev-parse --path-format=absolute --git-common-dir).Trim()
 $mainRoot = Split-Path -Parent $gitCommon
 Set-Location -LiteralPath $mainRoot
 $currentMain = (git rev-parse HEAD).Trim()
-$closurePr = gh pr view --repo tdistress/ESAF agent/v04-alpha-publication-gates-closure --json number --jq '.number'
-$closureHead = gh pr view --repo tdistress/ESAF $closurePr --json headRefOid --jq '.headRefOid'
-$externalEvidence = Join-Path ([IO.Path]::GetTempPath()) 'esaf-v04-closure-external-evidence.json'
-$evidenceMerge = (git rev-parse 'HEAD^1').Trim()
-$externalRecord = Get-Content -Raw -LiteralPath $externalEvidence | ConvertFrom-Json
-$validatedMerge = $externalRecord.merge_head.Trim()
-$mappingDecisionBasis = $externalRecord.mapping_decision_basis.Trim()
-if ($currentMain -ne $validatedMerge) { throw 'Current main differs from the merge SHA recorded in external evidence' }
-python tools/release_gates.py --check --baseline-ref $evidenceMerge --external-evidence $externalEvidence --expected-head $validatedMerge --phase taggable
+$postMergePath = Join-Path ([IO.Path]::GetTempPath()) 'esaf-v04-post-merge.json'
+@{sha=$currentMain; commands=$commands} | ConvertTo-Json -Depth 6 |
+  Set-Content -LiteralPath $postMergePath -Encoding utf8
 ```
 
-Expected: pass only when the pre-merge and post-merge SHA domains are each internally exact and all required evidence is present.
+Expected: the post-merge input is ready for the fresh taggable-evidence rebuild.
 
 - [ ] **Step 4: Create and push the annotated tag atomically after validation**
 
 ```powershell
-$gitCommon = (git rev-parse --path-format=absolute --git-common-dir).Trim()
-$mainRoot = Split-Path -Parent $gitCommon
-Set-Location -LiteralPath $mainRoot
-$externalEvidence = Join-Path ([IO.Path]::GetTempPath()) 'esaf-v04-closure-external-evidence.json'
+function Assert-NativeSuccess([string]$operation) {
+  if ($LASTEXITCODE -ne 0) { throw "$operation failed with exit $LASTEXITCODE" }
+}
+$externalEvidence = Join-Path ([IO.Path]::GetTempPath()) `
+  'esaf-v04-closure-external-evidence.json'
+$taggableEvidence = Join-Path ([IO.Path]::GetTempPath()) `
+  'esaf-v04-taggable-external-evidence.json'
+$postMergePath = Join-Path ([IO.Path]::GetTempPath()) `
+  'esaf-v04-post-merge.json'
+$baseEvidence = Get-Content -Raw -LiteralPath $externalEvidence | ConvertFrom-Json
+$closureHead = [string]$baseEvidence.closure_head
+$ownerCommentId = [long]$baseEvidence.mapping_decisions[0].source.comment_id
+$ownerFetchedPath = Join-Path ([IO.Path]::GetTempPath()) `
+  'esaf-v04-owner-prefetch-tag.json'
+gh api "repos/tdistress/ESAF/issues/comments/$ownerCommentId" |
+  Set-Content -LiteralPath $ownerFetchedPath -Encoding utf8
+Assert-NativeSuccess 'Refetch owner source before tag'
+$closureMerge = (git rev-parse HEAD).Trim()
+Assert-NativeSuccess 'Resolve closure merge before tag'
 $evidenceMerge = (git rev-parse 'HEAD^1').Trim()
-$validatedMerge = ((Get-Content -Raw -LiteralPath $externalEvidence | ConvertFrom-Json).merge_head).Trim()
-if ([string]::IsNullOrWhiteSpace($validatedMerge)) { throw 'External evidence does not contain the validated merge SHA' }
-git fetch origin main
-$currentMain = (git rev-parse HEAD).Trim()
-$remoteMain = (git rev-parse origin/main).Trim()
-if ($currentMain -ne $validatedMerge -or $remoteMain -ne $validatedMerge) { throw 'HEAD, origin/main, and the validated merge SHA are not identical' }
-if (@(git status --porcelain).Count -ne 0) { throw 'Main worktree changed after validation' }
+Assert-NativeSuccess 'Resolve evidence baseline before tag'
 $publicationDate = python -c "from pathlib import Path; from tools.release_gates import load_front_matter; print(load_front_matter(Path('docs/superpowers/reviews/2026-07-21-v04-alpha-publication-readiness.md'))['publication']['date'])"
-if ((Get-Date).ToUniversalTime().ToString('yyyy-MM-dd') -ne $publicationDate.Trim()) { throw 'Conditional publication date expired; create and review a new closure candidate' }
-if ($mappingDecisionBasis -eq 'owner_risk_acceptance') { & python tools/owner_risk_evidence.py @ownerRiskRefreshArgs }
-python tools/release_gates.py --check --baseline-ref $evidenceMerge --external-evidence $externalEvidence --expected-head $validatedMerge --phase taggable
-if (git tag --list 'v0.4-alpha') { throw 'Local v0.4-alpha tag already exists' }
-if (git ls-remote --tags origin 'refs/tags/v0.4-alpha') { throw 'Remote v0.4-alpha tag already exists' }
+Assert-NativeSuccess 'Read publication date before tag'
+$verifiedAt = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
+if (Test-Path -LiteralPath $taggableEvidence) { Remove-Item -LiteralPath $taggableEvidence }
+python tools/owner_risk_evidence.py --comment-json $ownerFetchedPath `
+  --base-evidence $externalEvidence --expected-head $closureHead `
+  --publication-date $publicationDate --verified-at $verifiedAt `
+  --merge-head $closureMerge --post-merge-json $postMergePath `
+  --output $taggableEvidence
+Assert-NativeSuccess 'Build refreshed taggable evidence'
+python tools/release_gates.py --check --baseline-ref $evidenceMerge --external-evidence $taggableEvidence --expected-head $closureMerge --phase taggable
+Assert-NativeSuccess 'Validate refreshed taggable evidence'
+$validatedEvidence = Get-Content -Raw -LiteralPath $taggableEvidence | ConvertFrom-Json
+$validatedMerge = [string]$validatedEvidence.merge_head
+$mappingDecisionBasis = [string]$validatedEvidence.mapping_decision_basis
+$mappingIds = ($validatedEvidence.mapping_decisions.mapping_set_id -join ', ')
+if ($mappingDecisionBasis -eq 'owner_risk_acceptance') {
+  $mappingDecisionSummary = "Repository-owner risk acceptance for $mappingIds; qualified review is deferred and backlog retention covers all three mapping-set IDs."
+} elseif ($mappingDecisionBasis -eq 'qualified_approval') {
+  $mappingDecisionSummary = "Qualified approval is completed for $mappingIds."
+} else { throw "Unsupported mapping decision basis: $mappingDecisionBasis" }
+git fetch origin main
+Assert-NativeSuccess 'Fetch origin main before tag'
+$currentMain = (git rev-parse HEAD).Trim()
+Assert-NativeSuccess 'Resolve local main before tag'
+$remoteMain = (git rev-parse origin/main).Trim()
+Assert-NativeSuccess 'Resolve remote main before tag'
+if ($currentMain -ne $validatedMerge -or $remoteMain -ne $validatedMerge) { throw 'HEAD, origin/main, and validated merge differ' }
+if (@(git status --porcelain).Count -ne 0) { throw 'Main worktree is not clean' }
+if ((Get-Date).ToUniversalTime().ToString('yyyy-MM-dd') -ne $publicationDate.Trim()) { throw 'Conditional publication date expired' }
+if (@(git tag --list 'v0.4-alpha').Count -ne 0) { throw 'Local v0.4-alpha already exists' }
+if (@(git ls-remote --tags origin 'refs/tags/v0.4-alpha').Count -ne 0) { throw 'Remote v0.4-alpha already exists' }
+python tools/release_gates.py --check --baseline-ref $evidenceMerge --external-evidence $taggableEvidence --expected-head $closureMerge --phase taggable
+Assert-NativeSuccess 'Revalidate refreshed taggable evidence before tag'
 $tagMessage = @"
 ESAF 0.4-alpha Working Draft
 
@@ -1312,7 +1452,9 @@ Mapping decision basis: $mappingDecisionBasis. $mappingDecisionSummary
 Lifecycle boundary: Draft artifacts remain Draft; this tag does not claim compliance, certification, equivalence, endorsement, or production readiness.
 "@
 git tag -a v0.4-alpha $validatedMerge -m $tagMessage
+Assert-NativeSuccess 'Create annotated v0.4-alpha tag'
 git push origin refs/tags/v0.4-alpha
+Assert-NativeSuccess 'Push annotated v0.4-alpha tag'
 ```
 
 Do not move or recreate the tag if push verification fails. Diagnose the exact remote state first.
@@ -1323,8 +1465,9 @@ Do not move or recreate the tag if push verification fails. Diagnose the exact r
 $gitCommon = (git rev-parse --path-format=absolute --git-common-dir).Trim()
 $mainRoot = Split-Path -Parent $gitCommon
 Set-Location -LiteralPath $mainRoot
-$externalEvidence = Join-Path ([IO.Path]::GetTempPath()) 'esaf-v04-closure-external-evidence.json'
-$validatedMerge = ((Get-Content -Raw -LiteralPath $externalEvidence | ConvertFrom-Json).merge_head).Trim()
+$taggableEvidence = Join-Path ([IO.Path]::GetTempPath()) 'esaf-v04-taggable-external-evidence.json'
+$evidence = Get-Content -Raw -LiteralPath $taggableEvidence | ConvertFrom-Json
+$validatedMerge = [string]$evidence.merge_head
 git fetch origin tag v0.4-alpha --force
 $localPeeled = (git rev-parse 'v0.4-alpha^{commit}').Trim()
 $remoteRows = @(git ls-remote --tags origin 'refs/tags/v0.4-alpha' 'refs/tags/v0.4-alpha^{}')
@@ -1342,8 +1485,20 @@ The controller shall supply `$finalGateSummary` from the exact Task 7 Steps 2–
 $gitCommon = (git rev-parse --path-format=absolute --git-common-dir).Trim()
 $mainRoot = Split-Path -Parent $gitCommon
 Set-Location -LiteralPath $mainRoot
-$externalEvidence = Join-Path ([IO.Path]::GetTempPath()) 'esaf-v04-closure-external-evidence.json'
-$validatedMerge = ((Get-Content -Raw -LiteralPath $externalEvidence | ConvertFrom-Json).merge_head).Trim()
+$taggableEvidence = Join-Path ([IO.Path]::GetTempPath()) 'esaf-v04-taggable-external-evidence.json'
+$evidence = Get-Content -Raw -LiteralPath $taggableEvidence | ConvertFrom-Json
+$validatedMerge = [string]$evidence.merge_head
+$mappingDecisionBasis = [string]$evidence.mapping_decision_basis
+$mappingIds = ($evidence.mapping_decisions.mapping_set_id -join ', ')
+if ($mappingDecisionBasis -eq 'owner_risk_acceptance') {
+  $mappingDecisionSummary = "Repository-owner risk acceptance for $mappingIds; qualified review is deferred and backlog retention covers all three mapping-set IDs."
+} elseif ($mappingDecisionBasis -eq 'qualified_approval') {
+  $mappingDecisionSummary = "Qualified approval is completed for $mappingIds."
+} else { throw "Unsupported mapping decision basis: $mappingDecisionBasis" }
+$finalGateSummary = ($evidence.post_merge.commands | ForEach-Object {
+  "$($_.name): $($_.result)"
+}) -join '; '
+$finalReviewSummary = "technical $($evidence.technical.url); editorial $($evidence.editorial.url); rendering $($evidence.rendering.url); governance $($evidence.governance.url)"
 $closurePr = gh pr view --repo tdistress/ESAF agent/v04-alpha-publication-gates-closure --json number --jq '.number'
 $closureHead = gh pr view --repo tdistress/ESAF $closurePr --json headRefOid --jq '.headRefOid'
 $evidencePr = gh pr view --repo tdistress/ESAF agent/v04-alpha-publication-gates-design --json number --jq '.number'

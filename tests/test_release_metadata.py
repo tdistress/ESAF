@@ -236,6 +236,61 @@ class ReleaseMetadataTests(unittest.TestCase):
             with self.subTest(prohibited=prohibited):
                 self.assertNotIn(prohibited, plan)
 
+    def test_owner_risk_controller_rebuilds_live_evidence_at_each_required_point(self) -> None:
+        plan = read_repository_file(
+            "docs/superpowers/plans/2026-07-21-v04-alpha-publication-gates.md"
+        )
+        for fetched_path in (
+            "esaf-v04-$suffix.json",
+            "esaf-v04-$name-prefetch-merge.json",
+            "esaf-v04-owner-prefetch-tag.json",
+        ):
+            with self.subTest(fetched_path=fetched_path):
+                self.assertIn(fetched_path, plan)
+        self.assertGreaterEqual(
+            plan.count('gh api "repos/tdistress/ESAF/issues/comments/$commentId"'),
+            2,
+        )
+        self.assertGreaterEqual(plan.count("--technical-comment-json"), 2)
+        self.assertGreaterEqual(plan.count("--editorial-comment-json"), 2)
+        self.assertGreaterEqual(plan.count("--rendering-comment-json"), 2)
+        self.assertGreaterEqual(plan.count("--governance-comment-json"), 2)
+        self.assertGreaterEqual(plan.count("--pr-state-json"), 2)
+        self.assertIn("--base-evidence $externalEvidence", plan)
+        self.assertIn("Remove-Item -LiteralPath $externalEvidence", plan)
+        self.assertIn("Remove-Item -LiteralPath $taggableEvidence", plan)
+        for operation in (
+            "Assert-NativeSuccess 'Rebuild closure evidence'",
+            "Assert-NativeSuccess 'Validate refreshed closure evidence'",
+            "Assert-NativeSuccess 'Build refreshed taggable evidence'",
+            "Assert-NativeSuccess 'Validate refreshed taggable evidence'",
+        ):
+            with self.subTest(operation=operation):
+                self.assertIn(operation, plan)
+
+    def test_controller_resolves_basis_and_summary_inside_each_consumer_block(self) -> None:
+        plan = read_repository_file(
+            "docs/superpowers/plans/2026-07-21-v04-alpha-publication-gates.md"
+        )
+        self.assertNotIn("@ownerRiskRefreshArgs", plan)
+        summary_definition = "$mappingDecisionSummary ="
+        tag_block = plan[
+            plan.index("- [ ] **Step 4: Create and push the annotated tag atomically after validation**"):
+            plan.index("- [ ] **Step 5: Resolve the remote annotated tag to the exact commit**")
+        ]
+        issue_block = plan[
+            plan.index("- [ ] **Step 6: Record publication evidence and close issue #39**"):
+            plan.index("- [ ] **Step 7: Clean branches/worktrees and verify final repository state**")
+        ]
+        for block, use in (
+            (tag_block, "Mapping decision basis: $mappingDecisionBasis. $mappingDecisionSummary"),
+            (issue_block, "- Mapping decision: $mappingDecisionBasis; $mappingDecisionSummary"),
+        ):
+            with self.subTest(use=use):
+                self.assertIn(use, block)
+                self.assertLess(block.index("$mappingDecisionBasis ="), block.index(use))
+                self.assertLess(block.index(summary_definition), block.index(use))
+
     def test_repository_workflow_runs_release_and_link_validation(self) -> None:
         workflow = read_repository_file(".github/workflows/catalog-validation.yml")
         self.assertIn("python tools/release_gates.py --check", workflow)
