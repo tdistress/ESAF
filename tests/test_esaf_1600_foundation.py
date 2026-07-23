@@ -483,7 +483,11 @@ class Esaf1600FoundationTests(unittest.TestCase):
         release_gate = unique_step("Validate release gate record")
         self.assertEqual(release_gate, {
             "name": "Validate release gate record",
-            "run": "python tools/release_gates.py --check",
+            "if": "github.event_name == 'pull_request'",
+            "run": (
+                "python tools/release_gates.py --check --baseline-ref "
+                '\"${{ github.event.pull_request.base.sha }}\"'
+            ),
         })
 
         links = unique_step("Validate repository-local links")
