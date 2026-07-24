@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+from collections.abc import Iterator
 import json
 from pathlib import Path
 import re
@@ -37,11 +38,17 @@ PROHIBITED_ASSERTIONS = (
     "establishes endorsement",
     "provides continuous assurance",
 )
-NEGATED_ASSERTION_SUBJECT = re.compile(
-    r"(?:\bnothing|\bno\s+(?:maturity\s+)?"
-    r"(?:result|assessment|record|level|claim))\s*$",
+CLAUSE_BOUNDARY = re.compile(
+    r"[.!?;:]|\b(?:but|however|yet|nevertheless)\b",
     re.IGNORECASE,
 )
+CLAUSE_NEGATOR = re.compile(
+    r"\b(?:no|not|never|nothing|neither|nor|without|cannot)\b"
+    r"|\b(?:can['’]t|doesn['’]t|isn['’]t)\b",
+    re.IGNORECASE,
+)
+SYMMETRIC_QUOTES = ('"', "'")
+ASYMMETRIC_QUOTES = (("“", "”"), ("‘", "’"), ("«", "»"))
 PLACEHOLDER_WORD = re.compile(r"\b(?:TBD|TODO|FIXME)\b", re.IGNORECASE)
 BRACKETED_PLACEHOLDER = re.compile(
     r"\[[^\]]*(?:TBD|TODO|FIXME|INSERT|PLACEHOLDER)\b[^\]]*\]",
@@ -139,7 +146,37 @@ def list_of_objects(value: object) -> list[JsonObject]:
     return [item for item in value if isinstance(item, dict)]
 
 
-def asserted_prohibited_phrases(text: str):
+def symmetric_quote_positions(text: str, quote: str) -> list[int]:
+    positions = []
+    for index, character in enumerate(text):
+        if character != quote:
+            continue
+        before = text[index - 1] if index else ""
+        after = text[index + 1] if index + 1 < len(text) else ""
+        if before.isalnum() and after.isalnum():
+            continue
+        positions.append(index)
+    return positions
+
+
+def inside_paired_quotes(text: str, start: int, end: int) -> bool:
+    for quote in SYMMETRIC_QUOTES:
+        positions = symmetric_quote_positions(text, quote)
+        before = sum(position < start for position in positions)
+        if before % 2 and any(position >= end for position in positions):
+            return True
+    for opening, closing in ASYMMETRIC_QUOTES:
+        latest_opening = text.rfind(opening, 0, start)
+        latest_closing = text.rfind(closing, 0, start)
+        if (
+            latest_opening > latest_closing
+            and text.find(closing, end) >= 0
+        ):
+            return True
+    return False
+
+
+def asserted_prohibited_phrases(text: str) -> Iterator[str]:
     folded = text.casefold()
     for phrase in PROHIBITED_ASSERTIONS:
         offset = 0
@@ -147,14 +184,16 @@ def asserted_prohibited_phrases(text: str):
             index = folded.find(phrase, offset)
             if index < 0:
                 break
-            clause_start = max(
-                folded.rfind(delimiter, 0, index)
-                for delimiter in ".!?;:"
-            )
-            prefix = folded[clause_start + 1 : index]
-            if not NEGATED_ASSERTION_SUBJECT.search(prefix):
+            end = index + len(phrase)
+            boundaries = list(CLAUSE_BOUNDARY.finditer(folded, 0, index))
+            clause_start = boundaries[-1].end() if boundaries else 0
+            prefix = folded[clause_start:index]
+            if (
+                not inside_paired_quotes(text, index, end)
+                and not CLAUSE_NEGATOR.search(prefix)
+            ):
                 yield phrase
-            offset = index + len(phrase)
+            offset = end
 
 
 def duplicate_finding_diagnostics(

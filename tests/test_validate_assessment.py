@@ -449,6 +449,45 @@ class AssessmentValidationTests(unittest.TestCase):
         self.write("maturity-assessment", maturity)
         self.assertEqual(validate(self.root), [])
 
+    def test_no_evidence_negates_compliance_assertion(self) -> None:
+        maturity = self.load("maturity-assessment")
+        maturity["criteria"][-1]["rationale"] = (
+            "No evidence establishes compliance."
+        )
+        self.write("maturity-assessment", maturity)
+        self.assertEqual(validate(self.root), [])
+
+    def test_no_component_negates_continuous_assurance_assertion(self) -> None:
+        maturity = self.load("maturity-assessment")
+        maturity["limitations"] = [
+            "No component provides continuous assurance."
+        ]
+        self.write("maturity-assessment", maturity)
+        self.assertEqual(validate(self.root), [])
+
+    def test_quoted_prohibited_phrase_is_discussion_not_assertion(self) -> None:
+        maturity = self.load("maturity-assessment")
+        maturity["criteria"][-1]["rationale"] = (
+            'The phrase "establishes certification" is discussed, not asserted.'
+        )
+        self.write("maturity-assessment", maturity)
+        self.assertEqual(validate(self.root), [])
+
+    def test_denial_before_but_does_not_mask_positive_assertion(self) -> None:
+        maturity = self.load("maturity-assessment")
+        maturity["criteria"][-1]["rationale"] = (
+            "No evidence establishes compliance, "
+            "but this result establishes compliance."
+        )
+        self.write("maturity-assessment", maturity)
+        errors = [
+            error
+            for error in validate(self.root)
+            if "prohibited conformance assertion" in error
+        ]
+        self.assertEqual(len(errors), 1, errors)
+        self.assertIn("establishes compliance", errors[0])
+
     def test_unknown_schema_locator_is_rejected(self) -> None:
         evidence = self.load("evidence-record")
         evidence["$schema"] = "../schema/unknown.schema.json"
