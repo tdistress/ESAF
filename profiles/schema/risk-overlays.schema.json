@@ -6,7 +6,7 @@
   "additionalProperties": false,
   "required": ["$schema", "schema_version", "profile_id", "profile_version", "risks", "overlays"],
   "properties": {
-    "$schema": {"const": "../../../schema/risk-overlays.schema.json"},
+    "$schema": {"const": "../../schema/risk-overlays.schema.json"},
     "schema_version": {"const": "0.1.0"},
     "profile_id": {"$ref": "#/$defs/profileId"},
     "profile_version": {"const": "0.1.0"},

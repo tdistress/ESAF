@@ -6,7 +6,7 @@
   "additionalProperties": false,
   "required": ["$schema", "schema_version", "profile_id", "profile_version", "status", "title", "scope", "applicability_conditions", "source_boundary", "components", "change_history"],
   "properties": {
-    "$schema": {"const": "../../../schema/profile.schema.json"},
+    "$schema": {"const": "../../schema/profile.schema.json"},
     "schema_version": {"const": "0.1.0"},
     "profile_id": {"$ref": "#/$defs/profileId"},
     "profile_version": {"const": "0.1.0"},
@@ -23,7 +23,7 @@
     "profileId": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*--[a-z0-9]+(?:-[a-z0-9]+)*--[0-9]+\\.[0-9]+\\.[0-9]+$"},
     "identifier": {"type": "string", "pattern": "^[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*$"},
     "nonEmptyString": {"type": "string", "minLength": 1},
-    "relativePath": {"type": "string", "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9][A-Za-z0-9._/-]*$"},
+    "relativePath": {"type": "string", "pattern": "^(?!/)(?!.*\\\\)[A-Za-z0-9][A-Za-z0-9._-]*(?:/[A-Za-z0-9][A-Za-z0-9._-]*)*$"},
     "stringArray": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/nonEmptyString"}},
     "applicabilityCondition": {
       "type": "object",

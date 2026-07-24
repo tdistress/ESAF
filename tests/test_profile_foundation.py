@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import re
 import unittest
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 from jsonschema import Draft202012Validator
 
@@ -122,7 +122,7 @@ class ProfileSchemaTests(unittest.TestCase):
         documents = {
             "control-selections": {
                 **identity,
-                "$schema": "../../../schema/control-selections.schema.json",
+                "$schema": "../../schema/control-selections.schema.json",
                 "selections": [
                     {
                         "control_id": "GOV-100",
@@ -133,18 +133,18 @@ class ProfileSchemaTests(unittest.TestCase):
             },
             "risk-overlays": {
                 **identity,
-                "$schema": "../../../schema/risk-overlays.schema.json",
+                "$schema": "../../schema/risk-overlays.schema.json",
                 "risks": [],
                 "overlays": [],
             },
             "evidence-expectations": {
                 **identity,
-                "$schema": "../../../schema/evidence-expectations.schema.json",
+                "$schema": "../../schema/evidence-expectations.schema.json",
                 "expectations": [],
             },
             "external-references": {
                 **identity,
-                "$schema": "../../../schema/external-references.schema.json",
+                "$schema": "../../schema/external-references.schema.json",
                 "external_references": [
                     {
                         "mapping_set_id": "example--mapping-set--0.1.0",
@@ -169,7 +169,7 @@ class ProfileSchemaTests(unittest.TestCase):
                 Draft202012Validator(schemas["profile"]).validate(
                     {
                         **identity,
-                        "$schema": "../../../schema/profile.schema.json",
+                        "$schema": "../../schema/profile.schema.json",
                         "status": status,
                         "title": "Generic profile",
                         "scope": "A reusable profile scope.",
@@ -199,6 +199,122 @@ class ProfileSchemaTests(unittest.TestCase):
         for name, document in documents.items():
             with self.subTest(component=name):
                 Draft202012Validator(schemas[name]).validate(document)
+
+    def test_component_schema_locators_resolve_from_a_profile_package(self) -> None:
+        component_directory = ROOT / "profiles" / "example" / "0.1.0"
+        for name in SCHEMA_NAMES:
+            with self.subTest(component=name):
+                schema = json.loads(
+                    (SCHEMA_ROOT / f"{name}.schema.json").read_text(encoding="utf-8")
+                )
+                locator = schema["properties"]["$schema"]["const"]
+                self.assertEqual(
+                    (component_directory / PurePosixPath(locator)).resolve(),
+                    (SCHEMA_ROOT / f"{name}.schema.json").resolve(),
+                )
+
+    def test_repository_paths_are_normalized_posix_paths(self) -> None:
+        definitions = (
+            ("profile", "relativePath"),
+            ("external-references", "relativePath"),
+        )
+        invalid_paths = (
+            "nested//component.json",
+            "nested/./component.json",
+            "nested/../component.json",
+            r"nested\component.json",
+            "/absolute/component.json",
+        )
+        for schema_name, definition in definitions:
+            schema = json.loads(
+                (SCHEMA_ROOT / f"{schema_name}.schema.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            validator = Draft202012Validator(schema["$defs"][definition])
+            with self.subTest(schema=schema_name, path="nested/component.json"):
+                self.assertFalse(
+                    list(validator.iter_errors("nested/component.json"))
+                )
+            for path in invalid_paths:
+                with self.subTest(schema=schema_name, path=path):
+                    self.assertTrue(list(validator.iter_errors(path)))
+
+    def test_nested_schema_objects_reject_unknown_properties(self) -> None:
+        nested_records = (
+            (
+                "profile",
+                "applicabilityCondition",
+                {
+                    "condition_id": "DEPLOYMENT-FACT",
+                    "question": "Is the factual condition true?",
+                    "answer_type": "boolean",
+                    "activates_when": True,
+                    "resolution_evidence": "Recorded deployment evidence.",
+                },
+            ),
+            (
+                "control-selections",
+                "selection",
+                {
+                    "control_id": "GOV-100",
+                    "status": "required",
+                    "rationale": "A focused schema test.",
+                },
+            ),
+            (
+                "risk-overlays",
+                "risk",
+                {
+                    "risk_id": "EXPOSURE-RISK",
+                    "statement": "A bounded risk statement.",
+                    "circumstances": "An in-scope circumstance.",
+                    "source_basis": ["ESAF"],
+                    "affected_controls": ["GOV-100"],
+                    "overlay_ids": ["EXPOSURE-OVERLAY"],
+                },
+            ),
+            (
+                "evidence-expectations",
+                "evidenceExpectation",
+                {
+                    "expectation_id": "EXPOSURE-EVIDENCE",
+                    "purpose": "Demonstrate the expected evidence.",
+                    "artifact_class": "Record",
+                    "control_ids": ["GOV-100"],
+                    "quality_attributes": ["relevance"],
+                },
+            ),
+            (
+                "external-references",
+                "externalReference",
+                {
+                    "mapping_set_id": "example--mapping-set--0.1.0",
+                    "registry_path": "crosswalks/registry/example.md",
+                    "expected_status": "draft",
+                    "reference_use": "lifecycle_reference_only",
+                    "qualified_review_required": True,
+                    "non_import_statement": "Relationships and evidence are not imported.",
+                },
+            ),
+        )
+        for schema_name, definition, record in nested_records:
+            with self.subTest(schema=schema_name, definition=definition):
+                schema = json.loads(
+                    (SCHEMA_ROOT / f"{schema_name}.schema.json").read_text(
+                        encoding="utf-8"
+                    )
+                )
+                validator = Draft202012Validator(
+                    {
+                        "$schema": schema["$schema"],
+                        "$defs": schema["$defs"],
+                        "$ref": f"#/$defs/{definition}",
+                    }
+                )
+                self.assertTrue(
+                    list(validator.iter_errors({**record, "unexpected": True}))
+                )
 
 
 if __name__ == "__main__":
