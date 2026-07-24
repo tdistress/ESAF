@@ -204,7 +204,7 @@ allowed:
 
 ```python
 for path, value in flattened_items(record):
-    if path in PUBLISHED_SHA_PATHS:
+    if phase == "published" and path in PUBLISHED_SHA_PATHS:
         if value != PUBLISHED_SHA_PATHS[path]:
             errors.append(f"{path}: published identifier is invalid")
         continue
@@ -799,9 +799,9 @@ the main worktree is clean.
 - Produces: GitHub milestone `v0.5-beta`, five milestone issues, and one
   unmilestoned HITRUST readiness issue.
 
-- [ ] **Step 1: Create the milestone without a due date**
+- [ ] **Step 1: Preflight the complete queue and create the milestone**
 
-Verify it does not already exist:
+Verify the milestone does not already exist:
 
 ```powershell
 $existing=@(gh api 'repos/tdistress/ESAF/milestones?state=all&per_page=100' |
@@ -809,16 +809,8 @@ $existing=@(gh api 'repos/tdistress/ESAF/milestones?state=all&per_page=100' |
 if($existing.Count -ne 0){throw 'v0.5-beta milestone already exists'}
 ```
 
-Create it:
-
-```powershell
-$milestone=gh api repos/tdistress/ESAF/milestones -X POST `
-  -f title='v0.5-beta' `
-  -f description='Qualified UK mappings, minimum ESAF-1500 assessment foundation, one Draft pilot profile, PCI DSS readiness and mapping decision, and exact-candidate release closure.'
-$milestoneNumber=($milestone | ConvertFrom-Json).number
-```
-
-Load existing issue titles once and define a fail-closed duplicate guard:
+Load existing issue titles once, define a fail-closed duplicate guard, and
+preflight all six approved titles:
 
 ```powershell
 $existingIssueTitles=@(gh issue list --repo tdistress/ESAF --state all --limit 500 `
@@ -826,6 +818,42 @@ $existingIssueTitles=@(gh issue list --repo tdistress/ESAF --state all --limit 5
 function Assert-IssueTitleAbsent([string]$title){
   if($existingIssueTitles -contains $title){throw "Issue title already exists: $title"}
 }
+Assert-IssueTitleAbsent 'Complete qualified review of the three UK mapping snapshots'
+Assert-IssueTitleAbsent 'Define the minimum ESAF-1500 assessment foundation'
+Assert-IssueTitleAbsent 'Select and publish one Draft pilot ESAF industry profile'
+Assert-IssueTitleAbsent 'Complete PCI DSS source readiness and mapping go/no-go'
+Assert-IssueTitleAbsent 'Close the v0.5-beta publication gates'
+Assert-IssueTitleAbsent 'Establish HITRUST CSF source and review readiness'
+```
+
+Preflight every required label:
+
+```powershell
+$requiredLabels=@(
+  'crosswalk',
+  'assessment',
+  'profile',
+  'governance',
+  'priority:critical',
+  'priority:high',
+  'priority:medium'
+)
+$existingLabels=@(gh label list --repo tdistress/ESAF --limit 100 --json name |
+  ConvertFrom-Json | ForEach-Object {$_.name})
+$missingLabels=@($requiredLabels | Where-Object {$existingLabels -notcontains $_})
+if($missingLabels.Count -ne 0){
+  throw "Required labels are missing: $($missingLabels -join ', ')"
+}
+```
+
+Only after the milestone, title, and label preflights pass, create the
+milestone without a due date:
+
+```powershell
+$milestone=gh api repos/tdistress/ESAF/milestones -X POST `
+  -f title='v0.5-beta' `
+  -f description='Qualified UK mappings, minimum ESAF-1500 assessment foundation, one Draft pilot profile, PCI DSS readiness and mapping decision, and exact-candidate release closure.'
+$milestoneNumber=($milestone | ConvertFrom-Json).number
 ```
 
 - [ ] **Step 2: Create the qualified-review issue**
@@ -843,6 +871,10 @@ Complete coordinated independent qualified human review for these exact Draft ma
 - `uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0`
 
 Core and Plus remain separate mapping sets. This issue coordinates their deferred assurance work and does not merge their sources, scopes, or conclusions.
+
+## Dependencies
+
+Depends on the merged planning reconciliation. It does not depend on any other v0.5-beta content issue.
 
 ## Deliverables
 
@@ -863,7 +895,6 @@ Core and Plus remain separate mapping sets. This issue coordinates their deferre
 
 Review does not establish compliance, certification, equivalence, endorsement, external-scheme approval, assurance beyond the reviewed scope, or production readiness.
 '@
-Assert-IssueTitleAbsent 'Complete qualified review of the three UK mapping snapshots'
 $qualifiedUrl=gh issue create --repo tdistress/ESAF `
   --title 'Complete qualified review of the three UK mapping snapshots' `
   --body $qualifiedBody --label crosswalk --label 'priority:critical' `
@@ -879,6 +910,10 @@ $assessmentBody=@'
 ## Purpose
 
 Define the minimum shared ESAF-1500 assessment semantics required by crosswalks and the v0.5-beta pilot profile.
+
+## Dependencies
+
+Depends on the merged planning reconciliation. It does not depend on any other v0.5-beta content issue.
 
 ## Deliverables
 
@@ -899,7 +934,6 @@ Define the minimum shared ESAF-1500 assessment semantics required by crosswalks 
 
 This issue does not require the complete assessment workbook, audit checklist, governance-template library, certification method, or automated compliance score.
 '@
-Assert-IssueTitleAbsent 'Define the minimum ESAF-1500 assessment foundation'
 $assessmentUrl=gh issue create --repo tdistress/ESAF `
   --title 'Define the minimum ESAF-1500 assessment foundation' `
   --body $assessmentBody --label assessment --label 'priority:high' `
@@ -938,7 +972,6 @@ Profile implementation begins only after the minimum ESAF-1500 assessment founda
 
 The profile remains Draft and does not establish compliance, certification, equivalence, endorsement, external-scheme approval, or production readiness.
 '@
-Assert-IssueTitleAbsent 'Select and publish one Draft pilot ESAF industry profile'
 $profileUrl=gh issue create --repo tdistress/ESAF `
   --title 'Select and publish one Draft pilot ESAF industry profile' `
   --body $profileBody --label profile --label 'priority:high' `
@@ -954,6 +987,10 @@ $pciBody=@'
 ## Purpose
 
 Establish the authoritative PCI DSS source boundary and decide whether a substantive ESAF mapping is ready to proceed.
+
+## Dependencies
+
+Source inventory and readiness may proceed in parallel with the qualified-review and assessment workstreams. No mapping records may be published before the go/no-go decision.
 
 ## Deliverables
 
@@ -982,7 +1019,6 @@ Record the blocking condition, owner, reconsideration trigger, and non-claim bou
 
 Neither outcome asserts PCI DSS compliance, assessor approval, certification, equivalence, endorsement, or legal sufficiency.
 '@
-Assert-IssueTitleAbsent 'Complete PCI DSS source readiness and mapping go/no-go'
 $pciUrl=gh issue create --repo tdistress/ESAF `
   --title 'Complete PCI DSS source readiness and mapping go/no-go' `
   --body $pciBody --label crosswalk --label 'priority:high' `
@@ -1012,8 +1048,7 @@ Close the v0.5-beta publication gates on one exact candidate after the four mile
 - Technical, editorial, terminology, mapping, profile-scope, and governance reviews are complete.
 - Critical and Important findings are resolved.
 - Generated catalogs and traceability records are current.
-- The full suite and every affected control, architecture, crosswalk, link, release, and working-tree gate pass.
-- Every changed Mermaid block is rendered and reviewed.
+- The full test suite, control, architecture, crosswalk, link, release, working-tree, and applicable Mermaid-rendering gates pass on the exact candidate.
 - The complete branch diff is reviewed, GitHub checks pass, and merge state is clean.
 - Post-merge validation passes before an immutable tag or publication statement is created.
 - Final evidence records exact candidate, merge, tag, counts, reviews, and lifecycle limitations.
@@ -1022,7 +1057,6 @@ Close the v0.5-beta publication gates on one exact candidate after the four mile
 
 Evidence from v0.4-alpha is historical and cannot approve v0.5-beta. Publication does not change an artifact lifecycle state without its own evidence.
 '@
-Assert-IssueTitleAbsent 'Close the v0.5-beta publication gates'
 $closureUrl=gh issue create --repo tdistress/ESAF `
   --title 'Close the v0.5-beta publication gates' `
   --body $closureBody --label governance --label 'priority:high' `
@@ -1038,6 +1072,10 @@ $hitrustBody=@'
 ## Purpose
 
 Determine whether ESAF can begin a future HITRUST CSF mapping without exceeding licensed-source, publication-rights, or review boundaries.
+
+## Dependencies
+
+Depends on licensed-source access, publication-rights confirmation, exact-version identification, and qualified-review availability. This issue is unmilestoned and non-blocking for v0.5-beta.
 
 ## Deliverables
 
@@ -1057,7 +1095,6 @@ Determine whether ESAF can begin a future HITRUST CSF mapping without exceeding 
 
 This issue does not authorize substantive mapping records and does not block v0.5-beta. It makes no HITRUST certification, compliance, equivalence, endorsement, or assurance claim.
 '@
-Assert-IssueTitleAbsent 'Establish HITRUST CSF source and review readiness'
 $hitrustUrl=gh issue create --repo tdistress/ESAF `
   --title 'Establish HITRUST CSF source and review readiness' `
   --body $hitrustBody --label crosswalk --label 'priority:medium'

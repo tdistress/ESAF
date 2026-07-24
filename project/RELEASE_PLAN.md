@@ -22,8 +22,8 @@ on 2026-07-23. The tag object is
 evidence at https://github.com/tdistress/ESAF/issues/39#issuecomment-5064098764.
 
 Architecture content and all mapping sets remain Draft. The uniform Working
-Draft mapping decision basis is `owner_risk_acceptance`; qualified mapping
-review is deferred and does not complete or qualify that review. Owner risk acceptance defers qualified review; it does not complete or qualify that review.
+Draft mapping decision basis is `owner_risk_acceptance`. Owner risk acceptance
+defers qualified review; it does not complete or qualify that review.
 The closed evidence records that every Mermaid diagram was rendered and reviewed. It does
 not represent qualified review by qualified contributors. Steering Committee governance approval remains a separate gate and was recorded independently of
 the repository-owner risk decision.

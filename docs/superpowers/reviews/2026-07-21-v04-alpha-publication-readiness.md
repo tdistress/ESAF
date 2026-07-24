@@ -37,9 +37,11 @@ It applies to the complete Git-tracked ESAF repository, not a selected subset.
 
 ## Lifecycle limitations
 
-The mapping sets remain Draft snapshots. This record does not assert assurance,
-certification, compliance, equivalence, endorsement, external-scheme approval,
-production readiness, or qualified review.
+Working Draft publication does not convert Draft controls, architectures, or
+mappings into reviewed or approved artifacts. The mapping sets remain Draft
+snapshots. This record does not assert assurance, certification, compliance,
+equivalence, endorsement, external-scheme approval, production readiness, or
+qualified review.
 
 ## Evidence ownership
 

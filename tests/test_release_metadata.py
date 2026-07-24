@@ -227,6 +227,11 @@ class ReleaseMetadataTests(unittest.TestCase):
         readiness = read_repository_file(
             "docs/superpowers/reviews/2026-07-21-v04-alpha-publication-readiness.md"
         ).casefold()
+        self.assertTrue(contains_normalized_phrase(
+            readiness,
+            "does not convert draft controls, architectures, or mappings into "
+            "reviewed or approved artifacts",
+        ))
         for required in (
             "owner risk acceptance",
             "qualified mapping review is deferred",
@@ -240,7 +245,7 @@ class ReleaseMetadataTests(unittest.TestCase):
             "production readiness",
         ):
             with self.subTest(required=required):
-                self.assertIn(required, readiness)
+                self.assertTrue(contains_normalized_phrase(readiness, required))
         for path in ("CHANGELOG.md", "project/RELEASE_PLAN.md"):
             with self.subTest(path=path):
                 self.assertNotIn("qualified mapping review completed", read_repository_file(path).casefold())
@@ -252,11 +257,11 @@ class ReleaseMetadataTests(unittest.TestCase):
             "`owner_risk_acceptance`",
             release_plan,
         )
-        self.assertIn(
+        self.assertTrue(contains_normalized_phrase(
+            release_plan,
             "Owner risk acceptance defers qualified review; it does not complete or "
             "qualify that review.",
-            release_plan,
-        )
+        ))
         self.assertIn(
             "Steering Committee governance approval remains a separate gate",
             release_plan,
@@ -292,6 +297,28 @@ class ReleaseMetadataTests(unittest.TestCase):
         ):
             self.assertIn(required, milestones)
 
+    def test_v05_beta_exit_and_closure_issue_require_complete_gate_set(self) -> None:
+        required_gate_set = (
+            "The full test suite, control, architecture, crosswalk, link, release, "
+            "working-tree, and applicable Mermaid-rendering gates pass on the exact "
+            "candidate."
+        )
+        milestones = read_repository_file("project/MILESTONES.md")
+        exit_criteria = milestones[
+            milestones.index("### Exit criteria"):
+            milestones.index("### Non-goals")
+        ]
+        self.assertTrue(contains_normalized_phrase(exit_criteria, required_gate_set))
+
+        plan = read_repository_file(
+            "docs/superpowers/plans/2026-07-23-v05-beta-plan-reconciliation.md"
+        )
+        closure_body = plan[
+            plan.index("$closureBody=@'"):
+            plan.index("'@", plan.index("$closureBody=@'"))
+        ]
+        self.assertTrue(contains_normalized_phrase(closure_body, required_gate_set))
+
     def test_v05_beta_preserves_bounded_non_goals(self) -> None:
         milestones = read_repository_file("project/MILESTONES.md")
         for non_goal in (
@@ -317,6 +344,7 @@ class ReleaseMetadataTests(unittest.TestCase):
         self.assertLess(review, assessment)
         self.assertLess(assessment, profile)
         self.assertLess(profile, pci)
+        self.assertNotIn("This supersedes the former initiative", backlog)
 
     def test_hitrust_is_readiness_gated_and_not_a_v05_blocker(self) -> None:
         backlog = read_repository_file("project/BACKLOG.md")
@@ -348,6 +376,84 @@ class ReleaseMetadataTests(unittest.TestCase):
         )
         positions = [sequence.index(stage) for stage in stages]
         self.assertEqual(positions, sorted(positions))
+
+    def test_v05_issue_bodies_state_their_dependencies(self) -> None:
+        plan = read_repository_file(
+            "docs/superpowers/plans/2026-07-23-v05-beta-plan-reconciliation.md"
+        )
+        cases = {
+            "qualifiedBody": (
+                "Depends on the merged planning reconciliation.",
+                "does not depend on any other v0.5-beta content issue",
+            ),
+            "assessmentBody": (
+                "Depends on the merged planning reconciliation.",
+                "does not depend on any other v0.5-beta content issue",
+            ),
+            "pciBody": (
+                "may proceed in parallel with the qualified-review and assessment "
+                "workstreams",
+                "No mapping records may be published before the go/no-go decision.",
+            ),
+            "hitrustBody": (
+                "licensed-source access",
+                "publication-rights confirmation",
+                "exact-version identification",
+                "qualified-review availability",
+                "unmilestoned and non-blocking for v0.5-beta",
+            ),
+        }
+        for variable, requirements in cases.items():
+            with self.subTest(variable=variable):
+                start = plan.index(f"${variable}=@'")
+                body = plan[start:plan.index("'@", start)]
+                self.assertIn("## Dependencies", body)
+                for required in requirements:
+                    self.assertTrue(contains_normalized_phrase(body, required))
+
+    def test_v05_queue_preflights_titles_and_labels_before_first_write(self) -> None:
+        plan = read_repository_file(
+            "docs/superpowers/plans/2026-07-23-v05-beta-plan-reconciliation.md"
+        )
+        queue = plan[plan.index("### Task 6: Create and verify"):]
+        first_write = queue.index(
+            "$milestone=gh api repos/tdistress/ESAF/milestones -X POST"
+        )
+        preflight = queue[:first_write]
+        self.assertIn("$existingIssueTitles=@", preflight)
+        for title in (
+            "Complete qualified review of the three UK mapping snapshots",
+            "Define the minimum ESAF-1500 assessment foundation",
+            "Select and publish one Draft pilot ESAF industry profile",
+            "Complete PCI DSS source readiness and mapping go/no-go",
+            "Close the v0.5-beta publication gates",
+            "Establish HITRUST CSF source and review readiness",
+        ):
+            with self.subTest(title=title):
+                self.assertIn(f"Assert-IssueTitleAbsent '{title}'", preflight)
+        self.assertIn("$requiredLabels=@", preflight)
+        self.assertIn("$existingLabels=@", preflight)
+        self.assertIn("$missingLabels=@", preflight)
+        for label in (
+            "crosswalk",
+            "assessment",
+            "profile",
+            "governance",
+            "priority:critical",
+            "priority:high",
+            "priority:medium",
+        ):
+            with self.subTest(label=label):
+                self.assertIn(f"'{label}'", preflight)
+
+    def test_published_sha_exception_plan_is_phase_scoped(self) -> None:
+        plan = read_repository_file(
+            "docs/superpowers/plans/2026-07-23-v05-beta-plan-reconciliation.md"
+        )
+        self.assertIn(
+            'if phase == "published" and path in PUBLISHED_SHA_PATHS:',
+            plan,
+        )
 
     def test_publication_controller_uses_two_basis_owner_risk_contract(self) -> None:
         plan = read_repository_file(

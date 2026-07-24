@@ -53,8 +53,9 @@
 - the PCI DSS workstream has reached its approved `GO` deliverable or a
   formally evidenced `HOLD` disposition;
 - generated catalogs and affected traceability records are current;
-- the full test suite, affected validators, link, release, working-tree, and
-  applicable Mermaid-rendering gates pass on the exact candidate;
+- the full test suite, control, architecture, crosswalk, link, release,
+  working-tree, and applicable Mermaid-rendering gates pass on the exact
+  candidate;
 - Critical and Important review findings are resolved; and
 - the exact candidate receives technical, editorial, mapping, and governance
   approval appropriate to its contents.

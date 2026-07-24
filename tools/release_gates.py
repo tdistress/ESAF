@@ -182,6 +182,10 @@ def validate_record(root: Path, record: dict[str, object]) -> list[str]:
             errors.append("published evidence locator is invalid")
     if phase == "closure_candidate" and record.get("mapping_decision_basis") not in MAPPING_DECISION_BASES:
         errors.append("closure candidate mapping_decision_basis shall be supported")
+    if phase == "published" and record.get("mapping_decision_basis") != "owner_risk_acceptance":
+        errors.append(
+            "published mapping_decision_basis shall equal owner_risk_acceptance"
+        )
     version = (root / "VERSION.md").read_text(encoding="utf-8")
     if "Current Version: **0.4-alpha**" not in version or "Status: **Working Draft**" not in version:
         errors.append("VERSION.md current version shall equal 0.4-alpha")

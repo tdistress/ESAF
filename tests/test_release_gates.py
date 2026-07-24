@@ -310,6 +310,24 @@ class ReleaseGateTests(unittest.TestCase):
                     write_published_scope_fixture(root)
                     self.assertIn(diagnostic, validate_record(root, record))
 
+    def test_published_record_requires_owner_risk_acceptance_mapping_basis(self) -> None:
+        cases = (None, "qualified_approval")
+        for basis in cases:
+            with self.subTest(basis=basis):
+                record = published_record()
+                if basis is None:
+                    record.pop("mapping_decision_basis")
+                else:
+                    record["mapping_decision_basis"] = basis
+                with tempfile.TemporaryDirectory() as temporary:
+                    root = Path(temporary)
+                    write_published_scope_fixture(root)
+                    self.assertIn(
+                        "published mapping_decision_basis shall equal "
+                        "owner_risk_acceptance",
+                        validate_record(root, record),
+                    )
+
     def test_published_record_requires_every_gate_closed(self) -> None:
         record = published_record()
         record["gates"]["technical"]["state"] = "ready"
