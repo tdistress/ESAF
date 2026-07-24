@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import unittest
 from pathlib import Path
 
@@ -36,8 +37,27 @@ class MappingReviewProtocolTests(unittest.TestCase):
             "AI-produced review",
         ):
             self.assertIn(phrase, text)
-        for mapping_set_id in SET_IDS:
-            self.assertIn(mapping_set_id, text)
+        self.assertEqual(
+            tuple(
+                re.findall(
+                    r"^- `(uk-ncsc--[^`]+)`$",
+                    text,
+                    flags=re.MULTILINE,
+                )
+            ),
+            SET_IDS,
+        )
+        for population in (
+            "Core, 116 provisions.",
+            "Plus forward, 144 provisions.",
+            "Plus reverse, 144 provisions.",
+        ):
+            self.assertIn(population, text)
+        self.assertIn(
+            "Every package byte shall be read from that exact commit; "
+            "working-tree bytes shall not be used.",
+            text,
+        )
 
     def test_attestation_requires_identity_eligibility_and_nonclaims(self) -> None:
         text = (TEMPLATES / "REVIEWER_ATTESTATION.md").read_text(encoding="utf-8")

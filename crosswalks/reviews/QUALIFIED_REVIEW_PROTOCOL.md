@@ -21,8 +21,7 @@ conclusions.
 
 ## Candidate integrity
 
-Every review names one full 40-character Git commit SHA and one package
-manifest digest. A changed candidate invalidates final review evidence.
+Every review names one full 40-character Git commit SHA and one package manifest digest. Every package byte shall be read from that exact commit; working-tree bytes shall not be used. A changed candidate invalidates final review evidence.
 
 ## Reviewer eligibility
 
