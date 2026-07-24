@@ -22,6 +22,12 @@ from tools.release_gates import (
 
 ROOT = Path(__file__).resolve().parents[1]
 RECORD = ROOT / "docs/superpowers/reviews/2026-07-21-v04-alpha-publication-readiness.md"
+PUBLISHED_DATE = "2026-07-23"
+PUBLISHED_TAG_OBJECT = "2cd1cf847fdb13a8b3323f62387ad5dabc5bd41f"
+PUBLISHED_COMMIT = "8abfe5a85db19d11295a0c3debeb2d58109b0ca7"
+PUBLISHED_EVIDENCE = (
+    "https://github.com/tdistress/ESAF/issues/39#issuecomment-5064098764"
+)
 
 
 def write_release_scope_fixture(root: Path) -> None:
@@ -33,6 +39,23 @@ def write_release_scope_fixture(root: Path) -> None:
     subprocess.run(["git", "init", "-q"], cwd=root, check=True)
     subprocess.run(["git", "config", "core.autocrlf", "false"], cwd=root, check=True)
     subprocess.run(["git", "add", "VERSION.md", "project/RELEASE_PLAN.md", "crosswalks/catalog.json"], cwd=root, check=True)
+
+
+def write_published_scope_fixture(root: Path) -> None:
+    write_release_scope_fixture(root)
+    (root / "project/RELEASE_PLAN.md").write_text(
+        """# Release Plan
+
+## 0.4-alpha publication
+
+Publication gates are Closed.
+
+Evidence: https://github.com/tdistress/ESAF/issues/39#issuecomment-5064098764
+
+Validated commit: 8abfe5a85db19d11295a0c3debeb2d58109b0ca7
+""",
+        encoding="utf-8",
+    )
 
 
 def valid_record() -> dict[str, object]:
@@ -70,6 +93,27 @@ def closure_record(basis: str = "qualified_approval") -> dict[str, object]:
         for gate in GATE_IDS
     }
     record["mapping_decision_basis"] = basis
+    return record
+
+
+def published_record() -> dict[str, object]:
+    record = valid_record()
+    record["phase"] = "published"
+    record["publication"] = {
+        "date": PUBLISHED_DATE,
+        "condition": "remote_annotated_tag_matches_exact_validated_commit",
+        "tag_object": PUBLISHED_TAG_OBJECT,
+        "tagged_commit": PUBLISHED_COMMIT,
+        "evidence": PUBLISHED_EVIDENCE,
+    }
+    record["gates"] = {
+        gate: {
+            "state": "closed",
+            "evidence": [PUBLISHED_EVIDENCE],
+        }
+        for gate in GATE_IDS
+    }
+    record["mapping_decision_basis"] = "owner_risk_acceptance"
     return record
 
 
@@ -226,6 +270,79 @@ class ReleaseGateTests(unittest.TestCase):
 
     def test_authoritative_record_is_valid(self) -> None:
         self.assertEqual(validate_record(ROOT, load_front_matter(RECORD)), [])
+
+    def test_published_record_accepts_fixed_historical_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_published_scope_fixture(root)
+            self.assertEqual(validate_record(root, published_record()), [])
+
+    def test_published_record_rejects_mutated_publication_evidence(self) -> None:
+        cases = (
+            ("date", "2026-07-24", "published date shall equal 2026-07-23"),
+            ("tag_object", "a" * 40, "published tag object is invalid"),
+            ("tagged_commit", "b" * 40, "published tagged commit is invalid"),
+            ("evidence", "http://example.test/evidence", "published evidence locator is invalid"),
+        )
+        for field, value, diagnostic in cases:
+            with self.subTest(field=field):
+                record = published_record()
+                record["publication"][field] = value
+                with tempfile.TemporaryDirectory() as temporary:
+                    root = Path(temporary)
+                    write_published_scope_fixture(root)
+                    self.assertIn(diagnostic, validate_record(root, record))
+
+    def test_published_record_requires_every_gate_closed(self) -> None:
+        record = published_record()
+        record["gates"]["technical"]["state"] = "ready"
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_published_scope_fixture(root)
+            self.assertIn(
+                "technical: published gate shall be closed",
+                validate_record(root, record),
+            )
+
+    def test_published_cli_requires_no_baseline_and_rejects_external_evidence(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_published_scope_fixture(root)
+            (root / "tools").mkdir()
+            (root / "docs/superpowers/reviews").mkdir(parents=True)
+            shutil.copy2(ROOT / "tools/release_gates.py", root / "tools/release_gates.py")
+            record_path = root / "docs/superpowers/reviews/2026-07-21-v04-alpha-publication-readiness.md"
+            record_path.write_text("---\n" + yaml.safe_dump(published_record(), sort_keys=False) + "---\n", encoding="utf-8")
+            evidence_path = root / "external-evidence.json"
+            evidence_path.write_text("{}\n", encoding="utf-8")
+            result = subprocess.run(
+                [sys.executable, str(root / "tools/release_gates.py"), "--check"],
+                cwd=root,
+                capture_output=True,
+                text=True,
+            )
+            external_result = subprocess.run(
+                [
+                    sys.executable,
+                    str(root / "tools/release_gates.py"),
+                    "--check",
+                    "--external-evidence",
+                    str(evidence_path),
+                    "--expected-head",
+                    "a" * 40,
+                    "--phase",
+                    "closure",
+                ],
+                cwd=root,
+                capture_output=True,
+                text=True,
+            )
+        self.assertEqual(result.returncode, 0)
+        self.assertNotEqual(external_result.returncode, 0)
+        self.assertIn(
+            "external evidence is not accepted for a published record",
+            external_result.stdout,
+        )
 
     def test_record_requires_complete_release_scope_inputs(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
