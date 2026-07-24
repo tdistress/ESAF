@@ -54,8 +54,14 @@ class MappingReviewProtocolTests(unittest.TestCase):
         ):
             self.assertIn(population, text)
         self.assertIn(
-            "Every package byte shall be read from that exact commit; "
-            "working-tree bytes shall not be used.",
+            "Every repository-sourced payload byte shall be read from either "
+            "the exact candidate commit or an exact historical commit SHA "
+            "pinned by candidate-commit metadata; working-tree bytes shall "
+            "never be used.",
+            text,
+        )
+        self.assertIn(
+            "Generated metadata shall be deterministic from those inputs.",
             text,
         )
 
