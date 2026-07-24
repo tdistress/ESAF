@@ -13,6 +13,9 @@
 - Canonical profile identifier: `uk--jurisdiction-profile--0.1.0`.
 - Schema version and profile version: `0.1.0`.
 - Profile lifecycle status: `draft`; target ESAF release: `v0.5-beta`.
+- Reusable schemas accept profile IDs matching the ESAF-1800 identifier
+  pattern and lifecycle states `proposed`, `draft`, `approved`, `published`,
+  `deprecated`, or `retired`; they do not pin UK identity or Draft status.
 - Applicability: AI systems deployed or operated in the United Kingdom, regardless of organizational domicile.
 - Source boundary: ESAF and the three pinned UK Cyber Essentials mapping sets already present in the repository.
 - Every one of the 91 authoritative controls appears exactly once as `required`, `conditional`, `recommended`, or `not_selected`.
@@ -199,7 +202,10 @@ class ProfileSchemaTests(unittest.TestCase):
         status = selections["$defs"]["selection"]["properties"]["status"]["enum"]
         self.assertEqual(status, ["required", "conditional", "recommended", "not_selected"])
         profile = json.loads((SCHEMA_ROOT / "profile.schema.json").read_text(encoding="utf-8"))
-        self.assertEqual(profile["properties"]["status"]["const"], "draft")
+        self.assertEqual(
+            profile["properties"]["status"]["enum"],
+            ["proposed", "draft", "approved", "published", "deprecated", "retired"],
+        )
 ```
 
 - [ ] **Step 2: Run and verify RED**
@@ -222,7 +228,10 @@ Use this common root shape in every schema:
   "properties": {
     "$schema": {"const": "../../../schema/<component>.schema.json"},
     "schema_version": {"const": "0.1.0"},
-    "profile_id": {"const": "uk--jurisdiction-profile--0.1.0"},
+    "profile_id": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*--[a-z0-9]+(?:-[a-z0-9]+)*--[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
     "profile_version": {"const": "0.1.0"}
   }
 }
@@ -230,7 +239,11 @@ Use this common root shape in every schema:
 
 Extend each schema with the exact fields in the design. Define reusable `$defs` for identifiers, non-empty strings, repository-relative paths, selection records, risks, overlays, evidence expectations, and external references. Every nested object sets `additionalProperties: false`.
 
-`profile.schema.json` shall require boolean applicability conditions with `activates_when` and `resolution_evidence`. `external-references.schema.json` shall close `reference_use` to `lifecycle_reference_only` and require `qualified_review_required` to be `true`.
+`profile.schema.json` shall use the six-state reusable lifecycle enum and
+require boolean applicability conditions with `activates_when` and
+`resolution_evidence`. `external-references.schema.json` shall close
+`reference_use` to `lifecycle_reference_only` and require
+`qualified_review_required` to be `true`.
 The reusable component schemas shall allow empty risk, overlay, and evidence
 arrays; Task 5 foundation tests, rather than the generic schemas, shall require
 the UK pilot to publish the approved non-empty content.
@@ -455,7 +468,11 @@ git commit -m "feat: enforce profile semantic invariants"
 
 - [ ] **Step 1: Add failing content tests**
 
-Test the exact profile ID, Draft status, UK operating applicability, exact component list, complete 91-control population, at least one of every selection status, exact three mapping identifiers, `lifecycle_reference_only`, and explicit non-claims.
+Test the exact profile ID, Draft status, UK operating applicability, exact
+component list, complete 91-control population, exact three mapping
+identifiers, `lifecycle_reference_only`, and explicit non-claims. Do not
+require every selection status to appear; each status used must be justified
+by the control analysis.
 
 - [ ] **Step 2: Run and verify RED**
 

@@ -145,6 +145,12 @@ shall carry the profile identifier, profile version, schema version, and its
 repository-relative schema locator. Identifiers shall use closed patterns and
 be unique within their namespace.
 
+The reusable schemas shall accept any profile identifier matching the
+ESAF-1800 identifier pattern. They shall not pin the United Kingdom pilot
+identifier. The reusable lifecycle vocabulary is `proposed`, `draft`,
+`approved`, `published`, `deprecated`, and `retired`; the United Kingdom pilot
+itself shall remain `draft`.
+
 `profile.json` shall identify all required component paths. Paths shall be
 repository-relative, normalized POSIX paths inside the same versioned profile
 package. The validator shall reject path traversal, absolute paths, alternate
