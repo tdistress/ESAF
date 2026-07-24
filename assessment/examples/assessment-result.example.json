@@ -1,0 +1,77 @@
+{
+  "$schema": "../schema/assessment-result.schema.json",
+  "schema_version": "0.1.0",
+  "result_id": "ASR-EXAMPLE-CHANGE-CONTROL",
+  "status": "final",
+  "title": "Fictional assessment of change-review control",
+  "assessor": {
+    "name": "Example Assessor",
+    "role": "Independent reviewer",
+    "organization": "Fictional Example Organization",
+    "independence_statement": "This fictional reviewer is presented only to illustrate record structure."
+  },
+  "assessment_scope": {
+    "subject": "Fictional change-review control",
+    "requirement_ids": ["ESAF-EXAMPLE-CHANGE-REVIEW"],
+    "boundary": "Fictional completed changes in the stated period.",
+    "exclusions": [],
+    "population": "Twelve fictional completed changes.",
+    "sample": "All twelve fictional completed changes."
+  },
+  "methods": [
+    {
+      "method": "Examine",
+      "procedure": "Examine the fictional change-review log.",
+      "object": "Fictional change-review log extract.",
+      "expected_result": "Each fictional completed change has recorded review evidence.",
+      "actual_work": "Examined the fictional log entries described by the evidence record."
+    }
+  ],
+  "time_boundary": {
+    "assessment_start": "2026-07-01T09:00:00Z",
+    "assessment_end": "2026-07-24T16:00:00Z",
+    "result_date": "2026-07-24T16:30:00Z"
+  },
+  "evidence_refs": ["EVD-EXAMPLE-CHANGE-LOG"],
+  "determination": "partially_satisfied",
+  "determination_rationale": "The fictional evidence illustrates recorded reviews, with one minor fictional exception resolved before result issuance.",
+  "design_effectiveness": "effective",
+  "operating_effectiveness": "partially_effective",
+  "findings": [
+    {
+      "finding_id": "FND-EXAMPLE-CHANGE-REVIEW",
+      "severity": "minor",
+      "status": "resolved",
+      "affected_requirement_ids": ["ESAF-EXAMPLE-CHANGE-REVIEW"],
+      "statement": "One fictional change-review record initially lacked a recorded reviewer identity.",
+      "evidence_refs": ["EVD-EXAMPLE-CHANGE-LOG"],
+      "owner": {
+        "name": "Example Change Owner",
+        "role": "Change manager",
+        "organization": "Fictional Example Organization"
+      },
+      "disposition": {
+        "action": "Updated the fictional record with the reviewer identity.",
+        "rationale": "The fictional review evidence was completed before the result was issued."
+      },
+      "identified_at": "2026-07-20T10:00:00Z",
+      "disposition_at": "2026-07-22T14:00:00Z"
+    }
+  ],
+  "limitations": [
+    "This fictional result is a structural example and makes no compliance claim."
+  ],
+  "traceability": {
+    "esaf_requirement_ids": ["ESAF-EXAMPLE-CHANGE-REVIEW"],
+    "external_or_profile_ids": []
+  },
+  "change_history": [
+    {
+      "version": "0.1.0",
+      "date": "2026-07-24T16:30:00Z",
+      "author": "Example Assessor",
+      "description": "Created the fictional final example result."
+    }
+  ],
+  "example_notice": "Fictional non-authoritative example; no organization, ESAF control, profile, or external framework has been assessed."
+}

@@ -1,0 +1,188 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://esaf.dev/schema/assessment/assessment-result.schema.json",
+  "title": "ESAF assessment result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema", "schema_version", "result_id", "status", "title", "assessor",
+    "assessment_scope", "methods", "time_boundary", "evidence_refs", "determination",
+    "determination_rationale", "design_effectiveness", "operating_effectiveness",
+    "findings", "limitations", "traceability", "change_history"
+  ],
+  "properties": {
+    "$schema": { "const": "../schema/assessment-result.schema.json" },
+    "schema_version": { "const": "0.1.0" },
+    "result_id": { "type": "string", "pattern": "^ASR-[A-Z0-9][A-Z0-9-]*$" },
+    "status": { "enum": ["draft", "final"] },
+    "title": { "$ref": "#/$defs/nonEmptyString" },
+    "assessor": { "$ref": "#/$defs/person" },
+    "assessment_scope": { "$ref": "#/$defs/assessmentScope" },
+    "methods": {
+      "type": "array", "minItems": 1, "uniqueItems": true,
+      "items": { "$ref": "#/$defs/method" }
+    },
+    "time_boundary": { "$ref": "#/$defs/timeBoundary" },
+    "evidence_refs": { "$ref": "#/$defs/evidenceRefs" },
+    "determination": {
+      "enum": ["satisfied", "partially_satisfied", "not_satisfied", "not_applicable", "not_assessed"]
+    },
+    "determination_rationale": { "$ref": "#/$defs/nonEmptyString" },
+    "applicability_rationale": { "$ref": "#/$defs/nonEmptyString" },
+    "applicability_approver": { "$ref": "#/$defs/person" },
+    "scope_exclusion_rationale": { "$ref": "#/$defs/nonEmptyString" },
+    "design_effectiveness": {
+      "enum": ["effective", "partially_effective", "ineffective", "not_applicable", "not_assessed"]
+    },
+    "operating_effectiveness": {
+      "enum": ["effective", "partially_effective", "ineffective", "not_applicable", "not_assessed"]
+    },
+    "findings": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/finding" } },
+    "limitations": { "$ref": "#/$defs/stringArray" },
+    "traceability": { "$ref": "#/$defs/traceability" },
+    "change_history": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/change" } },
+    "example_notice": {
+      "const": "Fictional non-authoritative example; no organization, ESAF control, profile, or external framework has been assessed."
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "determination": { "const": "not_applicable" } }, "required": ["determination"] },
+      "then": { "required": ["applicability_rationale", "applicability_approver"] },
+      "else": {
+        "not": { "anyOf": [ { "required": ["applicability_rationale"] }, { "required": ["applicability_approver"] } ] }
+      }
+    },
+    {
+      "if": { "properties": { "determination": { "const": "not_assessed" } }, "required": ["determination"] },
+      "then": { "required": ["scope_exclusion_rationale"] },
+      "else": { "not": { "required": ["scope_exclusion_rationale"] } }
+    },
+    {
+      "if": { "properties": { "status": { "const": "final" } }, "required": ["status"] },
+      "then": { "properties": { "change_history": { "minItems": 1 } } }
+    }
+  ],
+  "$defs": {
+    "nonEmptyString": { "type": "string", "minLength": 1 },
+    "stringArray": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/nonEmptyString" } },
+    "person": {
+      "type": "object", "additionalProperties": false,
+      "required": ["name", "role", "organization", "independence_statement"],
+      "properties": {
+        "name": { "$ref": "#/$defs/nonEmptyString" },
+        "role": { "$ref": "#/$defs/nonEmptyString" },
+        "organization": { "$ref": "#/$defs/nonEmptyString" },
+        "independence_statement": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    },
+    "assessmentScope": {
+      "type": "object", "additionalProperties": false,
+      "required": ["subject", "requirement_ids", "boundary", "exclusions", "population", "sample"],
+      "properties": {
+        "subject": { "$ref": "#/$defs/nonEmptyString" },
+        "requirement_ids": { "$ref": "#/$defs/requirementIds" },
+        "boundary": { "$ref": "#/$defs/nonEmptyString" },
+        "exclusions": { "$ref": "#/$defs/stringArray" },
+        "population": { "$ref": "#/$defs/nonEmptyString" },
+        "sample": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    },
+    "requirementIds": {
+      "type": "array", "minItems": 1, "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^[A-Z][A-Z0-9-]*$" }
+    },
+    "method": {
+      "type": "object", "additionalProperties": false,
+      "required": ["method", "procedure", "object", "expected_result", "actual_work"],
+      "properties": {
+        "method": { "enum": ["Examine", "Interview", "Test", "Observe"] },
+        "procedure": { "$ref": "#/$defs/nonEmptyString" },
+        "object": { "$ref": "#/$defs/nonEmptyString" },
+        "expected_result": { "$ref": "#/$defs/nonEmptyString" },
+        "actual_work": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    },
+    "timeBoundary": {
+      "type": "object", "additionalProperties": false,
+      "required": ["assessment_start", "assessment_end", "result_date"],
+      "properties": {
+        "assessment_start": { "type": "string", "format": "date-time" },
+        "assessment_end": { "type": "string", "format": "date-time" },
+        "result_date": { "type": "string", "format": "date-time" }
+      }
+    },
+    "evidenceRefs": {
+      "type": "array", "minItems": 1, "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^EVD-[A-Z0-9][A-Z0-9-]*$" }
+    },
+    "finding": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "finding_id", "severity", "status", "affected_requirement_ids", "statement",
+        "evidence_refs", "owner", "disposition", "identified_at"
+      ],
+      "properties": {
+        "finding_id": { "type": "string", "pattern": "^FND-[A-Z0-9][A-Z0-9-]*$" },
+        "severity": { "enum": ["critical", "important", "minor"] },
+        "status": { "enum": ["open", "resolved", "accepted"] },
+        "affected_requirement_ids": { "$ref": "#/$defs/requirementIds" },
+        "statement": { "$ref": "#/$defs/nonEmptyString" },
+        "evidence_refs": { "$ref": "#/$defs/evidenceRefs" },
+        "owner": { "$ref": "#/$defs/owner" },
+        "disposition": { "$ref": "#/$defs/disposition" },
+        "identified_at": { "type": "string", "format": "date-time" },
+        "disposition_at": { "type": "string", "format": "date-time" },
+        "acceptance_authority": { "$ref": "#/$defs/nonEmptyString" },
+        "acceptance_rationale": { "$ref": "#/$defs/nonEmptyString" },
+        "review_at": { "type": "string", "format": "date-time" },
+        "residual_risk": { "$ref": "#/$defs/nonEmptyString" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "status": { "enum": ["resolved", "accepted"] } }, "required": ["status"] },
+          "then": { "required": ["disposition_at"] }
+        },
+        {
+          "if": { "properties": { "status": { "const": "accepted" } }, "required": ["status"] },
+          "then": { "required": ["disposition_at", "acceptance_authority", "acceptance_rationale", "review_at", "residual_risk"] }
+        }
+      ]
+    },
+    "owner": {
+      "type": "object", "additionalProperties": false,
+      "required": ["name", "role", "organization"],
+      "properties": {
+        "name": { "$ref": "#/$defs/nonEmptyString" },
+        "role": { "$ref": "#/$defs/nonEmptyString" },
+        "organization": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    },
+    "disposition": {
+      "type": "object", "additionalProperties": false,
+      "required": ["action", "rationale"],
+      "properties": {
+        "action": { "$ref": "#/$defs/nonEmptyString" },
+        "rationale": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    },
+    "traceability": {
+      "type": "object", "additionalProperties": false,
+      "required": ["esaf_requirement_ids", "external_or_profile_ids"],
+      "properties": {
+        "esaf_requirement_ids": { "$ref": "#/$defs/requirementIds" },
+        "external_or_profile_ids": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "change": {
+      "type": "object", "additionalProperties": false,
+      "required": ["version", "date", "author", "description"],
+      "properties": {
+        "version": { "$ref": "#/$defs/nonEmptyString" },
+        "date": { "type": "string", "format": "date-time" },
+        "author": { "$ref": "#/$defs/nonEmptyString" },
+        "description": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    }
+  }
+}

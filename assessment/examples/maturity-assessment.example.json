@@ -1,0 +1,54 @@
+{
+  "$schema": "../schema/maturity-assessment.schema.json",
+  "schema_version": "0.1.0",
+  "maturity_id": "MAT-EXAMPLE-CHANGE-MANAGEMENT",
+  "status": "final",
+  "scope": "Fictional change-management capability for the stated fictional assessment period.",
+  "exclusions": [],
+  "assessor": {
+    "name": "Example Assessor",
+    "role": "Independent reviewer",
+    "organization": "Fictional Example Organization",
+    "independence_statement": "This fictional reviewer is presented only to illustrate record structure."
+  },
+  "assessed_at": "2026-07-24T17:00:00Z",
+  "level": "M1",
+  "criteria": [
+    {
+      "level": "M0",
+      "criterion_id": "M0-CHANGE-MANAGEMENT-BASELINE",
+      "statement": "The fictional capability's current state is explicitly documented.",
+      "met": true,
+      "rationale": "The fictional evidence and result identify a defined baseline for the stated scope.",
+      "basis_refs": ["EVD-EXAMPLE-CHANGE-LOG", "ASR-EXAMPLE-CHANGE-CONTROL"]
+    },
+    {
+      "level": "M1",
+      "criterion_id": "M1-CHANGE-MANAGEMENT-OWNERSHIP",
+      "statement": "The fictional capability has accountable ownership and repeatable basic operation.",
+      "met": true,
+      "rationale": "The fictional records illustrate ownership and a repeatable review activity.",
+      "basis_refs": ["EVD-EXAMPLE-CHANGE-LOG", "ASR-EXAMPLE-CHANGE-CONTROL"]
+    }
+  ],
+  "basis_refs": ["EVD-EXAMPLE-CHANGE-LOG", "ASR-EXAMPLE-CHANGE-CONTROL"],
+  "limitations": [
+    "This fictional maturity example does not assess an organization or establish any assurance outcome."
+  ],
+  "component_results": [
+    {
+      "maturity_ref": "MAT-EXAMPLE-CHANGE-MANAGEMENT",
+      "level": "M1",
+      "applicability": "applicable"
+    }
+  ],
+  "change_history": [
+    {
+      "version": "0.1.0",
+      "date": "2026-07-24T17:00:00Z",
+      "author": "Example Assessor",
+      "description": "Created the fictional maturity assessment example."
+    }
+  ],
+  "example_notice": "Fictional non-authoritative example; no organization, ESAF control, profile, or external framework has been assessed."
+}
