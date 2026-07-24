@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import argparse
-import calendar
 from collections.abc import Iterator
 import json
 from pathlib import Path
@@ -79,14 +78,63 @@ BRACKETED_PLACEHOLDER = re.compile(
     re.IGNORECASE,
 )
 RFC3339_DATE_TIME = re.compile(
-    r"^(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})"
-    r"[Tt](?P<hour>\d{2}):(?P<minute>\d{2}):(?P<second>\d{2})"
-    r"(?:\.\d+)?(?P<offset>[Zz]|[+-]\d{2}:\d{2})$"
+    r"^(?P<year>[0-9]{4})-(?P<month>[0-9]{2})-(?P<day>[0-9]{2})"
+    r"[Tt](?P<hour>[0-9]{2}):(?P<minute>[0-9]{2}):(?P<second>[0-9]{2})"
+    r"(?:\.[0-9]+)?(?P<offset>[Zz]|[+-][0-9]{2}:[0-9]{2})$"
 )
 ASSESSMENT_FORMAT_CHECKER = FormatChecker()
 
 JsonObject: TypeAlias = dict[str, object]
 Record: TypeAlias = tuple[str, str, JsonObject]
+
+
+def is_proleptic_gregorian_leap_year(year: int) -> bool:
+    return year % 4 == 0 and (year % 100 != 0 or year % 400 == 0)
+
+
+def days_in_proleptic_gregorian_month(year: int, month: int) -> int:
+    if month == 2:
+        return 29 if is_proleptic_gregorian_leap_year(year) else 28
+    return 30 if month in (4, 6, 9, 11) else 31
+
+
+def previous_proleptic_gregorian_date(
+    year: int, month: int, day: int
+) -> tuple[int, int, int]:
+    if day > 1:
+        return year, month, day - 1
+    if month > 1:
+        month -= 1
+        return year, month, days_in_proleptic_gregorian_month(year, month)
+    return year - 1, 12, 31
+
+
+def next_proleptic_gregorian_date(
+    year: int, month: int, day: int
+) -> tuple[int, int, int]:
+    if day < days_in_proleptic_gregorian_month(year, month):
+        return year, month, day + 1
+    if month < 12:
+        return year, month + 1, 1
+    return year + 1, 1, 1
+
+
+def utc_date_and_time(
+    year: int,
+    month: int,
+    day: int,
+    hour: int,
+    minute: int,
+    offset_minutes: int,
+) -> tuple[int, int, int, int, int]:
+    total_minutes = hour * 60 + minute - offset_minutes
+    if total_minutes < 0:
+        year, month, day = previous_proleptic_gregorian_date(year, month, day)
+        total_minutes += 24 * 60
+    elif total_minutes >= 24 * 60:
+        year, month, day = next_proleptic_gregorian_date(year, month, day)
+        total_minutes -= 24 * 60
+    return year, month, day, total_minutes // 60, total_minutes % 60
 
 
 @ASSESSMENT_FORMAT_CHECKER.checks("date-time")
@@ -103,18 +151,29 @@ def is_rfc3339_date_time(value: object) -> bool:
     hour = int(match["hour"])
     minute = int(match["minute"])
     second = int(match["second"])
-    if year < 1 or not 1 <= month <= 12:
+    if not 1 <= month <= 12:
         return False
-    if not 1 <= day <= calendar.monthrange(year, month)[1]:
+    if not 1 <= day <= days_in_proleptic_gregorian_month(year, month):
         return False
     if hour > 23 or minute > 59 or second > 60:
         return False
     offset = match["offset"]
     if offset.casefold() == "z":
+        offset_minutes = 0
+    else:
+        offset_hour = int(offset[1:3])
+        offset_minute = int(offset[4:6])
+        if offset_hour > 23 or offset_minute > 59:
+            return False
+        offset_minutes = offset_hour * 60 + offset_minute
+        if offset[0] == "-":
+            offset_minutes = -offset_minutes
+    if second != 60:
         return True
-    offset_hour = int(offset[1:3])
-    offset_minute = int(offset[4:6])
-    return offset_hour <= 23 and offset_minute <= 59
+    _year, month, day, hour, minute = utc_date_and_time(
+        year, month, day, hour, minute, offset_minutes
+    )
+    return hour == 23 and minute == 59 and (month, day) in ((6, 30), (12, 31))
 
 
 def reject_duplicate_keys(

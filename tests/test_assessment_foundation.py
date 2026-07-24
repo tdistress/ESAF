@@ -210,7 +210,10 @@ class AssessmentSchemaTests(unittest.TestCase):
 
     def test_exported_rfc3339_checker_rejects_malformed_values(self) -> None:
         for value in (
-            "2024-02-29T23:59:60.123Z",
+            "0000-02-29T00:00:00Z",
+            "1991-06-30T23:59:60.123Z",
+            "1990-12-31T23:59:60Z",
+            "1991-01-01T08:59:60+09:00",
             "2026-07-24t15:00:00z",
             "2026-07-24T15:00:00+07:30",
         ):
@@ -220,7 +223,11 @@ class AssessmentSchemaTests(unittest.TestCase):
                 )
         for value in (
             "not-a-date-time",
+            "0000-02-30T00:00:00Z",
+            "\u0662\u0660\u0662\u0664-\u0660\u0666-\u0663\u0660T\u0662\u0663:\u0665\u0669:\u0665\u0669Z",
             "2026-02-29T15:00:00Z",
+            "2024-02-29T23:59:60Z",
+            "1991-01-01T09:00:60+09:00",
             "2026-07-24 15:00:00Z",
             "2026-07-24T24:00:00Z",
             "2026-07-24T15:00:00",
