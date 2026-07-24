@@ -24,6 +24,7 @@ from tools.build_mapping_review_bundle import (
     validate_output_directory,
     write_package,
 )
+from tools.crosswalks.digests import snapshot_digest_from_files
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -153,6 +154,34 @@ class GitReaderTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "unsafe repository path"):
                     self.reader.read_bytes(self.head, unsafe)
 
+    def test_read_bytes_rejects_non_regular_git_blob_mode(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository, _head = _create_clean_repository(Path(directory))
+            blob = subprocess.run(
+                ["git", "hash-object", "-w", "--stdin"],
+                cwd=repository,
+                input=b"tracked.txt",
+                check=True,
+                capture_output=True,
+            ).stdout.decode("ascii").strip()
+            _git(
+                repository,
+                "update-index",
+                "--add",
+                "--cacheinfo",
+                f"120000,{blob},fixed-evidence.md",
+            )
+            _git(repository, "commit", "-m", "add non-regular evidence")
+            head = _git(repository, "rev-parse", "HEAD")
+            with self.assertRaisesRegex(
+                ValueError,
+                "unexpected repository entry",
+            ):
+                GitReader(repository).read_bytes(
+                    head,
+                    "fixed-evidence.md",
+                )
+
     def test_reports_all_worktree_roots_as_resolved_paths(self) -> None:
         roots = self.reader.worktree_roots()
         self.assertIn(ROOT.resolve(), roots)
@@ -187,6 +216,84 @@ class CandidateExecutionStateTests(unittest.TestCase):
             _git(repository, "commit", "-m", "second")
             with self.assertRaisesRegex(ValueError, "current HEAD must equal candidate"):
                 GitReader(repository).require_candidate_execution_state(first)
+
+
+class GeneratorCheckoutBindingTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.head = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        self.profile = PROFILES[CORE_ID]
+
+    def test_writer_rejects_reader_from_different_checkout(self) -> None:
+        module_reader = GitReader(ROOT)
+        mapping_set_path = f"{self.profile.snapshot_path}/README.md"
+        minimal_files = (
+            PackageFile(
+                mapping_set_path,
+                module_reader.read_bytes(self.head, mapping_set_path),
+                "mapping set",
+            ),
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            repository, foreign_head = _create_clean_repository(root)
+            output = root / "package"
+            with mock.patch(
+                "tools.build_mapping_review_bundle.collect_package_files",
+                return_value=minimal_files,
+            ):
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "reader root must equal module checkout",
+                ):
+                    write_package(
+                        GitReader(repository),
+                        foreign_head,
+                        self.profile,
+                        output,
+                    )
+
+    def test_writer_uses_fresh_module_checkout_for_execution_state(
+        self,
+    ) -> None:
+        caller = GitReader(ROOT)
+        caller_check = mock.Mock()
+        caller.require_candidate_execution_state = caller_check
+        mapping_set_path = f"{self.profile.snapshot_path}/README.md"
+        minimal_files = (
+            PackageFile(
+                mapping_set_path,
+                caller.read_bytes(self.head, mapping_set_path),
+                "mapping set",
+            ),
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            with mock.patch(
+                "tools.build_mapping_review_bundle.collect_package_files",
+                return_value=minimal_files,
+            ), mock.patch.object(
+                GitReader,
+                "require_candidate_execution_state",
+                autospec=True,
+            ) as module_check:
+                write_package(
+                    caller,
+                    self.head,
+                    self.profile,
+                    Path(directory) / "package",
+                )
+        caller_check.assert_not_called()
+        self.assertEqual(module_check.call_count, 2)
+        for call in module_check.call_args_list:
+            checked_reader, checked_commit = call.args
+            self.assertIsNot(checked_reader, caller)
+            self.assertEqual(checked_reader.root, ROOT)
+            self.assertEqual(checked_commit, self.head)
 
 
 class PackagePopulationTests(unittest.TestCase):
@@ -377,6 +484,66 @@ class PackagePopulationTests(unittest.TestCase):
                 return base.list_files(commit, path)
 
         with self.assertRaisesRegex(ValueError, "control catalog digest mismatch"):
+            collect_package_files(MutatingReader(), self.head, profile)
+
+    def test_collector_rejects_consistently_rehashed_incomplete_manifest(
+        self,
+    ) -> None:
+        profile = PROFILES[CORE_ID]
+        base = self.reader
+        manifest_path = f"{profile.snapshot_path}/ESAF_CONTROL_MANIFEST.json"
+        registry_path = f"crosswalks/registry/{profile.mapping_set_id}.md"
+        snapshot_contents = {
+            path: base.read_bytes(self.head, path)
+            for path in base.list_files(self.head, profile.snapshot_path)
+        }
+        manifest = json.loads(snapshot_contents[manifest_path])
+        removed = manifest["controls"].pop()
+        self.assertEqual(removed["id"], "STR-130")
+        snapshot_contents[manifest_path] = bundle_builder.canonical_json_bytes(
+            manifest
+        )
+        replacement_digest = snapshot_digest_from_files(
+            profile.snapshot_path,
+            snapshot_contents,
+        )
+        registry = re.sub(
+            rb"(?m)^snapshot_digest: [0-9a-f]{64}$",
+            f"snapshot_digest: {replacement_digest}".encode("ascii"),
+            base.read_bytes(self.head, registry_path),
+            count=1,
+        )
+        catalog = json.loads(
+            base.read_bytes(self.head, "crosswalks/catalog.json")
+        )
+        catalog_entry = next(
+            item
+            for item in catalog["mapping_sets"]
+            if item["metadata"]["mapping_set_id"] == profile.mapping_set_id
+        )
+        catalog_entry["lifecycle"]["snapshot_digest"] = replacement_digest
+        catalog_bytes = bundle_builder.canonical_json_bytes(catalog)
+
+        class MutatingReader:
+            def resolve_commit(self, revision: str) -> str:
+                return base.resolve_commit(revision)
+
+            def read_bytes(self, commit: str, path: str) -> bytes:
+                if path == manifest_path:
+                    return snapshot_contents[manifest_path]
+                if path == registry_path:
+                    return registry
+                if path == "crosswalks/catalog.json":
+                    return catalog_bytes
+                return base.read_bytes(commit, path)
+
+            def list_files(self, commit: str, path: str) -> tuple[str, ...]:
+                return base.list_files(commit, path)
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "control manifest differs from deterministic regeneration",
+        ):
             collect_package_files(MutatingReader(), self.head, profile)
 
     def test_collector_rejects_source_evidence_digest_drift(self) -> None:
@@ -613,6 +780,12 @@ class PackageWriterTests(unittest.TestCase):
         )
         self.require_state = state_patch.start()
         self.addCleanup(state_patch.stop)
+        generator_state_patch = mock.patch(
+            "tools.build_mapping_review_bundle._require_generator_execution_state",
+            create=True,
+        )
+        self.generator_state = generator_state_patch.start()
+        self.addCleanup(generator_state_patch.stop)
 
     def test_writer_verifies_candidate_state_at_api_boundary(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -628,12 +801,16 @@ class PackageWriterTests(unittest.TestCase):
                     output,
                 )
         self.assertEqual(
-            self.require_state.call_args_list,
-            [mock.call(self.head), mock.call(self.head)],
+            self.generator_state.call_args_list,
+            [
+                mock.call(self.reader, self.head),
+                mock.call(self.reader, self.head),
+            ],
         )
+        self.require_state.assert_not_called()
 
     def test_writer_does_not_publish_after_execution_state_changes(self) -> None:
-        self.require_state.side_effect = (
+        self.generator_state.side_effect = (
             None,
             ValueError("repository became dirty"),
         )
@@ -717,9 +894,8 @@ class PackageWriterTests(unittest.TestCase):
             output = Path(directory) / "package"
             stdout = io.StringIO()
             stderr = io.StringIO()
-            with mock.patch.object(
-                GitReader,
-                "require_candidate_execution_state",
+            with mock.patch(
+                "tools.build_mapping_review_bundle._require_generator_execution_state",
             ) as require_state:
                 with redirect_stdout(stdout), redirect_stderr(stderr):
                     result = main(
@@ -733,10 +909,12 @@ class PackageWriterTests(unittest.TestCase):
                         ]
                     )
             self.assertEqual(result, 0, stderr.getvalue())
-            self.assertEqual(
-                require_state.call_args_list,
-                [mock.call(self.head), mock.call(self.head)],
-            )
+            self.assertEqual(require_state.call_count, 2)
+            for call in require_state.call_args_list:
+                checked_reader, checked_commit = call.args
+                self.assertIsInstance(checked_reader, GitReader)
+                self.assertEqual(checked_reader.root, ROOT)
+                self.assertEqual(checked_commit, self.head)
             report = json.loads(stdout.getvalue())
             self.assertEqual(report["candidate_commit"], self.head)
             self.assertEqual(report["mapping_set_id"], self.profile.mapping_set_id)
@@ -891,9 +1069,8 @@ class PackageIntegrationTests(unittest.TestCase):
             ["git", "rev-parse", "HEAD"],
             cwd=ROOT, check=True, capture_output=True, text=True,
         ).stdout.strip()
-        with mock.patch.object(
-            reader,
-            "require_candidate_execution_state",
+        with mock.patch(
+            "tools.build_mapping_review_bundle._require_generator_execution_state",
         ) as require_state, tempfile.TemporaryDirectory() as directory:
             manifests = {}
             for profile in PROFILES.values():
@@ -1016,7 +1193,7 @@ class PackageIntegrationTests(unittest.TestCase):
             )
             self.assertEqual(
                 require_state.call_args_list,
-                [mock.call(head)] * (2 * len(PROFILES)),
+                [mock.call(reader, head)] * (2 * len(PROFILES)),
             )
 
     def test_tools_readme_documents_exact_safe_command(self) -> None:
@@ -1030,6 +1207,15 @@ class PackageIntegrationTests(unittest.TestCase):
         self.assertIn("outside every Git worktree", normalized)
         self.assertIn(
             "new output path that does not already exist",
+            normalized,
+        )
+        self.assertIn(
+            "candidate commit must equal the current clean HEAD",
+            normalized,
+        )
+        self.assertIn(
+            "failed assembly can leave an owned hidden sibling staging "
+            "directory",
             normalized,
         )
         self.assertIn("does not include the external source document", text)

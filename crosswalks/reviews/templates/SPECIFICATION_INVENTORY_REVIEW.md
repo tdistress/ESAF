@@ -18,12 +18,17 @@
 
 ## Review scope
 
-Verify:
+Make and record an explicit determination for each of:
 
 - source identity, version, checksum, and official locator;
 - Publication rights;
 - Provision population;
-- inventory order and hierarchy;
+- provision identifiers;
+- provision hierarchy;
+- provision granularity;
+- provision coverage;
+- predecessor integrity;
+- absence of omitted, duplicated, invented, or wrong-version provisions;
 - record, catalog, and registry agreement; and
 - change history.
 

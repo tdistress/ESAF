@@ -55,8 +55,16 @@ remain separate.
 ## Specification and inventory review
 
 Verify official source identity/version/checksum/locators, publication rights,
-provision population and hierarchy, record coverage, registry/catalog
-consistency, and predecessor/change-history integrity.
+registry/catalog consistency, and change-history integrity. The reviewer shall
+make and record explicit determinations for:
+
+- provision population;
+- provision identifiers;
+- provision hierarchy;
+- provision granularity;
+- provision coverage;
+- predecessor integrity; and
+- absence of omitted, duplicated, invented, or wrong-version provisions.
 
 ## Security and overclaiming review
 

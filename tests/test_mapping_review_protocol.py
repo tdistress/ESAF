@@ -196,6 +196,38 @@ class MappingReviewProtocolTests(unittest.TestCase):
                 normalized,
             )
 
+    def test_specification_review_requires_complete_inventory_determinations(
+        self,
+    ) -> None:
+        protocol = " ".join(
+            PROTOCOL.read_text(encoding="utf-8").lower().split()
+        )
+        worksheet = " ".join(
+            (
+                TEMPLATES / "SPECIFICATION_INVENTORY_REVIEW.md"
+            ).read_text(encoding="utf-8").lower().split()
+        )
+        for text in (protocol, worksheet):
+            for determination in (
+                "provision population",
+                "provision identifiers",
+                "provision hierarchy",
+                "provision granularity",
+                "provision coverage",
+                "predecessor integrity",
+                "absence of omitted, duplicated, invented, or wrong-version "
+                "provisions",
+            ):
+                self.assertIn(determination, text)
+        self.assertIn(
+            "shall make and record explicit determinations",
+            protocol,
+        )
+        self.assertIn(
+            "make and record an explicit determination",
+            worksheet,
+        )
+
     def test_signed_worksheet_digest_has_reproducible_scope(self) -> None:
         protocol = " ".join(PROTOCOL.read_text(encoding="utf-8").split())
         for expected in (

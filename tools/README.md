@@ -77,9 +77,15 @@ Render each input with `@mermaid-js/mermaid-cli@11.16.0`, then record parse and 
 
 ## Qualified mapping review packages
 
-Generate one reviewer package from an exact commit.
-Supply a new output path that does not already exist and is outside every Git
-worktree:
+Generate one reviewer package from an exact commit. Supply a new output path
+that does not already exist and is outside every Git worktree.
+
+The candidate commit must equal the current clean HEAD of this module
+checkout, including for programmatic callers. A failed assembly can leave an
+owned hidden sibling staging directory; the caller destination remains
+unpublished.
+
+For example:
 
 ```powershell
 $candidate = git rev-parse HEAD

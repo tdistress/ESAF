@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import dataclass
+from functools import lru_cache
 import hashlib
 import json
 import os
@@ -19,6 +20,7 @@ if str(ROOT) not in sys.path:
 from tools.crosswalks.catalog import build_catalog
 from tools.crosswalks.digests import snapshot_digest_from_files
 from tools.crosswalks.io import load_yaml_mapping
+from tools.crosswalks.manifest import build_control_manifest, render_manifest
 from tools.crosswalks.validation import ValidationResult
 
 
@@ -102,6 +104,16 @@ def canonical_json_bytes(value: object) -> bytes:
     ).encode("utf-8")
 
 
+@lru_cache(maxsize=None)
+def _deterministic_control_manifest_bytes(
+    commit: str,
+    release: str,
+    tag_alias: str | None,
+) -> bytes:
+    manifest = build_control_manifest(ROOT, commit, release, tag_alias)
+    return render_manifest(manifest).encode("utf-8")
+
+
 def _is_within(path: Path, parent: Path) -> bool:
     try:
         path.relative_to(parent)
@@ -142,6 +154,7 @@ def validate_output_directory(
 class GitReader:
     def __init__(self, root: Path) -> None:
         self.root = root.resolve()
+        self._regular_blobs: set[tuple[str, str]] = set()
 
     def _run(
         self,
@@ -181,12 +194,43 @@ class GitReader:
 
     def read_bytes(self, commit: str, path: str) -> bytes:
         _canonical_relative_path(path, "repository")
+        self._require_regular_blob(commit, path)
         try:
             return self._run("show", f"{commit}:{path}").stdout
         except subprocess.CalledProcessError as error:
             raise ValueError(
                 f"missing tracked file at candidate: {path}"
             ) from error
+
+    def _require_regular_blob(self, commit: str, path: str) -> None:
+        key = (commit, path)
+        if key in self._regular_blobs:
+            return
+        result = self._run(
+            "ls-tree",
+            "-z",
+            commit,
+            "--",
+            path,
+        ).stdout
+        entries = [item for item in result.split(b"\0") if item]
+        if not entries:
+            raise ValueError(f"missing tracked file at candidate: {path}")
+        if len(entries) != 1:
+            raise ValueError(f"unexpected repository entry: {path}")
+        try:
+            header, raw_name = entries[0].split(b"\t", 1)
+            mode, object_type, _object_id = header.split(b" ", 2)
+            name = raw_name.decode("utf-8")
+        except (UnicodeDecodeError, ValueError) as error:
+            raise ValueError("malformed Git tree entry") from error
+        if (
+            name != path
+            or object_type != b"blob"
+            or mode not in {b"100644", b"100755"}
+        ):
+            raise ValueError(f"unexpected repository entry: {name}")
+        self._regular_blobs.add(key)
 
     def list_files(self, commit: str, path: str) -> tuple[str, ...]:
         _canonical_relative_path(path, "repository")
@@ -212,6 +256,7 @@ class GitReader:
                 raise ValueError(f"unexpected repository entry: {name}")
             _canonical_relative_path(name, "repository")
             names.append(name)
+            self._regular_blobs.add((commit, name))
         return tuple(sorted(names))
 
     def require_candidate_execution_state(self, commit: str) -> None:
@@ -477,6 +522,21 @@ def collect_package_files(
         or actual_catalog_digest != pinned_catalog_digest
     ):
         raise ValueError("control catalog digest mismatch")
+    release_id = release.get("id")
+    tag_alias = release.get("tag_alias")
+    if not isinstance(release_id, str) or (
+        tag_alias is not None and not isinstance(tag_alias, str)
+    ):
+        raise ValueError("mapping set ESAF release pin is invalid")
+    expected_manifest = _deterministic_control_manifest_bytes(
+        control_source,
+        release_id,
+        tag_alias,
+    )
+    if manifest_file.content != expected_manifest:
+        raise ValueError(
+            "control manifest differs from deterministic regeneration"
+        )
     controls = manifest.get("controls")
     if not isinstance(controls, list) or not controls:
         raise ValueError("control manifest has no controls")
@@ -784,13 +844,22 @@ def _write_file_exclusively(path: Path, content: bytes) -> None:
         stream.write(content)
 
 
+def _require_generator_execution_state(
+    reader: GitReader,
+    commit: str,
+) -> None:
+    if not isinstance(reader, GitReader) or reader.root != ROOT:
+        raise ValueError("reader root must equal module checkout")
+    GitReader(ROOT).require_candidate_execution_state(commit)
+
+
 def write_package(
     reader: GitReader,
     commit: str,
     profile: MappingProfile,
     output: Path,
 ) -> dict[str, object]:
-    reader.require_candidate_execution_state(commit)
+    _require_generator_execution_state(reader, commit)
     destination = validate_output_directory(output, reader.worktree_roots())
     collected = list(collect_package_files(reader, commit, profile))
     mapping_set_path = f"{profile.snapshot_path}/README.md"
@@ -861,7 +930,7 @@ def write_package(
         staging / "PACKAGE_MANIFEST.json",
         manifest_content,
     )
-    reader.require_candidate_execution_state(commit)
+    _require_generator_execution_state(reader, commit)
     if os.path.lexists(destination):
         raise ValueError("output appeared while package was being assembled")
     staging.rename(destination)
