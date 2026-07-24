@@ -37,14 +37,9 @@ class MappingReviewProtocolTests(unittest.TestCase):
             "AI-produced review",
         ):
             self.assertIn(phrase, text)
+        scope = text.split("## In-scope snapshots\n", 1)[1].split("\n## ", 1)[0]
         self.assertEqual(
-            tuple(
-                re.findall(
-                    r"^- `(uk-ncsc--[^`]+)`$",
-                    text,
-                    flags=re.MULTILINE,
-                )
-            ),
+            tuple(re.findall(r"^- `([^`]+)`$", scope, flags=re.MULTILINE)),
             SET_IDS,
         )
         for population in (

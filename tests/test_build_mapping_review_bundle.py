@@ -12,6 +12,7 @@ from tools.build_mapping_review_bundle import (
     GitReader,
     MappingProfile,
     collect_package_files,
+    parse_front_matter_bytes,
     validate_output_directory,
     write_package,
 )
@@ -214,6 +215,60 @@ class PackagePopulationTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "must remain draft"):
             collect_package_files(MutatingReader(), self.head, profile)
 
+    def test_collector_rejects_reviewer_metadata_on_draft_mapping_set(self) -> None:
+        profile = next(iter(PROFILES.values()))
+        base = self.reader
+
+        class MutatingReader:
+            def resolve_commit(self, revision: str) -> str:
+                return base.resolve_commit(revision)
+
+            def read_bytes(self, commit: str, path: str) -> bytes:
+                content = base.read_bytes(commit, path)
+                if path == f"{profile.snapshot_path}/README.md":
+                    return content.replace(
+                        b"status: draft\n",
+                        b"status: draft\nreviewer: Example Reviewer\n",
+                        1,
+                    )
+                return content
+
+            def list_files(self, commit: str, path: str) -> tuple[str, ...]:
+                return base.list_files(commit, path)
+
+        with self.assertRaisesRegex(ValueError, "must remain draft"):
+            collect_package_files(MutatingReader(), self.head, profile)
+
+    def test_collector_rejects_reviewer_metadata_on_draft_mapping_record(self) -> None:
+        profile = next(iter(PROFILES.values()))
+        base = self.reader
+
+        class MutatingReader:
+            def resolve_commit(self, revision: str) -> str:
+                return base.resolve_commit(revision)
+
+            def read_bytes(self, commit: str, path: str) -> bytes:
+                content = base.read_bytes(commit, path)
+                if (
+                    path.startswith(f"{profile.snapshot_path}/")
+                    and path.endswith(".md")
+                    and not path.endswith("/README.md")
+                    and not path.endswith("/PROVISION_INVENTORY.md")
+                ):
+                    return content.replace(
+                        b'  "status": "draft",\n',
+                        b'  "status": "draft",\n'
+                        b'  "reviewer": {"id": "example-reviewer"},\n',
+                        1,
+                    )
+                return content
+
+            def list_files(self, commit: str, path: str) -> tuple[str, ...]:
+                return base.list_files(commit, path)
+
+        with self.assertRaisesRegex(ValueError, "must remain draft"):
+            collect_package_files(MutatingReader(), self.head, profile)
+
 
 class PackageWriterTests(unittest.TestCase):
     @classmethod
@@ -315,3 +370,74 @@ class PackageWriterTests(unittest.TestCase):
             )
             self.assertEqual(result.returncode, 2)
             self.assertIn("unsupported mapping-set identifier", result.stderr)
+
+
+class PackageIntegrationTests(unittest.TestCase):
+    def test_all_packages_are_separate_complete_and_source_safe(self) -> None:
+        reader = GitReader(ROOT)
+        head = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=ROOT, check=True, capture_output=True, text=True,
+        ).stdout.strip()
+        with tempfile.TemporaryDirectory() as directory:
+            manifests = {}
+            for profile in PROFILES.values():
+                output = Path(directory) / profile.label.replace(" ", "-").lower()
+                manifests[profile.label] = write_package(
+                    reader, head, profile, output
+                )
+                names = {
+                    path.relative_to(output).as_posix()
+                    for path in output.rglob("*") if path.is_file()
+                }
+                self.assertFalse(
+                    any(name.lower().endswith((".pdf", ".doc", ".docx")) for name in names)
+                )
+                index = (output / "PACKAGE_INDEX.md").read_text(encoding="utf-8")
+                self.assertIn(profile.label, index)
+                self.assertIn(profile.direction, index)
+                self.assertIn(f"`{profile.mapping_set_id}`", index)
+                self.assertIn(f"| Candidate commit | `{head}` |", index)
+                self.assertIn(
+                    f"| Expected provisions | {profile.expected_count} |", index
+                )
+                mapping_set = next(
+                    item.content
+                    for item in collect_package_files(reader, head, profile)
+                    if item.path == f"{profile.snapshot_path}/README.md"
+                )
+                metadata, _ = parse_front_matter_bytes(mapping_set)
+                source = metadata["source"]
+                source_version = metadata["source_version"]
+                self.assertIn(
+                    f"| Source version | `{source_version['id']}` ({source_version['label']}) |",
+                    index,
+                )
+                self.assertIn(f"| Official URL | {source['official_url']} |", index)
+                self.assertIn(f"| Access class | `{source['access_class']}` |", index)
+                self.assertIn("obtain authorized access", index)
+                self.assertIn("remains Draft", index)
+                for nonclaim in (
+                    "certification",
+                    "compliance",
+                    "equivalence",
+                    "endorsement",
+                    "approval",
+                    "assurance",
+                ):
+                    self.assertIn(nonclaim, index)
+            self.assertEqual(set(manifests), {"Core", "Plus forward", "Plus reverse"})
+            self.assertEqual(
+                {item["mapping_set_id"] for item in manifests.values()},
+                set(PROFILES),
+            )
+
+    def test_tools_readme_documents_exact_safe_command(self) -> None:
+        text = (ROOT / "tools/README.md").read_text(encoding="utf-8")
+        self.assertIn("## Qualified mapping review packages", text)
+        self.assertIn("build_mapping_review_bundle.py", text)
+        self.assertIn("--commit", text)
+        self.assertIn("--mapping-set-id", text)
+        self.assertIn("--output", text)
+        self.assertIn("outside every Git worktree", text)
+        self.assertIn("does not include the external source document", text)

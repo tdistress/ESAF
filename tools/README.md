@@ -74,3 +74,24 @@ python tools/mermaid_inventory.py --output-dir $renderDirectory --write
 ```
 
 Render each input with `@mermaid-js/mermaid-cli@11.16.0`, then record parse and readability dispositions in the tracked release ledger. Parser success does not replace visual review.
+
+## Qualified mapping review packages
+
+Generate one reviewer package from an exact commit into an empty directory
+outside every Git worktree:
+
+```powershell
+$candidate = git rev-parse HEAD
+$output = Join-Path ([System.IO.Path]::GetTempPath()) "esaf-uk-review-core"
+python tools/build_mapping_review_bundle.py `
+  --commit $candidate `
+  --mapping-set-id uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0 `
+  --output $output
+```
+
+Repeat with each allowlisted mapping-set identifier and a distinct empty
+output directory. Preserve the exact commit and printed manifest SHA-256 in
+the review record.
+
+The package contains tracked ESAF mapping evidence, referenced controls,
+schemas, protocol, and blank worksheets. It does not include the external source document. Reviewers obtain authorized access independently. Package generation does not change Draft lifecycle state or constitute qualified review.
