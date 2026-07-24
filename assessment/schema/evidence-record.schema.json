@@ -134,27 +134,6 @@
         "rationale": { "$ref": "#/$defs/nonEmptyString" }
       }
     },
-    "quality": {
-      "type": "object", "additionalProperties": false,
-      "required": [
-        "relevance", "reliability", "completeness", "timeliness", "attribution",
-        "integrity", "traceability", "sufficiency", "evaluated_by", "evaluated_at",
-        "sufficiency_rationale"
-      ],
-      "properties": {
-        "relevance": { "$ref": "#/$defs/qualityAttribute" },
-        "reliability": { "$ref": "#/$defs/qualityAttribute" },
-        "completeness": { "$ref": "#/$defs/qualityAttribute" },
-        "timeliness": { "$ref": "#/$defs/qualityAttribute" },
-        "attribution": { "$ref": "#/$defs/qualityAttribute" },
-        "integrity": { "$ref": "#/$defs/qualityAttribute" },
-        "traceability": { "$ref": "#/$defs/qualityAttribute" },
-        "sufficiency": { "enum": ["sufficient", "limited", "insufficient"] },
-        "evaluated_by": { "$ref": "#/$defs/person" },
-        "evaluated_at": { "type": "string", "format": "date-time" },
-        "sufficiency_rationale": { "$ref": "#/$defs/nonEmptyString" }
-      }
-    },
     "integrity": {
       "oneOf": [
         {

@@ -43,6 +43,12 @@ QUALITY_ATTRIBUTES = (
     "integrity",
     "traceability",
 )
+QUALITY_FIELDS = QUALITY_ATTRIBUTES + (
+    "sufficiency",
+    "evaluated_by",
+    "evaluated_at",
+    "sufficiency_rationale",
+)
 METHODS = ("Examine", "Interview", "Test", "Observe")
 DETERMINATIONS = (
     "satisfied",
@@ -202,10 +208,91 @@ class AssessmentSchemaTests(unittest.TestCase):
                 self.assertEqual(example["example_notice"], notice)
 
     def test_evidence_schema_requires_every_quality_attribute(self) -> None:
-        required = set(
-            self.schemas["evidence-record"]["properties"]["quality"]["required"]
+        quality = self.schemas["evidence-record"]["properties"]["quality"]
+        self.assertCountEqual(quality["required"], QUALITY_FIELDS)
+        self.assertCountEqual(quality["properties"], QUALITY_FIELDS)
+
+    def test_evidence_schema_has_no_unused_quality_definition(self) -> None:
+        self.assertNotIn("quality", self.schemas["evidence-record"]["$defs"])
+
+    def test_evidence_schema_accepts_each_period_and_integrity_alternative(self) -> None:
+        validator = Draft202012Validator(
+            self.schemas["evidence-record"], format_checker=FormatChecker()
         )
-        self.assertTrue(set(QUALITY_ATTRIBUTES).issubset(required))
+        fixtures = (
+            (
+                "point-in-time period with digest integrity",
+                {"point_in_time": "2026-06-30T23:59:59Z"},
+                {
+                    "digest_algorithm": "sha-256",
+                    "digest": "0123456789abcdef" * 4,
+                },
+            ),
+            (
+                "inclusive range with protected-record integrity",
+                {
+                    "start": "2026-04-01T00:00:00Z",
+                    "end": "2026-06-30T23:59:59Z",
+                },
+                {
+                    "protected_record_locator": "example://protected/evidence-record",
+                    "verification_method": "Verify the immutable record's access log.",
+                },
+            ),
+        )
+        for name, period, integrity in fixtures:
+            with self.subTest(name=name):
+                evidence = json.loads(json.dumps(self.examples["evidence-record"]))
+                evidence["period"] = period
+                evidence["integrity"] = integrity
+                self.assertEqual(list(validator.iter_errors(evidence)), [])
+
+    def test_evidence_schema_rejects_invalid_period_and_integrity_alternatives(self) -> None:
+        validator = Draft202012Validator(
+            self.schemas["evidence-record"], format_checker=FormatChecker()
+        )
+        fixtures = (
+            (
+                "invalid point-in-time period",
+                {
+                    "point_in_time": "2026-06-30T23:59:59Z",
+                    "start": "2026-04-01T00:00:00Z",
+                },
+                {
+                    "digest_algorithm": "sha-256",
+                    "digest": "0123456789abcdef" * 4,
+                },
+            ),
+            (
+                "invalid inclusive range",
+                {
+                    "start": "2026-04-01T00:00:00Z",
+                },
+                {
+                    "protected_record_locator": "example://protected/evidence-record",
+                    "verification_method": "Verify the immutable record's access log.",
+                },
+            ),
+            (
+                "invalid digest integrity",
+                {"point_in_time": "2026-06-30T23:59:59Z"},
+                {"digest_algorithm": "sha-256", "digest": "not-a-digest"},
+            ),
+            (
+                "invalid protected-record integrity",
+                {
+                    "start": "2026-04-01T00:00:00Z",
+                    "end": "2026-06-30T23:59:59Z",
+                },
+                {"protected_record_locator": "example://protected/evidence-record"},
+            ),
+        )
+        for name, period, integrity in fixtures:
+            with self.subTest(name=name):
+                evidence = json.loads(json.dumps(self.examples["evidence-record"]))
+                evidence["period"] = period
+                evidence["integrity"] = integrity
+                self.assertTrue(list(validator.iter_errors(evidence)))
 
     def test_schema_enumerations_match_the_normative_contract(self) -> None:
         evidence = self.schemas["evidence-record"]
@@ -214,6 +301,22 @@ class AssessmentSchemaTests(unittest.TestCase):
         self.assertEqual(
             evidence["$defs"]["qualityRating"]["enum"],
             ["adequate", "limited", "inadequate", "not_evaluated"],
+        )
+        self.assertEqual(
+            evidence["properties"]["evidence_type"]["enum"],
+            [
+                "policy", "procedure", "record", "configuration", "log",
+                "technical_test", "observation", "interview", "metric", "contract",
+                "external_assurance", "other",
+            ],
+        )
+        self.assertEqual(
+            evidence["properties"]["quality"]["properties"]["sufficiency"]["enum"],
+            ["sufficient", "limited", "insufficient"],
+        )
+        self.assertEqual(
+            result["$defs"]["method"]["properties"]["method"]["enum"],
+            list(METHODS),
         )
         self.assertEqual(
             result["properties"]["determination"]["enum"],
