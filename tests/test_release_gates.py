@@ -419,6 +419,24 @@ class ReleaseGateTests(unittest.TestCase):
                 record[key] = value
                 self.assertTrue(validate_record(ROOT, record))
 
+    def test_candidate_records_reject_published_sha_fields(self) -> None:
+        for phase, record in (
+            ("evidence_candidate", valid_record()),
+            ("closure_candidate", closure_record()),
+        ):
+            with self.subTest(phase=phase):
+                record["publication"]["tag_object"] = PUBLISHED_TAG_OBJECT
+                record["publication"]["tagged_commit"] = PUBLISHED_COMMIT
+                errors = validate_record(ROOT, record)
+                self.assertIn(
+                    "publication.tag_object: tracked record shall not contain a 40-character SHA",
+                    errors,
+                )
+                self.assertIn(
+                    "publication.tagged_commit: tracked record shall not contain SHA fields",
+                    errors,
+                )
+
     def test_closed_gate_requires_nonempty_stable_evidence_locator(self) -> None:
         record = valid_record()
         record["gates"]["technical"] = {"state": "closed", "evidence": []}

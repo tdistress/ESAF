@@ -219,7 +219,7 @@ def validate_record(root: Path, record: dict[str, object]) -> list[str]:
             if phase == "published" and gate["state"] != "closed":
                 errors.append(f"{gate_id}: published gate shall be closed")
     for path, value in flattened_items(record):
-        if path in PUBLISHED_SHA_PATHS:
+        if phase == "published" and path in PUBLISHED_SHA_PATHS:
             if value != PUBLISHED_SHA_PATHS[path]:
                 errors.append(f"{path}: published identifier is invalid")
             continue
