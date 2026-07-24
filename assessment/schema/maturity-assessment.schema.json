@@ -72,8 +72,18 @@
       "properties": {
         "maturity_ref": { "type": "string", "pattern": "^MAT-[A-Z0-9][A-Z0-9-]*$" },
         "level": { "enum": ["M0", "M1", "M2", "M3", "M4"] },
-        "applicability": { "enum": ["applicable", "not_applicable", "not_assessed"] }
-      }
+        "applicability": { "enum": ["applicable", "not_applicable", "not_assessed"] },
+        "rationale": { "$ref": "#/$defs/nonEmptyString" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "applicability": { "const": "not_applicable" } },
+            "required": ["applicability"]
+          },
+          "then": { "required": ["rationale"] }
+        }
+      ]
     },
     "change": {
       "type": "object", "additionalProperties": false,

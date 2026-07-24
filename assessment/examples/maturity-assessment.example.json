@@ -35,13 +35,6 @@
   "limitations": [
     "This fictional maturity example does not assess an organization or establish any assurance outcome."
   ],
-  "component_results": [
-    {
-      "maturity_ref": "MAT-EXAMPLE-CHANGE-MANAGEMENT",
-      "level": "M1",
-      "applicability": "applicable"
-    }
-  ],
   "change_history": [
     {
       "version": "0.1.0",

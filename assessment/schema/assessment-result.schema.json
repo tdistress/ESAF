@@ -19,7 +19,7 @@
     "assessor": { "$ref": "#/$defs/person" },
     "assessment_scope": { "$ref": "#/$defs/assessmentScope" },
     "methods": {
-      "type": "array", "minItems": 1, "uniqueItems": true,
+      "type": "array", "uniqueItems": true,
       "items": { "$ref": "#/$defs/method" }
     },
     "time_boundary": { "$ref": "#/$defs/timeBoundary" },
@@ -46,6 +46,18 @@
     }
   },
   "allOf": [
+    {
+      "if": {
+        "properties": { "determination": { "const": "not_assessed" } },
+        "required": ["determination"]
+      },
+      "else": {
+        "properties": {
+          "methods": { "minItems": 1 },
+          "evidence_refs": { "minItems": 1 }
+        }
+      }
+    },
     {
       "if": { "properties": { "determination": { "const": "not_applicable" } }, "required": ["determination"] },
       "then": { "required": ["applicability_rationale", "applicability_approver"] },
@@ -113,7 +125,7 @@
       }
     },
     "evidenceRefs": {
-      "type": "array", "minItems": 1, "uniqueItems": true,
+      "type": "array", "uniqueItems": true,
       "items": { "type": "string", "pattern": "^EVD-[A-Z0-9][A-Z0-9-]*$" }
     },
     "finding": {
@@ -128,7 +140,7 @@
         "status": { "enum": ["open", "resolved", "accepted"] },
         "affected_requirement_ids": { "$ref": "#/$defs/requirementIds" },
         "statement": { "$ref": "#/$defs/nonEmptyString" },
-        "evidence_refs": { "$ref": "#/$defs/evidenceRefs" },
+        "evidence_refs": { "$ref": "#/$defs/evidenceRefs", "minItems": 1 },
         "owner": { "$ref": "#/$defs/owner" },
         "disposition": { "$ref": "#/$defs/disposition" },
         "identified_at": { "type": "string", "format": "date-time" },
