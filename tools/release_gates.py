@@ -77,6 +77,22 @@ RELEASE_PLAN_MARKERS = (
     "Architecture content is complete only at Draft level. Publication gates remain Open.",
     "0.4-alpha shall not be tagged or represented as released.",
 )
+PUBLISHED_DATE = "2026-07-23"
+PUBLISHED_TAG_OBJECT = "2cd1cf847fdb13a8b3323f62387ad5dabc5bd41f"
+PUBLISHED_COMMIT = "8abfe5a85db19d11295a0c3debeb2d58109b0ca7"
+PUBLISHED_EVIDENCE = (
+    "https://github.com/tdistress/ESAF/issues/39#issuecomment-5064098764"
+)
+PUBLISHED_SHA_PATHS = {
+    "publication.tag_object": PUBLISHED_TAG_OBJECT,
+    "publication.tagged_commit": PUBLISHED_COMMIT,
+}
+PUBLISHED_RELEASE_PLAN_MARKERS = (
+    "## 0.4-alpha publication",
+    "Publication gates are Closed.",
+    PUBLISHED_EVIDENCE,
+    PUBLISHED_COMMIT,
+)
 
 
 def load_front_matter(path: Path) -> dict[str, object]:
@@ -143,23 +159,45 @@ def validate_record(root: Path, record: dict[str, object]) -> list[str]:
         errors.append("issue shall equal 39")
     if record.get("repository_scope") != REPOSITORY_SCOPE:
         errors.append("repository scope shall equal complete_git_tracked_repository")
-    if record.get("phase") not in {"evidence_candidate", "closure_candidate"}:
-        errors.append("phase shall be evidence_candidate or closure_candidate")
+    phase = record.get("phase")
+    if phase not in {"evidence_candidate", "closure_candidate", "published"}:
+        errors.append(
+            "phase shall be evidence_candidate, closure_candidate, or published"
+        )
     publication = record.get("publication")
     if not isinstance(publication, dict) or publication.get("condition") != PUBLICATION_CONDITION:
         errors.append("publication condition is invalid")
-    elif record.get("phase") == "evidence_candidate" and publication.get("date") is not None:
+    elif phase == "evidence_candidate" and publication.get("date") is not None:
         errors.append("evidence candidate shall not have a publication date")
-    elif record.get("phase") == "closure_candidate" and not re.fullmatch(r"\d{4}-\d{2}-\d{2}", _date_text(publication.get("date")) or ""):
+    elif phase == "closure_candidate" and not re.fullmatch(r"\d{4}-\d{2}-\d{2}", _date_text(publication.get("date")) or ""):
         errors.append("closure candidate shall have an ISO publication date")
-    if record.get("phase") == "closure_candidate" and record.get("mapping_decision_basis") not in MAPPING_DECISION_BASES:
+    elif phase == "published":
+        if _date_text(publication.get("date")) != PUBLISHED_DATE:
+            errors.append("published date shall equal 2026-07-23")
+        if publication.get("tag_object") != PUBLISHED_TAG_OBJECT:
+            errors.append("published tag object is invalid")
+        if publication.get("tagged_commit") != PUBLISHED_COMMIT:
+            errors.append("published tagged commit is invalid")
+        if publication.get("evidence") != PUBLISHED_EVIDENCE:
+            errors.append("published evidence locator is invalid")
+    if phase == "closure_candidate" and record.get("mapping_decision_basis") not in MAPPING_DECISION_BASES:
         errors.append("closure candidate mapping_decision_basis shall be supported")
+    if phase == "published" and record.get("mapping_decision_basis") != "owner_risk_acceptance":
+        errors.append(
+            "published mapping_decision_basis shall equal owner_risk_acceptance"
+        )
     version = (root / "VERSION.md").read_text(encoding="utf-8")
     if "Current Version: **0.4-alpha**" not in version or "Status: **Working Draft**" not in version:
         errors.append("VERSION.md current version shall equal 0.4-alpha")
     release_plan = (root / "project/RELEASE_PLAN.md").read_text(encoding="utf-8")
-    if not all(marker in release_plan for marker in RELEASE_PLAN_MARKERS):
-        errors.append("project/RELEASE_PLAN.md shall preserve the 0.4-alpha Draft release plan")
+    release_plan_markers = (
+        PUBLISHED_RELEASE_PLAN_MARKERS if phase == "published" else RELEASE_PLAN_MARKERS
+    )
+    if not all(marker in release_plan for marker in release_plan_markers):
+        if phase == "published":
+            errors.append("project/RELEASE_PLAN.md shall preserve the 0.4-alpha published release plan")
+        else:
+            errors.append("project/RELEASE_PLAN.md shall preserve the 0.4-alpha Draft release plan")
     try:
         if not set(REQUIRED_SCOPE_INPUTS).issubset(_tracked_paths(root)):
             errors.append("required release-scope inputs shall be Git-tracked")
@@ -182,7 +220,13 @@ def validate_record(root: Path, record: dict[str, object]) -> list[str]:
                 errors.append(f"{gate_id}: {gate['state']} gate requires evidence")
             elif gate["state"] in {"ready", "closed"} and any(not _https(locator) for locator in evidence):
                 errors.append(f"{gate_id}: evidence shall contain HTTPS locators")
+            if phase == "published" and gate["state"] != "closed":
+                errors.append(f"{gate_id}: published gate shall be closed")
     for path, value in flattened_items(record):
+        if phase == "published" and path in PUBLISHED_SHA_PATHS:
+            if value != PUBLISHED_SHA_PATHS[path]:
+                errors.append(f"{path}: published identifier is invalid")
+            continue
         if "sha" in path.casefold() or "commit" in path.casefold():
             errors.append(f"{path}: tracked record shall not contain SHA fields")
         if isinstance(value, str) and SHA_RE.search(value):
@@ -603,13 +647,16 @@ def main(argv: list[str] | None = None) -> int:
             if record.get("phase") != "evidence_candidate" or args.phase in {"closure", "taggable"}:
                 errors.append(f"baseline record could not be loaded: {exc}")
     if args.external_evidence:
-        try:
-            evidence = json.loads(args.external_evidence.read_text(encoding="utf-8"))
-            if not isinstance(evidence, dict):
-                raise ValueError("external evidence shall be a JSON object")
-            errors.extend(validate_external_evidence(record, evidence, args.expected_head, args.phase))
-        except (OSError, json.JSONDecodeError, ValueError) as exc:
-            errors.append(f"external evidence could not be loaded: {exc}")
+        if record.get("phase") == "published":
+            errors.append("external evidence is not accepted for a published record")
+        else:
+            try:
+                evidence = json.loads(args.external_evidence.read_text(encoding="utf-8"))
+                if not isinstance(evidence, dict):
+                    raise ValueError("external evidence shall be a JSON object")
+                errors.extend(validate_external_evidence(record, evidence, args.expected_head, args.phase))
+            except (OSError, json.JSONDecodeError, ValueError) as exc:
+                errors.append(f"external evidence could not be loaded: {exc}")
     for error in errors:
         print(error)
     return 0 if not errors else 1

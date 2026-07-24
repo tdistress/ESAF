@@ -773,7 +773,7 @@ class CyberEssentialsPlusExternalToEsafMappingTests(unittest.TestCase):
             backlog,
         )
         self.assertIn(
-            "Obtain qualified human review for Cyber Essentials core v3.3.",
+            "Complete coordinated qualified review of all three UK mapping snapshots",
             backlog,
         )
         self.assertTrue(TRACEABILITY.is_file())
