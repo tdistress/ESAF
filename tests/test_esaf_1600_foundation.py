@@ -428,6 +428,7 @@ class Esaf1600FoundationTests(unittest.TestCase):
             "project/**",
             "docs/superpowers/reviews/**",
             "architectures/**",
+            "assessment/**",
             "controls/**",
             "crosswalks/**",
             "tests/**",
@@ -436,6 +437,7 @@ class Esaf1600FoundationTests(unittest.TestCase):
             "tools/mermaid_inventory.py",
             "tools/validate_links.py",
             "tools/validate_architectures.py",
+            "tools/validate_assessment.py",
             "tools/validate_controls.py",
             "tools/validate_crosswalks.py",
             "requirements-dev.txt",
@@ -550,6 +552,9 @@ class Esaf1600FoundationTests(unittest.TestCase):
 
         active_runs = [step.get("run") for step in steps]
         self.assertEqual(active_runs.count("python tools/validate_architectures.py"), 1)
+        self.assertEqual(
+            active_runs.count("python tools/validate_assessment.py --check"), 1
+        )
         self.assertEqual(active_runs.count("python tools/validate_controls.py --check"), 1)
         crosswalk_runs = [
             (step["run"], step.get("if", ""))

@@ -51,6 +51,16 @@ The mapper and reviewer shall be different people. The rights reviewer shall als
 
 ---
 
+## Assessment Contributions
+
+Assessment-guide, schema, or example changes shall include:
+
+```shell
+python tools/validate_assessment.py --check
+```
+
+---
+
 ## Review Process
 
 Proposed changes should move through:

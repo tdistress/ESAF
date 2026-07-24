@@ -34,6 +34,8 @@ These instructions preserve durable project conventions for future Codex develop
 
 - Run focused tests for the artifact being changed.
 - Run the full test suite with `python -m unittest discover -s tests -v`.
+- Run `python tools/validate_assessment.py --check` when assessment content,
+  schemas, examples, or their references may be affected.
 - Run `python tools/validate_controls.py --check` when controls or their references may be affected.
 - Run `python tools/validate_architectures.py` when architecture content or links may be affected.
 - Run ordinary working-tree checks such as `git diff --check` during development, then run `git diff --check <merge-base>..HEAD` for final whole-branch review; ensure generated caches or build outputs are not committed.

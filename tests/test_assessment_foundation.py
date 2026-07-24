@@ -116,6 +116,45 @@ class AssessmentFoundationTests(unittest.TestCase):
         self.assertIn("Numeric averaging", section)
         self.assertIn("not-assessed components", section)
 
+    def test_repository_indexes_link_the_normative_guide(self) -> None:
+        expected = {
+            "README.md": "[ESAF-1500](assessment/ESAF-1500.md)",
+            "assessment/README.md": "[ESAF-1500](ESAF-1500.md)",
+            "framework/ESAF-1000.md": "[ESAF-1500](../assessment/ESAF-1500.md)",
+            "controls/ESAF-1100.md": "[ESAF-1500](../assessment/ESAF-1500.md)",
+            "profiles/README.md": "[ESAF-1500](../assessment/ESAF-1500.md)",
+        }
+        for relative, marker in expected.items():
+            with self.subTest(relative=relative):
+                self.assertIn(marker, (ROOT / relative).read_text(encoding="utf-8"))
+
+    def test_tools_and_contributing_document_the_validator(self) -> None:
+        for relative in ("tools/README.md", "CONTRIBUTING.md", "AGENTS.md"):
+            with self.subTest(relative=relative):
+                self.assertIn(
+                    "python tools/validate_assessment.py --check",
+                    (ROOT / relative).read_text(encoding="utf-8"),
+                )
+
+    def test_ci_runs_assessment_validation_for_assessment_changes(self) -> None:
+        workflow = (
+            ROOT / ".github/workflows/catalog-validation.yml"
+        ).read_text(encoding="utf-8")
+        self.assertEqual(workflow.count('- "assessment/**"'), 2)
+        self.assertEqual(workflow.count('- "tools/validate_assessment.py"'), 2)
+        self.assertIn("run: python tools/validate_assessment.py --check", workflow)
+
+    def test_profile_contract_cannot_define_local_maturity_scale(self) -> None:
+        profile = (ROOT / "profiles/README.md").read_text(encoding="utf-8")
+        self.assertIn("shall reuse", profile)
+        self.assertIn(
+            "shall not define a profile-local replacement maturity scale", profile
+        )
+
+    def test_completed_foundation_is_removed_from_backlog(self) -> None:
+        backlog = (ROOT / "project/BACKLOG.md").read_text(encoding="utf-8")
+        self.assertNotIn("Define the minimum ESAF-1500 assessment foundation", backlog)
+
 
 class AssessmentSchemaTests(unittest.TestCase):
     def setUp(self) -> None:

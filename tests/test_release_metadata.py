@@ -338,11 +338,11 @@ class ReleaseMetadataTests(unittest.TestCase):
             backlog.count("Complete coordinated qualified review"),
         )
         review = backlog.index("Complete coordinated qualified review")
-        assessment = backlog.index("Define the minimum ESAF-1500 assessment foundation")
         profile = backlog.index("Select and publish one Draft pilot")
         pci = backlog.index("Complete PCI DSS source readiness")
-        self.assertLess(review, assessment)
-        self.assertLess(assessment, profile)
+        self.assertNotIn("Define the minimum ESAF-1500 assessment foundation", backlog)
+        self.assertIn("after the minimum ESAF-1500 assessment foundation is complete", backlog)
+        self.assertLess(review, profile)
         self.assertLess(profile, pci)
         self.assertNotIn("This supersedes the former initiative", backlog)
 
