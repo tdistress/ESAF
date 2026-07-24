@@ -9,6 +9,11 @@ import re
 import subprocess
 import sys
 
+
+ROOT = Path(__file__).absolute().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 from tools.crosswalks.io import load_yaml_mapping
 
 
@@ -68,6 +73,38 @@ def parse_front_matter_bytes(content: bytes) -> tuple[dict[str, object], str]:
     if len(parts) != 3:
         raise ValueError("malformed YAML front matter")
     return load_yaml_mapping(parts[1]), parts[2]
+
+
+def canonical_json_bytes(value: object) -> bytes:
+    return (
+        json.dumps(
+            value,
+            ensure_ascii=False,
+            sort_keys=True,
+            indent=2,
+            allow_nan=False,
+        )
+        + "\n"
+    ).encode("utf-8")
+
+
+def _is_within(path: Path, parent: Path) -> bool:
+    try:
+        path.relative_to(parent)
+        return True
+    except ValueError:
+        return False
+
+
+def validate_output_directory(
+    output: Path, worktrees: tuple[Path, ...]
+) -> Path:
+    resolved = output.resolve()
+    if any(_is_within(resolved, root) for root in worktrees):
+        raise ValueError("output must be outside every Git worktree")
+    if resolved.exists() and any(resolved.iterdir()):
+        raise ValueError("existing output directory must be empty")
+    return resolved
 
 
 class GitReader:
@@ -313,3 +350,137 @@ def collect_package_files(
     if len(paths) != len(set(paths)):
         raise ValueError("duplicate package path")
     return tuple(sorted(files, key=lambda item: item.path))
+
+
+def render_package_index(
+    profile: MappingProfile,
+    commit: str,
+    mapping_set_content: bytes,
+) -> bytes:
+    metadata, _ = parse_front_matter_bytes(mapping_set_content)
+    source = metadata["source"]
+    rights = metadata["publication_rights"]
+    source_version = metadata["source_version"]
+    text = f"""# {profile.label} Qualified-Review Package
+
+| Field | Value |
+|---|---|
+| Mapping-set identifier | `{profile.mapping_set_id}` |
+| Direction | `{profile.direction}` |
+| Candidate commit | `{commit}` |
+| Expected provisions | {profile.expected_count} |
+| Source version | `{source_version["id"]}` ({source_version["label"]}) |
+| Official URL | {source["official_url"]} |
+| Access class | `{source["access_class"]}` |
+
+## Publication-rights boundary
+
+**Basis:** {rights["basis"]}
+
+**Restrictions:** {rights["restrictions"]}
+
+External source documents are not included. The reviewer must independently
+obtain authorized access to the exact source and attest to that access.
+
+## Lifecycle and assurance boundary
+
+This package does not establish qualified review, certification, compliance,
+equivalence, endorsement, approval, or assurance. The mapping remains Draft.
+"""
+    return text.encode("utf-8")
+
+
+def write_package(
+    reader: GitReader,
+    commit: str,
+    profile: MappingProfile,
+    output: Path,
+) -> dict[str, object]:
+    destination = validate_output_directory(output, reader.worktree_roots())
+    collected = list(collect_package_files(reader, commit, profile))
+    mapping_set_path = f"{profile.snapshot_path}/README.md"
+    mapping_set_content = next(
+        item.content for item in collected
+        if item.path == mapping_set_path
+    )
+    collected.append(
+        PackageFile(
+            "PACKAGE_INDEX.md",
+            render_package_index(profile, commit, mapping_set_content),
+            "package index",
+        )
+    )
+    collected.sort(key=lambda item: item.path)
+    destination.mkdir(parents=True, exist_ok=True)
+    manifest_files: list[dict[str, object]] = []
+    for item in collected:
+        relative = Path(item.path)
+        if relative.is_absolute() or ".." in relative.parts:
+            raise ValueError(f"unsafe package path: {item.path}")
+        target = destination / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_bytes(item.content)
+        manifest_files.append(
+            {
+                "path": item.path,
+                "purpose": item.purpose,
+                "bytes": len(item.content),
+                "sha256": hashlib.sha256(item.content).hexdigest(),
+            }
+        )
+    manifest: dict[str, object] = {
+        "schema_version": "1.0.0",
+        "generator_version": GENERATOR_VERSION,
+        "mapping_set_id": profile.mapping_set_id,
+        "package_label": profile.label,
+        "direction": profile.direction,
+        "expected_provision_count": profile.expected_count,
+        "candidate_commit": commit,
+        "files": manifest_files,
+    }
+    (destination / "PACKAGE_MANIFEST.json").write_bytes(
+        canonical_json_bytes(manifest)
+    )
+    return manifest
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--commit", required=True)
+    parser.add_argument("--mapping-set-id", required=True)
+    parser.add_argument("--output", type=Path, required=True)
+    args = parser.parse_args(argv)
+    try:
+        root = Path(
+            subprocess.run(
+                ["git", "rev-parse", "--show-toplevel"],
+                check=True, capture_output=True, text=True,
+            ).stdout.strip()
+        )
+        reader = GitReader(root)
+        commit = reader.resolve_commit(args.commit)
+        try:
+            profile = PROFILES[args.mapping_set_id]
+        except KeyError as error:
+            raise ValueError("unsupported mapping-set identifier") from error
+        output = validate_output_directory(
+            args.output, reader.worktree_roots()
+        )
+        write_package(reader, commit, profile, output)
+        report = {
+            "candidate_commit": commit,
+            "mapping_set_id": profile.mapping_set_id,
+            "output": str(output),
+            "manifest_sha256": hashlib.sha256(
+                (output / "PACKAGE_MANIFEST.json").read_bytes()
+            ).hexdigest(),
+        }
+        print(json.dumps(report, sort_keys=True))
+        return 0
+    except Exception as error:
+        print(error, file=sys.stderr)
+        return 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

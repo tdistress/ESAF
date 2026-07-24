@@ -12,6 +12,8 @@ from tools.build_mapping_review_bundle import (
     GitReader,
     MappingProfile,
     collect_package_files,
+    validate_output_directory,
+    write_package,
 )
 
 
@@ -211,3 +213,105 @@ class PackagePopulationTests(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "must remain draft"):
             collect_package_files(MutatingReader(), self.head, profile)
+
+
+class PackageWriterTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.reader = GitReader(ROOT)
+        cls.head = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=ROOT, check=True, capture_output=True, text=True,
+        ).stdout.strip()
+        cls.profile = PROFILES[
+            "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0"
+        ]
+
+    def test_two_runs_are_byte_identical(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            first = root / "first"
+            second = root / "second"
+            first_manifest = write_package(
+                self.reader, self.head, self.profile, first
+            )
+            second_manifest = write_package(
+                self.reader, self.head, self.profile, second
+            )
+            self.assertEqual(first_manifest, second_manifest)
+            first_files = {
+                path.relative_to(first).as_posix(): path.read_bytes()
+                for path in first.rglob("*") if path.is_file()
+            }
+            second_files = {
+                path.relative_to(second).as_posix(): path.read_bytes()
+                for path in second.rglob("*") if path.is_file()
+            }
+            self.assertEqual(first_files, second_files)
+            self.assertIn("PACKAGE_INDEX.md", first_files)
+            self.assertIn("PACKAGE_MANIFEST.json", first_files)
+
+    def test_manifest_covers_every_payload_file(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "package"
+            manifest = write_package(
+                self.reader, self.head, self.profile, output
+            )
+            listed = {item["path"] for item in manifest["files"]}
+            actual_payload = {
+                path.relative_to(output).as_posix()
+                for path in output.rglob("*")
+                if path.is_file() and path.name != "PACKAGE_MANIFEST.json"
+            }
+            self.assertEqual(listed, actual_payload)
+            for item in manifest["files"]:
+                content = (output / item["path"]).read_bytes()
+                self.assertEqual(item["bytes"], len(content))
+                self.assertEqual(
+                    item["sha256"], hashlib.sha256(content).hexdigest()
+                )
+
+    def test_rejects_worktree_and_nonempty_output(self) -> None:
+        with self.assertRaisesRegex(ValueError, "outside every Git worktree"):
+            validate_output_directory(
+                ROOT / "review-output",
+                self.reader.worktree_roots(),
+            )
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "existing"
+            output.mkdir()
+            (output / "keep.txt").write_text("keep", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "empty"):
+                validate_output_directory(output, ())
+
+    def test_cli_writes_one_allowlisted_package(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "package"
+            result = subprocess.run(
+                [
+                    "python", str(ROOT / "tools/build_mapping_review_bundle.py"),
+                    "--commit", self.head,
+                    "--mapping-set-id", self.profile.mapping_set_id,
+                    "--output", str(output),
+                ],
+                cwd=ROOT, capture_output=True, text=True,
+            )
+            self.assertEqual(result.returncode, 0, result.stderr)
+            report = json.loads(result.stdout)
+            self.assertEqual(report["candidate_commit"], self.head)
+            self.assertEqual(report["mapping_set_id"], self.profile.mapping_set_id)
+            self.assertEqual(len(report["manifest_sha256"]), 64)
+
+    def test_cli_rejects_unknown_mapping_set(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            result = subprocess.run(
+                [
+                    "python", str(ROOT / "tools/build_mapping_review_bundle.py"),
+                    "--commit", self.head,
+                    "--mapping-set-id", "unknown",
+                    "--output", str(Path(directory) / "package"),
+                ],
+                cwd=ROOT, capture_output=True, text=True,
+            )
+            self.assertEqual(result.returncode, 2)
+            self.assertIn("unsupported mapping-set identifier", result.stderr)
