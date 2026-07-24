@@ -8,6 +8,7 @@ import shutil
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from tests import profile_fixture
 from tools import validate_profiles
@@ -282,6 +283,24 @@ class ProfileValidationTests(unittest.TestCase):
         path.write_text(text, encoding="utf-8", newline="\n")
         self.assert_has_error("registry lifecycle status is 'approved'")
 
+    def test_registry_os_error_does_not_disclose_host_path(self) -> None:
+        with mock.patch.object(
+            validate_profiles,
+            "registry_metadata",
+            side_effect=OSError(f"cannot read {self.root}"),
+        ):
+            diagnostics = validate_profiles.validate(self.root)
+        matching = [
+            error
+            for error in diagnostics
+            if "cannot load registry metadata" in error
+        ]
+        self.assertTrue(matching, diagnostics)
+        self.assertTrue(
+            all(str(self.root) not in error for error in matching),
+            matching,
+        )
+
     def test_fourth_mapping_reference_is_rejected(self) -> None:
         document = self.load_component("external-references.json")
         extra = dict(document["external_references"][0])
@@ -344,6 +363,46 @@ class ProfileValidationTests(unittest.TestCase):
         )
         self.assert_has_error("prohibited control weakening language")
 
+    def test_unrelated_denial_does_not_mask_later_control_weakening(self) -> None:
+        for conjunction in ("and", ", and"):
+            with self.subTest(conjunction=conjunction):
+                (self.package / "README.md").write_text(
+                    "# Synthetic profile\n\n"
+                    "This profile does not replace its title "
+                    f"{conjunction} replaces core controls.\n",
+                    encoding="utf-8",
+                )
+                self.assert_has_error("prohibited control weakening language")
+
+    def test_common_affirmative_control_weakening_is_rejected(self) -> None:
+        for text in (
+            "This profile replaces core controls.",
+            "This profile alters core controls.",
+            "This profile relaxes core control requirements.",
+            "This profile makes core controls optional.",
+        ):
+            with self.subTest(text=text):
+                (self.package / "README.md").write_text(
+                    f"# Synthetic profile\n\n{text}\n",
+                    encoding="utf-8",
+                )
+                self.assert_has_error("prohibited control weakening language")
+
+    def test_explicit_control_weakening_denials_are_allowed(self) -> None:
+        for text in (
+            "This profile does not replace core controls.",
+            "No profile alters core controls.",
+            "This profile does not relax or make core controls optional.",
+            "This profile replaces no core controls.",
+            "This profile replaces neither core control.",
+        ):
+            with self.subTest(text=text):
+                (self.package / "README.md").write_text(
+                    f"# Synthetic profile\n\n{text}\n",
+                    encoding="utf-8",
+                )
+                self.assertEqual(validate_profiles.validate(self.root), [])
+
     def test_profile_local_maturity_scale_is_rejected(self) -> None:
         package = self.loaded_package()
         package.documents["profile"]["nested"] = {
@@ -376,6 +435,27 @@ class ProfileValidationTests(unittest.TestCase):
                 )
                 self.assert_has_error(f"prohibited assertion '{expected}'")
 
+    def test_common_affirmative_profile_claim_variants_are_rejected(self) -> None:
+        for text, expected in (
+            ("This profile provides legal sufficiency.", "legal sufficiency"),
+            ("This profile is externally approved.", "external approval"),
+            (
+                "This profile demonstrates production readiness.",
+                "production readiness",
+            ),
+            ("This profile is ready for production.", "production readiness"),
+            ("This profile is compliant.", "compliance"),
+            ("This profile is certified.", "certification"),
+            ("This profile is equivalent.", "equivalence"),
+            ("This profile is endorsed.", "endorsement"),
+        ):
+            with self.subTest(text=text):
+                (self.package / "README.md").write_text(
+                    f"# Synthetic profile\n\n{text}\n",
+                    encoding="utf-8",
+                )
+                self.assert_has_error(f"prohibited assertion '{expected}'")
+
     def test_explicit_claim_denial_is_allowed(self) -> None:
         (self.package / "README.md").write_text(
             "# Synthetic profile\n\n"
@@ -384,6 +464,20 @@ class ProfileValidationTests(unittest.TestCase):
         )
         self.assertEqual(validate_profiles.validate(self.root), [])
 
+    def test_profile_specific_claim_denials_are_allowed(self) -> None:
+        for text in (
+            "This profile is not legally sufficient.",
+            "This profile does not have external approval.",
+            "This profile is not production ready.",
+            "This profile does not certify compliance.",
+        ):
+            with self.subTest(text=text):
+                (self.package / "README.md").write_text(
+                    f"# Synthetic profile\n\n{text}\n",
+                    encoding="utf-8",
+                )
+                self.assertEqual(validate_profiles.validate(self.root), [])
+
     def test_metalinguistic_claim_quotation_is_allowed(self) -> None:
         (self.package / "README.md").write_text(
             "# Synthetic profile\n\n"
@@ -391,6 +485,25 @@ class ProfileValidationTests(unittest.TestCase):
             encoding="utf-8",
         )
         self.assertEqual(validate_profiles.validate(self.root), [])
+
+    def test_profile_specific_claim_quotations_are_allowed(self) -> None:
+        for phrase in (
+            "legally sufficient",
+            "has external approval",
+            "production ready",
+            "certifies compliance",
+            "is compliant",
+            "is certified",
+            "is equivalent",
+            "is endorsed",
+        ):
+            with self.subTest(phrase=phrase):
+                (self.package / "README.md").write_text(
+                    "# Synthetic profile\n\n"
+                    f'The phrase "{phrase}" is prohibited.\n',
+                    encoding="utf-8",
+                )
+                self.assertEqual(validate_profiles.validate(self.root), [])
 
     def test_semantic_diagnostic_ordering_is_stable(self) -> None:
         selections = self.load_component("control-selections.json")

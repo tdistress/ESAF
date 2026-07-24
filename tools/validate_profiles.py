@@ -16,10 +16,20 @@ from jsonschema.exceptions import SchemaError
 
 if __package__:
     from .crosswalks.io import parse_front_matter
-    from .validate_assessment import asserted_prohibited_phrases
+    from .validate_assessment import (
+        DIRECT_NEGATED_PROPOSITION,
+        PROPOSITION_BOUNDARY,
+        asserted_prohibited_phrases,
+        quoted_occurrence_is_metalinguistic,
+    )
 else:
     from crosswalks.io import parse_front_matter
-    from validate_assessment import asserted_prohibited_phrases
+    from validate_assessment import (
+        DIRECT_NEGATED_PROPOSITION,
+        PROPOSITION_BOUNDARY,
+        asserted_prohibited_phrases,
+        quoted_occurrence_is_metalinguistic,
+    )
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -39,6 +49,10 @@ DOCUMENT_SCHEMAS = {
     "external_references": "external-references.schema.json",
 }
 SEMVER = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+$")
+PROFILE_PROPOSITION_BOUNDARY = re.compile(
+    rf"(?:{PROPOSITION_BOUNDARY.pattern})|[\r\n]",
+    PROPOSITION_BOUNDARY.flags,
+)
 MAPPING_REFERENCES = {
     (
         "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3"
@@ -90,31 +104,112 @@ NON_IMPORT_STATEMENT = (
     "Relationships, external outcomes, and evidence are not imported."
 )
 PROFILE_ASSERTION_PATTERNS = (
-    ("legal sufficiency", re.compile(r"\blegally sufficient\b", re.IGNORECASE)),
+    (
+        "legal sufficiency",
+        re.compile(
+            r"\b(?:is|are|was|were)\s+(?:not\s+)?"
+            r"(?P<outcome>legally sufficient)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "legal sufficiency",
+        re.compile(
+            r"\b(?:provides?|demonstrates?)\s+(?:no\s+)?"
+            r"(?P<outcome>legal sufficiency)\b",
+            re.IGNORECASE,
+        ),
+    ),
     (
         "external approval",
-        re.compile(r"\b(?:has|have|had)\s+external approval\b", re.IGNORECASE),
+        re.compile(
+            r"\b(?:has|have|had)\s+(?:no\s+)?"
+            r"(?P<outcome>external approval)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "external approval",
+        re.compile(
+            r"\b(?:is|are|was|were)\s+(?:not\s+)?"
+            r"(?P<outcome>externally approved)\b",
+            re.IGNORECASE,
+        ),
     ),
     (
         "production readiness",
-        re.compile(r"\bproduction[- ]ready\b", re.IGNORECASE),
+        re.compile(
+            r"\b(?:is|are|was|were)\s+(?:not\s+)?"
+            r"(?P<outcome>production[- ]ready|ready for production)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "production readiness",
+        re.compile(
+            r"\b(?:demonstrates?|provides?)\s+(?:no\s+)?"
+            r"(?P<outcome>production readiness)\b",
+            re.IGNORECASE,
+        ),
     ),
     (
         "compliance",
-        re.compile(r"\bcertif(?:y|ies|ied)\s+compliance\b", re.IGNORECASE),
+        re.compile(
+            r"\bcertif(?:y|ies|ied)\s+(?:no\s+)?"
+            r"(?P<outcome>compliance)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "compliance",
+        re.compile(
+            r"\b(?:is|are|was|were)\s+(?:not\s+)?"
+            r"(?P<outcome>compliant)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "certification",
+        re.compile(
+            r"\b(?:is|are|was|were)\s+(?:not\s+)?"
+            r"(?P<outcome>certified)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "equivalence",
+        re.compile(
+            r"\b(?:is|are|was|were)\s+(?:not\s+)?"
+            r"(?P<outcome>equivalent)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "endorsement",
+        re.compile(
+            r"\b(?:is|are|was|were)\s+(?:not\s+)?"
+            r"(?P<outcome>endorsed)\b",
+            re.IGNORECASE,
+        ),
     ),
 )
-WEAKENING_LANGUAGE = re.compile(
-    r"\b(?:replace(?:s|d|ment)?|waiv(?:e|es|ed|er)|"
-    r"weaken(?:s|ed|ing)?|narrow(?:s|ed|ing)?|inapplicable)\b",
+WEAKENING_PREDICATE = re.compile(
+    r"\b(?:replace(?:s|d|ing)?|alter(?:s|ed|ing)?|relax(?:es|ed|ing)?"
+    r"|waiv(?:e|es|ed|ing)|weaken(?:s|ed|ing)?|narrow(?:s|ed|ing)?"
+    r"|mark(?:s|ed|ing)?|mak(?:e|es|ing))\b",
     re.IGNORECASE,
 )
 CONTROL_LANGUAGE = re.compile(
     r"\b(?:core\s+)?controls?(?:\s+requirements?)?\b",
     re.IGNORECASE,
 )
-WEAKENING_NEGATION = re.compile(
-    r"\b(?:cannot|does\s+not|must\s+not|never|not|shall\s+not)\b",
+PREDICATE_NEGATION = re.compile(
+    r"\b(?:cannot|can['’]t|doesn['’]t|isn['’]t|must\s+not|never|not"
+    r"|shall\s+not|wasn['’]t|weren['’]t)\b",
+    re.IGNORECASE,
+)
+POST_PREDICATE_NEGATION = re.compile(
+    r"\b(?:no|neither)\b",
     re.IGNORECASE,
 )
 
@@ -600,7 +695,13 @@ def semantic_diagnostics(
         path = root.joinpath(*PurePosixPath(expected_path).parts)
         try:
             metadata = registry_metadata(path)
-        except (OSError, UnicodeError, ValueError) as exc:
+        except OSError:
+            diagnostics.append(
+                f"{expected_path}: cannot load registry metadata: "
+                "registry file is unavailable"
+            )
+            continue
+        except (UnicodeError, ValueError) as exc:
             diagnostics.append(
                 f"{expected_path}: cannot load registry metadata: {exc}"
             )
@@ -755,20 +856,71 @@ def walk_json(
     return found
 
 
+def proposition_bounds(
+    text: str, index: int
+) -> tuple[int, int, list[re.Match[str]]]:
+    """Return the proposition containing ``index`` and preceding boundaries."""
+    preceding = list(PROFILE_PROPOSITION_BOUNDARY.finditer(text, 0, index))
+    start = preceding[-1].end() if preceding else 0
+    following = PROFILE_PROPOSITION_BOUNDARY.search(text, index)
+    end = following.start() if following else len(text)
+    return start, end, preceding
+
+
+def predicate_is_negated(prefix: str) -> bool:
+    """Return whether a proposition prefix directly negates its predicate."""
+    return bool(
+        DIRECT_NEGATED_PROPOSITION.search(prefix)
+        or PREDICATE_NEGATION.search(prefix)
+    )
+
+
+def coordinated_weakening_is_negated(
+    text: str, preceding: list[re.Match[str]]
+) -> bool:
+    """Propagate a weakening denial only across an adjacent ``or``/``nor``."""
+    if not preceding or preceding[-1].group(0).casefold() not in {"or", "nor"}:
+        return False
+    previous_end = preceding[-1].start()
+    previous_start = preceding[-2].end() if len(preceding) > 1 else 0
+    previous = text[previous_start:previous_end]
+    weakening = WEAKENING_PREDICATE.search(previous)
+    if weakening is None:
+        return False
+    return predicate_is_negated(previous[: weakening.start()])
+
+
 def contains_affirmative_weakening(text: str) -> bool:
-    """Recognize known control weakening language while allowing denials."""
-    for clause in re.split(
-        r"[.!?;\n]+|,\s*(?=(?:but|however|yet)\b)"
-        r"|\b(?:but|however|yet)\b",
-        text,
-        flags=re.IGNORECASE,
-    ):
-        weakening = WEAKENING_LANGUAGE.search(clause)
-        control = CONTROL_LANGUAGE.search(clause)
-        if weakening is None or control is None:
+    """Recognize weakening predicates with assertion-aware polarity."""
+    for weakening in WEAKENING_PREDICATE.finditer(text):
+        start, end, preceding = proposition_bounds(text, weakening.start())
+        proposition = text[start:end]
+        relative_predicate = weakening.start() - start
+        prefix = proposition[:relative_predicate]
+        suffix = proposition[relative_predicate:]
+        control = CONTROL_LANGUAGE.search(suffix)
+        if control is None:
             continue
-        prefix = clause[: weakening.start()]
-        if WEAKENING_NEGATION.search(prefix):
+        word = weakening.group(0).casefold()
+        after_control = suffix[control.end() :]
+        if word.startswith("mak") and not re.search(
+            r"\boptional\b", after_control, re.IGNORECASE
+        ):
+            continue
+        if word.startswith("mark") and not re.search(
+            r"\binapplicable\b", after_control, re.IGNORECASE
+        ):
+            continue
+        between = suffix[weakening.end() - weakening.start() : control.start()]
+        if (
+            predicate_is_negated(prefix)
+            or POST_PREDICATE_NEGATION.search(between)
+            or coordinated_weakening_is_negated(text, preceding)
+        ):
+            continue
+        if quoted_occurrence_is_metalinguistic(
+            text, weakening.start(), weakening.start() + control.end()
+        ):
             continue
         return True
     return False
@@ -779,13 +931,15 @@ def asserted_profile_phrases(text: str) -> list[str]:
     assertions = list(asserted_prohibited_phrases(text))
     for label, pattern in PROFILE_ASSERTION_PATTERNS:
         for match in pattern.finditer(text):
-            transformed = (
-                text[: match.start()]
-                + "establishes compliance"
-                + text[match.end() :]
-            )
-            if list(asserted_prohibited_phrases(transformed)):
-                assertions.append(label)
+            outcome_start = match.start("outcome")
+            start, _, _ = proposition_bounds(text, outcome_start)
+            if predicate_is_negated(text[start:outcome_start]):
+                continue
+            if quoted_occurrence_is_metalinguistic(
+                text, match.start(), match.end()
+            ):
+                continue
+            assertions.append(label)
     return assertions
 
 
