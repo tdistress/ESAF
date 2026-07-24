@@ -81,6 +81,45 @@ class MappingReviewProtocolTests(unittest.TestCase):
         ):
             self.assertIn(field, text)
 
+    def test_attestation_binds_source_rights_conflicts_and_owner_acceptance(
+        self,
+    ) -> None:
+        text = (TEMPLATES / "REVIEWER_ATTESTATION.md").read_text(encoding="utf-8")
+        for field in (
+            "Publication identity",
+            "Exact source version",
+            "Official URL",
+            "Source checksum",
+            "Source locator",
+            "Publication-rights basis",
+            "Permitted elements",
+            "Prohibited elements",
+            "Restrictions",
+            "Conflict disposition",
+            "Project-owner eligibility acceptance",
+            "Project-owner identity",
+            "Project-owner signature",
+            "Project-owner acceptance date",
+        ):
+            self.assertIn(field, text)
+
+    def test_protocol_references_authority_and_dual_role_acceptance(self) -> None:
+        text = PROTOCOL.read_text(encoding="utf-8")
+        normalized = " ".join(text.split())
+        for path in (
+            "crosswalks/ESAF-1600.md",
+            "crosswalks/schema/mapping-set.schema.json",
+            "crosswalks/schema/mapping-record.schema.json",
+            "crosswalks/schema/provision-inventory.schema.json",
+            "crosswalks/schema/esaf-control-manifest.schema.json",
+            "crosswalks/schema/lifecycle-record.schema.json",
+        ):
+            self.assertIn(path, text)
+        self.assertIn(
+            "project owner must explicitly accept that arrangement",
+            normalized,
+        )
+
     def test_review_worksheets_have_separate_scopes_and_findings(self) -> None:
         specification = (
             TEMPLATES / "SPECIFICATION_INVENTORY_REVIEW.md"
@@ -111,6 +150,80 @@ class MappingReviewProtocolTests(unittest.TestCase):
         self.assertIn("no_direct_mapping", security)
         self.assertIn("prerequisite", security)
         self.assertIn("partially_supports", security)
+
+    def test_worksheets_capture_signed_coverage_and_findings_disposition(
+        self,
+    ) -> None:
+        for name in (
+            "SPECIFICATION_INVENTORY_REVIEW.md",
+            "SECURITY_OVERCLAIMING_REVIEW.md",
+        ):
+            with self.subTest(template=name):
+                text = (TEMPLATES / name).read_text(encoding="utf-8")
+                for field in (
+                    "Review role",
+                    "Review method",
+                    "Provision coverage",
+                    "Mapping-record coverage",
+                    "Resolver or acceptor",
+                    "Disposition date",
+                    "Acceptance rationale",
+                    "Reviewer signature",
+                    "Signature date",
+                    "Signed worksheet SHA-256",
+                ):
+                    self.assertIn(field, text)
+                self.assertIn(
+                    "Critical and Important findings cannot be accepted",
+                    text,
+                )
+                self.assertIn("Only Minor findings may be accepted", text)
+
+    def test_security_review_preserves_no_outcome_rules(self) -> None:
+        protocol = PROTOCOL.read_text(encoding="utf-8")
+        security = (
+            TEMPLATES / "SECURITY_OVERCLAIMING_REVIEW.md"
+        ).read_text(encoding="utf-8")
+        for text in (protocol, security):
+            normalized = " ".join(text.split())
+            self.assertIn(
+                "conditions cannot create a missing external outcome",
+                normalized,
+            )
+            self.assertIn(
+                "implementation guidance or adjacent capabilities cannot "
+                "replace normative requirements",
+                normalized,
+            )
+
+    def test_signed_worksheet_digest_has_reproducible_scope(self) -> None:
+        protocol = " ".join(PROTOCOL.read_text(encoding="utf-8").split())
+        for expected in (
+            "UTF-8 without BOM and LF line endings",
+            "all other fields, including the reviewer signature and signature "
+            "date, are final",
+            "remove the entire `| Signed worksheet SHA-256 |` table row",
+            "No non-excluded byte may change after the digest is recorded",
+        ):
+            self.assertIn(expected, protocol)
+        for name in (
+            "SPECIFICATION_INVENTORY_REVIEW.md",
+            "SECURITY_OVERCLAIMING_REVIEW.md",
+        ):
+            with self.subTest(template=name):
+                text = " ".join(
+                    (TEMPLATES / name).read_text(encoding="utf-8").split()
+                )
+                self.assertIn(
+                    "remove the entire `| Signed worksheet SHA-256 |` "
+                    "table row",
+                    text,
+                )
+                self.assertIn(
+                    "No non-excluded byte may change after the digest is "
+                    "recorded",
+                    text,
+                )
 
     def test_preparation_does_not_transition_snapshots(self) -> None:
         for snapshot in SNAPSHOTS:

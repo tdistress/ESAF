@@ -77,8 +77,9 @@ Render each input with `@mermaid-js/mermaid-cli@11.16.0`, then record parse and 
 
 ## Qualified mapping review packages
 
-Generate one reviewer package from an exact commit into an empty directory
-outside every Git worktree:
+Generate one reviewer package from an exact commit.
+Supply a new output path that does not already exist and is outside every Git
+worktree:
 
 ```powershell
 $candidate = git rev-parse HEAD
@@ -89,9 +90,9 @@ python tools/build_mapping_review_bundle.py `
   --output $output
 ```
 
-Repeat with each allowlisted mapping-set identifier and a distinct empty
-output directory. Preserve the exact commit and printed manifest SHA-256 in
-the review record.
+Repeat with each allowlisted mapping-set identifier and a distinct new output
+path. Preserve the exact commit and printed manifest SHA-256 in the review
+record.
 
 The package contains tracked ESAF mapping evidence, referenced controls,
 schemas, protocol, and blank worksheets. It does not include the external source document. Reviewers obtain authorized access independently. Package generation does not change Draft lifecycle state or constitute qualified review.

@@ -7,6 +7,21 @@ under ESAF-1600. Preparation, automation, mapper self-review, and AI-produced
 review are not qualified review. Until every applicable condition is met, the
 affected mapping set remains `draft`.
 
+## Authoritative method and schemas
+
+The authoritative review and lifecycle rules remain in:
+
+- `crosswalks/ESAF-1600.md`;
+- `crosswalks/schema/mapping-set.schema.json`;
+- `crosswalks/schema/mapping-record.schema.json`;
+- `crosswalks/schema/provision-inventory.schema.json`;
+- `crosswalks/schema/esaf-control-manifest.schema.json`; and
+- `crosswalks/schema/lifecycle-record.schema.json`.
+
+This protocol supplies a review procedure and evidence forms. It does not
+replace or restate those normative and machine-enforced requirements as a
+parallel lifecycle model.
+
 ## In-scope snapshots
 
 - `uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0`
@@ -31,6 +46,12 @@ from the mapper, and conflicts of interest. The project owner accepts or
 rejects eligibility per mapping set and review role. The reviewer must be
 different from the mapper.
 
+Prefer different qualified humans for the two review disciplines. If one
+human performs both disciplines, the project owner must explicitly accept
+that arrangement. The reviewer must demonstrate qualifications for both
+roles, and the attestations, worksheets, findings, signatures, and conclusions
+remain separate.
+
 ## Specification and inventory review
 
 Verify official source identity/version/checksum/locators, publication rights,
@@ -43,13 +64,29 @@ Verify each relationship and `no_direct_mapping` rationale against exact
 normative source and ESAF text. Check direction, coverage, confidence,
 conditions, evidence, gaps, `prerequisite` versus `partially_supports`, and
 all certification, compliance, equivalence, endorsement, and assurance
-nonclaims.
+nonclaims. The review shall also confirm:
+
+- conditions cannot create a missing external outcome; and
+- implementation guidance or adjacent capabilities cannot replace normative
+  requirements.
 
 ## Findings
 
-Use Critical, Important, and Minor. Resolve Critical and Important findings
-before `reviewed`. Only Minor may be accepted, with named acceptor, rationale,
-and date. Record separate worksheets for both review disciplines.
+Use Critical, Important, and Minor. Critical and Important findings cannot be
+accepted and shall be resolved before `reviewed`. Only Minor findings may be
+accepted, with a named acceptor, acceptance rationale, and disposition date.
+Record separate signed worksheets for both review disciplines.
+
+## Signed worksheet digest procedure
+
+The signed worksheet digest shall be reproducible and shall not hash its own
+value. First encode the completed worksheet as UTF-8 without BOM and LF line
+endings. Ensure all other fields, including the reviewer signature and
+signature date, are final. For the digest calculation, remove the entire
+`| Signed worksheet SHA-256 |` table row, including its terminating LF, and
+hash every remaining byte with SHA-256. Record the resulting lowercase
+hexadecimal digest in that row. Verification repeats the same row exclusion.
+No non-excluded byte may change after the digest is recorded.
 
 ## Lifecycle transition
 

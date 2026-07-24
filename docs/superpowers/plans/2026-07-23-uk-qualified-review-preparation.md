@@ -445,7 +445,7 @@ _PROFILE_ROWS = (
     (
         "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
         "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0",
-        "Core", "external_to_esaf", 116,
+        "Core", "esaf_to_external", 116,
     ),
     (
         "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
