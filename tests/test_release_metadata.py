@@ -266,11 +266,88 @@ class ReleaseMetadataTests(unittest.TestCase):
         backlog = read_repository_file("project/BACKLOG.md")
         item = next(
             value for value in markdown_list_items(backlog)
-            if "Complete deferred qualified review for the 0.4-alpha mapping snapshots" in value
+            if "Complete coordinated qualified review" in value
         )
         for mapping_set_id in EXPECTED_MAPPING_SET_IDS:
             with self.subTest(mapping_set_id=mapping_set_id):
                 self.assertIn(mapping_set_id, item)
+
+    def test_v05_beta_has_bounded_workstreams_and_exit_criteria(self) -> None:
+        milestones = read_repository_file("project/MILESTONES.md")
+        for heading in (
+            "### Entry state",
+            "### Required workstreams",
+            "### Exit criteria",
+            "### Non-goals",
+        ):
+            self.assertIn(heading, milestones)
+        for required in (
+            "all three UK mapping snapshots",
+            "minimum ESAF-1500 assessment foundation",
+            "one Draft pilot",
+            "PCI DSS",
+            "`GO`",
+            "`HOLD`",
+            "Critical and Important",
+        ):
+            self.assertIn(required, milestones)
+
+    def test_v05_beta_preserves_bounded_non_goals(self) -> None:
+        milestones = read_repository_file("project/MILESTONES.md")
+        for non_goal in (
+            "all roadmap crosswalks",
+            "all nine planned profiles",
+            "complete assessment workbook",
+            "substantive HITRUST CSF mapping",
+            "redesigning `v0.9-rc1` and `v1.0`",
+        ):
+            self.assertIn(non_goal, milestones)
+
+    def test_backlog_removes_completed_release_work_and_orders_dependencies(self) -> None:
+        backlog = read_repository_file("project/BACKLOG.md")
+        self.assertNotIn("Complete open 0.4-alpha publication gates", backlog)
+        self.assertEqual(
+            1,
+            backlog.count("Complete coordinated qualified review"),
+        )
+        review = backlog.index("Complete coordinated qualified review")
+        assessment = backlog.index("Define the minimum ESAF-1500 assessment foundation")
+        profile = backlog.index("Select and publish one Draft pilot")
+        pci = backlog.index("Complete PCI DSS source readiness")
+        self.assertLess(review, assessment)
+        self.assertLess(assessment, profile)
+        self.assertLess(profile, pci)
+
+    def test_hitrust_is_readiness_gated_and_not_a_v05_blocker(self) -> None:
+        backlog = read_repository_file("project/BACKLOG.md")
+        for required in (
+            "licensed-source access",
+            "publication rights",
+            "qualified-review availability",
+            "does not block `v0.5-beta`",
+        ):
+            self.assertIn(required, backlog)
+
+    def test_roadmap_sequences_v05_beta_delivery_before_long_term_phases(self) -> None:
+        roadmap = read_repository_file("ROADMAP.md")
+        section = re.search(
+            r"^## 0\.5-beta delivery sequence$"
+            r"(?P<section>.*?)"
+            r"(?=^## |\Z)",
+            roadmap,
+            re.MULTILINE | re.DOTALL,
+        )
+        self.assertIsNotNone(section)
+        assert section is not None
+        sequence = section.group("section")
+        stages = (
+            "mapping assurance debt",
+            "minimum shared assessment semantics",
+            "one pilot profile",
+            "priority mappings",
+        )
+        positions = [sequence.index(stage) for stage in stages]
+        self.assertEqual(positions, sorted(positions))
 
     def test_publication_controller_uses_two_basis_owner_risk_contract(self) -> None:
         plan = read_repository_file(

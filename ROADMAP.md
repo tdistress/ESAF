@@ -4,6 +4,11 @@
 
 **Version:** 0.4-alpha
 
+## 0.5-beta delivery sequence
+
+`v0.5-beta` first closes mapping assurance debt, then establishes minimum shared assessment semantics, validates one pilot profile, and finally expands priority mappings. The Phase 4 and Phase 5 lists remain long-term direction,
+not `v0.5-beta` exit criteria.
+
 ## Phase 0 - Foundation
 
 - Stable repository structure and contribution workflow
