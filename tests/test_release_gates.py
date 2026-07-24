@@ -58,6 +58,20 @@ Validated commit: 8abfe5a85db19d11295a0c3debeb2d58109b0ca7
     )
 
 
+def write_candidate_scope_fixture(root: Path) -> None:
+    write_release_scope_fixture(root)
+    (root / "project/RELEASE_PLAN.md").write_text(
+        """# Release Plan
+
+## 0.4-alpha readiness
+
+Architecture content is complete only at Draft level. Publication gates remain Open.
+0.4-alpha shall not be tagged or represented as released.
+""",
+        encoding="utf-8",
+    )
+
+
 def valid_record() -> dict[str, object]:
     return {
         "release": "0.4-alpha",
@@ -256,15 +270,18 @@ def approved_external_evidence(
 
 
 class ReleaseGateTests(unittest.TestCase):
-    def test_tracked_closure_record_has_ready_https_gates_and_owner_risk_basis(self) -> None:
+    def test_tracked_published_record_has_closed_https_gates_and_owner_risk_basis(self) -> None:
         record = load_front_matter(RECORD)
-        self.assertEqual("closure_candidate", record["phase"])
+        self.assertEqual("published", record["phase"])
         self.assertEqual("owner_risk_acceptance", record["mapping_decision_basis"])
-        self.assertEqual(datetime.now(timezone.utc).date(), record["publication"]["date"])
+        self.assertEqual(date.fromisoformat(PUBLISHED_DATE), record["publication"]["date"])
+        self.assertEqual(PUBLISHED_TAG_OBJECT, record["publication"]["tag_object"])
+        self.assertEqual(PUBLISHED_COMMIT, record["publication"]["tagged_commit"])
+        self.assertEqual(PUBLISHED_EVIDENCE, record["publication"]["evidence"])
         self.assertEqual(validate_record(ROOT, record), [])
         for gate, value in record["gates"].items():
             with self.subTest(gate=gate):
-                self.assertEqual("ready", value["state"])
+                self.assertEqual("closed", value["state"])
                 self.assertTrue(value["evidence"])
                 self.assertTrue(all(locator.startswith("https://") for locator in value["evidence"]))
 
@@ -383,8 +400,10 @@ class ReleaseGateTests(unittest.TestCase):
                 encoding="utf-8",
             )
             loaded = load_front_matter(path)
+            candidate_root = Path(temporary) / "candidate-root"
+            write_candidate_scope_fixture(candidate_root)
+            self.assertEqual(validate_record(candidate_root, loaded), [])
         self.assertIsInstance(loaded["publication"]["date"], date)
-        self.assertEqual(validate_record(ROOT, loaded), [])
         self.assertEqual(
             validate_external_evidence(loaded, approved_external_evidence("d" * 40), "d" * 40, "closure"),
             [],
@@ -567,18 +586,21 @@ class ReleaseGateTests(unittest.TestCase):
                 self.assertIn(diagnostic, validate_external_evidence(closure_record(), evidence, merge, "taggable"))
 
     def test_closure_record_requires_supported_mapping_decision_basis(self) -> None:
-        for value in (None, "legacy"):
-            with self.subTest(value=value):
-                record = closure_record()
-                if value is None:
-                    record.pop("mapping_decision_basis")
-                else:
-                    record["mapping_decision_basis"] = value
-                self.assertIn(
-                    "closure candidate mapping_decision_basis shall be supported",
-                    validate_record(ROOT, record),
-                )
-        self.assertEqual(validate_record(ROOT, valid_record()), [])
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_candidate_scope_fixture(root)
+            for value in (None, "legacy"):
+                with self.subTest(value=value):
+                    record = closure_record()
+                    if value is None:
+                        record.pop("mapping_decision_basis")
+                    else:
+                        record["mapping_decision_basis"] = value
+                    self.assertIn(
+                        "closure candidate mapping_decision_basis shall be supported",
+                        validate_record(root, record),
+                    )
+            self.assertEqual(validate_record(root, valid_record()), [])
 
     def test_both_uniform_mapping_decision_bases_pass_closure_and_taggable(self) -> None:
         closure = "d" * 40

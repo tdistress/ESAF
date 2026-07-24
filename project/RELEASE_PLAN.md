@@ -10,37 +10,39 @@ Each release shall complete the following gates:
 6. Changelog and version metadata updated.
 7. Release approved under `GOVERNANCE.md`.
 
-## 0.4-alpha readiness
+## 0.4-alpha publication
 
-Architecture content is complete only at Draft level. Publication gates remain Open.
-For this conditional closure candidate, all eight tracked readiness entries are
-Ready, while the release gates remain open until exact-head external evidence,
-post-merge validation, and the conditional tag rule are satisfied. The closure
-evidence shall confirm that every Mermaid diagram was rendered and reviewed and
-that `qualified_approval`, when selected, is completed by qualified contributors.
-Owner risk acceptance defers qualified review; it does not complete or qualify that review.
+Publication gates are Closed.
 
-Pre-merge evidence shall be tied to the exact reviewed PR-head/candidate SHA. Post-merge evidence shall be tied to the exact resulting merged-main SHA; these are successive repository states and are not required to have the same SHA.
+The v0.4-alpha Working Draft was published through annotated tag `v0.4-alpha`
+on 2026-07-23. The tag object is
+`2cd1cf847fdb13a8b3323f62387ad5dabc5bd41f` and its peeled commit is
+`8abfe5a85db19d11295a0c3debeb2d58109b0ca7`. Issue
+[#39](https://github.com/tdistress/ESAF/issues/39) records the publication
+evidence at https://github.com/tdistress/ESAF/issues/39#issuecomment-5064098764.
 
-| Gate | Current state | Required closure evidence |
+Architecture content and all mapping sets remain Draft. The uniform Working
+Draft mapping decision basis is `owner_risk_acceptance`; qualified mapping
+review is deferred and does not complete or qualify that review. Owner risk acceptance defers qualified review; it does not complete or qualify that review.
+The closed evidence records that every Mermaid diagram was rendered and reviewed. It does
+not represent qualified review by qualified contributors. Steering Committee governance approval remains a separate gate and was recorded independently of
+the repository-owner risk decision.
+
+| Gate | Current state | Final evidence |
 |---|---|---|
-| Scope and milestone approval | Ready | Owner mapping/scope decision on the exact closure candidate: https://github.com/tdistress/ESAF/issues/39 |
-| Normative and technical review | Ready | Exact-head technical verdict and validation evidence: https://github.com/tdistress/ESAF/pull/51 |
-| Editorial and terminology review | Ready | Exact-head editorial review evidence: https://github.com/tdistress/ESAF/blob/main/docs/superpowers/reviews/2026-07-21-v04-alpha-editorial-review.md |
-| Cross-reference and rendering review | Ready | Exact-head 23-block Mermaid inventory and rendering review: https://github.com/tdistress/ESAF/blob/main/docs/superpowers/reviews/2026-07-21-v04-alpha-mermaid-rendering.md |
-| Standards mapping review | Ready | `owner_risk_acceptance` is the one uniform Working Draft basis; qualified mapping review is deferred, does not complete or qualify that review, and all mapping snapshots remain Draft: https://github.com/tdistress/ESAF/issues/39 |
-| Release metadata synchronization | Ready | Conditional closure metadata and exact-head review record: https://github.com/tdistress/ESAF/pull/51 |
-| Governance approval | Ready | Separate Steering Committee approval, successful checks, and clean merge state will be bound to the exact closure candidate: https://github.com/tdistress/ESAF/issues/39 |
-| Post-merge validation | Ready | Post-merge validation remains a condition of the remote annotated tag: https://github.com/tdistress/ESAF/issues/39 |
+| Scope and milestone approval | Closed | Owner mapping and scope decision: https://github.com/tdistress/ESAF/issues/39#issuecomment-5064098764 |
+| Normative and technical review | Closed | Technical verdict and validation evidence: https://github.com/tdistress/ESAF/issues/39#issuecomment-5064098764 |
+| Editorial and terminology review | Closed | Editorial review evidence: https://github.com/tdistress/ESAF/issues/39#issuecomment-5064098764 |
+| Cross-reference and rendering review | Closed | Mermaid rendering evidence: https://github.com/tdistress/ESAF/issues/39#issuecomment-5064098764 |
+| Standards mapping review | Closed | Owner-risk Working Draft basis; qualified review remains deferred: https://github.com/tdistress/ESAF/issues/39#issuecomment-5064098764 |
+| Release metadata synchronization | Closed | Published metadata and annotated-tag evidence: https://github.com/tdistress/ESAF/issues/39#issuecomment-5064098764 |
+| Governance approval | Closed | Separate Steering Committee approval: https://github.com/tdistress/ESAF/issues/39#issuecomment-5064098764 |
+| Post-merge validation | Closed | Validated merged-main commit and tag resolution: https://github.com/tdistress/ESAF/issues/39#issuecomment-5064098764 |
 
-Structural validators do not replace renderer, mapping-decision, or governance evidence. Steering Committee governance approval remains a separate gate and repository-owner risk acceptance does not supply it.
-
-Owner risk acceptance is a conditional Working Draft publication basis, not a
+Structural validators do not replace renderer, mapping-decision, or governance
+evidence. Owner risk acceptance is a Working Draft publication basis, not a
 qualified mapping review or external-scheme approval. It makes no assurance,
 compliance, certification, equivalence, endorsement, or production-readiness
-claim. Until every applicable pre-merge gate is externally evidenced on the
-exact reviewed candidate SHA and post-merge validation passes on the exact
-resulting merged-main SHA, 0.4-alpha shall not be tagged or represented as
-released.
+claim.
 
-Until that condition is met, 0.4-alpha shall not be tagged or represented as released.
+This evidence closes only `v0.4-alpha` and cannot approve a later release.
