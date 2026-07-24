@@ -1,0 +1,178 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://esaf.dev/schema/assessment/evidence-record.schema.json",
+  "title": "ESAF evidence record",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema", "schema_version", "evidence_id", "title", "description",
+    "evidence_type", "source", "custodian", "collected_at", "collection_method",
+    "scope", "period", "population", "quality", "integrity", "limitations",
+    "retention", "traceability"
+  ],
+  "properties": {
+    "$schema": { "const": "../schema/evidence-record.schema.json" },
+    "schema_version": { "const": "0.1.0" },
+    "evidence_id": { "type": "string", "pattern": "^EVD-[A-Z0-9][A-Z0-9-]*$" },
+    "title": { "$ref": "#/$defs/nonEmptyString" },
+    "description": { "$ref": "#/$defs/nonEmptyString" },
+    "evidence_type": {
+      "enum": [
+        "policy", "procedure", "record", "configuration", "log", "technical_test",
+        "observation", "interview", "metric", "contract", "external_assurance", "other"
+      ]
+    },
+    "other_type_description": { "$ref": "#/$defs/nonEmptyString" },
+    "source": { "$ref": "#/$defs/source" },
+    "custodian": { "$ref": "#/$defs/person" },
+    "collected_at": { "type": "string", "format": "date-time" },
+    "collection_method": { "$ref": "#/$defs/nonEmptyString" },
+    "scope": { "$ref": "#/$defs/scope" },
+    "period": { "$ref": "#/$defs/period" },
+    "population": { "$ref": "#/$defs/population" },
+    "quality": {
+      "type": "object", "additionalProperties": false,
+      "required": [
+        "relevance", "reliability", "completeness", "timeliness", "attribution",
+        "integrity", "traceability", "sufficiency", "evaluated_by", "evaluated_at",
+        "sufficiency_rationale"
+      ],
+      "properties": {
+        "relevance": { "$ref": "#/$defs/qualityAttribute" },
+        "reliability": { "$ref": "#/$defs/qualityAttribute" },
+        "completeness": { "$ref": "#/$defs/qualityAttribute" },
+        "timeliness": { "$ref": "#/$defs/qualityAttribute" },
+        "attribution": { "$ref": "#/$defs/qualityAttribute" },
+        "integrity": { "$ref": "#/$defs/qualityAttribute" },
+        "traceability": { "$ref": "#/$defs/qualityAttribute" },
+        "sufficiency": { "enum": ["sufficient", "limited", "insufficient"] },
+        "evaluated_by": { "$ref": "#/$defs/person" },
+        "evaluated_at": { "type": "string", "format": "date-time" },
+        "sufficiency_rationale": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    },
+    "integrity": { "$ref": "#/$defs/integrity" },
+    "limitations": { "$ref": "#/$defs/stringArray" },
+    "retention": { "$ref": "#/$defs/retention" },
+    "traceability": { "$ref": "#/$defs/traceability" },
+    "example_notice": {
+      "const": "Fictional non-authoritative example; no organization, ESAF control, profile, or external framework has been assessed."
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "evidence_type": { "const": "other" } }, "required": ["evidence_type"] },
+      "then": { "required": ["other_type_description"] },
+      "else": { "not": { "required": ["other_type_description"] } }
+    }
+  ],
+  "$defs": {
+    "nonEmptyString": { "type": "string", "minLength": 1 },
+    "stringArray": {
+      "type": "array", "items": { "$ref": "#/$defs/nonEmptyString" }, "uniqueItems": true
+    },
+    "referenceArray": {
+      "type": "array", "minItems": 1, "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^[A-Z][A-Z0-9-]*$" }
+    },
+    "source": {
+      "type": "object", "additionalProperties": false,
+      "required": ["identity", "locator"],
+      "properties": {
+        "identity": { "$ref": "#/$defs/nonEmptyString" },
+        "locator": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    },
+    "person": {
+      "type": "object", "additionalProperties": false,
+      "required": ["name", "role", "organization"],
+      "properties": {
+        "name": { "$ref": "#/$defs/nonEmptyString" },
+        "role": { "$ref": "#/$defs/nonEmptyString" },
+        "organization": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    },
+    "scope": {
+      "type": "object", "additionalProperties": false,
+      "required": ["description"],
+      "properties": { "description": { "$ref": "#/$defs/nonEmptyString" } }
+    },
+    "period": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["point_in_time"],
+          "properties": { "point_in_time": { "type": "string", "format": "date-time" } }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["start", "end"],
+          "properties": {
+            "start": { "type": "string", "format": "date-time" },
+            "end": { "type": "string", "format": "date-time" }
+          }
+        }
+      ]
+    },
+    "population": {
+      "type": "object", "additionalProperties": false,
+      "required": ["description", "sample", "selection_rationale"],
+      "properties": {
+        "description": { "$ref": "#/$defs/nonEmptyString" },
+        "sample": { "$ref": "#/$defs/nonEmptyString" },
+        "selection_rationale": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    },
+    "qualityRating": {
+      "enum": ["adequate", "limited", "inadequate", "not_evaluated"]
+    },
+    "qualityAttribute": {
+      "type": "object", "additionalProperties": false,
+      "required": ["rating", "rationale"],
+      "properties": {
+        "rating": { "$ref": "#/$defs/qualityRating" },
+        "rationale": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    },
+    "integrity": {
+      "oneOf": [
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["digest_algorithm", "digest"],
+          "properties": {
+            "digest_algorithm": { "const": "sha-256" },
+            "digest": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+          }
+        },
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["protected_record_locator", "verification_method"],
+          "properties": {
+            "protected_record_locator": { "$ref": "#/$defs/nonEmptyString" },
+            "verification_method": { "$ref": "#/$defs/nonEmptyString" }
+          }
+        }
+      ]
+    },
+    "retention": {
+      "type": "object", "additionalProperties": false,
+      "required": ["authority", "end_condition"],
+      "properties": {
+        "authority": { "$ref": "#/$defs/nonEmptyString" },
+        "end_condition": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    },
+    "traceability": {
+      "type": "object", "additionalProperties": false,
+      "required": ["requirement_refs", "procedure_refs", "result_refs"],
+      "properties": {
+        "requirement_refs": { "$ref": "#/$defs/referenceArray" },
+        "procedure_refs": { "$ref": "#/$defs/referenceArray" },
+        "result_refs": {
+          "type": "array", "minItems": 1, "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^ASR-[A-Z0-9][A-Z0-9-]*$" }
+        }
+      }
+    }
+  }
+}

@@ -2,6 +2,17 @@
 
 Validation, publication, assessment, and repository-maintenance tools will be maintained here. Generated artifacts should not replace authoritative Markdown sources.
 
+## Assessment validation
+
+Validate the ESAF-1500 schemas, tracked fictional examples, references, final
+states, maturity prerequisites, component roll-ups, and non-claim boundaries:
+
+```shell
+python tools/validate_assessment.py --check
+```
+
+The validator does not score organizations.
+
 ## Control catalog validation
 
 Install the development dependencies and validate the catalog:

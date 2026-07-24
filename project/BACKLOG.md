@@ -5,8 +5,6 @@ The authoritative work queue should be maintained in GitHub Issues. This file re
 Cyber Essentials core and Cyber Essentials Plus remain separate mapping sets.
 
 - Complete coordinated qualified review of all three UK mapping snapshots: `uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0`, `uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0`, and `uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0`.
-- Define the minimum ESAF-1500 assessment foundation for the shared evidence
-  model, assessment-result contract, and maturity-scoring semantics.
 - Select and publish one Draft pilot ESAF industry or jurisdiction profile
   after the minimum ESAF-1500 assessment foundation is complete.
 - Complete PCI DSS source readiness and mapping go/no-go, including the

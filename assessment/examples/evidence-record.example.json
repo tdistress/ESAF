@@ -1,0 +1,65 @@
+{
+  "$schema": "../schema/evidence-record.schema.json",
+  "schema_version": "0.1.0",
+  "evidence_id": "EVD-EXAMPLE-CHANGE-LOG",
+  "title": "Fictional change-review log extract",
+  "description": "A fictional change log showing whether documented change reviews occurred.",
+  "evidence_type": "log",
+  "source": {
+    "identity": "Fictional change-management workspace",
+    "locator": "example://change-management/review-log"
+  },
+  "custodian": {
+    "name": "Example Records Custodian",
+    "role": "Change manager",
+    "organization": "Fictional Example Organization"
+  },
+  "collected_at": "2026-07-24T15:00:00Z",
+  "collection_method": "Read-only export supplied for this fictional example.",
+  "scope": {
+    "description": "Fictional change-management reviews for the stated assessment period."
+  },
+  "period": {
+    "start": "2026-04-01T00:00:00Z",
+    "end": "2026-06-30T23:59:59Z"
+  },
+  "population": {
+    "description": "Twelve fictional completed changes recorded during the period.",
+    "sample": "All twelve fictional changes.",
+    "selection_rationale": "The fictional population is small enough for complete examination."
+  },
+  "quality": {
+    "relevance": { "rating": "adequate", "rationale": "The log directly records the fictional review activity." },
+    "reliability": { "rating": "limited", "rationale": "The example does not independently verify the source system." },
+    "completeness": { "rating": "adequate", "rationale": "The example states that it contains the complete fictional population." },
+    "timeliness": { "rating": "adequate", "rationale": "The period aligns with the fictional assessment period." },
+    "attribution": { "rating": "adequate", "rationale": "The fictional source and custodian are identified." },
+    "integrity": { "rating": "limited", "rationale": "The fictional digest illustrates verification without asserting real assurance." },
+    "traceability": { "rating": "adequate", "rationale": "The example links to the fictional assessment result." },
+    "sufficiency": "limited",
+    "evaluated_by": {
+      "name": "Example Assessor",
+      "role": "Independent reviewer",
+      "organization": "Fictional Example Organization"
+    },
+    "evaluated_at": "2026-07-24T15:30:00Z",
+    "sufficiency_rationale": "The fictional log is limited evidence for the stated fictional use."
+  },
+  "integrity": {
+    "digest_algorithm": "sha-256",
+    "digest": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+  },
+  "limitations": [
+    "This fictional example does not demonstrate an actual organization's evidence quality."
+  ],
+  "retention": {
+    "authority": "Fictional records schedule",
+    "end_condition": "Retain until the fictional schedule expires."
+  },
+  "traceability": {
+    "requirement_refs": ["ESAF-EXAMPLE-CHANGE-REVIEW"],
+    "procedure_refs": ["PROC-EXAMPLE-CHANGE-REVIEW"],
+    "result_refs": ["ASR-EXAMPLE-CHANGE-CONTROL"]
+  },
+  "example_notice": "Fictional non-authoritative example; no organization, ESAF control, profile, or external framework has been assessed."
+}

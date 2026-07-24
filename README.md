@@ -38,7 +38,7 @@ Every requirement, control, architecture, assessment, and governance artifact wi
 | ESAF-1200 | Reference Architecture | `architectures/` |
 | ESAF-1300 | Governance Manual | `governance/` |
 | ESAF-1400 | Implementation Guide | `implementation/` |
-| ESAF-1500 | Assessment Guide | `assessment/` |
+| [ESAF-1500](assessment/ESAF-1500.md) | Assessment Guide | [assessment/ESAF-1500.md](assessment/ESAF-1500.md) |
 | ESAF-1600 | Standards Crosswalk | `crosswalks/` |
 | ESAF-1700 | Enterprise AI Data Model | `data-model/` |
 | ESAF-1800 | Industry Profiles | `profiles/` |

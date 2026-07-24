@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://esaf.dev/schema/assessment/maturity-assessment.schema.json",
+  "title": "ESAF maturity assessment",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "$schema", "schema_version", "maturity_id", "status", "scope", "exclusions",
+    "assessor", "assessed_at", "level", "criteria", "basis_refs", "limitations",
+    "change_history"
+  ],
+  "properties": {
+    "$schema": { "const": "../schema/maturity-assessment.schema.json" },
+    "schema_version": { "const": "0.1.0" },
+    "maturity_id": { "type": "string", "pattern": "^MAT-[A-Z0-9][A-Z0-9-]*$" },
+    "status": { "enum": ["draft", "final"] },
+    "scope": { "$ref": "#/$defs/nonEmptyString" },
+    "exclusions": { "$ref": "#/$defs/stringArray" },
+    "assessor": { "$ref": "#/$defs/person" },
+    "assessed_at": { "type": "string", "format": "date-time" },
+    "level": { "enum": ["M0", "M1", "M2", "M3", "M4"] },
+    "criteria": {
+      "type": "array", "minItems": 1, "uniqueItems": true,
+      "items": { "$ref": "#/$defs/criterion" }
+    },
+    "basis_refs": { "$ref": "#/$defs/basisRefs" },
+    "limitations": { "$ref": "#/$defs/stringArray" },
+    "component_results": {
+      "type": "array", "uniqueItems": true,
+      "items": { "$ref": "#/$defs/component" }
+    },
+    "change_history": {
+      "type": "array", "uniqueItems": true,
+      "items": { "$ref": "#/$defs/change" }
+    },
+    "example_notice": {
+      "const": "Fictional non-authoritative example; no organization, ESAF control, profile, or external framework has been assessed."
+    }
+  },
+  "$defs": {
+    "nonEmptyString": { "type": "string", "minLength": 1 },
+    "stringArray": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/nonEmptyString" } },
+    "person": {
+      "type": "object", "additionalProperties": false,
+      "required": ["name", "role", "organization", "independence_statement"],
+      "properties": {
+        "name": { "$ref": "#/$defs/nonEmptyString" },
+        "role": { "$ref": "#/$defs/nonEmptyString" },
+        "organization": { "$ref": "#/$defs/nonEmptyString" },
+        "independence_statement": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    },
+    "basisRefs": {
+      "type": "array", "minItems": 1, "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^(?:EVD|ASR)-[A-Z0-9][A-Z0-9-]*$" }
+    },
+    "criterion": {
+      "type": "object", "additionalProperties": false,
+      "required": ["level", "criterion_id", "statement", "met", "rationale", "basis_refs"],
+      "properties": {
+        "level": { "enum": ["M0", "M1", "M2", "M3", "M4"] },
+        "criterion_id": { "type": "string", "pattern": "^M[0-4]-[A-Z0-9][A-Z0-9-]*$" },
+        "statement": { "$ref": "#/$defs/nonEmptyString" },
+        "met": { "type": "boolean" },
+        "rationale": { "$ref": "#/$defs/nonEmptyString" },
+        "basis_refs": { "$ref": "#/$defs/basisRefs" }
+      }
+    },
+    "component": {
+      "type": "object", "additionalProperties": false,
+      "required": ["maturity_ref", "level", "applicability"],
+      "properties": {
+        "maturity_ref": { "type": "string", "pattern": "^MAT-[A-Z0-9][A-Z0-9-]*$" },
+        "level": { "enum": ["M0", "M1", "M2", "M3", "M4"] },
+        "applicability": { "enum": ["applicable", "not_applicable", "not_assessed"] },
+        "rationale": { "$ref": "#/$defs/nonEmptyString" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "applicability": { "const": "not_applicable" } },
+            "required": ["applicability"]
+          },
+          "then": { "required": ["rationale"] }
+        }
+      ]
+    },
+    "change": {
+      "type": "object", "additionalProperties": false,
+      "required": ["version", "date", "author", "description"],
+      "properties": {
+        "version": { "$ref": "#/$defs/nonEmptyString" },
+        "date": { "type": "string", "format": "date-time" },
+        "author": { "$ref": "#/$defs/nonEmptyString" },
+        "description": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    }
+  }
+}
