@@ -38,13 +38,22 @@ PROHIBITED_ASSERTIONS = (
     "establishes endorsement",
     "provides continuous assurance",
 )
-CLAUSE_BOUNDARY = re.compile(
-    r"[.!?;:]|\b(?:but|however|yet|nevertheless)\b",
+PROPOSITION_BOUNDARY = re.compile(
+    r"[,;:.!?]|\b(?:and|or|but|however|although|yet|nor)\b",
     re.IGNORECASE,
 )
-CLAUSE_NEGATOR = re.compile(
-    r"\b(?:no|not|never|nothing|neither|nor|without|cannot)\b"
-    r"|\b(?:can['’]t|doesn['’]t|isn['’]t)\b",
+DIRECT_NEGATED_PROPOSITION = re.compile(
+    r"^\s*[\"'“‘«]?\s*(?:no\b|nothing\b|neither\b|nor\b|not\s+one\b)",
+    re.IGNORECASE,
+)
+IMMEDIATE_NEVER = re.compile(r"\bnever\s*$", re.IGNORECASE)
+METALINGUISTIC_NOUN = re.compile(
+    r"\b(?:phrase|words?|text|statement|assertion|claim)\b",
+    re.IGNORECASE,
+)
+METALINGUISTIC_ACTION = re.compile(
+    r"\b(?:discussion|discuss(?:ed|es|ing)?|prohibit(?:ed|s|ing)?"
+    r"|reject(?:ed|s|ing)?|avoid(?:ed|s|ing)?)\b",
     re.IGNORECASE,
 )
 SYMMETRIC_QUOTES = ('"', "'")
@@ -159,41 +168,76 @@ def symmetric_quote_positions(text: str, quote: str) -> list[int]:
     return positions
 
 
-def inside_paired_quotes(text: str, start: int, end: int) -> bool:
+def paired_quote_span(
+    text: str,
+    start: int,
+    end: int,
+) -> tuple[int, int] | None:
     for quote in SYMMETRIC_QUOTES:
         positions = symmetric_quote_positions(text, quote)
-        before = sum(position < start for position in positions)
-        if before % 2 and any(position >= end for position in positions):
-            return True
+        for opening, closing in zip(positions[::2], positions[1::2]):
+            if opening < start and closing >= end:
+                return opening, closing
     for opening, closing in ASYMMETRIC_QUOTES:
         latest_opening = text.rfind(opening, 0, start)
         latest_closing = text.rfind(closing, 0, start)
-        if (
-            latest_opening > latest_closing
-            and text.find(closing, end) >= 0
-        ):
-            return True
-    return False
+        next_closing = text.find(closing, end)
+        if latest_opening > latest_closing and next_closing >= 0:
+            return latest_opening, next_closing
+    return None
+
+
+def quoted_occurrence_is_metalinguistic(
+    text: str,
+    start: int,
+    end: int,
+) -> bool:
+    span = paired_quote_span(text, start, end)
+    if span is None:
+        return False
+    opening, closing = span
+    sentence_start = max(
+        text.rfind(delimiter, 0, opening) for delimiter in ".!?;"
+    )
+    sentence_end_candidates = [
+        position
+        for delimiter in ".!?;"
+        if (position := text.find(delimiter, closing + 1)) >= 0
+    ]
+    sentence_end = (
+        min(sentence_end_candidates)
+        if sentence_end_candidates
+        else len(text)
+    )
+    surrounding = (
+        text[sentence_start + 1 : opening]
+        + " "
+        + text[closing + 1 : sentence_end]
+    )
+    return bool(
+        METALINGUISTIC_NOUN.search(surrounding)
+        and METALINGUISTIC_ACTION.search(surrounding)
+    )
 
 
 def asserted_prohibited_phrases(text: str) -> Iterator[str]:
-    folded = text.casefold()
     for phrase in PROHIBITED_ASSERTIONS:
-        offset = 0
-        while True:
-            index = folded.find(phrase, offset)
-            if index < 0:
-                break
-            end = index + len(phrase)
-            boundaries = list(CLAUSE_BOUNDARY.finditer(folded, 0, index))
+        pattern = re.compile(re.escape(phrase), re.IGNORECASE)
+        for match in pattern.finditer(text):
+            index = match.start()
+            end = match.end()
+            boundaries = list(PROPOSITION_BOUNDARY.finditer(text, 0, index))
             clause_start = boundaries[-1].end() if boundaries else 0
-            prefix = folded[clause_start:index]
-            if (
-                not inside_paired_quotes(text, index, end)
-                and not CLAUSE_NEGATOR.search(prefix)
-            ):
-                yield phrase
-            offset = end
+            prefix = text[clause_start:index]
+            directly_negated = bool(
+                DIRECT_NEGATED_PROPOSITION.search(prefix)
+                or IMMEDIATE_NEVER.search(prefix)
+            )
+            if directly_negated:
+                continue
+            if quoted_occurrence_is_metalinguistic(text, index, end):
+                continue
+            yield phrase
 
 
 def duplicate_finding_diagnostics(

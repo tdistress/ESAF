@@ -488,6 +488,30 @@ class AssessmentValidationTests(unittest.TestCase):
         self.assertEqual(len(errors), 1, errors)
         self.assertIn("establishes compliance", errors[0])
 
+    def test_unrelated_no_before_and_does_not_negate_assertion(self) -> None:
+        maturity = self.load("maturity-assessment")
+        maturity["criteria"][-1]["rationale"] = (
+            "No caveat applies, and this result establishes compliance."
+        )
+        self.write("maturity-assessment", maturity)
+        self.assert_has_error("prohibited conformance assertion")
+
+    def test_without_elsewhere_does_not_negate_assertion(self) -> None:
+        maturity = self.load("maturity-assessment")
+        maturity["criteria"][-1]["rationale"] = (
+            "Without qualification, this result establishes compliance."
+        )
+        self.write("maturity-assessment", maturity)
+        self.assert_has_error("prohibited conformance assertion")
+
+    def test_endorsed_quotation_is_rejected(self) -> None:
+        maturity = self.load("maturity-assessment")
+        maturity["criteria"][-1]["rationale"] = (
+            'Management concludes, "This maturity result establishes compliance."'
+        )
+        self.write("maturity-assessment", maturity)
+        self.assert_has_error("prohibited conformance assertion")
+
     def test_unknown_schema_locator_is_rejected(self) -> None:
         evidence = self.load("evidence-record")
         evidence["$schema"] = "../schema/unknown.schema.json"
