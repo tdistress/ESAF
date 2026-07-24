@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
@@ -30,6 +31,7 @@ DOCUMENT_SCHEMAS = {
     "evidence_expectations": "evidence-expectations.schema.json",
     "external_references": "external-references.schema.json",
 }
+SEMVER = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+$")
 
 
 @dataclass(frozen=True)
@@ -82,13 +84,13 @@ def discover_profile_packages(root: Path) -> tuple[Path, ...]:
     profiles = root / "profiles"
     if not profiles.is_dir():
         return ()
-    packages = [
-        candidate.parent
-        for candidate in profiles.glob("*/*/profile.json")
-        if candidate.parent.parent.parent == profiles
-        and candidate.parent.name.count(".") == 2
-        and all(part.isdigit() for part in candidate.parent.name.split("."))
-    ]
+    packages: list[Path] = []
+    for country in profiles.iterdir():
+        if country.name == "schema" or not country.is_dir():
+            continue
+        for version in country.iterdir():
+            if version.is_dir() and SEMVER.fullmatch(version.name):
+                packages.append(version)
     return tuple(sorted(packages, key=lambda item: item.relative_to(root).as_posix()))
 
 
@@ -123,9 +125,35 @@ def package_relative(root: Path, path: Path) -> str:
     return path.relative_to(root).as_posix()
 
 
+def safe_schema(root: Path, schema_name: str) -> Path | None:
+    """Resolve a schema only when it is a real file under ``profiles/schema``."""
+    schema_root = root / "profiles" / "schema"
+    candidate = schema_root / schema_name
+    if any(
+        part.is_symlink()
+        for part in (candidate, *candidate.parents)
+        if part != root.parent
+    ):
+        return None
+    try:
+        root_resolved = root.resolve(strict=True)
+        schema_root_resolved = schema_root.resolve(strict=True)
+        schema_root_resolved.relative_to(root_resolved)
+        candidate.resolve(strict=True).relative_to(schema_root_resolved)
+    except (OSError, ValueError):
+        return None
+    return candidate
+
+
 def load_schema(root: Path, schema_name: str, diagnostics: list[str]) -> dict[str, object] | None:
-    path = root / "profiles" / "schema" / schema_name
-    relative = package_relative(root, path)
+    nominal_path = root / "profiles" / "schema" / schema_name
+    relative = package_relative(root, nominal_path)
+    path = safe_schema(root, schema_name)
+    if path is None:
+        diagnostics.append(
+            f"{relative}: schema root or file is missing, symlinked, or outside profiles/schema"
+        )
+        return None
     try:
         schema = load_json(path)
     except (OSError, json.JSONDecodeError, ValueError) as exc:
@@ -181,15 +209,16 @@ def load_package(
         return None
 
     expected_files = set(PACKAGE_FILES.values())
-    actual_files = {
-        path.relative_to(directory).as_posix()
-        for path in directory.rglob("*")
-        if path.is_file() or path.is_symlink()
+    actual_entries = {
+        path.relative_to(directory).as_posix(): path for path in directory.rglob("*")
     }
-    for filename in sorted(expected_files - actual_files):
+    for filename in sorted(expected_files - actual_entries.keys()):
         diagnostics.append(f"{relative}: missing package file {filename}")
-    for filename in sorted(actual_files - expected_files):
-        diagnostics.append(f"{relative}: unlisted package file {filename}")
+    for entry, path in sorted(actual_entries.items()):
+        if entry in expected_files:
+            continue
+        kind = "entry" if path.is_dir() else "file"
+        diagnostics.append(f"{relative}: unlisted package {kind} {entry}")
 
     documents: dict[str, dict[str, object]] = {}
     profile = load_document(root, directory, "profile", diagnostics)
@@ -249,7 +278,7 @@ def main(argv: Sequence[str] | None = None, *, root: Path | None = None) -> int:
         validation_root = root if root is not None else ROOT
         diagnostics = validate(validation_root)
         package_count = len(discover_profile_packages(validation_root))
-    except OSError as exc:
+    except Exception as exc:
         print(f"Profile validation could not run: {exc}", file=sys.stderr)
         return 2
     if diagnostics:
