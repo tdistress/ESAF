@@ -88,6 +88,35 @@ class AssessmentValidationTests(unittest.TestCase):
         self.write("evidence-record", evidence)
         self.assert_has_error("quality: 'relevance' is a required property")
 
+    def test_malformed_datetime_values_produce_schema_diagnostics(self) -> None:
+        evidence = self.load("evidence-record")
+        evidence["collected_at"] = "2026-02-29T15:00:00Z"
+        self.write("evidence-record", evidence)
+        result = self.load("assessment-result")
+        result["time_boundary"]["assessment_start"] = "2026-07-24 15:00:00Z"
+        self.write("assessment-result", result)
+        maturity = self.load("maturity-assessment")
+        maturity["assessed_at"] = "2026-07-24T15:00:00"
+        self.write("maturity-assessment", maturity)
+
+        errors = validate(self.root)
+
+        for filename, field in (
+            ("evidence-record.example.json", "collected_at"),
+            ("assessment-result.example.json", "time_boundary.assessment_start"),
+            ("maturity-assessment.example.json", "assessed_at"),
+        ):
+            with self.subTest(filename=filename, field=field):
+                self.assertTrue(
+                    any(
+                        filename in error
+                        and field in error
+                        and "is not a 'date-time'" in error
+                        for error in errors
+                    ),
+                    "missing date-time schema diagnostic:\n" + "\n".join(errors),
+                )
+
     def test_unresolved_evidence_result_reference_is_rejected(self) -> None:
         evidence = self.load("evidence-record")
         evidence["traceability"]["result_refs"] = ["ASR-MISSING"]

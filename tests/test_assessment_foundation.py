@@ -5,7 +5,8 @@ import re
 import unittest
 from pathlib import Path
 
-from jsonschema import Draft202012Validator, FormatChecker
+from jsonschema import Draft202012Validator
+from tools.validate_assessment import ASSESSMENT_FORMAT_CHECKER
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -193,7 +194,7 @@ class AssessmentSchemaTests(unittest.TestCase):
                 errors = list(
                     Draft202012Validator(
                         self.schemas[name],
-                        format_checker=FormatChecker(),
+                        format_checker=ASSESSMENT_FORMAT_CHECKER,
                     ).iter_errors(self.examples[name])
                 )
                 self.assertEqual(errors, [])
@@ -207,6 +208,51 @@ class AssessmentSchemaTests(unittest.TestCase):
             with self.subTest(name=name):
                 self.assertEqual(example["example_notice"], notice)
 
+    def test_exported_rfc3339_checker_rejects_malformed_values(self) -> None:
+        for value in (
+            "2024-02-29T23:59:60.123Z",
+            "2026-07-24t15:00:00z",
+            "2026-07-24T15:00:00+07:30",
+        ):
+            with self.subTest(value=value):
+                self.assertTrue(
+                    ASSESSMENT_FORMAT_CHECKER.conforms(value, "date-time")
+                )
+        for value in (
+            "not-a-date-time",
+            "2026-02-29T15:00:00Z",
+            "2026-07-24 15:00:00Z",
+            "2026-07-24T24:00:00Z",
+            "2026-07-24T15:00:00",
+            "2026-07-24T15:00:00+07:60",
+        ):
+            with self.subTest(value=value):
+                self.assertFalse(
+                    ASSESSMENT_FORMAT_CHECKER.conforms(value, "date-time")
+                )
+
+    def test_assessment_schemas_reject_malformed_datetime_fields(self) -> None:
+        fixtures = (
+            ("evidence-record", ("collected_at",), "2026-02-29T15:00:00Z"),
+            (
+                "assessment-result",
+                ("time_boundary", "assessment_start"),
+                "2026-07-24 15:00:00Z",
+            ),
+            ("maturity-assessment", ("assessed_at",), "2026-07-24T15:00:00"),
+        )
+        for name, path, invalid_value in fixtures:
+            with self.subTest(name=name, path=path):
+                value = json.loads(json.dumps(self.examples[name]))
+                target = value
+                for part in path[:-1]:
+                    target = target[part]
+                target[path[-1]] = invalid_value
+                validator = Draft202012Validator(
+                    self.schemas[name], format_checker=ASSESSMENT_FORMAT_CHECKER
+                )
+                self.assertTrue(list(validator.iter_errors(value)))
+
     def test_evidence_schema_requires_every_quality_attribute(self) -> None:
         quality = self.schemas["evidence-record"]["properties"]["quality"]
         self.assertCountEqual(quality["required"], QUALITY_FIELDS)
@@ -217,7 +263,8 @@ class AssessmentSchemaTests(unittest.TestCase):
 
     def test_evidence_schema_accepts_each_period_and_integrity_alternative(self) -> None:
         validator = Draft202012Validator(
-            self.schemas["evidence-record"], format_checker=FormatChecker()
+            self.schemas["evidence-record"],
+            format_checker=ASSESSMENT_FORMAT_CHECKER,
         )
         fixtures = (
             (
@@ -249,11 +296,20 @@ class AssessmentSchemaTests(unittest.TestCase):
 
     def test_evidence_schema_rejects_invalid_period_and_integrity_alternatives(self) -> None:
         validator = Draft202012Validator(
-            self.schemas["evidence-record"], format_checker=FormatChecker()
+            self.schemas["evidence-record"],
+            format_checker=ASSESSMENT_FORMAT_CHECKER,
         )
         fixtures = (
             (
                 "invalid point-in-time period",
+                {"point_in_time": "not-a-date-time"},
+                {
+                    "digest_algorithm": "sha-256",
+                    "digest": "0123456789abcdef" * 4,
+                },
+            ),
+            (
+                "point-in-time period with range member",
                 {
                     "point_in_time": "2026-06-30T23:59:59Z",
                     "start": "2026-04-01T00:00:00Z",
@@ -265,6 +321,17 @@ class AssessmentSchemaTests(unittest.TestCase):
             ),
             (
                 "invalid inclusive range",
+                {
+                    "start": "2026-04-01T00:00:00Z",
+                    "end": "not-a-date-time",
+                },
+                {
+                    "protected_record_locator": "example://protected/evidence-record",
+                    "verification_method": "Verify the immutable record's access log.",
+                },
+            ),
+            (
+                "inclusive range without end",
                 {
                     "start": "2026-04-01T00:00:00Z",
                 },
@@ -339,7 +406,7 @@ class AssessmentSchemaTests(unittest.TestCase):
 
         for name, example in self.examples.items():
             validator = Draft202012Validator(
-                self.schemas[name], format_checker=FormatChecker()
+                self.schemas[name], format_checker=ASSESSMENT_FORMAT_CHECKER
             )
             for path in walk(example):
                 mutated = json.loads(json.dumps(example))

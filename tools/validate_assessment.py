@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import calendar
 from collections.abc import Iterator
 import json
 from pathlib import Path
@@ -77,9 +78,43 @@ BRACKETED_PLACEHOLDER = re.compile(
     r"\[[^\]]*(?:TBD|TODO|FIXME|INSERT|PLACEHOLDER)\b[^\]]*\]",
     re.IGNORECASE,
 )
+RFC3339_DATE_TIME = re.compile(
+    r"^(?P<year>\d{4})-(?P<month>\d{2})-(?P<day>\d{2})"
+    r"[Tt](?P<hour>\d{2}):(?P<minute>\d{2}):(?P<second>\d{2})"
+    r"(?:\.\d+)?(?P<offset>[Zz]|[+-]\d{2}:\d{2})$"
+)
+ASSESSMENT_FORMAT_CHECKER = FormatChecker()
 
 JsonObject: TypeAlias = dict[str, object]
 Record: TypeAlias = tuple[str, str, JsonObject]
+
+
+@ASSESSMENT_FORMAT_CHECKER.checks("date-time")
+def is_rfc3339_date_time(value: object) -> bool:
+    """Return whether a string is a calendar-valid RFC 3339 date-time."""
+    if not isinstance(value, str):
+        return True
+    match = RFC3339_DATE_TIME.fullmatch(value)
+    if match is None:
+        return False
+    year = int(match["year"])
+    month = int(match["month"])
+    day = int(match["day"])
+    hour = int(match["hour"])
+    minute = int(match["minute"])
+    second = int(match["second"])
+    if year < 1 or not 1 <= month <= 12:
+        return False
+    if not 1 <= day <= calendar.monthrange(year, month)[1]:
+        return False
+    if hour > 23 or minute > 59 or second > 60:
+        return False
+    offset = match["offset"]
+    if offset.casefold() == "z":
+        return True
+    offset_hour = int(offset[1:3])
+    offset_minute = int(offset[4:6])
+    return offset_hour <= 23 and offset_minute <= 59
 
 
 def reject_duplicate_keys(
@@ -629,7 +664,7 @@ def validate(root: Path = ROOT) -> list[str]:
             continue
         validators[name] = Draft202012Validator(
             schema,
-            format_checker=FormatChecker(),
+            format_checker=ASSESSMENT_FORMAT_CHECKER,
         )
 
     canonical_examples = {
