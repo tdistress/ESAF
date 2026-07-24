@@ -43,9 +43,10 @@ class ProfileFoundationTests(unittest.TestCase):
         selection_section = document.split("## Control selections", 1)[1].split(
             "\n## ", 1
         )[0]
-        for status in SELECTION_STATUSES:
-            with self.subTest(status=status):
-                self.assertIn(f"`{status}`", selection_section)
+        defined_statuses = set(
+            re.findall(r"(?m)^\| `([^`]+)` \|", selection_section)
+        )
+        self.assertSetEqual(defined_statuses, set(SELECTION_STATUSES))
 
     def test_non_selection_preserves_control_applicability(self) -> None:
         self.assertIn(
