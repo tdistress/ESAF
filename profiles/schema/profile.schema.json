@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://esaf.dev/schema/profiles/profile/0.1.0",
+  "title": "ESAF profile manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "schema_version", "profile_id", "profile_version", "status", "title", "scope", "applicability_conditions", "source_boundary", "components", "change_history"],
+  "properties": {
+    "$schema": {"const": "../../../schema/profile.schema.json"},
+    "schema_version": {"const": "0.1.0"},
+    "profile_id": {"$ref": "#/$defs/profileId"},
+    "profile_version": {"const": "0.1.0"},
+    "status": {"enum": ["proposed", "draft", "approved", "published", "deprecated", "retired"]},
+    "target_esaf_release": {"$ref": "#/$defs/nonEmptyString"},
+    "title": {"$ref": "#/$defs/nonEmptyString"},
+    "scope": {"$ref": "#/$defs/nonEmptyString"},
+    "applicability_conditions": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/applicabilityCondition"}},
+    "source_boundary": {"$ref": "#/$defs/sourceBoundary"},
+    "components": {"$ref": "#/$defs/components"},
+    "change_history": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/change"}}
+  },
+  "$defs": {
+    "profileId": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*--[a-z0-9]+(?:-[a-z0-9]+)*--[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "identifier": {"type": "string", "pattern": "^[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*$"},
+    "nonEmptyString": {"type": "string", "minLength": 1},
+    "relativePath": {"type": "string", "pattern": "^(?!/)(?!.*\\\\)(?!.*(?:^|/)\\.\\.(?:/|$))[A-Za-z0-9][A-Za-z0-9._/-]*$"},
+    "stringArray": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/nonEmptyString"}},
+    "applicabilityCondition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["condition_id", "question", "answer_type", "activates_when", "resolution_evidence"],
+      "properties": {
+        "condition_id": {"$ref": "#/$defs/identifier"},
+        "question": {"$ref": "#/$defs/nonEmptyString"},
+        "answer_type": {"const": "boolean"},
+        "activates_when": {"type": "boolean"},
+        "resolution_evidence": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    },
+    "sourceBoundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["statement", "permitted_sources", "excluded_sources"],
+      "properties": {
+        "statement": {"$ref": "#/$defs/nonEmptyString"},
+        "permitted_sources": {"$ref": "#/$defs/stringArray"},
+        "excluded_sources": {"$ref": "#/$defs/stringArray"}
+      }
+    },
+    "components": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["readme", "control_selections", "risk_overlays", "evidence_expectations", "external_references"],
+      "properties": {
+        "readme": {"$ref": "#/$defs/relativePath"},
+        "control_selections": {"$ref": "#/$defs/relativePath"},
+        "risk_overlays": {"$ref": "#/$defs/relativePath"},
+        "evidence_expectations": {"$ref": "#/$defs/relativePath"},
+        "external_references": {"$ref": "#/$defs/relativePath"}
+      }
+    },
+    "change": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "date", "author", "description"],
+      "properties": {
+        "version": {"$ref": "#/$defs/nonEmptyString"},
+        "date": {"type": "string", "format": "date"},
+        "author": {"$ref": "#/$defs/nonEmptyString"},
+        "description": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    }
+  }
+}
