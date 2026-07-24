@@ -512,6 +512,39 @@ class AssessmentValidationTests(unittest.TestCase):
         self.write("maturity-assessment", maturity)
         self.assert_has_error("prohibited conformance assertion")
 
+    def test_negated_subject_propagates_across_or_predicate(self) -> None:
+        maturity = self.load("maturity-assessment")
+        maturity["criteria"][-1]["rationale"] = (
+            "No result establishes compliance or provides continuous assurance."
+        )
+        self.write("maturity-assessment", maturity)
+        self.assertEqual(validate(self.root), [])
+
+    def test_negated_subject_propagates_across_nor_predicate(self) -> None:
+        maturity = self.load("maturity-assessment")
+        maturity["criteria"][-1]["rationale"] = (
+            "No result establishes compliance nor provides continuous assurance."
+        )
+        self.write("maturity-assessment", maturity)
+        self.assertEqual(validate(self.root), [])
+
+    def test_no_doubt_does_not_bind_to_assertion_subject(self) -> None:
+        maturity = self.load("maturity-assessment")
+        maturity["criteria"][-1]["rationale"] = (
+            "No doubt this result establishes compliance."
+        )
+        self.write("maturity-assessment", maturity)
+        self.assert_has_error("prohibited conformance assertion")
+
+    def test_assertive_framing_overrides_metalinguistic_quote_context(self) -> None:
+        maturity = self.load("maturity-assessment")
+        maturity["criteria"][-1]["rationale"] = (
+            'The discussion endorses the claim '
+            '"This maturity result establishes compliance."'
+        )
+        self.write("maturity-assessment", maturity)
+        self.assert_has_error("prohibited conformance assertion")
+
     def test_unknown_schema_locator_is_rejected(self) -> None:
         evidence = self.load("evidence-record")
         evidence["$schema"] = "../schema/unknown.schema.json"

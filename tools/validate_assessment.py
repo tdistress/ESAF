@@ -43,19 +43,33 @@ PROPOSITION_BOUNDARY = re.compile(
     re.IGNORECASE,
 )
 DIRECT_NEGATED_PROPOSITION = re.compile(
-    r"^\s*[\"'“‘«]?\s*(?:no\b|nothing\b|neither\b|nor\b|not\s+one\b)",
+    r"^\s*[\"'“‘«]?\s*(?:no\b(?!\s+(?:doubt|question|wonder)\b)"
+    r"|nothing\b|neither\b|nor\b|not\s+one\b)",
     re.IGNORECASE,
 )
 IMMEDIATE_NEVER = re.compile(r"\bnever\s*$", re.IGNORECASE)
+IMMEDIATE_ACTION_NEGATOR = re.compile(
+    r"\b(?:not|never|cannot|can['’]t|doesn['’]t|isn['’]t)\s*$",
+    re.IGNORECASE,
+)
 METALINGUISTIC_NOUN = re.compile(
     r"\b(?:phrase|words?|text|statement|assertion|claim)\b",
     re.IGNORECASE,
 )
 METALINGUISTIC_ACTION = re.compile(
-    r"\b(?:discussion|discuss(?:ed|es|ing)?|prohibit(?:ed|s|ing)?"
-    r"|reject(?:ed|s|ing)?|avoid(?:ed|s|ing)?)\b",
+    r"\b(?:discussion|discuss(?:ed|es|ing)?|quot(?:e|es|ed|ing)"
+    r"|mention(?:s|ed|ing)?|prohibit(?:ed|s|ing)?"
+    r"|reject(?:ed|s|ing)?|avoid(?:ed|s|ing)?|label(?:s|ed|ing)?)\b",
     re.IGNORECASE,
 )
+ASSERTIVE_ACTION = re.compile(
+    r"\b(?:endors(?:e|es|ed|ing)|conclud(?:e|es|ed|ing)"
+    r"|assert(?:s|ed|ing)?|stat(?:e|es|ed|ing)"
+    r"|affirm(?:s|ed|ing)?|confirm(?:s|ed|ing)?"
+    r"|claim(?:s|ed|ing)?)\b",
+    re.IGNORECASE,
+)
+COORDINATING_BOUNDARIES = frozenset(("and", "or", "nor"))
 SYMMETRIC_QUOTES = ('"', "'")
 ASYMMETRIC_QUOTES = (("“", "”"), ("‘", "’"), ("«", "»"))
 PLACEHOLDER_WORD = re.compile(r"\b(?:TBD|TODO|FIXME)\b", re.IGNORECASE)
@@ -216,8 +230,89 @@ def quoted_occurrence_is_metalinguistic(
     )
     return bool(
         METALINGUISTIC_NOUN.search(surrounding)
-        and METALINGUISTIC_ACTION.search(surrounding)
+        and has_affirmative_action(METALINGUISTIC_ACTION, surrounding)
+        and not has_affirmative_action(ASSERTIVE_ACTION, surrounding)
     )
+
+
+def has_affirmative_action(pattern: re.Pattern[str], text: str) -> bool:
+    for match in pattern.finditer(text):
+        word = match.group(0).casefold()
+        prefix = text[: match.start()]
+        boundaries = list(PROPOSITION_BOUNDARY.finditer(prefix))
+        proposition_start = boundaries[-1].end() if boundaries else 0
+        proposition_prefix = prefix[proposition_start:]
+        if (
+            DIRECT_NEGATED_PROPOSITION.search(proposition_prefix)
+            or IMMEDIATE_ACTION_NEGATOR.search(proposition_prefix)
+        ):
+            continue
+        if word in {"claim", "state"} and re.search(
+            r"\b(?:a|an|the|this|that|these|those)\s*$",
+            proposition_prefix,
+            re.IGNORECASE,
+        ):
+            continue
+        return True
+    return False
+
+
+def starts_with_prohibited_predicate(text: str) -> bool:
+    stripped = text.lstrip(" \t\r\n\"'“‘«")
+    return any(
+        re.match(re.escape(phrase), stripped, re.IGNORECASE)
+        for phrase in PROHIBITED_ASSERTIONS
+    )
+
+
+def previous_nonempty_segment(
+    text: str,
+    boundaries: list[re.Match[str]],
+    boundary_index: int,
+) -> tuple[str, int]:
+    end = boundaries[boundary_index].start()
+    previous_index = boundary_index - 1
+    while previous_index >= 0:
+        start = boundaries[previous_index].end()
+        segment = text[start:end]
+        if segment.strip():
+            return segment, previous_index
+        end = boundaries[previous_index].start()
+        previous_index -= 1
+    return text[:end], -1
+
+
+def inherits_coordinated_negation(
+    text: str,
+    index: int,
+    boundaries: list[re.Match[str]],
+) -> bool:
+    if not boundaries:
+        return False
+    boundary_index = len(boundaries) - 1
+    boundary = boundaries[boundary_index]
+    if boundary.group(0).casefold() not in COORDINATING_BOUNDARIES:
+        return False
+    current_prefix = text[boundary.end():index]
+    if current_prefix.lstrip(" \t\r\n\"'“‘«"):
+        return False
+
+    while True:
+        segment, preceding_index = previous_nonempty_segment(
+            text,
+            boundaries,
+            boundary_index,
+        )
+        if DIRECT_NEGATED_PROPOSITION.search(segment):
+            return True
+        if not starts_with_prohibited_predicate(segment):
+            return False
+        if preceding_index < 0:
+            return False
+        preceding = boundaries[preceding_index]
+        if preceding.group(0).casefold() not in COORDINATING_BOUNDARIES:
+            return False
+        boundary_index = preceding_index
 
 
 def asserted_prohibited_phrases(text: str) -> Iterator[str]:
@@ -232,6 +327,7 @@ def asserted_prohibited_phrases(text: str) -> Iterator[str]:
             directly_negated = bool(
                 DIRECT_NEGATED_PROPOSITION.search(prefix)
                 or IMMEDIATE_NEVER.search(prefix)
+                or inherits_coordinated_negation(text, index, boundaries)
             )
             if directly_negated:
                 continue
