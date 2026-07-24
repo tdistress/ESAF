@@ -147,6 +147,14 @@ class AssessmentValidationTests(unittest.TestCase):
         self.write("assessment-result", result)
         self.assertEqual(validate(self.root), [])
 
+    def test_draft_result_may_have_empty_methods_and_evidence(self) -> None:
+        result = self.load("assessment-result")
+        result["status"] = "draft"
+        result["methods"] = []
+        result["evidence_refs"] = []
+        self.write("assessment-result", result)
+        self.assertEqual(validate(self.root), [])
+
     def test_invalid_not_applicable_result_is_rejected(self) -> None:
         result = self.load("assessment-result")
         result["determination"] = "not_applicable"
@@ -338,6 +346,24 @@ class AssessmentValidationTests(unittest.TestCase):
         self.write("maturity-assessment", maturity)
         self.assertEqual(validate(self.root), [])
 
+    def test_excluded_component_must_resolve_to_final_record(self) -> None:
+        component = self.component(level="M0")
+        component["status"] = "draft"
+        self.write_example("maturity-component.example.json", component)
+        maturity = self.load("maturity-assessment")
+        maturity["component_results"] = [
+            {
+                "maturity_ref": "MAT-COMPONENT-A",
+                "level": "M0",
+                "applicability": "not_applicable",
+                "rationale": "The fictional component is outside the stated scope.",
+            }
+        ]
+        self.write("maturity-assessment", maturity)
+        self.assert_has_error(
+            "component MAT-COMPONENT-A must be final"
+        )
+
     def test_excluded_component_without_rationale_is_rejected(self) -> None:
         self.component(level="M0")
         maturity = self.load("maturity-assessment")
@@ -408,6 +434,17 @@ class AssessmentValidationTests(unittest.TestCase):
         )
         maturity["limitations"] = [
             "Certification evidence was outside the fictional assessment scope."
+        ]
+        self.write("maturity-assessment", maturity)
+        self.assertEqual(validate(self.root), [])
+
+    def test_explicitly_negated_assertions_are_not_rejected(self) -> None:
+        maturity = self.load("maturity-assessment")
+        maturity["criteria"][-1]["rationale"] = (
+            "No maturity result establishes compliance."
+        )
+        maturity["limitations"] = [
+            "Nothing provides continuous assurance."
         ]
         self.write("maturity-assessment", maturity)
         self.assertEqual(validate(self.root), [])

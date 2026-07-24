@@ -48,10 +48,13 @@
   "allOf": [
     {
       "if": {
-        "properties": { "determination": { "const": "not_assessed" } },
-        "required": ["determination"]
+        "properties": {
+          "status": { "const": "final" },
+          "determination": { "not": { "const": "not_assessed" } }
+        },
+        "required": ["status", "determination"]
       },
-      "else": {
+      "then": {
         "properties": {
           "methods": { "minItems": 1 },
           "evidence_refs": { "minItems": 1 }

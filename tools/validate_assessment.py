@@ -37,6 +37,11 @@ PROHIBITED_ASSERTIONS = (
     "establishes endorsement",
     "provides continuous assurance",
 )
+NEGATED_ASSERTION_SUBJECT = re.compile(
+    r"(?:\bnothing|\bno\s+(?:maturity\s+)?"
+    r"(?:result|assessment|record|level|claim))\s*$",
+    re.IGNORECASE,
+)
 PLACEHOLDER_WORD = re.compile(r"\b(?:TBD|TODO|FIXME)\b", re.IGNORECASE)
 BRACKETED_PLACEHOLDER = re.compile(
     r"\[[^\]]*(?:TBD|TODO|FIXME|INSERT|PLACEHOLDER)\b[^\]]*\]",
@@ -132,6 +137,24 @@ def list_of_objects(value: object) -> list[JsonObject]:
     if not isinstance(value, list):
         return []
     return [item for item in value if isinstance(item, dict)]
+
+
+def asserted_prohibited_phrases(text: str):
+    folded = text.casefold()
+    for phrase in PROHIBITED_ASSERTIONS:
+        offset = 0
+        while True:
+            index = folded.find(phrase, offset)
+            if index < 0:
+                break
+            clause_start = max(
+                folded.rfind(delimiter, 0, index)
+                for delimiter in ".!?;:"
+            )
+            prefix = folded[clause_start + 1 : index]
+            if not NEGATED_ASSERTION_SUBJECT.search(prefix):
+                yield phrase
+            offset = index + len(phrase)
 
 
 def duplicate_finding_diagnostics(
@@ -290,21 +313,17 @@ def maturity_local_diagnostics(
         for criterion in criteria:
             rationale = criterion.get("rationale")
             if isinstance(rationale, str):
-                folded = rationale.casefold()
-                for assertion in PROHIBITED_ASSERTIONS:
-                    if assertion in folded:
-                        diagnostics.append(
-                            f"{relative}: prohibited conformance assertion "
-                            f"{assertion!r}"
-                        )
-        for limitation in list_of_strings(maturity.get("limitations")):
-            folded = limitation.casefold()
-            for assertion in PROHIBITED_ASSERTIONS:
-                if assertion in folded:
+                for assertion in asserted_prohibited_phrases(rationale):
                     diagnostics.append(
                         f"{relative}: prohibited conformance assertion "
                         f"{assertion!r}"
                     )
+        for limitation in list_of_strings(maturity.get("limitations")):
+            for assertion in asserted_prohibited_phrases(limitation):
+                diagnostics.append(
+                    f"{relative}: prohibited conformance assertion "
+                    f"{assertion!r}"
+                )
 
         for component in list_of_objects(maturity.get("component_results")):
             applicability = component.get("applicability")
@@ -381,13 +400,13 @@ def maturity_reference_diagnostics(
                     f"{component_level} but resolved record declares "
                     f"{resolved_level}"
                 )
-            if applicability != "applicable":
-                continue
             if status == "final" and resolved_value.get("status") != "final":
                 diagnostics.append(
-                    f"{relative}: applicable component {maturity_ref} "
+                    f"{relative}: {applicability} component {maturity_ref} "
                     "must be final"
                 )
+                continue
+            if applicability != "applicable":
                 continue
             if isinstance(resolved_level, str):
                 applicable_levels.append(resolved_level)
