@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://esaf.dev/schema/profiles/risk-overlays/0.1.0",
+  "title": "ESAF profile risks and overlays",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "schema_version", "profile_id", "profile_version", "risks", "overlays"],
+  "properties": {
+    "$schema": {"const": "../../schema/risk-overlays.schema.json"},
+    "schema_version": {"const": "0.1.0"},
+    "profile_id": {"$ref": "#/$defs/profileId"},
+    "profile_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "risks": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/risk"}},
+    "overlays": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/overlay"}}
+  },
+  "$defs": {
+    "profileId": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*--[a-z0-9]+(?:-[a-z0-9]+)*--[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "identifier": {"type": "string", "pattern": "^[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*$"},
+    "controlId": {"type": "string", "pattern": "^[A-Z][A-Z0-9]{1,15}-[0-9]{3}$"},
+    "nonEmptyString": {"type": "string", "minLength": 1},
+    "sourceBasisReference": {
+      "type": "string",
+      "minLength": 1,
+      "description": "An authoritative ESAF control identifier or an exact manifest permitted source identifier; semantic validation resolves the closed set."
+    },
+    "identifierArray": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/identifier"}},
+    "controlArray": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/controlId"}},
+    "risk": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["risk_id", "statement", "circumstances", "source_basis", "affected_controls", "overlay_ids"],
+      "properties": {
+        "risk_id": {"$ref": "#/$defs/identifier"},
+        "statement": {"$ref": "#/$defs/nonEmptyString"},
+        "circumstances": {"$ref": "#/$defs/nonEmptyString"},
+        "source_basis": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/sourceBasisReference"}},
+        "affected_controls": {"$ref": "#/$defs/controlArray"},
+        "overlay_ids": {"$ref": "#/$defs/identifierArray"}
+      }
+    },
+    "overlay": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["overlay_id", "statement", "applicability", "affected_controls", "risk_ids", "evidence_expectation_ids", "strengthening_rationale"],
+      "properties": {
+        "overlay_id": {"$ref": "#/$defs/identifier"},
+        "statement": {"$ref": "#/$defs/nonEmptyString"},
+        "applicability": {"enum": ["universal", "conditional"]},
+        "activation_conditions": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/identifier"}},
+        "affected_controls": {"$ref": "#/$defs/controlArray"},
+        "risk_ids": {"$ref": "#/$defs/identifierArray"},
+        "evidence_expectation_ids": {"$ref": "#/$defs/identifierArray"},
+        "strengthening_rationale": {"$ref": "#/$defs/nonEmptyString"}
+      },
+      "allOf": [
+        {"if": {"properties": {"applicability": {"const": "conditional"}}, "required": ["applicability"]}, "then": {"required": ["activation_conditions"]}, "else": {"not": {"required": ["activation_conditions"]}}}
+      ]
+    }
+  }
+}

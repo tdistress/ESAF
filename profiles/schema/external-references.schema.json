@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://esaf.dev/schema/profiles/external-references/0.1.0",
+  "title": "ESAF profile external references",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "schema_version", "profile_id", "profile_version", "external_references"],
+  "properties": {
+    "$schema": {"const": "../../schema/external-references.schema.json"},
+    "schema_version": {"const": "0.1.0"},
+    "profile_id": {"$ref": "#/$defs/profileId"},
+    "profile_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "external_references": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/externalReference"}}
+  },
+  "$defs": {
+    "profileId": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*--[a-z0-9]+(?:-[a-z0-9]+)*--[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "mappingSetId": {"type": "string", "pattern": "^[a-z0-9]+(?:[-.][a-z0-9]+)*(?:--[a-z0-9]+(?:[-.][a-z0-9]+)*)+$"},
+    "nonEmptyString": {"type": "string", "minLength": 1},
+    "relativePath": {"type": "string", "pattern": "^(?!/)(?!.*\\\\)[A-Za-z0-9][A-Za-z0-9._-]*(?:/[A-Za-z0-9][A-Za-z0-9._-]*)*$"},
+    "externalReference": {
+      "type": "object",
+      "description": "A mapping snapshot pin whose editorial status is checked separately from governed registry lifecycle events.",
+      "additionalProperties": false,
+      "required": ["mapping_set_id", "registry_path", "expected_status", "reference_use", "qualified_review_required", "non_import_statement"],
+      "properties": {
+        "mapping_set_id": {"$ref": "#/$defs/mappingSetId", "description": "Exact mapping snapshot identifier."},
+        "registry_path": {"$ref": "#/$defs/relativePath", "description": "Repository-relative path to the governed lifecycle registry record."},
+        "expected_status": {"enum": ["draft", "reviewed", "approved", "published", "deprecated", "retired"], "description": "Expected mapping snapshot editorial status, or the relied-upon governed state after approval."},
+        "reference_use": {"const": "lifecycle_reference_only"},
+        "qualified_review_required": {"const": true},
+        "non_import_statement": {"$ref": "#/$defs/nonEmptyString"}
+      }
+    }
+  }
+}

@@ -1,0 +1,425 @@
+{
+  "$schema": "../../schema/evidence-expectations.schema.json",
+  "schema_version": "0.1.0",
+  "profile_id": "uk--jurisdiction-profile--0.1.0",
+  "profile_version": "0.1.0",
+  "expectations": [
+    {
+      "expectation_id": "BOUNDARY-EXPOSURE-EVIDENCE",
+      "purpose": "Demonstrate which AI service and administrative paths were reachable from the internet during the assessment period and whether authenticated administration, boundary protections, resource safeguards, and detection paths operated as recorded.",
+      "evidence_types": ["configuration", "record", "metric", "technical_test", "log"],
+      "control_ids": [
+        "IAM-110",
+        "IAM-130",
+        "INF-110",
+        "INF-120",
+        "INF-140",
+        "INF-150",
+        "MON-110"
+      ],
+      "overlay_ids": [
+        "EXPOSED-BOUNDARY-OVERLAY"
+      ],
+      "quality_attributes": [
+        "relevance",
+        "completeness",
+        "timeliness",
+        "integrity",
+        "traceability"
+      ],
+      "activation_conditions": [
+        "INTERNET-EXPOSURE"
+      ],
+      "strengthening": "All seven ESAF-1500 evidence-quality attributes remain required; the listed attributes are profile-specific emphases. The evidence population shall reconcile the declared endpoint inventory to externally observed reachability, authentication and privileged-access configuration and tests, resource-safeguard configuration and metrics, and representative boundary and exhaustion tests no older than the material network, service, identity, or safeguard change that defines the assessed exposure."
+    },
+    {
+      "expectation_id": "AI-APPLICATION-INTERFACE-EVIDENCE",
+      "purpose": "Demonstrate which AI-use interfaces and workflows, including privileged AI-use workflows, were reachable from the internet during the assessment period, how a user or automated client invoked or interacted with the assessed AI capability, and whether misuse, abuse, resource-protection, detection, and response safeguards operated as recorded.",
+      "evidence_types": ["configuration", "record", "metric", "technical_test", "log"],
+      "control_ids": [
+        "APP-150"
+      ],
+      "overlay_ids": [
+        "AI-APPLICATION-INTERFACE-OVERLAY"
+      ],
+      "quality_attributes": [
+        "relevance",
+        "reliability",
+        "completeness",
+        "timeliness",
+        "attribution",
+        "integrity",
+        "traceability"
+      ],
+      "activation_conditions": [
+        "INTERNET-REACHABLE-AI-APPLICATION-INTERFACE"
+      ],
+      "strengthening": "All seven ESAF-1500 evidence-quality attributes remain required; the listed attributes are profile-specific emphases. The evidence shall reconcile the current AI-use interface and workflow inventory to external reachability results, invocation or interaction records, abuse cases, thresholds, limits, monitoring rules, alerts, response procedures, representative misuse and exhaustion tests, and accountable application-owner records; administration-only consoles or paths shall be separately identified and excluded."
+    },
+    {
+      "expectation_id": "INTERNET-REACHABLE-API-EVIDENCE",
+      "purpose": "Demonstrate which APIs that expose or connect AI capabilities, models, data, tools, or administrative functions were reachable from the internet during the assessment period and whether their required API security controls operated as recorded.",
+      "evidence_types": ["configuration", "record", "technical_test", "log"],
+      "control_ids": [
+        "API-110"
+      ],
+      "overlay_ids": [
+        "INTERNET-REACHABLE-API-OVERLAY"
+      ],
+      "quality_attributes": [
+        "relevance",
+        "reliability",
+        "completeness",
+        "timeliness",
+        "attribution",
+        "integrity",
+        "traceability"
+      ],
+      "activation_conditions": [
+        "INTERNET-REACHABLE-API"
+      ],
+      "strengthening": "All seven ESAF-1500 evidence-quality attributes remain required; the listed attributes are profile-specific emphases. The evidence shall reconcile the current AI API inventory and contracts to gateway, routing, firewall, endpoint-discovery, and external reachability results, and include representative authentication, authorization, validation, replay, rate-limit, logging, and deprecation tests for the resolved internet-reachable API population."
+    },
+    {
+      "expectation_id": "PRIVILEGED-CONFIGURATION-EVIDENCE",
+      "purpose": "Demonstrate that privileged identities, approved configuration state, material changes, and attributable audit events align for the same assessed boundary and period.",
+      "evidence_types": ["configuration", "record", "log"],
+      "control_ids": [
+        "IAM-120",
+        "IAM-130",
+        "IAM-150",
+        "INF-110",
+        "INF-130",
+        "MON-150"
+      ],
+      "overlay_ids": [
+        "PRIVILEGED-CONFIGURATION-OVERLAY"
+      ],
+      "quality_attributes": [
+        "relevance",
+        "reliability",
+        "completeness",
+        "timeliness",
+        "attribution",
+        "integrity",
+        "traceability"
+      ],
+      "strengthening": "All seven ESAF-1500 evidence-quality attributes remain required; the listed attributes are profile-specific emphases. The evidence shall cover every privileged path and material configuration domain in scope, identify the originating identity and approval, and preserve exceptions and unexplained differences rather than treating collection as a determination."
+    },
+    {
+      "expectation_id": "MODEL-RETIREMENT-EVIDENCE",
+      "purpose": "Demonstrate the lifecycle and deployment state, affected capability scope, authorized retirement disposition, and verified completion for each end-of-life, replaced, unsupported, compromised, nonconforming, expired, or abandoned model.",
+      "evidence_types": ["record", "configuration", "contract", "technical_test"],
+      "control_ids": [
+        "MOD-150"
+      ],
+      "overlay_ids": [
+        "MODEL-RETIREMENT-OVERLAY"
+      ],
+      "quality_attributes": [
+        "relevance",
+        "reliability",
+        "completeness",
+        "timeliness",
+        "attribution",
+        "integrity",
+        "traceability"
+      ],
+      "activation_conditions": [
+        "UNSUPPORTED-MODEL-PRESENCE"
+      ],
+      "strengthening": "All seven ESAF-1500 evidence-quality attributes remain required; the listed attributes are profile-specific emphases. The evidence shall cover the reconciled population of end-of-life, replaced, unsupported, compromised, nonconforming, expired, and abandoned models at the assessment end date and distinguish lifecycle, support, validation, incident, conformity, expiry, and abandonment facts from authorized retirement decisions, dependency impacts, access and deployment removal, retained artifacts, and verified closure."
+    },
+    {
+      "expectation_id": "UNSUPPORTED-INFRASTRUCTURE-EVIDENCE",
+      "purpose": "Demonstrate the support state, vulnerability exposure, accountable treatment, compensating controls, and verified action for each unsupported infrastructure component or managed-service dependency.",
+      "evidence_types": ["record", "configuration", "contract", "technical_test"],
+      "control_ids": [
+        "INF-120"
+      ],
+      "overlay_ids": [
+        "UNSUPPORTED-INFRASTRUCTURE-OVERLAY"
+      ],
+      "quality_attributes": [
+        "relevance",
+        "reliability",
+        "completeness",
+        "timeliness",
+        "attribution",
+        "integrity",
+        "traceability"
+      ],
+      "activation_conditions": [
+        "UNSUPPORTED-INFRASTRUCTURE-COMPONENT-PRESENCE"
+      ],
+      "strengthening": "All seven ESAF-1500 evidence-quality attributes remain required; the listed attributes are profile-specific emphases. The evidence shall cover the reconciled unsupported infrastructure population at the assessment end date and separate provider support facts, vulnerability and exposure assessment, organizational treatment decisions, compensating controls, exceptions, and verified closure."
+    },
+    {
+      "expectation_id": "UNSUPPORTED-TECHNOLOGY-EVIDENCE",
+      "purpose": "Demonstrate lifecycle ownership, support state, technical debt, governed disposition, replacement planning, and verified action for each unsupported AI technology or architecture component.",
+      "evidence_types": ["record", "configuration", "contract", "technical_test"],
+      "control_ids": [
+        "ARC-150"
+      ],
+      "overlay_ids": [
+        "UNSUPPORTED-TECHNOLOGY-OVERLAY"
+      ],
+      "quality_attributes": [
+        "relevance",
+        "reliability",
+        "completeness",
+        "timeliness",
+        "attribution",
+        "integrity",
+        "traceability"
+      ],
+      "activation_conditions": [
+        "UNSUPPORTED-TECHNOLOGY-COMPONENT-PRESENCE"
+      ],
+      "strengthening": "All seven ESAF-1500 evidence-quality attributes remain required; the listed attributes are profile-specific emphases. The evidence shall cover the reconciled unsupported technology population at the assessment end date and distinguish supplier support facts, owners, dependencies, debt, exceptions, approved lifecycle decisions, replacement criteria, and verified closure."
+    },
+    {
+      "expectation_id": "MODEL-INTAKE-EVIDENCE",
+      "purpose": "Demonstrate that each untrusted model intake path enforces approved sourcing, provenance, integrity, authenticity, ownership and license checks, malicious-behavior inspection, validation, and acceptance decisions.",
+      "evidence_types": ["procedure", "configuration", "record", "technical_test"],
+      "control_ids": [
+        "MOD-110"
+      ],
+      "overlay_ids": [
+        "MODEL-INTAKE-OVERLAY"
+      ],
+      "quality_attributes": [
+        "relevance",
+        "reliability",
+        "completeness",
+        "timeliness",
+        "attribution",
+        "integrity",
+        "traceability"
+      ],
+      "activation_conditions": [
+        "UNTRUSTED-MODEL-INTAKE"
+      ],
+      "strengthening": "All seven ESAF-1500 evidence-quality attributes remain required; the listed attributes are profile-specific emphases. The evidence population shall reconcile the activated model intake paths and admitted models used during the assessment period to approved-source rules, provenance and integrity results, validation, exceptions, rejection records, and accountable acceptance decisions."
+    },
+    {
+      "expectation_id": "APPLICATION-ARTIFACT-INTAKE-EVIDENCE",
+      "purpose": "Demonstrate that each untrusted application-artifact intake path enforces approved sourcing, provenance, integrity, dependency inspection, risk-proportionate review and testing, and acceptance decisions.",
+      "evidence_types": ["procedure", "configuration", "record", "technical_test"],
+      "control_ids": [
+        "APP-140"
+      ],
+      "overlay_ids": [
+        "APPLICATION-ARTIFACT-INTAKE-OVERLAY"
+      ],
+      "quality_attributes": [
+        "relevance",
+        "reliability",
+        "completeness",
+        "timeliness",
+        "attribution",
+        "integrity",
+        "traceability"
+      ],
+      "activation_conditions": [
+        "UNTRUSTED-APPLICATION-ARTIFACT-INTAKE"
+      ],
+      "strengthening": "All seven ESAF-1500 evidence-quality attributes remain required; the listed attributes are profile-specific emphases. The evidence population shall reconcile the activated application-artifact intake paths and admitted artifacts used during the assessment period to build and dependency manifests, provenance and integrity results, tests, exceptions, rejection records, and accountable acceptance decisions."
+    },
+    {
+      "expectation_id": "CALLABLE-TOOL-EVIDENCE",
+      "purpose": "Demonstrate that each callable tool or plugin is inventoried, approved, constrained, monitored, changed, and retired according to its purpose, permissions, data access, environment, trust boundary, and failure behavior.",
+      "evidence_types": ["procedure", "configuration", "record", "technical_test", "log"],
+      "control_ids": [
+        "API-120"
+      ],
+      "overlay_ids": [
+        "CALLABLE-TOOL-OVERLAY"
+      ],
+      "quality_attributes": [
+        "relevance",
+        "reliability",
+        "completeness",
+        "timeliness",
+        "attribution",
+        "integrity",
+        "traceability"
+      ],
+      "activation_conditions": [
+        "CALLABLE-TOOL-OR-PLUGIN-USE"
+      ],
+      "strengthening": "All seven ESAF-1500 evidence-quality attributes remain required; the listed attributes are profile-specific emphases. The evidence shall reconcile the current callable-tool and plugin inventory to orchestration configuration, permissions, approval and change records, representative execution and failure tests, monitoring, exceptions, and retirement state for the assessment period."
+    },
+    {
+      "expectation_id": "INFRASTRUCTURE-DEPENDENCY-INTAKE-EVIDENCE",
+      "purpose": "Demonstrate that each untrusted infrastructure-dependency intake path enforces approved sourcing, integrity verification, version and vulnerability inspection, risk-proportionate treatment, and acceptance decisions.",
+      "evidence_types": ["procedure", "configuration", "record", "technical_test"],
+      "control_ids": [
+        "INF-120"
+      ],
+      "overlay_ids": [
+        "INFRASTRUCTURE-DEPENDENCY-INTAKE-OVERLAY"
+      ],
+      "quality_attributes": [
+        "relevance",
+        "reliability",
+        "completeness",
+        "timeliness",
+        "attribution",
+        "integrity",
+        "traceability"
+      ],
+      "activation_conditions": [
+        "UNTRUSTED-INFRASTRUCTURE-DEPENDENCY-INTAKE"
+      ],
+      "strengthening": "All seven ESAF-1500 evidence-quality attributes remain required; the listed attributes are profile-specific emphases. The evidence population shall reconcile the activated infrastructure-dependency intake paths and admitted dependencies used during the assessment period to manifests, approved-source rules, integrity and vulnerability results, exceptions, rejection records, and accountable treatment and acceptance decisions."
+    },
+    {
+      "expectation_id": "EXTERNAL-RESPONSIBILITY-EVIDENCE",
+      "purpose": "Demonstrate that provider responsibilities, applicable terms, architecture dependencies, assurance access, continuity, and exit ownership remain mutually consistent for each external provider dependency.",
+      "evidence_types": ["contract", "record", "configuration", "external_assurance"],
+      "control_ids": [
+        "CMP-120",
+        "ARC-140"
+      ],
+      "overlay_ids": [
+        "EXTERNAL-RESPONSIBILITY-OVERLAY"
+      ],
+      "quality_attributes": [
+        "relevance",
+        "reliability",
+        "completeness",
+        "timeliness",
+        "attribution",
+        "traceability"
+      ],
+      "activation_conditions": [
+        "EXTERNAL-PROVIDER-USE"
+      ],
+      "strengthening": "All seven ESAF-1500 evidence-quality attributes remain required; the listed attributes are profile-specific emphases. The evidence shall cover the complete external-provider population and current applicable terms; inherited or external assurance remains evidence with recorded limitations and is not itself an assessment determination."
+    },
+    {
+      "expectation_id": "EXTERNAL-AI-SERVICE-INTEGRATION-EVIDENCE",
+      "purpose": "Demonstrate that security, privacy, data use, retention, training, residency, availability, change, incident, assurance, continuity, and exit requirements are defined and enforced for each live external AI service integration.",
+      "evidence_types": ["contract", "record", "configuration", "technical_test", "external_assurance"],
+      "control_ids": [
+        "API-140"
+      ],
+      "overlay_ids": [
+        "EXTERNAL-AI-SERVICE-INTEGRATION-OVERLAY"
+      ],
+      "quality_attributes": [
+        "relevance",
+        "reliability",
+        "completeness",
+        "timeliness",
+        "attribution",
+        "integrity",
+        "traceability"
+      ],
+      "activation_conditions": [
+        "EXTERNAL-AI-SERVICE-INTEGRATION"
+      ],
+      "strengthening": "All seven ESAF-1500 evidence-quality attributes remain required; the listed attributes are profile-specific emphases. The evidence shall reconcile the complete live external AI service-integration population to due diligence, contracts, architecture and data flows, technical configuration, shared-responsibility records, assurance, monitoring, continuity, and exit records for the assessment period; downloaded or otherwise acquired external model artifacts without a live service boundary shall be separately identified and excluded."
+    },
+    {
+      "expectation_id": "MATERIAL-DEPENDENCY-EVIDENCE",
+      "purpose": "Demonstrate the factual E1 through E4 classification and material external provider or platform dependency, together with the interfaces, formats, configuration, migration, isolation, and exit capabilities required to manage continuity and concentration risk.",
+      "evidence_types": ["record", "contract", "configuration", "technical_test"],
+      "control_ids": [
+        "API-150"
+      ],
+      "overlay_ids": [
+        "MATERIAL-DEPENDENCY-OVERLAY"
+      ],
+      "quality_attributes": [
+        "relevance",
+        "reliability",
+        "completeness",
+        "timeliness",
+        "attribution",
+        "integrity",
+        "traceability"
+      ],
+      "activation_conditions": [
+        "MATERIAL-EXTERNAL-PROVIDER-DEPENDENCY"
+      ],
+      "strengthening": "All seven ESAF-1500 evidence-quality attributes remain required; the listed attributes are profile-specific emphases. The evidence shall distinguish the factual capability classification and dependency materiality determination from the resulting interface contracts, export tests, migration plan, alternative-provider or isolation tests, and exit criteria."
+    },
+    {
+      "expectation_id": "THIRD-PARTY-ADMINISTRATION-EVIDENCE",
+      "purpose": "Demonstrate the identity, authority, authentication, duration, activity, review, emergency use, and revocation state of every third-party administrative path.",
+      "evidence_types": ["contract", "configuration", "record", "log"],
+      "control_ids": [
+        "IAM-130",
+        "IAM-140",
+        "IAM-150",
+        "INF-130",
+        "CMP-120",
+        "ARC-140"
+      ],
+      "overlay_ids": [
+        "THIRD-PARTY-ADMINISTRATION-OVERLAY"
+      ],
+      "quality_attributes": [
+        "relevance",
+        "reliability",
+        "completeness",
+        "timeliness",
+        "attribution",
+        "integrity",
+        "traceability"
+      ],
+      "activation_conditions": [
+        "THIRD-PARTY-ADMINISTRATION"
+      ],
+      "strengthening": "All seven ESAF-1500 evidence-quality attributes remain required; the listed attributes are profile-specific emphases. The evidence shall reconcile contractual support authority to current privileged identities and attributable activity for the assessment period, including dormant, emergency, and recently revoked access."
+    },
+    {
+      "expectation_id": "SYSTEM-BOUNDARY-EVIDENCE",
+      "purpose": "Demonstrate the assessed AI system, business purpose, United Kingdom operating basis, included and excluded components, dependencies, suppliers, condition answers, limitations, and accountable owners.",
+      "evidence_types": ["record", "configuration", "contract", "observation"],
+      "control_ids": [
+        "GOV-130",
+        "RSK-110",
+        "ARC-110"
+      ],
+      "overlay_ids": [
+        "SCOPE-EVIDENCE-OVERLAY"
+      ],
+      "quality_attributes": [
+        "relevance",
+        "completeness",
+        "timeliness",
+        "attribution",
+        "traceability"
+      ],
+      "strengthening": "All seven ESAF-1500 evidence-quality attributes remain required; the listed attributes are profile-specific emphases. The boundary record shall be dated for the assessment period, approved by accountable business and technical owners, and reconcile unresolved scope questions and exclusions to their effect on the evidence population."
+    },
+    {
+      "expectation_id": "ASSET-COVERAGE-EVIDENCE",
+      "purpose": "Demonstrate that identity, model, hosting, service, and dependency inventories cover the declared system boundary and support a complete control and evidence population.",
+      "evidence_types": ["record", "configuration"],
+      "control_ids": [
+        "IAM-100",
+        "MOD-100",
+        "INF-100",
+        "AUD-120",
+        "ARC-110"
+      ],
+      "overlay_ids": [
+        "SCOPE-EVIDENCE-OVERLAY"
+      ],
+      "quality_attributes": [
+        "relevance",
+        "reliability",
+        "completeness",
+        "timeliness",
+        "attribution",
+        "integrity",
+        "traceability"
+      ],
+      "strengthening": "All seven ESAF-1500 evidence-quality attributes remain required; the listed attributes are profile-specific emphases. Inventory evidence shall be reconciled across authoritative sources at the assessment end date, disclose unmatched records and sampling limitations, and retain source attribution and integrity verification."
+    }
+  ]
+}

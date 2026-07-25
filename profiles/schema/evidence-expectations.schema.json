@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://esaf.dev/schema/profiles/evidence-expectations/0.1.0",
+  "title": "ESAF profile evidence expectations",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "schema_version", "profile_id", "profile_version", "expectations"],
+  "properties": {
+    "$schema": {"const": "../../schema/evidence-expectations.schema.json"},
+    "schema_version": {"const": "0.1.0"},
+    "profile_id": {"$ref": "#/$defs/profileId"},
+    "profile_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "expectations": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/evidenceExpectation"}}
+  },
+  "$defs": {
+    "profileId": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*--[a-z0-9]+(?:-[a-z0-9]+)*--[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "identifier": {"type": "string", "pattern": "^[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*$"},
+    "controlId": {"type": "string", "pattern": "^[A-Z][A-Z0-9]{1,15}-[0-9]{3}$"},
+    "nonEmptyString": {"type": "string", "minLength": 1},
+    "identifierArray": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/identifier"}},
+    "controlArray": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/controlId"}},
+    "qualityAttribute": {"enum": ["relevance", "reliability", "completeness", "timeliness", "attribution", "integrity", "traceability"]},
+    "evidenceExpectation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["expectation_id", "purpose", "evidence_types", "quality_attributes"],
+      "properties": {
+        "expectation_id": {"$ref": "#/$defs/identifier"},
+        "purpose": {"$ref": "#/$defs/nonEmptyString"},
+        "evidence_types": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": ["policy", "procedure", "record", "configuration", "log", "technical_test", "observation", "interview", "metric", "contract", "external_assurance", "other"]
+          }
+        },
+        "other_type_description": {"$ref": "#/$defs/nonEmptyString"},
+        "control_ids": {"$ref": "#/$defs/controlArray"},
+        "overlay_ids": {"$ref": "#/$defs/identifierArray"},
+        "quality_attributes": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/qualityAttribute"}},
+        "activation_conditions": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/identifier"}},
+        "strengthening": {"$ref": "#/$defs/nonEmptyString"}
+      },
+      "anyOf": [
+        {"required": ["control_ids"]},
+        {"required": ["overlay_ids"]}
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "evidence_types": {"contains": {"const": "other"}}
+            },
+            "required": ["evidence_types"]
+          },
+          "then": {"required": ["other_type_description"]},
+          "else": {"not": {"required": ["other_type_description"]}}
+        }
+      ]
+    }
+  }
+}

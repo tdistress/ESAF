@@ -8,7 +8,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from tools.validate_assessment import validate
+from tools.validate_assessment import asserted_prohibited_phrases, validate
 
 
 REPO = Path(__file__).resolve().parents[1]
@@ -72,6 +72,24 @@ class AssessmentValidationTests(unittest.TestCase):
 
     def test_valid_foundation_has_no_errors(self) -> None:
         self.assertEqual(validate(self.root), [])
+
+    def test_profile_reuse_does_not_change_assessment_claim_classifier(self) -> None:
+        self.assertEqual(
+            list(
+                asserted_prohibited_phrases(
+                    "This result does not establish compliance."
+                )
+            ),
+            [],
+        )
+        self.assertEqual(
+            list(
+                asserted_prohibited_phrases(
+                    "This result establishes compliance."
+                )
+            ),
+            ["establishes compliance"],
+        )
 
     def test_duplicate_json_key_is_rejected(self) -> None:
         path = self.root / "assessment/examples/evidence-record.example.json"

@@ -13,6 +13,27 @@ python tools/validate_assessment.py --check
 
 The validator does not score organizations.
 
+## Profile validation
+
+Validate ESAF-1800 schemas, Draft profile packages, control selections,
+traceability, lifecycle-bound external references, and non-claim boundaries:
+
+```shell
+python tools/validate_profiles.py --check
+```
+
+The validator fails closed on malformed, incomplete, or semantically invalid
+packages. It does not establish legal sufficiency, external-scheme assurance,
+or production readiness.
+
+Versioned packages reside at `profiles/<profile-domain>/<version>/`, where the
+profile domain identifies the jurisdiction, industry, sector, or risk context.
+Manifest component values are package-relative component paths; component
+`$schema` values are document-relative schema locators.
+Each package's `PROFILE.md` is the authoritative instance record. The
+validator requires every adjacent derived JSON component to match its named
+Markdown JSON block exactly.
+
 ## Control catalog validation
 
 Install the development dependencies and validate the catalog:

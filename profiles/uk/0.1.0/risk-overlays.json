@@ -1,0 +1,484 @@
+{
+  "$schema": "../../schema/risk-overlays.schema.json",
+  "schema_version": "0.1.0",
+  "profile_id": "uk--jurisdiction-profile--0.1.0",
+  "profile_version": "0.1.0",
+  "risks": [
+    {
+      "risk_id": "EXPOSED-INFRASTRUCTURE-RISK",
+      "statement": "Internet-reachable AI services, application interfaces, privileged workflows, or administrative paths can expand the opportunity for unauthorized access, exploit attempts, automated abuse, and resource exhaustion.",
+      "circumstances": "The risk is in scope when an internet-originated connection can reach an AI service, application interface, supporting interface, privileged workflow, or administrative path in the assessed boundary.",
+      "source_basis": [
+        "APP-150",
+        "API-110",
+        "IAM-110",
+        "IAM-130",
+        "INF-110",
+        "INF-120",
+        "INF-140",
+        "INF-150",
+        "MON-110"
+      ],
+      "affected_controls": [
+        "APP-150",
+        "API-110",
+        "IAM-110",
+        "IAM-130",
+        "INF-110",
+        "INF-120",
+        "INF-140",
+        "INF-150",
+        "MON-110"
+      ],
+      "overlay_ids": [
+        "EXPOSED-BOUNDARY-OVERLAY",
+        "AI-APPLICATION-INTERFACE-OVERLAY",
+        "INTERNET-REACHABLE-API-OVERLAY"
+      ]
+    },
+    {
+      "risk_id": "PRIVILEGED-CONFIGURATION-RISK",
+      "statement": "Unreconciled privileged access or configuration changes can bypass approved AI boundaries, alter protective settings, or prevent accountable reconstruction.",
+      "circumstances": "The risk applies to every assessed boundary because administrative identities, configuration states, and material changes support operation even when their implementation is inherited.",
+      "source_basis": [
+        "IAM-120",
+        "IAM-130",
+        "IAM-140",
+        "IAM-150",
+        "INF-110",
+        "INF-130",
+        "MON-150"
+      ],
+      "affected_controls": [
+        "IAM-120",
+        "IAM-130",
+        "IAM-140",
+        "IAM-150",
+        "INF-110",
+        "INF-130",
+        "MON-150"
+      ],
+      "overlay_ids": [
+        "PRIVILEGED-CONFIGURATION-OVERLAY",
+        "THIRD-PARTY-ADMINISTRATION-OVERLAY"
+      ]
+    },
+    {
+      "risk_id": "LIFECYCLE-DISPOSITION-RISK",
+      "statement": "Models in a retirement-triggering state can remain deployed or accessible until authorized retirement is completed; unsupported or end-of-life infrastructure can retain unresolved vulnerabilities; and unsupported, end-of-life, or out-of-window AI technology or architecture components can lose dependable maintenance paths and frustrate safe recovery or replacement.",
+      "circumstances": "The risk is in scope when records identify an end-of-life, replaced, unsupported, compromised, nonconforming, expired, or abandoned model; an unsupported or end-of-life infrastructure component or managed-service dependency; or an unsupported, end-of-life, or out-of-window AI technology or architecture component.",
+      "source_basis": [
+        "MOD-150",
+        "INF-120",
+        "ARC-150"
+      ],
+      "affected_controls": [
+        "MOD-150",
+        "INF-120",
+        "ARC-150"
+      ],
+      "overlay_ids": [
+        "MODEL-RETIREMENT-OVERLAY",
+        "UNSUPPORTED-INFRASTRUCTURE-OVERLAY",
+        "UNSUPPORTED-TECHNOLOGY-OVERLAY"
+      ]
+    },
+    {
+      "risk_id": "UNTRUSTED-SOFTWARE-RISK",
+      "statement": "Models, application artifacts, or infrastructure dependencies from untrusted paths, and tools or plugins callable by an AI capability, can introduce malicious behavior, vulnerable dependencies, excessive authority, or unauthorized functionality.",
+      "circumstances": "The risk is in scope when a defined untrusted model, application-artifact, or infrastructure-dependency intake path exists, or when the assessed AI capability can invoke a tool or plugin.",
+      "source_basis": [
+        "MOD-110",
+        "APP-140",
+        "API-120",
+        "INF-120"
+      ],
+      "affected_controls": [
+        "MOD-110",
+        "APP-140",
+        "API-120",
+        "INF-120"
+      ],
+      "overlay_ids": [
+        "MODEL-INTAKE-OVERLAY",
+        "APPLICATION-ARTIFACT-INTAKE-OVERLAY",
+        "CALLABLE-TOOL-OVERLAY",
+        "INFRASTRUCTURE-DEPENDENCY-INTAKE-OVERLAY"
+      ]
+    },
+    {
+      "risk_id": "EXTERNAL-RESPONSIBILITY-RISK",
+      "statement": "External services or administrators can leave control ownership, access authority, change duties, evidence access, continuity, and exit responsibilities incomplete or inconsistent.",
+      "circumstances": "The risk is in scope when an external provider supplies a service or when a third party can administer any component in the assessed boundary.",
+      "source_basis": [
+        "API-140",
+        "CMP-120",
+        "ARC-140",
+        "IAM-130",
+        "IAM-150"
+      ],
+      "affected_controls": [
+        "API-140",
+        "CMP-120",
+        "ARC-140",
+        "IAM-130",
+        "IAM-150"
+      ],
+      "overlay_ids": [
+        "EXTERNAL-RESPONSIBILITY-OVERLAY",
+        "EXTERNAL-AI-SERVICE-INTEGRATION-OVERLAY",
+        "THIRD-PARTY-ADMINISTRATION-OVERLAY"
+      ]
+    },
+    {
+      "risk_id": "MATERIAL-DEPENDENCY-RISK",
+      "statement": "Material dependence on an external AI provider or platform can create concentration, continuity, portability, and isolation risk that prevents timely recovery or replacement.",
+      "circumstances": "The risk is in scope when an E1 through E4 capability is materially dependent on an external provider or platform.",
+      "source_basis": [
+        "API-150"
+      ],
+      "affected_controls": [
+        "API-150"
+      ],
+      "overlay_ids": [
+        "MATERIAL-DEPENDENCY-OVERLAY"
+      ]
+    },
+    {
+      "risk_id": "INCOMPLETE-SCOPE-EVIDENCE-RISK",
+      "statement": "Incomplete system, asset, dependency, or evidence coverage can omit material control responsibilities and make assessment conclusions unreliable for the declared boundary.",
+      "circumstances": "The risk applies to every profile use because the package depends on a recorded system boundary, complete control population, resolved conditions, and traceable assessment evidence.",
+      "source_basis": [
+        "GOV-130",
+        "RSK-110",
+        "IAM-100",
+        "MOD-100",
+        "INF-100",
+        "AUD-120",
+        "ARC-110",
+        "ESAF"
+      ],
+      "affected_controls": [
+        "GOV-130",
+        "RSK-110",
+        "IAM-100",
+        "MOD-100",
+        "INF-100",
+        "AUD-120",
+        "ARC-110"
+      ],
+      "overlay_ids": [
+        "SCOPE-EVIDENCE-OVERLAY"
+      ]
+    }
+  ],
+  "overlays": [
+    {
+      "overlay_id": "EXPOSED-BOUNDARY-OVERLAY",
+      "statement": "When internet exposure is present, the organization shall document every reachable service and administrative path, minimize permitted reachability, apply authenticated administration and risk-proportionate transport protection, test detection and response for representative abuse and exploit paths, and establish risk-proportionate capacity, quota, isolation, priority, budget, concurrency, scaling, and shutdown safeguards without fixed profile thresholds.",
+      "applicability": "conditional",
+      "activation_conditions": [
+        "INTERNET-EXPOSURE"
+      ],
+      "affected_controls": [
+        "IAM-110",
+        "IAM-130",
+        "INF-110",
+        "INF-120",
+        "INF-140",
+        "INF-150",
+        "MON-110"
+      ],
+      "risk_ids": [
+        "EXPOSED-INFRASTRUCTURE-RISK"
+      ],
+      "evidence_expectation_ids": [
+        "BOUNDARY-EXPOSURE-EVIDENCE"
+      ],
+      "strengthening_rationale": "The overlay adds a current exposure inventory, tested boundary evidence, authenticated-administration verification, and service-specific resource safeguards while retaining each control's existing authentication, privileged-access, protection, vulnerability, cryptography, capacity, and detection outcomes."
+    },
+    {
+      "overlay_id": "AI-APPLICATION-INTERFACE-OVERLAY",
+      "statement": "When an internet-originated connection can reach an interface or workflow through which a user or automated client invokes or interacts with the assessed AI capability, including a privileged AI-use workflow, the organization shall identify representative misuse, adversarial, automated-abuse, denial-of-service, excessive-consumption, and repeated policy-evasion scenarios, apply risk-proportionate constraints, and test detection and response.",
+      "applicability": "conditional",
+      "activation_conditions": [
+        "INTERNET-REACHABLE-AI-APPLICATION-INTERFACE"
+      ],
+      "affected_controls": [
+        "APP-150"
+      ],
+      "risk_ids": [
+        "EXPOSED-INFRASTRUCTURE-RISK"
+      ],
+      "evidence_expectation_ids": [
+        "AI-APPLICATION-INTERFACE-EVIDENCE"
+      ],
+      "strengthening_rationale": "The overlay focuses APP-150's existing misuse, abuse, resource-protection, and response outcomes on the exact internet-reachable AI-use interface and workflow population. An administration-only console or path is excluded from this condition and remains covered by the separate exposed-boundary IAM and infrastructure chain."
+    },
+    {
+      "overlay_id": "INTERNET-REACHABLE-API-OVERLAY",
+      "statement": "When an internet-originated connection can reach an API that exposes or connects an AI capability, model, data, tool, or administrative function, the organization shall reconcile that API to the approved inventory and contract, verify authentication, object and action authorization, validation, encryption, limits, versioning, logging, monitoring, and secure deprecation, and test representative unauthorized, malformed, replay, and excessive-use paths.",
+      "applicability": "conditional",
+      "activation_conditions": [
+        "INTERNET-REACHABLE-API"
+      ],
+      "affected_controls": [
+        "API-110"
+      ],
+      "risk_ids": [
+        "EXPOSED-INFRASTRUCTURE-RISK"
+      ],
+      "evidence_expectation_ids": [
+        "INTERNET-REACHABLE-API-EVIDENCE"
+      ],
+      "strengthening_rationale": "The overlay focuses API-110's existing interface-security outcomes on the exact population of AI APIs reachable from the internet without treating broader service or administrative-path exposure as proof that an API exists."
+    },
+    {
+      "overlay_id": "PRIVILEGED-CONFIGURATION-OVERLAY",
+      "statement": "The organization shall reconcile privileged identities, approved configuration baselines, material changes, and attributable audit events for the assessed boundary at a frequency justified by change and operational risk.",
+      "applicability": "universal",
+      "affected_controls": [
+        "IAM-120",
+        "IAM-130",
+        "IAM-150",
+        "INF-110",
+        "INF-130",
+        "MON-150"
+      ],
+      "risk_ids": [
+        "PRIVILEGED-CONFIGURATION-RISK"
+      ],
+      "evidence_expectation_ids": [
+        "PRIVILEGED-CONFIGURATION-EVIDENCE"
+      ],
+      "strengthening_rationale": "The overlay connects access, configuration, change, and audit evidence for one declared boundary without changing the authorization, hardening, review, or audit-trail meanings of the affected controls."
+    },
+    {
+      "overlay_id": "MODEL-RETIREMENT-OVERLAY",
+      "statement": "When an end-of-life, replaced, unsupported, compromised, nonconforming, expired, or abandoned model is present, the organization shall govern its authorized retirement, identify affected capabilities and dependencies, remove deployment and access, preserve required evidence, dispose of artifacts and data, update records, and verify that prohibited use cannot continue.",
+      "applicability": "conditional",
+      "activation_conditions": [
+        "UNSUPPORTED-MODEL-PRESENCE"
+      ],
+      "affected_controls": [
+        "MOD-150"
+      ],
+      "risk_ids": [
+        "LIFECYCLE-DISPOSITION-RISK"
+      ],
+      "evidence_expectation_ids": [
+        "MODEL-RETIREMENT-EVIDENCE"
+      ],
+      "strengthening_rationale": "The overlay makes end-of-life, replaced, unsupported, compromised, nonconforming, expired, and abandoned model states, affected-capability scope, and verified retirement evidence explicit while preserving MOD-150's authorized model-retirement outcome."
+    },
+    {
+      "overlay_id": "UNSUPPORTED-INFRASTRUCTURE-OVERLAY",
+      "statement": "When an unsupported or end-of-life infrastructure component or managed-service dependency is present, the organization shall identify and assess the resulting vulnerabilities, determine risk-proportionate remediation, mitigation, or acceptance, record compensating controls and accountable disposition, and verify the completed treatment.",
+      "applicability": "conditional",
+      "activation_conditions": [
+        "UNSUPPORTED-INFRASTRUCTURE-COMPONENT-PRESENCE"
+      ],
+      "affected_controls": [
+        "INF-120"
+      ],
+      "risk_ids": [
+        "LIFECYCLE-DISPOSITION-RISK"
+      ],
+      "evidence_expectation_ids": [
+        "UNSUPPORTED-INFRASTRUCTURE-EVIDENCE"
+      ],
+      "strengthening_rationale": "The overlay focuses INF-120's existing vulnerability-management outcome on the exact unsupported infrastructure population and does not infer model retirement or a broader technology-lifecycle fact."
+    },
+    {
+      "overlay_id": "UNSUPPORTED-TECHNOLOGY-OVERLAY",
+      "statement": "When an unsupported, end-of-life, or out-of-window AI technology or architecture component is present, the organization shall record its owner, version, dependencies, support state, technical debt, approved exception or disposition, replacement criteria and plan, and verification of completed lifecycle action.",
+      "applicability": "conditional",
+      "activation_conditions": [
+        "UNSUPPORTED-TECHNOLOGY-COMPONENT-PRESENCE"
+      ],
+      "affected_controls": [
+        "ARC-150"
+      ],
+      "risk_ids": [
+        "LIFECYCLE-DISPOSITION-RISK"
+      ],
+      "evidence_expectation_ids": [
+        "UNSUPPORTED-TECHNOLOGY-EVIDENCE"
+      ],
+      "strengthening_rationale": "The overlay makes support-state and disposition evidence explicit for ARC-150's technology-lifecycle population without treating a general technology fact as proof of an unsupported model or infrastructure component."
+    },
+    {
+      "overlay_id": "MODEL-INTAKE-OVERLAY",
+      "statement": "When a model can enter approved use through an externally sourced or otherwise untrusted path, the organization shall verify its source, provenance, integrity, authenticity, ownership and license, inspect it for malicious or unexpected behavior, perform risk-proportionate validation, and block admission when approved acceptance criteria are not met.",
+      "applicability": "conditional",
+      "activation_conditions": [
+        "UNTRUSTED-MODEL-INTAKE"
+      ],
+      "affected_controls": [
+        "MOD-110"
+      ],
+      "risk_ids": [
+        "UNTRUSTED-SOFTWARE-RISK"
+      ],
+      "evidence_expectation_ids": [
+        "MODEL-INTAKE-EVIDENCE"
+      ],
+      "strengthening_rationale": "The overlay binds the exact untrusted-model intake fact to MOD-110's existing model supply-chain outcome without inferring application-artifact, tool, or infrastructure-dependency intake."
+    },
+    {
+      "overlay_id": "APPLICATION-ARTIFACT-INTAKE-OVERLAY",
+      "statement": "When an externally sourced or otherwise untrusted application artifact can enter an internally built or materially configured AI application or pipeline, the organization shall record its provenance and integrity, inspect dependencies, perform risk-proportionate review and testing, and block artifacts that do not meet approved acceptance criteria.",
+      "applicability": "conditional",
+      "activation_conditions": [
+        "UNTRUSTED-APPLICATION-ARTIFACT-INTAKE"
+      ],
+      "affected_controls": [
+        "APP-140"
+      ],
+      "risk_ids": [
+        "UNTRUSTED-SOFTWARE-RISK"
+      ],
+      "evidence_expectation_ids": [
+        "APPLICATION-ARTIFACT-INTAKE-EVIDENCE"
+      ],
+      "strengthening_rationale": "The overlay binds the exact application-artifact intake fact to APP-140's existing software-assurance outcome without inferring a model, callable tool, or infrastructure dependency."
+    },
+    {
+      "overlay_id": "CALLABLE-TOOL-OVERLAY",
+      "statement": "When an AI capability can invoke a tool or plugin, the organization shall inventory the callable function and its owner, purpose, permissions, data access, environment, trust boundary, failure behavior, monitoring, approval, change, and retirement state, and shall constrain execution to approved actions.",
+      "applicability": "conditional",
+      "activation_conditions": [
+        "CALLABLE-TOOL-OR-PLUGIN-USE"
+      ],
+      "affected_controls": [
+        "API-120"
+      ],
+      "risk_ids": [
+        "UNTRUSTED-SOFTWARE-RISK"
+      ],
+      "evidence_expectation_ids": [
+        "CALLABLE-TOOL-EVIDENCE"
+      ],
+      "strengthening_rationale": "The overlay binds the exact callable-tool fact to API-120's existing tool and plugin governance outcome without treating tool use as proof of an untrusted software intake path."
+    },
+    {
+      "overlay_id": "INFRASTRUCTURE-DEPENDENCY-INTAKE-OVERLAY",
+      "statement": "When an externally sourced or otherwise untrusted infrastructure dependency can enter the AI infrastructure boundary, the organization shall record its source and integrity, inspect its version and vulnerabilities, determine risk-proportionate remediation, mitigation, or acceptance, and block admission when approved acceptance criteria are not met.",
+      "applicability": "conditional",
+      "activation_conditions": [
+        "UNTRUSTED-INFRASTRUCTURE-DEPENDENCY-INTAKE"
+      ],
+      "affected_controls": [
+        "INF-120"
+      ],
+      "risk_ids": [
+        "UNTRUSTED-SOFTWARE-RISK"
+      ],
+      "evidence_expectation_ids": [
+        "INFRASTRUCTURE-DEPENDENCY-INTAKE-EVIDENCE"
+      ],
+      "strengthening_rationale": "The overlay binds the exact infrastructure-dependency intake fact to INF-120's existing vulnerability-management outcome without inferring model, application-artifact, or callable-tool use."
+    },
+    {
+      "overlay_id": "EXTERNAL-RESPONSIBILITY-OVERLAY",
+      "statement": "When an external provider is used, the organization shall maintain a service-specific responsibility record covering security, data handling, change, incident, continuity, evidence access, dependency concentration, and exit ownership, and shall verify the record against current architecture and service terms.",
+      "applicability": "conditional",
+      "activation_conditions": [
+        "EXTERNAL-PROVIDER-USE"
+      ],
+      "affected_controls": [
+        "CMP-120",
+        "ARC-140"
+      ],
+      "risk_ids": [
+        "EXTERNAL-RESPONSIBILITY-RISK"
+      ],
+      "evidence_expectation_ids": [
+        "EXTERNAL-RESPONSIBILITY-EVIDENCE"
+      ],
+      "strengthening_rationale": "The overlay requires one reconciled provider-responsibility record while preserving the controls' existing supplier and shared-responsibility outcomes."
+    },
+    {
+      "overlay_id": "EXTERNAL-AI-SERVICE-INTEGRATION-OVERLAY",
+      "statement": "When a live external AI service integration is present, the organization shall define and enforce service-specific security, privacy, data-use, retention, training, residency, availability, change, incident, assurance, continuity, and exit requirements and verify them against current architecture, configuration, and service terms.",
+      "applicability": "conditional",
+      "activation_conditions": [
+        "EXTERNAL-AI-SERVICE-INTEGRATION"
+      ],
+      "affected_controls": [
+        "API-140"
+      ],
+      "risk_ids": [
+        "EXTERNAL-RESPONSIBILITY-RISK"
+      ],
+      "evidence_expectation_ids": [
+        "EXTERNAL-AI-SERVICE-INTEGRATION-EVIDENCE"
+      ],
+      "strengthening_rationale": "The overlay focuses API-140's external-service integration outcomes on the exact live service-integration population. A downloaded or otherwise acquired external model artifact without a live service boundary is excluded from this condition."
+    },
+    {
+      "overlay_id": "MATERIAL-DEPENDENCY-OVERLAY",
+      "statement": "When an E1 through E4 capability is materially dependent on an external provider or platform, the organization shall document and test the interfaces, data formats, configuration, model dependencies, migration procedures, isolation options, and exit criteria required to address continuity and concentration risk.",
+      "applicability": "conditional",
+      "activation_conditions": [
+        "MATERIAL-EXTERNAL-PROVIDER-DEPENDENCY"
+      ],
+      "affected_controls": [
+        "API-150"
+      ],
+      "risk_ids": [
+        "MATERIAL-DEPENDENCY-RISK"
+      ],
+      "evidence_expectation_ids": [
+        "MATERIAL-DEPENDENCY-EVIDENCE"
+      ],
+      "strengthening_rationale": "The overlay focuses API-150's interoperability, portability, isolation, and exit outcomes on the factually resolved material E1 through E4 dependency without making an existing replacement or isolation decision part of applicability."
+    },
+    {
+      "overlay_id": "THIRD-PARTY-ADMINISTRATION-OVERLAY",
+      "statement": "When third-party administration is present, the organization shall individually authorize, separately authenticate, time-bound where feasible, monitor, and periodically recertify each external privileged path, including its emergency and revocation arrangements.",
+      "applicability": "conditional",
+      "activation_conditions": [
+        "THIRD-PARTY-ADMINISTRATION"
+      ],
+      "affected_controls": [
+        "IAM-130",
+        "IAM-140",
+        "IAM-150",
+        "INF-130",
+        "CMP-120",
+        "ARC-140"
+      ],
+      "risk_ids": [
+        "PRIVILEGED-CONFIGURATION-RISK",
+        "EXTERNAL-RESPONSIBILITY-RISK"
+      ],
+      "evidence_expectation_ids": [
+        "THIRD-PARTY-ADMINISTRATION-EVIDENCE"
+      ],
+      "strengthening_rationale": "The overlay focuses existing privileged access, secrets, review, configuration, supplier, and responsibility controls on external administrative paths without changing their core requirements."
+    },
+    {
+      "overlay_id": "SCOPE-EVIDENCE-OVERLAY",
+      "statement": "The organization shall maintain a dated assessed-boundary record that reconciles the AI capability, business purpose, components, identities, models, hosting, dependencies, suppliers, condition answers, exclusions, limitations, and accountable owners to the evidence population used for assessment.",
+      "applicability": "universal",
+      "affected_controls": [
+        "GOV-130",
+        "RSK-110",
+        "IAM-100",
+        "MOD-100",
+        "INF-100",
+        "AUD-120",
+        "ARC-110"
+      ],
+      "risk_ids": [
+        "INCOMPLETE-SCOPE-EVIDENCE-RISK"
+      ],
+      "evidence_expectation_ids": [
+        "SYSTEM-BOUNDARY-EVIDENCE",
+        "ASSET-COVERAGE-EVIDENCE"
+      ],
+      "strengthening_rationale": "The overlay joins ownership, classification, inventories, hosting, architecture, and assessment evidence into a profile-specific boundary record while preserving every underlying control meaning."
+    }
+  ]
+}

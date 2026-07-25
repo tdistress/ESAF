@@ -330,20 +330,28 @@ class ReleaseMetadataTests(unittest.TestCase):
         ):
             self.assertIn(non_goal, milestones)
 
-    def test_backlog_removes_completed_release_work_and_orders_dependencies(self) -> None:
+    def test_backlog_removes_completed_work_and_preserves_remaining_dependencies(
+        self,
+    ) -> None:
         backlog = read_repository_file("project/BACKLOG.md")
         self.assertNotIn("Complete open 0.4-alpha publication gates", backlog)
+        self.assertNotIn("Select and publish one Draft pilot", backlog)
         self.assertEqual(
             1,
             backlog.count("Complete coordinated qualified review"),
         )
         review = backlog.index("Complete coordinated qualified review")
-        profile = backlog.index("Select and publish one Draft pilot")
         pci = backlog.index("Complete PCI DSS source readiness")
         self.assertNotIn("Define the minimum ESAF-1500 assessment foundation", backlog)
-        self.assertIn("after the minimum ESAF-1500 assessment foundation is complete", backlog)
-        self.assertLess(review, profile)
-        self.assertLess(profile, pci)
+        self.assertLess(review, pci)
+        for mapping_set_id in EXPECTED_MAPPING_SET_IDS:
+            with self.subTest(mapping_set_id=mapping_set_id):
+                self.assertIn(mapping_set_id, backlog)
+        self.assertIn("official source boundary", backlog)
+        self.assertIn("publication rights", backlog)
+        self.assertIn("qualified-review requirements", backlog)
+        self.assertIn("approved `GO` scope or evidenced", backlog)
+        self.assertIn("`HOLD` condition", backlog)
         self.assertNotIn("This supersedes the former initiative", backlog)
 
     def test_hitrust_is_readiness_gated_and_not_a_v05_blocker(self) -> None:

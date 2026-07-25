@@ -71,6 +71,34 @@ python tools/validate_assessment.py --check
 
 ---
 
+## Profile Contributions
+
+Profile contract changes shall follow [ESAF-1800](profiles/ESAF-1800.md).
+Create or edit a versioned package only under
+`profiles/<profile-domain>/<version>/`, where the profile domain identifies
+the jurisdiction, industry, sector, or risk context. Preserve the required
+package components and keep profile-specific requirements separate from the
+meanings of core ESAF controls and ESAF-1500 assessment semantics. Manifest
+component values are package-relative component paths; component `$schema`
+values are document-relative schema locators.
+Edit the package's authoritative `PROFILE.md` record first and keep each
+derived JSON component synchronized exactly; validation rejects any drift.
+
+`proposed` remains a valid earlier lifecycle state. A profile shall not advance
+beyond Draft until the applicable technical, editorial, scope, and
+overclaiming reviews and publication gates are complete. Profiles shall not
+claim compliance, certification, equivalence, endorsement, legal sufficiency,
+external approval, or production readiness.
+
+Profile contract, schema, package, index, or validator changes shall include:
+
+```shell
+python -m unittest tests.test_profile_foundation tests.test_validate_profiles -v
+python tools/validate_profiles.py --check
+```
+
+---
+
 ## Review Process
 
 Proposed changes should move through:

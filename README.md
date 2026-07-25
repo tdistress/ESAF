@@ -41,7 +41,9 @@ Every requirement, control, architecture, assessment, and governance artifact wi
 | [ESAF-1500](assessment/ESAF-1500.md) | Assessment Guide | [assessment/ESAF-1500.md](assessment/ESAF-1500.md) |
 | ESAF-1600 | Standards Crosswalk | `crosswalks/` |
 | ESAF-1700 | Enterprise AI Data Model | `data-model/` |
-| ESAF-1800 | Industry Profiles | `profiles/` |
+| [ESAF-1800](profiles/ESAF-1800.md) | Industry, jurisdiction, and risk profiles | [profiles/ESAF-1800.md](profiles/ESAF-1800.md) |
+
+The current profile package is the [Draft United Kingdom jurisdiction pilot](profiles/uk/0.1.0/README.md).
 
 ## Standards alignment
 
