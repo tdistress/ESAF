@@ -1810,6 +1810,199 @@ class ProfileValidationTests(unittest.TestCase):
         )
         self.assertEqual(validate_profiles.validate(self.root), [])
 
+    def test_contrast_clause_boundaries_do_not_mask_prohibited_language(
+        self,
+    ) -> None:
+        profile = self.load_component("profile.json")
+        profile["source_boundary"]["excluded_sources"] = ["UK GDPR"]
+        self.write_component("profile.json", profile)
+        cases = (
+            ("This profile guarantees legal compliance.", "assertion 'compliance'"),
+            ("This profile supersedes GOV-100.", "control weakening language"),
+            (
+                "UK GDPR governs this profile.",
+                "source authority language",
+            ),
+        )
+        for conjunction in (
+            "while",
+            "whereas",
+            "although",
+            "though",
+            "even though",
+            "however",
+        ):
+            for assertion, expected in cases:
+                text = (
+                    "The document discusses and rejects that claim "
+                    f"{conjunction} {assertion}"
+                )
+                with self.subTest(conjunction=conjunction, assertion=assertion):
+                    (self.package / "README.md").write_text(
+                        f"# Synthetic profile\n\n{text}\n", encoding="utf-8"
+                    )
+                    self.assert_has_error(f"prohibited {expected}")
+
+    def test_weakening_state_grammar_matrix(self) -> None:
+        singular_predicates = (
+            "must not apply",
+            "shall not apply",
+            "need not apply",
+            "no longer applies",
+            "is no longer required",
+            "shall be optional",
+            "must be optional",
+            "is optional",
+            "shall be inapplicable",
+            "must be inapplicable",
+            "is inapplicable",
+            "is not required",
+        )
+        plural_predicates = (
+            "must not apply",
+            "shall not apply",
+            "need not apply",
+            "no longer apply",
+            "are no longer required",
+            "shall be optional",
+            "must be optional",
+            "are optional",
+            "shall be inapplicable",
+            "must be inapplicable",
+            "are inapplicable",
+            "are not required",
+        )
+        for subject, predicates in (
+            ("GOV-100", singular_predicates),
+            ("Core controls", plural_predicates),
+        ):
+            for predicate in predicates:
+                text = f"{subject} {predicate} under this profile."
+                with self.subTest(subject=subject, predicate=predicate):
+                    (self.package / "README.md").write_text(
+                        f"# Synthetic profile\n\n{text}\n", encoding="utf-8"
+                    )
+                    self.assert_has_error(
+                        "prohibited control weakening language"
+                    )
+
+    def test_assurance_voice_tense_and_aspect_grammar_matrix(self) -> None:
+        cases = (
+            ("This profile guarantees legal compliance.", "compliance"),
+            ("This profile guaranteed legal compliance.", "compliance"),
+            ("This profile has guaranteed legal compliance.", "compliance"),
+            ("This profile proves legal compliance.", "compliance"),
+            ("This profile proved legal compliance.", "compliance"),
+            ("This profile has proven legal compliance.", "compliance"),
+            ("Legal compliance is ensured by this profile.", "compliance"),
+            ("Legal compliance was proven by this profile.", "compliance"),
+            ("Legal compliance has been guaranteed by this profile.", "compliance"),
+            ("This profile certified the organization.", "certification"),
+            ("This profile has certified the organization.", "certification"),
+            ("The organization was certified by this profile.", "certification"),
+            ("The organization has been certified by this profile.", "certification"),
+            (
+                "This profile made the organization eligible for certification.",
+                "certification eligibility",
+            ),
+            (
+                "The organization has been made eligible for certification by "
+                "this profile.",
+                "certification eligibility",
+            ),
+            ("NCSC approved this profile.", "named-authority approval"),
+            ("NCSC has approved this profile.", "named-authority approval"),
+            ("This profile was approved by NCSC.", "named-authority approval"),
+            ("This profile has been approved by NCSC.", "named-authority approval"),
+            ("This profile received NCSC approval.", "named-authority approval"),
+        )
+        for text, label in cases:
+            with self.subTest(text=text):
+                (self.package / "README.md").write_text(
+                    f"# Synthetic profile\n\n{text}\n", encoding="utf-8"
+                )
+                self.assert_has_error(f"prohibited assertion '{label}'")
+
+    def test_mapping_direction_and_authority_grammar_matrix(self) -> None:
+        profile = self.load_component("profile.json")
+        profile["source_boundary"]["excluded_sources"] = [
+            "UK GDPR",
+            "Cyber Essentials",
+        ]
+        self.write_component("profile.json", profile)
+        for text in (
+            "Cyber Essentials provision A maps to GOV-100.",
+            "Cyber Essentials provision A mapped to GOV-100.",
+            "Cyber Essentials provision A has a mapping to GOV-100.",
+            "Cyber Essentials provision A is mapped to GOV-100.",
+            "GOV-100 is mapped from Cyber Essentials provision A.",
+        ):
+            with self.subTest(text=text):
+                (self.package / "README.md").write_text(
+                    f"# Synthetic profile\n\n{text}\n", encoding="utf-8"
+                )
+                self.assert_has_error(
+                    "prohibited assertion 'imported mapping relationship'"
+                )
+        for text in (
+            "This profile is governed by UK GDPR.",
+            "This profile was governed by UK GDPR.",
+            "UK GDPR governs this profile.",
+            "UK GDPR governed this profile.",
+        ):
+            with self.subTest(text=text):
+                (self.package / "README.md").write_text(
+                    f"# Synthetic profile\n\n{text}\n", encoding="utf-8"
+                )
+                self.assert_has_error("prohibited source authority language")
+        for text in (
+            "Cyber Essentials provision A is not mapped to GOV-100.",
+            (
+                "The claim that Cyber Essentials provision A is mapped to "
+                "GOV-100 is false."
+            ),
+            "This profile is not governed by UK GDPR.",
+            "The claim that this profile is governed by UK GDPR is rejected.",
+        ):
+            with self.subTest(text=text):
+                (self.package / "README.md").write_text(
+                    f"# Synthetic profile\n\n{text}\n", encoding="utf-8"
+                )
+                self.assertEqual(validate_profiles.validate(self.root), [])
+
+    def test_extended_polarity_and_metalinguistic_matrix(self) -> None:
+        allowed = (
+            (
+                "This profile does not under any circumstances guarantee "
+                "legal compliance."
+            ),
+            "GOV-100 is superseded by neither this profile nor any overlay.",
+            "The claim that GOV-100 is optional is false.",
+            (
+                "The claim that this profile guarantees legal compliance is "
+                "false."
+            ),
+            "The claim that GOV-100 shall be optional is rejected.",
+            (
+                "The assertion that this profile has guaranteed legal "
+                "compliance is denied."
+            ),
+            "Legal compliance has not been guaranteed by this profile.",
+            "Legal compliance is guaranteed by no profile.",
+            (
+                "Legal compliance is guaranteed by neither this profile nor "
+                "any overlay."
+            ),
+            "NCSC did not approve this profile.",
+            'The phrase "This profile proved legal compliance" is prohibited.',
+        )
+        for text in allowed:
+            with self.subTest(text=text):
+                (self.package / "README.md").write_text(
+                    f"# Synthetic profile\n\n{text}\n", encoding="utf-8"
+                )
+                self.assertEqual(validate_profiles.validate(self.root), [])
+
     def test_semantic_diagnostic_ordering_is_stable(self) -> None:
         selections = self.load_component("control-selections.json")
         duplicate = dict(selections["selections"][0])

@@ -60,7 +60,8 @@ PROFILE_IDENTIFIER = re.compile(
 )
 PROFILE_ROOT_FILES = frozenset({"ESAF-1800.md", "README.md"})
 PROFILE_PROPOSITION_BOUNDARY = re.compile(
-    rf"(?:{PROPOSITION_BOUNDARY.pattern})|[\r\n]",
+    rf"(?:{PROPOSITION_BOUNDARY.pattern})|"
+    r"\b(?:even\s+though|while|whereas|though)\b|[\r\n]",
     PROPOSITION_BOUNDARY.flags,
 )
 UK_PILOT_PROFILE_ID = "uk--jurisdiction-profile--0.1.0"
@@ -421,6 +422,65 @@ PROFILE_ASSERTION_PATTERNS = (
         ),
     ),
 )
+PROFILE_ASSERTION_PATTERNS += (
+    (
+        "compliance",
+        re.compile(
+            r"\b(?:guarantee(?:s|d|ing)?|prov(?:e|es|ed|en|ing)|"
+            r"ensur(?:e|es|ed|ing))\s+(?P<outcome>legal compliance)\b"
+            r"|\blegal compliance\s+(?:is|was|has\s+been|had\s+been)\s+"
+            r"(?P<passive_outcome>guaranteed|proved|proven|ensured)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "certification",
+        re.compile(
+            r"\bcertif(?:y|ies|ied|ying)\s+"
+            r"(?P<outcome>(?:the\s+)?organization)\b"
+            r"|\b(?:the\s+)?organization\s+"
+            r"(?:is|was|has\s+been|had\s+been)\s+"
+            r"(?P<passive_outcome>certified)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "certification eligibility",
+        re.compile(
+            r"\b(?:make|makes|made|making)\s+"
+            r"(?P<outcome>(?:the\s+)?organization\s+eligible\s+for\s+"
+            r"certification)\b"
+            r"|\b(?:the\s+)?organization\s+"
+            r"(?:is|was|has\s+been|had\s+been)\s+"
+            r"(?P<passive_outcome>made\s+eligible\s+for\s+certification)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "named-authority approval",
+        re.compile(
+            r"\bNCSC\s+(?:approves?|approved|approving)\s+"
+            r"(?P<active_outcome>(?:this|the)\s+profile)\b"
+            r"|\b(?:this|the)\s+profile\s+"
+            r"(?:is|was|has\s+been|had\s+been)\s+"
+            r"(?P<outcome>approved\s+by\s+NCSC)\b"
+            r"|\b(?:this|the)\s+profile\s+(?:receives?|received|receiving)\s+"
+            r"(?P<passive_outcome>NCSC approval)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "imported mapping relationship",
+        re.compile(
+            r"\b(?:Cyber Essentials|NCSC|external scheme)\s+"
+            r"(?:provision|requirement|control)\s+[A-Za-z0-9.-]+\s+"
+            r"(?:is\s+|was\s+|has\s+been\s+|had\s+been\s+)?"
+            r"(?P<outcome>mapped\s+to)\s+"
+            r"[A-Z][A-Z0-9]{1,15}-[0-9]{3}\b",
+            re.IGNORECASE,
+        ),
+    ),
+)
 WEAKENING_PREDICATE = re.compile(
     r"\b(?:replace(?:s|d|ing)?|alter(?:s|ed|ing)?|relax(?:es|ed|ing)?"
     r"|waiv(?:e|es|ed|ing)|weaken(?:s|ed|ing)?|narrow(?:s|ed|ing)?"
@@ -441,6 +501,16 @@ PASSIVE_WEAKENING = re.compile(
     re.IGNORECASE,
 )
 ADJECTIVAL_WEAKENING = (
+    re.compile(
+        r"\b(?P<control>(?:(?:core\s+)?controls?(?:\s+requirements?)?"
+        r"|[A-Z][A-Z0-9]{1,15}-[0-9]{3}))\s+"
+        r"(?P<predicate>(?:(?:shall|must|need)\s+not\s+apply)"
+        r"|no\s+longer\s+appl(?:y|ies)"
+        r"|(?:is|are)\s+no\s+longer\s+required"
+        r"|(?:shall|must)\s+be\s+(?:optional|inapplicable)"
+        r"|(?:is|are)\s+(?:optional|inapplicable|not\s+required))\b",
+        re.IGNORECASE,
+    ),
     re.compile(
         r"\b(?P<control>(?:(?:core\s+)?controls?"
         r"|[A-Z][A-Z0-9]{1,15}-[0-9]{3}))\s+"
@@ -484,7 +554,8 @@ METALINGUISTIC_REFERENCE = re.compile(
 )
 METALINGUISTIC_DISCUSSION = re.compile(
     r"\b(?:discuss(?:ed|es|ing)?|quot(?:e|es|ed|ing)"
-    r"|prohibit(?:ed|s|ing)?|reject(?:ed|s|ing)?|avoid(?:ed|s|ing)?)\b",
+    r"|prohibit(?:ed|s|ing)?|reject(?:ed|s|ing)?|avoid(?:ed|s|ing)?"
+    r"|den(?:y|ies|ied|ying)|false)\b",
     re.IGNORECASE,
 )
 ASSERTIVE_DISCUSSION = re.compile(
@@ -493,6 +564,13 @@ ASSERTIVE_DISCUSSION = re.compile(
     re.IGNORECASE,
 )
 SOURCE_AUTHORITY_PATTERNS = (
+    re.compile(
+        r"\b(?:this|the)\s+profile\s+"
+        r"(?:is|was|has\s+been|had\s+been)\s+(?:not\s+)?"
+        r"(?P<outcome>governed\s+by)\s+"
+        r"(?P<source>UK GDPR|Cyber Essentials|NCSC)\b",
+        re.IGNORECASE,
+    ),
     re.compile(
         r"\b(?P<source>UK GDPR|Cyber Essentials|NCSC)\s+"
         r"(?:is|was)\s+(?:not\s+)?"
@@ -509,9 +587,9 @@ SOURCE_AUTHORITY_PATTERNS = (
     ),
     re.compile(
         r"\b(?P<source>UK GDPR|Cyber Essentials|NCSC)\s+"
-        r"(?:does|did)\s+(?:not\s+)?"
-        r"(?P<outcome>govern)\s+(?:this|the)\s+profile\s+"
-        r"(?:selection|scope|requirement)\b",
+        r"(?:(?:does|did)\s+(?:not\s+)?)?"
+        r"(?P<outcome>govern(?:s|ed)?)\s+(?:this|the)\s+profile"
+        r"(?:\s+(?:selection|scope|requirement))?\b",
         re.IGNORECASE,
     ),
     re.compile(
@@ -540,8 +618,8 @@ SOURCE_AUTHORITY_PATTERNS = (
     re.compile(
         r"\b(?P<source>[A-Z][A-Za-z0-9&.-]+"
         r"(?:\s+[A-Z][A-Za-z0-9&.-]+){0,5})\s+"
-        r"(?:does\s+(?:not\s+)?)?"
-        r"(?P<outcome>governs?\s+(?:this|the)\s+profile)\b",
+        r"(?:(?:does|did)\s+(?:not\s+)?)?"
+        r"(?P<outcome>govern(?:s|ed)?\s+(?:this|the)\s+profile)\b",
         re.IGNORECASE,
     ),
 )
@@ -1700,7 +1778,7 @@ def proposition_bounds(
 
 
 def predicate_is_negated(prefix: str) -> bool:
-    """Return whether a proposition prefix directly negates its predicate."""
+    """Return whether the local predicate phrase is denied."""
     semantic_prefix = re.sub(
         r"\bnot\s+(?=(?:only|merely|just)\b)",
         "",
@@ -1709,15 +1787,35 @@ def predicate_is_negated(prefix: str) -> bool:
     )
     if DIRECT_NEGATED_PROPOSITION.search(semantic_prefix):
         return True
-    if re.search(r"\bno\s*$", semantic_prefix, re.IGNORECASE):
+    if re.search(r"\b(?:no|neither)\s*$", semantic_prefix, re.IGNORECASE):
         return True
     for match in PREDICATE_NEGATION.finditer(semantic_prefix):
-        trailing_words = re.findall(
-            r"\b[\w'â€™-]+\b", semantic_prefix[match.end() :]
-        )
-        if len(trailing_words) <= 3:
-            return True
+        trailing = semantic_prefix[match.end() :]
+        if re.search(r"\b(?:that|which|who)\b", trailing, re.IGNORECASE):
+            continue
+        return True
     return False
+
+
+def postposed_denial(text: str) -> bool:
+    """Recognize a denied agent or object after a matched predicate."""
+    return bool(
+        re.search(
+            r"\b(?:by|from|to)\s+(?:no\b|neither\b[^.;:!?]*\bnor\b)",
+            text,
+            re.IGNORECASE,
+        )
+    )
+
+
+def sentence_suffix(text: str, index: int) -> str:
+    """Return the remainder of the containing sentence."""
+    endings = [
+        position
+        for delimiter in ".!?;\r\n"
+        if (position := text.find(delimiter, index)) >= 0
+    ]
+    return text[index : min(endings) if endings else len(text)]
 
 
 def assertion_outcome_start(match: re.Match[str]) -> int:
@@ -1868,11 +1966,7 @@ def contains_affirmative_weakening(text: str) -> bool:
             text, occurrence_start, occurrence_end
         ):
             continue
-        if re.search(
-            r"\bby\s+no\s+profile\b",
-            proposition[relative_predicate + len(weakening.group(0)) :],
-            re.IGNORECASE,
-        ):
+        if postposed_denial(sentence_suffix(text, weakening.end())):
             continue
         return True
     for weakening in PASSIVE_WEAKENING.finditer(text):
@@ -1884,17 +1978,13 @@ def contains_affirmative_weakening(text: str) -> bool:
             text, weakening.start(), weakening.end()
         ):
             continue
-        if re.search(
-            r"\bby\s+no\s+profile\b",
-            text[weakening.end() : proposition_bounds(
-                text, predicate_start
-            )[1]],
-            re.IGNORECASE,
-        ):
+        if postposed_denial(sentence_suffix(text, weakening.end())):
             continue
         return True
     for pattern in ADJECTIVAL_WEAKENING:
         for weakening in pattern.finditer(text):
+            if postposed_denial(sentence_suffix(text, weakening.end())):
+                continue
             if occurrence_is_metalinguistic(
                 text, weakening.start(), weakening.end()
             ):
@@ -1912,6 +2002,7 @@ def asserted_profile_phrases(text: str) -> list[str]:
             start, _, preceding = proposition_bounds(text, outcome_start)
             if (
                 predicate_is_negated(text[start:outcome_start])
+                or postposed_denial(sentence_suffix(text, match.end()))
                 or coordinated_assertion_is_negated(
                     text, match, preceding
                 )
