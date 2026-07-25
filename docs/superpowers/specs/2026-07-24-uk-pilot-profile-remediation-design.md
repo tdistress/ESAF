@@ -1,8 +1,8 @@
 # UK Pilot Profile Whole-Branch Remediation Design
 
-**Date:** 2026-07-24  
-**Issue:** #57  
-**Reviewed candidate:** `bdfa078a890c6bf7fba5d06eeda6701ac2c67c4e`  
+**Date:** 2026-07-24
+**Issue:** #57
+**Reviewed candidate:** `bdfa078a890c6bf7fba5d06eeda6701ac2c67c4e`
 **Merge base:** `9715ddcd59eac0a92c72cf748db869e50f39359b`
 
 ## 1. Purpose
