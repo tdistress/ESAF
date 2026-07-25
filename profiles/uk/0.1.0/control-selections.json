@@ -1,0 +1,515 @@
+{
+  "$schema": "../../schema/control-selections.schema.json",
+  "schema_version": "0.1.0",
+  "profile_id": "uk--jurisdiction-profile--0.1.0",
+  "profile_version": "0.1.0",
+  "selections": [
+    {
+      "control_id": "GOV-100",
+      "status": "required",
+      "rationale": "Every use of this profile needs an identifiable enterprise authority to govern boundary decisions, unresolved risks, exceptions, and profile application across the in-scope AI system."
+    },
+    {
+      "control_id": "GOV-110",
+      "status": "not_selected",
+      "rationale": "The pilot adds no United Kingdom-specific enterprise policy content beyond its bounded technical selections; GOV-110 continues to govern the organization's approved AI policy."
+    },
+    {
+      "control_id": "GOV-120",
+      "status": "not_selected",
+      "rationale": "Portfolio aggregation and review cadence depend on enterprise portfolio structure rather than the operating-location facts used by this pilot, so no additional profile selection is made."
+    },
+    {
+      "control_id": "GOV-130",
+      "status": "required",
+      "rationale": "A named business owner and technical or service owner are necessary for every assessed boundary to attest the United Kingdom operating basis, scope, conditions, resources, and retirement responsibilities."
+    },
+    {
+      "control_id": "GOV-140",
+      "status": "not_selected",
+      "rationale": "The profile creates no distinct exception regime or waiver authority; any deviation remains subject to the time-bounded authorization and risk treatment already defined by GOV-140."
+    },
+    {
+      "control_id": "STR-100",
+      "status": "not_selected",
+      "rationale": "Deployment or operation in the United Kingdom does not by itself add a separate enterprise strategy objective or investment priority, so the pilot leaves STR-100 to normal ESAF application."
+    },
+    {
+      "control_id": "STR-110",
+      "status": "not_selected",
+      "rationale": "Value measures and continuation criteria depend on each production capability's intended organizational outcomes, which are not supplied by this jurisdiction profile's technical source boundary."
+    },
+    {
+      "control_id": "STR-120",
+      "status": "not_selected",
+      "rationale": "The approved pilot scope does not add experimentation rules or distinguish research hypotheses; controlled E0 experiments remain governed directly by STR-120 where they occur."
+    },
+    {
+      "control_id": "STR-130",
+      "status": "not_selected",
+      "rationale": "Portfolio resource depth, funding, competencies, and operational capacity are organization-specific planning decisions rather than consequences of the five bounded profile conditions."
+    },
+    {
+      "control_id": "RSK-100",
+      "status": "required",
+      "rationale": "Every profile assessment needs a consistent risk method to rate, treat, monitor, accept, and escalate the six additional risk lenses without inventing profile-local risk meanings."
+    },
+    {
+      "control_id": "RSK-110",
+      "status": "required",
+      "rationale": "Capability classification is required to define the assessed boundary and interpret exposure, data sensitivity, external dependency, criticality, and uncertainty for every in-scope AI system."
+    },
+    {
+      "control_id": "RSK-120",
+      "status": "required",
+      "rationale": "Each unresolved profile risk and condition-driven safeguard needs documented treatment, monitoring, and accountable residual-risk acceptance before continued operation within the declared boundary."
+    },
+    {
+      "control_id": "RSK-130",
+      "status": "not_selected",
+      "rationale": "Impact-assessment depth is tied to E2 through E4 capability characteristics and affected parties, not to a universal fact established by this technical jurisdiction pilot."
+    },
+    {
+      "control_id": "RSK-140",
+      "status": "not_selected",
+      "rationale": "Material-change reassessment remains an underlying lifecycle obligation, but the pilot does not add a separate change trigger beyond the condition and evidence refresh requirements it states."
+    },
+    {
+      "control_id": "IAM-100",
+      "status": "required",
+      "rationale": "Complete human, service, workload, API, agent, and third-party identity coverage is necessary to reconcile access and administration to every assessed system boundary."
+    },
+    {
+      "control_id": "IAM-110",
+      "status": "required",
+      "rationale": "Every in-scope system has non-public assets or administrative functions whose identities must be authenticated with risk-proportionate mechanisms, including systems that expose public service endpoints."
+    },
+    {
+      "control_id": "IAM-120",
+      "status": "required",
+      "rationale": "Purpose-bound authorization and least privilege are universal foundations for limiting access to models, data, prompts, tools, integrations, and administrative actions in the assessed boundary."
+    },
+    {
+      "control_id": "IAM-130",
+      "status": "required",
+      "rationale": "Every assessed AI boundary includes privileged functions capable of changing configuration, data, models, instructions, logs, or policy, so their stronger authentication, restriction, and monitoring are selected."
+    },
+    {
+      "control_id": "IAM-140",
+      "status": "conditional",
+      "rationale": "Third-party administration creates an additional need to govern the credentials, tokens, and keys used across external support paths and to verify prompt, code, log, and documentation handling.",
+      "activation_conditions": [
+        "THIRD-PARTY-ADMINISTRATION"
+      ]
+    },
+    {
+      "control_id": "IAM-150",
+      "status": "required",
+      "rationale": "Access inventories used by this profile must be periodically reviewed and promptly corrected when purpose, role, employment, authorization, supplier relationship, or operational need changes."
+    },
+    {
+      "control_id": "DAT-100",
+      "status": "not_selected",
+      "rationale": "Data authority and permitted purpose depend on each dataset, contract, and processing context; the profile's deployment location alone supplies no additional authority or use permission."
+    },
+    {
+      "control_id": "DAT-110",
+      "status": "required",
+      "rationale": "The assessed boundary cannot support reliable access, logging, sharing, retention, or protection decisions unless prompts, outputs, embeddings, telemetry, and other AI data are classified and handled."
+    },
+    {
+      "control_id": "DAT-120",
+      "status": "not_selected",
+      "rationale": "Accuracy, representativeness, timeliness, and fitness criteria must be derived from the capability's intended use and data population, which this technical profile does not define."
+    },
+    {
+      "control_id": "DAT-130",
+      "status": "not_selected",
+      "rationale": "The pilot does not add a profile-specific lineage granularity or reproducibility rule; material data provenance remains governed by DAT-130 according to risk and obligations."
+    },
+    {
+      "control_id": "DAT-140",
+      "status": "not_selected",
+      "rationale": "Personal-data processing is not established for every in-scope system, and interpreting privacy duties is outside the approved source boundary, so no profile selection is added."
+    },
+    {
+      "control_id": "DAT-150",
+      "status": "not_selected",
+      "rationale": "Retrieval, embedding, vector search, and long-term memory are capability facts not represented by the bounded pilot conditions; their protections remain governed by DAT-150 when present."
+    },
+    {
+      "control_id": "DAT-160",
+      "status": "not_selected",
+      "rationale": "Output and feedback handling must follow actual content, intended use, reliability, intellectual-property status, and downstream impact rather than a universal jurisdiction-profile rule."
+    },
+    {
+      "control_id": "MOD-100",
+      "status": "required",
+      "rationale": "Every assessed AI system depends on one or more identifiable models, so complete ownership, version, provider, validation, deployment, review, and retirement records are required for boundary coverage."
+    },
+    {
+      "control_id": "MOD-110",
+      "status": "conditional",
+      "rationale": "When untrusted artifacts can enter the boundary, model source, licensing, integrity, dependencies, limitations, terms, and modification history must be verified before their approved use.",
+      "activation_conditions": [
+        "UNTRUSTED-SOFTWARE-INTAKE"
+      ]
+    },
+    {
+      "control_id": "MOD-120",
+      "status": "not_selected",
+      "rationale": "Model validation criteria must be tailored to intended performance, safety, fairness, privacy, robustness, and operating conditions; this infrastructure-focused pilot does not define those use-specific thresholds."
+    },
+    {
+      "control_id": "MOD-130",
+      "status": "not_selected",
+      "rationale": "The pilot adds no separate provider-version or model-release process; model changes continue to require the authorization, testing, monitoring, and rollback defined by MOD-130."
+    },
+    {
+      "control_id": "MOD-140",
+      "status": "not_selected",
+      "rationale": "Protection depth for weights, parameters, configurations, and restricted interfaces depends on the model deployment and sensitivity, not solely on the approved profile conditions."
+    },
+    {
+      "control_id": "MOD-150",
+      "status": "conditional",
+      "rationale": "An unsupported or end-of-life model requires an authorized retirement path that removes deployment and access, preserves evidence, updates dependencies, and verifies that prohibited continued use is prevented.",
+      "activation_conditions": [
+        "UNSUPPORTED-COMPONENT-PRESENCE"
+      ]
+    },
+    {
+      "control_id": "APP-100",
+      "status": "required",
+      "rationale": "Every in-scope AI application needs documented trust boundaries, flows, threats, failure modes, oversight points, and validation criteria to establish the technical boundary used by this profile."
+    },
+    {
+      "control_id": "APP-110",
+      "status": "not_selected",
+      "rationale": "Instruction, user-input, retrieval, tool-output, and memory protections depend on the application's actual context channels; the five pilot conditions do not establish those channels universally."
+    },
+    {
+      "control_id": "APP-120",
+      "status": "not_selected",
+      "rationale": "Output validation and authorization must reflect each destination, action, uncertainty, and impact, so this jurisdiction package does not add a generic profile-level selection."
+    },
+    {
+      "control_id": "APP-130",
+      "status": "not_selected",
+      "rationale": "Tenant, session, cache, conversation, and memory isolation requirements depend on application state and tenancy architecture, which are not resolved by this pilot's conditions."
+    },
+    {
+      "control_id": "APP-140",
+      "status": "conditional",
+      "rationale": "Untrusted software intake requires controlled review, dependency handling, build, testing, release, vulnerability, and change practices for application code, prompts, workflows, configuration, and generated artifacts.",
+      "activation_conditions": [
+        "UNTRUSTED-SOFTWARE-INTAKE"
+      ]
+    },
+    {
+      "control_id": "APP-150",
+      "status": "conditional",
+      "rationale": "Internet reachability materially increases automated abuse, denial-of-service, consumption, adversarial behavior, and policy-evasion opportunities at AI application interfaces, activating dedicated misuse controls.",
+      "activation_conditions": [
+        "INTERNET-EXPOSURE"
+      ]
+    },
+    {
+      "control_id": "API-100",
+      "status": "not_selected",
+      "rationale": "Gateway architecture is not universal because equivalent policy enforcement may exist elsewhere and the control applies to production service access; the profile does not prescribe one topology."
+    },
+    {
+      "control_id": "API-110",
+      "status": "conditional",
+      "rationale": "Internet-reachable AI, management, tool, callback, streaming, or batch interfaces require explicit authentication, authorization, validation, encryption, limits, versioning, logging, monitoring, and secure deprecation.",
+      "activation_conditions": [
+        "INTERNET-EXPOSURE"
+      ]
+    },
+    {
+      "control_id": "API-120",
+      "status": "conditional",
+      "rationale": "When untrusted software paths admit tools or plugins, each callable capability needs inventory, approval, authentication, authorization, constraints, validation, monitoring, and governed retirement.",
+      "activation_conditions": [
+        "UNTRUSTED-SOFTWARE-INTAKE"
+      ]
+    },
+    {
+      "control_id": "API-130",
+      "status": "not_selected",
+      "rationale": "MCP or comparable orchestration is not present in every AI system and no bounded condition establishes it, so the pilot makes no additional orchestration-security selection."
+    },
+    {
+      "control_id": "API-140",
+      "status": "conditional",
+      "rationale": "External provider use requires service-specific security, privacy, data-use, retention, availability, change, incident, assurance, continuity, and exit expectations for the integration.",
+      "activation_conditions": [
+        "EXTERNAL-PROVIDER-USE"
+      ]
+    },
+    {
+      "control_id": "API-150",
+      "status": "conditional",
+      "rationale": "A material external provider dependency requires documented and tested interfaces, formats, configuration, migration procedures, and exit criteria proportionate to continuity and concentration risk.",
+      "activation_conditions": [
+        "EXTERNAL-PROVIDER-USE"
+      ]
+    },
+    {
+      "control_id": "INF-100",
+      "status": "required",
+      "rationale": "Every in-scope workload, model, dataset, and supporting service must reside in an environment approved for its risk, classification, architecture, jurisdiction, isolation, assurance, and operations."
+    },
+    {
+      "control_id": "INF-110",
+      "status": "required",
+      "rationale": "A versioned hardening baseline is necessary for the compute, hosts, containers, networks, storage, runtimes, and management interfaces supporting every declared AI boundary, including inherited responsibilities."
+    },
+    {
+      "control_id": "INF-120",
+      "status": "conditional",
+      "rationale": "Internet exposure, untrusted intake, or unsupported components each increase the need to identify and disposition infrastructure vulnerabilities using exploitability, exposure, impact, sensitivity, criticality, and compensating controls.",
+      "activation_conditions": [
+        "INTERNET-EXPOSURE",
+        "UNTRUSTED-SOFTWARE-INTAKE",
+        "UNSUPPORTED-COMPONENT-PRESENCE"
+      ]
+    },
+    {
+      "control_id": "INF-130",
+      "status": "required",
+      "rationale": "Reproducible, reviewed, tested, approved, monitored, and recoverable configuration is required to reconcile the actual infrastructure state and material changes for every assessed boundary."
+    },
+    {
+      "control_id": "INF-140",
+      "status": "conditional",
+      "rationale": "Internet-reachable services and administrative paths require approved cryptographic mechanisms and key management for communications, credentials, data, models, backups, and management traffic according to risk.",
+      "activation_conditions": [
+        "INTERNET-EXPOSURE"
+      ]
+    },
+    {
+      "control_id": "INF-150",
+      "status": "not_selected",
+      "rationale": "Capacity, budget, concurrency, scaling, and shutdown safeguards depend on workload demand and shared-platform design; internet exposure alone does not define their appropriate thresholds."
+    },
+    {
+      "control_id": "AGT-100",
+      "status": "not_selected",
+      "rationale": "Agent presence is not established by the five profile conditions, so the pilot adds no agent-identity selection while AGT-100 continues to govern any agents actually deployed."
+    },
+    {
+      "control_id": "AGT-110",
+      "status": "not_selected",
+      "rationale": "Data, tool, target, action, delegation, and side-effect permissions are agent-specific architecture facts that cannot be inferred from United Kingdom operation or the selected technical conditions."
+    },
+    {
+      "control_id": "AGT-120",
+      "status": "not_selected",
+      "rationale": "Human approval and intervention requirements must reflect agent action impact, reversibility, uncertainty, affected parties, and safety consequences, none of which this pilot resolves universally."
+    },
+    {
+      "control_id": "AGT-130",
+      "status": "not_selected",
+      "rationale": "Agent memory and state are not universal system components, and the profile conditions do not establish their purpose, tenant, sensitivity, source, retention, or deletion needs."
+    },
+    {
+      "control_id": "AGT-140",
+      "status": "not_selected",
+      "rationale": "Agent instruction, plan, tool-call, permission, approval, action, and outcome traceability applies when agents act; the pilot does not add a separate agent-capability condition."
+    },
+    {
+      "control_id": "AGT-150",
+      "status": "not_selected",
+      "rationale": "Pause, restriction, isolation, termination, rollback, recovery, and safe-resume mechanisms depend on an agent deployment and its action risks, which are outside the bounded condition catalog."
+    },
+    {
+      "control_id": "AGT-160",
+      "status": "not_selected",
+      "rationale": "Multi-agent communication, delegation, shared state, conflict, termination, and emergent behavior cannot be assumed for all systems deployed or operated within the profile scope."
+    },
+    {
+      "control_id": "OPS-100",
+      "status": "not_selected",
+      "rationale": "Service objectives apply to E1 through E4 production capabilities and shared platforms; the profile also covers non-production systems and does not define capability-specific service targets."
+    },
+    {
+      "control_id": "OPS-110",
+      "status": "not_selected",
+      "rationale": "The pilot adds evidence refresh expectations but no distinct release taxonomy or approval workflow; AI changes remain governed by OPS-110 according to impact and dependencies."
+    },
+    {
+      "control_id": "OPS-120",
+      "status": "not_selected",
+      "rationale": "Incident preparation and response remain essential ESAF obligations, but the pilot does not define a separate jurisdiction-specific incident category, communication path, or reporting rule."
+    },
+    {
+      "control_id": "OPS-130",
+      "status": "not_selected",
+      "rationale": "Continuity, fallback, recovery, and provider-failure arrangements depend on E1 through E4 criticality, substitutability, and failure consequence, which this profile does not determine."
+    },
+    {
+      "control_id": "OPS-140",
+      "status": "not_selected",
+      "rationale": "Availability, latency, throughput, quality, utilization, demand, and cost objectives are production-service facts not established across all systems in this jurisdiction profile."
+    },
+    {
+      "control_id": "OPS-150",
+      "status": "conditional",
+      "rationale": "An unsupported component can force capability decommissioning or replacement, requiring an approved process that addresses users, dependencies, access, suppliers, records, continuity, and verified closure.",
+      "activation_conditions": [
+        "UNSUPPORTED-COMPONENT-PRESENCE"
+      ]
+    },
+    {
+      "control_id": "MON-100",
+      "status": "required",
+      "rationale": "Every assessed boundary needs attributable, time-synchronized, protected telemetry sufficient to connect identity, configuration, performance, policy, cost, and relevant AI events to assessment evidence."
+    },
+    {
+      "control_id": "MON-110",
+      "status": "conditional",
+      "rationale": "Internet reachability activates focused detection and investigation for unauthorized access, prompt or context attacks, data exposure, model abuse, extraction, policy evasion, and anomalous consumption.",
+      "activation_conditions": [
+        "INTERNET-EXPOSURE"
+      ]
+    },
+    {
+      "control_id": "MON-120",
+      "status": "not_selected",
+      "rationale": "Production behavior baselines for performance, drift, safety, fairness, reliability, and uncertainty depend on capability purpose and feedback availability rather than this profile's infrastructure conditions."
+    },
+    {
+      "control_id": "MON-130",
+      "status": "not_selected",
+      "rationale": "Agent monitoring applies only when agents exist, and no selected condition establishes agent identity, plans, delegation, memory, interventions, or outcome monitoring for the assessed system."
+    },
+    {
+      "control_id": "MON-140",
+      "status": "not_selected",
+      "rationale": "Alert ownership, priorities, service levels, containment, and tuning must reflect actual monitoring design and risk; the profile adds no universal alert-response operating model."
+    },
+    {
+      "control_id": "MON-150",
+      "status": "required",
+      "rationale": "Protected, attributable audit trails for access, configuration, privileged activity, model and data changes, incidents, and governance decisions are necessary to reconstruct every profile assessment boundary."
+    },
+    {
+      "control_id": "CMP-100",
+      "status": "not_selected",
+      "rationale": "Identifying and interpreting applicable obligations requires authorities beyond the approved source boundary; this profile therefore adds no legal, regulatory, contractual, or sector interpretation."
+    },
+    {
+      "control_id": "CMP-110",
+      "status": "not_selected",
+      "rationale": "Record, notice, registration, disclosure, and reporting duties depend on applicable authorities and audiences not defined by this pilot, so CMP-110 remains directly applicable as appropriate."
+    },
+    {
+      "control_id": "CMP-120",
+      "status": "conditional",
+      "rationale": "External providers or administrators require assigned and verified third-party responsibilities for security, data use, change, incidents, assurance, continuity, subcontractors, privileged support, and exit.",
+      "activation_conditions": [
+        "EXTERNAL-PROVIDER-USE",
+        "THIRD-PARTY-ADMINISTRATION"
+      ]
+    },
+    {
+      "control_id": "CMP-130",
+      "status": "not_selected",
+      "rationale": "The pilot establishes its own operating-location applicability but does not interpret residency, transfer, government-access, geographic-support, sovereignty, contract, or customer requirements for particular data or services."
+    },
+    {
+      "control_id": "CMP-140",
+      "status": "not_selected",
+      "rationale": "Ownership, licensing, attribution, distribution, training, output, indemnity, and restriction requirements depend on the actual acquired or generated assets, which the profile does not specify."
+    },
+    {
+      "control_id": "AUD-100",
+      "status": "not_selected",
+      "rationale": "Assessment-program frequency, sampling, independence, reporting, and follow-up are enterprise assurance decisions; the pilot defines package evidence expectations but not a replacement assessment program."
+    },
+    {
+      "control_id": "AUD-110",
+      "status": "not_selected",
+      "rationale": "Assessor competence and independence must match each technical, governance, privacy, safety, compliance, or control subject; the profile cannot set one universal personnel threshold."
+    },
+    {
+      "control_id": "AUD-120",
+      "status": "required",
+      "rationale": "Every profile conclusion must rest on relevant, reliable, complete, timely, attributable, integrity-protected evidence sufficient for its procedure, determination, declared scope, and assessment period."
+    },
+    {
+      "control_id": "AUD-130",
+      "status": "not_selected",
+      "rationale": "Finding severity, remediation priority, due date, retest, closure, and acceptance remain governed by the assessed risk and root cause rather than a jurisdiction-profile-specific disposition process."
+    },
+    {
+      "control_id": "AUD-140",
+      "status": "not_selected",
+      "rationale": "Management-review cadence and portfolio inputs concern the enterprise AI management system as a whole; this pilot adds no separate executive review body or schedule."
+    },
+    {
+      "control_id": "EDU-100",
+      "status": "not_selected",
+      "rationale": "Baseline literacy remains an enterprise requirement, but the infrastructure and evidence conditions in this pilot do not add a distinct curriculum for all personnel affected by AI."
+    },
+    {
+      "control_id": "EDU-110",
+      "status": "not_selected",
+      "rationale": "Role-based competency must be defined for actual design, validation, operation, security, governance, audit, and use responsibilities, which the profile's technical facts do not enumerate."
+    },
+    {
+      "control_id": "EDU-120",
+      "status": "not_selected",
+      "rationale": "Acceptable-use education depends on the organization's approved services, data boundaries, user actions, and policy; the pilot does not create additional user-access training content."
+    },
+    {
+      "control_id": "EDU-130",
+      "status": "not_selected",
+      "rationale": "Secure engineering training applies to personnel performing defined development and maintenance work, but the profile conditions do not establish those roles across every in-scope system."
+    },
+    {
+      "control_id": "EDU-140",
+      "status": "not_selected",
+      "rationale": "Executive and governance education must reflect assigned authority, risk acceptance, review, and audit duties; this package adds no profile-local competency or education schedule."
+    },
+    {
+      "control_id": "ARC-100",
+      "status": "not_selected",
+      "rationale": "Architecture governance remains necessary for new capabilities, changes, shared platforms, exceptions, and retirement, but the pilot adds no separate pattern approval or technical-debt process."
+    },
+    {
+      "control_id": "ARC-110",
+      "status": "required",
+      "rationale": "Documented components, actors, identities, flows, trust levels, dependencies, administrative paths, and enforcement boundaries are indispensable to define and evidence every system assessed with this profile."
+    },
+    {
+      "control_id": "ARC-120",
+      "status": "not_selected",
+      "rationale": "Reusable reference patterns depend on recurring organizational architectures and governance maturity; this first jurisdiction pilot does not require a particular pattern library or deviation process."
+    },
+    {
+      "control_id": "ARC-130",
+      "status": "not_selected",
+      "rationale": "Failure design applies to E1 through E4 based on consequence, criticality, and substitutability; the pilot's conditions do not establish one resilience design for all systems."
+    },
+    {
+      "control_id": "ARC-140",
+      "status": "conditional",
+      "rationale": "External provider use or third-party administration requires documented, approved, validated, and monitored responsibility boundaries for inherited controls, service outcomes, evidence access, and administrative paths.",
+      "activation_conditions": [
+        "EXTERNAL-PROVIDER-USE",
+        "THIRD-PARTY-ADMINISTRATION"
+      ]
+    },
+    {
+      "control_id": "ARC-150",
+      "status": "conditional",
+      "rationale": "Unsupported components require governed currency, compatibility, technical-debt, support, replacement, deprecation, and retirement decisions across models, runtimes, protocols, platforms, tools, interfaces, and infrastructure.",
+      "activation_conditions": [
+        "UNSUPPORTED-COMPONENT-PRESENCE"
+      ]
+    }
+  ]
+}

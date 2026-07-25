@@ -1,0 +1,76 @@
+{
+  "$schema": "../../schema/profile.schema.json",
+  "schema_version": "0.1.0",
+  "profile_id": "uk--jurisdiction-profile--0.1.0",
+  "profile_version": "0.1.0",
+  "status": "draft",
+  "target_esaf_release": "v0.5-beta",
+  "title": "Draft United Kingdom Jurisdiction Profile",
+  "scope": "AI systems deployed or operated in the United Kingdom, regardless of organizational domicile. The assessed boundary includes supporting infrastructure, services, suppliers, and operational dependencies that support or affect the AI system.",
+  "applicability_conditions": [
+    {
+      "condition_id": "INTERNET-EXPOSURE",
+      "question": "Can an internet-originated connection reach an AI service, supporting interface, or administrative path within the assessed boundary?",
+      "answer_type": "boolean",
+      "activates_when": true,
+      "resolution_evidence": "Current network and service inventories, externally observed endpoints, data-flow diagrams, routing and firewall configuration, and an accountable owner's boundary attestation."
+    },
+    {
+      "condition_id": "EXTERNAL-PROVIDER-USE",
+      "question": "Does the assessed AI system depend on an external provider for a model, hosted service, platform, tool, data service, or material operation?",
+      "answer_type": "boolean",
+      "activates_when": true,
+      "resolution_evidence": "Supplier and service inventories, architecture and data-flow records, contracts, service descriptions, and the approved shared-responsibility record."
+    },
+    {
+      "condition_id": "THIRD-PARTY-ADMINISTRATION",
+      "question": "Can personnel or services outside the organization administer, configure, deploy, support, or recover any component in the assessed boundary?",
+      "answer_type": "boolean",
+      "activates_when": true,
+      "resolution_evidence": "Privileged-identity inventories, support agreements, access paths, authorization records, responsibility assignments, and recent access-review evidence."
+    },
+    {
+      "condition_id": "UNTRUSTED-SOFTWARE-INTAKE",
+      "question": "Can externally sourced or otherwise untrusted models, code, packages, images, plugins, tools, or generated artifacts enter the assessed boundary?",
+      "answer_type": "boolean",
+      "activates_when": true,
+      "resolution_evidence": "Approved-source rules, software and model inventories, dependency manifests, intake pipeline configuration, provenance records, and inspection or test results."
+    },
+    {
+      "condition_id": "UNSUPPORTED-COMPONENT-PRESENCE",
+      "question": "Does the assessed boundary contain a model, software component, platform, protocol, or infrastructure element that is unsupported, end-of-life, or outside an approved maintenance window?",
+      "answer_type": "boolean",
+      "activates_when": true,
+      "resolution_evidence": "Version and component inventories reconciled to provider support notices, maintenance records, approved lifecycle standards, exception records, and replacement plans."
+    }
+  ],
+  "source_boundary": {
+    "statement": "Profile content is original ESAF synthesis bounded to the ESAF library and lifecycle-aware identification of the three pinned Draft mapping sets. Mapping relationships, external outcomes, and evidence are not imported.",
+    "permitted_sources": [
+      "ESAF",
+      "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+      "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
+      "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0"
+    ],
+    "excluded_sources": [
+      "United Kingdom laws, regulations, sector rules, and regulatory guidance",
+      "External assurance outcomes or certification decisions",
+      "Unpinned or unreviewed external mappings and interpretations"
+    ]
+  },
+  "components": {
+    "readme": "README.md",
+    "control_selections": "control-selections.json",
+    "risk_overlays": "risk-overlays.json",
+    "evidence_expectations": "evidence-expectations.json",
+    "external_references": "external-references.json"
+  },
+  "change_history": [
+    {
+      "version": "0.1.0",
+      "date": "2026-07-24",
+      "author": "ESAF",
+      "description": "Initial Draft United Kingdom pilot profile for v0.5-beta."
+    }
+  ]
+}

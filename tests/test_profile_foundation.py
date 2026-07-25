@@ -6,11 +6,13 @@ import unittest
 from pathlib import Path, PurePosixPath
 
 from jsonschema import Draft202012Validator
+from tools import validate_profiles
 
 
 ROOT = Path(__file__).resolve().parents[1]
 STANDARD = ROOT / "profiles" / "ESAF-1800.md"
 SCHEMA_ROOT = ROOT / "profiles" / "schema"
+UK_PROFILE_ROOT = ROOT / "profiles" / "uk" / "0.1.0"
 SCHEMA_NAMES = (
     "profile",
     "control-selections",
@@ -36,6 +38,31 @@ SELECTION_STATUSES = (
     "recommended",
     "not_selected",
 )
+UK_PROFILE_ID = "uk--jurisdiction-profile--0.1.0"
+UK_COMPONENTS = {
+    "readme": "README.md",
+    "control_selections": "control-selections.json",
+    "risk_overlays": "risk-overlays.json",
+    "evidence_expectations": "evidence-expectations.json",
+    "external_references": "external-references.json",
+}
+UK_MAPPING_IDS = (
+    "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3"
+    "--esaf-0.4-alpha--0.1.0",
+    "uk-ncsc--cyber-essentials-plus-test-specification--3.2"
+    "--esaf-0.4-alpha--0.1.0",
+    "uk-ncsc--cyber-essentials-plus-test-specification--3.2"
+    "--esaf-0.4-alpha--0.2.0",
+)
+ESAF_1500_QUALITY_ATTRIBUTES = {
+    "relevance",
+    "reliability",
+    "completeness",
+    "timeliness",
+    "attribution",
+    "integrity",
+    "traceability",
+}
 
 
 def text() -> str:
@@ -315,6 +342,136 @@ class ProfileSchemaTests(unittest.TestCase):
                 self.assertTrue(
                     list(validator.iter_errors({**record, "unexpected": True}))
                 )
+
+
+class UKPilotProfileTests(unittest.TestCase):
+    def load(self, filename: str) -> dict[str, object]:
+        path = UK_PROFILE_ROOT / filename
+        self.assertTrue(path.is_file(), f"missing UK pilot artifact {filename}")
+        return json.loads(path.read_text(encoding="utf-8"))
+
+    def test_package_has_exact_identity_lifecycle_scope_and_components(self) -> None:
+        manifest = self.load("profile.json")
+        self.assertEqual(manifest["profile_id"], UK_PROFILE_ID)
+        self.assertEqual(manifest["profile_version"], "0.1.0")
+        self.assertEqual(manifest["status"], "draft")
+        self.assertEqual(manifest["target_esaf_release"], "v0.5-beta")
+        self.assertIn("deployed or operated in the United Kingdom", manifest["scope"])
+        self.assertIn("regardless of organizational domicile", manifest["scope"])
+        self.assertEqual(manifest["components"], UK_COMPONENTS)
+        self.assertEqual(
+            {path.name for path in UK_PROFILE_ROOT.iterdir()},
+            {"profile.json", *UK_COMPONENTS.values()},
+        )
+
+    def test_conditions_are_bounded_booleans_with_resolution_evidence(self) -> None:
+        manifest = self.load("profile.json")
+        conditions = manifest["applicability_conditions"]
+        self.assertEqual(
+            {condition["condition_id"] for condition in conditions},
+            {
+                "INTERNET-EXPOSURE",
+                "EXTERNAL-PROVIDER-USE",
+                "THIRD-PARTY-ADMINISTRATION",
+                "UNTRUSTED-SOFTWARE-INTAKE",
+                "UNSUPPORTED-COMPONENT-PRESENCE",
+            },
+        )
+        for condition in conditions:
+            with self.subTest(condition=condition["condition_id"]):
+                self.assertEqual(condition["answer_type"], "boolean")
+                self.assertIs(condition["activates_when"], True)
+                self.assertTrue(condition["question"].strip())
+                self.assertTrue(condition["resolution_evidence"].strip())
+
+    def test_control_ledger_matches_catalog_order_and_status_invariants(self) -> None:
+        catalog = json.loads(
+            (ROOT / "controls" / "catalog.json").read_text(encoding="utf-8")
+        )
+        selections = self.load("control-selections.json")["selections"]
+        expected = [record["id"] for record in catalog["controls"]]
+        observed = [record["control_id"] for record in selections]
+        self.assertEqual(len(selections), 91)
+        self.assertEqual(observed, expected)
+        self.assertEqual(len(observed), len(set(observed)))
+        self.assertEqual(len({record["rationale"] for record in selections}), 91)
+        for selection in selections:
+            with self.subTest(control=selection["control_id"]):
+                self.assertIn(selection["status"], SELECTION_STATUSES)
+                self.assertGreaterEqual(len(selection["rationale"].split()), 8)
+                if selection["status"] == "conditional":
+                    self.assertTrue(selection["activation_conditions"])
+                else:
+                    self.assertNotIn("activation_conditions", selection)
+
+    def test_risks_overlays_and_evidence_are_non_empty_and_reuse_esaf_1500(self) -> None:
+        risk_document = self.load("risk-overlays.json")
+        evidence_document = self.load("evidence-expectations.json")
+        self.assertGreaterEqual(len(risk_document["risks"]), 6)
+        self.assertGreaterEqual(len(risk_document["overlays"]), 6)
+        self.assertTrue(evidence_document["expectations"])
+        used_attributes = set()
+        for expectation in evidence_document["expectations"]:
+            used_attributes.update(expectation["quality_attributes"])
+        self.assertTrue(used_attributes)
+        self.assertLessEqual(used_attributes, ESAF_1500_QUALITY_ATTRIBUTES)
+
+    def test_external_references_are_exactly_the_three_lifecycle_pins(self) -> None:
+        references = self.load("external-references.json")["external_references"]
+        self.assertEqual(
+            tuple(reference["mapping_set_id"] for reference in references),
+            UK_MAPPING_IDS,
+        )
+        for reference in references:
+            with self.subTest(mapping=reference["mapping_set_id"]):
+                self.assertEqual(reference["expected_status"], "draft")
+                self.assertEqual(
+                    reference["reference_use"], "lifecycle_reference_only"
+                )
+                self.assertIs(reference["qualified_review_required"], True)
+                self.assertEqual(
+                    reference["non_import_statement"],
+                    "Relationships, external outcomes, and evidence are not imported.",
+                )
+                self.assertEqual(
+                    set(reference),
+                    {
+                        "mapping_set_id",
+                        "registry_path",
+                        "expected_status",
+                        "reference_use",
+                        "qualified_review_required",
+                        "non_import_statement",
+                    },
+                )
+
+    def test_source_boundary_and_readme_state_explicit_non_claims(self) -> None:
+        manifest = self.load("profile.json")
+        boundary = manifest["source_boundary"]
+        self.assertEqual(
+            boundary["permitted_sources"],
+            [
+                "ESAF",
+                *UK_MAPPING_IDS,
+            ],
+        )
+        self.assertIn("laws", " ".join(boundary["excluded_sources"]).lower())
+        readme = (UK_PROFILE_ROOT / "README.md").read_text(encoding="utf-8")
+        for statement in (
+            "does not establish legal sufficiency",
+            "does not establish compliance",
+            "does not establish certification",
+            "does not establish equivalence",
+            "does not establish endorsement",
+            "does not establish external approval",
+            "does not establish production readiness",
+            "does not define the scope of Cyber Essentials",
+        ):
+            with self.subTest(statement=statement):
+                self.assertIn(statement, readme)
+
+    def test_published_pilot_passes_profile_validation(self) -> None:
+        self.assertEqual(validate_profiles.validate(ROOT), [])
 
 
 if __name__ == "__main__":

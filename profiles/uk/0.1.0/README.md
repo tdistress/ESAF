@@ -1,0 +1,67 @@
+# Draft United Kingdom Jurisdiction Profile 0.1.0
+
+**Profile ID:** `uk--jurisdiction-profile--0.1.0`
+
+**Lifecycle:** Draft
+
+**Target ESAF release:** `v0.5-beta`
+
+## Purpose and applicability
+
+This Draft profile applies to AI systems deployed or operated in the United
+Kingdom, regardless of organizational domicile. Incorporation, headquarters,
+or domicile alone does not determine applicability.
+
+The assessed boundary includes the AI system and business purpose, included
+and excluded components, supporting infrastructure and services, suppliers,
+shared-responsibility boundaries, applicable condition answers and their
+evidence, assumptions, limitations, and unresolved scope questions. Users
+shall record the United Kingdom deployment or operating basis and retain the
+evidence used to resolve each applicable condition.
+
+## How to use the package
+
+1. Confirm and evidence the United Kingdom deployment or operating basis.
+2. Record the assessed system boundary and supporting dependencies.
+3. Answer the boolean conditions in `profile.json` using the specified
+   resolution evidence.
+4. Resolve `required` and activated `conditional` selections in
+   `control-selections.json`.
+5. Apply the relevant overlays and evidence expectations.
+6. Gather and evaluate evidence under ESAF-1500, preserving scope, period,
+   methods, limitations, and determinations.
+7. Report this profile identifier, version, and Draft lifecycle with the
+   assessment result.
+
+`not_selected` means that this pilot adds no profile-level selection. It does
+not alter the underlying ESAF requirement. The profile-local control status
+also does not determine an ESAF-1500 assessment determination.
+
+## Source boundary
+
+The package is original ESAF synthesis. Its permitted source boundary is the
+ESAF library and lifecycle-aware identification of the three pinned Draft
+United Kingdom Cyber Essentials mapping sets in `external-references.json`.
+Those references import no mapping relationships, external outcomes, or
+evidence. Other United Kingdom laws, regulations, sector rules, and guidance
+are outside this pilot.
+
+## Draft limitations and non-claims
+
+This Draft profile does not establish legal sufficiency.
+It does not establish compliance.
+It does not establish certification.
+It does not establish equivalence.
+It does not establish endorsement.
+It does not establish external approval.
+It does not establish production readiness.
+
+This profile does not define the scope of Cyber Essentials or any legal or
+regulatory regime. It does not implement or certify Cyber Essentials, complete
+qualified review of a mapping set, or advance a referenced mapping beyond its
+recorded Draft lifecycle. Core ESAF controls are not replaced, waived,
+weakened, narrowed, or made optional by this profile.
+
+An assessment remains valid only for its recorded system boundary, evidence,
+methods, limitations, and time period. ESAF-1500 maturity and control
+determinations remain separate and retain their shared meanings.

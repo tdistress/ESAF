@@ -1,0 +1,215 @@
+{
+  "$schema": "../../schema/evidence-expectations.schema.json",
+  "schema_version": "0.1.0",
+  "profile_id": "uk--jurisdiction-profile--0.1.0",
+  "profile_version": "0.1.0",
+  "expectations": [
+    {
+      "expectation_id": "BOUNDARY-EXPOSURE-EVIDENCE",
+      "purpose": "Demonstrate which AI and administrative paths were reachable from the internet during the assessment period and whether the declared boundary protections and detection paths operated as recorded.",
+      "artifact_class": "Configuration, record, technical_test, and log evidence records",
+      "control_ids": [
+        "APP-150",
+        "API-110",
+        "INF-110",
+        "INF-120",
+        "INF-140",
+        "MON-110"
+      ],
+      "overlay_ids": [
+        "EXPOSED-BOUNDARY-OVERLAY"
+      ],
+      "quality_attributes": [
+        "relevance",
+        "completeness",
+        "timeliness",
+        "integrity",
+        "traceability"
+      ],
+      "activation_conditions": [
+        "INTERNET-EXPOSURE"
+      ],
+      "strengthening": "The evidence population shall reconcile the declared endpoint inventory to externally observed reachability and representative technical tests no older than the material network or service change that defines the assessed exposure."
+    },
+    {
+      "expectation_id": "PRIVILEGED-CONFIGURATION-EVIDENCE",
+      "purpose": "Demonstrate that privileged identities, approved configuration state, material changes, and attributable audit events align for the same assessed boundary and period.",
+      "artifact_class": "Configuration, record, and log evidence records",
+      "control_ids": [
+        "IAM-120",
+        "IAM-130",
+        "IAM-150",
+        "INF-110",
+        "INF-130",
+        "MON-150"
+      ],
+      "overlay_ids": [
+        "PRIVILEGED-CONFIGURATION-OVERLAY"
+      ],
+      "quality_attributes": [
+        "relevance",
+        "reliability",
+        "completeness",
+        "timeliness",
+        "attribution",
+        "integrity",
+        "traceability"
+      ],
+      "strengthening": "The evidence shall cover every privileged path and material configuration domain in scope, identify the originating identity and approval, and preserve exceptions and unexplained differences rather than treating collection as a determination."
+    },
+    {
+      "expectation_id": "COMPONENT-SUPPORT-EVIDENCE",
+      "purpose": "Demonstrate the support state, affected capability scope, governed disposition, and completed mitigation or retirement action for each unsupported component.",
+      "artifact_class": "Record, configuration, contract, and technical_test evidence records",
+      "control_ids": [
+        "MOD-150",
+        "INF-120",
+        "OPS-150",
+        "ARC-150"
+      ],
+      "overlay_ids": [
+        "SUPPORTED-COMPONENT-OVERLAY"
+      ],
+      "quality_attributes": [
+        "relevance",
+        "reliability",
+        "completeness",
+        "timeliness",
+        "attribution",
+        "traceability"
+      ],
+      "activation_conditions": [
+        "UNSUPPORTED-COMPONENT-PRESENCE"
+      ],
+      "strengthening": "Support status shall be current for the assessment end date, cover the reconciled component population, and distinguish provider facts, organizational decisions, compensating measures, and verified closure."
+    },
+    {
+      "expectation_id": "SOFTWARE-INTAKE-EVIDENCE",
+      "purpose": "Demonstrate that every in-scope untrusted intake path enforces approved sourcing, provenance, integrity, dependency inspection, capability review, testing, and acceptance decisions.",
+      "artifact_class": "Procedure, configuration, record, and technical_test evidence records",
+      "control_ids": [
+        "MOD-110",
+        "APP-140",
+        "API-120",
+        "INF-120"
+      ],
+      "overlay_ids": [
+        "TRUSTED-INTAKE-OVERLAY"
+      ],
+      "quality_attributes": [
+        "relevance",
+        "reliability",
+        "completeness",
+        "timeliness",
+        "attribution",
+        "integrity",
+        "traceability"
+      ],
+      "activation_conditions": [
+        "UNTRUSTED-SOFTWARE-INTAKE"
+      ],
+      "strengthening": "The population shall include models, packages, images, plugins, tools, and generated artifacts admitted during the assessment period, with sampled testing only when the population and selection rationale are explicit."
+    },
+    {
+      "expectation_id": "EXTERNAL-RESPONSIBILITY-EVIDENCE",
+      "purpose": "Demonstrate that provider responsibilities, service terms, architecture dependencies, assurance access, continuity, and exit ownership remain mutually consistent for each material external service.",
+      "artifact_class": "Contract, record, configuration, and external_assurance evidence records",
+      "control_ids": [
+        "API-140",
+        "API-150",
+        "CMP-120",
+        "ARC-140"
+      ],
+      "overlay_ids": [
+        "EXTERNAL-RESPONSIBILITY-OVERLAY"
+      ],
+      "quality_attributes": [
+        "relevance",
+        "reliability",
+        "completeness",
+        "timeliness",
+        "attribution",
+        "traceability"
+      ],
+      "activation_conditions": [
+        "EXTERNAL-PROVIDER-USE"
+      ],
+      "strengthening": "The evidence shall cover the complete material-provider population and current service terms; inherited or external assurance remains evidence with recorded limitations and is not itself an assessment determination."
+    },
+    {
+      "expectation_id": "THIRD-PARTY-ADMINISTRATION-EVIDENCE",
+      "purpose": "Demonstrate the identity, authority, authentication, duration, activity, review, emergency use, and revocation state of every third-party administrative path.",
+      "artifact_class": "Contract, configuration, record, and log evidence records",
+      "control_ids": [
+        "IAM-130",
+        "IAM-140",
+        "IAM-150",
+        "INF-130",
+        "CMP-120",
+        "ARC-140"
+      ],
+      "overlay_ids": [
+        "THIRD-PARTY-ADMINISTRATION-OVERLAY"
+      ],
+      "quality_attributes": [
+        "relevance",
+        "reliability",
+        "completeness",
+        "timeliness",
+        "attribution",
+        "integrity",
+        "traceability"
+      ],
+      "activation_conditions": [
+        "THIRD-PARTY-ADMINISTRATION"
+      ],
+      "strengthening": "The evidence shall reconcile contractual support authority to current privileged identities and attributable activity for the assessment period, including dormant, emergency, and recently revoked access."
+    },
+    {
+      "expectation_id": "SYSTEM-BOUNDARY-EVIDENCE",
+      "purpose": "Demonstrate the assessed AI system, business purpose, United Kingdom operating basis, included and excluded components, dependencies, suppliers, condition answers, limitations, and accountable owners.",
+      "artifact_class": "Record, configuration, contract, and observation evidence records",
+      "control_ids": [
+        "GOV-130",
+        "RSK-110",
+        "ARC-110"
+      ],
+      "overlay_ids": [
+        "SCOPE-EVIDENCE-OVERLAY"
+      ],
+      "quality_attributes": [
+        "relevance",
+        "completeness",
+        "timeliness",
+        "attribution",
+        "traceability"
+      ],
+      "strengthening": "The boundary record shall be dated for the assessment period, approved by accountable business and technical owners, and reconcile unresolved scope questions and exclusions to their effect on the evidence population."
+    },
+    {
+      "expectation_id": "ASSET-COVERAGE-EVIDENCE",
+      "purpose": "Demonstrate that identity, model, hosting, service, and dependency inventories cover the declared system boundary and support a complete control and evidence population.",
+      "artifact_class": "Record and configuration evidence records",
+      "control_ids": [
+        "IAM-100",
+        "MOD-100",
+        "INF-100",
+        "AUD-120",
+        "ARC-110"
+      ],
+      "overlay_ids": [
+        "SCOPE-EVIDENCE-OVERLAY"
+      ],
+      "quality_attributes": [
+        "relevance",
+        "reliability",
+        "completeness",
+        "timeliness",
+        "attribution",
+        "integrity",
+        "traceability"
+      ],
+      "strengthening": "Inventory evidence shall be reconciled across authoritative sources at the assessment end date, disclose unmatched records and sampling limitations, and retain source attribution and integrity verification."
+    }
+  ]
+}

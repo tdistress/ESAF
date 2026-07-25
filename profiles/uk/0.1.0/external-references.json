@@ -1,0 +1,32 @@
+{
+  "$schema": "../../schema/external-references.schema.json",
+  "schema_version": "0.1.0",
+  "profile_id": "uk--jurisdiction-profile--0.1.0",
+  "profile_version": "0.1.0",
+  "external_references": [
+    {
+      "mapping_set_id": "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+      "registry_path": "crosswalks/registry/uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0.md",
+      "expected_status": "draft",
+      "reference_use": "lifecycle_reference_only",
+      "qualified_review_required": true,
+      "non_import_statement": "Relationships, external outcomes, and evidence are not imported."
+    },
+    {
+      "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
+      "registry_path": "crosswalks/registry/uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0.md",
+      "expected_status": "draft",
+      "reference_use": "lifecycle_reference_only",
+      "qualified_review_required": true,
+      "non_import_statement": "Relationships, external outcomes, and evidence are not imported."
+    },
+    {
+      "mapping_set_id": "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+      "registry_path": "crosswalks/registry/uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0.md",
+      "expected_status": "draft",
+      "reference_use": "lifecycle_reference_only",
+      "qualified_review_required": true,
+      "non_import_statement": "Relationships, external outcomes, and evidence are not imported."
+    }
+  ]
+}
