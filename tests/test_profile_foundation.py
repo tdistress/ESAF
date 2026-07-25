@@ -236,6 +236,27 @@ class ProfileFoundationTests(unittest.TestCase):
             design,
         )
 
+    def test_original_design_and_plan_pin_lifecycle_only_source_boundary(
+        self,
+    ) -> None:
+        expected_boundary = (
+            "ESAF plus pinned lifecycle metadata only from the exact three "
+            "mapping snapshots"
+        )
+        expected_exclusion = (
+            "Substantive mapping content, relationships, external outcomes, "
+            "evidence, and interpretations are excluded."
+        )
+        for path in (DESIGN, PLAN):
+            document = re.sub(
+                r"\s+",
+                " ",
+                path.read_text(encoding="utf-8"),
+            )
+            with self.subTest(path=path.name):
+                self.assertIn(expected_boundary, document)
+                self.assertIn(expected_exclusion, document)
+
     def test_rsk_100_rationale_does_not_pin_a_stale_risk_count(self) -> None:
         selections = json.loads(
             (UK_PROFILE_ROOT / "control-selections.json").read_text(

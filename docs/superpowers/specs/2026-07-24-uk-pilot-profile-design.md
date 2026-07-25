@@ -38,9 +38,11 @@ The approved design decisions are:
 1. **Pilot:** United Kingdom jurisdiction profile.
 2. **Applicability:** AI systems deployed or operated in the United Kingdom,
    regardless of organizational domicile.
-3. **Source boundary:** ESAF and the three pinned United Kingdom Cyber
-   Essentials mapping sets already present in the repository. Other United
-   Kingdom laws, regulations, and guidance are out of scope.
+3. **Source boundary:** ESAF plus pinned lifecycle metadata only from the exact
+   three mapping snapshots already present in the repository. Substantive
+   mapping content, relationships, external outcomes, evidence, and
+   interpretations are excluded. Other United Kingdom laws, regulations, and
+   guidance are out of scope.
 4. **Control-selection model:** one explicit profile classification for every
    control in the complete ESAF catalog.
 5. **Mapping treatment:** immutable, lifecycle-aware references only. Mapping

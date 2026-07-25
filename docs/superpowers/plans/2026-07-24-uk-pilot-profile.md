@@ -21,7 +21,10 @@
   pattern and lifecycle states `proposed`, `draft`, `approved`, `published`,
   `deprecated`, or `retired`; they do not pin UK identity or Draft status.
 - Applicability: AI systems deployed or operated in the United Kingdom, regardless of organizational domicile.
-- Source boundary: ESAF and the three pinned UK Cyber Essentials mapping sets already present in the repository.
+- Source boundary: ESAF plus pinned lifecycle metadata only from the exact
+  three mapping snapshots already present in the repository. Substantive
+  mapping content, relationships, external outcomes, evidence, and
+  interpretations are excluded.
 - Every one of the 91 authoritative controls appears exactly once as `required`, `conditional`, `recommended`, or `not_selected`.
 - Referenced mappings remain Draft, reference-only, and separately qualified-review gated.
 - Reuse ESAF-1500 assessment and maturity semantics; never define a profile-local maturity scale.

@@ -1418,6 +1418,56 @@ class ProfileValidationTests(unittest.TestCase):
                 self.write_readme(f"{denial} However, {assertion}.")
                 self.assert_has_error(f"prohibited assertion '{expected}'")
 
+    def test_third_review_passive_aspect_claim_families(self) -> None:
+        cases = (
+            (
+                "Compliance with Cyber Essentials has been guaranteed by this profile",
+                "Compliance with Cyber Essentials has not been guaranteed by this profile.",
+                "compliance",
+            ),
+            (
+                "Compliance with Cyber Essentials had been guaranteed by this profile",
+                "Compliance with Cyber Essentials had not been guaranteed by this profile.",
+                "compliance",
+            ),
+            (
+                "Production readiness has been confirmed by this profile",
+                "Production readiness has not been confirmed by this profile.",
+                "production readiness",
+            ),
+            (
+                "Production readiness had been confirmed by this profile",
+                "Production readiness had not been confirmed by this profile.",
+                "production readiness",
+            ),
+            (
+                "Evidence for GOV-100 has been provided by Cyber Essentials provision A.1",
+                "Evidence for GOV-100 has not been provided by Cyber Essentials provision A.1.",
+                "imported mapping relationship",
+            ),
+            (
+                "Evidence for GOV-100 had been provided by Cyber Essentials provision A.1",
+                "Evidence for GOV-100 had not been provided by Cyber Essentials provision A.1.",
+                "imported mapping relationship",
+            ),
+        )
+        for assertion, denial, expected in cases:
+            with self.subTest(assertion=assertion, form="affirmative"):
+                self.write_readme(f"{assertion}.")
+                self.assert_has_error(f"prohibited assertion '{expected}'")
+            with self.subTest(assertion=assertion, form="denial"):
+                self.write_readme(denial)
+                self.assertEqual(validate_profiles.validate(self.root), [])
+            with self.subTest(assertion=assertion, form="quotation"):
+                self.write_readme(f'The phrase "{assertion}" is prohibited.')
+                self.assertEqual(validate_profiles.validate(self.root), [])
+            with self.subTest(assertion=assertion, form="discussion"):
+                self.write_readme(f"The claim that {assertion} is rejected.")
+                self.assertEqual(validate_profiles.validate(self.root), [])
+            with self.subTest(assertion=assertion, form="coordinated"):
+                self.write_readme(f"{denial} However, {assertion}.")
+                self.assert_has_error(f"prohibited assertion '{expected}'")
+
     def test_establishes_profile_claim_variants_are_rejected(self) -> None:
         for text, expected in (
             (
@@ -1807,6 +1857,45 @@ class ProfileValidationTests(unittest.TestCase):
                 self.write_readme(f"{denial} However, {assertion}.")
                 self.assert_has_error("prohibited source authority language")
 
+    def test_third_review_excluded_source_supply_aspect_and_voice(self) -> None:
+        profile = self.load_component("profile.json")
+        profile["source_boundary"]["excluded_sources"] = ["UK GDPR"]
+        self.write_component("profile.json", profile)
+        cases = (
+            (
+                "UK GDPR has supplied the GOV-100 profile selection",
+                "UK GDPR has not supplied the GOV-100 profile selection.",
+            ),
+            (
+                "UK GDPR had supplied the GOV-100 profile selection",
+                "UK GDPR had not supplied the GOV-100 profile selection.",
+            ),
+            (
+                "The GOV-100 profile selection has been supplied by UK GDPR",
+                "The GOV-100 profile selection has not been supplied by UK GDPR.",
+            ),
+            (
+                "The GOV-100 profile selection had been supplied by UK GDPR",
+                "The GOV-100 profile selection had not been supplied by UK GDPR.",
+            ),
+        )
+        for assertion, denial in cases:
+            with self.subTest(assertion=assertion, form="affirmative"):
+                self.write_readme(f"{assertion}.")
+                self.assert_has_error("prohibited source authority language")
+            with self.subTest(assertion=assertion, form="denial"):
+                self.write_readme(denial)
+                self.assertEqual(validate_profiles.validate(self.root), [])
+            with self.subTest(assertion=assertion, form="quotation"):
+                self.write_readme(f'The phrase "{assertion}" is prohibited.')
+                self.assertEqual(validate_profiles.validate(self.root), [])
+            with self.subTest(assertion=assertion, form="discussion"):
+                self.write_readme(f"The claim that {assertion} is rejected.")
+                self.assertEqual(validate_profiles.validate(self.root), [])
+            with self.subTest(assertion=assertion, form="coordinated"):
+                self.write_readme(f"{denial} However, {assertion}.")
+                self.assert_has_error("prohibited source authority language")
+
     def test_source_boundary_uses_declared_generic_excluded_source(self) -> None:
         profile = self.load_component("profile.json")
         profile["source_boundary"]["excluded_sources"] = ["Acme Code"]
@@ -2025,6 +2114,42 @@ class ProfileValidationTests(unittest.TestCase):
                 self.write_readme(f"{denial} However, {assertion}.")
                 self.assert_has_error("prohibited control weakening language")
 
+    def test_third_review_progressive_direct_weakening_forms(self) -> None:
+        cases = (
+            (
+                "This profile is omitting the GOV-100 control",
+                "This profile is not omitting the GOV-100 control.",
+            ),
+            (
+                "This profile was skipping GOV-100",
+                "This profile was not skipping GOV-100.",
+            ),
+            (
+                "This profile has been omitting GOV-100",
+                "This profile has not been omitting GOV-100.",
+            ),
+            (
+                "This profile had been skipping the GOV-100 control",
+                "This profile had not been skipping the GOV-100 control.",
+            ),
+        )
+        for assertion, denial in cases:
+            with self.subTest(assertion=assertion, form="affirmative"):
+                self.write_readme(f"{assertion}.")
+                self.assert_has_error("prohibited control weakening language")
+            with self.subTest(assertion=assertion, form="denial"):
+                self.write_readme(denial)
+                self.assertEqual(validate_profiles.validate(self.root), [])
+            with self.subTest(assertion=assertion, form="quotation"):
+                self.write_readme(f'The phrase "{assertion}" is prohibited.')
+                self.assertEqual(validate_profiles.validate(self.root), [])
+            with self.subTest(assertion=assertion, form="discussion"):
+                self.write_readme(f"The claim that {assertion} is rejected.")
+                self.assertEqual(validate_profiles.validate(self.root), [])
+            with self.subTest(assertion=assertion, form="coordinated"):
+                self.write_readme(f"{denial} However, {assertion}.")
+                self.assert_has_error("prohibited control weakening language")
+
     def test_direct_weakening_object_and_complement_are_bounded(self) -> None:
         for statement in (
             (
@@ -2048,6 +2173,48 @@ class ProfileValidationTests(unittest.TestCase):
             with self.subTest(statement=statement):
                 self.write_readme(statement)
                 self.assertEqual(validate_profiles.validate(self.root), [])
+
+    def test_third_review_bounded_nonweakening_semantic_variations(self) -> None:
+        statements = (
+            "This profile reduces GOV-100 implementation risks while preserving all requirements.",
+            "This profile reduced the GOV-100 control implementation risk while preserving every requirement.",
+            "This profile omits GOV-100 from an illustrative list while retaining it in the complete selection ledger.",
+            "This profile omitted the GOV-100 control from this illustrative list while retaining it in complete selection ledger.",
+        )
+        for statement in statements:
+            with self.subTest(statement=statement):
+                self.write_readme(statement)
+                self.assertEqual(validate_profiles.validate(self.root), [])
+
+    def test_third_review_readiness_explicit_denial_family(self) -> None:
+        safe_statements = (
+            "This profile confirms production readiness gaps remain unresolved.",
+            "This profile confirmed production readiness is not established.",
+            "This profile confirms production readiness has not been established.",
+            "This profile confirmed production readiness had not been established.",
+            "This profile confirms production readiness remains unestablished.",
+            "This profile confirmed production readiness is unestablished.",
+            "This profile confirms production readiness remained unestablished.",
+        )
+        for statement in safe_statements:
+            with self.subTest(statement=statement):
+                self.write_readme(statement)
+                self.assertEqual(validate_profiles.validate(self.root), [])
+        for assertion in (
+            "This profile confirms production readiness is established.",
+            "This profile confirms production readiness has been established.",
+            "This profile confirms production readiness remains established.",
+        ):
+            with self.subTest(assertion=assertion):
+                self.write_readme(assertion)
+                self.assert_has_error(
+                    "prohibited assertion 'production readiness'"
+                )
+        self.write_readme(
+            "This profile confirms production readiness remains unestablished. "
+            "However, this profile confirms production readiness is established."
+        )
+        self.assert_has_error("prohibited assertion 'production readiness'")
 
     def test_additional_weakening_denials_and_discussion_are_allowed(self) -> None:
         for text in (

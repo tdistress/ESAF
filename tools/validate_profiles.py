@@ -504,7 +504,8 @@ PROFILE_ASSERTION_PATTERNS += (
         "compliance",
         re.compile(
             r"\bCompliance\s+with\s+Cyber Essentials\s+"
-            r"(?:is|was)\s+(?:not\s+)?"
+            r"(?:(?:is|was)\s+(?:not\s+)?"
+            r"|(?:has|had)\s+(?:not\s+)?been\s+)"
             r"(?P<outcome>guaranteed\s+by\s+(?:this|the)\s+profile)\b",
             re.IGNORECASE,
         ),
@@ -512,7 +513,9 @@ PROFILE_ASSERTION_PATTERNS += (
     (
         "production readiness",
         re.compile(
-            r"\bProduction readiness\s+(?:is|was)\s+(?:not\s+)?"
+            r"\bProduction readiness\s+"
+            r"(?:(?:is|was)\s+(?:not\s+)?"
+            r"|(?:has|had)\s+(?:not\s+)?been\s+)"
             r"(?P<outcome>confirmed\s+by\s+(?:this|the)\s+profile)\b",
             re.IGNORECASE,
         ),
@@ -522,7 +525,8 @@ PROFILE_ASSERTION_PATTERNS += (
         re.compile(
             r"\bEvidence\s+for\s+"
             r"(?P<control>[A-Z][A-Z0-9]{1,15}-[0-9]{3})\s+"
-            r"(?:is|was)\s+(?:not\s+)?"
+            r"(?:(?:is|was)\s+(?:not\s+)?"
+            r"|(?:has|had)\s+(?:not\s+)?been\s+)"
             r"(?P<outcome>provided\s+by)\s+"
             r"(?:Cyber Essentials|NCSC|external scheme)\s+"
             r"(?:provision|requirement|control)\s+[A-Za-z0-9.-]+\b",
@@ -765,7 +769,19 @@ DIRECT_CONTROL_WEAKENING = (
     re.compile(
         r"\b(?:this|the)\s+profile\s+"
         r"(?:(?:does|did|has|had)\s+(?:not\s+)?)?"
-        r"(?P<predicate>omit(?:s|ted)?|skip(?:s|ped)?|reduc(?:e|es|ed))\s+"
+        r"(?P<predicate>omit(?:s|ted)?|skip(?:s|ped)?"
+        r"|reduc(?:e|es|ed))\s+"
+        r"(?:the\s+)?"
+        r"(?P<control>(?:(?:core\s+)?controls?"
+        r"|[A-Z][A-Z0-9]{1,15}-[0-9]{3}))"
+        r"(?:\s+control)?\b",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"\b(?:this|the)\s+profile\s+"
+        r"(?:(?:is|was)\s+(?:not\s+)?"
+        r"|(?:has|had)\s+(?:not\s+)?been\s+)"
+        r"(?P<predicate>omitting|skipping)\s+"
         r"(?:the\s+)?"
         r"(?P<control>(?:(?:core\s+)?controls?"
         r"|[A-Z][A-Z0-9]{1,15}-[0-9]{3}))"
@@ -775,16 +791,20 @@ DIRECT_CONTROL_WEAKENING = (
 )
 SAFE_DIRECT_CONTROL_COMPLEMENT = re.compile(
     r"^(?:"
-    r"\s+implementation\s+risk\s+while\s+preserving\s+every\s+requirement"
-    r"|\s+from\s+this\s+illustrative\s+list\s+while\s+retaining\s+it\s+"
-    r"in\s+the\s+complete\s+selection\s+ledger"
+    r"\s+implementation\s+risks?\s+while\s+preserving\s+"
+    r"(?:every\s+requirement|all\s+requirements)"
+    r"|\s+from\s+(?:this|an)\s+illustrative\s+list\s+while\s+"
+    r"retaining\s+it\s+in\s+(?:the\s+)?complete\s+selection\s+ledger"
     r")\s*$",
     re.IGNORECASE,
 )
-SAFE_READINESS_CONFIRMATION = re.compile(
-    r"\b(?:this|the)\s+profile\s+confirm(?:s|ed|ing)?\s+"
-    r"production readiness\s+(?:gaps?\s+remain\s+unresolved"
-    r"|is\s+not\s+established)\b",
+SAFE_READINESS_DENIAL = re.compile(
+    r"\bproduction readiness(?:"
+    r"\s+gaps?\s+remain\s+unresolved"
+    r"|\s+(?:is\s+not\s+established"
+    r"|(?:has|had)\s+not\s+been\s+established"
+    r"|(?:remains|is|remained)\s+unestablished)"
+    r")\b",
     re.IGNORECASE,
 )
 PREDICATE_NEGATION = re.compile(
@@ -2377,25 +2397,29 @@ def contains_affirmative_weakening(text: str) -> bool:
 
 def asserted_profile_phrases(text: str) -> list[str]:
     """Reuse ESAF-1500 assertion context for profile-specific claim phrases."""
-    assertions = list(asserted_prohibited_phrases(text))
-    if SAFE_READINESS_CONFIRMATION.search(text):
-        assertions = [
-            assertion
-            for assertion in assertions
-            if assertion != "production readiness"
-        ]
+    safe_readiness = list(SAFE_READINESS_DENIAL.finditer(text))
+    generic_text = SAFE_READINESS_DENIAL.sub(
+        lambda match: re.sub(
+            r"\bproduction readiness\b",
+            "readiness status",
+            match.group(0),
+            flags=re.IGNORECASE,
+        ),
+        text,
+    )
+    assertions = list(asserted_prohibited_phrases(generic_text))
     for label, pattern in PROFILE_ASSERTION_PATTERNS:
         for match in pattern.finditer(text):
+            outcome_start = assertion_outcome_start(match)
             if (
                 label == "production readiness"
                 and any(
-                    safe.start() <= match.start()
+                    safe.start() <= outcome_start
                     and match.end() <= safe.end()
-                    for safe in SAFE_READINESS_CONFIRMATION.finditer(text)
+                    for safe in safe_readiness
                 )
             ):
                 continue
-            outcome_start = assertion_outcome_start(match)
             _, _, preceding = proposition_bounds(text, outcome_start)
             if (
                 predicate_is_negated(sentence_prefix(text, outcome_start))
@@ -2486,6 +2510,17 @@ def contains_affirmative_source_authority(
         for pattern in (
             re.compile(
                 rf"\b(?P<source>{re.escape(source)})(?!\w)\s+"
+                r"(?:has|had)\s+(?:not\s+)?"
+                r"(?P<outcome>supplied|provided)\s+"
+                r"(?:(?:this|the)\s+profile\s+"
+                r"(?:selection|scope|requirement)"
+                r"|(?:this|the)\s+"
+                r"[A-Z][A-Z0-9]{1,15}-[0-9]{3}\s+"
+                r"profile\s+selection)\b",
+                re.IGNORECASE,
+            ),
+            re.compile(
+                rf"\b(?P<source>{re.escape(source)})(?!\w)\s+"
                 r"(?:(?:does|did)\s+(?:not\s+)?)?"
                 r"(?P<outcome>suppl(?:y|ies|ied)|"
                 r"provid(?:e|es|ed))\s+"
@@ -2497,11 +2532,15 @@ def contains_affirmative_source_authority(
                 re.IGNORECASE,
             ),
             re.compile(
-                r"\b(?:this|the)\s+profile\s+"
+                r"\b(?:(?:this|the)\s+profile\s+"
                 r"(?:selection(?:\s+for\s+"
                 r"[A-Z][A-Z0-9]{1,15}-[0-9]{3})?"
-                r"|scope|requirement)\s+"
-                r"(?:is|was)\s+(?:not\s+)?"
+                r"|scope|requirement)"
+                r"|(?:this|the)\s+"
+                r"[A-Z][A-Z0-9]{1,15}-[0-9]{3}\s+"
+                r"profile\s+selection)\s+"
+                r"(?:(?:is|was)\s+(?:not\s+)?"
+                r"|(?:has|had)\s+(?:not\s+)?been\s+)"
                 r"(?P<outcome>supplied|provided)\s+by\s+"
                 rf"(?P<source>{re.escape(source)})(?!\w)",
                 re.IGNORECASE,
