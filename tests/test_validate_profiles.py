@@ -2599,6 +2599,43 @@ class ProfileValidationTests(unittest.TestCase):
                 self.write_readme(text)
                 self.assertEqual(validate_profiles.validate(self.root), [])
 
+    def test_postposed_denial_complement_boundary_cross_product(
+        self,
+    ) -> None:
+        constructions = (
+            "Legal compliance is guaranteed {complement}{boundary}.",
+            "GOV-100 is superseded {complement}{boundary}.",
+        )
+        complements = (
+            "by no profile",
+            "by no authority under this profile",
+            "by neither this profile nor any overlay",
+        )
+        boundaries = (
+            "",
+            ", and this document explains the scope",
+            " while this document explains the scope",
+            " whereas this document explains the scope",
+            ", but this document explains the scope",
+        )
+        for construction, complement, boundary in product(
+            constructions,
+            complements,
+            boundaries,
+        ):
+            with self.subTest(
+                construction=construction,
+                complement=complement,
+                boundary=boundary,
+            ):
+                self.write_readme(
+                    construction.format(
+                        complement=complement,
+                        boundary=boundary,
+                    )
+                )
+                self.assertEqual(validate_profiles.validate(self.root), [])
+
     def test_semantic_diagnostic_ordering_is_stable(self) -> None:
         selections = self.load_component("control-selections.json")
         duplicate = dict(selections["selections"][0])

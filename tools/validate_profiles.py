@@ -1956,7 +1956,8 @@ def postposed_denial(text: str) -> bool:
             rf"(?:no\s+{bounded_noun}"
             rf"|neither\s+(?:(?:this|the|any)\s+)?{bounded_noun}\s+"
             rf"nor\s+(?:(?:this|the|any)\s+)?{bounded_noun})"
-            rf"{qualifier}\s*$",
+            rf"{qualifier}(?=\s*(?:$|,?\s*"
+            r"(?:and|while|whereas|but)\b))",
             text,
             re.IGNORECASE,
         )
