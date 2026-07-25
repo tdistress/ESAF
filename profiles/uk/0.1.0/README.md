@@ -35,12 +35,14 @@ evidence used to resolve each applicable condition.
 
 Each condition shall be answered independently from its exact factual
 question. A broader fact does not supply a narrower one: external-provider use
-does not by itself establish a material E1 through E4 dependency, generic
-internet exposure does not by itself establish an internet-reachable API,
-software intake does not establish model, application-artifact,
-infrastructure-dependency, or callable-tool use, and an unsupported technology
-does not by itself establish that a model is unsupported or that a capability
-must be retired.
+does not by itself establish an external AI service integration or a material
+E1 through E4 dependency, a downloaded external model does not by itself
+establish an external AI service integration, generic internet exposure does
+not by itself establish an internet-reachable API or an internet-reachable AI
+application interface or privileged application workflow, software intake does
+not establish model, application-artifact, infrastructure-dependency, or
+callable-tool use, and an unsupported technology does not by itself establish
+that a model is unsupported or that a capability must be retired.
 
 `not_selected` means that this pilot adds no profile-level selection. It does
 not alter the underlying ESAF requirement. The profile-local control status

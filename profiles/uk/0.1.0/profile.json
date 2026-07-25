@@ -23,6 +23,13 @@
       "resolution_evidence": "Current AI API inventory and contracts reconciled to gateway, routing, firewall, endpoint-discovery, and external reachability-test evidence, with an accountable API owner's attestation."
     },
     {
+      "condition_id": "INTERNET-REACHABLE-AI-APPLICATION-INTERFACE",
+      "question": "Can an internet-originated connection reach an AI application interface or privileged application workflow within the assessed boundary?",
+      "answer_type": "boolean",
+      "activates_when": true,
+      "resolution_evidence": "Current AI application and privileged-workflow inventories reconciled to routing, firewall, endpoint-discovery, external reachability-test, and accountable application-owner evidence."
+    },
+    {
       "condition_id": "EXTERNAL-PROVIDER-USE",
       "question": "Does the assessed AI system depend on an external provider for a model, hosted service, platform, tool, data service, or operation?",
       "answer_type": "boolean",
@@ -30,11 +37,18 @@
       "resolution_evidence": "Supplier and service inventories, architecture and data-flow records, contracts, service descriptions, and the approved shared-responsibility record."
     },
     {
-      "condition_id": "MATERIAL-EXTERNAL-PROVIDER-DEPENDENCY",
-      "question": "Is the assessed system an E1 through E4 capability with a material external provider or platform dependency whose replacement or isolation must be addressed for continuity or concentration risk?",
+      "condition_id": "EXTERNAL-AI-SERVICE-INTEGRATION",
+      "question": "Does the assessed capability use a live external AI service integration for a hosted model, AI SaaS, API, tool, data-processing service, evaluation service, or subcontracted operation?",
       "answer_type": "boolean",
       "activates_when": true,
-      "resolution_evidence": "Capability baseline and lifecycle records, dependency architecture, provider criticality and concentration analysis, continuity arrangements, and approved exit or isolation criteria."
+      "resolution_evidence": "Current integration and service inventories reconciled to architecture and data-flow records, endpoint and connector configuration, contracts, service descriptions, and accountable technical-owner evidence."
+    },
+    {
+      "condition_id": "MATERIAL-EXTERNAL-PROVIDER-DEPENDENCY",
+      "question": "Is the assessed capability classified E1 through E4 and materially dependent on an external provider or platform?",
+      "answer_type": "boolean",
+      "activates_when": true,
+      "resolution_evidence": "Capability baseline and lifecycle records, dependency architecture, provider criticality and concentration analysis, continuity dependencies, and the accountable owner's materiality classification."
     },
     {
       "condition_id": "THIRD-PARTY-ADMINISTRATION",

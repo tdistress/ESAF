@@ -529,6 +529,16 @@ class UKPilotProfileTests(unittest.TestCase):
         self.assertTrue(path.is_file(), f"missing UK pilot artifact {filename}")
         return json.loads(path.read_text(encoding="utf-8"))
 
+    def condition(self, condition_id: str) -> dict[str, object]:
+        return self.records_by_id(
+            "profile.json", "applicability_conditions", "condition_id"
+        )[condition_id]
+
+    def selection(self, control_id: str) -> dict[str, object]:
+        return self.records_by_id(
+            "control-selections.json", "selections", "control_id"
+        )[control_id]
+
     def records_by_id(
         self, filename: str, collection: str, identifier: str
     ) -> dict[str, dict[str, object]]:
@@ -559,7 +569,9 @@ class UKPilotProfileTests(unittest.TestCase):
             {
                 "INTERNET-EXPOSURE",
                 "INTERNET-REACHABLE-API",
+                "INTERNET-REACHABLE-AI-APPLICATION-INTERFACE",
                 "EXTERNAL-PROVIDER-USE",
+                "EXTERNAL-AI-SERVICE-INTEGRATION",
                 "MATERIAL-EXTERNAL-PROVIDER-DEPENDENCY",
                 "THIRD-PARTY-ADMINISTRATION",
                 "UNTRUSTED-MODEL-INTAKE",
@@ -578,6 +590,34 @@ class UKPilotProfileTests(unittest.TestCase):
                 self.assertIs(condition["activates_when"], True)
                 self.assertTrue(condition["question"].strip())
                 self.assertTrue(condition["resolution_evidence"].strip())
+
+    def test_admin_console_only_does_not_activate_app_150(self) -> None:
+        self.assertEqual(
+            ["INTERNET-REACHABLE-AI-APPLICATION-INTERFACE"],
+            self.selection("APP-150")["activation_conditions"],
+        )
+
+    def test_downloaded_external_model_does_not_activate_api_140(self) -> None:
+        self.assertEqual(
+            ["EXTERNAL-AI-SERVICE-INTEGRATION"],
+            self.selection("API-140")["activation_conditions"],
+        )
+
+    def test_api_150_material_dependency_condition_is_purely_factual(
+        self,
+    ) -> None:
+        question = self.condition(
+            "MATERIAL-EXTERNAL-PROVIDER-DEPENDENCY"
+        )["question"]
+        self.assertEqual(
+            question,
+            "Is the assessed capability classified E1 through E4 and "
+            "materially dependent on an external provider or platform?",
+        )
+        self.assertNotRegex(
+            question,
+            r"(?i)\b(must|should|addressed|replacement decision)\b",
+        )
 
     def test_every_condition_is_used_by_a_selection_or_overlay(self) -> None:
         condition_ids = {
@@ -599,10 +639,12 @@ class UKPilotProfileTests(unittest.TestCase):
             "MOD-110": ["UNTRUSTED-MODEL-INTAKE"],
             "MOD-150": ["UNSUPPORTED-MODEL-PRESENCE"],
             "APP-140": ["UNTRUSTED-APPLICATION-ARTIFACT-INTAKE"],
-            "APP-150": ["INTERNET-EXPOSURE"],
+            "APP-150": [
+                "INTERNET-REACHABLE-AI-APPLICATION-INTERFACE"
+            ],
             "API-110": ["INTERNET-REACHABLE-API"],
             "API-120": ["CALLABLE-TOOL-OR-PLUGIN-USE"],
-            "API-140": ["EXTERNAL-PROVIDER-USE"],
+            "API-140": ["EXTERNAL-AI-SERVICE-INTEGRATION"],
             "API-150": ["MATERIAL-EXTERNAL-PROVIDER-DEPENDENCY"],
             "INF-120": [
                 "INTERNET-EXPOSURE",
@@ -637,7 +679,8 @@ class UKPilotProfileTests(unittest.TestCase):
             "EXPOSED-BOUNDARY-OVERLAY": (
                 "INTERNET-EXPOSURE",
                 {
-                    "APP-150",
+                    "IAM-110",
+                    "IAM-130",
                     "INF-110",
                     "INF-120",
                     "INF-140",
@@ -645,6 +688,11 @@ class UKPilotProfileTests(unittest.TestCase):
                     "MON-110",
                 },
                 "BOUNDARY-EXPOSURE-EVIDENCE",
+            ),
+            "AI-APPLICATION-INTERFACE-OVERLAY": (
+                "INTERNET-REACHABLE-AI-APPLICATION-INTERFACE",
+                {"APP-150"},
+                "AI-APPLICATION-INTERFACE-EVIDENCE",
             ),
             "INTERNET-REACHABLE-API-OVERLAY": (
                 "INTERNET-REACHABLE-API",
@@ -688,8 +736,18 @@ class UKPilotProfileTests(unittest.TestCase):
             ),
             "EXTERNAL-RESPONSIBILITY-OVERLAY": (
                 "EXTERNAL-PROVIDER-USE",
-                {"API-140", "CMP-120", "ARC-140"},
+                {"CMP-120", "ARC-140"},
                 "EXTERNAL-RESPONSIBILITY-EVIDENCE",
+            ),
+            "EXTERNAL-AI-SERVICE-INTEGRATION-OVERLAY": (
+                "EXTERNAL-AI-SERVICE-INTEGRATION",
+                {"API-140"},
+                "EXTERNAL-AI-SERVICE-INTEGRATION-EVIDENCE",
+            ),
+            "MATERIAL-DEPENDENCY-OVERLAY": (
+                "MATERIAL-EXTERNAL-PROVIDER-DEPENDENCY",
+                {"API-150"},
+                "MATERIAL-DEPENDENCY-EVIDENCE",
             ),
             "THIRD-PARTY-ADMINISTRATION-OVERLAY": (
                 "THIRD-PARTY-ADMINISTRATION",
@@ -762,6 +820,81 @@ class UKPilotProfileTests(unittest.TestCase):
                         ),
                         f"{control_id} is not applicable under {condition_id}",
                     )
+                    if (
+                        selection["status"] == "conditional"
+                        and len(selection["activation_conditions"]) == 1
+                    ):
+                        self.assertEqual(
+                            selection["activation_conditions"],
+                            [condition_id],
+                            f"{control_id} and {overlay_id} use different "
+                            "single-condition applicability",
+                        )
+
+    def test_every_overlay_control_is_covered_by_a_linked_risk(self) -> None:
+        risk_document = self.load("risk-overlays.json")
+        risks = {
+            risk["risk_id"]: risk for risk in risk_document["risks"]
+        }
+        for overlay in risk_document["overlays"]:
+            linked_risks = [
+                risks[risk_id] for risk_id in overlay["risk_ids"]
+            ]
+            for control_id in overlay["affected_controls"]:
+                with self.subTest(
+                    overlay=overlay["overlay_id"],
+                    control=control_id,
+                ):
+                    self.assertTrue(
+                        any(
+                            control_id
+                            in {
+                                *risk["source_basis"],
+                                *risk["affected_controls"],
+                            }
+                            for risk in linked_risks
+                        ),
+                        f"{control_id} has no source or affected-control "
+                        f"coverage in risks linked to {overlay['overlay_id']}",
+                    )
+
+    def test_iam_140_and_authenticated_administration_are_fully_linked(
+        self,
+    ) -> None:
+        risks = self.records_by_id("risk-overlays.json", "risks", "risk_id")
+        overlays = self.records_by_id(
+            "risk-overlays.json", "overlays", "overlay_id"
+        )
+        expectations = self.records_by_id(
+            "evidence-expectations.json", "expectations", "expectation_id"
+        )
+
+        privileged_risk = risks["PRIVILEGED-CONFIGURATION-RISK"]
+        self.assertIn("IAM-140", privileged_risk["source_basis"])
+        self.assertIn("IAM-140", privileged_risk["affected_controls"])
+
+        third_party_overlay = overlays["THIRD-PARTY-ADMINISTRATION-OVERLAY"]
+        third_party_evidence = expectations[
+            "THIRD-PARTY-ADMINISTRATION-EVIDENCE"
+        ]
+        self.assertIn("IAM-140", third_party_overlay["affected_controls"])
+        self.assertIn("IAM-140", third_party_evidence["control_ids"])
+
+        exposure_overlay = overlays["EXPOSED-BOUNDARY-OVERLAY"]
+        exposure_evidence = expectations["BOUNDARY-EXPOSURE-EVIDENCE"]
+        exposed_risk = risks["EXPOSED-INFRASTRUCTURE-RISK"]
+        self.assertIn(
+            "authenticated administration",
+            exposure_overlay["statement"].lower(),
+        )
+        for control_id in ("IAM-110", "IAM-130"):
+            with self.subTest(control=control_id):
+                self.assertIn(
+                    control_id, exposure_overlay["affected_controls"]
+                )
+                self.assertIn(control_id, exposure_evidence["control_ids"])
+                self.assertIn(control_id, exposed_risk["source_basis"])
+                self.assertIn(control_id, exposed_risk["affected_controls"])
 
     def test_external_responsibility_chain_is_generic_but_api_150_is_material(
         self,
@@ -876,6 +1009,8 @@ class UKPilotProfileTests(unittest.TestCase):
             "EXPOSED-INFRASTRUCTURE-RISK": {
                 "APP-150",
                 "API-110",
+                "IAM-110",
+                "IAM-130",
                 "INF-110",
                 "INF-120",
                 "INF-140",
@@ -885,6 +1020,7 @@ class UKPilotProfileTests(unittest.TestCase):
             "PRIVILEGED-CONFIGURATION-RISK": {
                 "IAM-120",
                 "IAM-130",
+                "IAM-140",
                 "IAM-150",
                 "INF-110",
                 "INF-130",
@@ -908,6 +1044,7 @@ class UKPilotProfileTests(unittest.TestCase):
                 "IAM-130",
                 "IAM-150",
             },
+            "MATERIAL-DEPENDENCY-RISK": {"API-150"},
             "INCOMPLETE-SCOPE-EVIDENCE-RISK": {
                 "GOV-130",
                 "RSK-110",

@@ -6,11 +6,13 @@
   "risks": [
     {
       "risk_id": "EXPOSED-INFRASTRUCTURE-RISK",
-      "statement": "Internet-reachable AI services or administrative paths can expand the opportunity for unauthorized access, exploit attempts, automated abuse, and resource exhaustion.",
-      "circumstances": "The risk is in scope when an internet-originated connection can reach an AI service, supporting interface, or administrative path in the assessed boundary.",
+      "statement": "Internet-reachable AI services, application interfaces, privileged workflows, or administrative paths can expand the opportunity for unauthorized access, exploit attempts, automated abuse, and resource exhaustion.",
+      "circumstances": "The risk is in scope when an internet-originated connection can reach an AI service, application interface, supporting interface, privileged workflow, or administrative path in the assessed boundary.",
       "source_basis": [
         "APP-150",
         "API-110",
+        "IAM-110",
+        "IAM-130",
         "INF-110",
         "INF-120",
         "INF-140",
@@ -20,6 +22,8 @@
       "affected_controls": [
         "APP-150",
         "API-110",
+        "IAM-110",
+        "IAM-130",
         "INF-110",
         "INF-120",
         "INF-140",
@@ -28,6 +32,7 @@
       ],
       "overlay_ids": [
         "EXPOSED-BOUNDARY-OVERLAY",
+        "AI-APPLICATION-INTERFACE-OVERLAY",
         "INTERNET-REACHABLE-API-OVERLAY"
       ]
     },
@@ -38,6 +43,7 @@
       "source_basis": [
         "IAM-120",
         "IAM-130",
+        "IAM-140",
         "IAM-150",
         "INF-110",
         "INF-130",
@@ -46,6 +52,7 @@
       "affected_controls": [
         "IAM-120",
         "IAM-130",
+        "IAM-140",
         "IAM-150",
         "INF-110",
         "INF-130",
@@ -119,7 +126,22 @@
       ],
       "overlay_ids": [
         "EXTERNAL-RESPONSIBILITY-OVERLAY",
+        "EXTERNAL-AI-SERVICE-INTEGRATION-OVERLAY",
         "THIRD-PARTY-ADMINISTRATION-OVERLAY"
+      ]
+    },
+    {
+      "risk_id": "MATERIAL-DEPENDENCY-RISK",
+      "statement": "Material dependence on an external AI provider or platform can create concentration, continuity, portability, and isolation risk that prevents timely recovery or replacement.",
+      "circumstances": "The risk is in scope when an E1 through E4 capability is materially dependent on an external provider or platform.",
+      "source_basis": [
+        "API-150"
+      ],
+      "affected_controls": [
+        "API-150"
+      ],
+      "overlay_ids": [
+        "MATERIAL-DEPENDENCY-OVERLAY"
       ]
     },
     {
@@ -159,7 +181,8 @@
         "INTERNET-EXPOSURE"
       ],
       "affected_controls": [
-        "APP-150",
+        "IAM-110",
+        "IAM-130",
         "INF-110",
         "INF-120",
         "INF-140",
@@ -172,7 +195,25 @@
       "evidence_expectation_ids": [
         "BOUNDARY-EXPOSURE-EVIDENCE"
       ],
-      "strengthening_rationale": "The overlay adds a current exposure inventory, tested boundary evidence, and service-specific resource safeguards while retaining each control's existing identity, protection, vulnerability, cryptography, capacity, abuse, and detection outcomes."
+      "strengthening_rationale": "The overlay adds a current exposure inventory, tested boundary evidence, authenticated-administration verification, and service-specific resource safeguards while retaining each control's existing authentication, privileged-access, protection, vulnerability, cryptography, capacity, and detection outcomes."
+    },
+    {
+      "overlay_id": "AI-APPLICATION-INTERFACE-OVERLAY",
+      "statement": "When an internet-originated connection can reach an AI application interface or privileged application workflow, the organization shall identify representative misuse, adversarial, automated-abuse, denial-of-service, excessive-consumption, and repeated policy-evasion scenarios, apply risk-proportionate constraints, and test detection and response.",
+      "applicability": "conditional",
+      "activation_conditions": [
+        "INTERNET-REACHABLE-AI-APPLICATION-INTERFACE"
+      ],
+      "affected_controls": [
+        "APP-150"
+      ],
+      "risk_ids": [
+        "EXPOSED-INFRASTRUCTURE-RISK"
+      ],
+      "evidence_expectation_ids": [
+        "AI-APPLICATION-INTERFACE-EVIDENCE"
+      ],
+      "strengthening_rationale": "The overlay focuses APP-150's existing misuse, abuse, resource-protection, and response outcomes on the exact internet-reachable AI application-interface and privileged-workflow population without treating a reachable administration console or other exposed infrastructure as an AI application interface."
     },
     {
       "overlay_id": "INTERNET-REACHABLE-API-OVERLAY",
@@ -346,7 +387,6 @@
         "EXTERNAL-PROVIDER-USE"
       ],
       "affected_controls": [
-        "API-140",
         "CMP-120",
         "ARC-140"
       ],
@@ -356,7 +396,43 @@
       "evidence_expectation_ids": [
         "EXTERNAL-RESPONSIBILITY-EVIDENCE"
       ],
-      "strengthening_rationale": "The overlay requires one reconciled provider-responsibility record while preserving the controls' existing integration, portability, supplier, and shared-responsibility outcomes."
+      "strengthening_rationale": "The overlay requires one reconciled provider-responsibility record while preserving the controls' existing supplier and shared-responsibility outcomes."
+    },
+    {
+      "overlay_id": "EXTERNAL-AI-SERVICE-INTEGRATION-OVERLAY",
+      "statement": "When a live external AI service integration is present, the organization shall define and enforce service-specific security, privacy, data-use, retention, training, residency, availability, change, incident, assurance, continuity, and exit requirements and verify them against current architecture, configuration, and service terms.",
+      "applicability": "conditional",
+      "activation_conditions": [
+        "EXTERNAL-AI-SERVICE-INTEGRATION"
+      ],
+      "affected_controls": [
+        "API-140"
+      ],
+      "risk_ids": [
+        "EXTERNAL-RESPONSIBILITY-RISK"
+      ],
+      "evidence_expectation_ids": [
+        "EXTERNAL-AI-SERVICE-INTEGRATION-EVIDENCE"
+      ],
+      "strengthening_rationale": "The overlay focuses API-140's external-service integration outcomes on the exact live service-integration population without treating acquisition of an externally sourced model or another non-service provider dependency as an active integration."
+    },
+    {
+      "overlay_id": "MATERIAL-DEPENDENCY-OVERLAY",
+      "statement": "When an E1 through E4 capability is materially dependent on an external provider or platform, the organization shall document and test the interfaces, data formats, configuration, model dependencies, migration procedures, isolation options, and exit criteria required to address continuity and concentration risk.",
+      "applicability": "conditional",
+      "activation_conditions": [
+        "MATERIAL-EXTERNAL-PROVIDER-DEPENDENCY"
+      ],
+      "affected_controls": [
+        "API-150"
+      ],
+      "risk_ids": [
+        "MATERIAL-DEPENDENCY-RISK"
+      ],
+      "evidence_expectation_ids": [
+        "MATERIAL-DEPENDENCY-EVIDENCE"
+      ],
+      "strengthening_rationale": "The overlay focuses API-150's interoperability, portability, isolation, and exit outcomes on the factually resolved material E1 through E4 dependency without making an existing replacement or isolation decision part of applicability."
     },
     {
       "overlay_id": "THIRD-PARTY-ADMINISTRATION-OVERLAY",

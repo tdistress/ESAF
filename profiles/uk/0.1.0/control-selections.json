@@ -209,9 +209,9 @@
     {
       "control_id": "APP-150",
       "status": "conditional",
-      "rationale": "Internet reachability materially increases automated abuse, denial-of-service, consumption, adversarial behavior, and policy-evasion opportunities at AI application interfaces, activating dedicated misuse controls.",
+      "rationale": "An internet-reachable AI application interface or privileged application workflow materially increases automated abuse, denial-of-service, consumption, adversarial behavior, and policy-evasion opportunities, activating dedicated misuse controls.",
       "activation_conditions": [
-        "INTERNET-EXPOSURE"
+        "INTERNET-REACHABLE-AI-APPLICATION-INTERFACE"
       ]
     },
     {
@@ -243,9 +243,9 @@
     {
       "control_id": "API-140",
       "status": "conditional",
-      "rationale": "External provider use requires service-specific security, privacy, data-use, retention, availability, change, incident, assurance, continuity, and exit expectations for the integration.",
+      "rationale": "A live external AI service integration requires service-specific security, privacy, data-use, retention, availability, change, incident, assurance, continuity, and exit expectations for the integration.",
       "activation_conditions": [
-        "EXTERNAL-PROVIDER-USE"
+        "EXTERNAL-AI-SERVICE-INTEGRATION"
       ]
     },
     {
