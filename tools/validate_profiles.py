@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Sequence
 
+import yaml
 from jsonschema import Draft202012Validator, FormatChecker
 from jsonschema.exceptions import SchemaError
 from referencing.exceptions import Unresolvable
@@ -584,6 +585,11 @@ def safe_repository_file(
     """Resolve one normalized regular file beneath a repository subdirectory."""
     pure = PurePosixPath(relative)
     expected = PurePosixPath(expected_root)
+    reference_kind = (
+        "registry"
+        if expected_root == "crosswalks/registry"
+        else "snapshot"
+    )
     if (
         not relative
         or pure.is_absolute()
@@ -593,7 +599,9 @@ def safe_repository_file(
         or pure.as_posix() != relative
         or pure.parts[: len(expected.parts)] != expected.parts
     ):
-        raise ValueError(f"unsafe or missing registry path {relative!r}")
+        raise ValueError(
+            f"unsafe or missing {reference_kind} path {relative!r}"
+        )
     candidate = root.joinpath(*pure.parts)
     if any(
         entry_is_alias(
@@ -601,18 +609,22 @@ def safe_repository_file(
         )
         for part in bounded_paths(candidate, root)
     ):
-        raise ValueError(f"unsafe or missing registry path {relative!r}")
+        raise ValueError(
+            f"unsafe or missing {reference_kind} path {relative!r}"
+        )
     candidate_mode = lstat_mode(
         candidate, f"{expected_root}: cannot inspect repository reference"
     )
     if candidate_mode is None or not stat.S_ISREG(candidate_mode):
-        raise ValueError(f"unsafe or missing registry path {relative!r}")
+        raise ValueError(
+            f"unsafe or missing {reference_kind} path {relative!r}"
+        )
     try:
         expected_directory = root.joinpath(*expected.parts).resolve(strict=True)
         candidate.resolve(strict=True).relative_to(expected_directory)
     except (FileNotFoundError, ValueError) as exc:
         raise ValueError(
-            f"unsafe or missing registry path {relative!r}"
+            f"unsafe or missing {reference_kind} path {relative!r}"
         ) from exc
     except OSError as exc:
         raise OperationalProfileError(
@@ -813,10 +825,25 @@ def mapping_reference_metadata(
     root: Path, mapping_set_id: str, registry_path: str
 ) -> dict[str, object]:
     """Resolve declared mapping metadata without conflating editorial state."""
+    canonical_registry_path = (
+        f"crosswalks/registry/{mapping_set_id}.md"
+    )
+    if registry_path != canonical_registry_path:
+        raise ValueError(
+            "registry path must be canonical "
+            f"{canonical_registry_path!r}"
+        )
     registry_file = safe_repository_file(
         root, registry_path, expected_root="crosswalks/registry"
     )
-    registry, _ = parse_front_matter(registry_file)
+    try:
+        registry, _ = parse_front_matter(registry_file)
+    except yaml.YAMLError as exc:
+        raise ValueError("cannot parse registry front matter") from exc
+    except (UnicodeError, ValueError) as exc:
+        raise ValueError(
+            f"cannot load registry front matter: {exc}"
+        ) from exc
     events = registry.get("events")
     if not isinstance(events, list):
         raise ValueError("registry lifecycle events must be an array")
@@ -849,9 +876,30 @@ def mapping_reference_metadata(
         )
     if not isinstance(snapshot_path, str):
         raise ValueError(f"mapping set {mapping_set_id} has no snapshot path")
+    snapshot_file = safe_repository_file(
+        root, snapshot_path, expected_root="crosswalks/mappings"
+    )
+    try:
+        snapshot, _ = parse_front_matter(snapshot_file)
+    except yaml.YAMLError as exc:
+        raise ValueError("cannot parse snapshot front matter") from exc
+    except (UnicodeError, ValueError) as exc:
+        raise ValueError(
+            f"cannot load snapshot front matter: {exc}"
+        ) from exc
     if registry.get("mapping_set_id") != mapping_set_id:
         raise ValueError(
             f"registry mapping_set_id does not match {mapping_set_id}"
+        )
+    if snapshot.get("mapping_set_id") != mapping_set_id:
+        raise ValueError(
+            f"snapshot mapping_set_id does not match {mapping_set_id}"
+        )
+    snapshot_status = snapshot.get("status")
+    if snapshot_status != editorial_status:
+        raise ValueError(
+            f"snapshot editorial status {snapshot_status} does not match "
+            f"catalog {editorial_status}"
         )
     return {
         "mapping_set_id": mapping_set_id,

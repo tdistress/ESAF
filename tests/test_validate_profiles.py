@@ -88,6 +88,40 @@ class ProfileValidationTests(unittest.TestCase):
         record["metadata"]["status"] = status
         profile_fixture.write_json(path, catalog)
 
+    def snapshot_path(self, reference_index: int = 0) -> Path:
+        mapping_set_id = profile_fixture.MAPPING_REFERENCES[reference_index][0]
+        catalog = json.loads(
+            (self.root / "crosswalks/catalog.json").read_text(encoding="utf-8")
+        )
+        record = next(
+            record
+            for record in catalog["mapping_sets"]
+            if record["metadata"]["mapping_set_id"] == mapping_set_id
+        )
+        return self.root / record["path"]
+
+    def set_snapshot_editorial_status(
+        self, status: str, reference_index: int = 0
+    ) -> None:
+        path = self.snapshot_path(reference_index)
+        text = path.read_text(encoding="utf-8")
+        for current in ("draft", "reviewed", "approved"):
+            marker = f"status: {current}"
+            if marker in text:
+                path.write_text(
+                    text.replace(marker, f"status: {status}", 1),
+                    encoding="utf-8",
+                    newline="\n",
+                )
+                return
+        self.fail("snapshot has no editable editorial status")
+
+    def set_editorial_status(
+        self, status: str, reference_index: int = 0
+    ) -> None:
+        self.set_catalog_editorial_status(status, reference_index)
+        self.set_snapshot_editorial_status(status, reference_index)
+
     def set_expected_status(
         self, status: str, reference_index: int = 0
     ) -> None:
@@ -434,7 +468,7 @@ class ProfileValidationTests(unittest.TestCase):
     def test_reviewed_snapshot_is_not_inferred_as_draft_from_empty_events(
         self,
     ) -> None:
-        self.set_catalog_editorial_status("reviewed")
+        self.set_editorial_status("reviewed")
         package = self.generic_package(
             external_references=[self.external_references()[0]]
         )
@@ -448,7 +482,7 @@ class ProfileValidationTests(unittest.TestCase):
         )
 
     def test_reviewed_snapshot_with_empty_events_is_valid(self) -> None:
-        self.set_catalog_editorial_status("reviewed")
+        self.set_editorial_status("reviewed")
         self.set_expected_status("reviewed")
         package = self.generic_package(
             external_references=[self.external_references()[0]]
@@ -463,7 +497,7 @@ class ProfileValidationTests(unittest.TestCase):
         )
 
     def test_reviewed_snapshot_rejects_approved_registry_event(self) -> None:
-        self.set_catalog_editorial_status("reviewed")
+        self.set_editorial_status("reviewed")
         self.set_expected_status("reviewed")
         self.set_registry_events(["approved"])
         package = self.generic_package(
@@ -480,7 +514,7 @@ class ProfileValidationTests(unittest.TestCase):
         )
 
     def test_approved_snapshot_requires_approved_registry_event(self) -> None:
-        self.set_catalog_editorial_status("approved")
+        self.set_editorial_status("approved")
         self.set_expected_status("approved")
         package = self.generic_package(
             external_references=[self.external_references()[0]]
@@ -496,7 +530,7 @@ class ProfileValidationTests(unittest.TestCase):
         )
 
     def test_approved_snapshot_with_approved_registry_event_is_valid(self) -> None:
-        self.set_catalog_editorial_status("approved")
+        self.set_editorial_status("approved")
         self.set_expected_status("approved")
         self.set_registry_events(["approved"])
         package = self.generic_package(
@@ -513,7 +547,7 @@ class ProfileValidationTests(unittest.TestCase):
 
     def test_generic_reference_path_must_be_safe_and_present(self) -> None:
         reference = self.external_references()[0]
-        reference["registry_path"] = "crosswalks/registry/missing.md"
+        (self.root / str(reference["registry_path"])).unlink()
         package = self.generic_package(external_references=[reference])
         self.assertTrue(
             any(
@@ -526,7 +560,12 @@ class ProfileValidationTests(unittest.TestCase):
 
     def test_generic_reference_identifier_must_resolve_in_catalog(self) -> None:
         reference = self.external_references()[0]
+        source = self.root / str(reference["registry_path"])
         reference["mapping_set_id"] = "example--mapping-set--0.1.0"
+        reference["registry_path"] = (
+            "crosswalks/registry/example--mapping-set--0.1.0.md"
+        )
+        shutil.copy2(source, self.root / str(reference["registry_path"]))
         package = self.generic_package(external_references=[reference])
         self.assertTrue(
             any(
@@ -536,6 +575,175 @@ class ProfileValidationTests(unittest.TestCase):
                 )
             )
         )
+
+    def test_generic_reference_requires_canonical_registry_path(self) -> None:
+        reference = self.external_references()[0]
+        canonical = self.root / str(reference["registry_path"])
+        alternate = canonical.with_name("alternate-lifecycle-record.md")
+        shutil.copy2(canonical, alternate)
+        reference["registry_path"] = alternate.relative_to(self.root).as_posix()
+        package = self.generic_package(external_references=[reference])
+        self.assertTrue(
+            any(
+                "registry path must be canonical" in item
+                for item in validate_profiles.semantic_diagnostics(
+                    self.root, package
+                )
+            )
+        )
+
+    def test_missing_catalog_snapshot_is_rejected(self) -> None:
+        self.snapshot_path().unlink()
+        reference = self.external_references()[0]
+        package = self.generic_package(external_references=[reference])
+        self.assertTrue(
+            any(
+                "unsafe or missing snapshot path" in item
+                for item in validate_profiles.semantic_diagnostics(
+                    self.root, package
+                )
+            )
+        )
+
+    def test_catalog_snapshot_mapping_identifier_drift_is_rejected(self) -> None:
+        path = self.snapshot_path()
+        mapping_set_id = profile_fixture.MAPPING_REFERENCES[0][0]
+        path.write_text(
+            path.read_text(encoding="utf-8").replace(
+                f"mapping_set_id: {mapping_set_id}",
+                "mapping_set_id: example--wrong-mapping--0.1.0",
+                1,
+            ),
+            encoding="utf-8",
+            newline="\n",
+        )
+        reference = self.external_references()[0]
+        package = self.generic_package(external_references=[reference])
+        self.assertTrue(
+            any(
+                "snapshot mapping_set_id does not match" in item
+                for item in validate_profiles.semantic_diagnostics(
+                    self.root, package
+                )
+            )
+        )
+
+    def test_snapshot_and_catalog_editorial_status_drift_is_rejected(self) -> None:
+        self.set_snapshot_editorial_status("reviewed")
+        reference = self.external_references()[0]
+        package = self.generic_package(external_references=[reference])
+        self.assertTrue(
+            any(
+                "snapshot editorial status reviewed does not match catalog draft"
+                in item
+                for item in validate_profiles.semantic_diagnostics(
+                    self.root, package
+                )
+            )
+        )
+
+    def test_catalog_snapshot_escape_is_rejected(self) -> None:
+        catalog_path = self.root / "crosswalks/catalog.json"
+        catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
+        mapping_set_id = profile_fixture.MAPPING_REFERENCES[0][0]
+        record = next(
+            record
+            for record in catalog["mapping_sets"]
+            if record["metadata"]["mapping_set_id"] == mapping_set_id
+        )
+        record["path"] = "../outside-snapshot.md"
+        profile_fixture.write_json(catalog_path, catalog)
+        reference = self.external_references()[0]
+        package = self.generic_package(external_references=[reference])
+        self.assertTrue(
+            any(
+                "unsafe or missing snapshot path" in item
+                for item in validate_profiles.semantic_diagnostics(
+                    self.root, package
+                )
+            )
+        )
+
+    def test_catalog_snapshot_must_be_a_regular_file(self) -> None:
+        catalog_path = self.root / "crosswalks/catalog.json"
+        catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
+        mapping_set_id = profile_fixture.MAPPING_REFERENCES[0][0]
+        record = next(
+            record
+            for record in catalog["mapping_sets"]
+            if record["metadata"]["mapping_set_id"] == mapping_set_id
+        )
+        record["path"] = "crosswalks/mappings"
+        profile_fixture.write_json(catalog_path, catalog)
+        reference = self.external_references()[0]
+        package = self.generic_package(external_references=[reference])
+        self.assertTrue(
+            any(
+                "unsafe or missing snapshot path" in item
+                for item in validate_profiles.semantic_diagnostics(
+                    self.root, package
+                )
+            )
+        )
+
+    def test_generic_snapshot_symlink_is_rejected(self) -> None:
+        path = self.snapshot_path()
+        target = path.with_name("snapshot-target.md")
+        path.rename(target)
+        try:
+            path.symlink_to(target)
+        except OSError as error:
+            target.rename(path)
+            self.skipTest(f"symlink creation is unavailable: {error}")
+        try:
+            reference = self.external_references()[0]
+            package = self.generic_package(external_references=[reference])
+            self.assertTrue(
+                any(
+                    "unsafe or missing snapshot path" in item
+                    for item in validate_profiles.semantic_diagnostics(
+                        self.root, package
+                    )
+                )
+            )
+        finally:
+            path.unlink()
+            target.rename(path)
+
+    @unittest.skipUnless(os.name == "nt", "Windows junction regression")
+    def test_generic_snapshot_junction_is_rejected(self) -> None:
+        snapshot_directory = self.snapshot_path().parent
+        outside = self.root / "outside-snapshot"
+        snapshot_directory.rename(outside)
+        junction = subprocess.run(
+            [
+                "cmd",
+                "/c",
+                "mklink",
+                "/J",
+                str(snapshot_directory),
+                str(outside),
+            ],
+            capture_output=True,
+            text=True,
+        )
+        if junction.returncode != 0:
+            outside.rename(snapshot_directory)
+            self.skipTest(f"junction creation is unavailable: {junction.stderr}")
+        try:
+            reference = self.external_references()[0]
+            package = self.generic_package(external_references=[reference])
+            self.assertTrue(
+                any(
+                    "unsafe or missing snapshot path" in item
+                    for item in validate_profiles.semantic_diagnostics(
+                        self.root, package
+                    )
+                )
+            )
+        finally:
+            os.rmdir(snapshot_directory)
+            outside.rename(snapshot_directory)
 
     def test_generic_reference_registry_symlink_is_rejected(self) -> None:
         reference = self.external_references()[0]
@@ -556,6 +764,86 @@ class ProfileValidationTests(unittest.TestCase):
                 )
             )
         )
+
+    def test_malformed_registry_front_matter_is_content_failure(self) -> None:
+        registry_path = profile_fixture.MAPPING_REFERENCES[0][1]
+        (self.root / registry_path).write_text(
+            "---\nmapping_set_id: [\n---\n# Broken registry\n",
+            encoding="utf-8",
+            newline="\n",
+        )
+        stderr = io.StringIO()
+        with contextlib.redirect_stderr(stderr):
+            result = validate_profiles.main(["--check"], root=self.root)
+        self.assertEqual(result, 1)
+        self.assertIn("cannot parse registry front matter", stderr.getvalue())
+        self.assertNotIn(str(self.root), stderr.getvalue())
+
+    def test_malformed_snapshot_front_matter_is_content_failure(self) -> None:
+        self.snapshot_path().write_text(
+            "---\nmapping_set_id: [\n---\n# Broken snapshot\n",
+            encoding="utf-8",
+            newline="\n",
+        )
+        stderr = io.StringIO()
+        with contextlib.redirect_stderr(stderr):
+            result = validate_profiles.main(["--check"], root=self.root)
+        self.assertEqual(result, 1)
+        self.assertIn("cannot parse snapshot front matter", stderr.getvalue())
+        self.assertNotIn(str(self.root), stderr.getvalue())
+
+    def test_valid_governed_mapping_lifecycle_prefixes(self) -> None:
+        valid_cases = (
+            (["approved"], "approved"),
+            (["approved", "published"], "published"),
+            (["approved", "published", "deprecated"], "deprecated"),
+            (
+                ["approved", "published", "deprecated", "retired"],
+                "retired",
+            ),
+        )
+        for states, expected_status in valid_cases:
+            with self.subTest(states=states):
+                metadata = {
+                    "editorial_status": "approved",
+                    "registry_events": [
+                        {"state": state} for state in states
+                    ],
+                }
+                self.assertEqual(
+                    [],
+                    validate_profiles.mapping_lifecycle_diagnostics(
+                        metadata, expected_status
+                    ),
+                )
+
+    def test_invalid_governed_mapping_lifecycle_transitions(self) -> None:
+        invalid_cases = (
+            ["approved", "deprecated"],
+            ["approved", "approved"],
+            ["published", "approved"],
+            [
+                "approved",
+                "published",
+                "deprecated",
+                "retired",
+                "retired",
+            ],
+        )
+        for states in invalid_cases:
+            with self.subTest(states=states):
+                metadata = {
+                    "editorial_status": "approved",
+                    "registry_events": [
+                        {"state": state} for state in states
+                    ],
+                }
+                self.assertIn(
+                    "invalid governed registry lifecycle event prefix",
+                    validate_profiles.mapping_lifecycle_diagnostics(
+                        metadata, states[-1]
+                    ),
+                )
 
     def test_wrong_mapping_registry_path_is_rejected(self) -> None:
         document = self.load_component("external-references.json")

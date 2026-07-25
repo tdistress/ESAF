@@ -38,6 +38,13 @@ def write_valid_profile_fixture(root: Path) -> Path:
     shutil.copy2(SOURCE_ROOT / "controls/catalog.json", root / "controls/catalog.json")
     shutil.copytree(SOURCE_ROOT / "crosswalks/registry", root / "crosswalks/registry")
     shutil.copy2(SOURCE_ROOT / "crosswalks/catalog.json", root / "crosswalks/catalog.json")
+    crosswalk_catalog = json.loads(
+        (SOURCE_ROOT / "crosswalks/catalog.json").read_text(encoding="utf-8")
+    )
+    for record in crosswalk_catalog["mapping_sets"]:
+        snapshot = root / record["path"]
+        snapshot.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(SOURCE_ROOT / record["path"], snapshot)
 
     package = root / PACKAGE_RELATIVE
     package.mkdir(parents=True)
