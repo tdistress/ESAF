@@ -492,10 +492,10 @@ class UKPilotProfileTests(unittest.TestCase):
                 {"INF-120"},
                 "INFRASTRUCTURE-DEPENDENCY-INTAKE-EVIDENCE",
             ),
-            "UNSUPPORTED-MODEL-OVERLAY": (
+            "MODEL-RETIREMENT-OVERLAY": (
                 "UNSUPPORTED-MODEL-PRESENCE",
                 {"MOD-150"},
-                "UNSUPPORTED-MODEL-EVIDENCE",
+                "MODEL-RETIREMENT-EVIDENCE",
             ),
             "UNSUPPORTED-INFRASTRUCTURE-OVERLAY": (
                 "UNSUPPORTED-INFRASTRUCTURE-COMPONENT-PRESENCE",
@@ -622,6 +622,76 @@ class UKPilotProfileTests(unittest.TestCase):
             selections["API-150"]["activation_conditions"],
             ["MATERIAL-EXTERNAL-PROVIDER-DEPENDENCY"],
         )
+
+    def test_model_retirement_chain_covers_every_mod_150_state(self) -> None:
+        states = (
+            "end-of-life",
+            "replaced",
+            "unsupported",
+            "compromised",
+            "nonconforming",
+            "expired",
+            "abandoned",
+        )
+        conditions = {
+            condition["condition_id"]: condition
+            for condition in self.load("profile.json")["applicability_conditions"]
+        }
+        risk_document = self.load("risk-overlays.json")
+        risks = {
+            risk["risk_id"]: risk for risk in risk_document["risks"]
+        }
+        overlay = next(
+            record
+            for record in risk_document["overlays"]
+            if record.get("activation_conditions")
+            == ["UNSUPPORTED-MODEL-PRESENCE"]
+            and record["affected_controls"] == ["MOD-150"]
+        )
+        self.assertEqual(len(overlay["risk_ids"]), 1)
+        risk = risks[overlay["risk_ids"][0]]
+        expectations = self.records_by_id(
+            "evidence-expectations.json", "expectations", "expectation_id"
+        )
+        self.assertEqual(len(overlay["evidence_expectation_ids"]), 1)
+        expectation = expectations[overlay["evidence_expectation_ids"][0]]
+
+        for record_name, text in (
+            (
+                "condition question",
+                conditions["UNSUPPORTED-MODEL-PRESENCE"]["question"],
+            ),
+            ("risk circumstances", risk["circumstances"]),
+            ("risk source basis", " ".join(risk["source_basis"])),
+            ("overlay statement", overlay["statement"]),
+            ("overlay strengthening", overlay["strengthening_rationale"]),
+            ("evidence purpose", expectation["purpose"]),
+            ("evidence strengthening", expectation["strengthening"]),
+        ):
+            for state in states:
+                with self.subTest(record=record_name, state=state):
+                    self.assertIn(state, text.lower())
+
+        with self.subTest(record="risk identifier"):
+            self.assertEqual(risk["risk_id"], "LIFECYCLE-DISPOSITION-RISK")
+        with self.subTest(record="overlay identifier"):
+            self.assertEqual(
+                overlay["overlay_id"], "MODEL-RETIREMENT-OVERLAY"
+            )
+        with self.subTest(record="evidence identifier"):
+            self.assertEqual(
+                expectation["expectation_id"],
+                "MODEL-RETIREMENT-EVIDENCE",
+            )
+        self.assertIn(
+            "unsupported or end-of-life infrastructure",
+            risk["circumstances"].lower(),
+        )
+        self.assertIn(
+            "unsupported, end-of-life, or out-of-window ai technology",
+            risk["circumstances"].lower(),
+        )
+        self.assertIn("MOD-150", " ".join(risk["source_basis"]))
 
     def test_selection_rationales_do_not_embed_stale_condition_counts(self) -> None:
         selections = self.load("control-selections.json")["selections"]

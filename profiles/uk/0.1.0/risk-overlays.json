@@ -46,11 +46,12 @@
       ]
     },
     {
-      "risk_id": "UNSUPPORTED-COMPONENT-RISK",
-      "statement": "Unsupported or end-of-life components can retain unresolved defects, lose dependable maintenance paths, and frustrate safe recovery or replacement.",
-      "circumstances": "The risk is in scope when component and support records identify any model, software, platform, protocol, or infrastructure element outside an approved support window.",
+      "risk_id": "LIFECYCLE-DISPOSITION-RISK",
+      "statement": "Models in a retirement-triggering state can remain deployed or accessible until authorized retirement is completed; unsupported or end-of-life infrastructure can retain unresolved vulnerabilities; and unsupported, end-of-life, or out-of-window AI technology or architecture components can lose dependable maintenance paths and frustrate safe recovery or replacement.",
+      "circumstances": "The risk is in scope when records identify an end-of-life, replaced, unsupported, compromised, nonconforming, expired, or abandoned model; an unsupported or end-of-life infrastructure component or managed-service dependency; or an unsupported, end-of-life, or out-of-window AI technology or architecture component.",
       "source_basis": [
-        "ESAF-1100 controls MOD-150, INF-120, and ARC-150"
+        "ESAF-1100 MOD-150 applicability: end-of-life, replaced, unsupported, compromised, nonconforming, expired, and abandoned models",
+        "ESAF-1100 controls INF-120 and ARC-150 for their distinct infrastructure vulnerability and technology lifecycle populations"
       ],
       "affected_controls": [
         "MOD-150",
@@ -58,7 +59,7 @@
         "ARC-150"
       ],
       "overlay_ids": [
-        "UNSUPPORTED-MODEL-OVERLAY",
+        "MODEL-RETIREMENT-OVERLAY",
         "UNSUPPORTED-INFRASTRUCTURE-OVERLAY",
         "UNSUPPORTED-TECHNOLOGY-OVERLAY"
       ]
@@ -187,8 +188,8 @@
       "strengthening_rationale": "The overlay connects access, configuration, change, and audit evidence for one declared boundary without changing the authorization, hardening, review, or audit-trail meanings of the affected controls."
     },
     {
-      "overlay_id": "UNSUPPORTED-MODEL-OVERLAY",
-      "statement": "When an unsupported, end-of-life, replaced, compromised, nonconforming, expired, or abandoned model is present, the organization shall govern its authorized retirement, identify affected capabilities and dependencies, remove deployment and access, preserve required evidence, dispose of artifacts and data, update records, and verify that prohibited use cannot continue.",
+      "overlay_id": "MODEL-RETIREMENT-OVERLAY",
+      "statement": "When an end-of-life, replaced, unsupported, compromised, nonconforming, expired, or abandoned model is present, the organization shall govern its authorized retirement, identify affected capabilities and dependencies, remove deployment and access, preserve required evidence, dispose of artifacts and data, update records, and verify that prohibited use cannot continue.",
       "applicability": "conditional",
       "activation_conditions": [
         "UNSUPPORTED-MODEL-PRESENCE"
@@ -197,12 +198,12 @@
         "MOD-150"
       ],
       "risk_ids": [
-        "UNSUPPORTED-COMPONENT-RISK"
+        "LIFECYCLE-DISPOSITION-RISK"
       ],
       "evidence_expectation_ids": [
-        "UNSUPPORTED-MODEL-EVIDENCE"
+        "MODEL-RETIREMENT-EVIDENCE"
       ],
-      "strengthening_rationale": "The overlay makes model support state, affected-capability scope, and verified retirement evidence explicit while preserving MOD-150's authorized model-retirement outcome."
+      "strengthening_rationale": "The overlay makes end-of-life, replaced, unsupported, compromised, nonconforming, expired, and abandoned model states, affected-capability scope, and verified retirement evidence explicit while preserving MOD-150's authorized model-retirement outcome."
     },
     {
       "overlay_id": "UNSUPPORTED-INFRASTRUCTURE-OVERLAY",
@@ -215,7 +216,7 @@
         "INF-120"
       ],
       "risk_ids": [
-        "UNSUPPORTED-COMPONENT-RISK"
+        "LIFECYCLE-DISPOSITION-RISK"
       ],
       "evidence_expectation_ids": [
         "UNSUPPORTED-INFRASTRUCTURE-EVIDENCE"
@@ -233,7 +234,7 @@
         "ARC-150"
       ],
       "risk_ids": [
-        "UNSUPPORTED-COMPONENT-RISK"
+        "LIFECYCLE-DISPOSITION-RISK"
       ],
       "evidence_expectation_ids": [
         "UNSUPPORTED-TECHNOLOGY-EVIDENCE"

@@ -82,14 +82,14 @@
       "strengthening": "All seven ESAF-1500 evidence-quality attributes remain required; the listed attributes are profile-specific emphases. The evidence shall cover every privileged path and material configuration domain in scope, identify the originating identity and approval, and preserve exceptions and unexplained differences rather than treating collection as a determination."
     },
     {
-      "expectation_id": "UNSUPPORTED-MODEL-EVIDENCE",
-      "purpose": "Demonstrate the support and deployment state, affected capability scope, authorized retirement disposition, and verified completion for each unsupported or otherwise retirement-applicable model.",
+      "expectation_id": "MODEL-RETIREMENT-EVIDENCE",
+      "purpose": "Demonstrate the lifecycle and deployment state, affected capability scope, authorized retirement disposition, and verified completion for each end-of-life, replaced, unsupported, compromised, nonconforming, expired, or abandoned model.",
       "artifact_class": "Record, configuration, contract, and technical_test evidence records",
       "control_ids": [
         "MOD-150"
       ],
       "overlay_ids": [
-        "UNSUPPORTED-MODEL-OVERLAY"
+        "MODEL-RETIREMENT-OVERLAY"
       ],
       "quality_attributes": [
         "relevance",
@@ -103,7 +103,7 @@
       "activation_conditions": [
         "UNSUPPORTED-MODEL-PRESENCE"
       ],
-      "strengthening": "All seven ESAF-1500 evidence-quality attributes remain required; the listed attributes are profile-specific emphases. The evidence shall cover the reconciled unsupported-model population at the assessment end date and distinguish support facts, authorized retirement decisions, dependency impacts, access and deployment removal, retained artifacts, and verified closure."
+      "strengthening": "All seven ESAF-1500 evidence-quality attributes remain required; the listed attributes are profile-specific emphases. The evidence shall cover the reconciled population of end-of-life, replaced, unsupported, compromised, nonconforming, expired, and abandoned models at the assessment end date and distinguish lifecycle, support, validation, incident, conformity, expiry, and abandonment facts from authorized retirement decisions, dependency impacts, access and deployment removal, retained artifacts, and verified closure."
     },
     {
       "expectation_id": "UNSUPPORTED-INFRASTRUCTURE-EVIDENCE",
