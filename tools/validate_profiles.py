@@ -459,12 +459,16 @@ PROFILE_ASSERTION_PATTERNS += (
     (
         "named-authority approval",
         re.compile(
-            r"\bNCSC\s+(?:approves?|approved|approving)\s+"
+            r"\bNCSC\s+(?:(?:has|had)\s+(?:not\s+)?)?"
+            r"(?:approves?|approved|approving)\s+"
             r"(?P<active_outcome>(?:this|the)\s+profile)\b"
             r"|\b(?:this|the)\s+profile\s+"
-            r"(?:is|was|has\s+been|had\s+been)\s+"
+            r"(?:(?:is|was)\s+(?:not\s+)?"
+            r"|(?:has|had)\s+(?:not\s+)?been\s+)"
             r"(?P<outcome>approved\s+by\s+NCSC)\b"
-            r"|\b(?:this|the)\s+profile\s+(?:receives?|received|receiving)\s+"
+            r"|\b(?:this|the)\s+profile\s+"
+            r"(?:(?:has|had)\s+(?:not\s+)?)?"
+            r"(?:receives?|received|receiving)\s+"
             r"(?P<passive_outcome>NCSC approval)\b",
             re.IGNORECASE,
         ),
@@ -477,6 +481,76 @@ PROFILE_ASSERTION_PATTERNS += (
             r"(?:is\s+|was\s+|has\s+been\s+|had\s+been\s+)?"
             r"(?P<outcome>mapped\s+to)\s+"
             r"[A-Z][A-Z0-9]{1,15}-[0-9]{3}\b",
+            re.IGNORECASE,
+        ),
+    ),
+)
+PROFILE_ASSERTION_PATTERNS += (
+    (
+        "imported mapping relationship",
+        re.compile(
+            r"\b[A-Z][A-Z0-9]{1,15}-[0-9]{3}\s+"
+            r"(?:(?:does|did|has|had)\s+(?:not\s+)?)?"
+            r"(?P<outcome>maps?|mapped)\s+from\s+"
+            r"(?:Cyber Essentials|NCSC|external scheme)\s+"
+            r"(?:provision|requirement|control)\s+[A-Za-z0-9.-]+\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "imported mapping relationship",
+        re.compile(
+            r"\b(?:Cyber Essentials|NCSC|external scheme)\s+"
+            r"(?:provision|requirement|control)\s+[A-Za-z0-9.-]+\s+"
+            r"(?:(?:has|had)\s+(?:not\s+)?)?"
+            r"(?P<outcome>maps?|mapped)\s+to\s+"
+            r"[A-Z][A-Z0-9]{1,15}-[0-9]{3}\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "imported mapping relationship",
+        re.compile(
+            r"\b(?:Cyber Essentials|NCSC|external scheme)\s+"
+            r"(?:provision|requirement|control)\s+[A-Za-z0-9.-]+\s+"
+            r"(?:(?:is|was)\s+(?:not\s+)?"
+            r"|(?:has|had)\s+(?:not\s+)?been\s+)"
+            r"(?P<outcome>mapped\s+to)\s+"
+            r"[A-Z][A-Z0-9]{1,15}-[0-9]{3}\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "imported mapping relationship",
+        re.compile(
+            r"\b(?:Cyber Essentials|NCSC|external scheme)\s+"
+            r"(?:provision|requirement|control)\s+[A-Za-z0-9.-]+\s+"
+            r"(?:has|had)\s+(?:no\s+)?"
+            r"(?P<outcome>a\s+mapping\s+to)\s+"
+            r"[A-Z][A-Z0-9]{1,15}-[0-9]{3}\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "imported mapping relationship",
+        re.compile(
+            r"\b[A-Z][A-Z0-9]{1,15}-[0-9]{3}\s+"
+            r"(?:(?:is|was)\s+(?:not\s+)?"
+            r"|(?:has|had)\s+(?:not\s+)?been\s+)"
+            r"(?P<outcome>mapped\s+from)\s+"
+            r"(?:Cyber Essentials|NCSC|external scheme)\s+"
+            r"(?:provision|requirement|control)\s+[A-Za-z0-9.-]+\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "imported mapping relationship",
+        re.compile(
+            r"\b[A-Z][A-Z0-9]{1,15}-[0-9]{3}\s+"
+            r"(?:has|had)\s+(?:no\s+)?"
+            r"(?P<outcome>a\s+mapping\s+from)\s+"
+            r"(?:Cyber Essentials|NCSC|external scheme)\s+"
+            r"(?:provision|requirement|control)\s+[A-Za-z0-9.-]+\b",
             re.IGNORECASE,
         ),
     ),
@@ -497,7 +571,7 @@ PASSIVE_WEAKENING = re.compile(
     r"(?:is|are|was|were)\s+(?:not\s+)?"
     r"(?P<predicate>replaced|waived|made\s+optional|altered|relaxed|weakened|"
     r"narrowed|marked\s+inapplicable|superseded|lowered|rendered\s+optional|"
-    r"inapplicable)\b",
+    r"inapplicable|discontinued)\b",
     re.IGNORECASE,
 )
 ADJECTIVAL_WEAKENING = (
@@ -507,8 +581,12 @@ ADJECTIVAL_WEAKENING = (
         r"(?P<predicate>(?:(?:shall|must|need)\s+not\s+apply)"
         r"|no\s+longer\s+appl(?:y|ies)"
         r"|(?:is|are)\s+no\s+longer\s+required"
-        r"|(?:shall|must)\s+be\s+(?:optional|inapplicable)"
-        r"|(?:is|are)\s+(?:optional|inapplicable|not\s+required))\b",
+        r"|(?:shall|must|may)\s+be\s+(?:optional|inapplicable)"
+        r"|(?:shall|must|may)\s+not\s+be\s+mandatory"
+        r"|(?:is|are)\s+"
+        r"(?:optional|inapplicable|not\s+required|not\s+mandatory)"
+        r"|(?:(?:shall|must|may)\s+)?"
+        r"(?:cease(?:s)?\s+to\s+apply|discontinue(?:s)?\s+applying))\b",
         re.IGNORECASE,
     ),
     re.compile(
@@ -542,6 +620,15 @@ CONTROL_LANGUAGE = re.compile(
 PREDICATE_NEGATION = re.compile(
     r"\b(?:cannot|can['’]t|doesn['’]t|isn['’]t|must\s+not|never|not"
     r"|shall\s+not|wasn['’]t|weren['’]t)\b",
+    re.IGNORECASE,
+)
+ASSERTION_SUBJECT = re.compile(
+    r"\b(?:(?:this|the)\s+profile|NCSC|legal compliance"
+    r"|certification eligibility|(?:the\s+)?organization"
+    r"|(?:(?:core\s+)?controls?(?:\s+requirements?)?)"
+    r"|[A-Z][A-Z0-9]{1,15}-[0-9]{3}"
+    r"|(?:Cyber Essentials|external scheme)\s+"
+    r"(?:provision|requirement|control)\s+[A-Za-z0-9.-]+)\b",
     re.IGNORECASE,
 )
 POST_PREDICATE_NEGATION = re.compile(
@@ -1779,19 +1866,41 @@ def proposition_bounds(
 
 def predicate_is_negated(prefix: str) -> bool:
     """Return whether the local predicate phrase is denied."""
+    semantic_prefix = prefix
+    while re.search(r",[^,\r\n]*,", semantic_prefix):
+        semantic_prefix = re.sub(
+            r",[^,\r\n]*,",
+            " ",
+            semantic_prefix,
+            count=1,
+        )
     semantic_prefix = re.sub(
         r"\bnot\s+(?=(?:only|merely|just)\b)",
         "",
-        prefix,
+        semantic_prefix,
         flags=re.IGNORECASE,
     )
+    boundaries = [
+        boundary
+        for boundary in PROFILE_PROPOSITION_BOUNDARY.finditer(semantic_prefix)
+        if boundary.group(0) != ","
+    ]
+    if boundaries:
+        semantic_prefix = semantic_prefix[boundaries[-1].end() :]
+    subjects = list(ASSERTION_SUBJECT.finditer(semantic_prefix))
+    if subjects:
+        semantic_prefix = semantic_prefix[subjects[-1].start() :]
     if DIRECT_NEGATED_PROPOSITION.search(semantic_prefix):
         return True
     if re.search(r"\b(?:no|neither)\s*$", semantic_prefix, re.IGNORECASE):
         return True
     for match in PREDICATE_NEGATION.finditer(semantic_prefix):
         trailing = semantic_prefix[match.end() :]
-        if re.search(r"\b(?:that|which|who)\b", trailing, re.IGNORECASE):
+        if re.search(
+            r"\b(?:that|which|who|to\s+(?:see|observe|find))\b",
+            trailing,
+            re.IGNORECASE,
+        ):
             continue
         return True
     return False
@@ -1800,8 +1909,9 @@ def predicate_is_negated(prefix: str) -> bool:
 def postposed_denial(text: str) -> bool:
     """Recognize a denied agent or object after a matched predicate."""
     return bool(
-        re.search(
-            r"\b(?:by|from|to)\s+(?:no\b|neither\b[^.;:!?]*\bnor\b)",
+        re.match(
+            r"\s*(?:by|from|to)\s+"
+            r"(?:no\b|neither\b[^.;:!?]*\bnor\b)",
             text,
             re.IGNORECASE,
         )
@@ -1816,6 +1926,27 @@ def sentence_suffix(text: str, index: int) -> str:
         if (position := text.find(delimiter, index)) >= 0
     ]
     return text[index : min(endings) if endings else len(text)]
+
+
+def sentence_prefix(text: str, index: int) -> str:
+    """Return text from the containing sentence start to ``index``."""
+    start = max(text.rfind(delimiter, 0, index) for delimiter in ".!?;\r\n")
+    return text[start + 1 : index]
+
+
+def discussion_head_is_negated(context: str, index: int) -> bool:
+    """Return whether the nearest rejection/denial copula is negated."""
+    auxiliaries = list(
+        re.finditer(
+            r"\b(?:is|are|was|were|has|have|had)\b",
+            context,
+            re.IGNORECASE,
+        )
+    )
+    if not auxiliaries:
+        return False
+    local = context[auxiliaries[-1].end() : index]
+    return bool(re.search(r"\bnot\b", local, re.IGNORECASE))
 
 
 def assertion_outcome_start(match: re.Match[str]) -> int:
@@ -1848,21 +1979,27 @@ def occurrence_is_metalinguistic(
     context = text[sentence_start + 1 : sentence_end]
     relative_start = start - sentence_start - 1
     relative_end = end - sentence_start - 1
-    related_discussion = any(
-        (
-            match.start() >= relative_end
+    related_discussion = False
+    for discussion in METALINGUISTIC_DISCUSSION.finditer(context):
+        if (
+            discussion.group(0).casefold()
+            in {"false", "rejected", "denied"}
+            and discussion_head_is_negated(context, discussion.start())
+        ):
+            continue
+        if (
+            discussion.start() >= relative_end
             and not PROFILE_PROPOSITION_BOUNDARY.search(
-                context[relative_end : match.start()]
+                context[relative_end : discussion.start()]
             )
-        )
-        or (
-            match.end() <= relative_start
+        ) or (
+            discussion.end() <= relative_start
             and not PROFILE_PROPOSITION_BOUNDARY.search(
-                context[match.end() : relative_start]
+                context[discussion.end() : relative_start]
             )
-        )
-        for match in METALINGUISTIC_DISCUSSION.finditer(context)
-    )
+        ):
+            related_discussion = True
+            break
     affirmative_assertion = False
     for match in ASSERTIVE_DISCUSSION.finditer(context):
         boundaries = list(
@@ -1999,9 +2136,9 @@ def asserted_profile_phrases(text: str) -> list[str]:
     for label, pattern in PROFILE_ASSERTION_PATTERNS:
         for match in pattern.finditer(text):
             outcome_start = assertion_outcome_start(match)
-            start, _, preceding = proposition_bounds(text, outcome_start)
+            _, _, preceding = proposition_bounds(text, outcome_start)
             if (
-                predicate_is_negated(text[start:outcome_start])
+                predicate_is_negated(sentence_prefix(text, outcome_start))
                 or postposed_denial(sentence_suffix(text, match.end()))
                 or coordinated_assertion_is_negated(
                     text, match, preceding
@@ -2069,15 +2206,26 @@ def contains_affirmative_source_authority(
     text: str, excluded_sources: list[str]
 ) -> bool:
     """Reject affirmative authority claims for declared excluded sources."""
-    for pattern in SOURCE_AUTHORITY_PATTERNS:
+    declared_passive_patterns = tuple(
+        re.compile(
+            r"\b(?:this|the)\s+profile\s+"
+            r"(?:(?:is|was)\s+(?:not\s+)?"
+            r"|(?:has|had)\s+(?:not\s+)?been\s+)"
+            r"(?P<outcome>governed\s+by)\s+"
+            rf"(?P<source>{re.escape(source)})(?!\w)",
+            re.IGNORECASE,
+        )
+        for source in excluded_sources
+        if source.strip()
+    )
+    for pattern in (*declared_passive_patterns, *SOURCE_AUTHORITY_PATTERNS):
         for match in pattern.finditer(text):
             if not matched_source_is_excluded(
                 text, match, excluded_sources
             ):
                 continue
             outcome_start = match.start("outcome")
-            start, _, _ = proposition_bounds(text, outcome_start)
-            if predicate_is_negated(text[start:outcome_start]):
+            if predicate_is_negated(sentence_prefix(text, outcome_start)):
                 continue
             if occurrence_is_metalinguistic(
                 text, match.start(), match.end()

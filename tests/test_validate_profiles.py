@@ -8,6 +8,7 @@ import shutil
 import subprocess
 import tempfile
 import unittest
+from itertools import product
 from pathlib import Path
 from unittest import mock
 
@@ -132,6 +133,12 @@ class ProfileValidationTests(unittest.TestCase):
     ) -> None:
         (self.package / filename).write_text(
             json.dumps(document, indent=2) + "\n",
+            encoding="utf-8",
+        )
+
+    def write_readme(self, text: str) -> None:
+        (self.package / "README.md").write_text(
+            f"# Synthetic profile\n\n{text}\n",
             encoding="utf-8",
         )
 
@@ -2002,6 +2009,261 @@ class ProfileValidationTests(unittest.TestCase):
                     f"# Synthetic profile\n\n{text}\n", encoding="utf-8"
                 )
                 self.assertEqual(validate_profiles.validate(self.root), [])
+
+    def test_weakening_subject_modal_and_state_cross_product(self) -> None:
+        subjects = (
+            ("GOV-100", "is", "applies", "ceases", "discontinues"),
+            ("Core controls", "are", "apply", "cease", "discontinue"),
+        )
+        states = ("optional", "inapplicable", "not mandatory")
+        for (subject, copula, _, _, _), state in product(subjects, states):
+            modal_states = (
+                (
+                    f"{modal} not be mandatory"
+                    if state == "not mandatory"
+                    else f"{modal} be {state}"
+                )
+                for modal in ("shall", "must", "may")
+            )
+            for predicate in (
+                f"{copula} {state}",
+                *modal_states,
+            ):
+                with self.subTest(subject=subject, predicate=predicate):
+                    self.write_readme(f"{subject} {predicate}.")
+                    self.assert_has_error(
+                        "prohibited control weakening language"
+                    )
+        for subject, copula, applies, ceases, discontinues in subjects:
+            transitions = (
+                f"no longer {applies}",
+                f"{copula} no longer applied",
+                f"{copula} discontinued",
+                f"{ceases} to apply",
+                f"{discontinues} applying",
+                *(
+                    f"{modal} {verb}"
+                    for modal, verb in product(
+                        ("shall", "must", "may"),
+                        ("cease to apply", "discontinue applying"),
+                    )
+                ),
+            )
+            for predicate in transitions:
+                with self.subTest(subject=subject, predicate=predicate):
+                    self.write_readme(f"{subject} {predicate}.")
+                    self.assert_has_error(
+                        "prohibited control weakening language"
+                    )
+
+    def test_weakening_cross_product_denials_and_claim_frames(self) -> None:
+        denied = (
+            "GOV-100 is not optional.",
+            "Core controls are not inapplicable.",
+            "GOV-100 is mandatory.",
+            "GOV-100 does not cease to apply.",
+            "Core controls do not discontinue applying.",
+            "GOV-100 is not discontinued.",
+            "Core controls are still applied.",
+            "GOV-100 may not be optional.",
+        )
+        frames = ("is false", "is rejected", "was denied")
+        claims = (
+            "GOV-100 is not mandatory",
+            "Core controls may be optional",
+            "GOV-100 shall cease to apply",
+        )
+        for text in denied:
+            with self.subTest(text=text):
+                self.write_readme(text)
+                self.assertEqual(validate_profiles.validate(self.root), [])
+        for claim, frame in product(claims, frames):
+            with self.subTest(claim=claim, frame=frame):
+                self.write_readme(f"The claim that {claim} {frame}.")
+                self.assertEqual(validate_profiles.validate(self.root), [])
+
+    def test_approval_subject_voice_and_aspect_cross_product(self) -> None:
+        aspects = ("present", "past", "perfect", "past-perfect")
+        constructions = (
+            (
+                "NCSC {verb} this profile",
+                {
+                    "present": ("approves", "does not approve"),
+                    "past": ("approved", "did not approve"),
+                    "perfect": ("has approved", "has not approved"),
+                    "past-perfect": ("had approved", "had not approved"),
+                },
+            ),
+            (
+                "This profile {verb} NCSC approval",
+                {
+                    "present": ("receives", "does not receive"),
+                    "past": ("received", "did not receive"),
+                    "perfect": ("has received", "has not received"),
+                    "past-perfect": ("had received", "had not received"),
+                },
+            ),
+            (
+                "This profile {verb} by NCSC",
+                {
+                    "present": ("is approved", "is not approved"),
+                    "past": ("was approved", "was not approved"),
+                    "perfect": ("has been approved", "has not been approved"),
+                    "past-perfect": (
+                        "had been approved",
+                        "had not been approved",
+                    ),
+                },
+            ),
+        )
+        for (template, forms), aspect in product(constructions, aspects):
+            affirmative, denied = forms[aspect]
+            with self.subTest(template=template, aspect=aspect, polarity=True):
+                self.write_readme(f"{template.format(verb=affirmative)}.")
+                self.assert_has_error(
+                    "prohibited assertion 'named-authority approval'"
+                )
+            with self.subTest(template=template, aspect=aspect, polarity=False):
+                self.write_readme(f"{template.format(verb=denied)}.")
+                self.assertEqual(validate_profiles.validate(self.root), [])
+
+    def test_mapping_direction_form_and_aspect_cross_product(self) -> None:
+        external = "Cyber Essentials provision A"
+        control = "GOV-100"
+        directions = (
+            (external, "to", control),
+            (control, "from", external),
+        )
+        affirmative_forms = (
+            "{subject} maps {preposition} {object}",
+            "{subject} mapped {preposition} {object}",
+            "{subject} has mapped {preposition} {object}",
+            "{subject} had mapped {preposition} {object}",
+            "{subject} is mapped {preposition} {object}",
+            "{subject} was mapped {preposition} {object}",
+            "{subject} has been mapped {preposition} {object}",
+            "{subject} had been mapped {preposition} {object}",
+            "{subject} has a mapping {preposition} {object}",
+            "{subject} had a mapping {preposition} {object}",
+        )
+        for direction, form in product(directions, affirmative_forms):
+            subject, preposition, object_ = direction
+            assertion = form.format(
+                subject=subject,
+                preposition=preposition,
+                object=object_,
+            )
+            with self.subTest(direction=direction, form=form):
+                self.write_readme(f"{assertion}.")
+                self.assert_has_error(
+                    "prohibited assertion 'imported mapping relationship'"
+                )
+        denied_forms = (
+            "{subject} does not map {preposition} {object}",
+            "{subject} did not map {preposition} {object}",
+            "{subject} has not mapped {preposition} {object}",
+            "{subject} had not mapped {preposition} {object}",
+            "{subject} is not mapped {preposition} {object}",
+            "{subject} has not been mapped {preposition} {object}",
+            "{subject} had not been mapped {preposition} {object}",
+            "{subject} has no mapping {preposition} {object}",
+            "{subject} had no mapping {preposition} {object}",
+        )
+        for direction, form in product(directions, denied_forms):
+            subject, preposition, object_ = direction
+            assertion = form.format(
+                subject=subject,
+                preposition=preposition,
+                object=object_,
+            )
+            with self.subTest(direction=direction, form=form):
+                self.write_readme(f"{assertion}.")
+                self.assertEqual(validate_profiles.validate(self.root), [])
+
+    def test_declared_generic_authority_passive_aspect_cross_product(
+        self,
+    ) -> None:
+        profile = self.load_component("profile.json")
+        profile["source_boundary"]["excluded_sources"] = ["Acme Code"]
+        self.write_component("profile.json", profile)
+        for auxiliary in ("is", "was", "has been", "had been"):
+            with self.subTest(auxiliary=auxiliary):
+                self.write_readme(
+                    f"This profile {auxiliary} governed by Acme Code."
+                )
+                self.assert_has_error("prohibited source authority language")
+        for auxiliary in ("is not", "was not", "has not been", "had not been"):
+            with self.subTest(auxiliary=auxiliary):
+                self.write_readme(
+                    f"This profile {auxiliary} governed by Acme Code."
+                )
+                self.assertEqual(validate_profiles.validate(self.root), [])
+        self.write_readme("This profile is governed by Other Code.")
+        self.assertEqual(validate_profiles.validate(self.root), [])
+
+    def test_negation_binding_complement_and_insertion_cross_product(
+        self,
+    ) -> None:
+        embedded = (
+            "It is not surprising to see this profile guarantee legal compliance.",
+            "It is not unusual to observe this profile guarantee legal compliance.",
+            "It is not unexpected that this profile guarantees legal compliance.",
+            (
+                "A reviewer who did not object saw this profile guarantee "
+                "legal compliance."
+            ),
+        )
+        for text in embedded:
+            with self.subTest(text=text):
+                self.write_readme(text)
+                self.assert_has_error("prohibited assertion 'compliance'")
+        insertions = (
+            "as reviewers who assessed it confirmed",
+            "according to reviewers",
+            "despite what reviewers expected",
+        )
+        for insertion in insertions:
+            with self.subTest(insertion=insertion):
+                self.write_readme(
+                    "This profile does not, "
+                    f"{insertion}, guarantee legal compliance."
+                )
+                self.assertEqual(validate_profiles.validate(self.root), [])
+
+    def test_postposed_denial_and_rejection_polarity_cross_product(
+        self,
+    ) -> None:
+        for boundary in ("while", "whereas", "although"):
+            with self.subTest(boundary=boundary):
+                self.write_readme(
+                    "This profile guarantees legal compliance "
+                    f"{boundary} certification is granted by no authority."
+                )
+                self.assert_has_error("prohibited assertion 'compliance'")
+        claims = (
+            "this profile guarantees legal compliance",
+            "GOV-100 is optional",
+        )
+        affirmative_frames = ("is false", "is rejected", "was denied")
+        negated_frames = (
+            "is not false",
+            "is not rejected",
+            "was not denied",
+            "has not been rejected",
+        )
+        for claim, frame in product(claims, affirmative_frames):
+            with self.subTest(claim=claim, frame=frame):
+                self.write_readme(f"The claim that {claim} {frame}.")
+                self.assertEqual(validate_profiles.validate(self.root), [])
+        for claim, frame in product(claims, negated_frames):
+            with self.subTest(claim=claim, frame=frame):
+                self.write_readme(f"The claim that {claim} {frame}.")
+                expected = (
+                    "prohibited assertion 'compliance'"
+                    if "guarantees" in claim
+                    else "prohibited control weakening language"
+                )
+                self.assert_has_error(expected)
 
     def test_semantic_diagnostic_ordering_is_stable(self) -> None:
         selections = self.load_component("control-selections.json")
