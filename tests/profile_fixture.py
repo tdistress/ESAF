@@ -147,3 +147,31 @@ def write_valid_profile_fixture(root: Path) -> Path:
         },
     )
     return package
+
+
+def rewrite_profile_version(package: Path, version: str) -> Path:
+    """Rewrite every package identity and move it to the matching version path."""
+    profile_path = package / "profile.json"
+    profile = json.loads(profile_path.read_text(encoding="utf-8"))
+    profile_id = str(profile["profile_id"]).rsplit("--", 1)[0] + f"--{version}"
+    profile["profile_id"] = profile_id
+    profile["profile_version"] = version
+    for change in profile["change_history"]:
+        change["version"] = version
+    write_json(profile_path, profile)
+
+    for filename in (
+        "control-selections.json",
+        "risk-overlays.json",
+        "evidence-expectations.json",
+        "external-references.json",
+    ):
+        path = package / filename
+        document = json.loads(path.read_text(encoding="utf-8"))
+        document["profile_id"] = profile_id
+        document["profile_version"] = version
+        write_json(path, document)
+
+    destination = package.parent / version
+    package.rename(destination)
+    return destination

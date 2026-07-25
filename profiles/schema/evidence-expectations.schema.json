@@ -9,7 +9,7 @@
     "$schema": {"const": "../../schema/evidence-expectations.schema.json"},
     "schema_version": {"const": "0.1.0"},
     "profile_id": {"$ref": "#/$defs/profileId"},
-    "profile_version": {"const": "0.1.0"},
+    "profile_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
     "expectations": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/evidenceExpectation"}}
   },
   "$defs": {

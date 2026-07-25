@@ -9,7 +9,7 @@
     "$schema": {"const": "../../schema/profile.schema.json"},
     "schema_version": {"const": "0.1.0"},
     "profile_id": {"$ref": "#/$defs/profileId"},
-    "profile_version": {"const": "0.1.0"},
+    "profile_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
     "status": {"enum": ["proposed", "draft", "approved", "published", "deprecated", "retired"]},
     "target_esaf_release": {"$ref": "#/$defs/nonEmptyString"},
     "title": {"$ref": "#/$defs/nonEmptyString"},

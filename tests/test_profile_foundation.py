@@ -144,7 +144,7 @@ class ProfileSchemaTests(unittest.TestCase):
         identity = {
             "schema_version": "0.1.0",
             "profile_id": "example-sector--general-profile--1.2.3",
-            "profile_version": "0.1.0",
+            "profile_version": "1.2.3",
         }
         documents = {
             "control-selections": {
@@ -215,7 +215,7 @@ class ProfileSchemaTests(unittest.TestCase):
                         },
                         "change_history": [
                             {
-                                "version": "0.1.0",
+                                "version": "1.2.3",
                                 "date": "2026-07-24",
                                 "author": "ESAF",
                                 "description": "Initial profile version.",

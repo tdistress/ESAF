@@ -6,13 +6,15 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import stat
 import sys
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Sequence
 
-from jsonschema import Draft202012Validator
+from jsonschema import Draft202012Validator, FormatChecker
 from jsonschema.exceptions import SchemaError
+from referencing.exceptions import Unresolvable
 
 if __package__:
     from .crosswalks.io import parse_front_matter
@@ -48,7 +50,14 @@ DOCUMENT_SCHEMAS = {
     "evidence_expectations": "evidence-expectations.schema.json",
     "external_references": "external-references.schema.json",
 }
-SEMVER = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+$")
+SEMVER_PATTERN = r"[0-9]+\.[0-9]+\.[0-9]+"
+SEMVER = re.compile(rf"^{SEMVER_PATTERN}$")
+PROFILE_DOMAIN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+PROFILE_IDENTIFIER = re.compile(
+    rf"^[a-z0-9]+(?:-[a-z0-9]+)*--"
+    rf"[a-z0-9]+(?:-[a-z0-9]+)*--(?P<version>{SEMVER_PATTERN})$"
+)
+PROFILE_ROOT_FILES = frozenset({"ESAF-1800.md", "README.md"})
 PROFILE_PROPOSITION_BOUNDARY = re.compile(
     rf"(?:{PROPOSITION_BOUNDARY.pattern})|[\r\n]",
     PROPOSITION_BOUNDARY.flags,
@@ -254,6 +263,50 @@ class ProfilePackage:
     documents: dict[str, dict[str, object]]
 
 
+class OperationalProfileError(RuntimeError):
+    """A sanitized repository-relative operational validation failure."""
+
+
+def lstat_mode(path: Path, diagnostic: str) -> int | None:
+    """Return an entry mode without suppressing operational stat failures."""
+    try:
+        return path.lstat().st_mode
+    except FileNotFoundError:
+        return None
+    except OSError as exc:
+        raise OperationalProfileError(diagnostic) from exc
+
+
+def bounded_paths(path: Path, boundary: Path) -> tuple[Path, ...]:
+    """Return ``path`` and lexical parents only through ``boundary``."""
+    try:
+        path.relative_to(boundary)
+    except ValueError:
+        return ()
+    result: list[Path] = []
+    current = path
+    while True:
+        result.append(current)
+        if current == boundary:
+            return tuple(result)
+        current = current.parent
+
+
+def entry_is_alias(
+    path: Path, diagnostic: str, mode: int | None = None
+) -> bool:
+    """Inspect a path for aliasing while preserving operational failures."""
+    observed_mode = mode if mode is not None else lstat_mode(path, diagnostic)
+    if observed_mode is None:
+        return False
+    if stat.S_ISLNK(observed_mode):
+        return True
+    try:
+        return path.is_junction()
+    except OSError as exc:
+        raise OperationalProfileError(diagnostic) from exc
+
+
 def reject_duplicate_keys(pairs: list[tuple[str, object]]) -> dict[str, object]:
     """Build a JSON object while refusing duplicate keys."""
     document: dict[str, object] = {}
@@ -276,33 +329,179 @@ def schema_diagnostics(
     """Return deterministic Draft 2020-12 diagnostics for one document."""
     try:
         Draft202012Validator.check_schema(schema)
-        validator = Draft202012Validator(schema)
+        validator = Draft202012Validator(
+            schema,
+            format_checker=FormatChecker(),
+        )
     except SchemaError as exc:
         return [f"{relative}: invalid validation schema: {exc.message}"]
 
+    try:
+        errors = sorted(
+            validator.iter_errors(document),
+            key=lambda item: (
+                tuple(str(part) for part in item.path),
+                item.message,
+            ),
+        )
+    except Unresolvable as exc:
+        raise OperationalProfileError(
+            f"{relative}: cannot resolve validation schema"
+        ) from exc
+
     diagnostics: list[str] = []
-    for error in sorted(
-        validator.iter_errors(document),
-        key=lambda item: (tuple(str(part) for part in item.path), item.message),
-    ):
+    for error in errors:
         location = ".".join(str(part) for part in error.path) or "document"
         diagnostics.append(f"{relative}: {location}: {error.message}")
     return diagnostics
 
 
-def discover_profile_packages(root: Path) -> tuple[Path, ...]:
-    """Find only conventional ``profiles/<country>/<semver>`` packages."""
+def inventory_profile_packages(
+    root: Path,
+) -> tuple[tuple[Path, ...], list[str]]:
+    """Inventory every profile-domain entry without silently skipping content."""
     profiles = root / "profiles"
-    if not profiles.is_dir():
-        return ()
     packages: list[Path] = []
-    for country in profiles.iterdir():
-        if country.name == "schema" or not country.is_dir():
-            continue
-        for version in country.iterdir():
-            if version.is_dir() and SEMVER.fullmatch(version.name):
-                packages.append(version)
-    return tuple(sorted(packages, key=lambda item: item.relative_to(root).as_posix()))
+    diagnostics: list[str] = []
+    try:
+        profiles_mode = lstat_mode(
+            profiles, "profiles: cannot inspect profile root"
+        )
+        if profiles_mode is None:
+            diagnostics.append("profiles: profile root is missing")
+        elif entry_is_alias(
+            profiles, "profiles: cannot inspect profile root", profiles_mode
+        ):
+            diagnostics.append(
+                "profiles: profile root must not be a symlink or junction alias"
+            )
+        elif not stat.S_ISDIR(profiles_mode):
+            diagnostics.append("profiles: profile root must be a directory")
+        else:
+            for domain in sorted(profiles.iterdir(), key=lambda item: item.name):
+                relative = domain.relative_to(root).as_posix()
+                domain_mode = lstat_mode(
+                    domain, f"{relative}: cannot inspect profile inventory entry"
+                )
+                if domain_mode is None:
+                    raise OperationalProfileError(
+                        f"{relative}: profile inventory entry disappeared"
+                    )
+                if entry_is_alias(
+                    domain,
+                    f"{relative}: cannot inspect profile inventory entry",
+                    domain_mode,
+                ):
+                    if domain.name == "schema":
+                        diagnostics.append(
+                            f"{relative}: schema root or file must not be a "
+                            "symlink or junction alias"
+                        )
+                    else:
+                        diagnostics.append(
+                            f"{relative}: profile inventory entry must not be a "
+                            "symlink or junction alias"
+                        )
+                    continue
+                if domain.name in PROFILE_ROOT_FILES:
+                    if not stat.S_ISREG(domain_mode):
+                        diagnostics.append(
+                            f"{relative}: profile index entry must be a file"
+                        )
+                    continue
+                if domain.name == "schema":
+                    if not stat.S_ISDIR(domain_mode):
+                        diagnostics.append(
+                            f"{relative}: schema entry must be a directory"
+                        )
+                    continue
+                if not stat.S_ISDIR(domain_mode):
+                    diagnostics.append(
+                        f"{relative}: unexpected profile inventory entry"
+                    )
+                    continue
+                if not PROFILE_DOMAIN.fullmatch(domain.name):
+                    diagnostics.append(
+                        f"{relative}: invalid profile domain directory"
+                    )
+                    continue
+
+                version_entries = tuple(
+                    sorted(domain.iterdir(), key=lambda item: item.name)
+                )
+                if not version_entries:
+                    diagnostics.append(
+                        f"{relative}: profile domain contains no version entries"
+                    )
+                for version in version_entries:
+                    version_relative = version.relative_to(root).as_posix()
+                    version_mode = lstat_mode(
+                        version,
+                        f"{version_relative}: cannot inspect profile version entry",
+                    )
+                    if version_mode is None:
+                        raise OperationalProfileError(
+                            f"{version_relative}: profile version entry disappeared"
+                        )
+                    if entry_is_alias(
+                        version,
+                        f"{version_relative}: cannot inspect profile version entry",
+                        version_mode,
+                    ):
+                        diagnostics.append(
+                            f"{version_relative}: profile version directory "
+                            "must not be a symlink or junction alias"
+                        )
+                        continue
+                    if not stat.S_ISDIR(version_mode):
+                        diagnostics.append(
+                            f"{version_relative}: unexpected profile version entry"
+                        )
+                        continue
+                    if not SEMVER.fullmatch(version.name):
+                        diagnostics.append(
+                            f"{version_relative}: invalid profile version directory"
+                        )
+                        continue
+                    manifest = version / PACKAGE_FILES["profile"]
+                    manifest_relative = manifest.relative_to(root).as_posix()
+                    manifest_mode = lstat_mode(
+                        manifest,
+                        f"{manifest_relative}: cannot inspect profile manifest",
+                    )
+                    if manifest_mode is None:
+                        diagnostics.append(
+                            f"{version_relative}: missing profile manifest "
+                            f"{PACKAGE_FILES['profile']}"
+                        )
+                    elif entry_is_alias(
+                        manifest,
+                        f"{manifest_relative}: cannot inspect profile manifest",
+                        manifest_mode,
+                    ):
+                        diagnostics.append(
+                            f"{manifest_relative}: "
+                            "profile manifest must not be a symlink or junction alias"
+                        )
+                    elif not stat.S_ISREG(manifest_mode):
+                        diagnostics.append(
+                            f"{manifest_relative}: profile manifest must be a "
+                            "regular file"
+                        )
+                    packages.append(version)
+    except OSError as exc:
+        raise OperationalProfileError(
+            "profiles: cannot inventory profile packages"
+        ) from exc
+
+    if not packages:
+        diagnostics.append("profiles: no profile packages found")
+    return tuple(sorted(packages)), sorted(set(diagnostics))
+
+
+def discover_profile_packages(root: Path) -> tuple[Path, ...]:
+    """Return conventional packages from the fail-closed inventory."""
+    return inventory_profile_packages(root)[0]
 
 
 def safe_component(package: Path, relative: str) -> Path | None:
@@ -320,15 +519,25 @@ def safe_component(package: Path, relative: str) -> Path | None:
         return None
     candidate = package.joinpath(*pure.parts)
     if any(
-        part.is_symlink()
-        for part in (candidate, *candidate.parents)
-        if part != package.parent
+        entry_is_alias(
+            part, "profile package: cannot inspect package component path"
+        )
+        for part in bounded_paths(candidate, package)
     ):
+        return None
+    candidate_mode = lstat_mode(
+        candidate, "profile package: cannot inspect package component"
+    )
+    if candidate_mode is None or not stat.S_ISREG(candidate_mode):
         return None
     try:
         candidate.resolve(strict=True).relative_to(package.resolve(strict=True))
-    except (OSError, ValueError):
+    except (FileNotFoundError, ValueError):
         return None
+    except OSError as exc:
+        raise OperationalProfileError(
+            "profile package: cannot resolve package component"
+        ) from exc
     return candidate
 
 
@@ -341,18 +550,28 @@ def safe_schema(root: Path, schema_name: str) -> Path | None:
     schema_root = root / "profiles" / "schema"
     candidate = schema_root / schema_name
     if any(
-        part.is_symlink()
-        for part in (candidate, *candidate.parents)
-        if part != root.parent
+        entry_is_alias(
+            part, "profiles/schema: cannot inspect validation schema path"
+        )
+        for part in bounded_paths(candidate, root)
     ):
+        return None
+    candidate_mode = lstat_mode(
+        candidate, "profiles/schema: cannot inspect validation schema"
+    )
+    if candidate_mode is None or not stat.S_ISREG(candidate_mode):
         return None
     try:
         root_resolved = root.resolve(strict=True)
         schema_root_resolved = schema_root.resolve(strict=True)
         schema_root_resolved.relative_to(root_resolved)
         candidate.resolve(strict=True).relative_to(schema_root_resolved)
-    except (OSError, ValueError):
+    except (FileNotFoundError, ValueError):
         return None
+    except OSError as exc:
+        raise OperationalProfileError(
+            "profiles/schema: cannot resolve validation schema"
+        ) from exc
     return candidate
 
 
@@ -367,7 +586,11 @@ def load_schema(root: Path, schema_name: str, diagnostics: list[str]) -> dict[st
         return None
     try:
         schema = load_json(path)
-    except (OSError, json.JSONDecodeError, ValueError) as exc:
+    except OSError as exc:
+        raise OperationalProfileError(
+            f"{relative}: cannot read validation schema"
+        ) from exc
+    except (json.JSONDecodeError, ValueError) as exc:
         diagnostics.append(f"{relative}: cannot load schema: {exc}")
         return None
     if not isinstance(schema, dict):
@@ -390,7 +613,11 @@ def load_document(
         return None
     try:
         document = load_json(path)
-    except (OSError, json.JSONDecodeError, ValueError) as exc:
+    except OSError as exc:
+        raise OperationalProfileError(
+            f"{relative}: cannot read package component"
+        ) from exc
+    except (json.JSONDecodeError, ValueError) as exc:
         diagnostics.append(f"{relative}: cannot load JSON: {exc}")
         return None
     if not isinstance(document, dict):
@@ -412,23 +639,68 @@ def load_package(
     start = len(diagnostics)
     relative = package_relative(root, directory)
     if any(
-        path.is_symlink()
-        for path in (directory, *directory.parents)
-        if path != root.parent
+        entry_is_alias(
+            path, f"{relative}: cannot inspect package directory path"
+        )
+        for path in bounded_paths(directory, root)
     ):
         diagnostics.append(f"{relative}: package directory must not be a symlink")
         return None
 
     expected_files = set(PACKAGE_FILES.values())
-    actual_entries = {
-        path.relative_to(directory).as_posix(): path for path in directory.rglob("*")
-    }
-    for filename in sorted(expected_files - actual_entries.keys()):
-        diagnostics.append(f"{relative}: missing package file {filename}")
+    try:
+        actual_entries = {
+            path.name: path for path in directory.iterdir()
+        }
+    except OSError as exc:
+        raise OperationalProfileError(
+            f"{relative}: cannot inventory package contents"
+        ) from exc
+    for filename in sorted(expected_files):
+        path = actual_entries.get(filename)
+        component_relative = f"{relative}/{filename}"
+        if path is None:
+            diagnostics.append(f"{relative}: missing package file {filename}")
+            continue
+        mode = lstat_mode(
+            path, f"{component_relative}: cannot inspect package component"
+        )
+        if mode is None:
+            diagnostics.append(f"{relative}: missing package file {filename}")
+        elif entry_is_alias(
+            path,
+            f"{component_relative}: cannot inspect package component",
+            mode,
+        ):
+            diagnostics.append(
+                f"{component_relative}: package component must not be a "
+                "symlink or junction alias"
+            )
+        elif not stat.S_ISREG(mode):
+            diagnostics.append(
+                f"{component_relative}: package component must be a regular file"
+            )
     for entry, path in sorted(actual_entries.items()):
         if entry in expected_files:
             continue
-        kind = "entry" if path.is_dir() else "file"
+        entry_relative = f"{relative}/{entry}"
+        mode = lstat_mode(
+            path, f"{entry_relative}: cannot inspect unlisted package entry"
+        )
+        if mode is None:
+            raise OperationalProfileError(
+                f"{entry_relative}: unlisted package entry disappeared"
+            )
+        if entry_is_alias(
+            path,
+            f"{entry_relative}: cannot inspect unlisted package entry",
+            mode,
+        ):
+            kind = "symlink or junction alias"
+        elif stat.S_ISDIR(mode):
+            kind = "entry"
+        else:
+            kind = "file"
         diagnostics.append(f"{relative}: unlisted package {kind} {entry}")
 
     documents: dict[str, dict[str, object]] = {}
@@ -468,7 +740,12 @@ def load_package(
 
 def control_population(root: Path) -> set[str]:
     """Load the authoritative ESAF control identifiers."""
-    catalog = load_json(root / "controls" / "catalog.json")
+    try:
+        catalog = load_json(root / "controls" / "catalog.json")
+    except OSError as exc:
+        raise OperationalProfileError(
+            "controls/catalog.json: cannot read control catalog"
+        ) from exc
     if not isinstance(catalog, dict):
         raise ValueError("controls/catalog.json root must be an object")
     controls = catalog.get("controls")
@@ -544,6 +821,27 @@ def semantic_diagnostics(
 
     expected_profile_id = profile.get("profile_id")
     expected_profile_version = profile.get("profile_version")
+    identifier_match = (
+        PROFILE_IDENTIFIER.fullmatch(expected_profile_id)
+        if isinstance(expected_profile_id, str)
+        else None
+    )
+    if identifier_match is not None and isinstance(
+        expected_profile_version, str
+    ):
+        identifier_version = identifier_match.group("version")
+        if identifier_version != expected_profile_version:
+            diagnostics.append(
+                f"{package.relative}/profile.json: profile_id version "
+                f"{identifier_version} does not match profile_version "
+                f"{expected_profile_version}"
+            )
+        if expected_profile_version != package.directory.name:
+            diagnostics.append(
+                f"{package.relative}/profile.json: profile_version "
+                f"{expected_profile_version} does not match profile version "
+                f"directory {package.directory.name}"
+            )
     for component, document in sorted(package.documents.items()):
         if component == "profile":
             continue
@@ -726,12 +1024,10 @@ def semantic_diagnostics(
         path = root.joinpath(*PurePosixPath(expected_path).parts)
         try:
             metadata = registry_metadata(path)
-        except OSError:
-            diagnostics.append(
-                f"{expected_path}: cannot load registry metadata: "
-                "registry file is unavailable"
-            )
-            continue
+        except OSError as exc:
+            raise OperationalProfileError(
+                f"{expected_path}: cannot read registry metadata"
+            ) from exc
         except (UnicodeError, ValueError) as exc:
             diagnostics.append(
                 f"{expected_path}: cannot load registry metadata: {exc}"
@@ -1023,9 +1319,15 @@ def claim_diagnostics(package: ProfilePackage) -> list[str]:
                 )
 
     readme_relative = f"{package.relative}/{PACKAGE_FILES['readme']}"
-    readme = (package.directory / PACKAGE_FILES["readme"]).read_text(
-        encoding="utf-8"
-    )
+    try:
+        readme = (package.directory / PACKAGE_FILES["readme"]).read_text(
+            encoding="utf-8"
+        )
+    except UnicodeError:
+        diagnostics.append(
+            f"{readme_relative}: cannot decode UTF-8 content"
+        )
+        return sorted(set(diagnostics))
     if contains_affirmative_weakening(readme):
         diagnostics.append(
             f"{readme_relative}: prohibited control weakening language"
@@ -1039,15 +1341,22 @@ def claim_diagnostics(package: ProfilePackage) -> list[str]:
 
 def validate(root: Path = ROOT) -> list[str]:
     """Return all deterministic content diagnostics for discovered packages."""
-    diagnostics: list[str] = []
-    for directory in discover_profile_packages(root):
-        package = load_package(root, directory, diagnostics)
-        if package is None:
-            continue
-        diagnostics.extend(semantic_diagnostics(root, package))
-        diagnostics.extend(traceability_diagnostics(package))
-        diagnostics.extend(claim_diagnostics(package))
-    return sorted(set(diagnostics))
+    try:
+        packages, diagnostics = inventory_profile_packages(root)
+        for directory in packages:
+            package = load_package(root, directory, diagnostics)
+            if package is None:
+                continue
+            diagnostics.extend(semantic_diagnostics(root, package))
+            diagnostics.extend(traceability_diagnostics(package))
+            diagnostics.extend(claim_diagnostics(package))
+        return sorted(set(diagnostics))
+    except OperationalProfileError:
+        raise
+    except OSError as exc:
+        raise OperationalProfileError(
+            "profiles: repository content could not be read"
+        ) from exc
 
 
 def main(argv: Sequence[str] | None = None, *, root: Path | None = None) -> int:
@@ -1065,8 +1374,14 @@ def main(argv: Sequence[str] | None = None, *, root: Path | None = None) -> int:
         validation_root = root if root is not None else ROOT
         diagnostics = validate(validation_root)
         package_count = len(discover_profile_packages(validation_root))
-    except Exception as exc:
+    except OperationalProfileError as exc:
         print(f"Profile validation could not run: {exc}", file=sys.stderr)
+        return 2
+    except Exception:
+        print(
+            "Profile validation could not run: unexpected operational error",
+            file=sys.stderr,
+        )
         return 2
     if diagnostics:
         print(

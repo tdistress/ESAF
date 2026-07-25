@@ -5,6 +5,7 @@ import io
 import json
 import os
 import shutil
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -51,6 +52,21 @@ class ProfileValidationTests(unittest.TestCase):
         self.assertIsNotNone(package)
         assert package is not None
         return package
+
+    def remove_valid_package(self) -> None:
+        shutil.rmtree(self.package)
+
+    def rewrite_all_profile_ids(self, profile_id: str) -> None:
+        for filename in (
+            "profile.json",
+            "control-selections.json",
+            "risk-overlays.json",
+            "evidence-expectations.json",
+            "external-references.json",
+        ):
+            document = self.load_component(filename)
+            document["profile_id"] = profile_id
+            self.write_component(filename, document)
 
     def write_closed_trace_fixture(self) -> str:
         selections = self.load_component("control-selections.json")
@@ -107,6 +123,71 @@ class ProfileValidationTests(unittest.TestCase):
 
     def test_valid_population_has_no_errors(self) -> None:
         self.assertEqual(validate_profiles.validate(self.root), [])
+
+    def test_zero_profile_packages_is_rejected(self) -> None:
+        self.remove_valid_package()
+        self.assertIn(
+            "profiles: no profile packages found",
+            validate_profiles.validate(self.root),
+        )
+
+    def test_invalid_profile_domain_version_entry_is_rejected(self) -> None:
+        (self.root / "profiles" / "example" / "not-semver").mkdir(parents=True)
+        self.assertTrue(
+            any(
+                "invalid profile version directory" in item
+                for item in validate_profiles.validate(self.root)
+            )
+        )
+
+    def test_invalid_profile_domain_directory_is_rejected(self) -> None:
+        (self.root / "profiles" / "Invalid-Domain").mkdir()
+        self.assert_has_error("invalid profile domain directory")
+
+    def test_unexpected_profile_root_entry_is_rejected(self) -> None:
+        (self.root / "profiles" / "unexpected.txt").write_text(
+            "unexpected\n", encoding="utf-8"
+        )
+        self.assert_has_error("unexpected profile inventory entry")
+
+    def test_missing_profile_root_is_rejected(self) -> None:
+        shutil.rmtree(self.root / "profiles")
+        diagnostics = validate_profiles.validate(self.root)
+        self.assertIn("profiles: profile root is missing", diagnostics)
+        self.assertIn("profiles: no profile packages found", diagnostics)
+
+    def test_empty_profile_domain_is_rejected(self) -> None:
+        (self.root / "profiles" / "empty-domain").mkdir()
+        self.assert_has_error("profile domain contains no version entries")
+
+    def test_profile_id_version_must_match_manifest_and_directory(self) -> None:
+        self.rewrite_all_profile_ids("example--risk-profile--9.9.9")
+        self.assertTrue(
+            any(
+                "profile_id version 9.9.9 does not match profile_version 0.1.0"
+                in item
+                for item in validate_profiles.validate(self.root)
+            )
+        )
+
+    def test_non_pilot_semantic_version_is_valid_when_identity_and_directory_agree(
+        self,
+    ) -> None:
+        self.package = profile_fixture.rewrite_profile_version(
+            self.package, "1.2.3"
+        )
+        self.assertEqual(validate_profiles.validate(self.root), [])
+
+    def test_invalid_calendar_date_is_rejected(self) -> None:
+        manifest = self.load_component("profile.json")
+        manifest["change_history"][0]["date"] = "2026-02-30"
+        self.write_component("profile.json", manifest)
+        self.assertTrue(
+            any(
+                "is not a 'date'" in item
+                for item in validate_profiles.validate(self.root)
+            )
+        )
 
     def test_control_population_is_loaded_from_authoritative_catalog(self) -> None:
         catalog = json.loads(
@@ -283,23 +364,21 @@ class ProfileValidationTests(unittest.TestCase):
         path.write_text(text, encoding="utf-8", newline="\n")
         self.assert_has_error("registry lifecycle status is 'approved'")
 
-    def test_registry_os_error_does_not_disclose_host_path(self) -> None:
+    def test_registry_os_error_is_operational_and_does_not_disclose_host_path(
+        self,
+    ) -> None:
         with mock.patch.object(
             validate_profiles,
             "registry_metadata",
             side_effect=OSError(f"cannot read {self.root}"),
         ):
-            diagnostics = validate_profiles.validate(self.root)
-        matching = [
-            error
-            for error in diagnostics
-            if "cannot load registry metadata" in error
-        ]
-        self.assertTrue(matching, diagnostics)
-        self.assertTrue(
-            all(str(self.root) not in error for error in matching),
-            matching,
-        )
+            stderr = io.StringIO()
+            with contextlib.redirect_stderr(stderr):
+                self.assertEqual(
+                    2,
+                    validate_profiles.main(["--check"], root=self.root),
+                )
+        self.assertNotIn(str(self.root), stderr.getvalue())
 
     def test_fourth_mapping_reference_is_rejected(self) -> None:
         document = self.load_component("external-references.json")
@@ -644,6 +723,14 @@ class ProfileValidationTests(unittest.TestCase):
         path.write_text('{"risks": [}\n', encoding="utf-8")
         self.assert_has_error("cannot load JSON")
 
+    def test_malformed_readme_encoding_is_a_content_failure(self) -> None:
+        (self.package / "README.md").write_bytes(b"\xff\xfe")
+        stderr = io.StringIO()
+        with contextlib.redirect_stderr(stderr):
+            result = validate_profiles.main(["--check"], root=self.root)
+        self.assertEqual(result, 1)
+        self.assertIn("README.md: cannot decode UTF-8 content", stderr.getvalue())
+
     def test_unlisted_package_file_is_rejected(self) -> None:
         (self.package / "unlisted.json").write_text("{}\n", encoding="utf-8")
         self.assertTrue(
@@ -656,11 +743,67 @@ class ProfileValidationTests(unittest.TestCase):
             any("unlisted package entry rogue" in error for error in validate_profiles.validate(self.root))
         )
 
+    def test_package_alias_is_rejected_without_traversing_it(self) -> None:
+        outside = self.root / "outside-package"
+        outside.mkdir()
+        (outside / "nested.txt").write_text("outside\n", encoding="utf-8")
+        alias = self.package / "rogue"
+        try:
+            alias.symlink_to(outside, target_is_directory=True)
+        except OSError as exc:
+            if os.name != "nt":
+                self.skipTest(f"directory symlinks unavailable: {exc}")
+            junction = subprocess.run(
+                [
+                    "cmd",
+                    "/c",
+                    "mklink",
+                    "/J",
+                    str(alias),
+                    str(outside),
+                ],
+                capture_output=True,
+                text=True,
+            )
+            if junction.returncode != 0:
+                self.skipTest(
+                    f"directory aliases are unavailable: {exc}; "
+                    f"{junction.stderr}"
+                )
+        try:
+            diagnostics = validate_profiles.validate(self.root)
+            self.assertTrue(
+                any(
+                    "unlisted package symlink or junction alias rogue" in item
+                    for item in diagnostics
+                ),
+                diagnostics,
+            )
+            self.assertFalse(
+                any("nested.txt" in item for item in diagnostics),
+                diagnostics,
+            )
+        finally:
+            if alias.is_symlink():
+                alias.unlink()
+            elif alias.is_junction():
+                os.rmdir(alias)
+
     def test_missing_profile_manifest_is_rejected(self) -> None:
         (self.package / "profile.json").unlink()
         self.assertTrue(
             any("missing package file profile.json" in error for error in validate_profiles.validate(self.root))
         )
+
+    def test_directory_profile_manifest_is_a_content_failure(self) -> None:
+        manifest = self.package / "profile.json"
+        manifest.unlink()
+        manifest.mkdir()
+        stderr = io.StringIO()
+        with contextlib.redirect_stderr(stderr):
+            result = validate_profiles.main(["--check"], root=self.root)
+        self.assertEqual(result, 1)
+        self.assertIn("regular file", stderr.getvalue())
 
     def test_missing_component_is_rejected(self) -> None:
         (self.package / "evidence-expectations.json").unlink()
@@ -670,6 +813,16 @@ class ProfileValidationTests(unittest.TestCase):
                 for error in validate_profiles.validate(self.root)
             )
         )
+
+    def test_directory_component_is_a_content_failure(self) -> None:
+        component = self.package / "risk-overlays.json"
+        component.unlink()
+        component.mkdir()
+        stderr = io.StringIO()
+        with contextlib.redirect_stderr(stderr):
+            result = validate_profiles.main(["--check"], root=self.root)
+        self.assertEqual(result, 1)
+        self.assertIn("regular file", stderr.getvalue())
 
     def test_schema_directory_is_not_a_profile_country(self) -> None:
         false_package = self.root / "profiles" / "schema" / "0.1.0"
@@ -691,6 +844,23 @@ class ProfileValidationTests(unittest.TestCase):
             with self.subTest(relative=relative):
                 self.assertIsNone(validate_profiles.safe_component(self.package, relative))
 
+    def test_symlink_check_does_not_inspect_ancestors_above_repository(
+        self,
+    ) -> None:
+        outside_ancestor = self.root.parent.parent
+        original_is_symlink = Path.is_symlink
+
+        def simulated_ancestor_symlink(path: Path) -> bool:
+            return path == outside_ancestor or original_is_symlink(path)
+
+        with mock.patch.object(
+            Path,
+            "is_symlink",
+            autospec=True,
+            side_effect=simulated_ancestor_symlink,
+        ):
+            self.assertEqual(validate_profiles.validate(self.root), [])
+
     def test_diagnostics_are_deterministic_and_repository_relative(self) -> None:
         additional = self.root / "profiles" / "aa" / "0.1.0"
         shutil.copytree(self.package, additional)
@@ -708,10 +878,39 @@ class ProfileValidationTests(unittest.TestCase):
         try:
             os.symlink(outside_country, country, target_is_directory=True)
         except OSError as exc:
-            self.skipTest(f"symlink creation is unavailable: {exc}")
-        self.assertTrue(
-            any("symlink" in error for error in validate_profiles.validate(self.root))
-        )
+            if os.name != "nt":
+                self.skipTest(f"symlink creation is unavailable: {exc}")
+            junction = subprocess.run(
+                [
+                    "cmd",
+                    "/c",
+                    "mklink",
+                    "/J",
+                    str(country),
+                    str(outside_country),
+                ],
+                capture_output=True,
+                text=True,
+            )
+            if junction.returncode != 0:
+                self.skipTest(
+                    f"directory aliases are unavailable: {exc}; "
+                    f"{junction.stderr}"
+                )
+        try:
+            self.assertTrue(
+                any(
+                    "symlink" in error
+                    for error in validate_profiles.validate(self.root)
+                )
+            )
+        finally:
+            if country.is_symlink():
+                country.unlink()
+            elif country.is_junction():
+                os.rmdir(country)
+            if not country.exists():
+                shutil.move(str(outside_country), country)
 
     def test_symlinked_schema_file_is_rejected(self) -> None:
         schema = self.root / "profiles/schema/profile.schema.json"
@@ -767,11 +966,57 @@ class ProfileValidationTests(unittest.TestCase):
         self.assertEqual(result, 1)
         self.assertIn("unexpected.txt", output.getvalue())
 
+    def test_component_permission_error_is_operational_and_sanitized(self) -> None:
+        with mock.patch(
+            "tools.validate_profiles.load_json",
+            side_effect=PermissionError(r"C:\secret\profile.json"),
+        ):
+            stderr = io.StringIO()
+            with contextlib.redirect_stderr(stderr):
+                self.assertEqual(
+                    2,
+                    validate_profiles.main(["--check"], root=self.root),
+                )
+        self.assertNotIn(r"C:\secret", stderr.getvalue())
+
+    def test_component_resolution_error_is_operational_and_sanitized(self) -> None:
+        with mock.patch.object(
+            Path,
+            "resolve",
+            side_effect=PermissionError(r"C:\secret\profile.json"),
+        ):
+            stderr = io.StringIO()
+            with contextlib.redirect_stderr(stderr):
+                self.assertEqual(
+                    2,
+                    validate_profiles.main(["--check"], root=self.root),
+                )
+        self.assertNotIn(r"C:\secret", stderr.getvalue())
+
+    def test_inventory_permission_error_is_operational_and_sanitized(self) -> None:
+        with mock.patch.object(
+            Path,
+            "lstat",
+            side_effect=PermissionError(r"C:\secret\profiles"),
+        ):
+            stderr = io.StringIO()
+            with contextlib.redirect_stderr(stderr):
+                self.assertEqual(
+                    2,
+                    validate_profiles.main(["--check"], root=self.root),
+                )
+        self.assertNotIn(r"C:\secret", stderr.getvalue())
+
     def test_cli_reports_unresolvable_schema_reference_with_exit_two(self) -> None:
         path = self.root / "profiles/schema/profile.schema.json"
         schema = json.loads(path.read_text(encoding="utf-8"))
         schema["allOf"] = [{"$ref": "missing.schema.json"}]
         path.write_text(json.dumps(schema), encoding="utf-8")
+        with self.assertRaises(
+            validate_profiles.OperationalProfileError
+        ) as caught:
+            validate_profiles.validate(self.root)
+        self.assertNotIn(str(self.root), str(caught.exception))
         output = io.StringIO()
         with contextlib.redirect_stderr(output):
             result = validate_profiles.main(["--check"], root=self.root)
