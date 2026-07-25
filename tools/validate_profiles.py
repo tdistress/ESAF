@@ -107,6 +107,30 @@ PROFILE_ASSERTION_PATTERNS = (
     (
         "legal sufficiency",
         re.compile(
+            r"\bestablish(?:es|ed|ing)?\s+(?:no\s+)?"
+            r"(?P<outcome>legal sufficiency)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "external approval",
+        re.compile(
+            r"\bestablish(?:es|ed|ing)?\s+(?:no\s+)?"
+            r"(?P<outcome>external approval)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "production readiness",
+        re.compile(
+            r"\bestablish(?:es|ed|ing)?\s+(?:no\s+)?"
+            r"(?P<outcome>production readiness)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "legal sufficiency",
+        re.compile(
             r"\b(?:is|are|was|were)\s+(?:not\s+)?"
             r"(?P<outcome>legally sufficient)\b",
             re.IGNORECASE,
@@ -197,6 +221,12 @@ WEAKENING_PREDICATE = re.compile(
     r"\b(?:replace(?:s|d|ing)?|alter(?:s|ed|ing)?|relax(?:es|ed|ing)?"
     r"|waiv(?:e|es|ed|ing)|weaken(?:s|ed|ing)?|narrow(?:s|ed|ing)?"
     r"|mark(?:s|ed|ing)?|mak(?:e|es|ing))\b",
+    re.IGNORECASE,
+)
+PASSIVE_WEAKENING = re.compile(
+    r"\b(?P<control>(?:core\s+)?controls?(?:\s+requirements?)?)\s+"
+    r"(?:is|are|was|were)\s+(?:not\s+)?"
+    r"(?P<predicate>replaced|waived|made\s+optional)\b",
     re.IGNORECASE,
 )
 CONTROL_LANGUAGE = re.compile(
@@ -920,6 +950,16 @@ def contains_affirmative_weakening(text: str) -> bool:
             continue
         if quoted_occurrence_is_metalinguistic(
             text, weakening.start(), weakening.start() + control.end()
+        ):
+            continue
+        return True
+    for weakening in PASSIVE_WEAKENING.finditer(text):
+        predicate_start = weakening.start("predicate")
+        start, _, _ = proposition_bounds(text, predicate_start)
+        if predicate_is_negated(text[start:predicate_start]):
+            continue
+        if quoted_occurrence_is_metalinguistic(
+            text, weakening.start(), weakening.end()
         ):
             continue
         return True
