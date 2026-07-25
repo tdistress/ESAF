@@ -30,6 +30,9 @@ Versioned packages reside at `profiles/<profile-domain>/<version>/`, where the
 profile domain identifies the jurisdiction, industry, sector, or risk context.
 Manifest component values are package-relative component paths; component
 `$schema` values are document-relative schema locators.
+Each package's `PROFILE.md` is the authoritative instance record. The
+validator requires every adjacent derived JSON component to match its named
+Markdown JSON block exactly.
 
 ## Control catalog validation
 

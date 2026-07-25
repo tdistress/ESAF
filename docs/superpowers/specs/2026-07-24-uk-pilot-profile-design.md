@@ -89,11 +89,12 @@ The pilot package shall contain:
 | Artifact | Responsibility |
 |---|---|
 | `README.md` | Human-readable purpose, applicability, use, source boundary, Draft status, and limitations. |
-| `profile.json` | Identity, version, lifecycle, scope, applicability conditions, source boundary, component paths, and change history. |
-| `control-selections.json` | Complete 91-control applicability ledger. |
-| `risk-overlays.json` | Additional-risk records and their strengthening overlays. |
-| `evidence-expectations.json` | Profile-specific expectations that reuse ESAF-1500. |
-| `external-references.json` | Immutable references to the three Draft mapping snapshots and their governed registry records. |
+| `PROFILE.md` | Authoritative Markdown blocks for all profile instance records. |
+| `profile.json` | Derived identity, version, lifecycle, target release, catalog and per-control record pins, scope, applicability conditions, source boundary, component paths, and change history. |
+| `control-selections.json` | Derived complete 91-control applicability ledger. |
+| `risk-overlays.json` | Derived additional-risk records and their strengthening overlays. |
+| `evidence-expectations.json` | Derived profile-specific expectations that reuse ESAF-1500. |
+| `external-references.json` | Derived references to the three Draft mapping snapshots and their governed registry records. |
 
 This structure separates stable contract concerns from pilot content and keeps
 future profiles from inheriting United Kingdom-specific material. A monolithic
@@ -161,8 +162,10 @@ identify all required package-relative component paths. Component paths shall
 be normalized POSIX paths resolved inside the same versioned profile package.
 The validator shall reject path traversal, absolute paths, alternate
 separators, symlinks, missing components, and unlisted profile artifacts. The
-manifest shall list `README.md` as its human document in addition to the four
-machine-readable component manifests.
+manifest shall list `PROFILE.md` as the authoritative instance record and
+`README.md` as its human guidance in addition to the four derived
+machine-readable component manifests. Validation shall reject any difference
+between a named Markdown JSON block and its derived JSON file.
 
 The root manifest shall define a closed applicability-condition catalog.
 Each condition shall have:

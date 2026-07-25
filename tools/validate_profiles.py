@@ -39,6 +39,7 @@ else:
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE_FILES = {
     "profile": "profile.json",
+    "source": "PROFILE.md",
     "readme": "README.md",
     "control_selections": "control-selections.json",
     "risk_overlays": "risk-overlays.json",
@@ -52,6 +53,14 @@ DOCUMENT_SCHEMAS = {
     "evidence_expectations": "evidence-expectations.schema.json",
     "external_references": "external-references.schema.json",
 }
+AUTHORITATIVE_SOURCE_FILES = tuple(
+    PACKAGE_FILES[component] for component in DOCUMENT_SCHEMAS
+)
+AUTHORITATIVE_JSON_BLOCK = re.compile(
+    r"^## (?P<filename>[^\r\n]+)\r?\n\r?\n"
+    r"```json\r?\n(?P<body>.*?)\r?\n```(?:\r?\n|\Z)",
+    flags=re.MULTILINE | re.DOTALL,
+)
 SEMVER_PATTERN = r"[0-9]+\.[0-9]+\.[0-9]+"
 SEMVER = re.compile(rf"^{SEMVER_PATTERN}$")
 PROFILE_DOMAIN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
@@ -1400,6 +1409,8 @@ def safe_repository_file(
     reference_kind = (
         "registry"
         if expected_root == "crosswalks/registry"
+        else "control"
+        if expected_root == "controls"
         else "snapshot"
     )
     if (
@@ -1606,6 +1617,60 @@ def load_package(
     if len(diagnostics) != start:
         return None
     return ProfilePackage(directory=directory, relative=relative, documents=documents)
+
+
+def authoritative_source_diagnostics(package: ProfilePackage) -> list[str]:
+    """Require every derived JSON document to match its Markdown source block."""
+    relative = f"{package.relative}/{PACKAGE_FILES['source']}"
+    path = package.directory / PACKAGE_FILES["source"]
+    try:
+        text = path.read_text(encoding="utf-8")
+    except UnicodeError:
+        return [f"{relative}: cannot decode UTF-8 content"]
+    blocks: dict[str, dict[str, object]] = {}
+    diagnostics: list[str] = []
+    for match in AUTHORITATIVE_JSON_BLOCK.finditer(text):
+        filename = match.group("filename")
+        if filename not in AUTHORITATIVE_SOURCE_FILES:
+            diagnostics.append(
+                f"{relative}: unexpected authoritative JSON block {filename}"
+            )
+            continue
+        if filename in blocks:
+            diagnostics.append(
+                f"{relative}: duplicate authoritative JSON block {filename}"
+            )
+            continue
+        try:
+            document = json.loads(
+                match.group("body"),
+                object_pairs_hook=reject_duplicate_keys,
+            )
+        except (json.JSONDecodeError, ValueError) as exc:
+            diagnostics.append(
+                f"{relative}: cannot load authoritative {filename}: {exc}"
+            )
+            continue
+        if not isinstance(document, dict):
+            diagnostics.append(
+                f"{relative}: authoritative {filename} must be an object"
+            )
+            continue
+        blocks[filename] = document
+    for component, schema_name in DOCUMENT_SCHEMAS.items():
+        filename = PACKAGE_FILES[component]
+        source_document = blocks.get(filename)
+        if source_document is None:
+            diagnostics.append(
+                f"{relative}: missing authoritative JSON block {filename}"
+            )
+            continue
+        if source_document != package.documents[component]:
+            diagnostics.append(
+                f"{relative}: derived {filename} does not match "
+                "authoritative Markdown block"
+            )
+    return sorted(set(diagnostics))
 
 
 def control_population(root: Path) -> set[str]:
@@ -1857,6 +1922,82 @@ def semantic_diagnostics(
                 f"schema_version {observed_schema_version} does not match "
                 f"pinned {control_catalog_pin.get('schema_version')}"
             )
+        catalog_records = (
+            objects(catalog_document.get("controls"))
+            if isinstance(catalog_document, dict)
+            else []
+        )
+        expected_records = {
+            record["id"]: record
+            for record in catalog_records
+            if isinstance(record.get("id"), str)
+        }
+        pinned_records = objects(control_catalog_pin.get("records"))
+        pinned_ids = [
+            value
+            for record in pinned_records
+            if isinstance((value := record.get("id")), str)
+        ]
+        for identifier in sorted(set(pinned_ids) - set(expected_records)):
+            diagnostics.append(
+                f"{package.relative}/profile.json: unknown pinned control "
+                f"record {identifier}"
+            )
+        for identifier in sorted(set(expected_records) - set(pinned_ids)):
+            diagnostics.append(
+                f"{package.relative}/profile.json: missing pinned control "
+                f"record {identifier}"
+            )
+        for identifier in sorted(
+            identifier
+            for identifier in set(pinned_ids)
+            if pinned_ids.count(identifier) > 1
+        ):
+            diagnostics.append(
+                f"{package.relative}/profile.json: duplicate pinned control "
+                f"record {identifier}"
+            )
+        for record in pinned_records:
+            identifier = record.get("id")
+            if not isinstance(identifier, str):
+                continue
+            catalog_record = expected_records.get(identifier)
+            if catalog_record is None:
+                continue
+            for field in ("version", "status", "path"):
+                if record.get(field) != catalog_record.get(field):
+                    diagnostics.append(
+                        f"{package.relative}/profile.json: control "
+                        f"{identifier} {field} does not match "
+                        "controls/catalog.json"
+                    )
+            record_path = record.get("path")
+            if not isinstance(record_path, str):
+                continue
+            relative_record_path = f"controls/{record_path}"
+            try:
+                control_file = safe_repository_file(
+                    root, relative_record_path, expected_root="controls"
+                )
+            except ValueError as exc:
+                diagnostics.append(
+                    f"{package.relative}/profile.json: {exc}"
+                )
+                continue
+            try:
+                observed_record_digest = hashlib.sha256(
+                    control_file.read_bytes()
+                ).hexdigest()
+            except OSError as exc:
+                raise OperationalProfileError(
+                    f"{relative_record_path}: cannot read control record"
+                ) from exc
+            if record.get("record_sha256") != observed_record_digest:
+                diagnostics.append(
+                    f"{package.relative}/profile.json: control "
+                    f"{identifier} record digest does not match "
+                    f"{relative_record_path}"
+                )
 
     expected_profile_id = profile.get("profile_id")
     expected_profile_version = profile.get("profile_version")
@@ -1924,6 +2065,23 @@ def semantic_diagnostics(
         diagnostics.append(
             f"{package.relative}/profile.json: duplicate change history "
             f"version {version}"
+        )
+    history_order = [
+        (
+            record.get("date"),
+            tuple(int(part) for part in version.split(".")),
+        )
+        for record in history
+        if isinstance(record.get("date"), str)
+        and isinstance((version := record.get("version")), str)
+        and re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", version)
+    ]
+    if len(history_order) == len(history) and history_order != sorted(
+        history_order
+    ):
+        diagnostics.append(
+            f"{package.relative}/profile.json: change history must be "
+            "ordered by date and semantic version"
         )
 
     conditions = objects(profile.get("applicability_conditions"))
@@ -2030,7 +2188,12 @@ def semantic_diagnostics(
                 re.search(r"\bshould\b", rationale, flags=re.IGNORECASE)
                 is None
                 or re.search(
-                    r"\b(?:shall|must)\b", rationale, flags=re.IGNORECASE
+                    r"\b(?:shall|must|required|mandatory|obligatory|"
+                    r"compulsory)\b"
+                    r"|\b(?:has|have|needs?|needed)\s+to\b"
+                    r"|\b(?:is|are)\s+(?:an?\s+)?requirements?\b",
+                    rationale,
+                    flags=re.IGNORECASE,
                 )
                 is not None
             ):
@@ -2908,17 +3071,23 @@ def source_boundary_diagnostics(
                     "authority language"
                 )
 
-    readme_relative = f"{package.relative}/{PACKAGE_FILES['readme']}"
-    try:
-        readme = (package.directory / PACKAGE_FILES["readme"]).read_text(
-            encoding="utf-8"
-        )
-    except UnicodeError:
-        return sorted(set(diagnostics))
-    if contains_affirmative_source_authority(readme, excluded_sources):
-        diagnostics.append(
-            f"{readme_relative}: prohibited source authority language"
-        )
+    for component in ("readme", "source"):
+        filename = PACKAGE_FILES[component]
+        markdown_relative = f"{package.relative}/{filename}"
+        try:
+            markdown = (package.directory / filename).read_text(
+                encoding="utf-8"
+            )
+        except UnicodeError:
+            continue
+        if component == "source":
+            markdown = AUTHORITATIVE_JSON_BLOCK.sub("", markdown)
+        if contains_affirmative_source_authority(
+            markdown, excluded_sources
+        ):
+            diagnostics.append(
+                f"{markdown_relative}: prohibited source authority language"
+            )
     return sorted(set(diagnostics))
 
 
@@ -2960,24 +3129,28 @@ def claim_diagnostics(package: ProfilePackage) -> list[str]:
                     f"{phrase!r}"
                 )
 
-    readme_relative = f"{package.relative}/{PACKAGE_FILES['readme']}"
-    try:
-        readme = (package.directory / PACKAGE_FILES["readme"]).read_text(
-            encoding="utf-8"
-        )
-    except UnicodeError:
-        diagnostics.append(
-            f"{readme_relative}: cannot decode UTF-8 content"
-        )
-        return sorted(set(diagnostics))
-    if contains_affirmative_weakening(readme):
-        diagnostics.append(
-            f"{readme_relative}: prohibited control weakening language"
-        )
-    for phrase in asserted_profile_phrases(readme):
-        diagnostics.append(
-            f"{readme_relative}: prohibited assertion {phrase!r}"
-        )
+    for component in ("readme", "source"):
+        filename = PACKAGE_FILES[component]
+        markdown_relative = f"{package.relative}/{filename}"
+        try:
+            markdown = (package.directory / filename).read_text(
+                encoding="utf-8"
+            )
+        except UnicodeError:
+            diagnostics.append(
+                f"{markdown_relative}: cannot decode UTF-8 content"
+            )
+            continue
+        if component == "source":
+            markdown = AUTHORITATIVE_JSON_BLOCK.sub("", markdown)
+        if contains_affirmative_weakening(markdown):
+            diagnostics.append(
+                f"{markdown_relative}: prohibited control weakening language"
+            )
+        for phrase in asserted_profile_phrases(markdown):
+            diagnostics.append(
+                f"{markdown_relative}: prohibited assertion {phrase!r}"
+            )
     return sorted(set(diagnostics))
 
 
@@ -3002,6 +3175,7 @@ def validate(root: Path = ROOT) -> list[str]:
                 else:
                     profile_id_locations[profile_id] = package.relative
             diagnostics.extend(semantic_diagnostics(root, package))
+            diagnostics.extend(authoritative_source_diagnostics(package))
             diagnostics.extend(traceability_diagnostics(package))
             diagnostics.extend(
                 source_boundary_diagnostics(

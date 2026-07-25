@@ -29,11 +29,29 @@
     "controlCatalog": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["path", "schema_version", "sha256"],
+      "required": ["path", "schema_version", "sha256", "records"],
       "properties": {
         "path": {"const": "controls/catalog.json"},
         "schema_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
-        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "records": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/controlRecord"}
+        }
+      }
+    },
+    "controlRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version", "status", "path", "record_sha256"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[A-Z]{3}-[1-9][0-9]{2}$"},
+        "version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+        "status": {"enum": ["proposed", "draft", "approved", "published", "deprecated", "retired"]},
+        "path": {"type": "string", "pattern": "^([A-Z]{3})/\\1-[0-9]{3}\\.md$"},
+        "record_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
       }
     },
     "applicabilityCondition": {
@@ -61,8 +79,9 @@
     "components": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["readme", "control_selections", "risk_overlays", "evidence_expectations", "external_references"],
+      "required": ["source", "readme", "control_selections", "risk_overlays", "evidence_expectations", "external_references"],
       "properties": {
+        "source": {"$ref": "#/$defs/relativePath"},
         "readme": {"$ref": "#/$defs/relativePath"},
         "control_selections": {"$ref": "#/$defs/relativePath"},
         "risk_overlays": {"$ref": "#/$defs/relativePath"},
@@ -75,7 +94,7 @@
       "additionalProperties": false,
       "required": ["version", "date", "author", "description"],
       "properties": {
-        "version": {"$ref": "#/$defs/nonEmptyString"},
+        "version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
         "date": {"type": "string", "format": "date"},
         "author": {"$ref": "#/$defs/nonEmptyString"},
         "description": {"$ref": "#/$defs/nonEmptyString"}

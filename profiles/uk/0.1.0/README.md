@@ -7,9 +7,11 @@
 **Target ESAF release:** `v0.5-beta`
 
 This README is the authoritative package-level statement of purpose,
-applicability, use, and limitations under ESAF-1800. The JSON files are its
-schema-governed machine-readable instance records. A conflict shall fail
-review rather than change this Markdown meaning.
+applicability, use, and limitations under ESAF-1800. The complete control
+selections, risks, overlays, evidence expectations, and external references
+are authoritative in [PROFILE.md](PROFILE.md). The adjacent JSON files are
+deterministic schema-governed representations of those Markdown blocks; any
+difference shall fail validation.
 
 ## Purpose and applicability
 
@@ -28,12 +30,14 @@ evidence used to resolve each applicable condition.
 
 1. Confirm and evidence the United Kingdom deployment or operating basis.
 2. Record the assessed system boundary and supporting dependencies.
-3. Verify that the control-catalog schema version and SHA-256 pin in
-   `profile.json` match the authoritative catalog.
+3. Verify that the control-catalog schema version and SHA-256 pin, and every
+   control record's version, lifecycle status, path, and SHA-256 pin, in the
+   authoritative `profile.json` block in `PROFILE.md` match the catalog and
+   control Markdown.
 4. Answer the boolean conditions in `profile.json` using the specified
    resolution evidence.
-5. Resolve `required` and activated `conditional` selections in
-   `control-selections.json`.
+5. Resolve `required` and activated `conditional` selections from the
+   authoritative `control-selections.json` block in `PROFILE.md`.
 6. Apply the relevant overlays and evidence expectations.
 7. Gather and evaluate evidence under ESAF-1500 using the declared
    `evidence_types`, preserving scope, period, methods, limitations, and

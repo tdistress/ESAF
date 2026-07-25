@@ -182,6 +182,7 @@ class ProfileValidationTests(unittest.TestCase):
             json.dumps(document, indent=2) + "\n",
             encoding="utf-8",
         )
+        profile_fixture.write_authoritative_source(self.package)
 
     def write_readme(self, text: str) -> None:
         (self.package / "README.md").write_text(
@@ -377,6 +378,41 @@ class ProfileValidationTests(unittest.TestCase):
     def test_valid_population_has_no_errors(self) -> None:
         self.assertEqual(validate_profiles.validate(self.root), [])
 
+    def test_derived_json_must_match_authoritative_markdown(self) -> None:
+        path = self.package / "control-selections.json"
+        document = json.loads(path.read_text(encoding="utf-8"))
+        document["selections"][0]["rationale"] = "Drifted derived record."
+        profile_fixture.write_json(path, document)
+        self.assert_has_error(
+            "derived control-selections.json does not match authoritative "
+            "Markdown block"
+        )
+
+    def test_authoritative_markdown_prose_is_claim_scanned(self) -> None:
+        source = self.package / "PROFILE.md"
+        source.write_text(
+            source.read_text(encoding="utf-8")
+            + "\nThis profile establishes compliance.\n",
+            encoding="utf-8",
+        )
+        self.assert_has_error(
+            "PROFILE.md: prohibited assertion 'establishes compliance'"
+        )
+
+    def test_authoritative_markdown_prose_respects_source_boundary(self) -> None:
+        manifest = self.load_component("profile.json")
+        manifest["source_boundary"]["excluded_sources"] = ["UK GDPR"]
+        self.write_component("profile.json", manifest)
+        source = self.package / "PROFILE.md"
+        source.write_text(
+            source.read_text(encoding="utf-8")
+            + "\nUK GDPR governs this profile selection.\n",
+            encoding="utf-8",
+        )
+        self.assert_has_error(
+            "PROFILE.md: prohibited source authority language"
+        )
+
     def test_zero_profile_packages_is_rejected(self) -> None:
         self.remove_valid_package()
         self.assertIn(
@@ -464,6 +500,26 @@ class ProfileValidationTests(unittest.TestCase):
         self.write_component("profile.json", manifest)
         self.assert_has_error("duplicate change history version 0.1.0")
 
+    def test_change_history_versions_must_be_semver(self) -> None:
+        manifest = self.load_component("profile.json")
+        manifest["change_history"][0]["version"] = "not-semver"
+        self.write_component("profile.json", manifest)
+        self.assert_has_error("'not-semver' does not match")
+
+    def test_change_history_must_be_chronological(self) -> None:
+        manifest = self.load_component("profile.json")
+        manifest["change_history"].append(
+            {
+                **manifest["change_history"][0],
+                "version": "0.0.9",
+                "date": "2026-07-23",
+            }
+        )
+        self.write_component("profile.json", manifest)
+        self.assert_has_error(
+            "change history must be ordered by date and semantic version"
+        )
+
     def test_control_catalog_digest_drift_is_rejected(self) -> None:
         catalog_path = self.root / "controls" / "catalog.json"
         catalog_path.write_text(
@@ -478,6 +534,111 @@ class ProfileValidationTests(unittest.TestCase):
         catalog["schema_version"] = "9.9.9"
         profile_fixture.write_json(catalog_path, catalog)
         self.assert_has_error("control catalog schema_version 9.9.9 does not match")
+
+    def test_control_record_digest_drift_is_rejected(self) -> None:
+        control_path = self.root / "controls" / "GOV" / "GOV-100.md"
+        control_path.write_text(
+            control_path.read_text(encoding="utf-8")
+            + "\nUnversioned meaning change.\n",
+            encoding="utf-8",
+        )
+        self.assert_has_error("control GOV-100 record digest does not match")
+
+    def test_missing_control_record_pin_is_rejected(self) -> None:
+        manifest = self.load_component("profile.json")
+        missing = manifest["control_catalog"]["records"].pop()["id"]
+        self.write_component("profile.json", manifest)
+        self.assert_has_error(f"missing pinned control record {missing}")
+
+    def test_unknown_control_record_pin_is_rejected(self) -> None:
+        manifest = self.load_component("profile.json")
+        manifest["control_catalog"]["records"][0]["id"] = "GOV-999"
+        manifest["control_catalog"]["records"][0]["path"] = "GOV/GOV-999.md"
+        self.write_component("profile.json", manifest)
+        self.assert_has_error("unknown pinned control record GOV-999")
+
+    def test_duplicate_control_record_pin_is_rejected(self) -> None:
+        manifest = self.load_component("profile.json")
+        duplicate = dict(manifest["control_catalog"]["records"][0])
+        duplicate["record_sha256"] = "0" * 64
+        manifest["control_catalog"]["records"].append(duplicate)
+        self.write_component("profile.json", manifest)
+        self.assert_has_error("duplicate pinned control record GOV-100")
+
+    def test_control_record_version_drift_is_rejected(self) -> None:
+        manifest = self.load_component("profile.json")
+        manifest["control_catalog"]["records"][0]["version"] = "9.9.9"
+        self.write_component("profile.json", manifest)
+        self.assert_has_error(
+            "control GOV-100 version does not match controls/catalog.json"
+        )
+
+    def test_control_record_status_drift_is_rejected(self) -> None:
+        manifest = self.load_component("profile.json")
+        manifest["control_catalog"]["records"][0]["status"] = "retired"
+        self.write_component("profile.json", manifest)
+        self.assert_has_error(
+            "control GOV-100 status does not match controls/catalog.json"
+        )
+
+    def test_control_record_path_drift_is_rejected(self) -> None:
+        manifest = self.load_component("profile.json")
+        manifest["control_catalog"]["records"][0]["path"] = "GOV/GOV-110.md"
+        self.write_component("profile.json", manifest)
+        self.assert_has_error(
+            "control GOV-100 path does not match controls/catalog.json"
+        )
+
+    def test_control_record_path_traversal_is_rejected_by_schema(self) -> None:
+        manifest = self.load_component("profile.json")
+        manifest["control_catalog"]["records"][0]["path"] = "../GOV-100.md"
+        self.write_component("profile.json", manifest)
+        self.assert_has_error("'../GOV-100.md' does not match")
+
+    def test_missing_control_record_file_is_rejected(self) -> None:
+        (self.root / "controls/GOV/GOV-100.md").unlink()
+        self.assert_has_error(
+            "unsafe or missing control path 'controls/GOV/GOV-100.md'"
+        )
+
+    def test_control_record_directory_substitution_is_rejected(self) -> None:
+        path = self.root / "controls/GOV/GOV-100.md"
+        path.unlink()
+        path.mkdir()
+        self.assert_has_error(
+            "unsafe or missing control path 'controls/GOV/GOV-100.md'"
+        )
+
+    def test_control_record_symlink_substitution_is_rejected(self) -> None:
+        path = self.root / "controls/GOV/GOV-100.md"
+        target = self.root / "control-target.md"
+        target.write_bytes(path.read_bytes())
+        path.unlink()
+        try:
+            os.symlink(target, path)
+        except OSError as error:
+            self.skipTest(f"symlink creation is unavailable: {error}")
+        self.assert_has_error(
+            "unsafe or missing control path 'controls/GOV/GOV-100.md'"
+        )
+
+    def test_control_record_read_error_is_operational_and_sanitized(self) -> None:
+        control_path = self.root / "controls/GOV/GOV-100.md"
+        original_read_bytes = Path.read_bytes
+
+        def read_bytes(path: Path) -> bytes:
+            if path == control_path:
+                raise PermissionError(r"C:\secret\GOV-100.md")
+            return original_read_bytes(path)
+
+        with mock.patch.object(Path, "read_bytes", new=read_bytes):
+            stderr = io.StringIO()
+            with contextlib.redirect_stderr(stderr):
+                self.assertEqual(
+                    2,
+                    validate_profiles.main(["--check"], root=self.root),
+                )
+        self.assertNotIn(r"C:\secret", stderr.getvalue())
 
     def test_non_pilot_semantic_version_is_valid_when_identity_and_directory_agree(
         self,
@@ -517,13 +678,38 @@ class ProfileValidationTests(unittest.TestCase):
         document = self.load_component("control-selections.json")
         document["selections"][0]["status"] = "recommended"
         document["selections"][0]["rationale"] = (
-            "The organization shall implement this control."
+            "The organization should adopt this control because "
+            "implementation is required."
         )
         self.write_component("control-selections.json", document)
         self.assert_has_error(
             "recommended selection rationale must use should and must not "
             "use shall or must"
         )
+
+    def test_recommended_selection_rejects_mandatory_synonyms(self) -> None:
+        rationales = (
+            "The organization should implement this control because it is compulsory.",
+            "The organization should implement this control and has to maintain it.",
+            "The organization should implement this control; implementation is a requirement.",
+        )
+        for rationale in rationales:
+            with self.subTest(rationale=rationale):
+                document = self.load_component("control-selections.json")
+                document["selections"][0]["status"] = "recommended"
+                document["selections"][0]["rationale"] = rationale
+                self.write_component("control-selections.json", document)
+                self.assert_has_error(
+                    "recommended selection rationale must use should and "
+                    "must not use shall or must"
+                )
+
+    def test_other_evidence_type_requires_description(self) -> None:
+        self.write_closed_trace_fixture()
+        document = self.load_component("evidence-expectations.json")
+        document["expectations"][0]["evidence_types"] = ["other"]
+        self.write_component("evidence-expectations.json", document)
+        self.assert_has_error("'other_type_description' is a required property")
 
     def test_duplicate_control_selection_is_rejected(self) -> None:
         document = self.load_component("control-selections.json")

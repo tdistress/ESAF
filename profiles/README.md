@@ -26,6 +26,8 @@ the jurisdiction, industry, sector, or risk context. Package changes shall
 preserve the component structure and identifiers defined by ESAF-1800 and its
 schemas. Manifest component values are package-relative component paths;
 component `$schema` values are document-relative schema locators.
+Edit the package's `PROFILE.md` authoritative blocks first, then synchronize
+the derived JSON files exactly. Validation rejects any source/derivative drift.
 
 `proposed` remains a valid earlier lifecycle state. A profile shall not advance
 beyond Draft until the applicable technical, editorial, scope, and

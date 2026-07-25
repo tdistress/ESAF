@@ -81,6 +81,8 @@ package components and keep profile-specific requirements separate from the
 meanings of core ESAF controls and ESAF-1500 assessment semantics. Manifest
 component values are package-relative component paths; component `$schema`
 values are document-relative schema locators.
+Edit the package's authoritative `PROFILE.md` record first and keep each
+derived JSON component synchronized exactly; validation rejects any drift.
 
 `proposed` remains a valid earlier lifecycle state. A profile shall not advance
 beyond Draft until the applicable technical, editorial, scope, and

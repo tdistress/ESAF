@@ -22,6 +22,7 @@ VALIDATOR_TESTS = ROOT / "tests" / "test_validate_profiles.py"
 WORKFLOW = ROOT / ".github" / "workflows" / "catalog-validation.yml"
 SCHEMA_ROOT = ROOT / "profiles" / "schema"
 UK_PROFILE_ROOT = ROOT / "profiles" / "uk" / "0.1.0"
+UK_PROFILE_SOURCE = UK_PROFILE_ROOT / "PROFILE.md"
 SCHEMA_NAMES = (
     "profile",
     "control-selections",
@@ -50,6 +51,7 @@ SELECTION_STATUSES = (
 )
 UK_PROFILE_ID = "uk--jurisdiction-profile--0.1.0"
 UK_COMPONENTS = {
+    "source": "PROFILE.md",
     "readme": "README.md",
     "control_selections": "control-selections.json",
     "risk_overlays": "risk-overlays.json",
@@ -437,6 +439,15 @@ class ProfileSchemaTests(unittest.TestCase):
                             "path": "controls/catalog.json",
                             "schema_version": "1.0.0",
                             "sha256": "0" * 64,
+                            "records": [
+                                {
+                                    "id": "GOV-100",
+                                    "version": "1.0.0",
+                                    "status": "published",
+                                    "path": "GOV/GOV-100.md",
+                                    "record_sha256": "0" * 64,
+                                }
+                            ],
                         },
                         "title": "Generic profile",
                         "scope": "A reusable profile scope.",
@@ -447,6 +458,7 @@ class ProfileSchemaTests(unittest.TestCase):
                             "excluded_sources": [],
                         },
                         "components": {
+                            "source": "PROFILE.md",
                             "readme": "README.md",
                             "control_selections": "control-selections.json",
                             "risk_overlays": "risk-overlays.json",
@@ -726,6 +738,20 @@ class ProfileRepositoryIntegrationTests(unittest.TestCase):
 
 
 class UKPilotProfileTests(unittest.TestCase):
+    def test_markdown_source_contains_every_authoritative_profile_record(
+        self,
+    ) -> None:
+        source = UK_PROFILE_SOURCE.read_text(encoding="utf-8")
+        for filename in (
+            "profile.json",
+            "control-selections.json",
+            "risk-overlays.json",
+            "evidence-expectations.json",
+            "external-references.json",
+        ):
+            with self.subTest(filename=filename):
+                self.assertIn(f"## {filename}\n\n```json\n", source)
+
     def test_control_catalog_pin_matches_authoritative_catalog(self) -> None:
         profile = json.loads(
             (UK_PROFILE_ROOT / "profile.json").read_text(encoding="utf-8")
@@ -740,6 +766,22 @@ class UKPilotProfileTests(unittest.TestCase):
             profile["control_catalog"]["schema_version"],
             catalog["schema_version"],
         )
+        records = {
+            record["id"]: record
+            for record in profile["control_catalog"]["records"]
+        }
+        self.assertEqual(records.keys(), {record["id"] for record in catalog["controls"]})
+        for catalog_record in catalog["controls"]:
+            record = records[catalog_record["id"]]
+            self.assertEqual(record["version"], catalog_record["version"])
+            self.assertEqual(record["status"], catalog_record["status"])
+            self.assertEqual(record["path"], catalog_record["path"])
+            self.assertEqual(
+                record["record_sha256"],
+                hashlib.sha256(
+                    (ROOT / "controls" / record["path"]).read_bytes()
+                ).hexdigest(),
+            )
 
     def load(self, filename: str) -> dict[str, object]:
         path = UK_PROFILE_ROOT / filename
