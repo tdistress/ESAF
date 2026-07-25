@@ -393,6 +393,11 @@ class ProfileValidationTests(unittest.TestCase):
             "Core controls are replaced by this profile.",
             "Core control requirements are waived by this profile.",
             "Core controls are made optional by this profile.",
+            "Core controls are altered by this profile.",
+            "Core controls are relaxed by this profile.",
+            "Core controls are weakened by this profile.",
+            "Core controls are narrowed by this profile.",
+            "Core controls are marked inapplicable by this profile.",
         ):
             with self.subTest(text=text):
                 (self.package / "README.md").write_text(
@@ -406,6 +411,11 @@ class ProfileValidationTests(unittest.TestCase):
             "Core controls are not replaced by this profile.",
             "Core control requirements are not waived by this profile.",
             "Core controls are not made optional by this profile.",
+            "Core controls are not altered by this profile.",
+            "Core controls are not relaxed by this profile.",
+            "Core controls are not weakened by this profile.",
+            "Core controls are not narrowed by this profile.",
+            "Core controls are not marked inapplicable by this profile.",
         ):
             with self.subTest(text=text):
                 (self.package / "README.md").write_text(
@@ -419,6 +429,11 @@ class ProfileValidationTests(unittest.TestCase):
             "Core controls are replaced by this profile",
             "Core control requirements are waived by this profile",
             "Core controls are made optional by this profile",
+            "Core controls are altered by this profile",
+            "Core controls are relaxed by this profile",
+            "Core controls are weakened by this profile",
+            "Core controls are narrowed by this profile",
+            "Core controls are marked inapplicable by this profile",
         ):
             with self.subTest(phrase=phrase):
                 (self.package / "README.md").write_text(

@@ -226,7 +226,8 @@ WEAKENING_PREDICATE = re.compile(
 PASSIVE_WEAKENING = re.compile(
     r"\b(?P<control>(?:core\s+)?controls?(?:\s+requirements?)?)\s+"
     r"(?:is|are|was|were)\s+(?:not\s+)?"
-    r"(?P<predicate>replaced|waived|made\s+optional)\b",
+    r"(?P<predicate>replaced|waived|made\s+optional|altered|relaxed|weakened|"
+    r"narrowed|marked\s+inapplicable)\b",
     re.IGNORECASE,
 )
 CONTROL_LANGUAGE = re.compile(
