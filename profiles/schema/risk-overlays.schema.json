@@ -18,6 +18,11 @@
     "identifier": {"type": "string", "pattern": "^[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*$"},
     "controlId": {"type": "string", "pattern": "^[A-Z][A-Z0-9]{1,15}-[0-9]{3}$"},
     "nonEmptyString": {"type": "string", "minLength": 1},
+    "sourceBasisReference": {
+      "type": "string",
+      "minLength": 1,
+      "description": "An authoritative ESAF control identifier or an exact manifest permitted source identifier; semantic validation resolves the closed set."
+    },
     "identifierArray": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/identifier"}},
     "controlArray": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/controlId"}},
     "risk": {
@@ -28,7 +33,7 @@
         "risk_id": {"$ref": "#/$defs/identifier"},
         "statement": {"$ref": "#/$defs/nonEmptyString"},
         "circumstances": {"$ref": "#/$defs/nonEmptyString"},
-        "source_basis": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/nonEmptyString"}},
+        "source_basis": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/sourceBasisReference"}},
         "affected_controls": {"$ref": "#/$defs/controlArray"},
         "overlay_ids": {"$ref": "#/$defs/identifierArray"}
       }

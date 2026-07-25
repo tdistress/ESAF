@@ -9,7 +9,13 @@
       "statement": "Internet-reachable AI services or administrative paths can expand the opportunity for unauthorized access, exploit attempts, automated abuse, and resource exhaustion.",
       "circumstances": "The risk is in scope when an internet-originated connection can reach an AI service, supporting interface, or administrative path in the assessed boundary.",
       "source_basis": [
-        "ESAF-1100 controls APP-150, API-110, INF-110, INF-120, INF-140, INF-150, and MON-110"
+        "APP-150",
+        "API-110",
+        "INF-110",
+        "INF-120",
+        "INF-140",
+        "INF-150",
+        "MON-110"
       ],
       "affected_controls": [
         "APP-150",
@@ -30,7 +36,12 @@
       "statement": "Unreconciled privileged access or configuration changes can bypass approved AI boundaries, alter protective settings, or prevent accountable reconstruction.",
       "circumstances": "The risk applies to every assessed boundary because administrative identities, configuration states, and material changes support operation even when their implementation is inherited.",
       "source_basis": [
-        "ESAF-1100 controls IAM-120, IAM-130, IAM-150, INF-110, INF-130, and MON-150"
+        "IAM-120",
+        "IAM-130",
+        "IAM-150",
+        "INF-110",
+        "INF-130",
+        "MON-150"
       ],
       "affected_controls": [
         "IAM-120",
@@ -50,8 +61,9 @@
       "statement": "Models in a retirement-triggering state can remain deployed or accessible until authorized retirement is completed; unsupported or end-of-life infrastructure can retain unresolved vulnerabilities; and unsupported, end-of-life, or out-of-window AI technology or architecture components can lose dependable maintenance paths and frustrate safe recovery or replacement.",
       "circumstances": "The risk is in scope when records identify an end-of-life, replaced, unsupported, compromised, nonconforming, expired, or abandoned model; an unsupported or end-of-life infrastructure component or managed-service dependency; or an unsupported, end-of-life, or out-of-window AI technology or architecture component.",
       "source_basis": [
-        "ESAF-1100 MOD-150 applicability: end-of-life, replaced, unsupported, compromised, nonconforming, expired, and abandoned models",
-        "ESAF-1100 controls INF-120 and ARC-150 for their distinct infrastructure vulnerability and technology lifecycle populations"
+        "MOD-150",
+        "INF-120",
+        "ARC-150"
       ],
       "affected_controls": [
         "MOD-150",
@@ -69,7 +81,10 @@
       "statement": "Models, application artifacts, or infrastructure dependencies from untrusted paths, and tools or plugins callable by an AI capability, can introduce malicious behavior, vulnerable dependencies, excessive authority, or unauthorized functionality.",
       "circumstances": "The risk is in scope when a defined untrusted model, application-artifact, or infrastructure-dependency intake path exists, or when the assessed AI capability can invoke a tool or plugin.",
       "source_basis": [
-        "ESAF-1100 controls MOD-110, APP-140, API-120, and INF-120"
+        "MOD-110",
+        "APP-140",
+        "API-120",
+        "INF-120"
       ],
       "affected_controls": [
         "MOD-110",
@@ -89,7 +104,11 @@
       "statement": "External services or administrators can leave control ownership, access authority, change duties, evidence access, continuity, and exit responsibilities incomplete or inconsistent.",
       "circumstances": "The risk is in scope when an external provider supplies a service or when a third party can administer any component in the assessed boundary.",
       "source_basis": [
-        "ESAF-1100 controls API-140, CMP-120, ARC-140, IAM-130, and IAM-150"
+        "API-140",
+        "CMP-120",
+        "ARC-140",
+        "IAM-130",
+        "IAM-150"
       ],
       "affected_controls": [
         "API-140",
@@ -108,8 +127,14 @@
       "statement": "Incomplete system, asset, dependency, or evidence coverage can omit material control responsibilities and make assessment conclusions unreliable for the declared boundary.",
       "circumstances": "The risk applies to every profile use because the package depends on a recorded system boundary, complete control population, resolved conditions, and traceable assessment evidence.",
       "source_basis": [
-        "ESAF-1100 controls GOV-130, RSK-110, IAM-100, MOD-100, INF-100, AUD-120, and ARC-110",
-        "ESAF-1500 evidence quality and assessment scope semantics"
+        "GOV-130",
+        "RSK-110",
+        "IAM-100",
+        "MOD-100",
+        "INF-100",
+        "AUD-120",
+        "ARC-110",
+        "ESAF"
       ],
       "affected_controls": [
         "GOV-130",

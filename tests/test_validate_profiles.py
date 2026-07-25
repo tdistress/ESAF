@@ -15,6 +15,106 @@ from tests import profile_fixture
 from tools import validate_profiles
 
 
+AFFIRMATIVE_CLAIMS = (
+    ("This profile satisfies Cyber Essentials requirements.", "scheme satisfaction"),
+    ("This profile ensures legal compliance.", "compliance"),
+    (
+        "This profile confers certification eligibility.",
+        "certification eligibility",
+    ),
+    ("This profile has NCSC approval.", "named-authority approval"),
+    (
+        "Cyber Essentials provision A maps to GOV-100 and supplies its "
+        "external outcome.",
+        "imported mapping relationship",
+    ),
+    (
+        "Legal compliance is ensured by this profile.",
+        "compliance",
+    ),
+    (
+        "Certification eligibility is conferred by this profile.",
+        "certification eligibility",
+    ),
+    (
+        "NCSC approval is held by this profile.",
+        "named-authority approval",
+    ),
+    (
+        "GOV-100 is mapped from Cyber Essentials provision A and the external "
+        "outcome is imported.",
+        "imported mapping relationship",
+    ),
+    (
+        "GOV-100 supports Cyber Essentials provision A.",
+        "imported mapping relationship",
+    ),
+    (
+        "GOV-100 satisfies Cyber Essentials provision A.",
+        "imported mapping relationship",
+    ),
+    (
+        "Cyber Essentials provision A is supported by GOV-100.",
+        "imported mapping relationship",
+    ),
+    (
+        "Cyber Essentials provision A is satisfied by GOV-100.",
+        "imported mapping relationship",
+    ),
+    (
+        "Cyber Essentials provision A supports GOV-100.",
+        "imported mapping relationship",
+    ),
+    (
+        "Cyber Essentials provision A satisfies GOV-100.",
+        "imported mapping relationship",
+    ),
+    (
+        "GOV-100 is supported by Cyber Essentials provision A.",
+        "imported mapping relationship",
+    ),
+    (
+        "GOV-100 is satisfied by Cyber Essentials provision A.",
+        "imported mapping relationship",
+    ),
+    (
+        "This profile meets Cyber Essentials requirements.",
+        "scheme satisfaction",
+    ),
+    (
+        "This profile complies with Cyber Essentials.",
+        "compliance",
+    ),
+    (
+        "This profile qualifies the organization for certification.",
+        "certification eligibility",
+    ),
+    (
+        "This profile is approved by NCSC.",
+        "named-authority approval",
+    ),
+    (
+        "NCSC approves this profile.",
+        "named-authority approval",
+    ),
+)
+
+AFFIRMATIVE_WEAKENING = (
+    "This profile makes optional core controls.",
+    "This profile marks inapplicable core controls.",
+    "GOV-100 need not be applied.",
+    "This profile supersedes GOV-100.",
+    "The organization is exempt from GOV-100.",
+    "This profile lowers core control requirements.",
+    "GOV-100 is superseded by this profile.",
+    "GOV-100 is inapplicable under this profile.",
+    "Core control requirements are lowered by this profile.",
+    "This profile renders GOV-100 optional.",
+    "GOV-100 no longer applies.",
+    "GOV-100 does not apply under this profile.",
+)
+
+
 class ProfileValidationTests(unittest.TestCase):
     def setUp(self) -> None:
         self.temp = tempfile.TemporaryDirectory()
@@ -975,6 +1075,7 @@ class ProfileValidationTests(unittest.TestCase):
             "This profile alters core controls.",
             "This profile relaxes core control requirements.",
             "This profile makes core controls optional.",
+            *AFFIRMATIVE_WEAKENING,
         ):
             with self.subTest(text=text):
                 (self.package / "README.md").write_text(
@@ -1045,6 +1146,19 @@ class ProfileValidationTests(unittest.TestCase):
             "This profile does not relax or make core controls optional.",
             "This profile replaces no core controls.",
             "This profile replaces neither core control.",
+            "This profile does not make optional core controls.",
+            "This profile does not mark inapplicable core controls.",
+            "GOV-100 must be applied.",
+            "This profile does not supersede GOV-100.",
+            "The organization is not exempt from GOV-100.",
+            "This profile does not lower core control requirements.",
+            "GOV-100 is not superseded by this profile.",
+            "GOV-100 is not inapplicable under this profile.",
+            "Core control requirements are not lowered by this profile.",
+            "This profile does not render GOV-100 optional.",
+            "GOV-100 remains applicable.",
+            "This profile renders GOV-100 mandatory.",
+            "GOV-100 applies under this profile.",
         ):
             with self.subTest(text=text):
                 (self.package / "README.md").write_text(
@@ -1052,6 +1166,39 @@ class ProfileValidationTests(unittest.TestCase):
                     encoding="utf-8",
                 )
                 self.assertEqual(validate_profiles.validate(self.root), [])
+
+    def test_new_control_weakening_quotations_are_allowed(self) -> None:
+        for phrase in AFFIRMATIVE_WEAKENING:
+            with self.subTest(phrase=phrase):
+                (self.package / "README.md").write_text(
+                    "# Synthetic profile\n\n"
+                    f'The prohibited statement "{phrase}" is quoted for review.\n',
+                    encoding="utf-8",
+                )
+                self.assertEqual(validate_profiles.validate(self.root), [])
+
+    def test_affirmative_weakening_after_denial_is_rejected(self) -> None:
+        for text in (
+            "This profile does not supersede GOV-100, but it lowers GOV-100.",
+            (
+                "Core controls are not marked inapplicable, yet GOV-100 need "
+                "not be applied."
+            ),
+        ):
+            with self.subTest(text=text):
+                (self.package / "README.md").write_text(
+                    f"# Synthetic profile\n\n{text}\n",
+                    encoding="utf-8",
+                )
+                self.assert_has_error("prohibited control weakening language")
+
+    def test_non_negating_not_only_does_not_mask_weakening(self) -> None:
+        (self.package / "README.md").write_text(
+            "# Synthetic profile\n\n"
+            "This profile not only supersedes GOV-100.\n",
+            encoding="utf-8",
+        )
+        self.assert_has_error("prohibited control weakening language")
 
     def test_profile_local_maturity_scale_is_rejected(self) -> None:
         package = self.loaded_package()
@@ -1098,6 +1245,7 @@ class ProfileValidationTests(unittest.TestCase):
             ("This profile is certified.", "certification"),
             ("This profile is equivalent.", "equivalence"),
             ("This profile is endorsed.", "endorsement"),
+            *AFFIRMATIVE_CLAIMS,
         ):
             with self.subTest(text=text):
                 (self.package / "README.md").write_text(
@@ -1206,6 +1354,281 @@ class ProfileValidationTests(unittest.TestCase):
                     f'The phrase "{phrase}" is prohibited.\n',
                     encoding="utf-8",
                 )
+                self.assertEqual(validate_profiles.validate(self.root), [])
+
+    def test_new_profile_claim_denials_are_allowed(self) -> None:
+        for text in (
+            "This profile does not satisfy Cyber Essentials requirements.",
+            "This profile does not ensure legal compliance.",
+            "This profile does not confer certification eligibility.",
+            "This profile does not have NCSC approval.",
+            "Legal compliance is not ensured by this profile.",
+            "Certification eligibility is not conferred by this profile.",
+            "NCSC approval is not held by this profile.",
+            (
+                "Cyber Essentials provision A does not map to GOV-100 or "
+                "supply its external outcome."
+            ),
+            (
+                "GOV-100 is not mapped from Cyber Essentials provision A and "
+                "the external outcome is not imported."
+            ),
+            (
+                "GOV-100 does not support or satisfy Cyber Essentials "
+                "provision A."
+            ),
+            (
+                "Cyber Essentials provision A is not supported or satisfied "
+                "by GOV-100."
+            ),
+            (
+                "Cyber Essentials provision A does not support or satisfy "
+                "GOV-100."
+            ),
+            (
+                "GOV-100 is not supported or satisfied by Cyber Essentials "
+                "provision A."
+            ),
+            "This profile does not meet Cyber Essentials requirements.",
+            "This profile does not comply with Cyber Essentials.",
+            (
+                "This profile does not qualify the organization for "
+                "certification."
+            ),
+            "This profile is not approved by NCSC.",
+            "NCSC does not approve this profile.",
+        ):
+            with self.subTest(text=text):
+                (self.package / "README.md").write_text(
+                    f"# Synthetic profile\n\n{text}\n",
+                    encoding="utf-8",
+                )
+                self.assertEqual(validate_profiles.validate(self.root), [])
+
+    def test_new_profile_claim_quotations_and_discussion_are_allowed(self) -> None:
+        for text, _ in AFFIRMATIVE_CLAIMS:
+            with self.subTest(text=text):
+                (self.package / "README.md").write_text(
+                    "# Synthetic profile\n\n"
+                    f'The prohibited assertion "{text}" is quoted for review.\n',
+                    encoding="utf-8",
+                )
+                self.assertEqual(validate_profiles.validate(self.root), [])
+                (self.package / "README.md").write_text(
+                    "# Synthetic profile\n\n"
+                    "The prohibited assertion that "
+                    f"{text.rstrip('.')} is discussed here.\n",
+                    encoding="utf-8",
+                )
+                self.assertEqual(validate_profiles.validate(self.root), [])
+
+    def test_metalinguistic_context_is_bounded_to_the_assertion(self) -> None:
+        for text in (
+            (
+                "The claim that this profile ensures legal compliance is "
+                "prohibited."
+            ),
+            (
+                "This text discusses without asserting that this profile "
+                "ensures legal compliance."
+            ),
+        ):
+            with self.subTest(text=text):
+                (self.package / "README.md").write_text(
+                    f"# Synthetic profile\n\n{text}\n",
+                    encoding="utf-8",
+                )
+                self.assertEqual(validate_profiles.validate(self.root), [])
+        for text, expected in (
+            (
+                (
+                    "The prohibited statement is discussed here, but this "
+                    "profile ensures legal compliance."
+                ),
+                "prohibited assertion 'compliance'",
+            ),
+            (
+                (
+                    "The prohibited statement is discussed here, but this "
+                    "profile supersedes GOV-100."
+                ),
+                "prohibited control weakening language",
+            ),
+        ):
+            with self.subTest(text=text):
+                (self.package / "README.md").write_text(
+                    f"# Synthetic profile\n\n{text}\n",
+                    encoding="utf-8",
+                )
+                self.assert_has_error(expected)
+
+    def test_repeated_subject_after_or_is_not_inherited_denial(self) -> None:
+        (self.package / "README.md").write_text(
+            "# Synthetic profile\n\n"
+            "This profile does not ensure legal compliance or this profile "
+            "confers certification eligibility.\n",
+            encoding="utf-8",
+        )
+        self.assert_has_error(
+            "prohibited assertion 'certification eligibility'"
+        )
+
+    def test_affirmative_claim_after_denied_clause_is_rejected(self) -> None:
+        for text, expected in (
+            (
+                (
+                    "This profile does not ensure legal compliance, but it "
+                    "confers certification eligibility."
+                ),
+                "certification eligibility",
+            ),
+            (
+                (
+                    "Cyber Essentials provision A does not map to GOV-100, "
+                    "yet it supplies its external outcome."
+                ),
+                "external outcome import",
+            ),
+        ):
+            with self.subTest(text=text):
+                (self.package / "README.md").write_text(
+                    f"# Synthetic profile\n\n{text}\n",
+                    encoding="utf-8",
+                )
+                self.assert_has_error(f"prohibited assertion '{expected}'")
+
+    def test_non_negating_not_only_does_not_mask_claim(self) -> None:
+        (self.package / "README.md").write_text(
+            "# Synthetic profile\n\n"
+            "This profile not only satisfies Cyber Essentials requirements.\n",
+            encoding="utf-8",
+        )
+        self.assert_has_error("prohibited assertion 'scheme satisfaction'")
+
+    def test_mapping_leakage_is_checked_in_every_json_narrative(self) -> None:
+        package = self.loaded_package()
+        package.documents["profile"]["nested"] = {
+            "arbitrary_narrative": (
+                "Cyber Essentials provision A maps to GOV-100 and imports "
+                "its external outcome."
+            )
+        }
+        diagnostics = validate_profiles.claim_diagnostics(package)
+        self.assertTrue(
+            any(
+                "prohibited assertion 'imported mapping relationship'" in item
+                for item in diagnostics
+            ),
+            diagnostics,
+        )
+        self.assertTrue(
+            any(
+                "prohibited assertion 'external outcome import'" in item
+                for item in diagnostics
+            ),
+            diagnostics,
+        )
+
+    def test_source_boundary_rejects_excluded_authority_claims(self) -> None:
+        profile = self.load_component("profile.json")
+        profile["source_boundary"]["excluded_sources"] = ["UK GDPR"]
+        self.write_component("profile.json", profile)
+        for text in (
+            "UK GDPR is the authority for this profile selection.",
+            "This profile selection is governed by UK GDPR.",
+        ):
+            with self.subTest(text=text):
+                (self.package / "README.md").write_text(
+                    f"# Synthetic profile\n\n{text}\n",
+                    encoding="utf-8",
+                )
+                self.assert_has_error("prohibited source authority language")
+
+    def test_source_boundary_uses_declared_generic_excluded_source(self) -> None:
+        profile = self.load_component("profile.json")
+        profile["source_boundary"]["excluded_sources"] = ["Acme Code"]
+        self.write_component("profile.json", profile)
+        (self.package / "README.md").write_text(
+            "# Synthetic profile\n\n"
+            "Acme Code is the authority for this profile selection.\n",
+            encoding="utf-8",
+        )
+        self.assert_has_error("prohibited source authority language")
+
+    def test_source_authority_denials_and_discussion_are_allowed(self) -> None:
+        profile = self.load_component("profile.json")
+        profile["source_boundary"]["excluded_sources"] = ["UK GDPR"]
+        self.write_component("profile.json", profile)
+        for text in (
+            "UK GDPR is not the authority for this profile selection.",
+            "This profile selection is not governed by UK GDPR.",
+            (
+                'The prohibited assertion "UK GDPR is the authority for this '
+                'profile selection" is quoted for review.'
+            ),
+            (
+                "The assertion that UK GDPR is the authority for this profile "
+                "selection is prohibited and discussed here."
+            ),
+        ):
+            with self.subTest(text=text):
+                (self.package / "README.md").write_text(
+                    f"# Synthetic profile\n\n{text}\n",
+                    encoding="utf-8",
+                )
+                self.assertEqual(validate_profiles.validate(self.root), [])
+
+    def test_source_authority_after_denied_clause_is_rejected(self) -> None:
+        profile = self.load_component("profile.json")
+        profile["source_boundary"]["excluded_sources"] = ["UK GDPR"]
+        self.write_component("profile.json", profile)
+        (self.package / "README.md").write_text(
+            "# Synthetic profile\n\n"
+            "UK GDPR is not the authority for this profile title, but it is "
+            "the authority for this profile selection.\n",
+            encoding="utf-8",
+        )
+        self.assert_has_error("prohibited source authority language")
+        (self.package / "README.md").write_text(
+            "# Synthetic profile\n\n"
+            "The prohibited statement is discussed here, but UK GDPR is the "
+            "authority for this profile selection.\n",
+            encoding="utf-8",
+        )
+        self.assert_has_error("prohibited source authority language")
+
+    def test_unrelated_claim_denial_does_not_mask_source_authority(self) -> None:
+        profile = self.load_component("profile.json")
+        profile["source_boundary"]["excluded_sources"] = ["UK GDPR"]
+        self.write_component("profile.json", profile)
+        (self.package / "README.md").write_text(
+            "# Synthetic profile\n\n"
+            "This profile does not ensure legal compliance or UK GDPR is the "
+            "authority for this profile selection.\n",
+            encoding="utf-8",
+        )
+        self.assert_has_error("prohibited source authority language")
+
+    def test_risk_source_basis_must_resolve(self) -> None:
+        self.write_closed_trace_fixture()
+        for source_basis in ("UK GDPR", "ESAF-1100 controls GOV-100"):
+            with self.subTest(source_basis=source_basis):
+                document = self.load_component("risk-overlays.json")
+                document["risks"][0]["source_basis"] = [source_basis]
+                self.write_component("risk-overlays.json", document)
+                self.assert_has_error(
+                    f"unresolved risk source basis {source_basis!r}"
+                )
+
+    def test_risk_source_basis_accepts_controls_and_permitted_sources(
+        self,
+    ) -> None:
+        control_id = self.write_closed_trace_fixture()
+        for source_basis in (control_id, "ESAF"):
+            with self.subTest(source_basis=source_basis):
+                document = self.load_component("risk-overlays.json")
+                document["risks"][0]["source_basis"] = [source_basis]
+                self.write_component("risk-overlays.json", document)
                 self.assertEqual(validate_profiles.validate(self.root), [])
 
     def test_semantic_diagnostic_ordering_is_stable(self) -> None:

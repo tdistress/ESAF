@@ -229,22 +229,170 @@ PROFILE_ASSERTION_PATTERNS = (
             re.IGNORECASE,
         ),
     ),
+    (
+        "scheme satisfaction",
+        re.compile(
+            r"\b(?:Cyber Essentials|external scheme)\s+requirements?\s+"
+            r"(?:is|are|was|were)\s+(?:not\s+)?"
+            r"(?P<outcome>satisfied)\b"
+            r"|\b(?:satisf(?:y|ies|ied|ying))\s+"
+            r"(?P<active_outcome>(?:Cyber Essentials|external scheme)\s+"
+            r"requirements?)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "scheme satisfaction",
+        re.compile(
+            r"\b(?:meet(?:s|ing)?|met)\s+"
+            r"(?P<outcome>(?:Cyber Essentials|external scheme)\s+"
+            r"requirements?)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "compliance",
+        re.compile(
+            r"\b(?:ensur(?:e|es|ed|ing))\s+"
+            r"(?P<outcome>legal compliance)\b"
+            r"|\blegal compliance\s+(?:is|was)\s+(?:not\s+)?"
+            r"(?P<passive_outcome>ensured)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "compliance",
+        re.compile(
+            r"\b(?:compl(?:y|ies|ied|ying))\s+with\s+"
+            r"(?P<outcome>Cyber Essentials|an?\s+external scheme)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "certification eligibility",
+        re.compile(
+            r"\b(?:confer(?:s|red|ring)?)\s+"
+            r"(?P<outcome>certification eligibility)\b"
+            r"|\bcertification eligibility\s+(?:is|was)\s+(?:not\s+)?"
+            r"(?P<passive_outcome>conferred)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "certification eligibility",
+        re.compile(
+            r"\b(?:qualif(?:y|ies|ied|ying))\s+"
+            r"(?P<outcome>(?:the\s+)?organization\s+for\s+certification)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "named-authority approval",
+        re.compile(
+            r"\b(?:has|have|had)\s+(?:no\s+)?"
+            r"(?P<outcome>NCSC approval)\b"
+            r"|\bNCSC approval\s+(?:is|was)\s+(?:not\s+)?"
+            r"(?P<passive_outcome>held)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "named-authority approval",
+        re.compile(
+            r"\b(?:this|the)\s+profile\s+(?:is|was)\s+(?:not\s+)?"
+            r"(?P<outcome>approved\s+by\s+NCSC)\b"
+            r"|\bNCSC\s+(?:does\s+(?:not\s+)?)?"
+            r"(?P<active_outcome>approves?\s+(?:this|the)\s+profile)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "imported mapping relationship",
+        re.compile(
+            r"\b(?:Cyber Essentials|external scheme)\s+"
+            r"(?:provision|requirement|control)\s+[A-Za-z0-9.-]+\s+"
+            r"(?:does\s+(?:not\s+)?)?"
+            r"(?P<outcome>maps?\s+to\s+"
+            r"[A-Z][A-Z0-9]{1,15}-[0-9]{3})\b"
+            r"|\b[A-Z][A-Z0-9]{1,15}-[0-9]{3}\s+"
+            r"(?:is|was)\s+(?:not\s+)?"
+            r"(?P<passive_outcome>mapped\s+from)\s+"
+            r"(?:Cyber Essentials|external scheme)\s+"
+            r"(?:provision|requirement|control)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "imported mapping relationship",
+        re.compile(
+            r"\b(?:Cyber Essentials|external scheme)\s+"
+            r"(?:provision|requirement|control)\s+[A-Za-z0-9.-]+\s+"
+            r"(?:does\s+(?:not\s+)?)?"
+            r"(?P<outcome>(?:supports?|satisf(?:y|ies))"
+            r"(?:\s+or\s+(?:support|satisfy))?)\s+"
+            r"[A-Z][A-Z0-9]{1,15}-[0-9]{3}\b"
+            r"|\b[A-Z][A-Z0-9]{1,15}-[0-9]{3}\s+"
+            r"(?:is|was)\s+(?:not\s+)?"
+            r"(?P<passive_outcome>(?:supported|satisfied)"
+            r"(?:\s+or\s+(?:supported|satisfied))?)\s+by\s+"
+            r"(?:Cyber Essentials|external scheme)\s+"
+            r"(?:provision|requirement|control)\s+[A-Za-z0-9.-]+\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "imported mapping relationship",
+        re.compile(
+            r"\b[A-Z][A-Z0-9]{1,15}-[0-9]{3}\s+"
+            r"(?:does\s+(?:not\s+)?)?"
+            r"(?P<outcome>(?:supports?|satisf(?:y|ies))"
+            r"(?:\s+or\s+(?:support|satisfy))?)\s+"
+            r"(?:Cyber Essentials|external scheme)\s+"
+            r"(?:provision|requirement|control)\s+[A-Za-z0-9.-]+\b"
+            r"|\b(?:Cyber Essentials|external scheme)\s+"
+            r"(?:provision|requirement|control)\s+[A-Za-z0-9.-]+\s+"
+            r"(?:is|was)\s+(?:not\s+)?"
+            r"(?P<passive_outcome>(?:supported|satisfied)"
+            r"(?:\s+or\s+(?:supported|satisfied))?)\s+by\s+"
+            r"[A-Z][A-Z0-9]{1,15}-[0-9]{3}\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "external outcome import",
+        re.compile(
+            r"\b(?:suppl(?:y|ies|ied)|import(?:s|ed|ing)?"
+            r"|incorporat(?:e|es|ed|ing)|transfer(?:s|red|ring)?)\s+"
+            r"(?P<outcome>(?:its|the|an?)\s+external outcomes?)\b"
+            r"|\bexternal outcomes?(?:\s+and\s+evidence)?\s+"
+            r"(?:is|are|was|were)\s+(?:not\s+)?"
+            r"(?P<passive_outcome>imported|supplied|incorporated|transferred)\b",
+            re.IGNORECASE,
+        ),
+    ),
 )
 WEAKENING_PREDICATE = re.compile(
     r"\b(?:replace(?:s|d|ing)?|alter(?:s|ed|ing)?|relax(?:es|ed|ing)?"
     r"|waiv(?:e|es|ed|ing)|weaken(?:s|ed|ing)?|narrow(?:s|ed|ing)?"
-    r"|mark(?:s|ed|ing)?|mak(?:e|es|ing))\b",
+    r"|mark(?:s|ed|ing)?|mak(?:e|es|ing)|supersed(?:e|es|ed|ing)"
+    r"|lower(?:s|ed|ing)?|render(?:s|ed|ing)?|exempt(?:s|ed|ing)?"
+    r"|inapplicable|need\s+not\s+(?:be\s+)?appl(?:y|ied)"
+    r"|no\s+longer\s+appl(?:y|ies|ied)"
+    r"|does\s+not\s+appl(?:y|ies|ied))\b",
     re.IGNORECASE,
 )
 PASSIVE_WEAKENING = re.compile(
-    r"\b(?P<control>(?:core\s+)?controls?(?:\s+requirements?)?)\s+"
+    r"\b(?P<control>(?:(?:core\s+)?controls?(?:\s+requirements?)?"
+    r"|[A-Z][A-Z0-9]{1,15}-[0-9]{3}))\s+"
     r"(?:is|are|was|were)\s+(?:not\s+)?"
     r"(?P<predicate>replaced|waived|made\s+optional|altered|relaxed|weakened|"
-    r"narrowed|marked\s+inapplicable)\b",
+    r"narrowed|marked\s+inapplicable|superseded|lowered|rendered\s+optional|"
+    r"inapplicable)\b",
     re.IGNORECASE,
 )
 CONTROL_LANGUAGE = re.compile(
-    r"\b(?:core\s+)?controls?(?:\s+requirements?)?\b",
+    r"\b(?:(?:core\s+)?controls?(?:\s+requirements?)?"
+    r"|[A-Z][A-Z0-9]{1,15}-[0-9]{3})\b",
     re.IGNORECASE,
 )
 PREDICATE_NEGATION = re.compile(
@@ -255,6 +403,66 @@ PREDICATE_NEGATION = re.compile(
 POST_PREDICATE_NEGATION = re.compile(
     r"\b(?:no|neither)\b",
     re.IGNORECASE,
+)
+METALINGUISTIC_REFERENCE = re.compile(
+    r"\b(?:phrase|words?|text|statement|assertion|claim)\b",
+    re.IGNORECASE,
+)
+METALINGUISTIC_DISCUSSION = re.compile(
+    r"\b(?:discuss(?:ed|es|ing)?|quot(?:e|es|ed|ing)"
+    r"|prohibit(?:ed|s|ing)?|reject(?:ed|s|ing)?|avoid(?:ed|s|ing)?)\b",
+    re.IGNORECASE,
+)
+ASSERTIVE_DISCUSSION = re.compile(
+    r"\b(?:assert(?:s|ed|ing)?|affirm(?:s|ed|ing)?"
+    r"|confirm(?:s|ed|ing)?|claim(?:s|ed|ing))\b",
+    re.IGNORECASE,
+)
+SOURCE_AUTHORITY_PATTERNS = (
+    re.compile(
+        r"\b(?P<source>UK GDPR|Cyber Essentials|NCSC)\s+"
+        r"(?:is|was)\s+(?:not\s+)?"
+        r"(?P<outcome>the\s+authority\s+for\s+(?:this|the)\s+profile\s+"
+        r"(?:selection|scope|requirement))\b",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"\b(?:this|the)\s+profile\s+(?:selection|scope|requirement)\s+"
+        r"(?:is|was)\s+(?:not\s+)?"
+        r"(?P<outcome>governed\s+by)\s+"
+        r"(?P<source>UK GDPR|Cyber Essentials|NCSC)\b",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"\b(?P<source>UK GDPR|Cyber Essentials|NCSC)\s+"
+        r"(?:does|did)\s+(?:not\s+)?"
+        r"(?P<outcome>govern)\s+(?:this|the)\s+profile\s+"
+        r"(?:selection|scope|requirement)\b",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"\b(?P<source>it|that source)\s+"
+        r"(?:is|was)\s+(?:not\s+)?"
+        r"(?P<outcome>the\s+authority\s+for\s+(?:this|the)\s+profile\s+"
+        r"(?:selection|scope|requirement))\b",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"\b(?P<source>[A-Z][A-Za-z0-9&.-]+"
+        r"(?:\s+[A-Z][A-Za-z0-9&.-]+){0,5})\s+"
+        r"(?:is|was)\s+(?:not\s+)?"
+        r"(?P<outcome>the\s+authority\s+for\s+(?:this|the)\s+profile\s+"
+        r"(?:selection|scope|requirement))\b",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"\b(?:this|the)\s+profile\s+(?:selection|scope|requirement)\s+"
+        r"(?:is|was)\s+(?:not\s+)?"
+        r"(?P<outcome>governed\s+by)\s+"
+        r"(?P<source>[A-Z][A-Za-z0-9&.-]+"
+        r"(?:\s+[A-Z][A-Za-z0-9&.-]+){0,5})\b",
+        re.IGNORECASE,
+    ),
 )
 
 
@@ -1412,9 +1620,104 @@ def proposition_bounds(
 
 def predicate_is_negated(prefix: str) -> bool:
     """Return whether a proposition prefix directly negates its predicate."""
+    semantic_prefix = re.sub(
+        r"\bnot\s+(?=(?:only|merely|just)\b)",
+        "",
+        prefix,
+        flags=re.IGNORECASE,
+    )
     return bool(
-        DIRECT_NEGATED_PROPOSITION.search(prefix)
-        or PREDICATE_NEGATION.search(prefix)
+        DIRECT_NEGATED_PROPOSITION.search(semantic_prefix)
+        or PREDICATE_NEGATION.search(semantic_prefix)
+    )
+
+
+def assertion_outcome_start(match: re.Match[str]) -> int:
+    """Return the asserted outcome start for an alternative-rich pattern."""
+    for name in ("outcome", "active_outcome", "passive_outcome"):
+        if name in match.re.groupindex and match.start(name) >= 0:
+            return match.start(name)
+    return match.start()
+
+
+def occurrence_is_metalinguistic(
+    text: str, start: int, end: int
+) -> bool:
+    """Recognize bounded quotations and explicit non-assertive discussion."""
+    if quoted_occurrence_is_metalinguistic(text, start, end):
+        return True
+    sentence_start = max(
+        text.rfind(delimiter, 0, start) for delimiter in ".!?;\r\n"
+    )
+    sentence_end_candidates = [
+        position
+        for delimiter in ".!?;\r\n"
+        if (position := text.find(delimiter, end)) >= 0
+    ]
+    sentence_end = (
+        min(sentence_end_candidates)
+        if sentence_end_candidates
+        else len(text)
+    )
+    context = text[sentence_start + 1 : sentence_end]
+    relative_start = start - sentence_start - 1
+    relative_end = end - sentence_start - 1
+    related_discussion = any(
+        match.start() >= relative_end
+        or (
+            match.end() <= relative_start
+            and not PROFILE_PROPOSITION_BOUNDARY.search(
+                context[match.end() : relative_start]
+            )
+        )
+        for match in METALINGUISTIC_DISCUSSION.finditer(context)
+    )
+    affirmative_assertion = False
+    for match in ASSERTIVE_DISCUSSION.finditer(context):
+        boundaries = list(
+            PROFILE_PROPOSITION_BOUNDARY.finditer(
+                context, 0, match.start()
+            )
+        )
+        clause_start = boundaries[-1].end() if boundaries else 0
+        prefix = context[clause_start : match.start()]
+        if predicate_is_negated(prefix) or re.search(
+            r"\bwithout\s*$", prefix, re.IGNORECASE
+        ):
+            continue
+        affirmative_assertion = True
+        break
+    return bool(
+        METALINGUISTIC_REFERENCE.search(context)
+        and related_discussion
+        and not affirmative_assertion
+    )
+
+
+def clause_has_negated_profile_assertion(clause: str) -> bool:
+    """Return whether one clause contains a directly denied claim family."""
+    for _, pattern in PROFILE_ASSERTION_PATTERNS:
+        for match in pattern.finditer(clause):
+            outcome_start = assertion_outcome_start(match)
+            if predicate_is_negated(clause[:outcome_start]):
+                return True
+    return False
+
+
+def coordinated_assertion_is_negated(
+    text: str,
+    match: re.Match[str],
+    preceding: list[re.Match[str]],
+) -> bool:
+    """Propagate denial only across an adjacent assertion joined by or/nor."""
+    if not preceding or preceding[-1].group(0).casefold() not in {"or", "nor"}:
+        return False
+    if text[preceding[-1].end() : match.start()].strip():
+        return False
+    previous_end = preceding[-1].start()
+    previous_start = preceding[-2].end() if len(preceding) > 1 else 0
+    return clause_has_negated_profile_assertion(
+        text[previous_start:previous_end]
     )
 
 
@@ -1440,29 +1743,36 @@ def contains_affirmative_weakening(text: str) -> bool:
         proposition = text[start:end]
         relative_predicate = weakening.start() - start
         prefix = proposition[:relative_predicate]
-        suffix = proposition[relative_predicate:]
-        control = CONTROL_LANGUAGE.search(suffix)
+        control = CONTROL_LANGUAGE.search(proposition)
         if control is None:
             continue
         word = weakening.group(0).casefold()
-        after_control = suffix[control.end() :]
-        if word.startswith("mak") and not re.search(
-            r"\boptional\b", after_control, re.IGNORECASE
+        if word.startswith(("mak", "render")) and not re.search(
+            r"\boptional\b", proposition, re.IGNORECASE
         ):
             continue
         if word.startswith("mark") and not re.search(
-            r"\binapplicable\b", after_control, re.IGNORECASE
+            r"\binapplicable\b", proposition, re.IGNORECASE
         ):
             continue
-        between = suffix[weakening.end() - weakening.start() : control.start()]
+        relative_control_start = control.start()
+        relative_control_end = control.end()
+        between_start = min(
+            relative_predicate + len(weakening.group(0)),
+            relative_control_end,
+        )
+        between_end = max(relative_predicate, relative_control_start)
+        between = proposition[between_start:between_end]
         if (
             predicate_is_negated(prefix)
             or POST_PREDICATE_NEGATION.search(between)
             or coordinated_weakening_is_negated(text, preceding)
         ):
             continue
-        if quoted_occurrence_is_metalinguistic(
-            text, weakening.start(), weakening.start() + control.end()
+        occurrence_start = min(weakening.start(), start + control.start())
+        occurrence_end = max(weakening.end(), start + control.end())
+        if occurrence_is_metalinguistic(
+            text, occurrence_start, occurrence_end
         ):
             continue
         return True
@@ -1471,7 +1781,7 @@ def contains_affirmative_weakening(text: str) -> bool:
         start, _, _ = proposition_bounds(text, predicate_start)
         if predicate_is_negated(text[start:predicate_start]):
             continue
-        if quoted_occurrence_is_metalinguistic(
+        if occurrence_is_metalinguistic(
             text, weakening.start(), weakening.end()
         ):
             continue
@@ -1484,16 +1794,146 @@ def asserted_profile_phrases(text: str) -> list[str]:
     assertions = list(asserted_prohibited_phrases(text))
     for label, pattern in PROFILE_ASSERTION_PATTERNS:
         for match in pattern.finditer(text):
-            outcome_start = match.start("outcome")
-            start, _, _ = proposition_bounds(text, outcome_start)
-            if predicate_is_negated(text[start:outcome_start]):
+            outcome_start = assertion_outcome_start(match)
+            start, _, preceding = proposition_bounds(text, outcome_start)
+            if (
+                predicate_is_negated(text[start:outcome_start])
+                or coordinated_assertion_is_negated(
+                    text, match, preceding
+                )
+            ):
                 continue
-            if quoted_occurrence_is_metalinguistic(
+            if occurrence_is_metalinguistic(
                 text, match.start(), match.end()
             ):
                 continue
             assertions.append(label)
     return assertions
+
+
+def source_authority_is_excluded(
+    source: str, excluded_sources: list[str]
+) -> bool:
+    """Resolve a bounded named source to an excluded source declaration."""
+    normalized_source = source.casefold()
+    normalized_exclusions = " ".join(excluded_sources).casefold()
+    if any(
+        normalized_source in excluded.casefold()
+        or excluded.casefold() in normalized_source
+        for excluded in excluded_sources
+    ):
+        return True
+    if normalized_source == "uk gdpr":
+        return bool(
+            re.search(
+                r"\b(?:laws?|regulations?|regulatory)\b",
+                normalized_exclusions,
+            )
+        )
+    if normalized_source in {"cyber essentials", "ncsc"}:
+        return bool(
+            re.search(
+                r"\b(?:assurance|certification|external|mapping|substantive)\b",
+                normalized_exclusions,
+            )
+        )
+    return False
+
+
+def matched_source_is_excluded(
+    text: str,
+    match: re.Match[str],
+    excluded_sources: list[str],
+) -> bool:
+    """Resolve a named source or bounded pronoun antecedent."""
+    source = match.group("source")
+    if source.casefold() not in {"it", "that source"}:
+        return source_authority_is_excluded(source, excluded_sources)
+    return any(
+        source_authority_is_excluded(candidate, excluded_sources)
+        for candidate in ("UK GDPR", "Cyber Essentials", "NCSC")
+        if re.search(
+            rf"\b{re.escape(candidate)}\b",
+            text[: match.start()],
+            re.IGNORECASE,
+        )
+    )
+
+
+def contains_affirmative_source_authority(
+    text: str, excluded_sources: list[str]
+) -> bool:
+    """Reject affirmative authority claims for declared excluded sources."""
+    for pattern in SOURCE_AUTHORITY_PATTERNS:
+        for match in pattern.finditer(text):
+            if not matched_source_is_excluded(
+                text, match, excluded_sources
+            ):
+                continue
+            outcome_start = match.start("outcome")
+            start, _, _ = proposition_bounds(text, outcome_start)
+            if predicate_is_negated(text[start:outcome_start]):
+                continue
+            if occurrence_is_metalinguistic(
+                text, match.start(), match.end()
+            ):
+                continue
+            return True
+    return False
+
+
+def source_boundary_diagnostics(
+    package: ProfilePackage, controls: set[str]
+) -> list[str]:
+    """Validate declared risk sources and excluded-authority assertions."""
+    diagnostics: list[str] = []
+    profile = package.documents["profile"]
+    boundary = profile.get("source_boundary")
+    permitted_sources: list[str] = []
+    excluded_sources: list[str] = []
+    if isinstance(boundary, dict):
+        permitted_sources = strings(boundary.get("permitted_sources"))
+        excluded_sources = strings(boundary.get("excluded_sources"))
+    allowed_source_basis = controls | set(permitted_sources)
+    risks = objects(package.documents["risk_overlays"].get("risks"))
+    relative = f"{package.relative}/{PACKAGE_FILES['risk_overlays']}"
+    for risk_index, risk in enumerate(risks):
+        for source_index, source_basis in enumerate(
+            strings(risk.get("source_basis"))
+        ):
+            if source_basis not in allowed_source_basis:
+                diagnostics.append(
+                    f"{relative}: document.risks[{risk_index}]."
+                    f"source_basis[{source_index}]: unresolved risk "
+                    f"source basis {source_basis!r}"
+                )
+
+    for component, document in sorted(package.documents.items()):
+        filename = PACKAGE_FILES[component]
+        component_relative = f"{package.relative}/{filename}"
+        for location, _, value in walk_json(document):
+            if not isinstance(value, str):
+                continue
+            if contains_affirmative_source_authority(
+                value, excluded_sources
+            ):
+                diagnostics.append(
+                    f"{component_relative}: {location}: prohibited source "
+                    "authority language"
+                )
+
+    readme_relative = f"{package.relative}/{PACKAGE_FILES['readme']}"
+    try:
+        readme = (package.directory / PACKAGE_FILES["readme"]).read_text(
+            encoding="utf-8"
+        )
+    except UnicodeError:
+        return sorted(set(diagnostics))
+    if contains_affirmative_source_authority(readme, excluded_sources):
+        diagnostics.append(
+            f"{readme_relative}: prohibited source authority language"
+        )
+    return sorted(set(diagnostics))
 
 
 def claim_diagnostics(package: ProfilePackage) -> list[str]:
@@ -1565,6 +2005,11 @@ def validate(root: Path = ROOT) -> list[str]:
                 continue
             diagnostics.extend(semantic_diagnostics(root, package))
             diagnostics.extend(traceability_diagnostics(package))
+            diagnostics.extend(
+                source_boundary_diagnostics(
+                    package, control_population(root)
+                )
+            )
             diagnostics.extend(claim_diagnostics(package))
         return sorted(set(diagnostics))
     except OperationalProfileError:

@@ -114,6 +114,23 @@ class ProfileSchemaTests(unittest.TestCase):
             )
             self.assertFalse(schema["additionalProperties"])
 
+    def test_risk_source_basis_schema_declares_closed_reference_semantics(
+        self,
+    ) -> None:
+        schema = json.loads(
+            (SCHEMA_ROOT / "risk-overlays.schema.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        source_basis = schema["$defs"]["risk"]["properties"]["source_basis"]
+        self.assertEqual(
+            source_basis["items"]["$ref"],
+            "#/$defs/sourceBasisReference",
+        )
+        description = schema["$defs"]["sourceBasisReference"]["description"]
+        self.assertIn("authoritative ESAF control identifier", description)
+        self.assertIn("manifest permitted source identifier", description)
+
     def test_control_status_and_profile_lifecycle_are_closed(self) -> None:
         selections = json.loads(
             (SCHEMA_ROOT / "control-selections.schema.json").read_text(
@@ -756,7 +773,6 @@ class UKPilotProfileTests(unittest.TestCase):
                 conditions["UNSUPPORTED-MODEL-PRESENCE"]["question"],
             ),
             ("risk circumstances", risk["circumstances"]),
-            ("risk source basis", " ".join(risk["source_basis"])),
             ("overlay statement", overlay["statement"]),
             ("overlay strengthening", overlay["strengthening_rationale"]),
             ("evidence purpose", expectation["purpose"]),
@@ -786,6 +802,60 @@ class UKPilotProfileTests(unittest.TestCase):
             risk["circumstances"].lower(),
         )
         self.assertIn("MOD-150", " ".join(risk["source_basis"]))
+
+    def test_risk_source_basis_uses_only_closed_source_references(self) -> None:
+        expected = {
+            "EXPOSED-INFRASTRUCTURE-RISK": {
+                "APP-150",
+                "API-110",
+                "INF-110",
+                "INF-120",
+                "INF-140",
+                "INF-150",
+                "MON-110",
+            },
+            "PRIVILEGED-CONFIGURATION-RISK": {
+                "IAM-120",
+                "IAM-130",
+                "IAM-150",
+                "INF-110",
+                "INF-130",
+                "MON-150",
+            },
+            "LIFECYCLE-DISPOSITION-RISK": {
+                "MOD-150",
+                "INF-120",
+                "ARC-150",
+            },
+            "UNTRUSTED-SOFTWARE-RISK": {
+                "MOD-110",
+                "APP-140",
+                "API-120",
+                "INF-120",
+            },
+            "EXTERNAL-RESPONSIBILITY-RISK": {
+                "API-140",
+                "CMP-120",
+                "ARC-140",
+                "IAM-130",
+                "IAM-150",
+            },
+            "INCOMPLETE-SCOPE-EVIDENCE-RISK": {
+                "GOV-130",
+                "RSK-110",
+                "IAM-100",
+                "MOD-100",
+                "INF-100",
+                "AUD-120",
+                "ARC-110",
+                "ESAF",
+            },
+        }
+        risks = self.records_by_id("risk-overlays.json", "risks", "risk_id")
+        self.assertEqual(set(risks), set(expected))
+        for risk_id, source_basis in expected.items():
+            with self.subTest(risk=risk_id):
+                self.assertEqual(set(risks[risk_id]["source_basis"]), source_basis)
 
     def test_selection_rationales_do_not_embed_stale_condition_counts(self) -> None:
         selections = self.load("control-selections.json")["selections"]
