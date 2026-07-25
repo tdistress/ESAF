@@ -36,11 +36,14 @@ evidence used to resolve each applicable condition.
 Each condition shall be answered independently from its exact factual
 question. A broader fact does not supply a narrower one: external-provider use
 does not by itself establish an external AI service integration or a material
-E1 through E4 dependency, a downloaded external model does not by itself
-establish an external AI service integration, generic internet exposure does
-not by itself establish an internet-reachable API or an internet-reachable AI
-application interface or privileged application workflow, software intake does
-not establish model, application-artifact, infrastructure-dependency, or
+E1 through E4 dependency. A downloaded or otherwise acquired external model
+without a live service integration does not satisfy the external AI
+service-integration condition. Generic internet exposure does not by itself
+establish an internet-reachable API or an internet-reachable AI-use interface
+or workflow. An administration-only console or path does not satisfy the
+internet-reachable AI application-interface condition and remains covered by
+the separate exposed-boundary IAM and infrastructure chain. Software intake
+does not establish model, application-artifact, infrastructure-dependency, or
 callable-tool use, and an unsupported technology does not by itself establish
 that a model is unsupported or that a capability must be retired.
 

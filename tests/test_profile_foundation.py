@@ -591,17 +591,208 @@ class UKPilotProfileTests(unittest.TestCase):
                 self.assertTrue(condition["question"].strip())
                 self.assertTrue(condition["resolution_evidence"].strip())
 
-    def test_admin_console_only_does_not_activate_app_150(self) -> None:
-        self.assertEqual(
-            ["INTERNET-REACHABLE-AI-APPLICATION-INTERFACE"],
-            self.selection("APP-150")["activation_conditions"],
+    def test_applicability_contract_pins_positive_and_negative_semantics(
+        self,
+    ) -> None:
+        overlays = self.records_by_id(
+            "risk-overlays.json", "overlays", "overlay_id"
+        )
+        expectations = self.records_by_id(
+            "evidence-expectations.json", "expectations", "expectation_id"
+        )
+        readme = (UK_PROFILE_ROOT / "README.md").read_text(encoding="utf-8")
+        contracts = (
+            {
+                "control_id": "APP-150",
+                "condition_id": (
+                    "INTERNET-REACHABLE-AI-APPLICATION-INTERFACE"
+                ),
+                "overlay_id": "AI-APPLICATION-INTERFACE-OVERLAY",
+                "expectation_id": "AI-APPLICATION-INTERFACE-EVIDENCE",
+                "records": (
+                    (
+                        "condition question",
+                        (
+                            "user or automated client",
+                            "invokes or interacts with the assessed ai "
+                            "capability",
+                            "privileged ai-use workflow",
+                            "excluding a console or path used only to "
+                            "administer supporting systems",
+                        ),
+                    ),
+                    (
+                        "resolution evidence",
+                        (
+                            "ai-use",
+                            "privileged",
+                            "administration-only consoles or paths",
+                            "excluded",
+                        ),
+                    ),
+                    (
+                        "selection rationale",
+                        (
+                            "user or automated client",
+                            "invokes or interacts with the assessed ai "
+                            "capability",
+                            "administration-only console or path is excluded "
+                            "from this condition",
+                        ),
+                    ),
+                    (
+                        "overlay statement",
+                        (
+                            "user or automated client",
+                            "invokes or interacts with the assessed ai "
+                            "capability",
+                            "privileged ai-use workflow",
+                        ),
+                    ),
+                    (
+                        "overlay strengthening",
+                        (
+                            "administration-only console or path is excluded "
+                            "from this condition",
+                        ),
+                    ),
+                    (
+                        "evidence purpose",
+                        (
+                            "ai-use interfaces and workflows",
+                            "user or automated client",
+                            "invoked or interacted with the assessed ai "
+                            "capability",
+                        ),
+                    ),
+                    (
+                        "evidence strengthening",
+                        (
+                            "administration-only consoles or paths",
+                            "excluded",
+                        ),
+                    ),
+                    (
+                        "readme",
+                        (
+                            "administration-only console or path does not "
+                            "satisfy the internet-reachable ai "
+                            "application-interface condition",
+                        ),
+                    ),
+                ),
+            },
+            {
+                "control_id": "API-140",
+                "condition_id": "EXTERNAL-AI-SERVICE-INTEGRATION",
+                "overlay_id": "EXTERNAL-AI-SERVICE-INTEGRATION-OVERLAY",
+                "expectation_id": (
+                    "EXTERNAL-AI-SERVICE-INTEGRATION-EVIDENCE"
+                ),
+                "records": (
+                    (
+                        "condition question",
+                        ("live external ai service integration",),
+                    ),
+                    (
+                        "resolution evidence",
+                        (
+                            "downloaded or otherwise acquired external "
+                            "model artifact",
+                            "without a live service boundary",
+                            "excluded",
+                        ),
+                    ),
+                    (
+                        "selection rationale",
+                        (
+                            "live external ai service integration",
+                            "downloaded or otherwise acquired external "
+                            "model artifact without a live service boundary "
+                            "is excluded from this condition",
+                        ),
+                    ),
+                    (
+                        "overlay statement",
+                        ("live external ai service integration",),
+                    ),
+                    (
+                        "overlay strengthening",
+                        (
+                            "downloaded or otherwise acquired external "
+                            "model artifact without a live service boundary "
+                            "is excluded from this condition",
+                        ),
+                    ),
+                    (
+                        "evidence purpose",
+                        ("live external ai service integration",),
+                    ),
+                    (
+                        "evidence strengthening",
+                        (
+                            "downloaded or otherwise acquired external "
+                            "model artifacts without a live service boundary",
+                            "excluded",
+                        ),
+                    ),
+                    (
+                        "readme",
+                        (
+                            "downloaded or otherwise acquired external model "
+                            "without a live service integration does not "
+                            "satisfy the external ai service-integration "
+                            "condition",
+                        ),
+                    ),
+                ),
+            },
         )
 
-    def test_downloaded_external_model_does_not_activate_api_140(self) -> None:
-        self.assertEqual(
-            ["EXTERNAL-AI-SERVICE-INTEGRATION"],
-            self.selection("API-140")["activation_conditions"],
-        )
+        for contract in contracts:
+            condition = self.condition(contract["condition_id"])
+            selection = self.selection(contract["control_id"])
+            overlay = overlays[contract["overlay_id"]]
+            expectation = expectations[contract["expectation_id"]]
+            texts = {
+                "condition question": condition["question"],
+                "resolution evidence": condition["resolution_evidence"],
+                "selection rationale": selection["rationale"],
+                "overlay statement": overlay["statement"],
+                "overlay strengthening": overlay["strengthening_rationale"],
+                "evidence purpose": expectation["purpose"],
+                "evidence strengthening": expectation["strengthening"],
+                "readme": readme,
+            }
+            with self.subTest(
+                control=contract["control_id"],
+                assertion="condition identifier",
+            ):
+                self.assertEqual(
+                    selection["activation_conditions"],
+                    [contract["condition_id"]],
+                )
+                self.assertEqual(
+                    overlay["activation_conditions"],
+                    [contract["condition_id"]],
+                )
+                self.assertEqual(
+                    expectation["activation_conditions"],
+                    [contract["condition_id"]],
+                )
+            for record_name, phrases in contract["records"]:
+                for phrase in phrases:
+                    with self.subTest(
+                        control=contract["control_id"],
+                        record=record_name,
+                        phrase=phrase,
+                    ):
+                        self.assertIn(
+                            phrase,
+                            " ".join(
+                                texts[record_name].lower().split()
+                            ),
+                        )
 
     def test_api_150_material_dependency_condition_is_purely_factual(
         self,

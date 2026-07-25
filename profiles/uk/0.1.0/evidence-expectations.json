@@ -34,7 +34,7 @@
     },
     {
       "expectation_id": "AI-APPLICATION-INTERFACE-EVIDENCE",
-      "purpose": "Demonstrate which AI application interfaces and privileged application workflows were reachable from the internet during the assessment period and whether their misuse, abuse, resource-protection, detection, and response safeguards operated as recorded.",
+      "purpose": "Demonstrate which AI-use interfaces and workflows, including privileged AI-use workflows, were reachable from the internet during the assessment period, how a user or automated client invoked or interacted with the assessed AI capability, and whether misuse, abuse, resource-protection, detection, and response safeguards operated as recorded.",
       "artifact_class": "Configuration, record, metric, technical_test, and log evidence records",
       "control_ids": [
         "APP-150"
@@ -54,7 +54,7 @@
       "activation_conditions": [
         "INTERNET-REACHABLE-AI-APPLICATION-INTERFACE"
       ],
-      "strengthening": "All seven ESAF-1500 evidence-quality attributes remain required; the listed attributes are profile-specific emphases. The evidence shall reconcile the current AI application-interface and privileged-workflow inventory to external reachability results, abuse cases, thresholds, limits, monitoring rules, alerts, response procedures, representative misuse and exhaustion tests, and accountable application-owner records."
+      "strengthening": "All seven ESAF-1500 evidence-quality attributes remain required; the listed attributes are profile-specific emphases. The evidence shall reconcile the current AI-use interface and workflow inventory to external reachability results, invocation or interaction records, abuse cases, thresholds, limits, monitoring rules, alerts, response procedures, representative misuse and exhaustion tests, and accountable application-owner records; administration-only consoles or paths shall be separately identified and excluded."
     },
     {
       "expectation_id": "INTERNET-REACHABLE-API-EVIDENCE",
@@ -320,7 +320,7 @@
       "activation_conditions": [
         "EXTERNAL-AI-SERVICE-INTEGRATION"
       ],
-      "strengthening": "All seven ESAF-1500 evidence-quality attributes remain required; the listed attributes are profile-specific emphases. The evidence shall reconcile the complete live external AI service-integration population to due diligence, contracts, architecture and data flows, technical configuration, shared-responsibility records, assurance, monitoring, continuity, and exit records for the assessment period."
+      "strengthening": "All seven ESAF-1500 evidence-quality attributes remain required; the listed attributes are profile-specific emphases. The evidence shall reconcile the complete live external AI service-integration population to due diligence, contracts, architecture and data flows, technical configuration, shared-responsibility records, assurance, monitoring, continuity, and exit records for the assessment period; downloaded or otherwise acquired external model artifacts without a live service boundary shall be separately identified and excluded."
     },
     {
       "expectation_id": "MATERIAL-DEPENDENCY-EVIDENCE",

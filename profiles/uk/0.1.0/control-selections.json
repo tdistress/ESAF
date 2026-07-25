@@ -209,7 +209,7 @@
     {
       "control_id": "APP-150",
       "status": "conditional",
-      "rationale": "An internet-reachable AI application interface or privileged application workflow materially increases automated abuse, denial-of-service, consumption, adversarial behavior, and policy-evasion opportunities, activating dedicated misuse controls.",
+      "rationale": "An internet-reachable interface or workflow through which a user or automated client invokes or interacts with the assessed AI capability, including a privileged AI-use workflow, materially increases automated abuse, denial-of-service, consumption, adversarial behavior, and policy-evasion opportunities. An administration-only console or path is excluded from this condition.",
       "activation_conditions": [
         "INTERNET-REACHABLE-AI-APPLICATION-INTERFACE"
       ]
@@ -243,7 +243,7 @@
     {
       "control_id": "API-140",
       "status": "conditional",
-      "rationale": "A live external AI service integration requires service-specific security, privacy, data-use, retention, availability, change, incident, assurance, continuity, and exit expectations for the integration.",
+      "rationale": "A live external AI service integration requires service-specific security, privacy, data-use, retention, availability, change, incident, assurance, continuity, and exit expectations for the integration. A downloaded or otherwise acquired external model artifact without a live service boundary is excluded from this condition.",
       "activation_conditions": [
         "EXTERNAL-AI-SERVICE-INTEGRATION"
       ]

@@ -199,7 +199,7 @@
     },
     {
       "overlay_id": "AI-APPLICATION-INTERFACE-OVERLAY",
-      "statement": "When an internet-originated connection can reach an AI application interface or privileged application workflow, the organization shall identify representative misuse, adversarial, automated-abuse, denial-of-service, excessive-consumption, and repeated policy-evasion scenarios, apply risk-proportionate constraints, and test detection and response.",
+      "statement": "When an internet-originated connection can reach an interface or workflow through which a user or automated client invokes or interacts with the assessed AI capability, including a privileged AI-use workflow, the organization shall identify representative misuse, adversarial, automated-abuse, denial-of-service, excessive-consumption, and repeated policy-evasion scenarios, apply risk-proportionate constraints, and test detection and response.",
       "applicability": "conditional",
       "activation_conditions": [
         "INTERNET-REACHABLE-AI-APPLICATION-INTERFACE"
@@ -213,7 +213,7 @@
       "evidence_expectation_ids": [
         "AI-APPLICATION-INTERFACE-EVIDENCE"
       ],
-      "strengthening_rationale": "The overlay focuses APP-150's existing misuse, abuse, resource-protection, and response outcomes on the exact internet-reachable AI application-interface and privileged-workflow population without treating a reachable administration console or other exposed infrastructure as an AI application interface."
+      "strengthening_rationale": "The overlay focuses APP-150's existing misuse, abuse, resource-protection, and response outcomes on the exact internet-reachable AI-use interface and workflow population. An administration-only console or path is excluded from this condition and remains covered by the separate exposed-boundary IAM and infrastructure chain."
     },
     {
       "overlay_id": "INTERNET-REACHABLE-API-OVERLAY",
@@ -414,7 +414,7 @@
       "evidence_expectation_ids": [
         "EXTERNAL-AI-SERVICE-INTEGRATION-EVIDENCE"
       ],
-      "strengthening_rationale": "The overlay focuses API-140's external-service integration outcomes on the exact live service-integration population without treating acquisition of an externally sourced model or another non-service provider dependency as an active integration."
+      "strengthening_rationale": "The overlay focuses API-140's external-service integration outcomes on the exact live service-integration population. A downloaded or otherwise acquired external model artifact without a live service boundary is excluded from this condition."
     },
     {
       "overlay_id": "MATERIAL-DEPENDENCY-OVERLAY",

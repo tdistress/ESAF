@@ -24,10 +24,10 @@
     },
     {
       "condition_id": "INTERNET-REACHABLE-AI-APPLICATION-INTERFACE",
-      "question": "Can an internet-originated connection reach an AI application interface or privileged application workflow within the assessed boundary?",
+      "question": "Can an internet-originated connection reach an interface or workflow through which a user or automated client invokes or interacts with the assessed AI capability, including a privileged AI-use workflow but excluding a console or path used only to administer supporting systems?",
       "answer_type": "boolean",
       "activates_when": true,
-      "resolution_evidence": "Current AI application and privileged-workflow inventories reconciled to routing, firewall, endpoint-discovery, external reachability-test, and accountable application-owner evidence."
+      "resolution_evidence": "Current AI-use interface and workflow inventories, including privileged AI-use workflows, reconciled to routing, firewall, endpoint-discovery, external reachability tests, invocation or interaction records, and accountable application-owner evidence, with administration-only consoles or paths separately identified and excluded."
     },
     {
       "condition_id": "EXTERNAL-PROVIDER-USE",
@@ -41,7 +41,7 @@
       "question": "Does the assessed capability use a live external AI service integration for a hosted model, AI SaaS, API, tool, data-processing service, evaluation service, or subcontracted operation?",
       "answer_type": "boolean",
       "activates_when": true,
-      "resolution_evidence": "Current integration and service inventories reconciled to architecture and data-flow records, endpoint and connector configuration, contracts, service descriptions, and accountable technical-owner evidence."
+      "resolution_evidence": "Current integration and service inventories reconciled to architecture and data-flow records, endpoint and connector configuration, contracts, service descriptions, and accountable technical-owner evidence, with each downloaded or otherwise acquired external model artifact without a live service boundary separately identified and excluded."
     },
     {
       "condition_id": "MATERIAL-EXTERNAL-PROVIDER-DEPENDENCY",
