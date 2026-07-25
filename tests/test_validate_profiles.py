@@ -1631,6 +1631,185 @@ class ProfileValidationTests(unittest.TestCase):
                 self.write_component("risk-overlays.json", document)
                 self.assertEqual(validate_profiles.validate(self.root), [])
 
+    def test_later_metalinguistic_discussion_does_not_mask_assertions(
+        self,
+    ) -> None:
+        profile = self.load_component("profile.json")
+        profile["source_boundary"]["excluded_sources"] = ["UK GDPR"]
+        self.write_component("profile.json", profile)
+        for text, expected in (
+            (
+                (
+                    "This profile ensures legal compliance, and the document "
+                    "discusses that claim."
+                ),
+                "prohibited assertion 'compliance'",
+            ),
+            (
+                (
+                    "This profile supersedes GOV-100, and the document "
+                    "discusses that statement."
+                ),
+                "prohibited control weakening language",
+            ),
+            (
+                (
+                    "UK GDPR is the authority for this profile selection, and "
+                    "the document discusses that claim."
+                ),
+                "prohibited source authority language",
+            ),
+        ):
+            with self.subTest(text=text):
+                (self.package / "README.md").write_text(
+                    f"# Synthetic profile\n\n{text}\n", encoding="utf-8"
+                )
+                self.assert_has_error(expected)
+
+    def test_additional_control_weakening_forms_are_rejected(self) -> None:
+        for text in (
+            "GOV-100 is optional under this profile.",
+            "Core controls are optional under this profile.",
+            "GOV-100 shall not apply under this profile.",
+            "GOV-100 is not required under this profile.",
+            "This profile makes GOV-100 not required.",
+            "Under this profile, optional controls include GOV-100.",
+        ):
+            with self.subTest(text=text):
+                (self.package / "README.md").write_text(
+                    f"# Synthetic profile\n\n{text}\n", encoding="utf-8"
+                )
+                self.assert_has_error("prohibited control weakening language")
+
+    def test_additional_weakening_denials_and_discussion_are_allowed(self) -> None:
+        for text in (
+            "GOV-100 is not optional under this profile.",
+            "Core controls are not optional under this profile.",
+            "GOV-100 shall apply under this profile.",
+            'The phrase "GOV-100 is not required" is prohibited.',
+            (
+                "The claim that GOV-100 is not required is discussed and "
+                "rejected."
+            ),
+        ):
+            with self.subTest(text=text):
+                (self.package / "README.md").write_text(
+                    f"# Synthetic profile\n\n{text}\n", encoding="utf-8"
+                )
+                self.assertEqual(validate_profiles.validate(self.root), [])
+
+    def test_additional_assurance_claim_forms_are_rejected(self) -> None:
+        for text, expected in (
+            ("This profile guarantees legal compliance.", "compliance"),
+            (
+                "This profile makes the organization eligible for certification.",
+                "certification eligibility",
+            ),
+            ("This profile certifies the organization.", "certification"),
+            (
+                "This profile has received NCSC approval.",
+                "named-authority approval",
+            ),
+            (
+                "NCSC has approved this profile.",
+                "named-authority approval",
+            ),
+        ):
+            with self.subTest(text=text):
+                (self.package / "README.md").write_text(
+                    f"# Synthetic profile\n\n{text}\n", encoding="utf-8"
+                )
+                self.assert_has_error(f"prohibited assertion '{expected}'")
+
+    def test_additional_assurance_denials_and_discussion_are_allowed(self) -> None:
+        for text in (
+            "This profile does not guarantee legal compliance.",
+            (
+                "This profile does not make the organization eligible for "
+                "certification."
+            ),
+            "This profile does not certify the organization.",
+            "This profile has not received NCSC approval.",
+            "NCSC has not approved this profile.",
+            (
+                'The phrase "This profile guarantees legal compliance" is '
+                "prohibited."
+            ),
+        ):
+            with self.subTest(text=text):
+                (self.package / "README.md").write_text(
+                    f"# Synthetic profile\n\n{text}\n", encoding="utf-8"
+                )
+                self.assertEqual(validate_profiles.validate(self.root), [])
+
+    def test_reordered_mapping_and_general_authority_are_rejected(self) -> None:
+        profile = self.load_component("profile.json")
+        profile["source_boundary"]["excluded_sources"] = [
+            "UK GDPR",
+            "NCSC",
+            "Cyber Essentials",
+        ]
+        self.write_component("profile.json", profile)
+        for text, expected in (
+            (
+                "Requirement A of Cyber Essentials maps to GOV-100.",
+                "prohibited assertion 'imported mapping relationship'",
+            ),
+            (
+                "Cyber Essentials provision A has a mapping to GOV-100.",
+                "prohibited assertion 'imported mapping relationship'",
+            ),
+            (
+                "NCSC provision A maps to GOV-100.",
+                "prohibited assertion 'imported mapping relationship'",
+            ),
+            (
+                "UK GDPR governs this profile.",
+                "prohibited source authority language",
+            ),
+        ):
+            with self.subTest(text=text):
+                (self.package / "README.md").write_text(
+                    f"# Synthetic profile\n\n{text}\n", encoding="utf-8"
+                )
+                self.assert_has_error(expected)
+
+    def test_reordered_mapping_and_general_authority_denials_are_allowed(
+        self,
+    ) -> None:
+        profile = self.load_component("profile.json")
+        profile["source_boundary"]["excluded_sources"] = [
+            "UK GDPR",
+            "NCSC",
+            "Cyber Essentials",
+        ]
+        self.write_component("profile.json", profile)
+        for text in (
+            "Requirement A of Cyber Essentials does not map to GOV-100.",
+            "Cyber Essentials provision A has no mapping to GOV-100.",
+            "NCSC provision A does not map to GOV-100.",
+            "UK GDPR does not govern this profile.",
+        ):
+            with self.subTest(text=text):
+                (self.package / "README.md").write_text(
+                    f"# Synthetic profile\n\n{text}\n", encoding="utf-8"
+                )
+                self.assertEqual(validate_profiles.validate(self.root), [])
+
+    def test_polarity_is_bound_to_the_assertion_head(self) -> None:
+        (self.package / "README.md").write_text(
+            "# Synthetic profile\n\n"
+            "It is not surprising that this profile ensures legal compliance.\n",
+            encoding="utf-8",
+        )
+        self.assert_has_error("prohibited assertion 'compliance'")
+        (self.package / "README.md").write_text(
+            "# Synthetic profile\n\n"
+            "GOV-100 is superseded by no profile.\n",
+            encoding="utf-8",
+        )
+        self.assertEqual(validate_profiles.validate(self.root), [])
+
     def test_semantic_diagnostic_ordering_is_stable(self) -> None:
         selections = self.load_component("control-selections.json")
         duplicate = dict(selections["selections"][0])

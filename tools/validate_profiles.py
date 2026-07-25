@@ -309,7 +309,7 @@ PROFILE_ASSERTION_PATTERNS = (
     (
         "imported mapping relationship",
         re.compile(
-            r"\b(?:Cyber Essentials|external scheme)\s+"
+            r"\b(?:Cyber Essentials|NCSC|external scheme)\s+"
             r"(?:provision|requirement|control)\s+[A-Za-z0-9.-]+\s+"
             r"(?:does\s+(?:not\s+)?)?"
             r"(?P<outcome>maps?\s+to\s+"
@@ -317,7 +317,7 @@ PROFILE_ASSERTION_PATTERNS = (
             r"|\b[A-Z][A-Z0-9]{1,15}-[0-9]{3}\s+"
             r"(?:is|was)\s+(?:not\s+)?"
             r"(?P<passive_outcome>mapped\s+from)\s+"
-            r"(?:Cyber Essentials|external scheme)\s+"
+            r"(?:Cyber Essentials|NCSC|external scheme)\s+"
             r"(?:provision|requirement|control)\b",
             re.IGNORECASE,
         ),
@@ -325,7 +325,7 @@ PROFILE_ASSERTION_PATTERNS = (
     (
         "imported mapping relationship",
         re.compile(
-            r"\b(?:Cyber Essentials|external scheme)\s+"
+            r"\b(?:Cyber Essentials|NCSC|external scheme)\s+"
             r"(?:provision|requirement|control)\s+[A-Za-z0-9.-]+\s+"
             r"(?:does\s+(?:not\s+)?)?"
             r"(?P<outcome>(?:supports?|satisf(?:y|ies))"
@@ -335,7 +335,7 @@ PROFILE_ASSERTION_PATTERNS = (
             r"(?:is|was)\s+(?:not\s+)?"
             r"(?P<passive_outcome>(?:supported|satisfied)"
             r"(?:\s+or\s+(?:supported|satisfied))?)\s+by\s+"
-            r"(?:Cyber Essentials|external scheme)\s+"
+            r"(?:Cyber Essentials|NCSC|external scheme)\s+"
             r"(?:provision|requirement|control)\s+[A-Za-z0-9.-]+\b",
             re.IGNORECASE,
         ),
@@ -347,9 +347,9 @@ PROFILE_ASSERTION_PATTERNS = (
             r"(?:does\s+(?:not\s+)?)?"
             r"(?P<outcome>(?:supports?|satisf(?:y|ies))"
             r"(?:\s+or\s+(?:support|satisfy))?)\s+"
-            r"(?:Cyber Essentials|external scheme)\s+"
+            r"(?:Cyber Essentials|NCSC|external scheme)\s+"
             r"(?:provision|requirement|control)\s+[A-Za-z0-9.-]+\b"
-            r"|\b(?:Cyber Essentials|external scheme)\s+"
+            r"|\b(?:Cyber Essentials|NCSC|external scheme)\s+"
             r"(?:provision|requirement|control)\s+[A-Za-z0-9.-]+\s+"
             r"(?:is|was)\s+(?:not\s+)?"
             r"(?P<passive_outcome>(?:supported|satisfied)"
@@ -367,6 +367,56 @@ PROFILE_ASSERTION_PATTERNS = (
             r"|\bexternal outcomes?(?:\s+and\s+evidence)?\s+"
             r"(?:is|are|was|were)\s+(?:not\s+)?"
             r"(?P<passive_outcome>imported|supplied|incorporated|transferred)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "compliance",
+        re.compile(
+            r"\bguarantee(?:s|d|ing)?\s+"
+            r"(?P<outcome>legal compliance)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "certification eligibility",
+        re.compile(
+            r"\bmake(?:s|d|ing)?\s+"
+            r"(?P<outcome>(?:the\s+)?organization\s+eligible\s+for\s+"
+            r"certification)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "certification",
+        re.compile(
+            r"\bcertif(?:y|ies|ied|ying)\s+"
+            r"(?P<outcome>(?:the\s+)?organization)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "named-authority approval",
+        re.compile(
+            r"\b(?:this|the)\s+profile\s+has\s+(?:not\s+)?"
+            r"(?P<outcome>received\s+NCSC approval)\b"
+            r"|\bNCSC\s+has\s+(?:not\s+)?"
+            r"(?P<active_outcome>approved\s+(?:this|the)\s+profile)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "imported mapping relationship",
+        re.compile(
+            r"\b(?:requirement|provision|control)\s+[A-Za-z0-9.-]+\s+of\s+"
+            r"(?:Cyber Essentials|NCSC|external scheme)\s+"
+            r"(?:does\s+(?:not\s+)?)?"
+            r"(?P<outcome>maps?\s+to\s+"
+            r"[A-Z][A-Z0-9]{1,15}-[0-9]{3})\b"
+            r"|\b(?:Cyber Essentials|NCSC|external scheme)\s+"
+            r"(?:provision|requirement|control)\s+[A-Za-z0-9.-]+\s+"
+            r"has\s+(?:no\s+)?(?P<active_outcome>a\s+mapping\s+to\s+"
+            r"[A-Z][A-Z0-9]{1,15}-[0-9]{3})\b",
             re.IGNORECASE,
         ),
     ),
@@ -389,6 +439,30 @@ PASSIVE_WEAKENING = re.compile(
     r"narrowed|marked\s+inapplicable|superseded|lowered|rendered\s+optional|"
     r"inapplicable)\b",
     re.IGNORECASE,
+)
+ADJECTIVAL_WEAKENING = (
+    re.compile(
+        r"\b(?P<control>(?:(?:core\s+)?controls?"
+        r"|[A-Z][A-Z0-9]{1,15}-[0-9]{3}))\s+"
+        r"(?:is|are)\s+(?P<predicate>optional|not\s+required)\b",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"\b(?P<control>[A-Z][A-Z0-9]{1,15}-[0-9]{3})\s+"
+        r"(?P<predicate>shall\s+not\s+apply)\b",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"\bmake(?:s|d|ing)?\s+"
+        r"(?P<control>[A-Z][A-Z0-9]{1,15}-[0-9]{3})\s+"
+        r"(?P<predicate>not\s+required)\b",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"\b(?P<predicate>optional)\s+controls?\s+include(?:s)?\s+"
+        r"(?P<control>[A-Z][A-Z0-9]{1,15}-[0-9]{3})\b",
+        re.IGNORECASE,
+    ),
 )
 CONTROL_LANGUAGE = re.compile(
     r"\b(?:(?:core\s+)?controls?(?:\s+requirements?)?"
@@ -461,6 +535,13 @@ SOURCE_AUTHORITY_PATTERNS = (
         r"(?P<outcome>governed\s+by)\s+"
         r"(?P<source>[A-Z][A-Za-z0-9&.-]+"
         r"(?:\s+[A-Z][A-Za-z0-9&.-]+){0,5})\b",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"\b(?P<source>[A-Z][A-Za-z0-9&.-]+"
+        r"(?:\s+[A-Z][A-Za-z0-9&.-]+){0,5})\s+"
+        r"(?:does\s+(?:not\s+)?)?"
+        r"(?P<outcome>governs?\s+(?:this|the)\s+profile)\b",
         re.IGNORECASE,
     ),
 )
@@ -1626,10 +1707,17 @@ def predicate_is_negated(prefix: str) -> bool:
         prefix,
         flags=re.IGNORECASE,
     )
-    return bool(
-        DIRECT_NEGATED_PROPOSITION.search(semantic_prefix)
-        or PREDICATE_NEGATION.search(semantic_prefix)
-    )
+    if DIRECT_NEGATED_PROPOSITION.search(semantic_prefix):
+        return True
+    if re.search(r"\bno\s*$", semantic_prefix, re.IGNORECASE):
+        return True
+    for match in PREDICATE_NEGATION.finditer(semantic_prefix):
+        trailing_words = re.findall(
+            r"\b[\w'â€™-]+\b", semantic_prefix[match.end() :]
+        )
+        if len(trailing_words) <= 3:
+            return True
+    return False
 
 
 def assertion_outcome_start(match: re.Match[str]) -> int:
@@ -1663,7 +1751,12 @@ def occurrence_is_metalinguistic(
     relative_start = start - sentence_start - 1
     relative_end = end - sentence_start - 1
     related_discussion = any(
-        match.start() >= relative_end
+        (
+            match.start() >= relative_end
+            and not PROFILE_PROPOSITION_BOUNDARY.search(
+                context[relative_end : match.start()]
+            )
+        )
         or (
             match.end() <= relative_start
             and not PROFILE_PROPOSITION_BOUNDARY.search(
@@ -1775,6 +1868,12 @@ def contains_affirmative_weakening(text: str) -> bool:
             text, occurrence_start, occurrence_end
         ):
             continue
+        if re.search(
+            r"\bby\s+no\s+profile\b",
+            proposition[relative_predicate + len(weakening.group(0)) :],
+            re.IGNORECASE,
+        ):
+            continue
         return True
     for weakening in PASSIVE_WEAKENING.finditer(text):
         predicate_start = weakening.start("predicate")
@@ -1785,7 +1884,22 @@ def contains_affirmative_weakening(text: str) -> bool:
             text, weakening.start(), weakening.end()
         ):
             continue
+        if re.search(
+            r"\bby\s+no\s+profile\b",
+            text[weakening.end() : proposition_bounds(
+                text, predicate_start
+            )[1]],
+            re.IGNORECASE,
+        ):
+            continue
         return True
+    for pattern in ADJECTIVAL_WEAKENING:
+        for weakening in pattern.finditer(text):
+            if occurrence_is_metalinguistic(
+                text, weakening.start(), weakening.end()
+            ):
+                continue
+            return True
     return False
 
 
