@@ -184,6 +184,58 @@ class ProfileFoundationTests(unittest.TestCase):
         )
         self.assertIn("registry lifecycle", reference["description"].lower())
 
+    def test_expected_status_has_composite_normative_semantics(self) -> None:
+        contract = re.sub(r"\s+", " ", text())
+        self.assertIn(
+            "`expected_status` shall mean the expected mapping snapshot "
+            "editorial status before approval or the relied-upon governed "
+            "registry state after approval.",
+            contract,
+        )
+        self.assertIn(
+            "Draft and Reviewed mapping snapshots shall have no registry "
+            "lifecycle events.",
+            contract,
+        )
+        self.assertIn(
+            "Approved mapping snapshots and later governed registry states "
+            "shall have the applicable governed registry lifecycle events.",
+            contract,
+        )
+
+    def test_original_design_uses_editorial_and_lifecycle_terms_consistently(
+        self,
+    ) -> None:
+        design = re.sub(r"\s+", " ", DESIGN.read_text(encoding="utf-8"))
+        self.assertNotIn("three separate Draft United Kingdom mapping sets", design)
+        self.assertNotIn("Those mapping sets remain Draft", design)
+        self.assertNotIn(
+            "three Draft mapping sets and their lifecycle states",
+            design,
+        )
+        self.assertIn("three separate United Kingdom mapping snapshots", design)
+        self.assertIn("retain Draft editorial status", design)
+        self.assertIn("governed registry records", design)
+
+    def test_design_risk_lenses_do_not_claim_external_evidentiary_support(
+        self,
+    ) -> None:
+        design = re.sub(r"\s+", " ", DESIGN.read_text(encoding="utf-8"))
+        self.assertIn(
+            "supported by ESAF within the lifecycle-only external-reference "
+            "boundary",
+            design,
+        )
+        self.assertIn(
+            "does not treat lifecycle metadata as substantive external "
+            "evidentiary support",
+            design,
+        )
+        self.assertNotIn(
+            "supported by ESAF and the pinned Cyber Essentials source boundary",
+            design,
+        )
+
     def test_rsk_100_rationale_does_not_pin_a_stale_risk_count(self) -> None:
         selections = json.loads(
             (UK_PROFILE_ROOT / "control-selections.json").read_text(

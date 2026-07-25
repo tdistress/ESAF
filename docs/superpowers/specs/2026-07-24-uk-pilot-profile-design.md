@@ -55,15 +55,16 @@ requires profiles to reuse those semantics and prohibits profile-local
 replacement maturity scales.
 
 The repository currently has no normative ESAF-1800 contract, profile schemas,
-profile validator, or published pilot. It does have three separate Draft
-United Kingdom mapping sets:
+profile validator, or published pilot. It does have three separate United
+Kingdom mapping snapshots:
 
 - `uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0`;
 - `uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0`; and
 - `uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0`.
 
-Those mapping sets remain Draft and await qualified review. The pilot may
-identify their existence and lifecycle state, but shall not depend on their
+Those mapping snapshots retain Draft editorial status and await qualified
+review. Their governed registry records have no lifecycle events. The pilot
+may identify those separate facts, but shall not depend on the mapping
 relationships being approved. Profile publication therefore remains
 independent from the qualified-review workstream.
 
@@ -90,7 +91,7 @@ The pilot package shall contain:
 | `control-selections.json` | Complete 91-control applicability ledger. |
 | `risk-overlays.json` | Additional-risk records and their strengthening overlays. |
 | `evidence-expectations.json` | Profile-specific expectations that reuse ESAF-1500. |
-| `external-references.json` | Immutable references to the three Draft mapping sets and their lifecycle states. |
+| `external-references.json` | Immutable references to the three Draft mapping snapshots and their governed registry records. |
 
 This structure separates stable contract concerns from pilot content and keeps
 future profiles from inheriting United Kingdom-specific material. A monolithic
@@ -231,8 +232,8 @@ Essentials certification requirement.
 
 ## 9. Additional risks and overlays
 
-The pilot may define technical risk lenses supported by ESAF and the pinned
-Cyber Essentials source boundary, including:
+The pilot may define technical risk lenses supported by ESAF within the
+lifecycle-only external-reference boundary, including:
 
 - exposed AI infrastructure and boundary protection;
 - insecure configuration and privileged access;
@@ -240,6 +241,9 @@ Cyber Essentials source boundary, including:
 - malware and untrusted software paths;
 - cloud and third-party responsibility gaps; and
 - incomplete scope, asset, and evidence coverage.
+
+That boundary does not treat lifecycle metadata as substantive external
+evidentiary support for a risk lens.
 
 Each risk record shall identify:
 
