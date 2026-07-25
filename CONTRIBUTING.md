@@ -61,6 +61,28 @@ python tools/validate_assessment.py --check
 
 ---
 
+## Profile Contributions
+
+Profile contract changes shall follow [ESAF-1800](profiles/ESAF-1800.md).
+Create or edit a versioned package only under
+`profiles/<jurisdiction>/<version>/`, preserve the required package
+components, and keep profile-specific requirements separate from the meanings
+of core ESAF controls and ESAF-1500 assessment semantics.
+
+Profiles shall remain Draft until the applicable technical, editorial, scope,
+and overclaiming reviews and publication gates are complete. Profiles shall
+not claim compliance, certification, equivalence, endorsement, legal
+sufficiency, external approval, or production readiness.
+
+Profile contract, schema, package, index, or validator changes shall include:
+
+```shell
+python -m unittest tests.test_profile_foundation tests.test_validate_profiles -v
+python tools/validate_profiles.py --check
+```
+
+---
+
 ## Review Process
 
 Proposed changes should move through:

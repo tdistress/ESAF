@@ -344,6 +344,74 @@ class ProfileSchemaTests(unittest.TestCase):
                 )
 
 
+class ProfileRepositoryIntegrationTests(unittest.TestCase):
+    def read(self, relative: str) -> str:
+        return (ROOT / relative).read_text(encoding="utf-8")
+
+    def test_publication_indexes_link_contract_and_draft_uk_pilot(self) -> None:
+        expected_links = {
+            "README.md": (
+                "profiles/ESAF-1800.md",
+                "profiles/uk/0.1.0/README.md",
+            ),
+            "framework/ESAF-1000.md": (
+                "../profiles/ESAF-1800.md",
+                "../profiles/uk/0.1.0/README.md",
+            ),
+            "profiles/README.md": (
+                "ESAF-1800.md",
+                "uk/0.1.0/README.md",
+            ),
+        }
+        for path, links in expected_links.items():
+            document = self.read(path)
+            for link in links:
+                with self.subTest(path=path, link=link):
+                    self.assertRegex(
+                        document,
+                        rf"\[[^\]]+\]\({re.escape(link)}\)",
+                    )
+
+    def test_profile_authoring_guidance_is_draft_non_claim_and_validated(
+        self,
+    ) -> None:
+        for path in ("CONTRIBUTING.md", "profiles/README.md"):
+            document = self.read(path)
+            normalized = re.sub(r"\s+", " ", document)
+            with self.subTest(path=path, requirement="editing"):
+                self.assertIn("profiles/<jurisdiction>/<version>/", document)
+            with self.subTest(path=path, requirement="draft"):
+                self.assertIn("shall remain Draft", document)
+            with self.subTest(path=path, requirement="non-claim"):
+                self.assertIn(
+                    "shall not claim compliance, certification, equivalence, "
+                    "endorsement, legal sufficiency, external approval, or "
+                    "production readiness",
+                    normalized,
+                )
+            with self.subTest(path=path, requirement="validation"):
+                self.assertIn(
+                    "python tools/validate_profiles.py --check",
+                    document,
+                )
+
+    def test_tools_readme_documents_profile_validation(self) -> None:
+        document = self.read("tools/README.md")
+        self.assertIn("## Profile validation", document)
+        self.assertIn("python tools/validate_profiles.py --check", document)
+        self.assertIn("Draft profile packages", document)
+
+    def test_catalog_workflow_filters_and_validates_profiles(self) -> None:
+        workflow = self.read(".github/workflows/catalog-validation.yml")
+        self.assertEqual(workflow.count('- "profiles/**"'), 2)
+        self.assertEqual(workflow.count('- "tools/validate_profiles.py"'), 2)
+        self.assertEqual(workflow.count("- name: Validate profiles"), 1)
+        self.assertEqual(
+            workflow.count("run: python tools/validate_profiles.py --check"),
+            1,
+        )
+
+
 class UKPilotProfileTests(unittest.TestCase):
     def load(self, filename: str) -> dict[str, object]:
         path = UK_PROFILE_ROOT / filename

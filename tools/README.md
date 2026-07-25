@@ -13,6 +13,19 @@ python tools/validate_assessment.py --check
 
 The validator does not score organizations.
 
+## Profile validation
+
+Validate ESAF-1800 schemas, Draft profile packages, control selections,
+traceability, lifecycle-bound external references, and non-claim boundaries:
+
+```shell
+python tools/validate_profiles.py --check
+```
+
+The validator fails closed on malformed, incomplete, or semantically invalid
+packages. It does not establish legal sufficiency, external-scheme assurance,
+or production readiness.
+
 ## Control catalog validation
 
 Install the development dependencies and validate the catalog:
