@@ -13,6 +13,10 @@
 - Canonical profile identifier: `uk--jurisdiction-profile--0.1.0`.
 - Schema version and profile version: `0.1.0`.
 - Profile lifecycle status: `draft`; target ESAF release: `v0.5-beta`.
+- A package resides at `profiles/<profile-domain>/<version>/`; the profile
+  domain identifies its jurisdiction, industry, sector, or risk context.
+  Component paths are package-relative, while component `$schema` values are
+  document-relative schema locators.
 - Reusable schemas accept profile IDs matching the ESAF-1800 identifier
   pattern and lifecycle states `proposed`, `draft`, `approved`, `published`,
   `deprecated`, or `retired`; they do not pin UK identity or Draft status.
@@ -237,7 +241,11 @@ Use this common root shape in every schema:
 }
 ```
 
-Extend each schema with the exact fields in the design. Define reusable `$defs` for identifiers, non-empty strings, repository-relative paths, selection records, risks, overlays, evidence expectations, and external references. Every nested object sets `additionalProperties: false`.
+Extend each schema with the exact fields in the design. Define reusable `$defs`
+for identifiers, non-empty strings, package-relative component paths,
+document-relative schema locators, repository-relative registry paths,
+selection records, risks, overlays, evidence expectations, and external
+references. Every nested object sets `additionalProperties: false`.
 
 `profile.schema.json` shall use the six-state reusable lifecycle enum and
 require boolean applicability conditions with `activates_when` and
@@ -333,7 +341,11 @@ Expected: import error because `tools/validate_profiles.py` does not exist.
 
 - [ ] **Step 3: Implement the loader and CLI**
 
-Implement duplicate-key rejection with `json.load(..., object_pairs_hook=reject_duplicate_keys)`. Discover only `profiles/<country>/<semver>/profile.json`, excluding `profiles/schema`. Require the exact six package files from the design and reject every other file.
+Implement duplicate-key rejection with
+`json.load(..., object_pairs_hook=reject_duplicate_keys)`. Discover only
+`profiles/<profile-domain>/<semver>/profile.json`, excluding
+`profiles/schema`. Require the exact six package files from the design and
+reject every other file.
 
 For every candidate path:
 

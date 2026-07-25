@@ -127,19 +127,7 @@
       "version": "0.1.0",
       "date": "2026-07-24",
       "author": "ESAF",
-      "description": "Initial Draft United Kingdom pilot profile for v0.5-beta."
-    },
-    {
-      "version": "0.1.0",
-      "date": "2026-07-24",
-      "author": "ESAF",
-      "description": "Clarified applicability facts, mapping-source boundaries, resource safeguards, and evidence-quality semantics after independent review."
-    },
-    {
-      "version": "0.1.0",
-      "date": "2026-07-24",
-      "author": "ESAF",
-      "description": "Normalized conditional overlays and evidence expectations to exact factual triggers and added an internet-reachable API condition."
+      "description": "Initial Draft United Kingdom pilot profile for v0.5-beta, with clarified applicability facts, mapping-source boundaries, resource safeguards, evidence-quality semantics, normalized conditional overlays and evidence expectations using exact factual triggers, and an internet-reachable API condition."
     }
   ]
 }

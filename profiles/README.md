@@ -21,13 +21,17 @@ treat maturity as conformance, and shall not define a profile-local replacement 
 ## Editing profiles
 
 Create or edit versioned profile packages only under
-`profiles/<jurisdiction>/<version>/`. Package changes shall preserve the
-component structure and identifiers defined by ESAF-1800 and its schemas.
+`profiles/<profile-domain>/<version>/`, where the profile domain identifies
+the jurisdiction, industry, sector, or risk context. Package changes shall
+preserve the component structure and identifiers defined by ESAF-1800 and its
+schemas. Manifest component values are package-relative component paths;
+component `$schema` values are document-relative schema locators.
 
-Profiles shall remain Draft until the applicable technical, editorial, scope,
-and overclaiming reviews and publication gates are complete. Profiles shall
-not claim compliance, certification, equivalence, endorsement, legal
-sufficiency, external approval, or production readiness.
+`proposed` remains a valid earlier lifecycle state. A profile shall not advance
+beyond Draft until the applicable technical, editorial, scope, and
+overclaiming reviews and publication gates are complete. Profiles shall not
+claim compliance, certification, equivalence, endorsement, legal sufficiency,
+external approval, or production readiness.
 
 Validate profile contract, schema, package, or index changes from the
 repository root:

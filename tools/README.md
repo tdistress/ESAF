@@ -26,6 +26,11 @@ The validator fails closed on malformed, incomplete, or semantically invalid
 packages. It does not establish legal sufficiency, external-scheme assurance,
 or production readiness.
 
+Versioned packages reside at `profiles/<profile-domain>/<version>/`, where the
+profile domain identifies the jurisdiction, industry, sector, or risk context.
+Manifest component values are package-relative component paths; component
+`$schema` values are document-relative schema locators.
+
 ## Control catalog validation
 
 Install the development dependencies and validate the catalog:

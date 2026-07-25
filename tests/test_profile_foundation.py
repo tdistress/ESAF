@@ -5,12 +5,19 @@ import re
 import unittest
 from pathlib import Path, PurePosixPath
 
+import yaml
 from jsonschema import Draft202012Validator
 from tools import validate_profiles
 
 
 ROOT = Path(__file__).resolve().parents[1]
 STANDARD = ROOT / "profiles" / "ESAF-1800.md"
+DESIGN = ROOT / "docs" / "superpowers" / "specs" / "2026-07-24-uk-pilot-profile-design.md"
+PLAN = ROOT / "docs" / "superpowers" / "plans" / "2026-07-24-uk-pilot-profile.md"
+PROFILE_README = ROOT / "profiles" / "README.md"
+CONTRIBUTING = ROOT / "CONTRIBUTING.md"
+TOOLS_README = ROOT / "tools" / "README.md"
+WORKFLOW = ROOT / ".github" / "workflows" / "catalog-validation.yml"
 SCHEMA_ROOT = ROOT / "profiles" / "schema"
 UK_PROFILE_ROOT = ROOT / "profiles" / "uk" / "0.1.0"
 SCHEMA_NAMES = (
@@ -24,6 +31,7 @@ SCHEMA_NAMES = (
 REQUIRED_HEADINGS = (
     "Purpose and scope",
     "Profile identity and lifecycle",
+    "Source and authority boundaries",
     "Applicability and system boundary",
     "Control selections",
     "Additional risks and overlays",
@@ -100,6 +108,25 @@ class ProfileFoundationTests(unittest.TestCase):
             "shall not define a profile-local replacement maturity scale", document
         )
         self.assertIn("shall not alter or weaken a core control", document)
+
+    def test_normative_contract_defines_source_and_authority_boundaries(self) -> None:
+        contract = text()
+        self.assertIn("## Source and authority boundaries", contract)
+        self.assertIn("shall identify permitted and excluded sources", contract)
+        self.assertIn("shall be original ESAF synthesis", contract)
+
+    def test_referenced_artifact_transition_preserves_independent_lifecycles(
+        self,
+    ) -> None:
+        normalized = re.sub(r"\s+", " ", text())
+        self.assertIn(
+            "A referenced artifact lifecycle transition shall require an explicit "
+            "profile update before the new state is relied upon. The transition "
+            "shall not change the profile lifecycle automatically, and neither "
+            "artifact shall be represented beyond its independently governed "
+            "recorded state.",
+            normalized,
+        )
 
 
 class ProfileSchemaTests(unittest.TestCase):
@@ -422,9 +449,10 @@ class ProfileRepositoryIntegrationTests(unittest.TestCase):
             document = self.read(path)
             normalized = re.sub(r"\s+", " ", document)
             with self.subTest(path=path, requirement="editing"):
-                self.assertIn("profiles/<jurisdiction>/<version>/", document)
+                self.assertIn("profiles/<profile-domain>/<version>/", document)
             with self.subTest(path=path, requirement="draft"):
-                self.assertIn("shall remain Draft", document)
+                self.assertIn("shall not advance beyond Draft", normalized)
+                self.assertNotIn("shall remain Draft", document)
             with self.subTest(path=path, requirement="non-claim"):
                 self.assertIn(
                     "shall not claim compliance, certification, equivalence, "
@@ -444,14 +472,54 @@ class ProfileRepositoryIntegrationTests(unittest.TestCase):
         self.assertIn("python tools/validate_profiles.py --check", document)
         self.assertIn("Draft profile packages", document)
 
-    def test_catalog_workflow_filters_and_validates_profiles(self) -> None:
-        workflow = self.read(".github/workflows/catalog-validation.yml")
-        self.assertEqual(workflow.count('- "profiles/**"'), 2)
-        self.assertEqual(workflow.count('- "tools/validate_profiles.py"'), 2)
-        self.assertEqual(workflow.count("- name: Validate profiles"), 1)
-        self.assertEqual(
-            workflow.count("run: python tools/validate_profiles.py --check"),
-            1,
+    def test_component_path_language_is_package_relative(self) -> None:
+        for path in (
+            DESIGN,
+            PLAN,
+            STANDARD,
+            PROFILE_README,
+            CONTRIBUTING,
+            TOOLS_README,
+        ):
+            document = re.sub(r"\s+", " ", path.read_text(encoding="utf-8"))
+            with self.subTest(path=path.relative_to(ROOT)):
+                self.assertNotIn("repository-relative component path", document)
+                self.assertIn("package-relative component", document)
+                self.assertIn("document-relative", document)
+
+    def test_generic_authoring_guidance_uses_profile_domain_terminology(
+        self,
+    ) -> None:
+        for path in (
+            STANDARD,
+            DESIGN,
+            PLAN,
+            PROFILE_README,
+            CONTRIBUTING,
+            TOOLS_README,
+        ):
+            document = path.read_text(encoding="utf-8")
+            normalized = re.sub(r"\s+", " ", document)
+            with self.subTest(path=path.relative_to(ROOT)):
+                self.assertIn("profile domain", normalized.lower())
+                self.assertNotIn("<jurisdiction-or-sector>", document)
+                self.assertNotIn("profiles/<jurisdiction>/<version>/", document)
+                self.assertNotIn("profiles/<country>/<semver>/", document)
+
+    def test_workflow_assertions_are_structurally_scoped(self) -> None:
+        workflow = yaml.load(
+            WORKFLOW.read_text(encoding="utf-8"),
+            Loader=yaml.BaseLoader,
+        )
+        self.assertIn("profiles/**", workflow["on"]["pull_request"]["paths"])
+        self.assertIn("profiles/**", workflow["on"]["push"]["paths"])
+        steps = workflow["jobs"]["validate"]["steps"]
+        self.assertTrue(
+            any(
+                step.get("name") == "Validate profiles"
+                and step.get("run") == "python tools/validate_profiles.py --check"
+                for step in steps
+            )
         )
 
 
@@ -934,6 +1002,30 @@ class UKPilotProfileTests(unittest.TestCase):
                     self.assertTrue(selection["activation_conditions"])
                 else:
                     self.assertNotIn("activation_conditions", selection)
+
+    def test_not_selected_rationales_are_non_normative(self) -> None:
+        selections = self.load("control-selections.json")["selections"]
+        for record in selections:
+            if record["status"] == "not_selected":
+                with self.subTest(control=record["control_id"]):
+                    self.assertNotRegex(
+                        record["rationale"],
+                        r"(?i)\b(shall|should|must)\b",
+                    )
+
+    def test_change_history_has_one_consolidated_0_1_0_entry(self) -> None:
+        history = self.load("profile.json")["change_history"]
+        self.assertEqual(len(history), 1)
+        self.assertEqual(history[0]["version"], "0.1.0")
+        description = history[0]["description"]
+        for phrase in (
+            "Initial Draft United Kingdom pilot profile",
+            "mapping-source boundaries",
+            "normalized conditional overlays",
+            "internet-reachable API condition",
+        ):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, description)
 
     def test_risks_overlays_and_evidence_are_non_empty_and_reuse_esaf_1500(self) -> None:
         risk_document = self.load("risk-overlays.json")

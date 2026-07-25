@@ -142,8 +142,8 @@ Create these strict Draft 2020-12 schemas:
 
 Every object boundary shall reject additional properties. Every component
 shall carry the profile identifier, profile version, schema version, and its
-repository-relative schema locator. Identifiers shall use closed patterns and
-be unique within their namespace.
+document-relative schema locator. Identifiers shall use closed patterns and be
+unique within their namespace.
 
 The reusable schemas shall accept any profile identifier matching the
 ESAF-1800 identifier pattern. They shall not pin the United Kingdom pilot
@@ -151,12 +151,15 @@ identifier. The reusable lifecycle vocabulary is `proposed`, `draft`,
 `approved`, `published`, `deprecated`, and `retired`; the United Kingdom pilot
 itself shall remain `draft`.
 
-`profile.json` shall identify all required component paths. Paths shall be
-repository-relative, normalized POSIX paths inside the same versioned profile
-package. The validator shall reject path traversal, absolute paths, alternate
-separators, symlinks, missing components, and unlisted profile artifacts.
-The manifest shall list `README.md` as its human document in addition to the
-four machine-readable component manifests.
+Each versioned package resides at
+`profiles/<profile-domain>/<version>/`, where the profile domain identifies
+the jurisdiction, industry, sector, or risk context. `profile.json` shall
+identify all required package-relative component paths. Component paths shall
+be normalized POSIX paths resolved inside the same versioned profile package.
+The validator shall reject path traversal, absolute paths, alternate
+separators, symlinks, missing components, and unlisted profile artifacts. The
+manifest shall list `README.md` as its human document in addition to the four
+machine-readable component manifests.
 
 The root manifest shall define a closed applicability-condition catalog.
 Each condition shall have:
@@ -299,9 +302,11 @@ Each reference shall record:
   are not imported into the profile.
 
 The validator shall resolve each identifier against the actual mapping
-registry and reject identifier, path, or lifecycle drift. A later mapping
-lifecycle transition requires an explicit profile update. It does not
-silently change the profile or advance the profile lifecycle.
+registry and reject identifier, path, or lifecycle drift. A referenced
+artifact lifecycle transition shall require an explicit profile update before
+the new state is relied upon. The transition shall not change the profile
+lifecycle automatically, and neither artifact shall be represented beyond its
+independently governed recorded state.
 
 ## 12. Traceability and application flow
 

@@ -120,7 +120,7 @@
     {
       "control_id": "DAT-120",
       "status": "not_selected",
-      "rationale": "Accuracy, representativeness, timeliness, and fitness criteria must be derived from the capability's intended use and data population, which this technical profile does not define."
+      "rationale": "Accuracy, representativeness, timeliness, and fitness criteria derive from the capability's intended use and data population, which this technical profile does not define."
     },
     {
       "control_id": "DAT-130",
@@ -140,7 +140,7 @@
     {
       "control_id": "DAT-160",
       "status": "not_selected",
-      "rationale": "Output and feedback handling must follow actual content, intended use, reliability, intellectual-property status, and downstream impact rather than a universal jurisdiction-profile rule."
+      "rationale": "Output and feedback handling depends on actual content, intended use, reliability, intellectual-property status, and downstream impact rather than a universal jurisdiction-profile rule."
     },
     {
       "control_id": "MOD-100",
@@ -158,7 +158,7 @@
     {
       "control_id": "MOD-120",
       "status": "not_selected",
-      "rationale": "Model validation criteria must be tailored to intended performance, safety, fairness, privacy, robustness, and operating conditions; this infrastructure-focused pilot does not define those use-specific thresholds."
+      "rationale": "Model validation criteria depend on intended performance, safety, fairness, privacy, robustness, and operating conditions; this infrastructure-focused pilot does not define those use-specific thresholds."
     },
     {
       "control_id": "MOD-130",
@@ -191,7 +191,7 @@
     {
       "control_id": "APP-120",
       "status": "not_selected",
-      "rationale": "Output validation and authorization must reflect each destination, action, uncertainty, and impact, so this jurisdiction package does not add a generic profile-level selection."
+      "rationale": "Output validation and authorization depend on each destination, action, uncertainty, and impact, so this jurisdiction package does not add a generic profile-level selection."
     },
     {
       "control_id": "APP-130",
@@ -310,7 +310,7 @@
     {
       "control_id": "AGT-120",
       "status": "not_selected",
-      "rationale": "Human approval and intervention requirements must reflect agent action impact, reversibility, uncertainty, affected parties, and safety consequences, none of which this pilot resolves universally."
+      "rationale": "Human approval and intervention requirements depend on agent action impact, reversibility, uncertainty, affected parties, and safety consequences, none of which this pilot resolves universally."
     },
     {
       "control_id": "AGT-130",
@@ -391,7 +391,7 @@
     {
       "control_id": "MON-140",
       "status": "not_selected",
-      "rationale": "Alert ownership, priorities, service levels, containment, and tuning must reflect actual monitoring design and risk; the profile adds no universal alert-response operating model."
+      "rationale": "Alert ownership, priorities, service levels, containment, and tuning depend on actual monitoring design and risk; the profile adds no universal alert-response operating model."
     },
     {
       "control_id": "MON-150",
@@ -435,7 +435,7 @@
     {
       "control_id": "AUD-110",
       "status": "not_selected",
-      "rationale": "Assessor competence and independence must match each technical, governance, privacy, safety, compliance, or control subject; the profile cannot set one universal personnel threshold."
+      "rationale": "Assessor competence and independence depend on each technical, governance, privacy, safety, compliance, or control subject; the profile cannot set one universal personnel threshold."
     },
     {
       "control_id": "AUD-120",
@@ -460,7 +460,7 @@
     {
       "control_id": "EDU-110",
       "status": "not_selected",
-      "rationale": "Role-based competency must be defined for actual design, validation, operation, security, governance, audit, and use responsibilities, which the profile's technical facts do not enumerate."
+      "rationale": "Role-based competency depends on actual design, validation, operation, security, governance, audit, and use responsibilities, which the profile's technical facts do not enumerate."
     },
     {
       "control_id": "EDU-120",
@@ -475,7 +475,7 @@
     {
       "control_id": "EDU-140",
       "status": "not_selected",
-      "rationale": "Executive and governance education must reflect assigned authority, risk acceptance, review, and audit duties; this package adds no profile-local competency or education schedule."
+      "rationale": "Executive and governance education depends on assigned authority, risk acceptance, review, and audit duties; this package adds no profile-local competency or education schedule."
     },
     {
       "control_id": "ARC-100",
