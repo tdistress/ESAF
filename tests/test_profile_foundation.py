@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import re
 import unittest
 from pathlib import Path, PurePosixPath
@@ -143,8 +144,8 @@ class ProfileFoundationTests(unittest.TestCase):
         normalized = re.sub(r"\s+", " ", contract)
         self.assertIn(
             "Each profile manifest shall declare its profile identifier, "
-            "profile version, schema version, lifecycle state, and target "
-            "ESAF release.",
+            "profile version, schema version, lifecycle state, target "
+            "ESAF release",
             normalized,
         )
         self.assertIn(
@@ -281,6 +282,44 @@ class ProfileFoundationTests(unittest.TestCase):
 
 
 class ProfileSchemaTests(unittest.TestCase):
+    def test_manifest_requires_target_release_and_control_catalog_pin(
+        self,
+    ) -> None:
+        schema = json.loads(
+            (SCHEMA_ROOT / "profile.schema.json").read_text(encoding="utf-8")
+        )
+        self.assertIn("target_esaf_release", schema["required"])
+        self.assertIn("control_catalog", schema["required"])
+
+    def test_evidence_expectations_use_esaf_1500_evidence_types(self) -> None:
+        schema = json.loads(
+            (SCHEMA_ROOT / "evidence-expectations.schema.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        expectation = schema["$defs"]["evidenceExpectation"]
+        self.assertIn("evidence_types", expectation["required"])
+        self.assertNotIn("artifact_class", expectation["properties"])
+        self.assertEqual(
+            set(
+                expectation["properties"]["evidence_types"]["items"]["enum"]
+            ),
+            {
+                "policy",
+                "procedure",
+                "record",
+                "configuration",
+                "log",
+                "technical_test",
+                "observation",
+                "interview",
+                "metric",
+                "contract",
+                "external_assurance",
+                "other",
+            },
+        )
+
     def test_schemas_are_strict_draft_2020_12(self) -> None:
         for name in SCHEMA_NAMES:
             schema = json.loads(
@@ -393,6 +432,12 @@ class ProfileSchemaTests(unittest.TestCase):
                         **identity,
                         "$schema": "../../schema/profile.schema.json",
                         "status": status,
+                        "target_esaf_release": "v1.2.3",
+                        "control_catalog": {
+                            "path": "controls/catalog.json",
+                            "schema_version": "1.0.0",
+                            "sha256": "0" * 64,
+                        },
                         "title": "Generic profile",
                         "scope": "A reusable profile scope.",
                         "applicability_conditions": [],
@@ -528,7 +573,7 @@ class ProfileSchemaTests(unittest.TestCase):
                 {
                     "expectation_id": "EXPOSURE-EVIDENCE",
                     "purpose": "Demonstrate the expected evidence.",
-                    "artifact_class": "Record",
+                    "evidence_types": ["record"],
                     "control_ids": ["GOV-100"],
                     "quality_attributes": ["relevance"],
                 },
@@ -566,6 +611,12 @@ class ProfileSchemaTests(unittest.TestCase):
 
 
 class ProfileRepositoryIntegrationTests(unittest.TestCase):
+    def test_repository_contains_exactly_one_draft_pilot_package(self) -> None:
+        self.assertEqual(
+            validate_profiles.discover_profile_packages(ROOT),
+            (UK_PROFILE_ROOT,),
+        )
+
     def read(self, relative: str) -> str:
         return (ROOT / relative).read_text(encoding="utf-8")
 
@@ -675,6 +726,21 @@ class ProfileRepositoryIntegrationTests(unittest.TestCase):
 
 
 class UKPilotProfileTests(unittest.TestCase):
+    def test_control_catalog_pin_matches_authoritative_catalog(self) -> None:
+        profile = json.loads(
+            (UK_PROFILE_ROOT / "profile.json").read_text(encoding="utf-8")
+        )
+        catalog_path = ROOT / profile["control_catalog"]["path"]
+        self.assertEqual(
+            profile["control_catalog"]["sha256"],
+            hashlib.sha256(catalog_path.read_bytes()).hexdigest(),
+        )
+        catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
+        self.assertEqual(
+            profile["control_catalog"]["schema_version"],
+            catalog["schema_version"],
+        )
+
     def load(self, filename: str) -> dict[str, object]:
         path = UK_PROFILE_ROOT / filename
         self.assertTrue(path.is_file(), f"missing UK pilot artifact {filename}")

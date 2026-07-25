@@ -4,7 +4,7 @@
   "title": "ESAF profile manifest",
   "type": "object",
   "additionalProperties": false,
-  "required": ["$schema", "schema_version", "profile_id", "profile_version", "status", "title", "scope", "applicability_conditions", "source_boundary", "components", "change_history"],
+  "required": ["$schema", "schema_version", "profile_id", "profile_version", "status", "target_esaf_release", "control_catalog", "title", "scope", "applicability_conditions", "source_boundary", "components", "change_history"],
   "properties": {
     "$schema": {"const": "../../schema/profile.schema.json"},
     "schema_version": {"const": "0.1.0"},
@@ -12,6 +12,7 @@
     "profile_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
     "status": {"enum": ["proposed", "draft", "approved", "published", "deprecated", "retired"]},
     "target_esaf_release": {"$ref": "#/$defs/nonEmptyString"},
+    "control_catalog": {"$ref": "#/$defs/controlCatalog"},
     "title": {"$ref": "#/$defs/nonEmptyString"},
     "scope": {"$ref": "#/$defs/nonEmptyString"},
     "applicability_conditions": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/applicabilityCondition"}},
@@ -25,6 +26,16 @@
     "nonEmptyString": {"type": "string", "minLength": 1},
     "relativePath": {"type": "string", "pattern": "^(?!/)(?!.*\\\\)[A-Za-z0-9][A-Za-z0-9._-]*(?:/[A-Za-z0-9][A-Za-z0-9._-]*)*$"},
     "stringArray": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/nonEmptyString"}},
+    "controlCatalog": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "schema_version", "sha256"],
+      "properties": {
+        "path": {"const": "controls/catalog.json"},
+        "schema_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+        "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+      }
+    },
     "applicabilityCondition": {
       "type": "object",
       "additionalProperties": false,

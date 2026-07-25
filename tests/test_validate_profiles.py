@@ -220,7 +220,15 @@ class ProfileValidationTests(unittest.TestCase):
             package.documents["external_references"]["external_references"] = (
                 external_references
             )
-        return package
+        profile_domain, _, profile_version = profile_id.split("--")
+        directory = (
+            self.root / "profiles" / profile_domain / profile_version
+        )
+        return validate_profiles.ProfilePackage(
+            directory=directory,
+            relative=directory.relative_to(self.root).as_posix(),
+            documents=package.documents,
+        )
 
     def external_references(self) -> list[dict[str, object]]:
         document = self.load_component("external-references.json")
@@ -357,7 +365,7 @@ class ProfileValidationTests(unittest.TestCase):
                     {
                         "expectation_id": "EVIDENCE-A",
                         "purpose": "Synthetic evidence purpose.",
-                        "artifact_class": "Synthetic artifact.",
+                        "evidence_types": ["record"],
                         "overlay_ids": ["OVERLAY-A"],
                         "quality_attributes": ["relevance"],
                     }
@@ -415,6 +423,62 @@ class ProfileValidationTests(unittest.TestCase):
             )
         )
 
+    def test_profile_id_domain_must_match_package_domain(self) -> None:
+        package = self.loaded_package()
+        for document in package.documents.values():
+            document["profile_id"] = "example--jurisdiction-profile--0.1.0"
+        diagnostics = validate_profiles.semantic_diagnostics(self.root, package)
+        self.assertTrue(
+            any(
+                "profile_id domain example does not match profile domain "
+                "directory uk" in item
+                for item in diagnostics
+            ),
+            diagnostics,
+        )
+
+    def test_duplicate_profile_ids_across_packages_are_rejected(self) -> None:
+        duplicate = self.root / "profiles" / "example" / "0.1.0"
+        duplicate.parent.mkdir()
+        shutil.copytree(self.package, duplicate)
+        self.assert_has_error(
+            "duplicate profile_id uk--jurisdiction-profile--0.1.0"
+        )
+
+    def test_change_history_must_include_current_profile_version(self) -> None:
+        manifest = self.load_component("profile.json")
+        manifest["change_history"][0]["version"] = "9.9.9"
+        self.write_component("profile.json", manifest)
+        self.assert_has_error(
+            "change history does not include current profile_version 0.1.0"
+        )
+
+    def test_change_history_versions_must_be_unique(self) -> None:
+        manifest = self.load_component("profile.json")
+        manifest["change_history"].append(
+            {
+                **manifest["change_history"][0],
+                "date": "2026-07-25",
+            }
+        )
+        self.write_component("profile.json", manifest)
+        self.assert_has_error("duplicate change history version 0.1.0")
+
+    def test_control_catalog_digest_drift_is_rejected(self) -> None:
+        catalog_path = self.root / "controls" / "catalog.json"
+        catalog_path.write_text(
+            catalog_path.read_text(encoding="utf-8") + " ",
+            encoding="utf-8",
+        )
+        self.assert_has_error("control catalog digest does not match")
+
+    def test_control_catalog_schema_version_drift_is_rejected(self) -> None:
+        catalog_path = self.root / "controls" / "catalog.json"
+        catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
+        catalog["schema_version"] = "9.9.9"
+        profile_fixture.write_json(catalog_path, catalog)
+        self.assert_has_error("control catalog schema_version 9.9.9 does not match")
+
     def test_non_pilot_semantic_version_is_valid_when_identity_and_directory_agree(
         self,
     ) -> None:
@@ -448,6 +512,18 @@ class ProfileValidationTests(unittest.TestCase):
         missing = document["selections"].pop()["control_id"]
         self.write_component("control-selections.json", document)
         self.assert_has_error(f"missing control selection {missing}")
+
+    def test_recommended_selection_requires_should_modality(self) -> None:
+        document = self.load_component("control-selections.json")
+        document["selections"][0]["status"] = "recommended"
+        document["selections"][0]["rationale"] = (
+            "The organization shall implement this control."
+        )
+        self.write_component("control-selections.json", document)
+        self.assert_has_error(
+            "recommended selection rationale must use should and must not "
+            "use shall or must"
+        )
 
     def test_duplicate_control_selection_is_rejected(self) -> None:
         document = self.load_component("control-selections.json")
@@ -606,6 +682,18 @@ class ProfileValidationTests(unittest.TestCase):
         self.assertEqual(
             [],
             validate_profiles.semantic_diagnostics(self.root, package),
+        )
+
+    def test_generic_reference_requires_complete_non_import_statement(
+        self,
+    ) -> None:
+        reference = self.external_references()[0]
+        reference["non_import_statement"] = "Evidence is not imported."
+        package = self.generic_package(external_references=[reference])
+        diagnostics = validate_profiles.semantic_diagnostics(self.root, package)
+        self.assertTrue(
+            any("non_import_statement must be" in item for item in diagnostics),
+            diagnostics,
         )
 
     def test_uk_pilot_still_requires_exact_three_references(self) -> None:

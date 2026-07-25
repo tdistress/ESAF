@@ -439,6 +439,7 @@ class Esaf1600FoundationTests(unittest.TestCase):
             "assessment/**",
             "controls/**",
             "crosswalks/**",
+            "profiles/**",
             "tests/**",
             "tools/crosswalks/**",
             "tools/release_gates.py",
@@ -448,6 +449,7 @@ class Esaf1600FoundationTests(unittest.TestCase):
             "tools/validate_assessment.py",
             "tools/validate_controls.py",
             "tools/validate_crosswalks.py",
+            "tools/validate_profiles.py",
             "requirements-dev.txt",
         ]
         for event in ("pull_request", "push"):

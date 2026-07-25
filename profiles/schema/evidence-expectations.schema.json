@@ -23,11 +23,18 @@
     "evidenceExpectation": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["expectation_id", "purpose", "artifact_class", "quality_attributes"],
+      "required": ["expectation_id", "purpose", "evidence_types", "quality_attributes"],
       "properties": {
         "expectation_id": {"$ref": "#/$defs/identifier"},
         "purpose": {"$ref": "#/$defs/nonEmptyString"},
-        "artifact_class": {"$ref": "#/$defs/nonEmptyString"},
+        "evidence_types": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "enum": ["policy", "procedure", "record", "configuration", "log", "technical_test", "observation", "interview", "metric", "contract", "external_assurance", "other"]
+          }
+        },
         "control_ids": {"$ref": "#/$defs/controlArray"},
         "overlay_ids": {"$ref": "#/$defs/identifierArray"},
         "quality_attributes": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/qualityAttribute"}},

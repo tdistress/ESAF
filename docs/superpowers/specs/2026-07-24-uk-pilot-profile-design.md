@@ -281,7 +281,8 @@ Each expectation shall:
 
 - have a stable identifier;
 - reference at least one ESAF control or profile overlay;
-- describe the evidence purpose and expected artifact class;
+- describe the evidence purpose and one or more artifact classes using the
+  closed ESAF-1500 `evidence_type` vocabulary;
 - identify applicable ESAF-1500 quality attributes;
 - identify any condition that activates the expectation;
 - state freshness, scope, or independence strengthening where applicable; and

@@ -435,7 +435,7 @@
     {
       "control_id": "AUD-110",
       "status": "not_selected",
-      "rationale": "Assessor competence and independence depend on each technical, governance, privacy, safety, compliance, or control subject; the profile cannot set one universal personnel threshold."
+      "rationale": "Assessor competence and independence remain governed by ESAF-1500 and AUD-110 according to assessment purpose, method, complexity, and risk. The approved source boundary supplies no United Kingdom-specific competence or independence criterion, so the pilot adds no profile-level selection."
     },
     {
       "control_id": "AUD-120",

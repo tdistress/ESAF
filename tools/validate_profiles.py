@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import re
 import stat
@@ -55,8 +56,9 @@ SEMVER_PATTERN = r"[0-9]+\.[0-9]+\.[0-9]+"
 SEMVER = re.compile(rf"^{SEMVER_PATTERN}$")
 PROFILE_DOMAIN = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
 PROFILE_IDENTIFIER = re.compile(
-    rf"^[a-z0-9]+(?:-[a-z0-9]+)*--"
-    rf"[a-z0-9]+(?:-[a-z0-9]+)*--(?P<version>{SEMVER_PATTERN})$"
+    rf"^(?P<domain>[a-z0-9]+(?:-[a-z0-9]+)*)--"
+    rf"(?P<name>[a-z0-9]+(?:-[a-z0-9]+)*)--"
+    rf"(?P<version>{SEMVER_PATTERN})$"
 )
 PROFILE_ROOT_FILES = frozenset({"ESAF-1800.md", "README.md"})
 PROFILE_PROPOSITION_BOUNDARY = re.compile(
@@ -1820,6 +1822,41 @@ def semantic_diagnostics(
     risk_document = package.documents["risk_overlays"]
     evidence_document = package.documents["evidence_expectations"]
     reference_document = package.documents["external_references"]
+    control_catalog_pin = profile.get("control_catalog")
+
+    if isinstance(control_catalog_pin, dict):
+        catalog_path = root / "controls" / "catalog.json"
+        try:
+            catalog_bytes = catalog_path.read_bytes()
+            catalog_document = load_json(catalog_path)
+        except OSError as exc:
+            raise OperationalProfileError(
+                "controls/catalog.json: cannot read control catalog"
+            ) from exc
+        except (json.JSONDecodeError, ValueError) as exc:
+            raise ContentProfileError(
+                "controls/catalog.json: cannot load JSON"
+            ) from exc
+        observed_digest = hashlib.sha256(catalog_bytes).hexdigest()
+        if control_catalog_pin.get("sha256") != observed_digest:
+            diagnostics.append(
+                f"{package.relative}/profile.json: control catalog digest "
+                "does not match controls/catalog.json"
+            )
+        observed_schema_version = (
+            catalog_document.get("schema_version")
+            if isinstance(catalog_document, dict)
+            else None
+        )
+        if (
+            control_catalog_pin.get("schema_version")
+            != observed_schema_version
+        ):
+            diagnostics.append(
+                f"{package.relative}/profile.json: control catalog "
+                f"schema_version {observed_schema_version} does not match "
+                f"pinned {control_catalog_pin.get('schema_version')}"
+            )
 
     expected_profile_id = profile.get("profile_id")
     expected_profile_version = profile.get("profile_version")
@@ -1832,6 +1869,14 @@ def semantic_diagnostics(
         expected_profile_version, str
     ):
         identifier_version = identifier_match.group("version")
+        identifier_domain = identifier_match.group("domain")
+        package_domain = package.directory.parent.name
+        if identifier_domain != package_domain:
+            diagnostics.append(
+                f"{package.relative}/profile.json: profile_id domain "
+                f"{identifier_domain} does not match profile domain "
+                f"directory {package_domain}"
+            )
         if identifier_version != expected_profile_version:
             diagnostics.append(
                 f"{package.relative}/profile.json: profile_id version "
@@ -1856,6 +1901,30 @@ def semantic_diagnostics(
             diagnostics.append(
                 f"{relative}: profile_version does not match profile.json"
             )
+
+    history = objects(profile.get("change_history"))
+    history_versions = [
+        value
+        for record in history
+        if isinstance((value := record.get("version")), str)
+    ]
+    if (
+        isinstance(expected_profile_version, str)
+        and expected_profile_version not in history_versions
+    ):
+        diagnostics.append(
+            f"{package.relative}/profile.json: change history does not "
+            f"include current profile_version {expected_profile_version}"
+        )
+    for version in sorted(
+        value
+        for value in set(history_versions)
+        if history_versions.count(value) > 1
+    ):
+        diagnostics.append(
+            f"{package.relative}/profile.json: duplicate change history "
+            f"version {version}"
+        )
 
     conditions = objects(profile.get("applicability_conditions"))
     risks = objects(risk_document.get("risks"))
@@ -1942,6 +2011,7 @@ def semantic_diagnostics(
 
     for selection in selections:
         status = selection.get("status")
+        rationale = selection.get("rationale")
         activation_conditions = strings(
             selection.get("activation_conditions")
         )
@@ -1955,6 +2025,20 @@ def semantic_diagnostics(
                 f"{package.relative}/control-selections.json: only conditional "
                 "selections may use activation conditions"
             )
+        if status == "recommended" and isinstance(rationale, str):
+            if (
+                re.search(r"\bshould\b", rationale, flags=re.IGNORECASE)
+                is None
+                or re.search(
+                    r"\b(?:shall|must)\b", rationale, flags=re.IGNORECASE
+                )
+                is not None
+            ):
+                diagnostics.append(
+                    f"{package.relative}/control-selections.json: "
+                    "recommended selection rationale must use should and "
+                    "must not use shall or must"
+                )
     for overlay in overlays:
         applicability = overlay.get("applicability")
         activation_conditions = strings(overlay.get("activation_conditions"))
@@ -2020,6 +2104,12 @@ def semantic_diagnostics(
             diagnostics.append(
                 f"{observed_path}: {lifecycle_diagnostic}"
             )
+        if reference.get("non_import_statement") != NON_IMPORT_STATEMENT:
+            diagnostics.append(
+                f"{package.relative}/external-references.json: mapping "
+                f"{identifier} non_import_statement must be "
+                f"{NON_IMPORT_STATEMENT!r}"
+            )
 
     if expected_profile_id == UK_PILOT_PROFILE_ID:
         for identifier in sorted(
@@ -2072,12 +2162,6 @@ def semantic_diagnostics(
                 diagnostics.append(
                     f"{package.relative}/external-references.json: mapping "
                     f"{identifier} requires qualified review"
-                )
-            if reference.get("non_import_statement") != NON_IMPORT_STATEMENT:
-                diagnostics.append(
-                    f"{package.relative}/external-references.json: mapping "
-                    f"{identifier} non_import_statement must be "
-                    f"{NON_IMPORT_STATEMENT!r}"
                 )
     return sorted(set(diagnostics))
 
@@ -2902,10 +2986,21 @@ def validate(root: Path = ROOT) -> list[str]:
     diagnostics: list[str] = []
     try:
         packages, diagnostics = inventory_profile_packages(root)
+        profile_id_locations: dict[str, str] = {}
         for directory in packages:
             package = load_package(root, directory, diagnostics)
             if package is None:
                 continue
+            profile_id = package.documents["profile"].get("profile_id")
+            if isinstance(profile_id, str):
+                previous = profile_id_locations.get(profile_id)
+                if previous is not None:
+                    diagnostics.append(
+                        f"profiles: duplicate profile_id {profile_id} in "
+                        f"{previous} and {package.relative}"
+                    )
+                else:
+                    profile_id_locations[profile_id] = package.relative
             diagnostics.extend(semantic_diagnostics(root, package))
             diagnostics.extend(traceability_diagnostics(package))
             diagnostics.extend(

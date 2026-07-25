@@ -6,6 +6,11 @@
 
 **Target ESAF release:** `v0.5-beta`
 
+This README is the authoritative package-level statement of purpose,
+applicability, use, and limitations under ESAF-1800. The JSON files are its
+schema-governed machine-readable instance records. A conflict shall fail
+review rather than change this Markdown meaning.
+
 ## Purpose and applicability
 
 This Draft profile applies to AI systems deployed or operated in the United
@@ -23,14 +28,17 @@ evidence used to resolve each applicable condition.
 
 1. Confirm and evidence the United Kingdom deployment or operating basis.
 2. Record the assessed system boundary and supporting dependencies.
-3. Answer the boolean conditions in `profile.json` using the specified
+3. Verify that the control-catalog schema version and SHA-256 pin in
+   `profile.json` match the authoritative catalog.
+4. Answer the boolean conditions in `profile.json` using the specified
    resolution evidence.
-4. Resolve `required` and activated `conditional` selections in
+5. Resolve `required` and activated `conditional` selections in
    `control-selections.json`.
-5. Apply the relevant overlays and evidence expectations.
-6. Gather and evaluate evidence under ESAF-1500, preserving scope, period,
-   methods, limitations, and determinations.
-7. Report this profile identifier, version, and Draft lifecycle with the
+6. Apply the relevant overlays and evidence expectations.
+7. Gather and evaluate evidence under ESAF-1500 using the declared
+   `evidence_types`, preserving scope, period, methods, limitations, and
+   determinations.
+8. Report this profile identifier, version, and Draft lifecycle with the
    assessment result.
 
 Each condition shall be answered independently from its exact factual
@@ -62,6 +70,9 @@ ESAF library and pinned lifecycle metadata only from the three exact United
 Kingdom Cyber Essentials mapping registry records in
 `external-references.json`. Substantive mapping content remains excluded,
 including relationships, external outcomes, evidence, and interpretations.
+Composition with ESAF-1600 is therefore limited to exact mapping identity,
+registry location, Draft editorial status, empty registry lifecycle history,
+and qualified-review dependency; it does not create relationship legs.
 All content and interpretations from other or unpinned external mappings are
 also excluded. Other United Kingdom laws, regulations, sector rules, and
 guidance are outside this pilot.

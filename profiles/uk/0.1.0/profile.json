@@ -5,6 +5,11 @@
   "profile_version": "0.1.0",
   "status": "draft",
   "target_esaf_release": "v0.5-beta",
+  "control_catalog": {
+    "path": "controls/catalog.json",
+    "schema_version": "1.0.0",
+    "sha256": "70bbd955a65969d2843b60220ad0aad2850f36ec6d189ecd32c40431b848b398"
+  },
   "title": "Draft United Kingdom Jurisdiction Profile",
   "scope": "AI systems deployed or operated in the United Kingdom, regardless of organizational domicile. The assessed boundary includes supporting infrastructure, services, suppliers, and operational dependencies that support or affect the AI system.",
   "applicability_conditions": [
@@ -141,7 +146,7 @@
       "version": "0.1.0",
       "date": "2026-07-24",
       "author": "ESAF",
-      "description": "Initial Draft United Kingdom pilot profile for v0.5-beta, with clarified applicability facts, mapping-source boundaries, resource safeguards, evidence-quality semantics, normalized conditional overlays and evidence expectations using exact factual triggers, and an internet-reachable API condition."
+      "description": "Initial Draft United Kingdom pilot profile for v0.5-beta, with a pinned control catalog, clarified applicability facts, mapping-source boundaries, resource safeguards, ESAF-1500 evidence types and quality semantics, normalized conditional overlays and evidence expectations using exact factual triggers, and an internet-reachable API condition."
     }
   ]
 }

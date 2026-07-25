@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import shutil
 from pathlib import Path
 
@@ -49,6 +50,9 @@ def write_valid_profile_fixture(root: Path) -> Path:
     package = root / PACKAGE_RELATIVE
     package.mkdir(parents=True)
     catalog = json.loads((root / "controls/catalog.json").read_text(encoding="utf-8"))
+    catalog_digest = hashlib.sha256(
+        (root / "controls/catalog.json").read_bytes()
+    ).hexdigest()
     selections = [
         {
             "control_id": record["id"],
@@ -67,6 +71,11 @@ def write_valid_profile_fixture(root: Path) -> Path:
             "profile_version": PROFILE_VERSION,
             "status": "draft",
             "target_esaf_release": "v0.5-beta",
+            "control_catalog": {
+                "path": "controls/catalog.json",
+                "schema_version": str(catalog["schema_version"]),
+                "sha256": catalog_digest,
+            },
             "title": "Synthetic validator profile",
             "scope": "Synthetic loader validation only.",
             "applicability_conditions": [

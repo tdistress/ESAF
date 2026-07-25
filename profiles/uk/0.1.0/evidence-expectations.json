@@ -7,7 +7,7 @@
     {
       "expectation_id": "BOUNDARY-EXPOSURE-EVIDENCE",
       "purpose": "Demonstrate which AI service and administrative paths were reachable from the internet during the assessment period and whether authenticated administration, boundary protections, resource safeguards, and detection paths operated as recorded.",
-      "artifact_class": "Configuration, record, metric, technical_test, and log evidence records",
+      "evidence_types": ["configuration", "record", "metric", "technical_test", "log"],
       "control_ids": [
         "IAM-110",
         "IAM-130",
@@ -35,7 +35,7 @@
     {
       "expectation_id": "AI-APPLICATION-INTERFACE-EVIDENCE",
       "purpose": "Demonstrate which AI-use interfaces and workflows, including privileged AI-use workflows, were reachable from the internet during the assessment period, how a user or automated client invoked or interacted with the assessed AI capability, and whether misuse, abuse, resource-protection, detection, and response safeguards operated as recorded.",
-      "artifact_class": "Configuration, record, metric, technical_test, and log evidence records",
+      "evidence_types": ["configuration", "record", "metric", "technical_test", "log"],
       "control_ids": [
         "APP-150"
       ],
@@ -59,7 +59,7 @@
     {
       "expectation_id": "INTERNET-REACHABLE-API-EVIDENCE",
       "purpose": "Demonstrate which APIs that expose or connect AI capabilities, models, data, tools, or administrative functions were reachable from the internet during the assessment period and whether their required API security controls operated as recorded.",
-      "artifact_class": "Configuration, record, technical_test, and log evidence records",
+      "evidence_types": ["configuration", "record", "technical_test", "log"],
       "control_ids": [
         "API-110"
       ],
@@ -83,7 +83,7 @@
     {
       "expectation_id": "PRIVILEGED-CONFIGURATION-EVIDENCE",
       "purpose": "Demonstrate that privileged identities, approved configuration state, material changes, and attributable audit events align for the same assessed boundary and period.",
-      "artifact_class": "Configuration, record, and log evidence records",
+      "evidence_types": ["configuration", "record", "log"],
       "control_ids": [
         "IAM-120",
         "IAM-130",
@@ -109,7 +109,7 @@
     {
       "expectation_id": "MODEL-RETIREMENT-EVIDENCE",
       "purpose": "Demonstrate the lifecycle and deployment state, affected capability scope, authorized retirement disposition, and verified completion for each end-of-life, replaced, unsupported, compromised, nonconforming, expired, or abandoned model.",
-      "artifact_class": "Record, configuration, contract, and technical_test evidence records",
+      "evidence_types": ["record", "configuration", "contract", "technical_test"],
       "control_ids": [
         "MOD-150"
       ],
@@ -133,7 +133,7 @@
     {
       "expectation_id": "UNSUPPORTED-INFRASTRUCTURE-EVIDENCE",
       "purpose": "Demonstrate the support state, vulnerability exposure, accountable treatment, compensating controls, and verified action for each unsupported infrastructure component or managed-service dependency.",
-      "artifact_class": "Record, configuration, contract, and technical_test evidence records",
+      "evidence_types": ["record", "configuration", "contract", "technical_test"],
       "control_ids": [
         "INF-120"
       ],
@@ -157,7 +157,7 @@
     {
       "expectation_id": "UNSUPPORTED-TECHNOLOGY-EVIDENCE",
       "purpose": "Demonstrate lifecycle ownership, support state, technical debt, governed disposition, replacement planning, and verified action for each unsupported AI technology or architecture component.",
-      "artifact_class": "Record, configuration, contract, and technical_test evidence records",
+      "evidence_types": ["record", "configuration", "contract", "technical_test"],
       "control_ids": [
         "ARC-150"
       ],
@@ -181,7 +181,7 @@
     {
       "expectation_id": "MODEL-INTAKE-EVIDENCE",
       "purpose": "Demonstrate that each untrusted model intake path enforces approved sourcing, provenance, integrity, authenticity, ownership and license checks, malicious-behavior inspection, validation, and acceptance decisions.",
-      "artifact_class": "Procedure, configuration, record, and technical_test evidence records",
+      "evidence_types": ["procedure", "configuration", "record", "technical_test"],
       "control_ids": [
         "MOD-110"
       ],
@@ -205,7 +205,7 @@
     {
       "expectation_id": "APPLICATION-ARTIFACT-INTAKE-EVIDENCE",
       "purpose": "Demonstrate that each untrusted application-artifact intake path enforces approved sourcing, provenance, integrity, dependency inspection, risk-proportionate review and testing, and acceptance decisions.",
-      "artifact_class": "Procedure, configuration, record, and technical_test evidence records",
+      "evidence_types": ["procedure", "configuration", "record", "technical_test"],
       "control_ids": [
         "APP-140"
       ],
@@ -229,7 +229,7 @@
     {
       "expectation_id": "CALLABLE-TOOL-EVIDENCE",
       "purpose": "Demonstrate that each callable tool or plugin is inventoried, approved, constrained, monitored, changed, and retired according to its purpose, permissions, data access, environment, trust boundary, and failure behavior.",
-      "artifact_class": "Procedure, configuration, record, technical_test, and log evidence records",
+      "evidence_types": ["procedure", "configuration", "record", "technical_test", "log"],
       "control_ids": [
         "API-120"
       ],
@@ -253,7 +253,7 @@
     {
       "expectation_id": "INFRASTRUCTURE-DEPENDENCY-INTAKE-EVIDENCE",
       "purpose": "Demonstrate that each untrusted infrastructure-dependency intake path enforces approved sourcing, integrity verification, version and vulnerability inspection, risk-proportionate treatment, and acceptance decisions.",
-      "artifact_class": "Procedure, configuration, record, and technical_test evidence records",
+      "evidence_types": ["procedure", "configuration", "record", "technical_test"],
       "control_ids": [
         "INF-120"
       ],
@@ -277,7 +277,7 @@
     {
       "expectation_id": "EXTERNAL-RESPONSIBILITY-EVIDENCE",
       "purpose": "Demonstrate that provider responsibilities, applicable terms, architecture dependencies, assurance access, continuity, and exit ownership remain mutually consistent for each external provider dependency.",
-      "artifact_class": "Contract, record, configuration, and external_assurance evidence records",
+      "evidence_types": ["contract", "record", "configuration", "external_assurance"],
       "control_ids": [
         "CMP-120",
         "ARC-140"
@@ -301,7 +301,7 @@
     {
       "expectation_id": "EXTERNAL-AI-SERVICE-INTEGRATION-EVIDENCE",
       "purpose": "Demonstrate that security, privacy, data use, retention, training, residency, availability, change, incident, assurance, continuity, and exit requirements are defined and enforced for each live external AI service integration.",
-      "artifact_class": "Contract, record, configuration, technical_test, and external_assurance evidence records",
+      "evidence_types": ["contract", "record", "configuration", "technical_test", "external_assurance"],
       "control_ids": [
         "API-140"
       ],
@@ -325,7 +325,7 @@
     {
       "expectation_id": "MATERIAL-DEPENDENCY-EVIDENCE",
       "purpose": "Demonstrate the factual E1 through E4 classification and material external provider or platform dependency, together with the interfaces, formats, configuration, migration, isolation, and exit capabilities required to manage continuity and concentration risk.",
-      "artifact_class": "Record, contract, configuration, and technical_test evidence records",
+      "evidence_types": ["record", "contract", "configuration", "technical_test"],
       "control_ids": [
         "API-150"
       ],
@@ -349,7 +349,7 @@
     {
       "expectation_id": "THIRD-PARTY-ADMINISTRATION-EVIDENCE",
       "purpose": "Demonstrate the identity, authority, authentication, duration, activity, review, emergency use, and revocation state of every third-party administrative path.",
-      "artifact_class": "Contract, configuration, record, and log evidence records",
+      "evidence_types": ["contract", "configuration", "record", "log"],
       "control_ids": [
         "IAM-130",
         "IAM-140",
@@ -378,7 +378,7 @@
     {
       "expectation_id": "SYSTEM-BOUNDARY-EVIDENCE",
       "purpose": "Demonstrate the assessed AI system, business purpose, United Kingdom operating basis, included and excluded components, dependencies, suppliers, condition answers, limitations, and accountable owners.",
-      "artifact_class": "Record, configuration, contract, and observation evidence records",
+      "evidence_types": ["record", "configuration", "contract", "observation"],
       "control_ids": [
         "GOV-130",
         "RSK-110",
@@ -399,7 +399,7 @@
     {
       "expectation_id": "ASSET-COVERAGE-EVIDENCE",
       "purpose": "Demonstrate that identity, model, hosting, service, and dependency inventories cover the declared system boundary and support a complete control and evidence population.",
-      "artifact_class": "Record and configuration evidence records",
+      "evidence_types": ["record", "configuration"],
       "control_ids": [
         "IAM-100",
         "MOD-100",
