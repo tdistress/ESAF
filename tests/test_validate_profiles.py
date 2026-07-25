@@ -2265,6 +2265,216 @@ class ProfileValidationTests(unittest.TestCase):
                 )
                 self.assert_has_error(expected)
 
+    def test_weakening_aspect_and_state_cross_product(self) -> None:
+        subjects = (
+            ("GOV-100", "has", "is", "was"),
+            ("Core controls", "have", "are", "were"),
+        )
+        active_aspects = (
+            "{perfect} ceased to apply",
+            "had ceased to apply",
+            "{perfect} discontinued applying",
+            "had discontinued applying",
+        )
+        passive_aspects = (
+            "{present} discontinued",
+            "{past} discontinued",
+            "{perfect} been discontinued",
+            "had been discontinued",
+        )
+        mandatory_aspects = (
+            "{present} no longer mandatory",
+            "{past} no longer mandatory",
+            "{perfect} been no longer mandatory",
+            "had been no longer mandatory",
+        )
+        for subject, perfect, present, past in subjects:
+            values = {
+                "perfect": perfect,
+                "present": present,
+                "past": past,
+            }
+            for family, forms in (
+                ("active", active_aspects),
+                ("passive", passive_aspects),
+                ("mandatory", mandatory_aspects),
+            ):
+                for form in forms:
+                    predicate = form.format(**values)
+                    with self.subTest(
+                        subject=subject,
+                        family=family,
+                        predicate=predicate,
+                    ):
+                        self.write_readme(f"{subject} {predicate}.")
+                        self.assert_has_error(
+                            "prohibited control weakening language"
+                        )
+
+    def test_weakening_aspect_denial_and_metalinguistic_pairs(self) -> None:
+        denied = (
+            "GOV-100 has not ceased to apply.",
+            "Core controls have never discontinued applying.",
+            "GOV-100 has not been discontinued.",
+            "Core controls had never been discontinued.",
+        )
+        claims = (
+            "GOV-100 has ceased to apply",
+            "Core controls had been discontinued",
+            "GOV-100 has been no longer mandatory",
+        )
+        for text in denied:
+            with self.subTest(text=text):
+                self.write_readme(text)
+                self.assertEqual(validate_profiles.validate(self.root), [])
+        for claim, frame in product(
+            claims,
+            ("is false", "is rejected", "was denied"),
+        ):
+            with self.subTest(claim=claim, frame=frame):
+                self.write_readme(f"The claim that {claim} {frame}.")
+                self.assertEqual(validate_profiles.validate(self.root), [])
+
+    def test_bounded_adverb_slots_cross_product(self) -> None:
+        adverbs = (
+            "formally",
+            "explicitly",
+            "directly",
+            "expressly",
+            "carefully",
+        )
+        templates = (
+            (
+                "NCSC has {adverb} approved this profile.",
+                "prohibited assertion 'named-authority approval'",
+            ),
+            (
+                "This profile had {adverb} received NCSC approval.",
+                "prohibited assertion 'named-authority approval'",
+            ),
+            (
+                "This profile has been {adverb} approved by NCSC.",
+                "prohibited assertion 'named-authority approval'",
+            ),
+            (
+                "Cyber Essentials provision A has {adverb} mapped to GOV-100.",
+                "prohibited assertion 'imported mapping relationship'",
+            ),
+            (
+                "Cyber Essentials provision A has been {adverb} mapped to "
+                "GOV-100.",
+                "prohibited assertion 'imported mapping relationship'",
+            ),
+            (
+                "GOV-100 had {adverb} mapped from Cyber Essentials provision A.",
+                "prohibited assertion 'imported mapping relationship'",
+            ),
+            (
+                "GOV-100 had been {adverb} mapped from Cyber Essentials "
+                "provision A.",
+                "prohibited assertion 'imported mapping relationship'",
+            ),
+        )
+        for (template, expected), adverb in product(templates, adverbs):
+            with self.subTest(template=template, adverb=adverb):
+                self.write_readme(template.format(adverb=adverb))
+                self.assert_has_error(expected)
+
+    def test_dynamic_authority_bounded_adverb_cross_product(self) -> None:
+        profile = self.load_component("profile.json")
+        profile["source_boundary"]["excluded_sources"] = ["Acme Code"]
+        self.write_component("profile.json", profile)
+        for auxiliary, adverb in product(
+            ("is", "was", "has been", "had been"),
+            ("formally", "explicitly", "directly", "carefully"),
+        ):
+            with self.subTest(auxiliary=auxiliary, adverb=adverb):
+                self.write_readme(
+                    f"This profile {auxiliary} {adverb} governed by Acme Code."
+                )
+                self.assert_has_error("prohibited source authority language")
+        for modifier in ("not", "never", "by no means"):
+            with self.subTest(modifier=modifier):
+                self.write_readme(
+                    f"This profile has {modifier} been governed by Acme Code."
+                )
+                self.assertEqual(validate_profiles.validate(self.root), [])
+
+    def test_negative_modifiers_remain_polarity_cross_product(self) -> None:
+        templates = (
+            "NCSC has {modifier} approved this profile.",
+            (
+                "Cyber Essentials provision A has {modifier} mapped to "
+                "GOV-100."
+            ),
+            (
+                "GOV-100 has {modifier} mapped from Cyber Essentials "
+                "provision A."
+            ),
+        )
+        for template, modifier in product(
+            templates,
+            ("not", "never", "by no means"),
+        ):
+            with self.subTest(template=template, modifier=modifier):
+                self.write_readme(template.format(modifier=modifier))
+                self.assertEqual(validate_profiles.validate(self.root), [])
+
+    def test_postposed_denial_agent_vs_rhetorical_cross_product(self) -> None:
+        rhetorical = (
+            "This profile guarantees legal compliance to no one's surprise.",
+            "This profile proves legal compliance by no small margin.",
+            "GOV-100 is superseded by no small margin.",
+            "Core controls are discontinued by no surprising mechanism.",
+        )
+        for text in rhetorical:
+            with self.subTest(text=text):
+                self.write_readme(text)
+                expected = (
+                    "prohibited control weakening language"
+                    if "GOV-100" in text or "Core controls" in text
+                    else "prohibited assertion 'compliance'"
+                )
+                self.assert_has_error(expected)
+        genuine_denials = (
+            "Legal compliance is guaranteed by no profile.",
+            "Legal compliance was proven by no authority.",
+            "GOV-100 is superseded by no profile.",
+            "Core controls are discontinued by no authority.",
+            (
+                "GOV-100 is superseded by neither this profile nor any "
+                "overlay."
+            ),
+        )
+        for text in genuine_denials:
+            with self.subTest(text=text):
+                self.write_readme(text)
+                self.assertEqual(validate_profiles.validate(self.root), [])
+
+    def test_negated_rejection_head_cross_product(self) -> None:
+        claims = (
+            (
+                "this profile guarantees legal compliance",
+                "prohibited assertion 'compliance'",
+            ),
+            (
+                "GOV-100 is optional",
+                "prohibited control weakening language",
+            ),
+        )
+        frames = (
+            "is never false",
+            "was by no means rejected",
+            "has never been denied",
+            "cannot be rejected",
+            "can't be denied",
+            "is neither false nor rejected",
+        )
+        for (claim, expected), frame in product(claims, frames):
+            with self.subTest(claim=claim, frame=frame):
+                self.write_readme(f"The claim that {claim} {frame}.")
+                self.assert_has_error(expected)
+
     def test_semantic_diagnostic_ordering_is_stable(self) -> None:
         selections = self.load_component("control-selections.json")
         duplicate = dict(selections["selections"][0])

@@ -117,6 +117,10 @@ LOCAL_MATURITY_FIELDS = frozenset(
 NON_IMPORT_STATEMENT = (
     "Relationships, external outcomes, and evidence are not imported."
 )
+BOUNDED_PREDICATE_MODIFIERS = (
+    r"(?:(?:not|never|by\s+no\s+means)\s+)?"
+    r"(?:(?!(?:not|never)\b)[A-Za-z]+ly\s+)?"
+)
 PROFILE_ASSERTION_PATTERNS = (
     (
         "legal sufficiency",
@@ -459,15 +463,17 @@ PROFILE_ASSERTION_PATTERNS += (
     (
         "named-authority approval",
         re.compile(
-            r"\bNCSC\s+(?:(?:has|had)\s+(?:not\s+)?)?"
+            rf"\bNCSC\s+(?:(?:has|had)\s+)?"
+            rf"{BOUNDED_PREDICATE_MODIFIERS}"
             r"(?:approves?|approved|approving)\s+"
             r"(?P<active_outcome>(?:this|the)\s+profile)\b"
             r"|\b(?:this|the)\s+profile\s+"
-            r"(?:(?:is|was)\s+(?:not\s+)?"
-            r"|(?:has|had)\s+(?:not\s+)?been\s+)"
+            rf"(?:(?:is|was)\s+{BOUNDED_PREDICATE_MODIFIERS}"
+            rf"|(?:has|had)\s+{BOUNDED_PREDICATE_MODIFIERS}been\s+"
+            rf"{BOUNDED_PREDICATE_MODIFIERS})"
             r"(?P<outcome>approved\s+by\s+NCSC)\b"
             r"|\b(?:this|the)\s+profile\s+"
-            r"(?:(?:has|had)\s+(?:not\s+)?)?"
+            rf"(?:(?:has|had)\s+)?{BOUNDED_PREDICATE_MODIFIERS}"
             r"(?:receives?|received|receiving)\s+"
             r"(?P<passive_outcome>NCSC approval)\b",
             re.IGNORECASE,
@@ -490,7 +496,8 @@ PROFILE_ASSERTION_PATTERNS += (
         "imported mapping relationship",
         re.compile(
             r"\b[A-Z][A-Z0-9]{1,15}-[0-9]{3}\s+"
-            r"(?:(?:does|did|has|had)\s+(?:not\s+)?)?"
+            rf"(?:(?:does|did|has|had)\s+)?"
+            rf"{BOUNDED_PREDICATE_MODIFIERS}"
             r"(?P<outcome>maps?|mapped)\s+from\s+"
             r"(?:Cyber Essentials|NCSC|external scheme)\s+"
             r"(?:provision|requirement|control)\s+[A-Za-z0-9.-]+\b",
@@ -502,7 +509,7 @@ PROFILE_ASSERTION_PATTERNS += (
         re.compile(
             r"\b(?:Cyber Essentials|NCSC|external scheme)\s+"
             r"(?:provision|requirement|control)\s+[A-Za-z0-9.-]+\s+"
-            r"(?:(?:has|had)\s+(?:not\s+)?)?"
+            rf"(?:(?:has|had)\s+)?{BOUNDED_PREDICATE_MODIFIERS}"
             r"(?P<outcome>maps?|mapped)\s+to\s+"
             r"[A-Z][A-Z0-9]{1,15}-[0-9]{3}\b",
             re.IGNORECASE,
@@ -513,8 +520,9 @@ PROFILE_ASSERTION_PATTERNS += (
         re.compile(
             r"\b(?:Cyber Essentials|NCSC|external scheme)\s+"
             r"(?:provision|requirement|control)\s+[A-Za-z0-9.-]+\s+"
-            r"(?:(?:is|was)\s+(?:not\s+)?"
-            r"|(?:has|had)\s+(?:not\s+)?been\s+)"
+            rf"(?:(?:is|was)\s+{BOUNDED_PREDICATE_MODIFIERS}"
+            rf"|(?:has|had)\s+{BOUNDED_PREDICATE_MODIFIERS}been\s+"
+            rf"{BOUNDED_PREDICATE_MODIFIERS})"
             r"(?P<outcome>mapped\s+to)\s+"
             r"[A-Z][A-Z0-9]{1,15}-[0-9]{3}\b",
             re.IGNORECASE,
@@ -535,8 +543,9 @@ PROFILE_ASSERTION_PATTERNS += (
         "imported mapping relationship",
         re.compile(
             r"\b[A-Z][A-Z0-9]{1,15}-[0-9]{3}\s+"
-            r"(?:(?:is|was)\s+(?:not\s+)?"
-            r"|(?:has|had)\s+(?:not\s+)?been\s+)"
+            rf"(?:(?:is|was)\s+{BOUNDED_PREDICATE_MODIFIERS}"
+            rf"|(?:has|had)\s+{BOUNDED_PREDICATE_MODIFIERS}been\s+"
+            rf"{BOUNDED_PREDICATE_MODIFIERS})"
             r"(?P<outcome>mapped\s+from)\s+"
             r"(?:Cyber Essentials|NCSC|external scheme)\s+"
             r"(?:provision|requirement|control)\s+[A-Za-z0-9.-]+\b",
@@ -568,11 +577,29 @@ WEAKENING_PREDICATE = re.compile(
 PASSIVE_WEAKENING = re.compile(
     r"\b(?P<control>(?:(?:core\s+)?controls?(?:\s+requirements?)?"
     r"|[A-Z][A-Z0-9]{1,15}-[0-9]{3}))\s+"
-    r"(?:is|are|was|were)\s+(?:not\s+)?"
+    r"(?:(?:is|are|was|were)\s+(?:(?:not|never)\s+)?"
+    r"|(?:has|have|had)\s+(?:(?:not|never)\s+)?been\s+)"
     r"(?P<predicate>replaced|waived|made\s+optional|altered|relaxed|weakened|"
     r"narrowed|marked\s+inapplicable|superseded|lowered|rendered\s+optional|"
     r"inapplicable|discontinued)\b",
     re.IGNORECASE,
+)
+ASPECTUAL_WEAKENING = (
+    re.compile(
+        r"\b(?P<control>(?:(?:core\s+)?controls?(?:\s+requirements?)?"
+        r"|[A-Z][A-Z0-9]{1,15}-[0-9]{3}))\s+"
+        r"(?:has|have|had)\s+(?:(?:not|never)\s+)?"
+        r"(?P<predicate>ceased\s+to\s+apply|discontinued\s+applying)\b",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"\b(?P<control>(?:(?:core\s+)?controls?(?:\s+requirements?)?"
+        r"|[A-Z][A-Z0-9]{1,15}-[0-9]{3}))\s+"
+        r"(?:(?:is|are|was|were)\s+(?:(?:not|never)\s+)?"
+        r"|(?:has|have|had)\s+(?:(?:not|never)\s+)?been\s+)"
+        r"(?P<predicate>no\s+longer\s+mandatory)\b",
+        re.IGNORECASE,
+    ),
 )
 ADJECTIVAL_WEAKENING = (
     re.compile(
@@ -619,7 +646,7 @@ CONTROL_LANGUAGE = re.compile(
 )
 PREDICATE_NEGATION = re.compile(
     r"\b(?:cannot|can['’]t|doesn['’]t|isn['’]t|must\s+not|never|not"
-    r"|shall\s+not|wasn['’]t|weren['’]t)\b",
+    r"|by\s+no\s+means|shall\s+not|wasn['’]t|weren['’]t)\b",
     re.IGNORECASE,
 )
 ASSERTION_SUBJECT = re.compile(
@@ -1908,10 +1935,15 @@ def predicate_is_negated(prefix: str) -> bool:
 
 def postposed_denial(text: str) -> bool:
     """Recognize a denied agent or object after a matched predicate."""
+    denial_noun = (
+        r"(?:profile|authority|source|body|organization|agency|overlay)"
+    )
     return bool(
         re.match(
             r"\s*(?:by|from|to)\s+"
-            r"(?:no\b|neither\b[^.;:!?]*\bnor\b)",
+            rf"(?:no\s+{denial_noun}\b"
+            rf"|neither\s+(?:(?:this|the|any)\s+)?{denial_noun}\s+"
+            rf"nor\s+(?:(?:this|the|any)\s+)?{denial_noun}\b)",
             text,
             re.IGNORECASE,
         )
@@ -1938,15 +1970,25 @@ def discussion_head_is_negated(context: str, index: int) -> bool:
     """Return whether the nearest rejection/denial copula is negated."""
     auxiliaries = list(
         re.finditer(
-            r"\b(?:is|are|was|were|has|have|had)\b",
+            r"\b(?:is|are|was|were|has|have|had|cannot"
+            r"|can['’]t|can)\b",
             context,
             re.IGNORECASE,
         )
     )
     if not auxiliaries:
         return False
-    local = context[auxiliaries[-1].end() : index]
-    return bool(re.search(r"\bnot\b", local, re.IGNORECASE))
+    auxiliary = auxiliaries[-1]
+    local = context[auxiliary.end() : index]
+    return bool(
+        auxiliary.group(0).casefold()
+        in {"cannot", "can't", "can’t"}
+        or re.search(
+            r"\b(?:not|never|neither|by\s+no\s+means)\b",
+            local,
+            re.IGNORECASE,
+        )
+    )
 
 
 def assertion_outcome_start(match: re.Match[str]) -> int:
@@ -2118,6 +2160,20 @@ def contains_affirmative_weakening(text: str) -> bool:
         if postposed_denial(sentence_suffix(text, weakening.end())):
             continue
         return True
+    for pattern in ASPECTUAL_WEAKENING:
+        for weakening in pattern.finditer(text):
+            predicate_start = weakening.start("predicate")
+            if predicate_is_negated(
+                sentence_prefix(text, predicate_start)
+            ):
+                continue
+            if occurrence_is_metalinguistic(
+                text, weakening.start(), weakening.end()
+            ):
+                continue
+            if postposed_denial(sentence_suffix(text, weakening.end())):
+                continue
+            return True
     for pattern in ADJECTIVAL_WEAKENING:
         for weakening in pattern.finditer(text):
             if postposed_denial(sentence_suffix(text, weakening.end())):
@@ -2209,8 +2265,9 @@ def contains_affirmative_source_authority(
     declared_passive_patterns = tuple(
         re.compile(
             r"\b(?:this|the)\s+profile\s+"
-            r"(?:(?:is|was)\s+(?:not\s+)?"
-            r"|(?:has|had)\s+(?:not\s+)?been\s+)"
+            rf"(?:(?:is|was)\s+{BOUNDED_PREDICATE_MODIFIERS}"
+            rf"|(?:has|had)\s+{BOUNDED_PREDICATE_MODIFIERS}been\s+"
+            rf"{BOUNDED_PREDICATE_MODIFIERS})"
             r"(?P<outcome>governed\s+by)\s+"
             rf"(?P<source>{re.escape(source)})(?!\w)",
             re.IGNORECASE,
