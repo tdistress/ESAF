@@ -600,6 +600,13 @@ ASPECTUAL_WEAKENING = (
         r"(?P<predicate>no\s+longer\s+mandatory)\b",
         re.IGNORECASE,
     ),
+    re.compile(
+        r"\b(?P<control>(?:(?:core\s+)?controls?(?:\s+requirements?)?"
+        r"|[A-Z][A-Z0-9]{1,15}-[0-9]{3}))\s+"
+        r"(?:has|have|had)\s+"
+        r"(?P<predicate>no\s+longer\s+been\s+mandatory)\b",
+        re.IGNORECASE,
+    ),
 )
 ADJECTIVAL_WEAKENING = (
     re.compile(
@@ -1938,12 +1945,18 @@ def postposed_denial(text: str) -> bool:
     denial_noun = (
         r"(?:profile|authority|source|body|organization|agency|overlay)"
     )
+    bounded_noun = rf"{denial_noun}(?!['’]s|\w)"
+    qualifier = (
+        r"(?:\s+(?:under|within|in)\s+(?:this|the)\s+"
+        r"(?:profile|scheme|document|overlay))?"
+    )
     return bool(
         re.match(
-            r"\s*(?:by|from|to)\s+"
-            rf"(?:no\s+{denial_noun}\b"
-            rf"|neither\s+(?:(?:this|the|any)\s+)?{denial_noun}\s+"
-            rf"nor\s+(?:(?:this|the|any)\s+)?{denial_noun}\b)",
+            r"^\s*(?:by|from|to)\s+"
+            rf"(?:no\s+{bounded_noun}"
+            rf"|neither\s+(?:(?:this|the|any)\s+)?{bounded_noun}\s+"
+            rf"nor\s+(?:(?:this|the|any)\s+)?{bounded_noun})"
+            rf"{qualifier}\s*$",
             text,
             re.IGNORECASE,
         )

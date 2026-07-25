@@ -2475,6 +2475,130 @@ class ProfileValidationTests(unittest.TestCase):
                 self.write_readme(f"The claim that {claim} {frame}.")
                 self.assert_has_error(expected)
 
+    def test_natural_perfect_mandatory_placement_cross_product(self) -> None:
+        subjects = (
+            ("GOV-100", "has"),
+            ("Core controls", "have"),
+        )
+        for (subject, present_perfect), auxiliary in product(
+            subjects,
+            ("present", "past"),
+        ):
+            verb = present_perfect if auxiliary == "present" else "had"
+            with self.subTest(subject=subject, auxiliary=verb):
+                self.write_readme(
+                    f"{subject} {verb} no longer been mandatory."
+                )
+                self.assert_has_error(
+                    "prohibited control weakening language"
+                )
+
+    def test_natural_perfect_mandatory_denial_and_discussion_pairs(
+        self,
+    ) -> None:
+        for subject, auxiliary in (
+            ("GOV-100", "has"),
+            ("Core controls", "have"),
+            ("GOV-100", "had"),
+        ):
+            for negator in ("not", "never"):
+                with self.subTest(
+                    subject=subject,
+                    auxiliary=auxiliary,
+                    negator=negator,
+                ):
+                    self.write_readme(
+                        f"{subject} {auxiliary} {negator} ceased to be "
+                        "mandatory."
+                    )
+                    self.assertEqual(validate_profiles.validate(self.root), [])
+        claims = (
+            "GOV-100 has no longer been mandatory",
+            "Core controls have no longer been mandatory",
+            "GOV-100 had no longer been mandatory",
+        )
+        for claim, frame in product(
+            claims,
+            ("is false", "is rejected", "was denied"),
+        ):
+            with self.subTest(claim=claim, frame=frame):
+                self.write_readme(f"The claim that {claim} {frame}.")
+                self.assertEqual(validate_profiles.validate(self.root), [])
+        for claim in claims:
+            with self.subTest(claim=claim, frame="quotation"):
+                self.write_readme(f'The phrase "{claim}" is prohibited.')
+                self.assertEqual(validate_profiles.validate(self.root), [])
+
+    def test_postposed_possessive_rhetorical_suffix_cross_product(
+        self,
+    ) -> None:
+        closed_nouns = (
+            "profile",
+            "authority",
+            "source",
+            "body",
+            "organization",
+            "agency",
+            "overlay",
+        )
+        for noun, apostrophe in product(closed_nouns, ("'s", "’s")):
+            with self.subTest(noun=noun, apostrophe=apostrophe):
+                self.write_readme(
+                    "This profile proves legal compliance by no "
+                    f"{noun}{apostrophe} surprise."
+                )
+                self.assert_has_error("prohibited assertion 'compliance'")
+        for text in (
+            "This profile proves legal compliance by no organization’s surprise.",
+            "This profile proves legal compliance by no authority's measure.",
+        ):
+            with self.subTest(text=text):
+                self.write_readme(text)
+                self.assert_has_error("prohibited assertion 'compliance'")
+
+    def test_postposed_terminal_and_qualified_denial_cross_product(
+        self,
+    ) -> None:
+        closed_nouns = (
+            "profile",
+            "authority",
+            "source",
+            "body",
+            "organization",
+            "agency",
+            "overlay",
+        )
+        for noun in closed_nouns:
+            with self.subTest(noun=noun, qualification="terminal"):
+                self.write_readme(
+                    f"Legal compliance was proven by no {noun}."
+                )
+                self.assertEqual(validate_profiles.validate(self.root), [])
+        for qualifier in (
+            "under this profile",
+            "within the scheme",
+            "in this document",
+        ):
+            with self.subTest(qualifier=qualifier):
+                self.write_readme(
+                    "Legal compliance was proven by no authority "
+                    f"{qualifier}."
+                )
+                self.assertEqual(validate_profiles.validate(self.root), [])
+        for text in (
+            (
+                "GOV-100 is superseded by neither this profile nor any "
+                "overlay."
+            ),
+            (
+                "GOV-100 is superseded by neither this profile nor any "
+                "overlay under this profile."
+            ),
+        ):
+            with self.subTest(text=text):
+                self.write_readme(text)
+                self.assertEqual(validate_profiles.validate(self.root), [])
+
     def test_semantic_diagnostic_ordering_is_stable(self) -> None:
         selections = self.load_component("control-selections.json")
         duplicate = dict(selections["selections"][0])
