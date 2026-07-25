@@ -115,6 +115,53 @@ AFFIRMATIVE_WEAKENING = (
     "GOV-100 does not apply under this profile.",
 )
 
+ACTIVE_ASPECT_FORMS = (
+    ("{present}", "does not {base}"),
+    ("{past}", "did not {base}"),
+    ("has {participle}", "has not {participle}"),
+    ("had {participle}", "had not {participle}"),
+    ("is {progressive}", "is not {progressive}"),
+    ("was {progressive}", "was not {progressive}"),
+    ("has been {progressive}", "has not been {progressive}"),
+    ("had been {progressive}", "had not been {progressive}"),
+)
+PASSIVE_ASPECT_FORMS = (
+    ("is {participle}", "is not {participle}"),
+    ("was {participle}", "was not {participle}"),
+    ("has been {participle}", "has not been {participle}"),
+    ("had been {participle}", "had not been {participle}"),
+    ("is being {participle}", "is not being {participle}"),
+    ("was being {participle}", "was not being {participle}"),
+)
+
+
+def aspect_forms(
+    *,
+    base: str,
+    present: str,
+    past: str,
+    participle: str,
+    progressive: str,
+    voice: str,
+) -> tuple[tuple[str, str], ...]:
+    templates = (
+        ACTIVE_ASPECT_FORMS if voice == "active" else PASSIVE_ASPECT_FORMS
+    )
+    values = {
+        "base": base,
+        "present": present,
+        "past": past,
+        "participle": participle,
+        "progressive": progressive,
+    }
+    return tuple(
+        (
+            affirmative.format(**values),
+            denial.format(**values),
+        )
+        for affirmative, denial in templates
+    )
+
 
 class ProfileValidationTests(unittest.TestCase):
     def setUp(self) -> None:
@@ -1468,6 +1515,131 @@ class ProfileValidationTests(unittest.TestCase):
                 self.write_readme(f"{denial} However, {assertion}.")
                 self.assert_has_error(f"prohibited assertion '{expected}'")
 
+    def test_fourth_review_claim_and_import_auxiliary_matrix(self) -> None:
+        families = (
+            (
+                "compliance",
+                "This profile {verb} Cyber Essentials compliance",
+                "Cyber Essentials compliance {verb} by this profile",
+                {
+                    "base": "guarantee",
+                    "present": "guarantees",
+                    "past": "guaranteed",
+                    "participle": "guaranteed",
+                    "progressive": "guaranteeing",
+                },
+            ),
+            (
+                "production readiness",
+                "This profile {verb} production readiness",
+                "Production readiness {verb} by this profile",
+                {
+                    "base": "confirm",
+                    "present": "confirms",
+                    "past": "confirmed",
+                    "participle": "confirmed",
+                    "progressive": "confirming",
+                },
+            ),
+            (
+                "imported mapping relationship",
+                (
+                    "Cyber Essentials provision A.1 {verb} evidence for "
+                    "GOV-100"
+                ),
+                (
+                    "Evidence for GOV-100 {verb} by Cyber Essentials "
+                    "provision A.1"
+                ),
+                {
+                    "base": "provide",
+                    "present": "provides",
+                    "past": "provided",
+                    "participle": "provided",
+                    "progressive": "providing",
+                },
+            ),
+            (
+                "imported mapping relationship",
+                (
+                    "This profile {verb} evidence from Cyber Essentials "
+                    "provision A.1"
+                ),
+                (
+                    "Evidence from Cyber Essentials provision A.1 {verb} by "
+                    "this profile"
+                ),
+                {
+                    "base": "import",
+                    "present": "imports",
+                    "past": "imported",
+                    "participle": "imported",
+                    "progressive": "importing",
+                },
+            ),
+        )
+        for label, active, passive, forms in families:
+            for voice, template in (("active", active), ("passive", passive)):
+                for affirmative_verb, denial_verb in aspect_forms(
+                    **forms,
+                    voice=voice,
+                ):
+                    assertion = template.format(verb=affirmative_verb)
+                    denial = template.format(verb=denial_verb)
+                    with self.subTest(
+                        label=label,
+                        voice=voice,
+                        assertion=assertion,
+                        form="affirmative",
+                    ):
+                        self.assertIn(
+                            label,
+                            validate_profiles.asserted_profile_phrases(
+                                assertion
+                            ),
+                        )
+                    with self.subTest(
+                        label=label,
+                        voice=voice,
+                        assertion=assertion,
+                        form="denial",
+                    ):
+                        self.assertNotIn(
+                            label,
+                            validate_profiles.asserted_profile_phrases(denial),
+                        )
+                    for form, text in (
+                        ("quotation", f'The phrase "{assertion}" is prohibited.'),
+                        (
+                            "discussion",
+                            f"The claim that {assertion} is rejected.",
+                        ),
+                    ):
+                        with self.subTest(
+                            label=label,
+                            voice=voice,
+                            assertion=assertion,
+                            form=form,
+                        ):
+                            self.assertNotIn(
+                                label,
+                                validate_profiles.asserted_profile_phrases(
+                                    text
+                                ),
+                            )
+                    with self.subTest(
+                        label=label,
+                        voice=voice,
+                        assertion=assertion,
+                        form="coordinated",
+                    ):
+                        self.assertIn(
+                            label,
+                            validate_profiles.asserted_profile_phrases(
+                                f"{denial}. However, {assertion}."
+                            ),
+                        )
+
     def test_establishes_profile_claim_variants_are_rejected(self) -> None:
         for text, expected in (
             (
@@ -1896,6 +2068,152 @@ class ProfileValidationTests(unittest.TestCase):
                 self.write_readme(f"{denial} However, {assertion}.")
                 self.assert_has_error("prohibited source authority language")
 
+    def test_fourth_review_excluded_source_auxiliary_matrix(self) -> None:
+        for forms in (
+            {
+                "base": "supply",
+                "present": "supplies",
+                "past": "supplied",
+                "participle": "supplied",
+                "progressive": "supplying",
+            },
+            {
+                "base": "provide",
+                "present": "provides",
+                "past": "provided",
+                "participle": "provided",
+                "progressive": "providing",
+            },
+        ):
+            for voice, template in (
+                (
+                    "active",
+                    "UK GDPR {verb} the GOV-100 profile selection",
+                ),
+                (
+                    "passive",
+                    "The GOV-100 profile selection {verb} by UK GDPR",
+                ),
+            ):
+                for affirmative_verb, denial_verb in aspect_forms(
+                    **forms,
+                    voice=voice,
+                ):
+                    assertion = template.format(verb=affirmative_verb)
+                    denial = template.format(verb=denial_verb)
+                    with self.subTest(
+                        voice=voice,
+                        assertion=assertion,
+                        form="affirmative",
+                    ):
+                        self.assertTrue(
+                            validate_profiles.contains_affirmative_source_authority(
+                                assertion,
+                                ["UK GDPR"],
+                            )
+                        )
+                    with self.subTest(
+                        voice=voice,
+                        assertion=assertion,
+                        form="denial",
+                    ):
+                        self.assertFalse(
+                            validate_profiles.contains_affirmative_source_authority(
+                                denial,
+                                ["UK GDPR"],
+                            )
+                        )
+                    for form, text in (
+                        ("quotation", f'The phrase "{assertion}" is prohibited.'),
+                        (
+                            "discussion",
+                            f"The claim that {assertion} is rejected.",
+                        ),
+                    ):
+                        with self.subTest(
+                            voice=voice,
+                            assertion=assertion,
+                            form=form,
+                        ):
+                            self.assertFalse(
+                                validate_profiles.contains_affirmative_source_authority(
+                                    text,
+                                    ["UK GDPR"],
+                                )
+                            )
+                    with self.subTest(
+                        voice=voice,
+                        assertion=assertion,
+                        form="coordinated",
+                    ):
+                        self.assertTrue(
+                            validate_profiles.contains_affirmative_source_authority(
+                                f"{denial}. However, {assertion}.",
+                                ["UK GDPR"],
+                            )
+                        )
+
+    def test_fourth_review_excluded_source_perfect_derivation(self) -> None:
+        pairs = (
+            (
+                "The GOV-100 profile selection has been derived from UK GDPR",
+                "The GOV-100 profile selection has not been derived from UK GDPR",
+            ),
+            (
+                "The GOV-100 profile selection had been derived from UK GDPR",
+                "The GOV-100 profile selection had not been derived from UK GDPR",
+            ),
+            (
+                "The GOV-100 profile selection has been based on UK GDPR",
+                "The GOV-100 profile selection has not been based on UK GDPR",
+            ),
+            (
+                "The GOV-100 profile selection had been based on UK GDPR",
+                "The GOV-100 profile selection had not been based on UK GDPR",
+            ),
+            (
+                "UK GDPR has been the source for the GOV-100 profile selection",
+                "UK GDPR has not been the source for the GOV-100 profile selection",
+            ),
+            (
+                "UK GDPR had been the source for the GOV-100 profile selection",
+                "UK GDPR had not been the source for the GOV-100 profile selection",
+            ),
+        )
+        for assertion, denial in pairs:
+            with self.subTest(assertion=assertion, form="affirmative"):
+                self.assertTrue(
+                    validate_profiles.contains_affirmative_source_authority(
+                        assertion,
+                        ["UK GDPR"],
+                    )
+                )
+            with self.subTest(assertion=assertion, form="denial"):
+                self.assertFalse(
+                    validate_profiles.contains_affirmative_source_authority(
+                        denial,
+                        ["UK GDPR"],
+                    )
+                )
+            for form, text in (
+                ("quotation", f'The phrase "{assertion}" is prohibited.'),
+                ("discussion", f"The claim that {assertion} is rejected."),
+            ):
+                with self.subTest(assertion=assertion, form=form):
+                    self.assertFalse(
+                        validate_profiles.contains_affirmative_source_authority(
+                            text,
+                            ["UK GDPR"],
+                        )
+                    )
+            with self.subTest(assertion=assertion, form="coordinated"):
+                self.assertTrue(
+                    validate_profiles.contains_affirmative_source_authority(
+                        f"{denial}. However, {assertion}.",
+                        ["UK GDPR"],
+                    )
+                )
+
     def test_source_boundary_uses_declared_generic_excluded_source(self) -> None:
         profile = self.load_component("profile.json")
         profile["source_boundary"]["excluded_sources"] = ["Acme Code"]
@@ -2150,6 +2468,88 @@ class ProfileValidationTests(unittest.TestCase):
                 self.write_readme(f"{denial} However, {assertion}.")
                 self.assert_has_error("prohibited control weakening language")
 
+    def test_fourth_review_direct_weakening_auxiliary_matrix(self) -> None:
+        for forms in (
+            {
+                "base": "omit",
+                "present": "omits",
+                "past": "omitted",
+                "participle": "omitted",
+                "progressive": "omitting",
+            },
+            {
+                "base": "skip",
+                "present": "skips",
+                "past": "skipped",
+                "participle": "skipped",
+                "progressive": "skipping",
+            },
+            {
+                "base": "reduce",
+                "present": "reduces",
+                "past": "reduced",
+                "participle": "reduced",
+                "progressive": "reducing",
+            },
+        ):
+            for voice, template in (
+                ("active", "This profile {verb} the GOV-100 control"),
+                ("passive", "GOV-100 {verb} by this profile"),
+            ):
+                for affirmative_verb, denial_verb in aspect_forms(
+                    **forms,
+                    voice=voice,
+                ):
+                    assertion = template.format(verb=affirmative_verb)
+                    denial = template.format(verb=denial_verb)
+                    with self.subTest(
+                        voice=voice,
+                        assertion=assertion,
+                        form="affirmative",
+                    ):
+                        self.assertTrue(
+                            validate_profiles.contains_affirmative_weakening(
+                                assertion
+                            )
+                        )
+                    with self.subTest(
+                        voice=voice,
+                        assertion=assertion,
+                        form="denial",
+                    ):
+                        self.assertFalse(
+                            validate_profiles.contains_affirmative_weakening(
+                                denial
+                            )
+                        )
+                    for form, text in (
+                        ("quotation", f'The phrase "{assertion}" is prohibited.'),
+                        (
+                            "discussion",
+                            f"The claim that {assertion} is rejected.",
+                        ),
+                    ):
+                        with self.subTest(
+                            voice=voice,
+                            assertion=assertion,
+                            form=form,
+                        ):
+                            self.assertFalse(
+                                validate_profiles.contains_affirmative_weakening(
+                                    text
+                                )
+                            )
+                    with self.subTest(
+                        voice=voice,
+                        assertion=assertion,
+                        form="coordinated",
+                    ):
+                        self.assertTrue(
+                            validate_profiles.contains_affirmative_weakening(
+                                f"{denial}. However, {assertion}."
+                            )
+                        )
+
     def test_direct_weakening_object_and_complement_are_bounded(self) -> None:
         for statement in (
             (
@@ -2179,7 +2579,7 @@ class ProfileValidationTests(unittest.TestCase):
             "This profile reduces GOV-100 implementation risks while preserving all requirements.",
             "This profile reduced the GOV-100 control implementation risk while preserving every requirement.",
             "This profile omits GOV-100 from an illustrative list while retaining it in the complete selection ledger.",
-            "This profile omitted the GOV-100 control from this illustrative list while retaining it in complete selection ledger.",
+            "This profile omitted the GOV-100 control from this illustrative list while retaining it in the complete selection ledger.",
         )
         for statement in statements:
             with self.subTest(statement=statement):
@@ -2215,6 +2615,41 @@ class ProfileValidationTests(unittest.TestCase):
             "However, this profile confirms production readiness is established."
         )
         self.assert_has_error("prohibited assertion 'production readiness'")
+
+    def test_fourth_review_safe_complement_grammar_variations(self) -> None:
+        safe_weakening = (
+            "This profile reduces GOV-100-related implementation risk, while preserving every requirement.",
+            "This profile reduced GOV-100-related implementation risks while preserving all requirements.",
+            "This profile omits GOV-100 from this illustrative list while retaining it in the complete selection ledger.",
+            "This profile omitted GOV-100 from an illustrative list, while retaining it in the complete selection ledger.",
+            "This profile omits GOV-100 from the illustrative list while retaining it in the complete selection ledger.",
+        )
+        for statement in safe_weakening:
+            with self.subTest(statement=statement):
+                self.assertFalse(
+                    validate_profiles.contains_affirmative_weakening(statement)
+                )
+        safe_readiness = (
+            "This profile confirms production readiness is still not established.",
+            "This profile confirms production readiness has never been established.",
+            "This profile confirms production readiness had never been established.",
+            "This profile confirms production readiness has yet to be established.",
+            "This profile confirms production readiness had yet to be established.",
+        )
+        for statement in safe_readiness:
+            with self.subTest(statement=statement):
+                self.assertNotIn(
+                    "production readiness",
+                    validate_profiles.asserted_profile_phrases(statement),
+                )
+        self.assertIn(
+            "production readiness",
+            validate_profiles.asserted_profile_phrases(
+                "This profile confirms production readiness has never been "
+                "established. However, this profile confirms production "
+                "readiness is established."
+            ),
+        )
 
     def test_additional_weakening_denials_and_discussion_are_allowed(self) -> None:
         for text in (

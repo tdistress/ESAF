@@ -121,6 +121,73 @@ BOUNDED_PREDICATE_MODIFIERS = (
     r"(?:(?:not|never|by\s+no\s+means)\s+)?"
     r"(?:(?!(?:not|never)\b)[A-Za-z]+ly\s+)?"
 )
+ASPECT_VOICE_AUXILIARY_MATRIX = {
+    "active_do": r"(?:does|did)\s+(?:not\s+)?",
+    "active_perfect": r"(?:has|had)\s+(?:(?:not|never)\s+)?",
+    "active_progressive": r"(?:is|was)\s+(?:(?:not|never)\s+)?",
+    "active_perfect_progressive": (
+        r"(?:has|had)\s+(?:(?:not|never)\s+)?been\s+"
+    ),
+    "passive_simple": (
+        r"(?:is|are|was|were)\s+(?:(?:not|never)\s+)?"
+    ),
+    "passive_perfect": (
+        r"(?:has|have|had)\s+(?:(?:not|never)\s+)?been\s+"
+    ),
+    "passive_progressive": (
+        r"(?:is|are|was|were)\s+(?:(?:not|never)\s+)?being\s+"
+    ),
+}
+
+
+def bounded_aspect_voice_patterns(
+    *,
+    active_subject: str,
+    active_object: str,
+    passive_subject: str,
+    passive_agent: str,
+    base: str,
+    present: str,
+    past: str,
+    participle: str,
+    progressive: str,
+) -> tuple[re.Pattern[str], ...]:
+    """Compile the bounded active/passive auxiliary matrix for one verb."""
+    matrix = ASPECT_VOICE_AUXILIARY_MATRIX
+    active_rows = (
+        rf"(?P<outcome>(?:{present}|{past})\s+{active_object})",
+        rf"{matrix['active_do']}"
+        rf"(?P<outcome>{base}\s+{active_object})",
+        rf"{matrix['active_perfect']}"
+        rf"(?P<outcome>{participle}\s+{active_object})",
+        rf"{matrix['active_progressive']}"
+        rf"(?P<outcome>{progressive}\s+{active_object})",
+        rf"{matrix['active_perfect_progressive']}"
+        rf"(?P<outcome>{progressive}\s+{active_object})",
+    )
+    passive_rows = (
+        rf"{matrix['passive_simple']}"
+        rf"(?P<outcome>{participle}\s+{passive_agent})",
+        rf"{matrix['passive_perfect']}"
+        rf"(?P<outcome>{participle}\s+{passive_agent})",
+        rf"{matrix['passive_progressive']}"
+        rf"(?P<outcome>{participle}\s+{passive_agent})",
+    )
+    return tuple(
+        re.compile(
+            rf"\b{active_subject}\s+{row}\b",
+            re.IGNORECASE,
+        )
+        for row in active_rows
+    ) + tuple(
+        re.compile(
+            rf"\b{passive_subject}\s+{row}\b",
+            re.IGNORECASE,
+        )
+        for row in passive_rows
+    )
+
+
 PROFILE_ASSERTION_PATTERNS = (
     (
         "legal sufficiency",
@@ -663,6 +730,88 @@ PROFILE_ASSERTION_PATTERNS += (
         ),
     ),
 )
+for label, pattern_args in (
+    (
+        "compliance",
+        {
+            "active_subject": r"(?:this|the)\s+profile",
+            "active_object": r"Cyber Essentials compliance",
+            "passive_subject": r"Cyber Essentials compliance",
+            "passive_agent": r"by\s+(?:this|the)\s+profile",
+            "base": "guarantee",
+            "present": "guarantees",
+            "past": "guaranteed",
+            "participle": "guaranteed",
+            "progressive": "guaranteeing",
+        },
+    ),
+    (
+        "production readiness",
+        {
+            "active_subject": r"(?:this|the)\s+profile",
+            "active_object": r"production readiness",
+            "passive_subject": r"production readiness",
+            "passive_agent": r"by\s+(?:this|the)\s+profile",
+            "base": "confirm",
+            "present": "confirms",
+            "past": "confirmed",
+            "participle": "confirmed",
+            "progressive": "confirming",
+        },
+    ),
+    (
+        "imported mapping relationship",
+        {
+            "active_subject": (
+                r"(?:Cyber Essentials|NCSC|external scheme)\s+"
+                r"(?:provision|requirement|control)\s+[A-Za-z0-9.-]+"
+            ),
+            "active_object": (
+                r"evidence\s+for\s+"
+                r"[A-Z][A-Z0-9]{1,15}-[0-9]{3}"
+            ),
+            "passive_subject": (
+                r"evidence\s+for\s+"
+                r"[A-Z][A-Z0-9]{1,15}-[0-9]{3}"
+            ),
+            "passive_agent": (
+                r"by\s+(?:Cyber Essentials|NCSC|external scheme)\s+"
+                r"(?:provision|requirement|control)\s+[A-Za-z0-9.-]+"
+            ),
+            "base": "provide",
+            "present": "provides",
+            "past": "provided",
+            "participle": "provided",
+            "progressive": "providing",
+        },
+    ),
+    (
+        "imported mapping relationship",
+        {
+            "active_subject": r"(?:this|the)\s+profile",
+            "active_object": (
+                r"evidence\s+from\s+"
+                r"(?:Cyber Essentials|NCSC|external scheme)\s+"
+                r"(?:provision|requirement|control)\s+[A-Za-z0-9.-]+"
+            ),
+            "passive_subject": (
+                r"evidence\s+from\s+"
+                r"(?:Cyber Essentials|NCSC|external scheme)\s+"
+                r"(?:provision|requirement|control)\s+[A-Za-z0-9.-]+"
+            ),
+            "passive_agent": r"by\s+(?:this|the)\s+profile",
+            "base": "import",
+            "present": "imports",
+            "past": "imported",
+            "participle": "imported",
+            "progressive": "importing",
+        },
+    ),
+):
+    PROFILE_ASSERTION_PATTERNS += tuple(
+        (label, pattern)
+        for pattern in bounded_aspect_voice_patterns(**pattern_args)
+    )
 WEAKENING_PREDICATE = re.compile(
     r"\b(?:replace(?:s|d|ing)?|alter(?:s|ed|ing)?|relax(?:es|ed|ing)?"
     r"|waiv(?:e|es|ed|ing)|weaken(?:s|ed|ing)?|narrow(?:s|ed|ing)?"
@@ -676,8 +825,9 @@ WEAKENING_PREDICATE = re.compile(
 PASSIVE_WEAKENING = re.compile(
     r"\b(?P<control>(?:(?:core\s+)?controls?(?:\s+requirements?)?"
     r"|[A-Z][A-Z0-9]{1,15}-[0-9]{3}))\s+"
-    r"(?:(?:is|are|was|were)\s+(?:(?:not|never)\s+)?"
-    r"|(?:has|have|had)\s+(?:(?:not|never)\s+)?been\s+)"
+    rf"(?:{ASPECT_VOICE_AUXILIARY_MATRIX['passive_simple']}"
+    rf"|{ASPECT_VOICE_AUXILIARY_MATRIX['passive_perfect']}"
+    rf"|{ASPECT_VOICE_AUXILIARY_MATRIX['passive_progressive']})"
     r"(?P<predicate>replaced|waived|made\s+optional|altered|relaxed|weakened|"
     r"narrowed|marked\s+inapplicable|superseded|lowered|rendered\s+optional|"
     r"omitted|skipped|reduced|inapplicable|discontinued)\b",
@@ -768,9 +918,8 @@ CONTROL_LANGUAGE = re.compile(
 DIRECT_CONTROL_WEAKENING = (
     re.compile(
         r"\b(?:this|the)\s+profile\s+"
-        r"(?:(?:does|did|has|had)\s+(?:not\s+)?)?"
-        r"(?P<predicate>omit(?:s|ted)?|skip(?:s|ped)?"
-        r"|reduc(?:e|es|ed))\s+"
+        rf"(?:{ASPECT_VOICE_AUXILIARY_MATRIX['active_do']})?"
+        r"(?P<predicate>omit(?:s|ted)?|skip(?:s|ped)?|reduc(?:e|es|ed))\s+"
         r"(?:the\s+)?"
         r"(?P<control>(?:(?:core\s+)?controls?"
         r"|[A-Z][A-Z0-9]{1,15}-[0-9]{3}))"
@@ -779,9 +928,19 @@ DIRECT_CONTROL_WEAKENING = (
     ),
     re.compile(
         r"\b(?:this|the)\s+profile\s+"
-        r"(?:(?:is|was)\s+(?:not\s+)?"
-        r"|(?:has|had)\s+(?:not\s+)?been\s+)"
-        r"(?P<predicate>omitting|skipping)\s+"
+        rf"{ASPECT_VOICE_AUXILIARY_MATRIX['active_perfect']}"
+        r"(?P<predicate>omitted|skipped|reduced)\s+"
+        r"(?:the\s+)?"
+        r"(?P<control>(?:(?:core\s+)?controls?"
+        r"|[A-Z][A-Z0-9]{1,15}-[0-9]{3}))"
+        r"(?:\s+control)?\b",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"\b(?:this|the)\s+profile\s+"
+        rf"(?:{ASPECT_VOICE_AUXILIARY_MATRIX['active_progressive']}"
+        rf"|{ASPECT_VOICE_AUXILIARY_MATRIX['active_perfect_progressive']})"
+        r"(?P<predicate>omitting|skipping|reducing)\s+"
         r"(?:the\s+)?"
         r"(?P<control>(?:(?:core\s+)?controls?"
         r"|[A-Z][A-Z0-9]{1,15}-[0-9]{3}))"
@@ -791,18 +950,21 @@ DIRECT_CONTROL_WEAKENING = (
 )
 SAFE_DIRECT_CONTROL_COMPLEMENT = re.compile(
     r"^(?:"
-    r"\s+implementation\s+risks?\s+while\s+preserving\s+"
+    r"(?:-related)?\s+implementation\s+risks?\s*,?\s+"
+    r"while\s+preserving\s+"
     r"(?:every\s+requirement|all\s+requirements)"
-    r"|\s+from\s+(?:this|an)\s+illustrative\s+list\s+while\s+"
-    r"retaining\s+it\s+in\s+(?:the\s+)?complete\s+selection\s+ledger"
+    r"|\s+from\s+(?:this|an|the)\s+illustrative\s+list\s*,?\s+"
+    r"while\s+retaining\s+it\s+in\s+the\s+complete\s+selection\s+ledger"
     r")\s*$",
     re.IGNORECASE,
 )
 SAFE_READINESS_DENIAL = re.compile(
     r"\bproduction readiness(?:"
     r"\s+gaps?\s+remain\s+unresolved"
-    r"|\s+(?:is\s+not\s+established"
-    r"|(?:has|had)\s+not\s+been\s+established"
+    r"|\s+(?:is\s+(?:still\s+)?not\s+established"
+    r"|(?:has|had)\s+(?:"
+    r"(?:not|never)\s+been\s+established"
+    r"|yet\s+to\s+be\s+established)"
     r"|(?:remains|is|remained)\s+unestablished)"
     r")\b",
     re.IGNORECASE,
@@ -2411,11 +2573,30 @@ def asserted_profile_phrases(text: str) -> list[str]:
     for label, pattern in PROFILE_ASSERTION_PATTERNS:
         for match in pattern.finditer(text):
             outcome_start = assertion_outcome_start(match)
+            readiness_phrase = (
+                re.search(
+                    r"\bproduction readiness\b",
+                    match.group(0),
+                    re.IGNORECASE,
+                )
+                if label == "production readiness"
+                else None
+            )
+            readiness_start = (
+                match.start() + readiness_phrase.start()
+                if readiness_phrase is not None
+                else outcome_start
+            )
+            readiness_end = (
+                match.start() + readiness_phrase.end()
+                if readiness_phrase is not None
+                else match.end()
+            )
             if (
                 label == "production readiness"
                 and any(
-                    safe.start() <= outcome_start
-                    and match.end() <= safe.end()
+                    safe.start() <= readiness_start
+                    and readiness_end <= safe.end()
                     for safe in safe_readiness
                 )
             ):
@@ -2490,6 +2671,13 @@ def contains_affirmative_source_authority(
     text: str, excluded_sources: list[str]
 ) -> bool:
     """Reject affirmative authority claims for declared excluded sources."""
+    profile_selection = (
+        r"(?:(?:this|the)\s+profile\s+"
+        r"(?:selection(?:\s+for\s+"
+        r"[A-Z][A-Z0-9]{1,15}-[0-9]{3})?|scope|requirement)"
+        r"|(?:this|the)\s+"
+        r"[A-Z][A-Z0-9]{1,15}-[0-9]{3}\s+profile\s+selection)"
+    )
     declared_passive_patterns = tuple(
         re.compile(
             r"\b(?:this|the)\s+profile\s+"
@@ -2507,58 +2695,53 @@ def contains_affirmative_source_authority(
         pattern
         for source in excluded_sources
         if source.strip()
+        for forms in (
+            {
+                "base": "supply",
+                "present": "supplies",
+                "past": "supplied",
+                "participle": "supplied",
+                "progressive": "supplying",
+            },
+            {
+                "base": "provide",
+                "present": "provides",
+                "past": "provided",
+                "participle": "provided",
+                "progressive": "providing",
+            },
+        )
+        for pattern in bounded_aspect_voice_patterns(
+            active_subject=(
+                rf"(?P<source>{re.escape(source)})(?!\w)"
+            ),
+            active_object=profile_selection,
+            passive_subject=profile_selection,
+            passive_agent=(
+                rf"by\s+(?P<source>{re.escape(source)})(?!\w)"
+            ),
+            **forms,
+        )
+    )
+    declared_derivation_patterns = tuple(
+        pattern
+        for source in excluded_sources
+        if source.strip()
         for pattern in (
             re.compile(
-                rf"\b(?P<source>{re.escape(source)})(?!\w)\s+"
-                r"(?:has|had)\s+(?:not\s+)?"
-                r"(?P<outcome>supplied|provided)\s+"
-                r"(?:(?:this|the)\s+profile\s+"
-                r"(?:selection|scope|requirement)"
-                r"|(?:this|the)\s+"
-                r"[A-Z][A-Z0-9]{1,15}-[0-9]{3}\s+"
-                r"profile\s+selection)\b",
-                re.IGNORECASE,
-            ),
-            re.compile(
-                rf"\b(?P<source>{re.escape(source)})(?!\w)\s+"
-                r"(?:(?:does|did)\s+(?:not\s+)?)?"
-                r"(?P<outcome>suppl(?:y|ies|ied)|"
-                r"provid(?:e|es|ed))\s+"
-                r"(?:(?:this|the)\s+profile\s+"
-                r"(?:selection|scope|requirement)"
-                r"|(?:this|the)\s+"
-                r"[A-Z][A-Z0-9]{1,15}-[0-9]{3}\s+"
-                r"profile\s+selection)\b",
-                re.IGNORECASE,
-            ),
-            re.compile(
-                r"\b(?:(?:this|the)\s+profile\s+"
-                r"(?:selection(?:\s+for\s+"
-                r"[A-Z][A-Z0-9]{1,15}-[0-9]{3})?"
-                r"|scope|requirement)"
-                r"|(?:this|the)\s+"
-                r"[A-Z][A-Z0-9]{1,15}-[0-9]{3}\s+"
-                r"profile\s+selection)\s+"
-                r"(?:(?:is|was)\s+(?:not\s+)?"
-                r"|(?:has|had)\s+(?:not\s+)?been\s+)"
-                r"(?P<outcome>supplied|provided)\s+by\s+"
-                rf"(?P<source>{re.escape(source)})(?!\w)",
-                re.IGNORECASE,
-            ),
-            re.compile(
-                r"\b(?:this|the)\s+profile\s+"
-                r"(?:selection|scope|requirement)\s+"
-                r"(?:is|was)\s+(?:not\s+)?"
+                rf"\b{profile_selection}\s+"
+                rf"(?:{ASPECT_VOICE_AUXILIARY_MATRIX['passive_simple']}"
+                rf"|{ASPECT_VOICE_AUXILIARY_MATRIX['passive_perfect']})"
                 r"(?P<outcome>derived)\s+from\s+"
                 rf"(?P<source>{re.escape(source)})(?!\w)",
                 re.IGNORECASE,
             ),
             re.compile(
                 rf"\b(?P<source>{re.escape(source)})(?!\w)\s+"
-                r"(?:is|was)\s+(?:not\s+)?"
+                rf"(?:{ASPECT_VOICE_AUXILIARY_MATRIX['passive_simple']}"
+                rf"|{ASPECT_VOICE_AUXILIARY_MATRIX['passive_perfect']})"
                 r"(?P<outcome>the\s+source\s+for\s+"
-                r"(?:this|the)\s+profile\s+"
-                r"(?:selection|scope|requirement))\b",
+                rf"{profile_selection})\b",
                 re.IGNORECASE,
             ),
             re.compile(
@@ -2570,9 +2753,9 @@ def contains_affirmative_source_authority(
                 re.IGNORECASE,
             ),
             re.compile(
-                r"\b(?:this|the)\s+profile\s+"
-                r"(?:selection|scope|requirement)\s+"
-                r"(?:is|was)\s+(?:not\s+)?"
+                rf"\b{profile_selection}\s+"
+                rf"(?:{ASPECT_VOICE_AUXILIARY_MATRIX['passive_simple']}"
+                rf"|{ASPECT_VOICE_AUXILIARY_MATRIX['passive_perfect']})"
                 r"(?P<outcome>based\s+on)\s+"
                 rf"(?P<source>{re.escape(source)})(?!\w)",
                 re.IGNORECASE,
@@ -2582,6 +2765,7 @@ def contains_affirmative_source_authority(
     for pattern in (
         *declared_passive_patterns,
         *declared_supply_patterns,
+        *declared_derivation_patterns,
         *SOURCE_AUTHORITY_PATTERNS,
     ):
         for match in pattern.finditer(text):
