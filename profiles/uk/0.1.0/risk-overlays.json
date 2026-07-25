@@ -9,7 +9,7 @@
       "statement": "Internet-reachable AI services or administrative paths can expand the opportunity for unauthorized access, exploit attempts, automated abuse, and resource exhaustion.",
       "circumstances": "The risk is in scope when an internet-originated connection can reach an AI service, supporting interface, or administrative path in the assessed boundary.",
       "source_basis": [
-        "ESAF-1100 controls APP-150, API-110, INF-110, INF-120, INF-140, and MON-110"
+        "ESAF-1100 controls APP-150, API-110, INF-110, INF-120, INF-140, INF-150, and MON-110"
       ],
       "affected_controls": [
         "APP-150",
@@ -17,6 +17,7 @@
         "INF-110",
         "INF-120",
         "INF-140",
+        "INF-150",
         "MON-110"
       ],
       "overlay_ids": [
@@ -48,12 +49,11 @@
       "statement": "Unsupported or end-of-life components can retain unresolved defects, lose dependable maintenance paths, and frustrate safe recovery or replacement.",
       "circumstances": "The risk is in scope when component and support records identify any model, software, platform, protocol, or infrastructure element outside an approved support window.",
       "source_basis": [
-        "ESAF-1100 controls MOD-150, INF-120, OPS-150, and ARC-150"
+        "ESAF-1100 controls MOD-150, INF-120, and ARC-150"
       ],
       "affected_controls": [
         "MOD-150",
         "INF-120",
-        "OPS-150",
         "ARC-150"
       ],
       "overlay_ids": [
@@ -62,8 +62,8 @@
     },
     {
       "risk_id": "UNTRUSTED-SOFTWARE-RISK",
-      "statement": "Models, code, packages, images, plugins, tools, or generated artifacts from untrusted paths can introduce malicious behavior, vulnerable dependencies, or unauthorized functionality.",
-      "circumstances": "The risk is in scope when externally sourced or otherwise untrusted software or model artifacts can enter development, evaluation, deployment, or operational paths.",
+      "statement": "Models, application artifacts, or infrastructure dependencies from untrusted paths, and tools or plugins callable by an AI capability, can introduce malicious behavior, vulnerable dependencies, excessive authority, or unauthorized functionality.",
+      "circumstances": "The risk is in scope when a defined untrusted model, application-artifact, or infrastructure-dependency intake path exists, or when the assessed AI capability can invoke a tool or plugin.",
       "source_basis": [
         "ESAF-1100 controls MOD-110, APP-140, API-120, and INF-120"
       ],
@@ -82,11 +82,10 @@
       "statement": "External services or administrators can leave control ownership, access authority, change duties, evidence access, continuity, and exit responsibilities incomplete or inconsistent.",
       "circumstances": "The risk is in scope when an external provider supplies a material service or when a third party can administer any component in the assessed boundary.",
       "source_basis": [
-        "ESAF-1100 controls API-140, API-150, CMP-120, ARC-140, IAM-130, and IAM-150"
+        "ESAF-1100 controls API-140, CMP-120, ARC-140, IAM-130, and IAM-150"
       ],
       "affected_controls": [
         "API-140",
-        "API-150",
         "CMP-120",
         "ARC-140",
         "IAM-130",
@@ -122,7 +121,7 @@
   "overlays": [
     {
       "overlay_id": "EXPOSED-BOUNDARY-OVERLAY",
-      "statement": "When internet exposure is present, the organization shall document every reachable service and administrative path, minimize permitted reachability, apply authenticated administration and risk-proportionate transport protection, and test detection and response for representative abuse and exploit paths.",
+      "statement": "When internet exposure is present, the organization shall document every reachable service and administrative path, minimize permitted reachability, apply authenticated administration and risk-proportionate transport protection, test detection and response for representative abuse and exploit paths, and establish risk-proportionate capacity, quota, isolation, priority, budget, concurrency, scaling, and shutdown safeguards without fixed profile thresholds.",
       "applicability": "conditional",
       "activation_conditions": [
         "INTERNET-EXPOSURE"
@@ -133,6 +132,7 @@
         "INF-110",
         "INF-120",
         "INF-140",
+        "INF-150",
         "MON-110"
       ],
       "risk_ids": [
@@ -141,7 +141,7 @@
       "evidence_expectation_ids": [
         "BOUNDARY-EXPOSURE-EVIDENCE"
       ],
-      "strengthening_rationale": "The overlay adds a current exposure inventory and tested boundary evidence while retaining each control's existing identity, protection, vulnerability, cryptography, abuse, and detection outcomes."
+      "strengthening_rationale": "The overlay adds a current exposure inventory, tested boundary evidence, and service-specific resource safeguards while retaining each control's existing identity, protection, vulnerability, cryptography, capacity, abuse, and detection outcomes."
     },
     {
       "overlay_id": "PRIVILEGED-CONFIGURATION-OVERLAY",
@@ -165,15 +165,14 @@
     },
     {
       "overlay_id": "SUPPORTED-COMPONENT-OVERLAY",
-      "statement": "When an unsupported component is present, the organization shall record its affected capabilities, exposure, available maintenance and compensating measures, accountable disposition, time-bounded replacement or retirement plan, and verification of completed action.",
+      "statement": "When an unsupported technology component is present, the organization shall identify its component type, apply the relevant model-retirement, infrastructure-vulnerability, or technology-lifecycle control, and record affected capabilities, exposure, available maintenance and compensating measures, accountable disposition, time-bounded replacement plan, and verification of completed action.",
       "applicability": "conditional",
       "activation_conditions": [
-        "UNSUPPORTED-COMPONENT-PRESENCE"
+        "UNSUPPORTED-TECHNOLOGY-COMPONENT-PRESENCE"
       ],
       "affected_controls": [
         "MOD-150",
         "INF-120",
-        "OPS-150",
         "ARC-150"
       ],
       "risk_ids": [
@@ -186,10 +185,13 @@
     },
     {
       "overlay_id": "TRUSTED-INTAKE-OVERLAY",
-      "statement": "When untrusted software intake is possible, the organization shall restrict intake to governed paths that record provenance, verify integrity, inspect dependencies and requested capabilities, perform risk-proportionate testing, and block artifacts that do not meet approved acceptance criteria.",
+      "statement": "For each activated model, application-artifact, callable-tool, or infrastructure-dependency path, the organization shall apply the relevant affected control by recording provenance and integrity for admitted artifacts, inspecting dependencies, inventorying and constraining callable tools and plugins, performing risk-proportionate testing, and blocking artifacts that do not meet approved acceptance criteria.",
       "applicability": "conditional",
       "activation_conditions": [
-        "UNTRUSTED-SOFTWARE-INTAKE"
+        "UNTRUSTED-MODEL-INTAKE",
+        "UNTRUSTED-APPLICATION-ARTIFACT-INTAKE",
+        "CALLABLE-TOOL-OR-PLUGIN-USE",
+        "UNTRUSTED-INFRASTRUCTURE-DEPENDENCY-INTAKE"
       ],
       "affected_controls": [
         "MOD-110",
@@ -203,7 +205,7 @@
       "evidence_expectation_ids": [
         "SOFTWARE-INTAKE-EVIDENCE"
       ],
-      "strengthening_rationale": "The overlay binds provenance, dependency, tool, vulnerability, and acceptance evidence to the intake path without redefining the affected supply-chain or assurance controls."
+      "strengthening_rationale": "The overlay binds each exact artifact or callable-tool fact to its relevant provenance, dependency, tool-governance, vulnerability, and acceptance evidence while preserving the affected supply-chain and assurance outcomes."
     },
     {
       "overlay_id": "EXTERNAL-RESPONSIBILITY-OVERLAY",
@@ -214,7 +216,6 @@
       ],
       "affected_controls": [
         "API-140",
-        "API-150",
         "CMP-120",
         "ARC-140"
       ],

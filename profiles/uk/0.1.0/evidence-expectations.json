@@ -6,14 +6,15 @@
   "expectations": [
     {
       "expectation_id": "BOUNDARY-EXPOSURE-EVIDENCE",
-      "purpose": "Demonstrate which AI and administrative paths were reachable from the internet during the assessment period and whether the declared boundary protections and detection paths operated as recorded.",
-      "artifact_class": "Configuration, record, technical_test, and log evidence records",
+      "purpose": "Demonstrate which AI and administrative paths were reachable from the internet during the assessment period and whether the declared boundary protections, resource safeguards, and detection paths operated as recorded.",
+      "artifact_class": "Configuration, record, metric, technical_test, and log evidence records",
       "control_ids": [
         "APP-150",
         "API-110",
         "INF-110",
         "INF-120",
         "INF-140",
+        "INF-150",
         "MON-110"
       ],
       "overlay_ids": [
@@ -29,7 +30,7 @@
       "activation_conditions": [
         "INTERNET-EXPOSURE"
       ],
-      "strengthening": "The evidence population shall reconcile the declared endpoint inventory to externally observed reachability and representative technical tests no older than the material network or service change that defines the assessed exposure."
+      "strengthening": "All seven ESAF-1500 evidence-quality attributes remain required; the listed attributes are profile-specific emphases. The evidence population shall reconcile the declared endpoint inventory to externally observed reachability, resource-safeguard configuration and metrics, and representative boundary and exhaustion tests no older than the material network, service, or safeguard change that defines the assessed exposure."
     },
     {
       "expectation_id": "PRIVILEGED-CONFIGURATION-EVIDENCE",
@@ -55,7 +56,7 @@
         "integrity",
         "traceability"
       ],
-      "strengthening": "The evidence shall cover every privileged path and material configuration domain in scope, identify the originating identity and approval, and preserve exceptions and unexplained differences rather than treating collection as a determination."
+      "strengthening": "All seven ESAF-1500 evidence-quality attributes remain required; the listed attributes are profile-specific emphases. The evidence shall cover every privileged path and material configuration domain in scope, identify the originating identity and approval, and preserve exceptions and unexplained differences rather than treating collection as a determination."
     },
     {
       "expectation_id": "COMPONENT-SUPPORT-EVIDENCE",
@@ -64,7 +65,6 @@
       "control_ids": [
         "MOD-150",
         "INF-120",
-        "OPS-150",
         "ARC-150"
       ],
       "overlay_ids": [
@@ -79,13 +79,13 @@
         "traceability"
       ],
       "activation_conditions": [
-        "UNSUPPORTED-COMPONENT-PRESENCE"
+        "UNSUPPORTED-TECHNOLOGY-COMPONENT-PRESENCE"
       ],
-      "strengthening": "Support status shall be current for the assessment end date, cover the reconciled component population, and distinguish provider facts, organizational decisions, compensating measures, and verified closure."
+      "strengthening": "All seven ESAF-1500 evidence-quality attributes remain required; the listed attributes are profile-specific emphases. Support status shall be current for the assessment end date, cover the reconciled component population, distinguish the relevant model, infrastructure, or other technology lifecycle path, and separate provider facts, organizational decisions, compensating measures, and verified closure."
     },
     {
       "expectation_id": "SOFTWARE-INTAKE-EVIDENCE",
-      "purpose": "Demonstrate that every in-scope untrusted intake path enforces approved sourcing, provenance, integrity, dependency inspection, capability review, testing, and acceptance decisions.",
+      "purpose": "Demonstrate that each activated untrusted model, application-artifact, or infrastructure-dependency intake path enforces approved sourcing, provenance, integrity, dependency inspection, testing, and acceptance decisions, and that each activated callable tool or plugin is inventoried, constrained, monitored, and retired.",
       "artifact_class": "Procedure, configuration, record, and technical_test evidence records",
       "control_ids": [
         "MOD-110",
@@ -106,9 +106,12 @@
         "traceability"
       ],
       "activation_conditions": [
-        "UNTRUSTED-SOFTWARE-INTAKE"
+        "UNTRUSTED-MODEL-INTAKE",
+        "UNTRUSTED-APPLICATION-ARTIFACT-INTAKE",
+        "CALLABLE-TOOL-OR-PLUGIN-USE",
+        "UNTRUSTED-INFRASTRUCTURE-DEPENDENCY-INTAKE"
       ],
-      "strengthening": "The population shall include models, packages, images, plugins, tools, and generated artifacts admitted during the assessment period, with sampled testing only when the population and selection rationale are explicit."
+      "strengthening": "All seven ESAF-1500 evidence-quality attributes remain required; the listed attributes are profile-specific emphases. The population shall include the activated model, application-artifact, infrastructure-dependency, and callable-tool paths used during the assessment period, with sampled testing only when the population and selection rationale are explicit."
     },
     {
       "expectation_id": "EXTERNAL-RESPONSIBILITY-EVIDENCE",
@@ -116,7 +119,6 @@
       "artifact_class": "Contract, record, configuration, and external_assurance evidence records",
       "control_ids": [
         "API-140",
-        "API-150",
         "CMP-120",
         "ARC-140"
       ],
@@ -134,7 +136,7 @@
       "activation_conditions": [
         "EXTERNAL-PROVIDER-USE"
       ],
-      "strengthening": "The evidence shall cover the complete material-provider population and current service terms; inherited or external assurance remains evidence with recorded limitations and is not itself an assessment determination."
+      "strengthening": "All seven ESAF-1500 evidence-quality attributes remain required; the listed attributes are profile-specific emphases. The evidence shall cover the complete external-provider population and current service terms; inherited or external assurance remains evidence with recorded limitations and is not itself an assessment determination."
     },
     {
       "expectation_id": "THIRD-PARTY-ADMINISTRATION-EVIDENCE",
@@ -163,7 +165,7 @@
       "activation_conditions": [
         "THIRD-PARTY-ADMINISTRATION"
       ],
-      "strengthening": "The evidence shall reconcile contractual support authority to current privileged identities and attributable activity for the assessment period, including dormant, emergency, and recently revoked access."
+      "strengthening": "All seven ESAF-1500 evidence-quality attributes remain required; the listed attributes are profile-specific emphases. The evidence shall reconcile contractual support authority to current privileged identities and attributable activity for the assessment period, including dormant, emergency, and recently revoked access."
     },
     {
       "expectation_id": "SYSTEM-BOUNDARY-EVIDENCE",
@@ -184,7 +186,7 @@
         "attribution",
         "traceability"
       ],
-      "strengthening": "The boundary record shall be dated for the assessment period, approved by accountable business and technical owners, and reconcile unresolved scope questions and exclusions to their effect on the evidence population."
+      "strengthening": "All seven ESAF-1500 evidence-quality attributes remain required; the listed attributes are profile-specific emphases. The boundary record shall be dated for the assessment period, approved by accountable business and technical owners, and reconcile unresolved scope questions and exclusions to their effect on the evidence population."
     },
     {
       "expectation_id": "ASSET-COVERAGE-EVIDENCE",
@@ -209,7 +211,7 @@
         "integrity",
         "traceability"
       ],
-      "strengthening": "Inventory evidence shall be reconciled across authoritative sources at the assessment end date, disclose unmatched records and sampling limitations, and retain source attribution and integrity verification."
+      "strengthening": "All seven ESAF-1500 evidence-quality attributes remain required; the listed attributes are profile-specific emphases. Inventory evidence shall be reconciled across authoritative sources at the assessment end date, disclose unmatched records and sampling limitations, and retain source attribution and integrity verification."
     }
   ]
 }

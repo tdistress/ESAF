@@ -350,6 +350,14 @@ class UKPilotProfileTests(unittest.TestCase):
         self.assertTrue(path.is_file(), f"missing UK pilot artifact {filename}")
         return json.loads(path.read_text(encoding="utf-8"))
 
+    def records_by_id(
+        self, filename: str, collection: str, identifier: str
+    ) -> dict[str, dict[str, object]]:
+        return {
+            record[identifier]: record
+            for record in self.load(filename)[collection]
+        }
+
     def test_package_has_exact_identity_lifecycle_scope_and_components(self) -> None:
         manifest = self.load("profile.json")
         self.assertEqual(manifest["profile_id"], UK_PROFILE_ID)
@@ -372,9 +380,16 @@ class UKPilotProfileTests(unittest.TestCase):
             {
                 "INTERNET-EXPOSURE",
                 "EXTERNAL-PROVIDER-USE",
+                "MATERIAL-EXTERNAL-PROVIDER-DEPENDENCY",
                 "THIRD-PARTY-ADMINISTRATION",
-                "UNTRUSTED-SOFTWARE-INTAKE",
-                "UNSUPPORTED-COMPONENT-PRESENCE",
+                "UNTRUSTED-MODEL-INTAKE",
+                "UNTRUSTED-APPLICATION-ARTIFACT-INTAKE",
+                "CALLABLE-TOOL-OR-PLUGIN-USE",
+                "UNTRUSTED-INFRASTRUCTURE-DEPENDENCY-INTAKE",
+                "UNSUPPORTED-TECHNOLOGY-COMPONENT-PRESENCE",
+                "UNSUPPORTED-MODEL-PRESENCE",
+                "UNSUPPORTED-INFRASTRUCTURE-COMPONENT-PRESENCE",
+                "CAPABILITY-RETIREMENT-REQUIRED",
             },
         )
         for condition in conditions:
@@ -383,6 +398,98 @@ class UKPilotProfileTests(unittest.TestCase):
                 self.assertIs(condition["activates_when"], True)
                 self.assertTrue(condition["question"].strip())
                 self.assertTrue(condition["resolution_evidence"].strip())
+
+    def test_every_condition_is_used_by_a_selection_or_overlay(self) -> None:
+        condition_ids = {
+            condition["condition_id"]
+            for condition in self.load("profile.json")["applicability_conditions"]
+        }
+        selections = self.load("control-selections.json")["selections"]
+        overlays = self.load("risk-overlays.json")["overlays"]
+        used = {
+            condition_id
+            for record in [*selections, *overlays]
+            for condition_id in record.get("activation_conditions", [])
+        }
+        self.assertEqual(used, condition_ids)
+
+    def test_conditional_selections_use_exact_factual_triggers(self) -> None:
+        expected = {
+            "IAM-140": ["THIRD-PARTY-ADMINISTRATION"],
+            "MOD-110": ["UNTRUSTED-MODEL-INTAKE"],
+            "MOD-150": ["UNSUPPORTED-MODEL-PRESENCE"],
+            "APP-140": ["UNTRUSTED-APPLICATION-ARTIFACT-INTAKE"],
+            "APP-150": ["INTERNET-EXPOSURE"],
+            "API-110": ["INTERNET-EXPOSURE"],
+            "API-120": ["CALLABLE-TOOL-OR-PLUGIN-USE"],
+            "API-140": ["EXTERNAL-PROVIDER-USE"],
+            "API-150": ["MATERIAL-EXTERNAL-PROVIDER-DEPENDENCY"],
+            "INF-120": [
+                "INTERNET-EXPOSURE",
+                "UNTRUSTED-INFRASTRUCTURE-DEPENDENCY-INTAKE",
+                "UNSUPPORTED-INFRASTRUCTURE-COMPONENT-PRESENCE",
+            ],
+            "INF-140": ["INTERNET-EXPOSURE"],
+            "INF-150": ["INTERNET-EXPOSURE"],
+            "OPS-150": ["CAPABILITY-RETIREMENT-REQUIRED"],
+            "MON-110": ["INTERNET-EXPOSURE"],
+            "CMP-120": [
+                "EXTERNAL-PROVIDER-USE",
+                "THIRD-PARTY-ADMINISTRATION",
+            ],
+            "ARC-140": [
+                "EXTERNAL-PROVIDER-USE",
+                "THIRD-PARTY-ADMINISTRATION",
+            ],
+            "ARC-150": ["UNSUPPORTED-TECHNOLOGY-COMPONENT-PRESENCE"],
+        }
+        observed = {
+            selection["control_id"]: selection["activation_conditions"]
+            for selection in self.load("control-selections.json")["selections"]
+            if selection["status"] == "conditional"
+        }
+        self.assertEqual(observed, expected)
+
+    def test_internet_exposure_traces_infrastructure_resource_safeguards(
+        self,
+    ) -> None:
+        selections = self.records_by_id(
+            "control-selections.json", "selections", "control_id"
+        )
+        risks = self.records_by_id("risk-overlays.json", "risks", "risk_id")
+        overlays = self.records_by_id(
+            "risk-overlays.json", "overlays", "overlay_id"
+        )
+        expectations = self.records_by_id(
+            "evidence-expectations.json", "expectations", "expectation_id"
+        )
+        selection = selections["INF-150"]
+        risk = risks["EXPOSED-INFRASTRUCTURE-RISK"]
+        overlay = overlays["EXPOSED-BOUNDARY-OVERLAY"]
+        evidence = expectations["BOUNDARY-EXPOSURE-EVIDENCE"]
+        self.assertEqual(selection["status"], "conditional")
+        self.assertEqual(selection["activation_conditions"], ["INTERNET-EXPOSURE"])
+        self.assertIn("INF-150", risk["affected_controls"])
+        self.assertIn("INF-150", overlay["affected_controls"])
+        self.assertIn("INF-150", evidence["control_ids"])
+        self.assertIn(overlay["overlay_id"], risk["overlay_ids"])
+        self.assertIn(evidence["expectation_id"], overlay["evidence_expectation_ids"])
+        self.assertIn(overlay["overlay_id"], evidence["overlay_ids"])
+        for safeguard in (
+            "capacity",
+            "quota",
+            "budget",
+            "concurrency",
+            "isolation",
+            "scaling",
+            "shutdown",
+        ):
+            with self.subTest(safeguard=safeguard):
+                self.assertIn(safeguard, overlay["statement"].lower())
+        self.assertIn("risk-proportionate", overlay["statement"].lower())
+        self.assertIn(
+            "without fixed profile thresholds", overlay["statement"].lower()
+        )
 
     def test_control_ledger_matches_catalog_order_and_status_invariants(self) -> None:
         catalog = json.loads(
@@ -415,6 +522,17 @@ class UKPilotProfileTests(unittest.TestCase):
             used_attributes.update(expectation["quality_attributes"])
         self.assertTrue(used_attributes)
         self.assertLessEqual(used_attributes, ESAF_1500_QUALITY_ATTRIBUTES)
+
+    def test_evidence_emphases_preserve_all_seven_esaf_1500_evaluations(
+        self,
+    ) -> None:
+        required_statement = (
+            "All seven ESAF-1500 evidence-quality attributes remain required; "
+            "the listed attributes are profile-specific emphases."
+        )
+        for expectation in self.load("evidence-expectations.json")["expectations"]:
+            with self.subTest(expectation=expectation["expectation_id"]):
+                self.assertIn(required_statement, expectation["strengthening"])
 
     def test_external_references_are_exactly_the_three_lifecycle_pins(self) -> None:
         references = self.load("external-references.json")["external_references"]
@@ -452,11 +570,27 @@ class UKPilotProfileTests(unittest.TestCase):
             boundary["permitted_sources"],
             [
                 "ESAF",
-                *UK_MAPPING_IDS,
+                *[
+                    f"Pinned lifecycle metadata only: {mapping_id}"
+                    for mapping_id in UK_MAPPING_IDS
+                ],
             ],
         )
-        self.assertIn("laws", " ".join(boundary["excluded_sources"]).lower())
+        excluded = " ".join(boundary["excluded_sources"]).lower()
+        self.assertIn("laws", excluded)
+        self.assertIn("substantive content", excluded)
+        self.assertIn("other or unpinned external mappings", excluded)
+        self.assertNotIn("unreviewed", excluded)
+        self.assertTrue(
+            all(mapping_id not in excluded for mapping_id in UK_MAPPING_IDS)
+        )
+        self.assertIn(
+            "Relationships, external outcomes, and evidence are not imported",
+            boundary["statement"],
+        )
         readme = (UK_PROFILE_ROOT / "README.md").read_text(encoding="utf-8")
+        self.assertIn("pinned lifecycle metadata only", readme.lower())
+        self.assertIn("substantive mapping content remains excluded", readme.lower())
         for statement in (
             "does not establish legal sufficiency",
             "does not establish compliance",

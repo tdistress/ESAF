@@ -150,9 +150,9 @@
     {
       "control_id": "MOD-110",
       "status": "conditional",
-      "rationale": "When untrusted artifacts can enter the boundary, model source, licensing, integrity, dependencies, limitations, terms, and modification history must be verified before their approved use.",
+      "rationale": "When a model can enter approved use through an untrusted intake path, its source, licensing, usage rights, integrity, dependencies, limitations, supplier terms, and modification history require verification.",
       "activation_conditions": [
-        "UNTRUSTED-SOFTWARE-INTAKE"
+        "UNTRUSTED-MODEL-INTAKE"
       ]
     },
     {
@@ -173,9 +173,9 @@
     {
       "control_id": "MOD-150",
       "status": "conditional",
-      "rationale": "An unsupported or end-of-life model requires an authorized retirement path that removes deployment and access, preserves evidence, updates dependencies, and verifies that prohibited continued use is prevented.",
+      "rationale": "A model that is end-of-life, replaced, unsupported, compromised, nonconforming, expired, or abandoned requires an authorized retirement path that removes deployment and access and verifies closure.",
       "activation_conditions": [
-        "UNSUPPORTED-COMPONENT-PRESENCE"
+        "UNSUPPORTED-MODEL-PRESENCE"
       ]
     },
     {
@@ -201,9 +201,9 @@
     {
       "control_id": "APP-140",
       "status": "conditional",
-      "rationale": "Untrusted software intake requires controlled review, dependency handling, build, testing, release, vulnerability, and change practices for application code, prompts, workflows, configuration, and generated artifacts.",
+      "rationale": "When untrusted artifacts can enter an internally built or materially configured AI application or pipeline, its code, prompts, workflows, dependencies, builds, releases, vulnerabilities, and changes require controlled assurance.",
       "activation_conditions": [
-        "UNTRUSTED-SOFTWARE-INTAKE"
+        "UNTRUSTED-APPLICATION-ARTIFACT-INTAKE"
       ]
     },
     {
@@ -230,9 +230,9 @@
     {
       "control_id": "API-120",
       "status": "conditional",
-      "rationale": "When untrusted software paths admit tools or plugins, each callable capability needs inventory, approval, authentication, authorization, constraints, validation, monitoring, and governed retirement.",
+      "rationale": "When the AI capability can invoke a tool or plugin, every callable function, connector, action, script, browser, code facility, database, or business integration requires governed inventory and constraints.",
       "activation_conditions": [
-        "UNTRUSTED-SOFTWARE-INTAKE"
+        "CALLABLE-TOOL-OR-PLUGIN-USE"
       ]
     },
     {
@@ -251,9 +251,9 @@
     {
       "control_id": "API-150",
       "status": "conditional",
-      "rationale": "A material external provider dependency requires documented and tested interfaces, formats, configuration, migration procedures, and exit criteria proportionate to continuity and concentration risk.",
+      "rationale": "An E1 through E4 capability with a material external provider or platform dependency requires documented and tested interfaces, formats, configuration, migration procedures, and exit criteria proportionate to continuity and concentration risk.",
       "activation_conditions": [
-        "EXTERNAL-PROVIDER-USE"
+        "MATERIAL-EXTERNAL-PROVIDER-DEPENDENCY"
       ]
     },
     {
@@ -269,11 +269,11 @@
     {
       "control_id": "INF-120",
       "status": "conditional",
-      "rationale": "Internet exposure, untrusted intake, or unsupported components each increase the need to identify and disposition infrastructure vulnerabilities using exploitability, exposure, impact, sensitivity, criticality, and compensating controls.",
+      "rationale": "Internet exposure, untrusted infrastructure-dependency intake, or an unsupported infrastructure component establishes a concrete vulnerability context for hosts, firmware, drivers, containers, orchestration, model servers, libraries, storage, networks, or managed services.",
       "activation_conditions": [
         "INTERNET-EXPOSURE",
-        "UNTRUSTED-SOFTWARE-INTAKE",
-        "UNSUPPORTED-COMPONENT-PRESENCE"
+        "UNTRUSTED-INFRASTRUCTURE-DEPENDENCY-INTAKE",
+        "UNSUPPORTED-INFRASTRUCTURE-COMPONENT-PRESENCE"
       ]
     },
     {
@@ -291,8 +291,11 @@
     },
     {
       "control_id": "INF-150",
-      "status": "not_selected",
-      "rationale": "Capacity, budget, concurrency, scaling, and shutdown safeguards depend on workload demand and shared-platform design; internet exposure alone does not define their appropriate thresholds."
+      "status": "conditional",
+      "rationale": "Internet reachability increases automated demand, denial-of-service, uncontrolled-consumption, and harmful-contention risk, requiring capacity, quota, isolation, priority, budget, concurrency, scaling, and shutdown safeguards proportionate to the exposed service.",
+      "activation_conditions": [
+        "INTERNET-EXPOSURE"
+      ]
     },
     {
       "control_id": "AGT-100",
@@ -357,9 +360,9 @@
     {
       "control_id": "OPS-150",
       "status": "conditional",
-      "rationale": "An unsupported component can force capability decommissioning or replacement, requiring an approved process that addresses users, dependencies, access, suppliers, records, continuity, and verified closure.",
+      "rationale": "When accountable authority determines that an experiment, pilot, production service, embedded capability, or third-party AI service must retire, its users, dependencies, access, suppliers, records, continuity, and decommissioning require an approved process.",
       "activation_conditions": [
-        "UNSUPPORTED-COMPONENT-PRESENCE"
+        "CAPABILITY-RETIREMENT-REQUIRED"
       ]
     },
     {
@@ -508,7 +511,7 @@
       "status": "conditional",
       "rationale": "Unsupported components require governed currency, compatibility, technical-debt, support, replacement, deprecation, and retirement decisions across models, runtimes, protocols, platforms, tools, interfaces, and infrastructure.",
       "activation_conditions": [
-        "UNSUPPORTED-COMPONENT-PRESENCE"
+        "UNSUPPORTED-TECHNOLOGY-COMPONENT-PRESENCE"
       ]
     }
   ]

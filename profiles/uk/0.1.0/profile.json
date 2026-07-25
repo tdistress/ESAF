@@ -23,6 +23,13 @@
       "resolution_evidence": "Supplier and service inventories, architecture and data-flow records, contracts, service descriptions, and the approved shared-responsibility record."
     },
     {
+      "condition_id": "MATERIAL-EXTERNAL-PROVIDER-DEPENDENCY",
+      "question": "Is the assessed system an E1 through E4 capability with a material external provider or platform dependency whose replacement or isolation must be addressed for continuity or concentration risk?",
+      "answer_type": "boolean",
+      "activates_when": true,
+      "resolution_evidence": "Capability baseline and lifecycle records, dependency architecture, provider criticality and concentration analysis, continuity arrangements, and approved exit or isolation criteria."
+    },
+    {
       "condition_id": "THIRD-PARTY-ADMINISTRATION",
       "question": "Can personnel or services outside the organization administer, configure, deploy, support, or recover any component in the assessed boundary?",
       "answer_type": "boolean",
@@ -30,32 +37,75 @@
       "resolution_evidence": "Privileged-identity inventories, support agreements, access paths, authorization records, responsibility assignments, and recent access-review evidence."
     },
     {
-      "condition_id": "UNTRUSTED-SOFTWARE-INTAKE",
-      "question": "Can externally sourced or otherwise untrusted models, code, packages, images, plugins, tools, or generated artifacts enter the assessed boundary?",
+      "condition_id": "UNTRUSTED-MODEL-INTAKE",
+      "question": "Can a model acquired, downloaded, hosted, embedded, trained, fine-tuned, quantized, converted, or modified through an externally sourced or otherwise untrusted path enter approved use in the assessed boundary?",
       "answer_type": "boolean",
       "activates_when": true,
-      "resolution_evidence": "Approved-source rules, software and model inventories, dependency manifests, intake pipeline configuration, provenance records, and inspection or test results."
+      "resolution_evidence": "Model inventories and registries, approved-source rules, provider and provenance records, model intake pipeline configuration, integrity verification, and approval records."
     },
     {
-      "condition_id": "UNSUPPORTED-COMPONENT-PRESENCE",
+      "condition_id": "UNTRUSTED-APPLICATION-ARTIFACT-INTAKE",
+      "question": "Can externally sourced or otherwise untrusted code, prompts, workflows, configurations, dependencies, tests, deployment artifacts, or AI-generated artifacts enter an internally built or materially configured AI application or pipeline?",
+      "answer_type": "boolean",
+      "activates_when": true,
+      "resolution_evidence": "Application and pipeline inventories, dependency and build manifests, approved-source rules, repository and release configuration, provenance records, and review or test results."
+    },
+    {
+      "condition_id": "CALLABLE-TOOL-OR-PLUGIN-USE",
+      "question": "Can the assessed AI capability invoke a native tool, function, plugin, connector, action, script, browser, code-execution facility, database, or business-system integration?",
+      "answer_type": "boolean",
+      "activates_when": true,
+      "resolution_evidence": "Tool and plugin inventories, orchestration and capability configuration, callable-function schemas, authorization policy, execution traces, and accountable owner attestation."
+    },
+    {
+      "condition_id": "UNTRUSTED-INFRASTRUCTURE-DEPENDENCY-INTAKE",
+      "question": "Can an externally sourced or otherwise untrusted host image, firmware, driver, accelerator component, container, orchestration component, model server, library, storage component, or network dependency enter the AI infrastructure boundary?",
+      "answer_type": "boolean",
+      "activates_when": true,
+      "resolution_evidence": "Infrastructure and dependency inventories, image and package manifests, approved-source rules, intake pipeline configuration, vulnerability inspection, integrity verification, and acceptance records."
+    },
+    {
+      "condition_id": "UNSUPPORTED-TECHNOLOGY-COMPONENT-PRESENCE",
       "question": "Does the assessed boundary contain a model, software component, platform, protocol, or infrastructure element that is unsupported, end-of-life, or outside an approved maintenance window?",
       "answer_type": "boolean",
       "activates_when": true,
       "resolution_evidence": "Version and component inventories reconciled to provider support notices, maintenance records, approved lifecycle standards, exception records, and replacement plans."
+    },
+    {
+      "condition_id": "UNSUPPORTED-MODEL-PRESENCE",
+      "question": "Does the assessed boundary contain a model that is end-of-life, replaced, unsupported, compromised, nonconforming, expired, or abandoned?",
+      "answer_type": "boolean",
+      "activates_when": true,
+      "resolution_evidence": "Model registry and deployment records reconciled to provider notices, validation and incident records, approved lifecycle decisions, access state, and model retirement plans."
+    },
+    {
+      "condition_id": "UNSUPPORTED-INFRASTRUCTURE-COMPONENT-PRESENCE",
+      "question": "Does the AI infrastructure boundary contain an unsupported or end-of-life host, firmware, driver, accelerator, container, orchestration component, model server, library, storage component, network component, or managed-service dependency?",
+      "answer_type": "boolean",
+      "activates_when": true,
+      "resolution_evidence": "Infrastructure and dependency inventories reconciled to provider support notices, vulnerability records, managed-service responsibility records, approved exceptions, and remediation plans."
+    },
+    {
+      "condition_id": "CAPABILITY-RETIREMENT-REQUIRED",
+      "question": "Has the accountable authority determined that an experiment, pilot, production service, embedded AI capability, or third-party AI service in the assessed boundary must be retired or decommissioned?",
+      "answer_type": "boolean",
+      "activates_when": true,
+      "resolution_evidence": "Approved lifecycle or portfolio decision, accountable owner and authority, affected capability and dependency inventory, target decommissioning state, continuity assessment, and retirement plan."
     }
   ],
   "source_boundary": {
-    "statement": "Profile content is original ESAF synthesis bounded to the ESAF library and lifecycle-aware identification of the three pinned Draft mapping sets. Mapping relationships, external outcomes, and evidence are not imported.",
+    "statement": "Profile content is original ESAF synthesis bounded to the ESAF library and pinned lifecycle metadata only from the three exact Draft mapping registry records. Relationships, external outcomes, and evidence are not imported. Substantive mapping content and mapping interpretations are also excluded.",
     "permitted_sources": [
       "ESAF",
-      "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
-      "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
-      "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0"
+      "Pinned lifecycle metadata only: uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+      "Pinned lifecycle metadata only: uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
+      "Pinned lifecycle metadata only: uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0"
     ],
     "excluded_sources": [
       "United Kingdom laws, regulations, sector rules, and regulatory guidance",
       "External assurance outcomes or certification decisions",
-      "Unpinned or unreviewed external mappings and interpretations"
+      "Substantive content, relationships, external outcomes, evidence, and interpretations from the three pinned Draft mapping records",
+      "All content and interpretations from other or unpinned external mappings"
     ]
   },
   "components": {
@@ -71,6 +121,12 @@
       "date": "2026-07-24",
       "author": "ESAF",
       "description": "Initial Draft United Kingdom pilot profile for v0.5-beta."
+    },
+    {
+      "version": "0.1.0",
+      "date": "2026-07-24",
+      "author": "ESAF",
+      "description": "Clarified applicability facts, mapping-source boundaries, resource safeguards, and evidence-quality semantics after independent review."
     }
   ]
 }

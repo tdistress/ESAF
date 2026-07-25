@@ -33,18 +33,32 @@ evidence used to resolve each applicable condition.
 7. Report this profile identifier, version, and Draft lifecycle with the
    assessment result.
 
+Each condition shall be answered independently from its exact factual
+question. A broader fact does not supply a narrower one: external-provider use
+does not by itself establish a material E1 through E4 dependency, generic
+software intake does not establish model, application-artifact,
+infrastructure-dependency, or callable-tool use, and an unsupported technology
+does not by itself establish that a model is unsupported or that a capability
+must be retired.
+
 `not_selected` means that this pilot adds no profile-level selection. It does
 not alter the underlying ESAF requirement. The profile-local control status
 also does not determine an ESAF-1500 assessment determination.
 
+Every evidence expectation evaluates all seven ESAF-1500 evidence-quality
+attributes. The attributes listed in an expectation are profile-specific
+emphases and do not replace the complete ESAF-1500 evaluation.
+
 ## Source boundary
 
 The package is original ESAF synthesis. Its permitted source boundary is the
-ESAF library and lifecycle-aware identification of the three pinned Draft
-United Kingdom Cyber Essentials mapping sets in `external-references.json`.
-Those references import no mapping relationships, external outcomes, or
-evidence. Other United Kingdom laws, regulations, sector rules, and guidance
-are outside this pilot.
+ESAF library and pinned lifecycle metadata only from the three exact Draft
+United Kingdom Cyber Essentials mapping registry records in
+`external-references.json`. Substantive mapping content remains excluded,
+including relationships, external outcomes, evidence, and interpretations.
+All content and interpretations from other or unpinned external mappings are
+also excluded. Other United Kingdom laws, regulations, sector rules, and
+guidance are outside this pilot.
 
 ## Draft limitations and non-claims
 
