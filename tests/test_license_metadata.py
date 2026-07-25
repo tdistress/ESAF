@@ -85,6 +85,30 @@ class LicenseMetadataTests(unittest.TestCase):
             with self.subTest(prohibited_claim=prohibited_claim):
                 self.assertIn(prohibited_claim, policy)
 
+    def test_readme_publishes_the_dual_license_model(self) -> None:
+        readme = read_text("README.md")
+        self.assertNotIn("Licensing is not yet finalized", readme)
+        self.assertIn("CC BY 4.0", readme)
+        self.assertIn("Apache License 2.0", readme)
+        for target in (
+            "LICENSE",
+            "LICENSE_SCOPE.md",
+            "NOTICE",
+            "THIRD_PARTY_NOTICES.md",
+            "TRADEMARKS.md",
+        ):
+            with self.subTest(target=target):
+                self.assertIn(f"]({target})", readme)
+
+    def test_contributions_follow_target_path_license_and_require_authority(self) -> None:
+        contributing = read_text("CONTRIBUTING.md")
+        self.assertIn("license applicable to the target path", contributing)
+        self.assertIn("authority to submit the contribution", contributing)
+        self.assertIn("does not transfer copyright ownership", contributing)
+        self.assertIn("Not a Contribution", contributing)
+        self.assertIn("third-party material", contributing)
+        self.assertIn("LICENSE_SCOPE.md", contributing)
+
 
 if __name__ == "__main__":
     unittest.main()
