@@ -3,7 +3,7 @@
 **Document ID:** ESAF-0000  
 **Status:** Working Draft  
 **Version:** 0.1-alpha  
-**Owner:** ESAF Project Maintainers  
+**Owner:** Eric Amos (Hearst), Project Maintainer
 
 ---
 
