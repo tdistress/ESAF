@@ -17,6 +17,7 @@ PLAN = ROOT / "docs" / "superpowers" / "plans" / "2026-07-24-uk-pilot-profile.md
 PROFILE_README = ROOT / "profiles" / "README.md"
 CONTRIBUTING = ROOT / "CONTRIBUTING.md"
 TOOLS_README = ROOT / "tools" / "README.md"
+VALIDATOR_TESTS = ROOT / "tests" / "test_validate_profiles.py"
 WORKFLOW = ROOT / ".github" / "workflows" / "catalog-validation.yml"
 SCHEMA_ROOT = ROOT / "profiles" / "schema"
 UK_PROFILE_ROOT = ROOT / "profiles" / "uk" / "0.1.0"
@@ -127,6 +128,83 @@ class ProfileFoundationTests(unittest.TestCase):
             "recorded state.",
             normalized,
         )
+
+    def test_reusable_contract_contains_no_uk_pilot_instance_facts(self) -> None:
+        contract = text()
+        for instance_fact in (
+            "United Kingdom",
+            "uk--jurisdiction-profile--0.1.0",
+            "v0.5-beta",
+            "its lifecycle is `draft`",
+            "profile version and schema version are `0.1.0`",
+        ):
+            with self.subTest(instance_fact=instance_fact):
+                self.assertNotIn(instance_fact, contract)
+        normalized = re.sub(r"\s+", " ", contract)
+        self.assertIn(
+            "Each profile manifest shall declare its profile identifier, "
+            "profile version, schema version, lifecycle state, and target "
+            "ESAF release.",
+            normalized,
+        )
+        self.assertIn(
+            "Each profile shall state factual applicability conditions",
+            contract,
+        )
+
+    def test_mapping_editorial_status_and_registry_lifecycle_are_distinct(
+        self,
+    ) -> None:
+        for path in (STANDARD, DESIGN, UK_PROFILE_ROOT / "README.md"):
+            normalized = re.sub(
+                r"\s+", " ", path.read_text(encoding="utf-8")
+            ).lower()
+            with self.subTest(path=path.relative_to(ROOT)):
+                self.assertIn("mapping snapshot editorial status", normalized)
+                self.assertIn("registry lifecycle", normalized)
+        for path in (STANDARD, DESIGN):
+            normalized = re.sub(
+                r"\s+", " ", path.read_text(encoding="utf-8")
+            ).lower()
+            with self.subTest(path=path.relative_to(ROOT), drift=True):
+                self.assertIn("identifier/path drift", normalized)
+                self.assertIn("editorial status drift", normalized)
+                self.assertIn("registry lifecycle-event drift", normalized)
+                self.assertNotIn("approved mapping-set identifiers", normalized)
+
+        schema = json.loads(
+            (SCHEMA_ROOT / "external-references.schema.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        reference = schema["$defs"]["externalReference"]
+        self.assertIn(
+            "mapping snapshot editorial status",
+            reference["properties"]["expected_status"]["description"].lower(),
+        )
+        self.assertIn("registry lifecycle", reference["description"].lower())
+
+    def test_rsk_100_rationale_does_not_pin_a_stale_risk_count(self) -> None:
+        selections = json.loads(
+            (UK_PROFILE_ROOT / "control-selections.json").read_text(
+                encoding="utf-8"
+            )
+        )["selections"]
+        rationale = next(
+            item["rationale"]
+            for item in selections
+            if item["control_id"] == "RSK-100"
+        )
+        self.assertNotRegex(
+            rationale,
+            r"(?i)\b(?:six|6)\s+additional risk lenses\b",
+        )
+        self.assertIn("profile risk", rationale.lower())
+
+    def test_validator_tests_use_profile_domain_taxonomy(self) -> None:
+        tests = VALIDATOR_TESTS.read_text(encoding="utf-8")
+        self.assertNotRegex(tests, r"\b(?:outside_)?country\b")
+        self.assertNotIn("_profile_country", tests)
 
 
 class ProfileSchemaTests(unittest.TestCase):

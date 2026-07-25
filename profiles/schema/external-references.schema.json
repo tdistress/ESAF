@@ -19,12 +19,13 @@
     "relativePath": {"type": "string", "pattern": "^(?!/)(?!.*\\\\)[A-Za-z0-9][A-Za-z0-9._-]*(?:/[A-Za-z0-9][A-Za-z0-9._-]*)*$"},
     "externalReference": {
       "type": "object",
+      "description": "A mapping snapshot pin whose editorial status is checked separately from governed registry lifecycle events.",
       "additionalProperties": false,
       "required": ["mapping_set_id", "registry_path", "expected_status", "reference_use", "qualified_review_required", "non_import_statement"],
       "properties": {
-        "mapping_set_id": {"$ref": "#/$defs/mappingSetId"},
-        "registry_path": {"$ref": "#/$defs/relativePath"},
-        "expected_status": {"enum": ["draft", "reviewed", "approved", "published", "deprecated", "retired"]},
+        "mapping_set_id": {"$ref": "#/$defs/mappingSetId", "description": "Exact mapping snapshot identifier."},
+        "registry_path": {"$ref": "#/$defs/relativePath", "description": "Repository-relative path to the governed lifecycle registry record."},
+        "expected_status": {"enum": ["draft", "reviewed", "approved", "published", "deprecated", "retired"], "description": "Expected mapping snapshot editorial status, or the relied-upon governed state after approval."},
         "reference_use": {"const": "lifecycle_reference_only"},
         "qualified_review_required": {"const": true},
         "non_import_statement": {"$ref": "#/$defs/nonEmptyString"}

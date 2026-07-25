@@ -1261,6 +1261,102 @@ class ProfileValidationTests(unittest.TestCase):
                 )
                 self.assert_has_error(f"prohibited assertion '{expected}'")
 
+    def test_final_review_claim_assertions_are_rejected(self) -> None:
+        cases = (
+            (
+                "This profile guarantees compliance with Cyber Essentials.",
+                "prohibited assertion 'compliance'",
+            ),
+            (
+                "NCSC endorses this profile.",
+                "prohibited assertion 'endorsement'",
+            ),
+            (
+                "This profile confirms production readiness.",
+                "prohibited assertion 'production readiness'",
+            ),
+            (
+                "The organization is eligible for certification under this profile.",
+                "prohibited assertion 'certification eligibility'",
+            ),
+            (
+                "This profile has obtained NCSC approval.",
+                "prohibited assertion 'named-authority approval'",
+            ),
+            (
+                "Cyber Essentials provision A.1 corresponds to GOV-100.",
+                "prohibited assertion 'imported mapping relationship'",
+            ),
+            (
+                "Cyber Essentials provision A.1 provides evidence for GOV-100.",
+                "prohibited assertion 'imported mapping relationship'",
+            ),
+            (
+                "GOV-100 corresponds to Cyber Essentials provision A.1.",
+                "prohibited assertion 'imported mapping relationship'",
+            ),
+            (
+                "GOV-100 provides evidence for Cyber Essentials provision A.1.",
+                "prohibited assertion 'imported mapping relationship'",
+            ),
+        )
+        for assertion, expected in cases:
+            with self.subTest(assertion=assertion):
+                self.write_readme(assertion)
+                self.assert_has_error(expected)
+
+    def test_final_review_claim_polarity_and_clause_pairs(self) -> None:
+        cases = (
+            (
+                "This profile guarantees compliance with Cyber Essentials",
+                "This profile does not guarantee compliance with Cyber Essentials.",
+                "compliance",
+            ),
+            (
+                "NCSC endorses this profile",
+                "NCSC does not endorse this profile.",
+                "endorsement",
+            ),
+            (
+                "This profile confirms production readiness",
+                "This profile does not confirm production readiness.",
+                "production readiness",
+            ),
+            (
+                "The organization is eligible for certification under this profile",
+                "The organization is not eligible for certification under this profile.",
+                "certification eligibility",
+            ),
+            (
+                "This profile has obtained NCSC approval",
+                "This profile has not obtained NCSC approval.",
+                "named-authority approval",
+            ),
+            (
+                "Cyber Essentials provision A.1 corresponds to GOV-100",
+                "Cyber Essentials provision A.1 does not correspond to GOV-100.",
+                "imported mapping relationship",
+            ),
+            (
+                "Cyber Essentials provision A.1 provides evidence for GOV-100",
+                "Cyber Essentials provision A.1 does not provide evidence for GOV-100.",
+                "imported mapping relationship",
+            ),
+        )
+        for assertion, denial, expected in cases:
+            with self.subTest(assertion=assertion, form="denial"):
+                self.write_readme(denial)
+                self.assertEqual(validate_profiles.validate(self.root), [])
+            with self.subTest(assertion=assertion, form="quotation"):
+                self.write_readme(f'The phrase "{assertion}" is prohibited.')
+                self.assertEqual(validate_profiles.validate(self.root), [])
+            with self.subTest(assertion=assertion, form="discussion"):
+                self.write_readme(f"The claim that {assertion} is rejected.")
+                self.assertEqual(validate_profiles.validate(self.root), [])
+            with self.subTest(assertion=assertion, form="coordinated"):
+                self.write_readme(f"{denial} However, {assertion}.")
+                self.assert_has_error(f"prohibited assertion '{expected}'")
+
     def test_establishes_profile_claim_variants_are_rejected(self) -> None:
         for text, expected in (
             (
@@ -1551,6 +1647,65 @@ class ProfileValidationTests(unittest.TestCase):
                 )
                 self.assert_has_error("prohibited source authority language")
 
+    def test_excluded_source_supply_and_derivation_are_rejected(self) -> None:
+        profile = self.load_component("profile.json")
+        profile["source_boundary"]["excluded_sources"] = ["UK GDPR"]
+        self.write_component("profile.json", profile)
+        assertions = (
+            "UK GDPR supplies this profile selection.",
+            "This profile selection is supplied by UK GDPR.",
+            "UK GDPR is the source for this profile requirement.",
+            "UK GDPR provides this profile requirement.",
+            "This profile requirement is provided by UK GDPR.",
+            "This profile selection derives from UK GDPR.",
+            "This profile selection is derived from UK GDPR.",
+            "This profile requirement is based on UK GDPR.",
+        )
+        for assertion in assertions:
+            with self.subTest(assertion=assertion):
+                self.write_readme(assertion)
+                self.assert_has_error("prohibited source authority language")
+
+    def test_excluded_source_supply_and_derivation_polarity_pairs(self) -> None:
+        profile = self.load_component("profile.json")
+        profile["source_boundary"]["excluded_sources"] = ["UK GDPR"]
+        self.write_component("profile.json", profile)
+        pairs = (
+            (
+                "UK GDPR supplies this profile selection",
+                "UK GDPR does not supply this profile selection.",
+            ),
+            (
+                "This profile selection is supplied by UK GDPR",
+                "This profile selection is not supplied by UK GDPR.",
+            ),
+            (
+                "UK GDPR is the source for this profile requirement",
+                "UK GDPR is not the source for this profile requirement.",
+            ),
+            (
+                "This profile selection derives from UK GDPR",
+                "This profile selection does not derive from UK GDPR.",
+            ),
+            (
+                "This profile requirement is based on UK GDPR",
+                "This profile requirement is not based on UK GDPR.",
+            ),
+        )
+        for assertion, denial in pairs:
+            with self.subTest(assertion=assertion, form="denial"):
+                self.write_readme(denial)
+                self.assertEqual(validate_profiles.validate(self.root), [])
+            with self.subTest(assertion=assertion, form="quotation"):
+                self.write_readme(f'The phrase "{assertion}" is prohibited.')
+                self.assertEqual(validate_profiles.validate(self.root), [])
+            with self.subTest(assertion=assertion, form="discussion"):
+                self.write_readme(f"The claim that {assertion} is rejected.")
+                self.assertEqual(validate_profiles.validate(self.root), [])
+            with self.subTest(assertion=assertion, form="coordinated"):
+                self.write_readme(f"{denial} However, {assertion}.")
+                self.assert_has_error("prohibited source authority language")
+
     def test_source_boundary_uses_declared_generic_excluded_source(self) -> None:
         profile = self.load_component("profile.json")
         profile["source_boundary"]["excluded_sources"] = ["Acme Code"]
@@ -1685,6 +1840,53 @@ class ProfileValidationTests(unittest.TestCase):
             with self.subTest(text=text):
                 (self.package / "README.md").write_text(
                     f"# Synthetic profile\n\n{text}\n", encoding="utf-8"
+                )
+                self.assert_has_error("prohibited control weakening language")
+
+    def test_omit_skip_and_reduce_control_forms_are_rejected(self) -> None:
+        affirmative = (
+            "This profile omits GOV-100.",
+            "GOV-100 is omitted by this profile.",
+            "GOV-100 may be omitted.",
+            "This profile skips GOV-100.",
+            "GOV-100 is skipped by this profile.",
+            "GOV-100 may be skipped.",
+            "This profile reduces GOV-100.",
+            "GOV-100 is reduced by this profile.",
+            "GOV-100 may be reduced.",
+            "GOV-100 has become optional under this profile.",
+            "GOV-100 remains optional under this profile.",
+        )
+        for assertion in affirmative:
+            with self.subTest(assertion=assertion):
+                self.write_readme(assertion)
+                self.assert_has_error("prohibited control weakening language")
+
+    def test_omit_skip_and_reduce_polarity_pairs(self) -> None:
+        for verb, present, participle in (
+            ("omit", "omits", "omitted"),
+            ("skip", "skips", "skipped"),
+            ("reduce", "reduces", "reduced"),
+        ):
+            denial = f"This profile does not {verb} GOV-100."
+            claim = f"This profile {present} GOV-100"
+            with self.subTest(verb=verb, form="denial"):
+                self.write_readme(denial)
+                self.assertEqual(validate_profiles.validate(self.root), [])
+            with self.subTest(verb=verb, form="remain-optional"):
+                self.write_readme("GOV-100 does not remain optional.")
+                self.assertEqual(validate_profiles.validate(self.root), [])
+            with self.subTest(verb=verb, form="quotation"):
+                self.write_readme(f'The phrase "{claim}" is prohibited.')
+                self.assertEqual(validate_profiles.validate(self.root), [])
+            with self.subTest(verb=verb, form="discussion"):
+                self.write_readme(
+                    f"The claim that GOV-100 may be {participle} is rejected."
+                )
+                self.assertEqual(validate_profiles.validate(self.root), [])
+            with self.subTest(verb=verb, form="coordinated"):
+                self.write_readme(
+                    f"{denial} However, GOV-100 may be {participle}."
                 )
                 self.assert_has_error("prohibited control weakening language")
 
@@ -2667,6 +2869,30 @@ class ProfileValidationTests(unittest.TestCase):
         path.write_text('{"risks": [}\n', encoding="utf-8")
         self.assert_has_error("cannot load JSON")
 
+    def test_malformed_control_catalog_is_a_sanitized_content_failure(self) -> None:
+        path = self.root / "controls" / "catalog.json"
+        cases = (
+            ("{", "cannot load JSON"),
+            ("[]", "root must be an object"),
+            ("{}", "controls must be an array"),
+            ('{"controls": {}}', "controls must be an array"),
+            ('{"controls": [null]}', "controls[0] requires a string id"),
+            ('{"controls": [{"id": 42}]}', "controls[0] requires a string id"),
+        )
+        for content, expected in cases:
+            with self.subTest(content=content):
+                path.write_text(content + "\n", encoding="utf-8")
+                stderr = io.StringIO()
+                with contextlib.redirect_stderr(stderr):
+                    result = validate_profiles.main(
+                        ["--check"], root=self.root
+                    )
+                output = stderr.getvalue()
+                self.assertEqual(result, 1, output)
+                self.assertIn(f"controls/catalog.json: {expected}", output)
+                self.assertNotIn(str(self.root), output)
+                self.assertNotIn("unexpected operational error", output)
+
     def test_malformed_readme_encoding_is_a_content_failure(self) -> None:
         (self.package / "README.md").write_bytes(b"\xff\xfe")
         stderr = io.StringIO()
@@ -2768,7 +2994,7 @@ class ProfileValidationTests(unittest.TestCase):
         self.assertEqual(result, 1)
         self.assertIn("regular file", stderr.getvalue())
 
-    def test_schema_directory_is_not_a_profile_country(self) -> None:
+    def test_schema_directory_is_not_a_profile_domain(self) -> None:
         false_package = self.root / "profiles" / "schema" / "0.1.0"
         false_package.mkdir()
         (false_package / "profile.json").write_text("{}\n", encoding="utf-8")
@@ -2814,13 +3040,17 @@ class ProfileValidationTests(unittest.TestCase):
         self.assertEqual(diagnostics, sorted(diagnostics))
         self.assertTrue(all(str(self.root) not in error for error in diagnostics))
 
-    def test_symlinked_country_directory_is_rejected(self) -> None:
-        country = self.package.parent
-        outside_country = self.root / "outside" / country.name
-        outside_country.parent.mkdir()
-        shutil.move(str(country), outside_country)
+    def test_symlinked_profile_domain_directory_is_rejected(self) -> None:
+        profile_domain = self.package.parent
+        outside_profile_domain = self.root / "outside" / profile_domain.name
+        outside_profile_domain.parent.mkdir()
+        shutil.move(str(profile_domain), outside_profile_domain)
         try:
-            os.symlink(outside_country, country, target_is_directory=True)
+            os.symlink(
+                outside_profile_domain,
+                profile_domain,
+                target_is_directory=True,
+            )
         except OSError as exc:
             if os.name != "nt":
                 self.skipTest(f"symlink creation is unavailable: {exc}")
@@ -2830,8 +3060,8 @@ class ProfileValidationTests(unittest.TestCase):
                     "/c",
                     "mklink",
                     "/J",
-                    str(country),
-                    str(outside_country),
+                    str(profile_domain),
+                    str(outside_profile_domain),
                 ],
                 capture_output=True,
                 text=True,
@@ -2849,12 +3079,12 @@ class ProfileValidationTests(unittest.TestCase):
                 )
             )
         finally:
-            if country.is_symlink():
-                country.unlink()
-            elif country.is_junction():
-                os.rmdir(country)
-            if not country.exists():
-                shutil.move(str(outside_country), country)
+            if profile_domain.is_symlink():
+                profile_domain.unlink()
+            elif profile_domain.is_junction():
+                os.rmdir(profile_domain)
+            if not profile_domain.exists():
+                shutil.move(str(outside_profile_domain), profile_domain)
 
     def test_symlinked_schema_file_is_rejected(self) -> None:
         schema = self.root / "profiles/schema/profile.schema.json"

@@ -288,25 +288,29 @@ score, replace the five-level scale, or treat a maturity result as conformance.
 
 ## 11. External-reference semantics
 
-`external-references.json` shall contain exactly the three approved mapping-set
-identifiers listed in Section 3.
+`external-references.json` shall contain exactly the three owner-selected Draft
+mapping-set identifiers listed in Section 3. Listing an identifier for this
+pilot does not approve the mapping set.
 
 Each reference shall record:
 
 - the exact mapping-set identifier;
 - its registry path;
-- expected lifecycle status `draft`;
+- expected mapping snapshot editorial status `draft`;
 - reference use `lifecycle_reference_only`;
 - `qualified_review_required: true`; and
 - an explicit statement that relationships, external outcomes, and evidence
   are not imported into the profile.
 
-The validator shall resolve each identifier against the actual mapping
-registry and reject identifier, path, or lifecycle drift. A referenced
-artifact lifecycle transition shall require an explicit profile update before
-the new state is relied upon. The transition shall not change the profile
-lifecycle automatically, and neither artifact shall be represented beyond its
-independently governed recorded state.
+The validator shall resolve each identifier against the authoritative mapping
+snapshot and its registry record. Mapping snapshot editorial status and
+governed registry lifecycle state are separate facts. The validator shall
+report identifier/path drift, editorial status drift, and registry
+lifecycle-event drift separately. A referenced artifact lifecycle transition
+shall require an explicit profile update before the new state is relied upon.
+The transition shall not change the profile lifecycle automatically, and
+neither artifact shall be represented beyond its independently governed
+recorded state.
 
 ## 12. Traceability and application flow
 
@@ -360,7 +364,8 @@ The validator shall reject:
 - invalid selection status or condition usage;
 - unresolved references or asymmetric reciprocal traceability links;
 - component path escape, symlink, or package-boundary violations;
-- mapping identifier, path, or lifecycle drift;
+- mapping identifier/path drift, editorial status drift, or registry
+  lifecycle-event drift;
 - fields or statuses that replace, waive, narrow, or mark a core control
   inapplicable;
 - external outcomes presented as profile facts; and
@@ -405,7 +410,8 @@ Validator tests shall cover:
 - missing and duplicate controls;
 - applicability-condition resolution;
 - unresolved and invalid traceability;
-- mapping lifecycle drift;
+- mapping identifier/path, editorial-status, and registry lifecycle-event
+  drift;
 - external-outcome import attempts;
 - maturity and control-meaning substitution;
 - positive, negated, quoted, and discussed prohibited claims;

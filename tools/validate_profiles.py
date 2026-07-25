@@ -564,6 +564,62 @@ PROFILE_ASSERTION_PATTERNS += (
         ),
     ),
 )
+PROFILE_ASSERTION_PATTERNS += (
+    (
+        "compliance",
+        re.compile(
+            r"\bguarantee(?:s|d|ing)?\s+"
+            r"(?P<outcome>compliance\s+with\s+Cyber Essentials)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "endorsement",
+        re.compile(
+            r"\bNCSC\s+(?:does\s+(?:not\s+)?)?"
+            r"(?P<outcome>endorse(?:s|d|ing)?\s+(?:this|the)\s+profile)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "production readiness",
+        re.compile(
+            r"\bconfirm(?:s|ed|ing)?\s+(?:no\s+)?"
+            r"(?P<outcome>production readiness)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "certification eligibility",
+        re.compile(
+            r"\b(?:the\s+)?organization\s+(?:is|was)\s+(?:not\s+)?"
+            r"(?P<outcome>eligible\s+for\s+certification"
+            r"(?:\s+under\s+(?:this|the)\s+profile)?)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "named-authority approval",
+        re.compile(
+            r"\b(?:this|the)\s+profile\s+(?:has|had)\s+(?:not\s+)?"
+            r"(?P<outcome>obtained\s+NCSC approval)\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "imported mapping relationship",
+        re.compile(
+            r"\b(?:Cyber Essentials\s+(?:provision|requirement|control)\s+"
+            r"[A-Za-z0-9.-]+|[A-Z][A-Z0-9]{1,15}-[0-9]{3})\s+"
+            r"(?:does\s+(?:not\s+)?)?"
+            r"(?P<outcome>correspond(?:s|ed)?\s+to|"
+            r"provid(?:e|es|ed)\s+evidence\s+for)\s+"
+            r"(?:Cyber Essentials\s+(?:provision|requirement|control)\s+"
+            r"[A-Za-z0-9.-]+|[A-Z][A-Z0-9]{1,15}-[0-9]{3})\b",
+            re.IGNORECASE,
+        ),
+    ),
+)
 WEAKENING_PREDICATE = re.compile(
     r"\b(?:replace(?:s|d|ing)?|alter(?:s|ed|ing)?|relax(?:es|ed|ing)?"
     r"|waiv(?:e|es|ed|ing)|weaken(?:s|ed|ing)?|narrow(?:s|ed|ing)?"
@@ -581,7 +637,7 @@ PASSIVE_WEAKENING = re.compile(
     r"|(?:has|have|had)\s+(?:(?:not|never)\s+)?been\s+)"
     r"(?P<predicate>replaced|waived|made\s+optional|altered|relaxed|weakened|"
     r"narrowed|marked\s+inapplicable|superseded|lowered|rendered\s+optional|"
-    r"inapplicable|discontinued)\b",
+    r"omitted|skipped|reduced|inapplicable|discontinued)\b",
     re.IGNORECASE,
 )
 ASPECTUAL_WEAKENING = (
@@ -617,6 +673,7 @@ ADJECTIVAL_WEAKENING = (
         r"|(?:is|are)\s+no\s+longer\s+required"
         r"|(?:shall|must|may)\s+be\s+(?:optional|inapplicable)"
         r"|(?:shall|must|may)\s+not\s+be\s+mandatory"
+        r"|(?:may|can)\s+be\s+(?:omitted|skipped|reduced)"
         r"|(?:is|are)\s+"
         r"(?:optional|inapplicable|not\s+required|not\s+mandatory)"
         r"|(?:(?:shall|must|may)\s+)?"
@@ -645,11 +702,35 @@ ADJECTIVAL_WEAKENING = (
         r"(?P<control>[A-Z][A-Z0-9]{1,15}-[0-9]{3})\b",
         re.IGNORECASE,
     ),
+    re.compile(
+        r"\b(?P<control>(?:(?:core\s+)?controls?"
+        r"|[A-Z][A-Z0-9]{1,15}-[0-9]{3}))\s+"
+        r"(?:has|have|had)\s+(?:not\s+)?"
+        r"(?P<predicate>become\s+optional)\b",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"\b(?P<control>(?:(?:core\s+)?controls?"
+        r"|[A-Z][A-Z0-9]{1,15}-[0-9]{3}))\s+"
+        r"(?:(?:does|do|did)\s+(?:not\s+)?)?"
+        r"(?P<predicate>remains?\s+optional)\b",
+        re.IGNORECASE,
+    ),
 )
 CONTROL_LANGUAGE = re.compile(
     r"\b(?:(?:core\s+)?controls?(?:\s+requirements?)?"
     r"|[A-Z][A-Z0-9]{1,15}-[0-9]{3})\b",
     re.IGNORECASE,
+)
+DIRECT_CONTROL_WEAKENING = (
+    re.compile(
+        r"\b(?:this|the)\s+profile\s+"
+        r"(?:(?:does|did)\s+(?:not\s+)?)?"
+        r"(?P<predicate>omit(?:s|ted)?|skip(?:s|ped)?|reduc(?:e|es|ed))\s+"
+        r"(?P<control>(?:(?:core\s+)?controls?"
+        r"|[A-Z][A-Z0-9]{1,15}-[0-9]{3}))\b",
+        re.IGNORECASE,
+    ),
 )
 PREDICATE_NEGATION = re.compile(
     r"\b(?:cannot|can['’]t|doesn['’]t|isn['’]t|must\s+not|never|not"
@@ -757,6 +838,10 @@ class ProfilePackage:
 
 class OperationalProfileError(RuntimeError):
     """A sanitized repository-relative operational validation failure."""
+
+
+class ContentProfileError(ValueError):
+    """A deterministic repository-content validation failure."""
 
 
 def lstat_mode(path: Path, diagnostic: str) -> int | None:
@@ -1292,20 +1377,30 @@ def control_population(root: Path) -> set[str]:
         raise OperationalProfileError(
             "controls/catalog.json: cannot read control catalog"
         ) from exc
+    except (json.JSONDecodeError, ValueError) as exc:
+        raise ContentProfileError(
+            "controls/catalog.json: cannot load JSON"
+        ) from exc
     if not isinstance(catalog, dict):
-        raise ValueError("controls/catalog.json root must be an object")
+        raise ContentProfileError(
+            "controls/catalog.json: root must be an object"
+        )
     controls = catalog.get("controls")
     if not isinstance(controls, list):
-        raise ValueError("controls/catalog.json controls must be an array")
+        raise ContentProfileError(
+            "controls/catalog.json: controls must be an array"
+        )
     identifiers: list[str] = []
     for index, record in enumerate(controls):
         if not isinstance(record, dict) or not isinstance(record.get("id"), str):
-            raise ValueError(
-                f"controls/catalog.json controls[{index}] requires a string id"
+            raise ContentProfileError(
+                f"controls/catalog.json: controls[{index}] requires a string id"
             )
         identifiers.append(record["id"])
     if len(identifiers) != len(set(identifiers)):
-        raise ValueError("controls/catalog.json contains duplicate control ids")
+        raise ContentProfileError(
+            "controls/catalog.json: contains duplicate control ids"
+        )
     return set(identifiers)
 
 
@@ -2058,6 +2153,8 @@ def occurrence_is_metalinguistic(
             break
     affirmative_assertion = False
     for match in ASSERTIVE_DISCUSSION.finditer(context):
+        if relative_start <= match.start() and match.end() <= relative_end:
+            continue
         boundaries = list(
             PROFILE_PROPOSITION_BOUNDARY.finditer(
                 context, 0, match.start()
@@ -2162,6 +2259,20 @@ def contains_affirmative_weakening(text: str) -> bool:
         if postposed_denial(sentence_suffix(text, weakening.end())):
             continue
         return True
+    for pattern in DIRECT_CONTROL_WEAKENING:
+        for weakening in pattern.finditer(text):
+            predicate_start = weakening.start("predicate")
+            if predicate_is_negated(
+                sentence_prefix(text, predicate_start)
+            ):
+                continue
+            if occurrence_is_metalinguistic(
+                text, weakening.start(), weakening.end()
+            ):
+                continue
+            if postposed_denial(sentence_suffix(text, weakening.end())):
+                continue
+            return True
     for weakening in PASSIVE_WEAKENING.finditer(text):
         predicate_start = weakening.start("predicate")
         start, _, _ = proposition_bounds(text, predicate_start)
@@ -2190,6 +2301,11 @@ def contains_affirmative_weakening(text: str) -> bool:
             return True
     for pattern in ADJECTIVAL_WEAKENING:
         for weakening in pattern.finditer(text):
+            predicate_start = weakening.start("predicate")
+            if predicate_is_negated(
+                sentence_prefix(text, predicate_start)
+            ):
+                continue
             if postposed_denial(sentence_suffix(text, weakening.end())):
                 continue
             if occurrence_is_metalinguistic(
@@ -2289,7 +2405,67 @@ def contains_affirmative_source_authority(
         for source in excluded_sources
         if source.strip()
     )
-    for pattern in (*declared_passive_patterns, *SOURCE_AUTHORITY_PATTERNS):
+    declared_supply_patterns = tuple(
+        pattern
+        for source in excluded_sources
+        if source.strip()
+        for pattern in (
+            re.compile(
+                rf"\b(?P<source>{re.escape(source)})(?!\w)\s+"
+                r"(?:(?:does|did)\s+(?:not\s+)?)?"
+                r"(?P<outcome>suppl(?:y|ies|ied)|"
+                r"provid(?:e|es|ed))\s+"
+                r"(?:this|the)\s+profile\s+"
+                r"(?:selection|scope|requirement)\b",
+                re.IGNORECASE,
+            ),
+            re.compile(
+                r"\b(?:this|the)\s+profile\s+"
+                r"(?:selection|scope|requirement)\s+"
+                r"(?:is|was)\s+(?:not\s+)?"
+                r"(?P<outcome>supplied|provided)\s+by\s+"
+                rf"(?P<source>{re.escape(source)})(?!\w)",
+                re.IGNORECASE,
+            ),
+            re.compile(
+                r"\b(?:this|the)\s+profile\s+"
+                r"(?:selection|scope|requirement)\s+"
+                r"(?:is|was)\s+(?:not\s+)?"
+                r"(?P<outcome>derived)\s+from\s+"
+                rf"(?P<source>{re.escape(source)})(?!\w)",
+                re.IGNORECASE,
+            ),
+            re.compile(
+                rf"\b(?P<source>{re.escape(source)})(?!\w)\s+"
+                r"(?:is|was)\s+(?:not\s+)?"
+                r"(?P<outcome>the\s+source\s+for\s+"
+                r"(?:this|the)\s+profile\s+"
+                r"(?:selection|scope|requirement))\b",
+                re.IGNORECASE,
+            ),
+            re.compile(
+                r"\b(?:this|the)\s+profile\s+"
+                r"(?:selection|scope|requirement)\s+"
+                r"(?:(?:does|did)\s+(?:not\s+)?)?"
+                r"(?P<outcome>deriv(?:e|es|ed)\s+from)\s+"
+                rf"(?P<source>{re.escape(source)})(?!\w)",
+                re.IGNORECASE,
+            ),
+            re.compile(
+                r"\b(?:this|the)\s+profile\s+"
+                r"(?:selection|scope|requirement)\s+"
+                r"(?:is|was)\s+(?:not\s+)?"
+                r"(?P<outcome>based\s+on)\s+"
+                rf"(?P<source>{re.escape(source)})(?!\w)",
+                re.IGNORECASE,
+            ),
+        )
+    )
+    for pattern in (
+        *declared_passive_patterns,
+        *declared_supply_patterns,
+        *SOURCE_AUTHORITY_PATTERNS,
+    ):
         for match in pattern.finditer(text):
             if not matched_source_is_excluded(
                 text, match, excluded_sources
@@ -2421,6 +2597,7 @@ def claim_diagnostics(package: ProfilePackage) -> list[str]:
 
 def validate(root: Path = ROOT) -> list[str]:
     """Return all deterministic content diagnostics for discovered packages."""
+    diagnostics: list[str] = []
     try:
         packages, diagnostics = inventory_profile_packages(root)
         for directory in packages:
@@ -2435,6 +2612,9 @@ def validate(root: Path = ROOT) -> list[str]:
                 )
             )
             diagnostics.extend(claim_diagnostics(package))
+        return sorted(set(diagnostics))
+    except ContentProfileError as exc:
+        diagnostics.append(str(exc))
         return sorted(set(diagnostics))
     except OperationalProfileError:
         raise

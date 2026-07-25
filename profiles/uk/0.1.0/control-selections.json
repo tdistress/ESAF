@@ -52,7 +52,7 @@
     {
       "control_id": "RSK-100",
       "status": "required",
-      "rationale": "Every profile assessment needs a consistent risk method to rate, treat, monitor, accept, and escalate the six additional risk lenses without inventing profile-local risk meanings."
+      "rationale": "Every profile assessment needs a consistent risk method to rate, treat, monitor, accept, and escalate profile risks without inventing profile-local risk meanings."
     },
     {
       "control_id": "RSK-110",

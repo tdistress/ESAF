@@ -58,8 +58,8 @@ emphases and do not replace the complete ESAF-1500 evaluation.
 ## Source boundary
 
 The package is original ESAF synthesis. Its permitted source boundary is the
-ESAF library and pinned lifecycle metadata only from the three exact Draft
-United Kingdom Cyber Essentials mapping registry records in
+ESAF library and pinned lifecycle metadata only from the three exact United
+Kingdom Cyber Essentials mapping registry records in
 `external-references.json`. Substantive mapping content remains excluded,
 including relationships, external outcomes, evidence, and interpretations.
 All content and interpretations from other or unpinned external mappings are
@@ -79,8 +79,11 @@ It does not establish production readiness.
 This profile does not define the scope of Cyber Essentials or any legal or
 regulatory regime. It does not implement or certify Cyber Essentials, complete
 qualified review of a mapping set, or advance a referenced mapping beyond its
-recorded Draft lifecycle. Core ESAF controls are not replaced, waived,
-weakened, narrowed, or made optional by this profile.
+recorded state. Each listed mapping snapshot has Draft editorial status and an
+empty registry lifecycle-event history. Mapping snapshot editorial status and
+governed registry lifecycle state remain separate; a change to either requires
+an explicit profile update before reliance. Core ESAF controls are not replaced,
+waived, weakened, narrowed, or made optional by this profile.
 
 An assessment remains valid only for its recorded system boundary, evidence,
 methods, limitations, and time period. ESAF-1500 maturity and control
