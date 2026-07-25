@@ -36,6 +36,16 @@ Contributions should be:
 
 ---
 
+## Contribution licensing
+
+Unless the contributor and the ESAF Project Maintainers agree otherwise in writing, each contribution is submitted under the license applicable to the target path in [LICENSE_SCOPE.md](LICENSE_SCOPE.md). A contribution to an Apache-licensed path is submitted under Apache 2.0. A contribution to a CC BY 4.0 path is submitted under CC BY 4.0.
+
+By submitting a contribution, the contributor confirms that they have authority to submit the contribution under the applicable license. This submission does not transfer copyright ownership.
+
+Material conspicuously marked `Not a Contribution` is excluded from submission under these terms. Contributors shall identify third-party material and shall not submit it unless its terms permit inclusion and the project accepts it through the applicable rights-review process.
+
+---
+
 ## External Mapping Contributions
 
 An external mapping contribution shall follow [ESAF-1600](crosswalks/ESAF-1600.md) and record:

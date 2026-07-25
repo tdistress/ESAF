@@ -82,4 +82,6 @@ Contributions from enterprise architecture, AI engineering, cybersecurity, gover
 
 ## License
 
-Licensing is not yet finalized. See [LICENSE](LICENSE) before using or redistributing project content.
+Original ESAF standards content is licensed under [Creative Commons Attribution 4.0 International](LICENSE) (CC BY 4.0). Software and implementation assets identified in [LICENSE_SCOPE.md](LICENSE_SCOPE.md) are licensed under the [Apache License 2.0](LICENSES/Apache-2.0.txt).
+
+See the [copyright and attribution notice](NOTICE), [third-party notices](THIRD_PARTY_NOTICES.md), and [ESAF name and marks policy](TRADEMARKS.md). Separately identified third-party material remains under its stated terms.
