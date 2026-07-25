@@ -10,7 +10,7 @@
     "schema_version": {"const": "0.1.0"},
     "profile_id": {"$ref": "#/$defs/profileId"},
     "profile_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
-    "external_references": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/externalReference"}}
+    "external_references": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/externalReference"}}
   },
   "$defs": {
     "profileId": {"type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*--[a-z0-9]+(?:-[a-z0-9]+)*--[0-9]+\\.[0-9]+\\.[0-9]+$"},
@@ -24,7 +24,7 @@
       "properties": {
         "mapping_set_id": {"$ref": "#/$defs/mappingSetId"},
         "registry_path": {"$ref": "#/$defs/relativePath"},
-        "expected_status": {"enum": ["proposed", "draft", "approved", "published", "deprecated", "retired"]},
+        "expected_status": {"enum": ["draft", "reviewed", "approved", "published", "deprecated", "retired"]},
         "reference_use": {"const": "lifecycle_reference_only"},
         "qualified_review_required": {"const": true},
         "non_import_statement": {"$ref": "#/$defs/nonEmptyString"}

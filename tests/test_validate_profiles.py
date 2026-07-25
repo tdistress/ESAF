@@ -53,6 +53,63 @@ class ProfileValidationTests(unittest.TestCase):
         assert package is not None
         return package
 
+    def generic_package(
+        self,
+        *,
+        profile_id: str = "example--sector-profile--0.1.0",
+        external_references: list[dict[str, object]] | None = None,
+    ) -> validate_profiles.ProfilePackage:
+        package = self.loaded_package()
+        for document in package.documents.values():
+            document["profile_id"] = profile_id
+        if external_references is not None:
+            package.documents["external_references"]["external_references"] = (
+                external_references
+            )
+        return package
+
+    def external_references(self) -> list[dict[str, object]]:
+        document = self.load_component("external-references.json")
+        references = document["external_references"]
+        assert isinstance(references, list)
+        return references
+
+    def set_catalog_editorial_status(
+        self, status: str, reference_index: int = 0
+    ) -> None:
+        mapping_set_id = profile_fixture.MAPPING_REFERENCES[reference_index][0]
+        path = self.root / "crosswalks/catalog.json"
+        catalog = json.loads(path.read_text(encoding="utf-8"))
+        record = next(
+            record
+            for record in catalog["mapping_sets"]
+            if record["metadata"]["mapping_set_id"] == mapping_set_id
+        )
+        record["metadata"]["status"] = status
+        profile_fixture.write_json(path, catalog)
+
+    def set_expected_status(
+        self, status: str, reference_index: int = 0
+    ) -> None:
+        document = self.load_component("external-references.json")
+        document["external_references"][reference_index]["expected_status"] = status
+        self.write_component("external-references.json", document)
+
+    def set_registry_events(
+        self, states: list[str], reference_index: int = 0
+    ) -> None:
+        registry_path = profile_fixture.MAPPING_REFERENCES[reference_index][1]
+        path = self.root / registry_path
+        events = "\n".join(f"  - state: {state}" for state in states)
+        replacement = f"events:\n{events}" if events else "events: []"
+        path.write_text(
+            path.read_text(encoding="utf-8").replace(
+                "events: []", replacement, 1
+            ),
+            encoding="utf-8",
+            newline="\n",
+        )
+
     def remove_valid_package(self) -> None:
         shutil.rmtree(self.package)
 
@@ -323,13 +380,182 @@ class ProfileValidationTests(unittest.TestCase):
             "risk RISK-A and overlay OVERLAY-A must reference each other"
         )
 
-    def test_exact_registry_metadata_is_loaded_as_draft(self) -> None:
+    def test_exact_mapping_reference_metadata_uses_catalog_editorial_status(
+        self,
+    ) -> None:
         mapping_set_id, registry_path = profile_fixture.MAPPING_REFERENCES[0]
-        metadata = validate_profiles.registry_metadata(
-            self.root / registry_path
+        metadata = validate_profiles.mapping_reference_metadata(
+            self.root, mapping_set_id, registry_path
         )
         self.assertEqual(metadata["mapping_set_id"], mapping_set_id)
-        self.assertEqual(metadata["status"], "draft")
+        self.assertEqual(metadata["editorial_status"], "draft")
+        self.assertEqual(metadata["registry_events"], [])
+
+    def test_generic_profile_may_have_no_external_references(self) -> None:
+        package = self.generic_package(external_references=[])
+        self.assertEqual(
+            [],
+            validate_profiles.semantic_diagnostics(self.root, package),
+        )
+
+    def test_future_profile_is_not_forced_to_use_uk_mappings(self) -> None:
+        package = self.generic_package(
+            profile_id="example--sector-profile--1.2.3",
+            external_references=[],
+        )
+        diagnostics = validate_profiles.semantic_diagnostics(self.root, package)
+        self.assertFalse(
+            any("UK pilot mapping references" in item for item in diagnostics)
+        )
+        self.assertFalse(
+            any("mapping reference" in item for item in diagnostics),
+            diagnostics,
+        )
+
+    def test_generic_profile_may_declare_one_catalog_reference(self) -> None:
+        reference = self.external_references()[0]
+        package = self.generic_package(external_references=[reference])
+        self.assertEqual(
+            [],
+            validate_profiles.semantic_diagnostics(self.root, package),
+        )
+
+    def test_uk_pilot_still_requires_exact_three_references(self) -> None:
+        document = self.load_component("external-references.json")
+        document["external_references"].pop()
+        self.write_component("external-references.json", document)
+        self.assertTrue(
+            any(
+                "exactly three" in item
+                for item in validate_profiles.validate(self.root)
+            )
+        )
+
+    def test_reviewed_snapshot_is_not_inferred_as_draft_from_empty_events(
+        self,
+    ) -> None:
+        self.set_catalog_editorial_status("reviewed")
+        package = self.generic_package(
+            external_references=[self.external_references()[0]]
+        )
+        self.assertTrue(
+            any(
+                "expected editorial status draft; found reviewed" in item
+                for item in validate_profiles.semantic_diagnostics(
+                    self.root, package
+                )
+            )
+        )
+
+    def test_reviewed_snapshot_with_empty_events_is_valid(self) -> None:
+        self.set_catalog_editorial_status("reviewed")
+        self.set_expected_status("reviewed")
+        package = self.generic_package(
+            external_references=[self.external_references()[0]]
+        )
+        self.assertFalse(
+            any(
+                "lifecycle" in item or "editorial status" in item
+                for item in validate_profiles.semantic_diagnostics(
+                    self.root, package
+                )
+            )
+        )
+
+    def test_reviewed_snapshot_rejects_approved_registry_event(self) -> None:
+        self.set_catalog_editorial_status("reviewed")
+        self.set_expected_status("reviewed")
+        self.set_registry_events(["approved"])
+        package = self.generic_package(
+            external_references=[self.external_references()[0]]
+        )
+        self.assertTrue(
+            any(
+                "reviewed mapping snapshot requires empty registry lifecycle events"
+                in item
+                for item in validate_profiles.semantic_diagnostics(
+                    self.root, package
+                )
+            )
+        )
+
+    def test_approved_snapshot_requires_approved_registry_event(self) -> None:
+        self.set_catalog_editorial_status("approved")
+        self.set_expected_status("approved")
+        package = self.generic_package(
+            external_references=[self.external_references()[0]]
+        )
+        self.assertTrue(
+            any(
+                "approved mapping snapshot requires governed registry lifecycle events"
+                in item
+                for item in validate_profiles.semantic_diagnostics(
+                    self.root, package
+                )
+            )
+        )
+
+    def test_approved_snapshot_with_approved_registry_event_is_valid(self) -> None:
+        self.set_catalog_editorial_status("approved")
+        self.set_expected_status("approved")
+        self.set_registry_events(["approved"])
+        package = self.generic_package(
+            external_references=[self.external_references()[0]]
+        )
+        self.assertFalse(
+            any(
+                "lifecycle" in item or "editorial status" in item
+                for item in validate_profiles.semantic_diagnostics(
+                    self.root, package
+                )
+            )
+        )
+
+    def test_generic_reference_path_must_be_safe_and_present(self) -> None:
+        reference = self.external_references()[0]
+        reference["registry_path"] = "crosswalks/registry/missing.md"
+        package = self.generic_package(external_references=[reference])
+        self.assertTrue(
+            any(
+                "unsafe or missing registry path" in item
+                for item in validate_profiles.semantic_diagnostics(
+                    self.root, package
+                )
+            )
+        )
+
+    def test_generic_reference_identifier_must_resolve_in_catalog(self) -> None:
+        reference = self.external_references()[0]
+        reference["mapping_set_id"] = "example--mapping-set--0.1.0"
+        package = self.generic_package(external_references=[reference])
+        self.assertTrue(
+            any(
+                "does not resolve exactly once" in item
+                for item in validate_profiles.semantic_diagnostics(
+                    self.root, package
+                )
+            )
+        )
+
+    def test_generic_reference_registry_symlink_is_rejected(self) -> None:
+        reference = self.external_references()[0]
+        path = self.root / str(reference["registry_path"])
+        target = path.with_name("registry-target.md")
+        path.rename(target)
+        try:
+            path.symlink_to(target)
+        except OSError as error:
+            target.rename(path)
+            self.skipTest(f"symlink creation is unavailable: {error}")
+        package = self.generic_package(external_references=[reference])
+        self.assertTrue(
+            any(
+                "unsafe or missing registry path" in item
+                for item in validate_profiles.semantic_diagnostics(
+                    self.root, package
+                )
+            )
+        )
 
     def test_wrong_mapping_registry_path_is_rejected(self) -> None:
         document = self.load_component("external-references.json")
@@ -362,14 +588,16 @@ class ProfileValidationTests(unittest.TestCase):
             1,
         )
         path.write_text(text, encoding="utf-8", newline="\n")
-        self.assert_has_error("registry lifecycle status is 'approved'")
+        self.assert_has_error(
+            "draft mapping snapshot requires empty registry lifecycle events"
+        )
 
     def test_registry_os_error_is_operational_and_does_not_disclose_host_path(
         self,
     ) -> None:
         with mock.patch.object(
             validate_profiles,
-            "registry_metadata",
+            "mapping_reference_metadata",
             side_effect=OSError(f"cannot read {self.root}"),
         ):
             stderr = io.StringIO()
@@ -389,7 +617,7 @@ class ProfileValidationTests(unittest.TestCase):
         extra["registry_path"] = "crosswalks/registry/unapproved.md"
         document["external_references"].append(extra)
         self.write_component("external-references.json", document)
-        self.assert_has_error("unexpected mapping reference")
+        self.assert_has_error("unexpected UK pilot mapping reference")
 
     def test_imported_relationship_fields_are_rejected_at_any_depth(self) -> None:
         package = self.loaded_package()

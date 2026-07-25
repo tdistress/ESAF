@@ -227,6 +227,32 @@ class ProfileSchemaTests(unittest.TestCase):
             with self.subTest(component=name):
                 Draft202012Validator(schemas[name]).validate(document)
 
+    def test_external_reference_schema_permits_empty_and_reviewed_references(
+        self,
+    ) -> None:
+        schema = json.loads(
+            (SCHEMA_ROOT / "external-references.schema.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        identity = {
+            "$schema": "../../schema/external-references.schema.json",
+            "schema_version": "0.1.0",
+            "profile_id": "example--sector-profile--1.2.3",
+            "profile_version": "1.2.3",
+        }
+        validator = Draft202012Validator(schema)
+        validator.validate({**identity, "external_references": []})
+        reference = {
+            "mapping_set_id": "example--mapping-set--0.1.0",
+            "registry_path": "crosswalks/registry/example.md",
+            "expected_status": "reviewed",
+            "reference_use": "lifecycle_reference_only",
+            "qualified_review_required": True,
+            "non_import_statement": "Relationships and evidence are not imported.",
+        }
+        validator.validate({**identity, "external_references": [reference]})
+
     def test_component_schema_locators_resolve_from_a_profile_package(self) -> None:
         component_directory = ROOT / "profiles" / "example" / "0.1.0"
         for name in SCHEMA_NAMES:
@@ -878,6 +904,10 @@ class UKPilotProfileTests(unittest.TestCase):
                 self.assertEqual(
                     reference["non_import_statement"],
                     "Relationships, external outcomes, and evidence are not imported.",
+                )
+                self.assertEqual(
+                    reference["registry_path"],
+                    f"crosswalks/registry/{reference['mapping_set_id']}.md",
                 )
                 self.assertEqual(
                     set(reference),

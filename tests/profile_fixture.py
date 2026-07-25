@@ -37,6 +37,7 @@ def write_valid_profile_fixture(root: Path) -> Path:
     (root / "controls").mkdir(parents=True)
     shutil.copy2(SOURCE_ROOT / "controls/catalog.json", root / "controls/catalog.json")
     shutil.copytree(SOURCE_ROOT / "crosswalks/registry", root / "crosswalks/registry")
+    shutil.copy2(SOURCE_ROOT / "crosswalks/catalog.json", root / "crosswalks/catalog.json")
 
     package = root / PACKAGE_RELATIVE
     package.mkdir(parents=True)

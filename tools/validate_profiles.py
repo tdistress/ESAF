@@ -62,7 +62,8 @@ PROFILE_PROPOSITION_BOUNDARY = re.compile(
     rf"(?:{PROPOSITION_BOUNDARY.pattern})|[\r\n]",
     PROPOSITION_BOUNDARY.flags,
 )
-MAPPING_REFERENCES = {
+UK_PILOT_PROFILE_ID = "uk--jurisdiction-profile--0.1.0"
+UK_PILOT_REGISTRY_PATHS = {
     (
         "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3"
         "--esaf-0.4-alpha--0.1.0"
@@ -88,6 +89,8 @@ MAPPING_REFERENCES = {
         "--esaf-0.4-alpha--0.2.0.md"
     ),
 }
+UK_PILOT_MAPPING_REFERENCES = frozenset(UK_PILOT_REGISTRY_PATHS)
+MAPPING_LIFECYCLE_STATES = ("approved", "published", "deprecated", "retired")
 EXTERNAL_IMPORT_FIELDS = frozenset(
     {
         "relationship",
@@ -575,6 +578,49 @@ def safe_schema(root: Path, schema_name: str) -> Path | None:
     return candidate
 
 
+def safe_repository_file(
+    root: Path, relative: str, *, expected_root: str
+) -> Path:
+    """Resolve one normalized regular file beneath a repository subdirectory."""
+    pure = PurePosixPath(relative)
+    expected = PurePosixPath(expected_root)
+    if (
+        not relative
+        or pure.is_absolute()
+        or ".." in pure.parts
+        or "\\" in relative
+        or ":" in relative
+        or pure.as_posix() != relative
+        or pure.parts[: len(expected.parts)] != expected.parts
+    ):
+        raise ValueError(f"unsafe or missing registry path {relative!r}")
+    candidate = root.joinpath(*pure.parts)
+    if any(
+        entry_is_alias(
+            part, f"{expected_root}: cannot inspect repository reference path"
+        )
+        for part in bounded_paths(candidate, root)
+    ):
+        raise ValueError(f"unsafe or missing registry path {relative!r}")
+    candidate_mode = lstat_mode(
+        candidate, f"{expected_root}: cannot inspect repository reference"
+    )
+    if candidate_mode is None or not stat.S_ISREG(candidate_mode):
+        raise ValueError(f"unsafe or missing registry path {relative!r}")
+    try:
+        expected_directory = root.joinpath(*expected.parts).resolve(strict=True)
+        candidate.resolve(strict=True).relative_to(expected_directory)
+    except (FileNotFoundError, ValueError) as exc:
+        raise ValueError(
+            f"unsafe or missing registry path {relative!r}"
+        ) from exc
+    except OSError as exc:
+        raise OperationalProfileError(
+            f"{expected_root}: cannot resolve repository reference"
+        ) from exc
+    return candidate
+
+
 def load_schema(root: Path, schema_name: str, diagnostics: list[str]) -> dict[str, object] | None:
     nominal_path = root / "profiles" / "schema" / schema_name
     relative = package_relative(root, nominal_path)
@@ -763,20 +809,108 @@ def control_population(root: Path) -> set[str]:
     return set(identifiers)
 
 
-def registry_metadata(path: Path) -> dict[str, object]:
-    """Load lifecycle metadata and derive the mapping's current status."""
-    metadata, _ = parse_front_matter(path)
-    events = metadata.get("events")
+def mapping_reference_metadata(
+    root: Path, mapping_set_id: str, registry_path: str
+) -> dict[str, object]:
+    """Resolve declared mapping metadata without conflating editorial state."""
+    registry_file = safe_repository_file(
+        root, registry_path, expected_root="crosswalks/registry"
+    )
+    registry, _ = parse_front_matter(registry_file)
+    events = registry.get("events")
     if not isinstance(events, list):
         raise ValueError("registry lifecycle events must be an array")
-    if events:
-        final = events[-1]
-        if not isinstance(final, dict) or not isinstance(final.get("state"), str):
-            raise ValueError("registry lifecycle event requires a string state")
-        status = final["state"]
-    else:
-        status = "draft"
-    return {**metadata, "status": status}
+    catalog = load_json(root / "crosswalks" / "catalog.json")
+    if not isinstance(catalog, dict):
+        raise ValueError("crosswalks/catalog.json root must be an object")
+    mapping_sets = catalog.get("mapping_sets")
+    if not isinstance(mapping_sets, list):
+        raise ValueError(
+            "crosswalks/catalog.json mapping_sets must be an array"
+        )
+    matches = [
+        record
+        for record in mapping_sets
+        if isinstance(record, dict)
+        and isinstance(record.get("metadata"), dict)
+        and record["metadata"].get("mapping_set_id") == mapping_set_id
+    ]
+    if len(matches) != 1:
+        raise ValueError(
+            f"mapping set {mapping_set_id} does not resolve exactly once"
+        )
+    record = matches[0]
+    metadata = record["metadata"]
+    editorial_status = metadata.get("status")
+    snapshot_path = record.get("path")
+    if not isinstance(editorial_status, str):
+        raise ValueError(
+            f"mapping set {mapping_set_id} has no editorial status"
+        )
+    if not isinstance(snapshot_path, str):
+        raise ValueError(f"mapping set {mapping_set_id} has no snapshot path")
+    if registry.get("mapping_set_id") != mapping_set_id:
+        raise ValueError(
+            f"registry mapping_set_id does not match {mapping_set_id}"
+        )
+    return {
+        "mapping_set_id": mapping_set_id,
+        "editorial_status": editorial_status,
+        "snapshot_path": snapshot_path,
+        "registry_events": events,
+    }
+
+
+def mapping_lifecycle_diagnostics(
+    metadata: dict[str, object], expected_status: str
+) -> list[str]:
+    """Validate snapshot editorial state and governed lifecycle separately."""
+    diagnostics: list[str] = []
+    editorial_status = metadata.get("editorial_status")
+    events = metadata.get("registry_events")
+    if not isinstance(events, list):
+        return ["registry lifecycle events must be an array"]
+
+    expected_editorial = (
+        expected_status
+        if expected_status in {"draft", "reviewed", "approved"}
+        else "approved"
+    )
+    if editorial_status != expected_editorial:
+        diagnostics.append(
+            f"expected editorial status {expected_editorial}; "
+            f"found {editorial_status}"
+        )
+
+    states = [
+        event.get("state") if isinstance(event, dict) else None
+        for event in events
+    ]
+    if editorial_status in {"draft", "reviewed"}:
+        if events:
+            diagnostics.append(
+                f"{editorial_status} mapping snapshot requires empty "
+                "registry lifecycle events"
+            )
+        return diagnostics
+
+    if editorial_status == "approved":
+        if not events:
+            diagnostics.append(
+                "approved mapping snapshot requires governed registry "
+                "lifecycle events"
+            )
+            return diagnostics
+        if states != list(MAPPING_LIFECYCLE_STATES[: len(states)]):
+            diagnostics.append("invalid governed registry lifecycle event prefix")
+            return diagnostics
+        observed_status = states[-1]
+        if observed_status != expected_status:
+            diagnostics.append(
+                f"expected lifecycle status {expected_status}; "
+                f"found {observed_status}"
+            )
+    return diagnostics
 
 
 def objects(value: object) -> list[dict[str, object]]:
@@ -982,67 +1116,101 @@ def semantic_diagnostics(
             f"{package.relative}/external-references.json: "
             f"duplicate mapping reference {identifier}"
         )
-    for identifier in sorted(set(reference_ids) - MAPPING_REFERENCES.keys()):
-        diagnostics.append(
-            f"{package.relative}/external-references.json: "
-            f"unexpected mapping reference {identifier}"
-        )
-    for identifier in sorted(MAPPING_REFERENCES.keys() - set(reference_ids)):
-        diagnostics.append(
-            f"{package.relative}/external-references.json: "
-            f"missing mapping reference {identifier}"
-        )
-    if len(references) != len(MAPPING_REFERENCES):
-        diagnostics.append(
-            f"{package.relative}/external-references.json: expected exactly "
-            f"{len(MAPPING_REFERENCES)} mapping references"
-        )
 
     for reference in references:
         identifier = reference.get("mapping_set_id")
-        if not isinstance(identifier, str) or identifier not in MAPPING_REFERENCES:
-            continue
-        expected_path = MAPPING_REFERENCES[identifier]
         observed_path = reference.get("registry_path")
-        if observed_path != expected_path:
-            diagnostics.append(
-                f"{package.relative}/external-references.json: mapping "
-                f"{identifier} registry path must be {expected_path!r}"
-            )
+        expected_status = reference.get("expected_status")
+        if (
+            not isinstance(identifier, str)
+            or not isinstance(observed_path, str)
+            or not isinstance(expected_status, str)
+        ):
             continue
-        if reference.get("expected_status") != "draft":
-            diagnostics.append(
-                f"{package.relative}/external-references.json: mapping "
-                f"{identifier} expected_status must be 'draft'"
-            )
-        if reference.get("non_import_statement") != NON_IMPORT_STATEMENT:
-            diagnostics.append(
-                f"{package.relative}/external-references.json: mapping "
-                f"{identifier} non_import_statement must be "
-                f"{NON_IMPORT_STATEMENT!r}"
-            )
-        path = root.joinpath(*PurePosixPath(expected_path).parts)
         try:
-            metadata = registry_metadata(path)
+            metadata = mapping_reference_metadata(
+                root, identifier, observed_path
+            )
         except OSError as exc:
             raise OperationalProfileError(
-                f"{expected_path}: cannot read registry metadata"
+                f"{observed_path}: cannot read mapping reference metadata"
             ) from exc
         except (UnicodeError, ValueError) as exc:
             diagnostics.append(
-                f"{expected_path}: cannot load registry metadata: {exc}"
+                f"{package.relative}/external-references.json: mapping "
+                f"{identifier}: {exc}"
             )
             continue
         if metadata.get("mapping_set_id") != identifier:
             diagnostics.append(
-                f"{expected_path}: registry mapping_set_id does not match "
+                f"{observed_path}: registry mapping_set_id does not match "
                 f"{identifier}"
             )
-        if metadata.get("status") != "draft":
+        for lifecycle_diagnostic in mapping_lifecycle_diagnostics(
+            metadata, expected_status
+        ):
             diagnostics.append(
-                f"{expected_path}: registry lifecycle status is "
-                f"{metadata.get('status')!r}; expected 'draft'"
+                f"{observed_path}: {lifecycle_diagnostic}"
             )
+
+    if expected_profile_id == UK_PILOT_PROFILE_ID:
+        for identifier in sorted(
+            set(reference_ids) - UK_PILOT_MAPPING_REFERENCES
+        ):
+            diagnostics.append(
+                f"{package.relative}/external-references.json: unexpected "
+                f"UK pilot mapping reference {identifier}"
+            )
+        for identifier in sorted(
+            UK_PILOT_MAPPING_REFERENCES - set(reference_ids)
+        ):
+            diagnostics.append(
+                f"{package.relative}/external-references.json: missing "
+                f"UK pilot mapping reference {identifier}"
+            )
+        if (
+            len(references) != 3
+            or set(reference_ids) != UK_PILOT_MAPPING_REFERENCES
+        ):
+            diagnostics.append(
+                f"{package.relative}/external-references.json: UK pilot "
+                "mapping references must contain exactly three references"
+            )
+        for reference in references:
+            identifier = reference.get("mapping_set_id")
+            if (
+                not isinstance(identifier, str)
+                or identifier not in UK_PILOT_REGISTRY_PATHS
+            ):
+                continue
+            expected_path = UK_PILOT_REGISTRY_PATHS[identifier]
+            if reference.get("registry_path") != expected_path:
+                diagnostics.append(
+                    f"{package.relative}/external-references.json: mapping "
+                    f"{identifier} registry path must be {expected_path!r}"
+                )
+            if reference.get("expected_status") != "draft":
+                diagnostics.append(
+                    f"{package.relative}/external-references.json: mapping "
+                    f"{identifier} expected_status must be 'draft'"
+                )
+            if reference.get("reference_use") != "lifecycle_reference_only":
+                diagnostics.append(
+                    f"{package.relative}/external-references.json: mapping "
+                    f"{identifier} reference_use must be "
+                    "'lifecycle_reference_only'"
+                )
+            if reference.get("qualified_review_required") is not True:
+                diagnostics.append(
+                    f"{package.relative}/external-references.json: mapping "
+                    f"{identifier} requires qualified review"
+                )
+            if reference.get("non_import_statement") != NON_IMPORT_STATEMENT:
+                diagnostics.append(
+                    f"{package.relative}/external-references.json: mapping "
+                    f"{identifier} non_import_statement must be "
+                    f"{NON_IMPORT_STATEMENT!r}"
+                )
     return sorted(set(diagnostics))
 
 
