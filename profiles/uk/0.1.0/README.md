@@ -36,6 +36,7 @@ evidence used to resolve each applicable condition.
 Each condition shall be answered independently from its exact factual
 question. A broader fact does not supply a narrower one: external-provider use
 does not by itself establish a material E1 through E4 dependency, generic
+internet exposure does not by itself establish an internet-reachable API,
 software intake does not establish model, application-artifact,
 infrastructure-dependency, or callable-tool use, and an unsupported technology
 does not by itself establish that a model is unsupported or that a capability

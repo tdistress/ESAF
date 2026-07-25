@@ -16,8 +16,15 @@
       "resolution_evidence": "Current network and service inventories, externally observed endpoints, data-flow diagrams, routing and firewall configuration, and an accountable owner's boundary attestation."
     },
     {
+      "condition_id": "INTERNET-REACHABLE-API",
+      "question": "Can an internet-originated connection reach an API that exposes or connects an AI capability, model, data, tool, or administrative function within the assessed boundary?",
+      "answer_type": "boolean",
+      "activates_when": true,
+      "resolution_evidence": "Current AI API inventory and contracts reconciled to gateway, routing, firewall, endpoint-discovery, and external reachability-test evidence, with an accountable API owner's attestation."
+    },
+    {
       "condition_id": "EXTERNAL-PROVIDER-USE",
-      "question": "Does the assessed AI system depend on an external provider for a model, hosted service, platform, tool, data service, or material operation?",
+      "question": "Does the assessed AI system depend on an external provider for a model, hosted service, platform, tool, data service, or operation?",
       "answer_type": "boolean",
       "activates_when": true,
       "resolution_evidence": "Supplier and service inventories, architecture and data-flow records, contracts, service descriptions, and the approved shared-responsibility record."
@@ -127,6 +134,12 @@
       "date": "2026-07-24",
       "author": "ESAF",
       "description": "Clarified applicability facts, mapping-source boundaries, resource safeguards, and evidence-quality semantics after independent review."
+    },
+    {
+      "version": "0.1.0",
+      "date": "2026-07-24",
+      "author": "ESAF",
+      "description": "Normalized conditional overlays and evidence expectations to exact factual triggers and added an internet-reachable API condition."
     }
   ]
 }

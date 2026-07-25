@@ -47,7 +47,7 @@
     {
       "control_id": "STR-130",
       "status": "not_selected",
-      "rationale": "Portfolio resource depth, funding, competencies, and operational capacity are organization-specific planning decisions rather than consequences of the five bounded profile conditions."
+      "rationale": "Portfolio resource depth, funding, competencies, and operational capacity are organization-specific planning decisions rather than consequences of the bounded profile conditions."
     },
     {
       "control_id": "RSK-100",
@@ -186,7 +186,7 @@
     {
       "control_id": "APP-110",
       "status": "not_selected",
-      "rationale": "Instruction, user-input, retrieval, tool-output, and memory protections depend on the application's actual context channels; the five pilot conditions do not establish those channels universally."
+      "rationale": "Instruction, user-input, retrieval, tool-output, and memory protections depend on the application's actual context channels; the bounded profile conditions do not establish those channels universally."
     },
     {
       "control_id": "APP-120",
@@ -224,7 +224,7 @@
       "status": "conditional",
       "rationale": "Internet-reachable AI, management, tool, callback, streaming, or batch interfaces require explicit authentication, authorization, validation, encryption, limits, versioning, logging, monitoring, and secure deprecation.",
       "activation_conditions": [
-        "INTERNET-EXPOSURE"
+        "INTERNET-REACHABLE-API"
       ]
     },
     {
@@ -300,7 +300,7 @@
     {
       "control_id": "AGT-100",
       "status": "not_selected",
-      "rationale": "Agent presence is not established by the five profile conditions, so the pilot adds no agent-identity selection while AGT-100 continues to govern any agents actually deployed."
+      "rationale": "Agent presence is not established by the bounded profile conditions, so the pilot adds no agent-identity selection while AGT-100 continues to govern any agents actually deployed."
     },
     {
       "control_id": "AGT-110",

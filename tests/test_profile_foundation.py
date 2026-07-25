@@ -379,6 +379,7 @@ class UKPilotProfileTests(unittest.TestCase):
             {condition["condition_id"] for condition in conditions},
             {
                 "INTERNET-EXPOSURE",
+                "INTERNET-REACHABLE-API",
                 "EXTERNAL-PROVIDER-USE",
                 "MATERIAL-EXTERNAL-PROVIDER-DEPENDENCY",
                 "THIRD-PARTY-ADMINISTRATION",
@@ -420,7 +421,7 @@ class UKPilotProfileTests(unittest.TestCase):
             "MOD-150": ["UNSUPPORTED-MODEL-PRESENCE"],
             "APP-140": ["UNTRUSTED-APPLICATION-ARTIFACT-INTAKE"],
             "APP-150": ["INTERNET-EXPOSURE"],
-            "API-110": ["INTERNET-EXPOSURE"],
+            "API-110": ["INTERNET-REACHABLE-API"],
             "API-120": ["CALLABLE-TOOL-OR-PLUGIN-USE"],
             "API-140": ["EXTERNAL-PROVIDER-USE"],
             "API-150": ["MATERIAL-EXTERNAL-PROVIDER-DEPENDENCY"],
@@ -449,6 +450,195 @@ class UKPilotProfileTests(unittest.TestCase):
             if selection["status"] == "conditional"
         }
         self.assertEqual(observed, expected)
+
+    def test_conditional_overlay_and_evidence_truth_table_is_machine_resolvable(
+        self,
+    ) -> None:
+        expected = {
+            "EXPOSED-BOUNDARY-OVERLAY": (
+                "INTERNET-EXPOSURE",
+                {
+                    "APP-150",
+                    "INF-110",
+                    "INF-120",
+                    "INF-140",
+                    "INF-150",
+                    "MON-110",
+                },
+                "BOUNDARY-EXPOSURE-EVIDENCE",
+            ),
+            "INTERNET-REACHABLE-API-OVERLAY": (
+                "INTERNET-REACHABLE-API",
+                {"API-110"},
+                "INTERNET-REACHABLE-API-EVIDENCE",
+            ),
+            "MODEL-INTAKE-OVERLAY": (
+                "UNTRUSTED-MODEL-INTAKE",
+                {"MOD-110"},
+                "MODEL-INTAKE-EVIDENCE",
+            ),
+            "APPLICATION-ARTIFACT-INTAKE-OVERLAY": (
+                "UNTRUSTED-APPLICATION-ARTIFACT-INTAKE",
+                {"APP-140"},
+                "APPLICATION-ARTIFACT-INTAKE-EVIDENCE",
+            ),
+            "CALLABLE-TOOL-OVERLAY": (
+                "CALLABLE-TOOL-OR-PLUGIN-USE",
+                {"API-120"},
+                "CALLABLE-TOOL-EVIDENCE",
+            ),
+            "INFRASTRUCTURE-DEPENDENCY-INTAKE-OVERLAY": (
+                "UNTRUSTED-INFRASTRUCTURE-DEPENDENCY-INTAKE",
+                {"INF-120"},
+                "INFRASTRUCTURE-DEPENDENCY-INTAKE-EVIDENCE",
+            ),
+            "UNSUPPORTED-MODEL-OVERLAY": (
+                "UNSUPPORTED-MODEL-PRESENCE",
+                {"MOD-150"},
+                "UNSUPPORTED-MODEL-EVIDENCE",
+            ),
+            "UNSUPPORTED-INFRASTRUCTURE-OVERLAY": (
+                "UNSUPPORTED-INFRASTRUCTURE-COMPONENT-PRESENCE",
+                {"INF-120"},
+                "UNSUPPORTED-INFRASTRUCTURE-EVIDENCE",
+            ),
+            "UNSUPPORTED-TECHNOLOGY-OVERLAY": (
+                "UNSUPPORTED-TECHNOLOGY-COMPONENT-PRESENCE",
+                {"ARC-150"},
+                "UNSUPPORTED-TECHNOLOGY-EVIDENCE",
+            ),
+            "EXTERNAL-RESPONSIBILITY-OVERLAY": (
+                "EXTERNAL-PROVIDER-USE",
+                {"API-140", "CMP-120", "ARC-140"},
+                "EXTERNAL-RESPONSIBILITY-EVIDENCE",
+            ),
+            "THIRD-PARTY-ADMINISTRATION-OVERLAY": (
+                "THIRD-PARTY-ADMINISTRATION",
+                {
+                    "IAM-130",
+                    "IAM-140",
+                    "IAM-150",
+                    "INF-130",
+                    "CMP-120",
+                    "ARC-140",
+                },
+                "THIRD-PARTY-ADMINISTRATION-EVIDENCE",
+            ),
+        }
+        risk_document = self.load("risk-overlays.json")
+        risks = {
+            risk["risk_id"]: risk for risk in risk_document["risks"]
+        }
+        overlays = {
+            overlay["overlay_id"]: overlay for overlay in risk_document["overlays"]
+        }
+        expectations = self.records_by_id(
+            "evidence-expectations.json", "expectations", "expectation_id"
+        )
+        selections = self.records_by_id(
+            "control-selections.json", "selections", "control_id"
+        )
+        conditional_overlays = {
+            overlay_id: overlay
+            for overlay_id, overlay in overlays.items()
+            if overlay["applicability"] == "conditional"
+        }
+        self.assertEqual(set(conditional_overlays), set(expected))
+        self.assertEqual(
+            {
+                expectation_id
+                for expectation_id, expectation in expectations.items()
+                if expectation.get("activation_conditions")
+            },
+            {expectation_id for _, _, expectation_id in expected.values()},
+        )
+        for overlay_id, (
+            condition_id,
+            control_ids,
+            expectation_id,
+        ) in expected.items():
+            with self.subTest(overlay=overlay_id):
+                overlay = overlays[overlay_id]
+                self.assertEqual(overlay["activation_conditions"], [condition_id])
+                self.assertEqual(set(overlay["affected_controls"]), control_ids)
+                self.assertEqual(
+                    overlay["evidence_expectation_ids"], [expectation_id]
+                )
+                expectation = expectations[expectation_id]
+                self.assertEqual(
+                    expectation["activation_conditions"], [condition_id]
+                )
+                self.assertEqual(set(expectation["control_ids"]), control_ids)
+                self.assertEqual(expectation["overlay_ids"], [overlay_id])
+                for risk_id in overlay["risk_ids"]:
+                    self.assertIn(overlay_id, risks[risk_id]["overlay_ids"])
+                for control_id in control_ids:
+                    selection = selections[control_id]
+                    self.assertTrue(
+                        selection["status"] == "required"
+                        or (
+                            selection["status"] == "conditional"
+                            and condition_id
+                            in selection.get("activation_conditions", [])
+                        ),
+                        f"{control_id} is not applicable under {condition_id}",
+                    )
+
+    def test_external_responsibility_chain_is_generic_but_api_150_is_material(
+        self,
+    ) -> None:
+        risks = self.records_by_id("risk-overlays.json", "risks", "risk_id")
+        overlays = self.records_by_id(
+            "risk-overlays.json", "overlays", "overlay_id"
+        )
+        expectations = self.records_by_id(
+            "evidence-expectations.json", "expectations", "expectation_id"
+        )
+        conditions = {
+            condition["condition_id"]: condition
+            for condition in self.load("profile.json")["applicability_conditions"]
+        }
+        generic_chain = " ".join(
+            (
+                conditions["EXTERNAL-PROVIDER-USE"]["question"],
+                risks["EXTERNAL-RESPONSIBILITY-RISK"]["statement"],
+                risks["EXTERNAL-RESPONSIBILITY-RISK"]["circumstances"],
+                overlays["EXTERNAL-RESPONSIBILITY-OVERLAY"]["statement"],
+                overlays["EXTERNAL-RESPONSIBILITY-OVERLAY"][
+                    "strengthening_rationale"
+                ],
+                expectations["EXTERNAL-RESPONSIBILITY-EVIDENCE"]["purpose"],
+                expectations["EXTERNAL-RESPONSIBILITY-EVIDENCE"]["strengthening"],
+            )
+        ).lower()
+        self.assertNotRegex(
+            generic_chain,
+            r"\bmaterial (?:external )?(?:provider|service|operation)\b",
+        )
+        selections = self.records_by_id(
+            "control-selections.json", "selections", "control_id"
+        )
+        self.assertEqual(
+            selections["API-150"]["activation_conditions"],
+            ["MATERIAL-EXTERNAL-PROVIDER-DEPENDENCY"],
+        )
+
+    def test_selection_rationales_do_not_embed_stale_condition_counts(self) -> None:
+        selections = self.load("control-selections.json")["selections"]
+        for selection in selections:
+            with self.subTest(control=selection["control_id"]):
+                self.assertNotRegex(
+                    selection["rationale"].lower(),
+                    r"\b(?:five|5)\b[^.]{0,80}\bconditions?\b",
+                )
+        by_id = {
+            selection["control_id"]: selection for selection in selections
+        }
+        for control_id in ("STR-130", "APP-110", "AGT-100"):
+            self.assertIn(
+                "bounded profile conditions",
+                by_id[control_id]["rationale"].lower(),
+            )
 
     def test_internet_exposure_traces_infrastructure_resource_safeguards(
         self,
