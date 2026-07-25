@@ -65,7 +65,8 @@ These instructions preserve durable project conventions for future Codex develop
 
 - The repository owner prefers autonomous progress with concise commentary updates and outcome-focused handoffs.
 - For work scoped to `tdistress/ESAF`, the owner has authorized Codex to create branches and worktrees, edit files, commit, push, open and update pull requests, merge passing PRs, and clean up temporary branches and worktrees.
-- The owner has authorized safe and relevant use of subagents.
+- Within the approved task scope, Codex may choose and execute its recommended design and implementation approach without requesting intermediate approval. Ask only when a decision requires new authority, materially broadens scope, or carries significant external risk.
+- Use subagents whenever they add useful parallelism or independent review. Codex does not need separate approval to dispatch them for in-scope work.
 - Do not extend this authorization to other repositories, accounts, publishing destinations, permissions, credentials, or materially broader project scope.
 - When the owner asks to pause, leave the repository in a clean, recoverable state and stop new milestone work.
 
