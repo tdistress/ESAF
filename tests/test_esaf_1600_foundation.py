@@ -52,14 +52,6 @@ ESAF_1600_DECISIONS = (
     "The initial Cyber Essentials v3.3 mapping remains draft pending qualified human review.",
 )
 PLANNED_LANDING_PAGE_CONTENT = {
-    "pci-dss.md": """# PCI DSS Crosswalk
-
-**Status:** Planned
-
-This crosswalk will map applicable ESAF controls to a versioned PCI DSS release. Payment-account-data scope and compliance conclusions remain the responsibility of the adopting organization and its qualified assessor.
-
-No substantive mapping is approved. Future mapping work shall follow [ESAF-1600](ESAF-1600.md) and identify the exact approved source version before any mapping-set snapshot is created.
-""",
     "hitrust-csf.md": """# HITRUST CSF Crosswalk
 
 **Status:** Planned
@@ -120,6 +112,26 @@ class Esaf1600FoundationTests(unittest.TestCase):
         self.assertEqual(
             normalize_markdown_contract(text),
             normalize_markdown_contract(PLANNED_LANDING_PAGE_CONTENT[name]),
+        )
+
+    def assert_pci_hold_landing_page(self, text: str) -> None:
+        normalized = normalize_markdown_contract(text)
+        statuses = re.findall(
+            r"(?m)^\*\*Status:\*\*\s*(\S.*?)\s*$",
+            normalized,
+        )
+        self.assertEqual(statuses, ["Readiness HOLD"])
+        self.assertNotRegex(
+            normalized,
+            r"(?im)^\*\*Status:\*\*\s*(?:Approved|Reviewed|Published)\s*$",
+        )
+        self.assertIn("[ESAF-1600](ESAF-1600.md)", normalized)
+        self.assertIn("PCI DSS mapping artifacts: `0`", normalized)
+        self.assertNotRegex(
+            normalized,
+            r"(?im)^## Approved mappings$|"
+            r"^\| External provision \| ESAF control \|$|"
+            r"PCI DSS \d+(?:\.\d+)+ maps directly",
         )
 
     def test_required_foundation_files_exist(self) -> None:
@@ -342,20 +354,24 @@ class Esaf1600FoundationTests(unittest.TestCase):
         self.assertIn("python tools/validate_crosswalks.py --write", text)
         self.assertIn("python tools/validate_crosswalks.py --check", text)
 
-    def test_landing_pages_remain_planned_and_link_methodology(self) -> None:
-        for name in ("pci-dss.md", "hitrust-csf.md"):
-            text = (ROOT / "crosswalks" / name).read_text(encoding="utf-8")
-            with self.subTest(name=name):
-                self.assert_planned_landing_page(name, text)
+    def test_unmapped_landing_pages_publish_readiness_and_link_methodology(self) -> None:
+        pci = (ROOT / "crosswalks/pci-dss.md").read_text(encoding="utf-8")
+        self.assert_pci_hold_landing_page(pci)
+        hitrust = (ROOT / "crosswalks/hitrust-csf.md").read_text(encoding="utf-8")
+        self.assert_planned_landing_page("hitrust-csf.md", hitrust)
 
     def test_landing_page_contract_rejects_status_and_mapping_content_mutations(self) -> None:
         text = (ROOT / "crosswalks/pci-dss.md").read_text(encoding="utf-8")
         mutations = (
-            text.replace("**Status:** Planned", "**Status:** Approved"),
-            text.replace("**Status:** Planned", "**Status:** Planned\n\n**Status:** Reviewed"),
+            text.replace("**Status:** Readiness HOLD", "**Status:** Approved"),
             text.replace(
-                "Payment-account-data scope",
-                "PCI DSS 1.1 maps directly to IAM-100. Payment-account-data scope",
+                "**Status:** Readiness HOLD",
+                "**Status:** Readiness HOLD\n\n**Status:** Reviewed",
+            ),
+            text.replace(
+                "The mechanically derived readiness decision is `HOLD`.",
+                "PCI DSS 1.1 maps directly to IAM-100. "
+                "The mechanically derived readiness decision is `HOLD`.",
             ),
             text + "\n| External provision | ESAF control |\n|---|---|\n| 1.1 | IAM-100 |\n",
             text + "\n## Approved mappings\n\nNo rows yet.\n",
@@ -363,10 +379,10 @@ class Esaf1600FoundationTests(unittest.TestCase):
         for mutation in mutations:
             with self.subTest(mutation=mutation[-80:]):
                 with self.assertRaises(AssertionError):
-                    self.assert_planned_landing_page("pci-dss.md", mutation)
+                    self.assert_pci_hold_landing_page(mutation)
 
         whitespace_variant = text.replace("\n", "  \r\n\r\n")
-        self.assert_planned_landing_page("pci-dss.md", whitespace_variant)
+        self.assert_pci_hold_landing_page(whitespace_variant)
 
     def test_contributing_requires_rights_provenance(self) -> None:
         text = (ROOT / "CONTRIBUTING.md").read_text(encoding="utf-8")
@@ -435,6 +451,7 @@ class Esaf1600FoundationTests(unittest.TestCase):
             "ROADMAP.md",
             "project/**",
             "docs/superpowers/reviews/**",
+            "docs/superpowers/specs/**",
             "architectures/**",
             "assessment/**",
             "controls/**",
@@ -450,6 +467,7 @@ class Esaf1600FoundationTests(unittest.TestCase):
             "tools/validate_controls.py",
             "tools/validate_crosswalks.py",
             "tools/validate_profiles.py",
+            "tools/render_pci_dss_mapping_go_no_go.py",
             "requirements-dev.txt",
         ]
         for event in ("pull_request", "push"):
@@ -472,6 +490,12 @@ class Esaf1600FoundationTests(unittest.TestCase):
         self.assertEqual(current, {
             "name": "Validate crosswalk catalog",
             "run": "python tools/validate_crosswalks.py --check",
+        })
+
+        pci_readiness = unique_step("Validate PCI DSS readiness review")
+        self.assertEqual(pci_readiness, {
+            "name": "Validate PCI DSS readiness review",
+            "run": "python tools/render_pci_dss_mapping_go_no_go.py --check",
         })
 
         pull_request = unique_step("Validate crosswalk history on pull request")
