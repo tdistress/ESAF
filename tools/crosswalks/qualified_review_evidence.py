@@ -21,6 +21,14 @@ class EvidenceError(ValueError):
     """A sanitized qualified-review evidence validation failure."""
 
 
+_ORIGINAL_OS_OPEN = os.open
+_ORIGINAL_OS_STAT = os.stat
+_POSIX_ANCHORED_DIRECTORY_CAPABLE = (
+    hasattr(os, "O_DIRECTORY")
+    and hasattr(os, "O_NOFOLLOW")
+    and _ORIGINAL_OS_OPEN in os.supports_dir_fd
+    and _ORIGINAL_OS_STAT in os.supports_dir_fd
+)
 _COMMIT_SHA = re.compile(r"^[0-9a-f]{40}$")
 _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _IDENTIFIER = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
@@ -1562,12 +1570,7 @@ def _open_windows_directory_chain(
 def _open_posix_directory_chain(
     validated: _ValidatedExternalFile,
 ) -> _AnchoredDirectoryChain:
-    if (
-        not hasattr(os, "O_DIRECTORY")
-        or not hasattr(os, "O_NOFOLLOW")
-        or os.open not in os.supports_dir_fd
-        or os.stat not in os.supports_dir_fd
-    ):
+    if not _POSIX_ANCHORED_DIRECTORY_CAPABLE:
         raise EvidenceError(
             "platform cannot provide anchored no-follow directory traversal"
         )
@@ -1576,7 +1579,7 @@ def _open_posix_directory_chain(
     handles: list[int] = []
     failure: str | None = None
     try:
-        root_descriptor = os.open(validated.root, flags)
+        root_descriptor = _ORIGINAL_OS_OPEN(validated.root, flags)
         handles.append(root_descriptor)
         if (
             _stable_directory_state(
@@ -1593,7 +1596,11 @@ def _open_posix_directory_chain(
                 validated.relative_directories,
                 strict=True,
             ):
-                descriptor = os.open(part, flags, dir_fd=parent)
+                descriptor = _ORIGINAL_OS_OPEN(
+                    part,
+                    flags,
+                    dir_fd=parent,
+                )
                 handles.append(descriptor)
                 if (
                     _stable_directory_state(
@@ -1622,6 +1629,17 @@ def _open_anchored_directory_chain(
     return _open_posix_directory_chain(validated)
 
 
+def _open_final_file(
+    path: str | Path,
+    flags: int,
+    *,
+    dir_fd: int | None,
+) -> int:
+    if dir_fd is None:
+        return _ORIGINAL_OS_OPEN(path, flags)
+    return _ORIGINAL_OS_OPEN(path, flags, dir_fd=dir_fd)
+
+
 def read_external_regular_file(
     root: Path,
     relative: str,
@@ -1638,9 +1656,13 @@ def read_external_regular_file(
     close_failure = False
     try:
         if os.name == "nt":
-            descriptor = os.open(validated.resolved, flags)
+            descriptor = _open_final_file(
+                validated.resolved,
+                flags,
+                dir_fd=None,
+            )
         else:
-            descriptor = os.open(
+            descriptor = _open_final_file(
                 validated.canonical.name,
                 flags,
                 dir_fd=chain.parent_descriptor,
@@ -1660,7 +1682,7 @@ def read_external_regular_file(
         if os.name == "nt":
             after_path = validated.resolved.lstat()
         else:
-            after_path = os.stat(
+            after_path = _ORIGINAL_OS_STAT(
                 validated.canonical.name,
                 dir_fd=chain.parent_descriptor,
                 follow_symlinks=False,

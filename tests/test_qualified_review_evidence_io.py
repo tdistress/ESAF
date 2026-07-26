@@ -295,27 +295,29 @@ class ExternalPathTests(unittest.TestCase):
             replacement = root / "replacement.md"
             evidence.write_bytes(b"validated bytes\n")
             replacement.write_bytes(b"replacement bytes\n")
-            real_open = os.open
+            real_open = evidence_io._open_final_file
             swapped = False
 
             def swapping_open(
-                path: object,
+                path: str | Path,
                 flags: int,
-                mode: int = 0o777,
                 *,
                 dir_fd: int | None = None,
             ) -> int:
                 nonlocal swapped
-                if not swapped and os.fspath(path) == os.fspath(evidence):
+                absolute_match = os.path.isabs(path) and Path(path) == evidence
+                relative_match = (
+                    os.fspath(path) == evidence.name and dir_fd is not None
+                )
+                if not swapped and (absolute_match or relative_match):
                     swapped = True
                     evidence.unlink()
                     replacement.replace(evidence)
-                if dir_fd is None:
-                    return real_open(path, flags, mode)
-                return real_open(path, flags, mode, dir_fd=dir_fd)
+                return real_open(path, flags, dir_fd=dir_fd)
 
-            with mock.patch(
-                "tools.crosswalks.qualified_review_evidence.os.open",
+            with mock.patch.object(
+                evidence_io,
+                "_open_final_file",
                 side_effect=swapping_open,
             ):
                 with self.assertRaisesRegex(EvidenceError, "changed"):
