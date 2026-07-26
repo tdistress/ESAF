@@ -13,6 +13,8 @@ import unittest
 from unittest import mock
 import zipfile
 
+from jsonschema import Draft202012Validator
+
 from tools.crosswalks.qualified_review_evidence import (
     AttestationEvidence,
     build_campaign_archive,
@@ -27,6 +29,7 @@ from tools.crosswalks.qualified_review_evidence import (
     RoleEvidence,
     parse_completed_attestation,
     parse_completed_worksheet,
+    read_external_regular_file,
     resolve_external_regular_file,
     signed_worksheet_sha256,
 )
@@ -273,6 +276,89 @@ byte may change after the digest is recorded.
 
 
 class ExternalPathTests(unittest.TestCase):
+    def test_reads_validated_external_regular_file_bytes(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            evidence = root / "evidence.md"
+            evidence.write_bytes(b"evidence\n")
+
+            self.assertEqual(
+                read_external_regular_file(root, "evidence.md", (ROOT,)),
+                b"evidence\n",
+            )
+
+    def test_rejects_file_swapped_at_open_boundary(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            evidence = root / "evidence.md"
+            replacement = root / "replacement.md"
+            evidence.write_bytes(b"validated bytes\n")
+            replacement.write_bytes(b"replacement bytes\n")
+            real_open = os.open
+            swapped = False
+
+            def swapping_open(
+                path: object,
+                flags: int,
+                mode: int = 0o777,
+                *,
+                dir_fd: int | None = None,
+            ) -> int:
+                nonlocal swapped
+                if not swapped and os.fspath(path) == os.fspath(evidence):
+                    swapped = True
+                    evidence.unlink()
+                    replacement.replace(evidence)
+                if dir_fd is None:
+                    return real_open(path, flags, mode)
+                return real_open(path, flags, mode, dir_fd=dir_fd)
+
+            with mock.patch(
+                "tools.crosswalks.qualified_review_evidence.os.open",
+                side_effect=swapping_open,
+            ):
+                with self.assertRaisesRegex(EvidenceError, "changed"):
+                    read_external_regular_file(root, "evidence.md", ())
+
+    def test_rejects_size_or_mtime_drift_during_read(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            evidence = root / "evidence.md"
+            real_read = os.read
+            for mutation in ("size", "mtime"):
+                evidence.write_bytes(b"evidence\n")
+                original_stat = evidence.stat()
+                mutated = False
+
+                def drifting_read(descriptor: int, length: int) -> bytes:
+                    nonlocal mutated
+                    if not mutated:
+                        mutated = True
+                        if mutation == "size":
+                            with evidence.open("ab") as handle:
+                                handle.write(b"changed\n")
+                        else:
+                            os.utime(
+                                evidence,
+                                ns=(
+                                    original_stat.st_atime_ns,
+                                    original_stat.st_mtime_ns + 100,
+                                ),
+                            )
+                    return real_read(descriptor, length)
+
+                with self.subTest(mutation=mutation):
+                    with mock.patch(
+                        "tools.crosswalks.qualified_review_evidence.os.read",
+                        side_effect=drifting_read,
+                    ):
+                        with self.assertRaisesRegex(EvidenceError, "changed"):
+                            read_external_regular_file(
+                                root,
+                                "evidence.md",
+                                (),
+                            )
+
     def test_resolves_single_link_regular_file_beneath_external_root(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -397,6 +483,48 @@ class ExternalPathTests(unittest.TestCase):
             finally:
                 os.rmdir(junction)
 
+    def test_rejects_junction_above_supplied_root_when_supported(self) -> None:
+        if os.name != "nt":
+            self.skipTest("Windows directory junction fixture")
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            target = base / "target"
+            nested = target / "campaign"
+            nested.mkdir(parents=True)
+            (nested / "evidence.md").write_bytes(b"evidence\n")
+            junction = base / "junction"
+            result = subprocess.run(
+                ["cmd", "/c", "mklink", "/J", str(junction), str(target)],
+                capture_output=True,
+                text=True,
+            )
+            if result.returncode != 0:
+                self.skipTest(
+                    f"directory junction creation unavailable: {result.stderr}"
+                )
+            try:
+                with self.assertRaisesRegex(EvidenceError, "alias"):
+                    resolve_external_regular_file(
+                        junction / "campaign",
+                        "evidence.md",
+                        (),
+                    )
+            finally:
+                os.rmdir(junction)
+
+    def test_rejects_windows_trailing_dot_alias_when_supported(self) -> None:
+        if os.name != "nt":
+            self.skipTest("Windows trailing-dot alias fixture")
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            evidence = root / "evidence.md"
+            evidence.write_bytes(b"evidence\n")
+            alias = root / "evidence.md."
+            if not alias.exists():
+                self.skipTest("Win32 trailing-dot alias is unavailable")
+            with self.assertRaisesRegex(EvidenceError, "canonical"):
+                resolve_external_regular_file(root, "evidence.md.", ())
+
     def test_rejects_hard_link(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -486,6 +614,12 @@ class ExternalPathTests(unittest.TestCase):
             self.assertIn("evidence.md", diagnostic)
             self.assertNotIn(str(root), diagnostic)
             self.assertNotIn("host-secret", diagnostic)
+            current: BaseException | None = raised.exception
+            while current is not None:
+                rendered = repr(current)
+                self.assertNotIn(str(root), rendered)
+                self.assertNotIn("host-secret", rendered)
+                current = current.__cause__ or current.__context__
 
 
 class MarkdownParserTests(unittest.TestCase):
@@ -706,6 +840,72 @@ class MarkdownParserTests(unittest.TestCase):
                 with self.assertRaisesRegex(EvidenceError, "attestation"):
                     parse_completed_attestation(content.encode("utf-8"))
 
+    def test_rejects_negative_access_and_independence_attestations(self) -> None:
+        mutations = (
+            COMPLETED_ATTESTATION.replace(
+                "| Authorized source access | Yes |",
+                "| Authorized source access | No |",
+                1,
+            ).replace("recorded above: Yes.", "recorded above: No.", 1),
+            COMPLETED_ATTESTATION.replace(
+                "| Independence from mapper | Yes |",
+                "| Independence from mapper | No |",
+                1,
+            ).replace(
+                "independent from the mapper: Yes.",
+                "independent from the mapper: No.",
+                1,
+            ),
+        )
+        for content in mutations:
+            with self.subTest(content=content[-600:]):
+                with self.assertRaisesRegex(EvidenceError, "affirmative"):
+                    parse_completed_attestation(content.encode("utf-8"))
+
+    def test_rejects_extra_prose_and_tables_moved_between_sections(self) -> None:
+        extra_prose = SPECIFICATION_WORKSHEET.replace(
+            "\n## Review scope\n",
+            "\nUnexpected additional section prose.\n\n## Review scope\n",
+            1,
+        )
+        conclusion_table = (
+            "| Field | Value |\n"
+            "|---|---|\n"
+            "| Overall conclusion | pass |\n"
+            "| Post-correction candidate SHA | Not applicable |\n"
+            "| Reviewer metadata findings disposition | No findings |\n"
+        )
+        moved_table = SPECIFICATION_WORKSHEET.replace(
+            conclusion_table,
+            "",
+            1,
+        ).replace(
+            "## Review scope\n",
+            "## Review scope\n\n" + conclusion_table,
+            1,
+        )
+        for content in (extra_prose, moved_table):
+            with self.subTest(content=content[:100]):
+                with self.assertRaisesRegex(EvidenceError, "scaffold"):
+                    parse_completed_worksheet(
+                        content.encode("utf-8"),
+                        "specification_and_inventory",
+                    )
+
+    def test_rejects_raw_and_escaped_pipes_in_findings_cells(self) -> None:
+        for ambiguous in ("Ambiguous|wording", r"Ambiguous \| wording"):
+            content = SECURITY_WORKSHEET.replace(
+                "Ambiguous wording",
+                ambiguous,
+                1,
+            )
+            with self.subTest(ambiguous=ambiguous):
+                with self.assertRaisesRegex(EvidenceError, "pipe"):
+                    parse_completed_worksheet(
+                        content.encode("utf-8"),
+                        "security_and_overclaiming",
+                    )
+
     def test_rejects_invalid_exact_enums_and_none_mixed_with_findings(
         self,
     ) -> None:
@@ -846,6 +1046,29 @@ class DataclassConversionTests(unittest.TestCase):
         with self.assertRaises(EvidenceError):
             CampaignEvidence.from_mapping(campaign)
 
+    def test_optional_fields_distinguish_absence_from_present_null(self) -> None:
+        valid_absence = self._campaign()
+        converted = CampaignEvidence.from_mapping(valid_absence)
+        self.assertIsNone(converted.draft_campaign_reference)
+        self.assertIsNone(
+            converted.mapping_sets[0]
+            .roles[0]
+            .worksheet.post_correction_candidate_sha
+        )
+
+        null_worksheet = self._campaign()
+        mapping_set = null_worksheet["mapping_sets"][0]  # type: ignore[index]
+        role = mapping_set["roles"][0]  # type: ignore[index]
+        worksheet = role["worksheet"]  # type: ignore[index]
+        worksheet["post_correction_candidate_sha"] = None  # type: ignore[index]
+        with self.assertRaisesRegex(EvidenceError, "string"):
+            CampaignEvidence.from_mapping(null_worksheet)
+
+        null_draft_reference = self._campaign()
+        null_draft_reference["draft_campaign_reference"] = None
+        with self.assertRaisesRegex(EvidenceError, "object"):
+            CampaignEvidence.from_mapping(null_draft_reference)
+
         campaign = self._campaign()
         mapping_set = campaign["mapping_sets"][0]  # type: ignore[index]
         role = mapping_set["roles"][0]  # type: ignore[index]
@@ -889,6 +1112,28 @@ class SignedWorksheetDigestTests(unittest.TestCase):
             signed_worksheet_sha256(original),
             signed_worksheet_sha256(mutated),
         )
+
+    def test_excludes_matched_line_not_earlier_identical_substring(self) -> None:
+        row = f"| Signed worksheet SHA-256 | {DIGEST} |\n".encode("utf-8")
+        marker = b"## Review scope\n"
+        content = SPECIFICATION_WORKSHEET.encode("utf-8").replace(
+            marker,
+            b"Earlier substring " + row + marker,
+            1,
+        )
+        lines = content.splitlines(keepends=True)
+        matched_index = next(
+            index for index, line in enumerate(lines) if line == row
+        )
+        expected = hashlib.sha256(
+            b"".join(
+                line
+                for index, line in enumerate(lines)
+                if index != matched_index
+            )
+        ).hexdigest()
+
+        self.assertEqual(signed_worksheet_sha256(content), expected)
 
 
 class DeterministicArchiveTests(unittest.TestCase):
@@ -975,6 +1220,8 @@ class DeterministicArchiveTests(unittest.TestCase):
             ("attestations/core.md", "attestations/CORE.md"),
             ("attestations/core.md", "attestations/core.md"),
             ("CAMPAIGN_SEAL.json",),
+            ("campaign_seal.json",),
+            ("CAMPAIGN_SEAL.JSON",),
         )
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -982,6 +1229,27 @@ class DeterministicArchiveTests(unittest.TestCase):
                 with self.subTest(allowlist=allowlist):
                     with self.assertRaises(EvidenceError):
                         build_campaign_archive(root, allowlist)
+
+    def test_archive_rejects_casefolded_seal_name_in_campaign_tree(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            self._write_tree(root, self.ALLOWLIST, 1_600_000_000)
+            (root / "campaign_seal.json").write_bytes(b"forbidden\n")
+
+            with self.assertRaisesRegex(EvidenceError, "seal"):
+                build_campaign_archive(root, self.ALLOWLIST)
+
+    def test_archive_rejects_casefolded_seal_name_in_allowlist(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for reserved in (
+                "CAMPAIGN_SEAL.json",
+                "campaign_seal.json",
+                "CAMPAIGN_SEAL.JSON",
+            ):
+                with self.subTest(reserved=reserved):
+                    with self.assertRaisesRegex(EvidenceError, "seal"):
+                        build_campaign_archive(root, (reserved,))
 
     def test_archive_rejects_hard_links_and_symbolic_links(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -1099,6 +1367,64 @@ class CanonicalSealTests(unittest.TestCase):
             with self.subTest(change=change):
                 with self.assertRaises(EvidenceError):
                     build_seal_record(**{**valid, **change})  # type: ignore[arg-type]
+
+    def test_seal_locator_acceptance_matches_task2_schema_corpus(self) -> None:
+        schema = json.loads(
+            (
+                ROOT
+                / "crosswalks/schema/qualified-review-evidence.schema.json"
+            ).read_text(encoding="utf-8")
+        )
+        validator = Draft202012Validator(
+            schema["$defs"]["immutableLocator"]
+        )
+        corpus = (
+            "https://evidence.example/object?version=1",
+            "https://evidence.example:8443/object?versionId=abc-123",
+            "https://evidence.example:99999/object?generation=42#receipt",
+            "https://evidence.example/object?rev=release-1",
+            "https://evidence.example/object?sha256=" + "a" * 64,
+            (
+                "https://evidence.example/a%20b/~user:@!$&'()*+,;="
+                "?version=release%2F1&note=a/b?c"
+                "#receipt%20fragment:@!$&'()*+,;=/?"
+            ),
+            f"urn:sha256:{'b' * 64}",
+            "https:///object?version=1",
+            "https://evidence.example/object",
+            "https://evidence.example/object?%76ersion=1",
+            "https://evidence.example:0/object?version=1",
+            "https://evidence.example:100000/object?version=1",
+            "https://bad_host.example/object?version=1",
+            "https://evidence.example/object?version=",
+            "https://evidence.example/object?version=bad|value",
+            "https://evidence.example/object?version=%GG",
+            "http://evidence.example/object?version=1",
+            f"URN:SHA256:{'b' * 64}",
+        )
+        valid_arguments = {
+            "manifest_bytes": b"manifest\n",
+            "archive_bytes": b"archive",
+            "campaign_id": "draft-review-2026",
+            "candidate_commit": SHA,
+            "evidence_valid": True,
+            "readiness_name": "transition_ready",
+            "readiness_value": True,
+            "validator_version": "1.0.0",
+        }
+        for locator in corpus:
+            expected = validator.is_valid(locator)
+            with self.subTest(locator=locator, expected=expected):
+                try:
+                    build_seal_record(
+                        archive_locator=locator,
+                        **valid_arguments,
+                    )
+                except EvidenceError:
+                    actual = False
+                else:
+                    actual = True
+                self.assertEqual(actual, expected)
 
 
 if __name__ == "__main__":

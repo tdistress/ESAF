@@ -12,7 +12,6 @@ from pathlib import Path, PurePosixPath, PureWindowsPath
 import re
 import stat
 from typing import ClassVar
-from urllib.parse import parse_qsl, urlsplit
 import zipfile
 
 
@@ -25,6 +24,9 @@ _SHA256 = re.compile(r"^[0-9a-f]{64}$")
 _IDENTIFIER = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 _HTTPS_LOCATOR = re.compile(
     r"^https://"
+    r"(?=[^#]*[?&](?:version|versionId|generation|rev|sha256)="
+    r"(?:[A-Za-z0-9._~!$'()*+,;=:@/?-]|%[0-9A-Fa-f]{2})+"
+    r"(?:[&#]|$))"
     r"(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)"
     r"(?:\.(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?))*"
     r"(?::[1-9][0-9]{0,4})?"
@@ -119,6 +121,51 @@ _FINDING_COLUMNS = (
     "Disposition date",
     "Acceptance rationale",
 )
+_SPECIFICATION_SCOPE = """## Review scope
+
+Make and record an explicit determination for each of:
+
+- source identity, version, checksum, and official locator;
+- Publication rights;
+- Provision population;
+- provision identifiers;
+- provision hierarchy;
+- provision granularity;
+- provision coverage;
+- predecessor integrity;
+- absence of omitted, duplicated, invented, or wrong-version provisions;
+- record, catalog, and registry agreement; and
+- change history."""
+_SECURITY_SCOPE = """## Review scope
+
+Verify:
+
+- relationship direction and type;
+- coverage and confidence;
+- conditions;
+- expected evidence;
+- known gaps;
+- `no_direct_mapping`;
+- `prerequisite`;
+- `partially_supports`;
+- normative-text basis; and
+- that conditions cannot create a missing external outcome;
+- that implementation guidance or adjacent capabilities cannot replace
+  normative requirements; and
+- nonclaims, including certification, compliance, equivalence, endorsement,
+  and assurance."""
+_TABLE_INSTRUCTION = """Every table value shall be single-line text without an unescaped pipe
+character. Do not add, remove, duplicate, or reorder rows."""
+_FINDINGS_INSTRUCTION = """Critical and Important findings cannot be accepted and must be resolved.
+Only Minor findings may be accepted, with a named acceptor, acceptance
+rationale, and disposition date."""
+_DIGEST_INSTRUCTION = """Digest procedure: encode the completed worksheet as UTF-8 without BOM and LF
+line endings after all other fields, including the reviewer signature and
+signature date, are final. For the digest calculation, remove the entire
+`| Signed worksheet SHA-256 |` table row, including its terminating LF, and
+hash every remaining byte with SHA-256. Record the lowercase hexadecimal
+digest in that row; verification repeats the same exclusion. No non-excluded
+byte may change after the digest is recorded."""
 
 
 def _mapping(
@@ -338,10 +385,16 @@ class _WorksheetEvidence:
             ("post_correction_candidate_sha",),
         )
         conclusion = _string(item["conclusion"], "worksheet conclusion")
-        post_correction = item.get("post_correction_candidate_sha")
-        if (conclusion == "pass_after_correction") != (
-            post_correction is not None
-        ):
+        has_post_correction = "post_correction_candidate_sha" in item
+        post_correction = (
+            _string(
+                item["post_correction_candidate_sha"],
+                "post-correction candidate",
+            )
+            if has_post_correction
+            else None
+        )
+        if (conclusion == "pass_after_correction") != has_post_correction:
             raise EvidenceError(
                 "worksheet post-correction candidate does not match conclusion"
             )
@@ -362,11 +415,7 @@ class _WorksheetEvidence:
             ),
             review_date=_string(item["review_date"], "worksheet review date"),
             conclusion=conclusion,
-            post_correction_candidate_sha=(
-                _string(post_correction, "post-correction candidate")
-                if post_correction is not None
-                else None
-            ),
+            post_correction_candidate_sha=post_correction,
             findings_disposition=_string(
                 item["findings_disposition"],
                 "worksheet findings disposition",
@@ -547,7 +596,14 @@ class CampaignEvidence:
             cls._REQUIRED,
             ("draft_campaign_reference",),
         )
-        draft_reference = item.get("draft_campaign_reference")
+        has_draft_reference = "draft_campaign_reference" in item
+        draft_reference = (
+            _DraftCampaignReference.from_mapping(
+                item["draft_campaign_reference"]
+            )
+            if has_draft_reference
+            else None
+        )
         return cls(
             schema_version=_string(
                 item["schema_version"],
@@ -578,11 +634,7 @@ class CampaignEvidence:
                     "campaign mapping sets",
                 )
             ),
-            draft_campaign_reference=(
-                _DraftCampaignReference.from_mapping(draft_reference)
-                if draft_reference is not None
-                else None
-            ),
+            draft_campaign_reference=draft_reference,
         )
 
 
@@ -593,10 +645,13 @@ def _decode_markdown(content: bytes, subject: str) -> str:
         or not content.endswith(b"\n")
     ):
         raise EvidenceError(f"{subject} must use canonical UTF-8/LF")
+    decode_failed = False
     try:
         text = content.decode("utf-8")
-    except UnicodeDecodeError as error:
-        raise EvidenceError(f"{subject} must use canonical UTF-8/LF") from error
+    except UnicodeDecodeError:
+        decode_failed = True
+    if decode_failed:
+        raise EvidenceError(f"{subject} must use canonical UTF-8/LF")
     if "\\|" in text:
         raise EvidenceError(f"{subject} contains escaped-pipe ambiguity")
     if "[REQUIRED" in text:
@@ -663,10 +718,13 @@ def _snake_case(label: str) -> str:
 def _require_date(value: str, subject: str) -> None:
     if not re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", value):
         raise EvidenceError(f"{subject} must be an exact date")
+    invalid = False
     try:
         date.fromisoformat(value)
-    except ValueError as error:
-        raise EvidenceError(f"{subject} must be an exact date") from error
+    except ValueError:
+        invalid = True
+    if invalid:
+        raise EvidenceError(f"{subject} must be an exact date")
 
 
 def _require_digest(value: str, subject: str) -> None:
@@ -696,6 +754,9 @@ def parse_completed_attestation(content: bytes) -> dict[str, str]:
     ):
         if rows[label] not in {"Yes", "No"}:
             raise EvidenceError(f"{label} has an invalid exact enum")
+    for label in ("Authorized source access", "Independence from mapper"):
+        if rows[label] != "Yes":
+            raise EvidenceError(f"{label} must be an affirmative Yes")
     if rows["Project-owner eligibility acceptance"] not in {
         "Accepted",
         "Rejected",
@@ -740,10 +801,13 @@ def parse_completed_attestation(content: bytes) -> dict[str, str]:
 def _parse_findings(text: str) -> tuple[ReviewFinding, ...]:
     lines = text.splitlines()
     header = "| " + " | ".join(_FINDING_COLUMNS) + " |"
+    missing_header = False
     try:
         start = lines.index(header)
-    except ValueError as error:
-        raise EvidenceError("findings table header is invalid") from error
+    except ValueError:
+        missing_header = True
+    if missing_header:
+        raise EvidenceError("findings table header is invalid")
     separator = "|" + "|".join("---" for _ in _FINDING_COLUMNS) + "|"
     if start + 1 >= len(lines) or lines[start + 1] != separator:
         raise EvidenceError("findings table header is invalid")
@@ -753,9 +817,20 @@ def _parse_findings(text: str) -> tuple[ReviewFinding, ...]:
         line = lines[cursor]
         if not line.startswith("| ") or not line.endswith(" |"):
             raise EvidenceError("findings row or pipe syntax is invalid")
-        cells = tuple(line[2:-2].split(" | "))
-        if len(cells) != len(_FINDING_COLUMNS):
+        if line.count("|") != len(_FINDING_COLUMNS) + 1:
             raise EvidenceError("findings row or pipe syntax is invalid")
+        raw_cells = line[1:-1].split("|")
+        if (
+            len(raw_cells) != len(_FINDING_COLUMNS)
+            or any(
+                len(cell) < 2
+                or not cell.startswith(" ")
+                or not cell.endswith(" ")
+                for cell in raw_cells
+            )
+        ):
+            raise EvidenceError("findings row or pipe syntax is invalid")
+        cells = tuple(cell[1:-1] for cell in raw_cells)
         if any(cell != cell.strip() for cell in cells):
             raise EvidenceError("findings cells must use canonical whitespace")
         raw_rows.append(cells)
@@ -819,6 +894,80 @@ def _parse_findings(text: str) -> tuple[ReviewFinding, ...]:
             )
         )
     return tuple(findings)
+
+
+def _render_two_column_table(
+    rows: dict[str, str],
+    order: tuple[str, ...],
+) -> str:
+    return "\n".join(
+        (
+            "| Field | Value |",
+            "|---|---|",
+            *(f"| {label} | {rows[label]} |" for label in order),
+        )
+    )
+
+
+def _render_findings_table(findings: tuple[ReviewFinding, ...]) -> str:
+    header = "| " + " | ".join(_FINDING_COLUMNS) + " |"
+    separator = "|" + "|".join("---" for _ in _FINDING_COLUMNS) + "|"
+    if not findings:
+        rows = ("| NONE |  |  |  |  |  |  |  |  |  |  |",)
+    else:
+        rows = tuple(
+            "| "
+            + " | ".join(
+                (
+                    finding.finding_id,
+                    ", ".join(finding.affected_record_ids),
+                    finding.severity,
+                    finding.description,
+                    finding.evidence,
+                    finding.required_action,
+                    finding.status,
+                    finding.disposition,
+                    finding.resolver_or_acceptor,
+                    finding.disposition_date,
+                    finding.acceptance_rationale,
+                )
+            )
+            + " |"
+            for finding in findings
+        )
+    return "\n".join((header, separator, *rows))
+
+
+def _render_completed_worksheet(
+    *,
+    role: str,
+    identification: dict[str, str],
+    findings: tuple[ReviewFinding, ...],
+    conclusion: dict[str, str],
+    signature: dict[str, str],
+) -> str:
+    if role == "specification_and_inventory":
+        title = "# Specification and Inventory Review Worksheet"
+        scope = _SPECIFICATION_SCOPE
+    else:
+        title = "# Security and Overclaiming Review Worksheet"
+        scope = _SECURITY_SCOPE
+    return (
+        f"{title}\n\n"
+        "## Review identification\n\n"
+        f"{_render_two_column_table(identification, _WORKSHEET_IDENTIFICATION_ROWS)}"
+        "\n\n"
+        f"{_TABLE_INSTRUCTION}\n\n"
+        f"{scope}\n\n"
+        "## Findings\n\n"
+        f"{_FINDINGS_INSTRUCTION}\n\n"
+        f"{_render_findings_table(findings)}\n\n"
+        "## Overall conclusion\n\n"
+        f"{_render_two_column_table(conclusion, _CONCLUSION_ROWS)}\n\n"
+        "## Worksheet signature\n\n"
+        f"{_render_two_column_table(signature, _SIGNATURE_ROWS)}\n\n"
+        f"{_DIGEST_INSTRUCTION}\n"
+    )
 
 
 def parse_completed_worksheet(
@@ -898,6 +1047,15 @@ def parse_completed_worksheet(
         expected_pipe_lines
     ):
         raise EvidenceError("worksheet contains an unknown table row")
+    expected_text = _render_completed_worksheet(
+        role=role,
+        identification=identification,
+        findings=findings,
+        conclusion=conclusion_rows,
+        signature=signature,
+    )
+    if text != expected_text:
+        raise EvidenceError("worksheet does not match the closed scaffold")
     return CompletedWorksheet(
         role=role,
         reviewer_identity=identification["Reviewer identity"],
@@ -919,16 +1077,24 @@ def signed_worksheet_sha256(content: bytes) -> str:
     row_pattern = re.compile(
         rb"^\| Signed worksheet SHA-256 \| [^|\r\n]+ \|\n$"
     )
-    rows = tuple(
-        line
-        for line in content.splitlines(keepends=True)
+    lines = content.splitlines(keepends=True)
+    row_indexes = tuple(
+        index
+        for index, line in enumerate(lines)
         if row_pattern.fullmatch(line)
     )
-    if len(rows) != 1:
+    if len(row_indexes) != 1:
         raise EvidenceError(
             "worksheet must contain exactly one signed worksheet digest row"
         )
-    return hashlib.sha256(content.replace(rows[0], b"", 1)).hexdigest()
+    excluded_index = row_indexes[0]
+    return hashlib.sha256(
+        b"".join(
+            line
+            for index, line in enumerate(lines)
+            if index != excluded_index
+        )
+    ).hexdigest()
 
 
 def _is_within(path: Path, parent: Path) -> bool:
@@ -959,10 +1125,10 @@ def _canonical_relative_path(value: str, subject: str) -> PurePosixPath:
     return posix
 
 
-def _is_alias(path: Path, mode: int) -> bool:
-    if stat.S_ISLNK(mode):
+def _is_alias(path: Path, stat_result: os.stat_result) -> bool:
+    if stat.S_ISLNK(stat_result.st_mode):
         return True
-    file_attributes = getattr(path.lstat(), "st_file_attributes", 0)
+    file_attributes = getattr(stat_result, "st_file_attributes", 0)
     reparse_flag = getattr(stat, "FILE_ATTRIBUTE_REPARSE_POINT", 0)
     if reparse_flag and file_attributes & reparse_flag:
         return True
@@ -971,17 +1137,59 @@ def _is_alias(path: Path, mode: int) -> bool:
 
 
 def _inspect_lexical_entry(path: Path, subject: str) -> int:
+    missing = False
+    unavailable = False
     try:
         result = path.lstat()
-        if _is_alias(path, result.st_mode):
+        alias = _is_alias(path, result)
+    except FileNotFoundError:
+        missing = True
+    except OSError:
+        unavailable = True
+    else:
+        if alias:
             raise EvidenceError(f"{subject} must not use a filesystem alias")
         return result.st_mode
-    except EvidenceError:
-        raise
-    except FileNotFoundError as error:
-        raise EvidenceError(f"{subject} is missing") from error
-    except OSError as error:
-        raise EvidenceError(f"{subject} cannot be inspected") from error
+    if missing:
+        raise EvidenceError(f"{subject} is missing")
+    if unavailable:
+        raise EvidenceError(f"{subject} cannot be inspected")
+    raise EvidenceError(f"{subject} cannot be inspected")
+
+
+def _exact_directory_name(parent: Path, name: str, subject: str) -> None:
+    unavailable = False
+    try:
+        matches = tuple(
+            entry.name
+            for entry in parent.iterdir()
+            if entry.name.casefold() == name.casefold()
+        )
+    except OSError:
+        unavailable = True
+        matches = ()
+    if unavailable:
+        raise EvidenceError(f"{subject} cannot be inspected")
+    if len(matches) > 1:
+        raise EvidenceError(
+            f"{subject} has a case-insensitive path collision"
+        )
+    if len(matches) != 1 or matches[0] != name:
+        raise EvidenceError(f"{subject} does not use a canonical path name")
+
+
+def _inspect_complete_ancestor_chain(root: Path) -> Path:
+    absolute = Path(os.path.abspath(root))
+    parts = absolute.parts
+    if not parts:
+        raise EvidenceError("campaign root is not an absolute path")
+    current = Path(parts[0])
+    _inspect_lexical_entry(current, "campaign root ancestor")
+    for part in parts[1:]:
+        _exact_directory_name(current, part, "campaign root ancestor")
+        current /= part
+        _inspect_lexical_entry(current, "campaign root ancestor")
+    return absolute
 
 
 def _require_canonical_case(root: Path, relative: PurePosixPath) -> None:
@@ -996,13 +1204,18 @@ def _require_canonical_case(root: Path, relative: PurePosixPath) -> None:
                 for entry in current.iterdir()
                 if entry.name.casefold() == part.casefold()
             )
-        except OSError as error:
-            raise EvidenceError(f"{subject} cannot be inspected") from error
+        except OSError:
+            matches = ()
+            unavailable = True
+        else:
+            unavailable = False
+        if unavailable:
+            raise EvidenceError(f"{subject} cannot be inspected")
         if len(matches) > 1:
             raise EvidenceError(
                 f"{subject} has a case-insensitive path collision"
             )
-        if matches and matches[0] != part:
+        if len(matches) != 1 or matches[0] != part:
             raise EvidenceError(f"{subject} does not use canonical casing")
         current = current / part
 
@@ -1014,24 +1227,27 @@ def resolve_external_regular_file(
 ) -> Path:
     """Resolve one canonical, unaliased, single-link external regular file."""
     canonical = _canonical_relative_path(relative, "evidence path")
-    _inspect_lexical_entry(root, "campaign root")
-    _require_canonical_case(root, canonical)
+    lexical_root = _inspect_complete_ancestor_chain(root)
+    _require_canonical_case(lexical_root, canonical)
 
-    candidate = root.joinpath(*canonical.parts)
-    current = root
+    candidate = lexical_root.joinpath(*canonical.parts)
+    current = lexical_root
     for index, part in enumerate(canonical.parts):
         current /= part
         subject = "/".join(canonical.parts[: index + 1])
         _inspect_lexical_entry(current, subject)
 
+    resolution_failed = False
     try:
-        resolved_root = root.resolve(strict=True)
+        resolved_root = lexical_root.resolve(strict=True)
         resolved = candidate.resolve(strict=True)
         resolved_worktrees = tuple(
             worktree.resolve(strict=True) for worktree in worktrees
         )
-    except (OSError, RuntimeError) as error:
-        raise EvidenceError(f"{relative} cannot be resolved") from error
+    except (OSError, RuntimeError):
+        resolution_failed = True
+    if resolution_failed:
+        raise EvidenceError(f"{relative} cannot be resolved")
 
     if not _is_within(resolved, resolved_root):
         raise EvidenceError(f"{relative} escapes the campaign root")
@@ -1040,12 +1256,19 @@ def resolve_external_regular_file(
             f"{relative} must be outside every Git worktree"
         )
 
+    missing = False
+    unavailable = False
     try:
         stat_result = candidate.stat(follow_symlinks=False)
-    except FileNotFoundError as error:
-        raise EvidenceError(f"{relative} is missing") from error
-    except OSError as error:
-        raise EvidenceError(f"{relative} cannot be inspected") from error
+    except FileNotFoundError:
+        missing = True
+    except OSError:
+        unavailable = True
+    if missing:
+        raise EvidenceError(f"{relative} is missing")
+    if unavailable:
+        raise EvidenceError(f"{relative} cannot be inspected")
+    assert stat_result is not None
     if not stat.S_ISREG(stat_result.st_mode):
         raise EvidenceError(f"{relative} must be a regular file")
     if (
@@ -1058,8 +1281,121 @@ def resolve_external_regular_file(
     return resolved
 
 
+def _file_identity(
+    stat_result: os.stat_result,
+    subject: str,
+) -> tuple[int, int]:
+    device = getattr(stat_result, "st_dev", None)
+    inode = getattr(stat_result, "st_ino", None)
+    if (
+        type(device) is not int
+        or type(inode) is not int
+        or device < 0
+        or inode <= 0
+    ):
+        raise EvidenceError(f"{subject} filesystem identity is unavailable")
+    return device, inode
+
+
+def _stable_file_state(
+    stat_result: os.stat_result,
+    subject: str,
+) -> tuple[tuple[int, int], int, int]:
+    if not stat.S_ISREG(stat_result.st_mode):
+        raise EvidenceError(f"{subject} must be a regular file")
+    if (
+        not hasattr(stat_result, "st_nlink")
+        or stat_result.st_nlink != 1
+    ):
+        raise EvidenceError(
+            f"{subject} must have exactly one filesystem link"
+        )
+    size = getattr(stat_result, "st_size", None)
+    modified = getattr(stat_result, "st_mtime_ns", None)
+    if not all(type(value) is int for value in (size, modified)):
+        raise EvidenceError(f"{subject} stable file metadata is unavailable")
+    assert isinstance(size, int)
+    assert isinstance(modified, int)
+    return _file_identity(stat_result, subject), size, modified
+
+
+def read_external_regular_file(
+    root: Path,
+    relative: str,
+    worktrees: tuple[Path, ...],
+) -> bytes:
+    """Read one external file through a verified, stable filesystem handle."""
+    resolved = resolve_external_regular_file(root, relative, worktrees)
+    pre_failed = False
+    try:
+        before = resolved.lstat()
+    except OSError:
+        pre_failed = True
+    if pre_failed:
+        raise EvidenceError(f"{relative} cannot be inspected")
+    before_state = _stable_file_state(before, relative)
+
+    flags = os.O_RDONLY | getattr(os, "O_BINARY", 0)
+    flags |= getattr(os, "O_NOFOLLOW", 0)
+    open_failed = False
+    descriptor: int | None = None
+    try:
+        descriptor = os.open(resolved, flags)
+    except OSError:
+        open_failed = True
+    if open_failed or descriptor is None:
+        raise EvidenceError(f"{relative} cannot be opened safely")
+
+    try:
+        opened = os.fstat(descriptor)
+        opened_state = _stable_file_state(opened, relative)
+        if opened_state != before_state:
+            raise EvidenceError(f"{relative} changed before it was opened")
+        chunks: list[bytes] = []
+        while True:
+            chunk = os.read(descriptor, 1024 * 1024)
+            if not chunk:
+                break
+            chunks.append(chunk)
+        content = b"".join(chunks)
+        after_handle = os.fstat(descriptor)
+    except EvidenceError:
+        raise
+    except OSError:
+        read_failed = True
+    else:
+        read_failed = False
+    finally:
+        try:
+            os.close(descriptor)
+        except OSError:
+            close_failed = True
+        else:
+            close_failed = False
+    if read_failed or close_failed:
+        raise EvidenceError(f"{relative} cannot be read safely")
+
+    handle_state = _stable_file_state(after_handle, relative)
+    path_failed = False
+    try:
+        after_path = resolved.lstat()
+    except OSError:
+        path_failed = True
+    if path_failed:
+        raise EvidenceError(f"{relative} changed while it was read")
+    path_state = _stable_file_state(after_path, relative)
+    if (
+        handle_state != opened_state
+        or path_state != handle_state
+        or len(content) != handle_state[1]
+    ):
+        raise EvidenceError(f"{relative} changed while it was read")
+    return content
+
+
 def canonical_json_bytes(value: object) -> bytes:
     """Serialize canonical one-line sorted JSON with a terminating LF."""
+    serialization_failed = False
     try:
         text = json.dumps(
             value,
@@ -1068,8 +1404,10 @@ def canonical_json_bytes(value: object) -> bytes:
             separators=(",", ":"),
             allow_nan=False,
         )
-    except (TypeError, ValueError) as error:
-        raise EvidenceError("value is not canonical JSON data") from error
+    except (TypeError, ValueError):
+        serialization_failed = True
+    if serialization_failed:
+        raise EvidenceError("value is not canonical JSON data")
     return (text + "\n").encode("utf-8")
 
 
@@ -1077,11 +1415,14 @@ def _campaign_tree_entries(
     root: Path,
     expected_directories: set[str],
 ) -> tuple[str, ...]:
-    _inspect_lexical_entry(root, "campaign root")
+    root = _inspect_complete_ancestor_chain(root)
+    root_unavailable = False
     try:
         root_mode = root.stat(follow_symlinks=False).st_mode
-    except OSError as error:
-        raise EvidenceError("campaign root cannot be inspected") from error
+    except OSError:
+        root_unavailable = True
+    if root_unavailable:
+        raise EvidenceError("campaign root cannot be inspected")
     if not stat.S_ISDIR(root_mode):
         raise EvidenceError("campaign root must be a directory")
 
@@ -1090,11 +1431,15 @@ def _campaign_tree_entries(
     seen_casefold: dict[str, str] = {}
     while pending:
         directory, prefix = pending.pop()
+        directory_unavailable = False
         try:
             entries = tuple(os.scandir(directory))
-        except OSError as error:
+        except OSError:
+            directory_unavailable = True
+            entries = ()
+        if directory_unavailable:
             subject = prefix or "campaign root"
-            raise EvidenceError(f"{subject} cannot be inspected") from error
+            raise EvidenceError(f"{subject} cannot be inspected")
         component_names: dict[str, str] = {}
         for entry in entries:
             folded_name = entry.name.casefold()
@@ -1110,6 +1455,8 @@ def _campaign_tree_entries(
         for entry in entries:
             relative = f"{prefix}/{entry.name}" if prefix else entry.name
             canonical = _canonical_relative_path(relative, "campaign entry")
+            if canonical.name.casefold() == "campaign_seal.json".casefold():
+                raise EvidenceError("campaign seal must remain outside the archive")
             if canonical.as_posix() != relative:
                 raise EvidenceError(f"{relative} is not a canonical path")
             folded = relative.casefold()
@@ -1147,7 +1494,7 @@ def build_campaign_archive(
             raise EvidenceError(
                 "archive allowlist has a duplicate case-insensitive path"
             )
-        if canonical.name == "CAMPAIGN_SEAL.json":
+        if canonical.name.casefold() == "campaign_seal.json".casefold():
             raise EvidenceError("campaign seal must remain outside the archive")
         seen.add(folded)
         canonical_paths.append(normalized)
@@ -1163,11 +1510,7 @@ def build_campaign_archive(
 
     payloads: list[tuple[str, bytes]] = []
     for relative in sorted(canonical_paths):
-        resolved = resolve_external_regular_file(root, relative, ())
-        try:
-            content = resolved.read_bytes()
-        except OSError as error:
-            raise EvidenceError(f"{relative} cannot be read") from error
+        content = read_external_regular_file(root, relative, ())
         payloads.append((relative, content))
 
     output = io.BytesIO()
@@ -1193,23 +1536,6 @@ def _require_immutable_locator(value: str, subject: str) -> None:
     if re.fullmatch(r"urn:sha256:[0-9a-f]{64}", value):
         return
     if _HTTPS_LOCATOR.fullmatch(value) is None:
-        raise EvidenceError(f"{subject} is not an immutable locator")
-    try:
-        parsed = urlsplit(value)
-        query = parse_qsl(parsed.query, keep_blank_values=True)
-        port = parsed.port
-    except ValueError as error:
-        raise EvidenceError(f"{subject} is not an immutable locator") from error
-    immutable_keys = {"version", "versionId", "generation", "rev", "sha256"}
-    if (
-        parsed.scheme != "https"
-        or not parsed.hostname
-        or parsed.username is not None
-        or parsed.password is not None
-        or port is not None and not 1 <= port <= 65535
-        or not any(key in immutable_keys and value for key, value in query)
-        or any(character in value for character in "\r\n")
-    ):
         raise EvidenceError(f"{subject} is not an immutable locator")
 
 
