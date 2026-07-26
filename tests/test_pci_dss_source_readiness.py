@@ -1,3 +1,4 @@
+import json
 import re
 import unittest
 from pathlib import Path
@@ -10,6 +11,13 @@ RIGHTS_REVIEW = (
     / "superpowers"
     / "reviews"
     / "2026-07-25-pci-dss-publication-rights-review.md"
+)
+SOURCE_ORACLE = (
+    ROOT
+    / "docs"
+    / "superpowers"
+    / "specs"
+    / "2026-07-25-pci-dss-source-readiness-oracle.json"
 )
 
 EXPECTED_SOURCE_URLS = {
@@ -43,6 +51,55 @@ EXPECTED_BIBLIOGRAPHIC_METADATA = {
     "announcement_retirement_effective_dates",
     "retrieval_metadata",
     "official_urls",
+}
+
+EXPECTED_ORACLE_TOP_LEVEL_KEYS = {
+    "access",
+    "boundary",
+    "dates",
+    "discovery",
+    "nonclaims",
+    "publication",
+    "rights_review",
+    "schema_version",
+    "source_artifact",
+}
+
+EXPECTED_PUBLICATION = {
+    "document_reference": "pci_dss",
+    "format": "PDF",
+    "language": "English",
+    "publication_family": "PCI DSS",
+    "publisher": "PCI Security Standards Council",
+    "version": "v4.0.1",
+}
+
+EXPECTED_DISCOVERY_CATALOG = {
+    "byte_length": 1018867,
+    "final_url": "https://docs-pub.pcisecuritystandards.org/doc_library.json",
+    "retrieved_at_utc": "2026-07-26T00:55:54.992Z",
+    "sha256": "6af4ba6221059e2580f7f312e179d579c02bb2bb908aee7cfe096ec7e3b58f0c",
+    "sha256_scope": "mutable_public_discovery_metadata_not_standard",
+}
+
+EXPECTED_SELECTED_DOCUMENT = {
+    "agreement": "pcidss",
+    "archived": False,
+    "category": "Standard",
+    "last_updated": "2024-06-11T07:00:00+00:00",
+    "name": "PCI DSS",
+    "parent_reference": "pcidss",
+    "protected": "yes",
+    "reference": "pci_dss",
+}
+
+EXPECTED_SELECTED_VERSION = {
+    "archived": False,
+    "english_pdf_url": (
+        "https://docs-prv.pcisecuritystandards.org/PCI%20DSS/Standard/"
+        "PCI-DSS-v4_0_1.pdf"
+    ),
+    "title": "v4.0.1",
 }
 
 
@@ -148,6 +205,158 @@ class PciDssPublicationRightsReviewTests(unittest.TestCase):
         self.assertIn(
             "fail-closed absence-of-permission publication-control decision",
             boundaries,
+        )
+
+
+class PciDssSourceReadinessOracleTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.raw = SOURCE_ORACLE.read_bytes()
+        cls.oracle = json.loads(cls.raw)
+
+    def test_is_canonical_one_line_utf8_lf_json(self) -> None:
+        expected = (
+            json.dumps(
+                self.oracle,
+                ensure_ascii=False,
+                separators=(",", ":"),
+                sort_keys=True,
+            ).encode("utf-8")
+            + b"\n"
+        )
+        self.assertEqual(self.raw, expected)
+        self.assertEqual(self.raw.count(b"\n"), 1)
+
+    def test_has_closed_identity_and_rights_review_contract(self) -> None:
+        self.assertEqual(set(self.oracle), EXPECTED_ORACLE_TOP_LEVEL_KEYS)
+        self.assertEqual(self.oracle["schema_version"], "1.0.0")
+        self.assertEqual(self.oracle["publication"], EXPECTED_PUBLICATION)
+        self.assertEqual(
+            self.oracle["rights_review"],
+            {
+                "commit": "5bc0d82ea6dd7af3391497fc4b75be18ceb505a6",
+                "path": (
+                    "docs/superpowers/reviews/"
+                    "2026-07-25-pci-dss-publication-rights-review.md"
+                ),
+            },
+        )
+
+    def test_pins_retrieved_catalog_and_selected_values(self) -> None:
+        discovery = self.oracle["discovery"]
+        self.assertEqual(
+            set(discovery),
+            {
+                "catalog",
+                "document_library_url",
+                "selected_document",
+                "selected_version",
+            },
+        )
+        self.assertEqual(discovery["catalog"], EXPECTED_DISCOVERY_CATALOG)
+        self.assertEqual(
+            discovery["document_library_url"],
+            "https://www.pcisecuritystandards.org/document_library/",
+        )
+        self.assertEqual(discovery["selected_document"], EXPECTED_SELECTED_DOCUMENT)
+        self.assertEqual(discovery["selected_version"], EXPECTED_SELECTED_VERSION)
+
+    def test_separates_artifact_publication_from_other_public_dates(self) -> None:
+        self.assertEqual(
+            self.oracle["dates"],
+            {
+                "announcement": {
+                    "date": "2024-06-11",
+                    "precision": "day",
+                    "url": (
+                        "https://blog.pcisecuritystandards.org/"
+                        "just-published-pci-dss-v4-0-1"
+                    ),
+                },
+                "artifact_publication": {
+                    "date": "2024-06",
+                    "precision": "month",
+                },
+                "catalog_last_updated": "2024-06-11T07:00:00+00:00",
+                "current_retirement": {
+                    "date": None,
+                    "status": "not_announced",
+                },
+                "future_dated_requirements_effective": {
+                    "date": "2025-03-31",
+                    "precision": "day",
+                },
+                "predecessor_retirement": {
+                    "date": "2024-12-31",
+                    "precision": "day",
+                    "version": "v4.0",
+                },
+            },
+        )
+
+    def test_records_protected_access_without_accepting_license(self) -> None:
+        self.assertEqual(
+            self.oracle["access"],
+            {
+                "browser_behavior": "license_interstitial_requires_acceptance",
+                "direct_http_behavior": "access_response_not_pdf_bytes",
+                "license_accepted": False,
+                "protected": True,
+            },
+        )
+
+    def test_keeps_source_artifact_and_inventory_fields_unavailable(self) -> None:
+        self.assertEqual(
+            self.oracle["source_artifact"],
+            {
+                "byte_length": None,
+                "inventory_digest": None,
+                "page_count": None,
+                "provision_count": None,
+                "sha256": None,
+                "state": "unavailable",
+            },
+        )
+
+    def test_distinguishes_normative_artifact_from_supporting_interfaces(self) -> None:
+        self.assertEqual(
+            self.oracle["boundary"],
+            {
+                "normative": {
+                    "artifact": "PCI DSS v4.0.1 English PDF",
+                    "availability": "unavailable",
+                    "url": EXPECTED_SELECTED_VERSION["english_pdf_url"],
+                },
+                "supporting": [
+                    {
+                        "role": "document_library",
+                        "url": "https://www.pcisecuritystandards.org/document_library/",
+                    },
+                    {
+                        "role": "mutable_discovery_catalog",
+                        "url": "https://docs-pub.pcisecuritystandards.org/doc_library.json",
+                    },
+                    {
+                        "role": "publication_announcement",
+                        "url": (
+                            "https://blog.pcisecuritystandards.org/"
+                            "just-published-pci-dss-v4-0-1"
+                        ),
+                    },
+                ],
+            },
+        )
+
+    def test_records_inventory_mapping_compliance_and_checksum_nonclaims(self) -> None:
+        self.assertEqual(
+            self.oracle["nonclaims"],
+            {
+                "catalog_digest_is_source_artifact_digest": False,
+                "compliance_asserted": False,
+                "mapping_exists": False,
+                "provision_inventory_exists": False,
+                "source_artifact_checksum_available": False,
+            },
         )
 
 
