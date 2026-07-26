@@ -6,8 +6,8 @@ Cyber Essentials core and Cyber Essentials Plus remain separate mapping sets.
 
 ## Active milestone workstreams
 
-- Complete [issue 55](https://github.com/tdistress/ESAF/issues/55), coordinated
-  qualified review of all three UK mapping snapshots:
+- Complete coordinated qualified review of all three UK mapping snapshots under
+  [issue 55](https://github.com/tdistress/ESAF/issues/55):
   `uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0`,
   `uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0`,
   and
