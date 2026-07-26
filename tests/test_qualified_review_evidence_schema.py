@@ -372,6 +372,17 @@ class QualifiedReviewEvidenceSchemaTests(unittest.TestCase):
             "https://evidence.example/object?generation=42#receipt",
             "https://evidence.example/object?rev=release-1",
             "https://evidence.example/object?sha256=" + "a" * 64,
+            (
+                "https://evidence.example/"
+                "a%20b/~user:@!$&'()*+,;="
+                "?version=release%2F1&note=a/b?c"
+                "#receipt%20fragment:@!$&'()*+,;=/?"
+            ),
+            (
+                "https://evidence.example/"
+                "AZaz09-._~!$&'()*+,;=:@/"
+                "?generation=gen-1._~!$'()*+,;=:@/?"
+            ),
             f"urn:sha256:{'b' * 64}",
         ):
             with self.subTest(locator=locator):
@@ -393,6 +404,25 @@ class QualifiedReviewEvidenceSchemaTests(unittest.TestCase):
             "https://bad_host.example/object?version=1",
             "https://-bad.example/object?version=1",
             "https://evidence.example/object?version=",
+            "https://evidence.example/object?version=<bad>",
+            'https://evidence.example/object?version="bad"',
+            "https://evidence.example/<bad>?version=1",
+            "https://evidence.example/>bad?version=1",
+            "https://evidence.example/{bad}?version=1",
+            "https://evidence.example/object?version=bad|value",
+            "https://evidence.example/object?version=bad^value",
+            "https://evidence.example/object?version=bad`value",
+            "https://evidence.example/object?version=bad value",
+            "https://evidence.example/object?version=bad\x01value",
+            "https://evidence.example/object?version=%",
+            "https://evidence.example/object?version=%2",
+            "https://evidence.example/object?version=%GG",
+            "https://evidence.example/object?version=%2G",
+            "https://evidence.example/object?version=%G2",
+            "https://evidence.example/object%?version=1",
+            "https://evidence.example/object%2?version=1",
+            "https://evidence.example/object?version=1#bad%fragment",
+            "https://evidence.example/object?version=1#bad%2Gfragment",
             "http://evidence.example/object?version=1",
             "file:///local/package?version=1",
             "javascript:alert(1)?version=1",
