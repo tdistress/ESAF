@@ -25,7 +25,7 @@ Granularity: `finest_authorized_publishable_numbered_requirement_or_sub_requirem
 - Source-readiness oracle: `docs/superpowers/specs/2026-07-25-pci-dss-source-readiness-oracle.json`
 - Source-readiness oracle SHA-256: `fc513985138689085a9ceb8794edc12313a0a5a1f7e47c936d988bbeac294904`
 - Publication-rights review: `docs/superpowers/reviews/2026-07-25-pci-dss-publication-rights-review.md`
-- Publication-rights review commit: `5bc0d8235a49b3a08bffb14c1fc500c547199e81`
+- Publication-rights review commit: `5bc0d82ea6dd7af3391497fc4b75be18ceb505a6`
 - Positive feasibility probe available: `false`
 
 The protected PCI DSS source artifact, its digest, and its provision inventory remain unavailable. Public discovery metadata is not a substitute for source bytes.
@@ -39,7 +39,7 @@ The protected PCI DSS source artifact, its digest, and its provision inventory r
 | `publication_rights` | `BLOCKED` | The independent rights review records HOLD because no case-specific written permission covers ESAF publication and redistribution. | docs/superpowers/reviews/2026-07-25-pci-dss-publication-rights-review.md#final-decision |
 | `provision_inventory` | `BLOCKED` | No authorized exact source or independently reconciled complete provision population exists. | docs/superpowers/specs/2026-07-25-pci-dss-source-readiness-oracle.json#nonclaims; docs/superpowers/specs/2026-07-25-pci-dss-source-readiness-design.md#source-readiness-oracle |
 | `semantic_and_normative_feasibility` | `BLOCKED` | Exact PCI DSS outcomes cannot be compared with normative ESAF requirements without authorized source access and a complete approved inventory. | docs/superpowers/specs/2026-07-25-pci-dss-source-readiness-design.md#exact-proposed-mapping-contract; docs/superpowers/specs/2026-07-25-pci-dss-source-readiness-oracle.json#boundary |
-| `esaf_1600_and_schema_fit` | `PASS` | Existing ESAF-1600 direction, relationship, negative-disposition, rights, evidence, and lifecycle controls can represent the proposed future mapping without a parallel schema. | docs/superpowers/specs/2026-07-25-pci-dss-source-readiness-design.md#exact-proposed-mapping-contract; schemas/crosswalk-mapping-set.schema.json; schemas/crosswalk-mapping.schema.json |
+| `esaf_1600_and_schema_fit` | `PASS` | Existing ESAF-1600 direction, relationship, negative-disposition, rights, evidence, and lifecycle controls can represent the proposed future mapping without a parallel schema. | docs/superpowers/specs/2026-07-25-pci-dss-source-readiness-design.md#exact-proposed-mapping-contract; crosswalks/schema/mapping-set.schema.json; crosswalks/schema/mapping-record.schema.json |
 | `mapper_and_reviewer_readiness` | `BLOCKED` | Named qualified people with authorized source access and the required independent exact-candidate review roles are not evidenced. | docs/superpowers/specs/2026-07-25-pci-dss-source-readiness-design.md#mapper-and-qualified-review-contract |
 | `overclaiming_controls` | `PASS` | The HOLD boundary, explicit nonclaims, exact directional question, and future independent security review requirements can be enforced mechanically. | docs/superpowers/specs/2026-07-25-pci-dss-source-readiness-design.md#hold-boundary-and-reconsideration; docs/superpowers/reviews/2026-07-25-pci-dss-publication-rights-review.md#decision-boundaries |
 

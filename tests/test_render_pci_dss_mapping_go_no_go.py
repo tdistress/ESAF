@@ -68,6 +68,7 @@ QUESTION = (
     "and known gaps recorded independently, without implying PCI DSS compliance, "
     "assessment, equivalence, certification, authorization, or endorsement?"
 )
+RIGHTS_COMMIT = "5bc0d82ea6dd7af3391497fc4b75be18ceb505a6"
 
 
 class PciDssMappingGoNoGoTests(unittest.TestCase):
@@ -122,6 +123,31 @@ class PciDssMappingGoNoGoTests(unittest.TestCase):
         )
         validate_matrix(self.matrix)
 
+    def test_rights_review_commit_is_exact_live_and_ancestral(self) -> None:
+        rights = self.matrix["rights_review"]
+        self.assertEqual(rights["commit"], RIGHTS_COMMIT)
+        commit_exists = subprocess.run(
+            ["git", "cat-file", "-e", f"{RIGHTS_COMMIT}^{{commit}}"],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(commit_exists.returncode, 0, commit_exists.stderr)
+        review_exists = subprocess.run(
+            ["git", "cat-file", "-e", f"{RIGHTS_COMMIT}:{rights['path']}"],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(review_exists.returncode, 0, review_exists.stderr)
+        ancestor = subprocess.run(
+            ["git", "merge-base", "--is-ancestor", RIGHTS_COMMIT, "HEAD"],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(ancestor.returncode, 0, ancestor.stderr)
+
     def test_gate_order_statuses_evidence_and_blocker_coverage_are_exact(self) -> None:
         self.assertEqual([gate["gate"] for gate in self.matrix["gates"]], list(GATES))
         self.assertEqual(
@@ -164,6 +190,15 @@ class PciDssMappingGoNoGoTests(unittest.TestCase):
                 "ESAF Project Maintainer",
                 blocker["owner"],
             )
+
+    def test_repository_path_evidence_references_exist(self) -> None:
+        for gate in self.matrix["gates"]:
+            for reference in gate["evidence_references"]:
+                if "://" in reference or reference.startswith(("sha256:", "symbolic:")):
+                    continue
+                path_text = reference.split("#", 1)[0]
+                with self.subTest(gate=gate["gate"], reference=reference):
+                    self.assertTrue((ROOT / path_text).is_file())
 
     def test_matrix_binds_direction_scope_granularity_and_question(self) -> None:
         contract = self.matrix["mapping_contract"]

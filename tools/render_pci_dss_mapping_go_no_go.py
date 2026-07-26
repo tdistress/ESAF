@@ -4,6 +4,7 @@ import argparse
 import hashlib
 import json
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -147,6 +148,29 @@ def _resolve_repository_path(path_text: str, context: str) -> Path:
     return path
 
 
+def _require_git_object(*arguments: str, context: str) -> None:
+    result = subprocess.run(
+        ["git", *arguments],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+    )
+    if result.returncode != 0:
+        detail = result.stderr.strip() or result.stdout.strip()
+        raise ValueError(f"{context}: {detail or 'git verification failed'}")
+
+
+def _validate_evidence_reference(reference: str, context: str) -> None:
+    if "://" in reference or reference.startswith(("sha256:", "symbolic:")):
+        return
+    path_text = reference.split("#", 1)[0]
+    if not path_text:
+        raise ValueError(f"{context} has an empty repository path")
+    path = _resolve_repository_path(path_text, context)
+    if not path.is_file():
+        raise ValueError(f"{context} does not exist: {path_text}")
+
+
 def _validate_reviewer_contract(value: object) -> None:
     contract = _require_exact_keys(value, REVIEWER_CONTRACT_KEYS, "reviewer_contract")
     mapper = _require_exact_keys(
@@ -261,6 +285,25 @@ def validate_matrix(
     rights_commit = _require_nonempty_string(rights["commit"], "rights_review.commit")
     if not HEX_COMMIT.fullmatch(rights_commit):
         raise ValueError("rights_review.commit must be a full commit SHA")
+    _require_git_object(
+        "cat-file",
+        "-e",
+        f"{rights_commit}^{{commit}}",
+        context="rights review commit does not exist",
+    )
+    _require_git_object(
+        "cat-file",
+        "-e",
+        f"{rights_commit}:{rights_path_text}",
+        context="rights review path is absent from the bound commit",
+    )
+    _require_git_object(
+        "merge-base",
+        "--is-ancestor",
+        rights_commit,
+        "HEAD",
+        context="rights review commit is not an ancestor of HEAD",
+    )
 
     contract = _require_exact_keys(
         matrix["mapping_contract"],
@@ -302,10 +345,15 @@ def validate_matrix(
         if entry["status"] not in {"PASS", "BLOCKED"}:
             raise ValueError(f"invalid gate status for {entry['gate']}")
         _require_nonempty_string(entry["rationale"], f"{entry['gate']}.rationale")
-        _require_string_list(
+        evidence_references = _require_string_list(
             entry["evidence_references"],
             f"{entry['gate']}.evidence_references",
         )
+        for reference in evidence_references:
+            _validate_evidence_reference(
+                reference,
+                f"{entry['gate']}.evidence_references",
+            )
         _require_string_list(
             entry["blocker_ids"],
             f"{entry['gate']}.blocker_ids",
