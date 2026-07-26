@@ -792,36 +792,15 @@ class ReviewedCandidateAssemblyTests(unittest.TestCase):
         cls.shared_temporary.cleanup()
 
     def setUp(self) -> None:
-        self.temporary = tempfile.TemporaryDirectory()
-        self.addCleanup(self.temporary.cleanup)
-        self.repository = Path(self.temporary.name) / "reviewed-candidate"
-        subprocess.run(
-            ["git", "clone", "--no-hardlinks", str(self.base_repository), str(self.repository)],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-        _git(self.repository, "config", "user.name", "ESAF Test")
-        _git(self.repository, "config", "user.email", "esaf-test@example.invalid")
+        self.repository = self.base_repository
+        _git(self.repository, "reset", "--hard", self.base_head)
         self.profile = PROFILES[CORE_ID]
         self.head = self.base_head
         self.reader = GitReader(self.repository)
-        self._candidate_index = 0
 
     def _fresh_candidate(self) -> None:
-        self._candidate_index += 1
-        self.repository = (
-            Path(self.temporary.name) / f"reviewed-candidate-{self._candidate_index}"
-        )
-        subprocess.run(
-            ["git", "clone", "--no-hardlinks", str(self.base_repository), str(self.repository)],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-        _git(self.repository, "config", "user.name", "ESAF Test")
-        _git(self.repository, "config", "user.email", "esaf-test@example.invalid")
-        self.head = _git(self.repository, "rev-parse", "HEAD")
+        _git(self.repository, "reset", "--hard", self.base_head)
+        self.head = self.base_head
         self.reader = GitReader(self.repository)
 
     def _commit(self, message: str) -> str:
@@ -955,7 +934,7 @@ class ReviewedCandidateAssemblyTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, message):
                     self._assemble_after(relative, update)
 
-    def _test_reviewed_candidate_rejects_missing_reviewer_metadata(self) -> None:
+    def test_reviewed_candidate_rejects_missing_reviewer_metadata(self) -> None:
         for label, relative in (
             ("snapshot", f"{self.profile.snapshot_path}/README.md"),
             ("record", self._record_relative()),
@@ -965,7 +944,7 @@ class ReviewedCandidateAssemblyTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "candidate schema validation"):
                     self._assemble_after(relative, lambda metadata: metadata.pop("reviewer"))
 
-    def _test_reviewed_candidate_rejects_mapper_self_review(self) -> None:
+    def test_reviewed_candidate_rejects_mapper_self_review(self) -> None:
         for relative in (f"{self.profile.snapshot_path}/README.md", self._record_relative()):
             with self.subTest(relative=relative):
                 self._fresh_candidate()
@@ -977,7 +956,7 @@ class ReviewedCandidateAssemblyTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "reviewer must differ from mapper"):
                     self._assemble_after(relative, self_review)
 
-    def _test_reviewed_candidate_rejects_critical_and_important_findings(self) -> None:
+    def test_reviewed_candidate_rejects_critical_and_important_findings(self) -> None:
         readme = f"{self.profile.snapshot_path}/README.md"
         for severity, status in (
             ("Critical", "open"),
@@ -1011,7 +990,7 @@ class ReviewedCandidateAssemblyTests(unittest.TestCase):
                 ):
                     self._assemble_after(readme, add_finding)
 
-    def _test_reviewed_candidate_rejects_lifecycle_events(self) -> None:
+    def test_reviewed_candidate_rejects_lifecycle_events(self) -> None:
         registry = f"crosswalks/registry/{CORE_ID}.md"
         with self.assertRaisesRegex(ValueError, "event array must be empty"):
             self._assemble_after(
@@ -1019,7 +998,7 @@ class ReviewedCandidateAssemblyTests(unittest.TestCase):
                 lambda metadata: metadata.update(events=["reviewed"]),
             )
 
-    def _test_reviewed_candidate_rejects_each_required_reviewer_field(self) -> None:
+    def test_reviewed_candidate_rejects_each_required_reviewer_field(self) -> None:
         readme = f"{self.profile.snapshot_path}/README.md"
         for field in (
             "id",
