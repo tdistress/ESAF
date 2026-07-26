@@ -2,178 +2,289 @@
 
 ## Purpose
 
-ESAF shall close the PCI DSS v4.0.1 readiness workstream with a formally
-evidenced `HOLD`. The decision shall preserve a precise path to reconsideration
-without creating a mapping snapshot, provision inventory, registry record, or
-substantive PCI DSS mapping assertion.
+ESAF shall decide whether a public PCI DSS v4.0.1 mapping may proceed by using
+an evidence-pinned, mechanically derived GO/HOLD method. The current evidence
+produces `HOLD`: PCI DSS v4.0.1 is identifiable as the active version, but the
+authorized source bytes, source checksum, publishable provision inventory,
+publication permission, and qualified mapping reviewers are not available.
 
-PCI DSS v4.0.1 is the current active PCI DSS version. Its official PDF is
-access-controlled by a PCI Security Standards Council license agreement, and
-the public PCI SSC terms do not grant ESAF a general right to publish,
-distribute, or prepare derivative works from Council content. The exact PDF
-bytes, PDF checksum, and independently verified provision population are
-therefore unavailable for an authorized public mapping at this time.
+The HOLD shall preserve a precise reconsideration path without creating a
+mapping snapshot, provision record, registry record, or substantive PCI DSS
+mapping assertion.
 
-## Decision
+## Repository architecture
 
-The readiness disposition is `HOLD`.
+The readiness decision shall reuse the established source-oracle,
+feasibility-matrix, deterministic-renderer, review, and traceability pattern
+under `docs/superpowers/`. It shall not create a parallel authoritative
+registry under `crosswalks/`.
 
-`HOLD` means:
+The deliverables are:
 
-- no directory shall be created under `crosswalks/mappings/` for PCI DSS;
-- no PCI DSS lifecycle record shall be created under `crosswalks/registry/`;
-- no PCI DSS provision title, requirement text, close paraphrase, inventory, or
-  mapping relationship shall enter the repository;
-- no PCI DSS compliance, equivalence, coverage, certification, authorization,
-  endorsement, or legal-sufficiency claim shall be made; and
-- the workstream may be reconsidered only after every recorded blocker passes
-  its re-entry test.
+- `docs/superpowers/specs/2026-07-25-pci-dss-source-readiness-oracle.json`;
+- `docs/superpowers/reviews/2026-07-25-pci-dss-publication-rights-review.md`;
+- `docs/superpowers/specs/2026-07-25-pci-dss-mapping-readiness-matrix.json`;
+- `tools/render_pci_dss_mapping_go_no_go.py`;
+- `docs/superpowers/reviews/2026-07-25-pci-dss-mapping-go-no-go-review.md`;
+- `docs/superpowers/reviews/2026-07-25-pci-dss-mapping-go-no-go-traceability.md`;
+- focused source-readiness and renderer tests; and
+- status updates to `crosswalks/pci-dss.md` and `project/BACKLOG.md`.
 
-Internal study permitted by the PCI SSC license is outside the public
-repository boundary and does not authorize an ESAF mapping.
+No file shall be created under `crosswalks/mappings/` or
+`crosswalks/registry/`, and generated crosswalk catalog counts shall not change.
 
-## Authoritative readiness record
+## Rights-review sequence
 
-The authoritative record shall be
-`crosswalks/readiness/pci-dss-v4.0.1.md`. YAML front matter shall conform to a
-closed JSON Schema and shall contain:
+The publication-rights review shall be committed before the source-readiness
+oracle, feasibility matrix, or derivative decision analysis. It shall use only
+official PCI SSC rights sources available without accepting the protected
+document license.
 
-- stable record identity, decision, decision date, and accountable owner;
-- PCI SSC authority, publication family, exact version, language, and status;
-- the official Document Library, access-controlled PDF, discovery catalog,
-  publication announcement, terms, IPR policy, and permission-request URLs;
-- the retrieval timestamp, byte length, and SHA-256 digest of the mutable
-  discovery catalog, explicitly distinguished from the unavailable PDF digest;
-- exact source-artifact, provision-inventory, and publication-rights states;
-- the proposed mapping direction and boundaries;
-- mapper and independent-review qualification requirements;
-- overclaiming prohibitions;
-- one blocker object per missing prerequisite, including owner, missing
-  evidence, reconsideration trigger, and deterministic re-entry test; and
-- change history.
+The review shall name a reviewer different from any future mapper, record the
+review date, confirm authorized access to the reviewed public rights sources,
+and record that the publication basis was reviewed. It shall partition these
+six ESAF-1600 field classes exhaustively and without overlap:
 
-The Markdown body shall explain the evidence, decision, nonclaim boundary,
-reconsideration sequence, and adoption disclaimer. It shall contain no
-source-derived PCI DSS requirement content.
+- identifiers;
+- titles;
+- structural inventory;
+- paraphrases;
+- derivative mapping analysis; and
+- official links.
 
-## Source pinning boundary
+For the current HOLD, only official links are permitted. All other field
+classes are prohibited pending case-specific written PCI SSC permission. This
+is a fail-closed publication-control decision based on absence of affirmative
+permission, not legal advice or a conclusion about statutory exceptions.
 
-The readiness record may pin public discovery metadata that PCI SSC exposes
-without accepting the document license. It shall record the official
-`doc_library.json` bytes observed on 2026-07-25 by URL, retrieval timestamp,
-byte length, and SHA-256, together with the selected catalog facts used to
-identify PCI DSS v4.0.1. The mutable discovery-catalog digest shall not be
-presented as the standard's digest.
+The review shall cite:
 
-The normative source artifact shall remain `unavailable` with null byte length,
-SHA-256, page count, and inventory digest. A future authorized acquisition
-shall create a new readiness-record version or documented change that pins the
-exact English PDF bytes and independently reconciles the provision inventory
-before any mapping snapshot exists.
+- PCI SSC Terms and Conditions;
+- PCI SSC Intellectual Property Rights Policy;
+- the protected document license interstitial; and
+- the PCI SSC Materials License Agreement request path.
 
-The official version facts are:
+## Source-readiness oracle
 
-- publication: PCI Data Security Standard;
-- version: v4.0.1;
-- publication announcement date: 2024-06-11;
-- predecessor v4.0 retirement date: 2024-12-31;
-- previously future-dated requirements effective date: 2025-03-31; and
+The closed JSON oracle shall pin only public discovery facts available without
+accepting the protected document license:
+
+- publisher and publication-family identity;
+- document-library and discovery-catalog URLs;
+- exact UTC retrieval time, byte length, and SHA-256 of the retrieved mutable
+  `doc_library.json`;
+- selected catalog values for document reference, version, archived state,
+  protected state, catalog `last_updated`, and canonical English access URL;
+- official publication-announcement URL and date;
+- predecessor retirement and future-dated-requirement effective dates;
+- source-artifact state, access behavior, and null byte digest/count fields;
+- publication-date precision and evidence boundary;
+- normative/supporting-document boundary; and
+- explicit inventory and mapping nonclaims.
+
+The discovery-catalog digest shall be labeled as a time-stamped digest of
+mutable discovery metadata, never as the PCI DSS v4.0.1 source digest.
+
+The official facts that may be recorded are:
+
+- current version label: `v4.0.1`;
+- official publication announcement date: `2024-06-11`;
+- source artifact publication date: `2024-06` at month precision unless the
+  authorized artifact later supplies a more exact date;
+- PCI SSC catalog `last_updated`: `2024-06-11T07:00:00+00:00`;
+- predecessor v4.0 retirement date: `2024-12-31`;
+- previously future-dated requirements effective date: `2025-03-31`; and
 - current v4.0.1 retirement date: not announced.
 
-The effective date shall not be mislabeled as the v4.0.1 publication date.
+The effective date shall not be mislabeled as the publication date, and the
+announcement date shall not be silently substituted for an unverified exact
+artifact publication date.
 
-## Publication-rights boundary
+The normative PCI DSS PDF shall remain `unavailable` with null byte length,
+SHA-256, page count, provision count, and inventory digest. The oracle shall
+record that direct HTTP retrieval returned an access response rather than PDF
+bytes and that browser navigation displayed a license agreement requiring
+acceptance. No one acting in this workstream shall accept that agreement.
 
-A named, independent rights review shall record the public evidence:
+## Exact proposed mapping contract
 
-- PCI SSC owns the copyright in its standards and work product;
-- ordinary study rights are limited to internal copying and employee sharing;
-- public distribution, derivative works, and non-personal use are not generally
-  authorized without a separate written agreement; and
-- PCI SSC provides a case-specific Materials License Agreement request path.
+The first mapping direction is exactly `esaf_to_external`.
+`external_to_esaf` is excluded and would require a separate approved design.
 
-The readiness record shall mark publication rights `blocked`, not infer that
-identifiers, titles, paraphrases, inventories, or mapping analysis are safe to
-publish, and require a written PCI SSC permission or license covering the exact
-ESAF artifact and distribution channels before reconsideration.
+The proposed scope is `complete_publication` at the finest authorized,
+publishable numbered PCI DSS requirement or sub-requirement identifier.
+If written permission later narrows the available population or granularity,
+the scope shall be redesigned and reapproved before GO rather than silently
+converted to a subset.
 
-## Proposed future mapping scope
+The exact directional question is:
 
-If every blocker is later resolved, the first candidate mapping scope should be
-`esaf_to_external` only because the published ESAF PCI DSS landing page promises
-to map applicable ESAF controls to PCI DSS. `external_to_esaf` shall remain
-explicitly excluded until separately designed and approved.
+> Does exact normative ESAF control requirement text directly support,
+> partially support, or establish a prerequisite for the outcome required by
+> one authorized, publishable PCI DSS v4.0.1 numbered requirement or
+> sub-requirement, with each relationship's conditions, expected evidence, and
+> known gaps recorded independently, without implying PCI DSS compliance,
+> assessment, equivalence, certification, authorization, or endorsement?
 
-A future GO decision shall freeze:
+Conditions may narrow an existing relationship but shall not supply a missing
+PCI DSS outcome. Adjacency, implementation guidance, source titles, assessment
+procedures, or compliance-reporting forms shall not establish a positive
+mapping basis.
 
-- exact authorized source bytes and checksum;
-- complete-publication or declared-subset scope;
-- publishable provision identifiers and granularity;
-- permitted field classes;
-- exact directional question;
-- mapper and independent qualified reviewers with authorized source access;
-- adversarial positive and negative feasibility probes; and
-- every ESAF-1600 overclaiming and lifecycle control.
+## Mechanical GO/HOLD method
 
-GO shall require every gate to pass. It shall authorize a separate substantive
-mapping change and shall not itself create or imply PCI DSS coverage.
+The closed readiness matrix shall contain these ordered gates:
+
+1. `source_identity_and_drift`;
+2. `authorized_source_artifact`;
+3. `publication_rights`;
+4. `provision_inventory`;
+5. `semantic_and_normative_feasibility`;
+6. `esaf_1600_and_schema_fit`;
+7. `mapper_and_reviewer_readiness`; and
+8. `overclaiming_controls`.
+
+Each gate status shall be exactly `PASS` or `BLOCKED` and shall include a
+rationale plus one or more evidence references. Every `BLOCKED` gate shall
+include one or more blockers. Every blocker shall contain:
+
+- a stable blocker ID;
+- category;
+- accountable owner;
+- missing evidence;
+- reconsideration trigger; and
+- deterministic re-entry test.
+
+The matrix decision shall be derived, not asserted:
+
+- `GO` requires all eight gates to be `PASS`, zero blockers, a positive
+  feasibility probe for the exact directional question, and no unresolved
+  Critical or Important findings.
+- `HOLD` requires one or more `BLOCKED` gates and at least one complete blocker
+  for each blocked gate.
+
+The renderer shall reject any inconsistent matrix and deterministically derive
+the Markdown review. A HOLD review shall show all gates, blockers, owners,
+evidence gaps, triggers, re-entry tests, excluded direction, and nonclaims.
+
+The current expected gate results are:
+
+| Gate | Status | Basis |
+|---|---|---|
+| Source identity and drift | `PASS` | Public PCI SSC discovery metadata identifies v4.0.1 |
+| Authorized source artifact | `BLOCKED` | Protected PDF bytes and SHA-256 are unavailable |
+| Publication rights | `BLOCKED` | No case-specific written permission covers ESAF publication |
+| Provision inventory | `BLOCKED` | No authorized exact source or reconciled provision population |
+| Semantic and normative feasibility | `BLOCKED` | Exact PCI outcomes cannot be assessed without authorized source access |
+| ESAF-1600 and schema fit | `PASS` | Existing direction, relationship, disposition, rights, and lifecycle controls are sufficient |
+| Mapper and reviewer readiness | `BLOCKED` | Named qualified humans with authorized source access are not evidenced |
+| Overclaiming controls | `PASS` | The HOLD nonclaims and future analytical boundaries can be enforced |
+
+## Mapper and qualified-review contract
+
+A future GO requires:
+
+- a named mapper with PCI DSS v4.0.1 and ESAF-1600 experience and authorized
+  source access;
+- an independent PCI DSS subject-matter reviewer, different from the mapper,
+  with current QSA or owner-approved equivalent credentials and authorized
+  source access;
+- an independent ESAF mapping/specification reviewer;
+- a publication-rights reviewer different from the mapper;
+- a security/overclaiming reviewer; and
+- an approver authorized by the ESAF project owner.
+
+One person may fill more than one independent review discipline only through an
+explicit owner-approved dual-role decision that records why independence
+remains adequate. The mapper shall never review their own work.
+
+Each qualified review shall record identity, role, qualification or relevant
+experience, authorized-source-access attestation, signed or attributable
+attestation, review date, exact candidate SHA and artifact digests, findings,
+and disposition. Specification/inventory and security/overclaiming reviews
+shall run separately on the same exact candidate. Any candidate change shall
+invalidate both reviews and require redispatch.
+
+## HOLD boundary and reconsideration
+
+HOLD prohibits:
+
+- PCI DSS source text, titles, close paraphrases, or structural inventory;
+- provision records, mapping legs, negative dispositions, snapshots, registry
+  records, and generated catalog entries;
+- coverage statistics or percentages; and
+- claims of PCI SSC authorization, validation, endorsement, assessment,
+  compliance, equivalence, certification, coverage, or legal sufficiency.
+
+Reconsideration requires all of the following:
+
+1. case-specific written PCI SSC permission that covers the exact field
+   classes, repository, website, generated publications, license, and
+   downstream redistribution model;
+2. acquisition by an authorized person of the exact English PCI DSS v4.0.1 PDF
+   through the intended flow, with final URL, filename, byte length, SHA-256,
+   PDF metadata, page count, and acquisition time recorded;
+3. an independently reconciled complete provision inventory at the authorized
+   granularity, with count and digest;
+4. availability of the named mapper and qualified independent reviewers; and
+5. a refreshed current-version and source-drift check.
+
+Each satisfied trigger shall update the evidence and matrix. GO shall not be
+recorded until all gates pass mechanically.
+
+## GO closure semantics
+
+A readiness GO may authorize a separate substantive mapping pull request, but
+it does not by itself close issue 58 or the `v0.5-beta` PCI workstream. Under
+the GO path, closure requires the approved Draft mapping scope to be completed
+under ESAF-1600, including the source-pinned snapshot, provision inventory,
+control manifest, provision records and negative dispositions, lifecycle
+record, generated catalogs, exact-SHA qualified reviews, and traceability.
+
+The evidenced HOLD path may close issue 58 and satisfy the corresponding
+milestone workstream when this decision package passes all review and
+publication gates.
 
 ## Validation
 
-`tools/validate_crosswalk_readiness.py` shall discover direct Markdown children
-of `crosswalks/readiness/`, reject unexpected entries and duplicate YAML keys,
-validate the front matter against
-`crosswalks/schema/readiness-record.schema.json`, and enforce semantic
-conditions that JSON Schema alone cannot safely express.
+Focused tests shall begin red and shall enforce:
 
-For a `HOLD` record, validation shall require:
+- exact closed oracle and matrix key sets;
+- source identity, URL, date-precision, protected-access, and null-artifact
+  invariants;
+- the rights-review path, commit ancestry, six-element partition, independence,
+  access, and publication-basis attestations;
+- exact gate order, status vocabulary, evidence references, blocker coverage,
+  and mechanical GO/HOLD derivation;
+- exact directional question, complete-publication scope, granularity, and
+  excluded reverse direction;
+- mapper/reviewer qualification and independence requirements;
+- prohibited claims and reconsideration triggers;
+- deterministic renderer output and `--check` drift detection;
+- zero PCI DSS mapping, registry, or generated catalog artifacts; and
+- unchanged ordinary crosswalk catalog counts.
 
-- at least one blocker with nonempty owner, evidence gap, trigger, and re-entry
-  test;
-- null artifact and inventory digests when their states are unavailable;
-- a blocked or unreviewed publication-rights state;
-- a nonempty prohibited-claims list;
-- no PCI DSS mapping or registry record anywhere in the repository;
-- no language that promotes the decision to GO; and
-- internal agreement among record identity, version, source URLs, and status.
-
-Focused tests shall begin red and cover malformed records, incomplete blockers,
-false source pins, prohibited PCI mapping artifacts, duplicate keys,
-unauthorized decision transitions, and successful validation of the committed
-HOLD record. The full test suite, crosswalk validator, link validator, relevant
-repository validators, and whole-branch whitespace checks shall pass on the
-exact final candidate.
+The full test suite, crosswalk validator with protected baseline, link
+validator, relevant repository validators, and whole-branch whitespace checks
+shall pass on the exact candidate. Independent source/inventory and
+rights/overclaiming reviews shall approve the exact final candidate SHA with no
+open Critical or Important findings.
 
 ## Repository presentation
 
 `crosswalks/pci-dss.md` shall change from `Planned` to `Readiness HOLD`, link to
-the authoritative readiness record and reviews, state the blockers and
-nonclaims, and explain the reconsideration boundary.
+the oracle, rights review, matrix, generated review, and traceability record,
+and state the blockers, owner, reconsideration conditions, and nonclaims.
 
-`project/BACKLOG.md` shall mark issue 58 complete through the evidenced-HOLD
-path without implying that a PCI DSS mapping exists. Generated crosswalk
-catalog counts shall remain unchanged.
-
-## Independent review
-
-The exact candidate SHA shall receive:
-
-- a source and inventory review that confirms the official-version facts,
-  discovery digest, unavailable PDF checksum, and absence of an invented
-  provision population; and
-- a publication-rights and overclaiming review that confirms the HOLD boundary,
-  permission trigger, reviewer requirements, and prohibited claims.
-
-Critical and Important findings shall be resolved before publication. Any
-candidate change shall invalidate prior exact-SHA review evidence and require
-both reviews to be rerun.
+`project/BACKLOG.md` shall record issue 58 as completed through the
+evidenced-HOLD path without implying that a PCI DSS mapping exists.
 
 ## Non-goals
 
 This change does not:
 
 - accept the PCI SSC license agreement on behalf of Eric Amos, Hearst, ESAF, or
-  any other entity;
+  another entity;
 - provide legal advice or decide copyright exceptions;
 - download, commit, reproduce, paraphrase, or redistribute PCI DSS;
 - create a provision inventory, mapping record, mapping snapshot, registry

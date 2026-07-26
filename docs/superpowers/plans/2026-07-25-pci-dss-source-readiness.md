@@ -5,336 +5,340 @@
 > Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Record and enforce an evidenced `HOLD` on public PCI DSS v4.0.1
-mapping until ESAF has authorized source bytes, a verified provision inventory,
-written publication permission, and qualified independent reviewers.
+mapping until ESAF has authorized source bytes, a verified complete provision
+inventory, written publication permission, and qualified independent reviewers.
 
-**Architecture:** Add one authoritative Markdown readiness record with closed
-YAML front matter, a reusable readiness schema and validator, two evidence
-reviews, and focused tests. Keep readiness outside the ESAF-1600 mapping and
-registry trees so a HOLD cannot appear in generated crosswalk catalogs or imply
-that provisions were assessed.
+**Architecture:** Reuse ESAF's existing source-oracle, feasibility-matrix,
+deterministic-renderer, review, and traceability pattern under
+`docs/superpowers/`. Keep the decision outside the ESAF-1600 mapping and
+registry trees so HOLD cannot appear in generated catalogs or imply that any
+PCI DSS provision was assessed.
 
-**Tech Stack:** Markdown, YAML, JSON Schema Draft 2020-12, Python 3.13,
-`jsonschema`, `unittest`, GitHub Actions, SHA-256, and Git.
+**Tech stack:** Markdown, canonical JSON, Python 3.13, `unittest`, SHA-256,
+GitHub Actions, and Git.
 
 ## Global constraints
 
-- The disposition is exactly `HOLD`; do not create a GO artifact.
-- Do not accept the PCI SSC license agreement on behalf of any person or
-  entity.
-- Do not download or commit the access-controlled PCI DSS PDF.
+- Disposition is mechanically derived as `HOLD`; do not create a GO artifact.
+- Do not accept the PCI SSC protected-document license agreement.
+- Do not download or commit the protected PCI DSS PDF.
 - Do not reproduce PCI DSS requirement text, titles, close paraphrases, or a
   provision inventory.
-- Do not create any PCI DSS entry under `crosswalks/mappings/`,
-  `crosswalks/registry/`, `crosswalks/catalog.json`, or `crosswalks/CATALOG.md`.
-- Treat the discovery-catalog digest as a time-stamped digest of mutable
-  metadata, never as the PCI DSS v4.0.1 source digest.
-- Keep the proposed first mapping direction `esaf_to_external`; exclude
-  `external_to_esaf` until separately designed and approved.
-- Require one blocker object per unresolved source, inventory, rights, mapper,
-  or reviewer prerequisite.
-- Preserve the ESAF-1600 nonclaim boundary and add PCI SSC authorization,
-  endorsement, validation, and compliance claims to the prohibited set.
-- Use test-driven development for validator behavior.
-- Set `PYTHONDONTWRITEBYTECODE=1`; do not commit caches or downloaded source
-  artifacts.
-- Review the complete branch diff and rerun exact-SHA reviews after any
-  candidate change.
+- Create no PCI DSS mapping, registry, or generated catalog record.
+- Treat the discovery-catalog digest as mutable public metadata, never as the
+  standard's digest.
+- Scope only `esaf_to_external`; exclude `external_to_esaf`.
+- Proposed scope is complete publication at the finest authorized publishable
+  numbered requirement or sub-requirement identifier.
+- Use test-driven development for every enforceable invariant.
+- Set `PYTHONDONTWRITEBYTECODE=1`; do not commit caches or downloaded artifacts.
+- After any candidate change, rerun both independent exact-SHA reviews.
 
 ---
 
-### Task 1: Add the readiness record contract and fail-closed validator
+### Task 1: Commit the fail-closed publication-rights boundary
 
 **Files:**
 
-- Create: `crosswalks/schema/readiness-record.schema.json`
-- Create: `tools/crosswalks/readiness.py`
-- Create: `tools/validate_crosswalk_readiness.py`
-- Create: `tests/crosswalk_readiness_fixtures.py`
-- Create: `tests/test_validate_crosswalk_readiness.py`
-
-**Interfaces:**
-
-- Produces:
-  `inventory_readiness_records(root: Path) -> tuple[tuple[Path, ...], list[str]]`.
-- Produces:
-  `validate_readiness(root: Path = ROOT) -> list[str]`.
-- Reuses:
-  `tools.crosswalks.io.parse_front_matter` for UTF-8/LF and duplicate-key
-  enforcement.
-- CLI:
-  `python tools/validate_crosswalk_readiness.py --check`, with exit `0` on
-  success and `1` on content or contract errors.
-
-- [ ] **Step 1: Add RED fixture and inventory tests**
-
-Create a minimal temporary repository fixture containing the readiness schema,
-one valid HOLD record, and empty mapping and registry directories. Add failing
-tests for:
-
-```python
-def test_missing_readiness_directory_is_rejected(self) -> None: ...
-def test_unexpected_readiness_entry_is_rejected(self) -> None: ...
-def test_duplicate_yaml_key_is_rejected(self) -> None: ...
-def test_invalid_utf8_or_crlf_is_rejected(self) -> None: ...
-```
-
-Run:
-
-```powershell
-$env:PYTHONDONTWRITEBYTECODE='1'
-python -m unittest tests.test_validate_crosswalk_readiness -v
-```
-
-Expected: RED because the validator and schema do not exist.
-
-- [ ] **Step 2: Add RED schema and HOLD-invariant tests**
-
-Cover at minimum:
-
-```python
-def test_hold_requires_complete_blocker_contract(self) -> None: ...
-def test_hold_rejects_available_source_without_digest(self) -> None: ...
-def test_hold_rejects_source_digest_when_source_is_unavailable(self) -> None: ...
-def test_hold_rejects_inventory_digest_when_inventory_is_unavailable(self) -> None: ...
-def test_hold_requires_blocked_or_unreviewed_rights(self) -> None: ...
-def test_hold_requires_prohibited_claims(self) -> None: ...
-def test_hold_rejects_go_language(self) -> None: ...
-def test_record_identity_and_version_must_agree(self) -> None: ...
-def test_pci_mapping_snapshot_is_rejected_during_hold(self) -> None: ...
-def test_pci_registry_record_is_rejected_during_hold(self) -> None: ...
-def test_valid_hold_record_passes(self) -> None: ...
-```
-
-Expected: RED for the missing behavior.
-
-- [ ] **Step 3: Implement the closed schema**
-
-Use JSON Schema Draft 2020-12 with `additionalProperties: false` at every object
-layer. Require:
-
-- `schema_version`, `record_id`, `decision`, `decision_date`, and `owner`;
-- source identity and public official URLs;
-- discovery metadata and normative artifact states;
-- provision-inventory and publication-rights states;
-- proposed mapping scope and excluded direction;
-- mapper and reviewer requirements;
-- prohibited claims;
-- blockers with stable IDs, categories, owners, evidence gaps, triggers, and
-  re-entry tests; and
-- change history.
-
-Restrict decision to `GO` or `HOLD`, but implement only the fail-closed HOLD
-semantic contract in this change. A future GO must not validate accidentally
-without a separately implemented complete GO contract.
-
-- [ ] **Step 4: Implement discovery and semantic validation**
-
-Discover only direct `*.md` children of `crosswalks/readiness/`. Reject
-directories, symlinks, unsupported files, empty inventory, duplicate record
-IDs, parse errors, schema errors, and identity/path disagreement.
-
-For HOLD records:
-
-- require unavailable artifact and inventory states to carry null digest/count
-  fields and explicit reasons;
-- require rights to be `blocked` or `unreviewed`;
-- require all blocker fields and unique blocker IDs;
-- require `external_to_esaf` to be excluded in the PCI record;
-- scan `crosswalks/mappings/` and `crosswalks/registry/` for a matching
-  authority/publication identity and reject any PCI DSS mapping artifact; and
-- reject `decision: GO`, `Disposition: GO`, or equivalent promotion language in
-  the Markdown body.
-
-Keep diagnostics repository-relative and deterministic.
-
-- [ ] **Step 5: Make the focused tests GREEN**
-
-Run:
-
-```powershell
-$env:PYTHONDONTWRITEBYTECODE='1'
-python -m unittest tests.test_validate_crosswalk_readiness -v
-python tools/validate_crosswalk_readiness.py --check
-```
-
-Expected: tests pass; the CLI continues to fail until the authoritative record
-is added in Task 2.
-
-- [ ] **Step 6: Commit the contract**
-
-```powershell
-git add crosswalks/schema/readiness-record.schema.json `
-  tools/crosswalks/readiness.py tools/validate_crosswalk_readiness.py `
-  tests/crosswalk_readiness_fixtures.py `
-  tests/test_validate_crosswalk_readiness.py
-git commit -m "feat: validate crosswalk readiness holds"
-```
-
----
-
-### Task 2: Pin the public source evidence and record the HOLD
-
-**Files:**
-
-- Create: `crosswalks/readiness/pci-dss-v4.0.1.md`
 - Create:
   `docs/superpowers/reviews/2026-07-25-pci-dss-publication-rights-review.md`
+- Create: `tests/test_pci_dss_source_readiness.py`
+
+- [ ] **Step 1: Add RED rights-contract tests**
+
+Require the rights review to contain:
+
+- named reviewer, review date, reviewed public source URLs, and exact review
+  disposition;
+- reviewer independence from any future mapper;
+- authorized access to the reviewed public rights sources and a
+  publication-basis-reviewed attestation;
+- an exhaustive, disjoint partition of identifiers, titles,
+  structural_inventory, paraphrases, derivative_mapping_analysis, and
+  official_links;
+- only `official_links` permitted and all other classes prohibited;
+- case-specific Materials License Agreement trigger; and
+- the non-legal-advice and no-statutory-exception-decision boundaries.
+
+Run:
+
+```powershell
+$env:PYTHONDONTWRITEBYTECODE='1'
+python -m unittest tests.test_pci_dss_source_readiness -v
+```
+
+Expected: RED because the review does not exist.
+
+- [ ] **Step 2: Write the rights review using official PCI SSC evidence**
+
+Use only:
+
+- `https://www.pcisecuritystandards.org/terms_and_conditions/`;
+- `https://www.pcisecuritystandards.org/about_us/policies/`;
+- the protected document's official access interstitial; and
+- `https://programs.pcissc.org/mla_registration.aspx`.
+
+Record HOLD as a fail-closed absence-of-permission decision. Do not conclude
+that statutory exceptions are unavailable.
+
+- [ ] **Step 3: Validate and commit rights before derivative evidence**
+
+```powershell
+$env:PYTHONDONTWRITEBYTECODE='1'
+python -m unittest tests.test_pci_dss_source_readiness -v
+git diff --check
+git add docs/superpowers/reviews/2026-07-25-pci-dss-publication-rights-review.md `
+  tests/test_pci_dss_source_readiness.py
+git commit -m "docs: review PCI DSS publication rights"
+```
+
+Record this commit SHA for the oracle and matrix ancestry tests.
+
+---
+
+### Task 2: Pin the public source-readiness oracle
+
+**Files:**
+
 - Create:
-  `docs/superpowers/reviews/2026-07-25-pci-dss-source-readiness-review.md`
-- Modify: `tests/test_validate_crosswalk_readiness.py`
+  `docs/superpowers/specs/2026-07-25-pci-dss-source-readiness-oracle.json`
+- Modify: `tests/test_pci_dss_source_readiness.py`
 
-**Official sources:**
+**Official source interfaces:**
 
-- `https://www.pcisecuritystandards.org/document_library/`
-- `https://docs-pub.pcisecuritystandards.org/doc_library.json`
-- `https://docs-prv.pcisecuritystandards.org/PCI%20DSS/Standard/PCI-DSS-v4_0_1.pdf`
-- `https://blog.pcisecuritystandards.org/just-published-pci-dss-v4-0-1`
-- `https://www.pcisecuritystandards.org/terms_and_conditions/`
-- `https://www.pcisecuritystandards.org/about_us/policies/`
-- `https://programs.pcissc.org/mla_registration.aspx`
+- Document Library:
+  `https://www.pcisecuritystandards.org/document_library/`
+- Public discovery catalog:
+  `https://docs-pub.pcisecuritystandards.org/doc_library.json`
+- Protected English document URL:
+  `https://docs-prv.pcisecuritystandards.org/PCI%20DSS/Standard/PCI-DSS-v4_0_1.pdf`
+- Publication announcement:
+  `https://blog.pcisecuritystandards.org/just-published-pci-dss-v4-0-1`
 
 - [ ] **Step 1: Independently retrieve and hash public discovery metadata**
 
-Retrieve `doc_library.json` without accepting the PCI SSC document license.
-Record UTC retrieval time, final URL, byte length, and lowercase SHA-256.
-Extract only the selected metadata necessary to confirm:
+Retrieve `doc_library.json` without accepting the protected license. Record UTC
+retrieval time, final URL, byte length, and lowercase SHA-256. Select only:
 
 - document reference `pci_dss`;
 - version `v4.0.1`;
-- `last_updated` value;
+- catalog `last_updated`;
 - `archived: false`;
 - `protected: yes`; and
-- canonical English PDF URL.
+- canonical English protected-document URL.
 
-Do not commit the mutable one-megabyte catalog or any protected document.
+Do not commit the mutable one-megabyte catalog.
 
-- [ ] **Step 2: Add the publication-rights review**
+- [ ] **Step 2: Add RED closed-oracle tests**
 
-Record exact official-source evidence and distinguish:
+Require exact nested key sets and values for:
 
-- internal study permission;
-- prohibited or ungranted public distribution and derivative uses;
-- the case-specific Materials License Agreement path;
-- unknown version-specific terms beyond the observed access interstitial; and
-- the fact that this is a conservative publication-control decision, not legal
-  advice.
+- publisher, publication, version, language, and format;
+- discovery and access URLs;
+- retrieval timestamp, byte length, and digest;
+- selected discovery values;
+- source artifact state and null digest/count fields;
+- artifact publication date `2024-06` with `month` precision, separately from
+  announcement date `2024-06-11`, catalog update time, predecessor retirement,
+  and future-dated requirement effective date;
+- normative/supporting boundary;
+- protected access behavior; and
+- inventory, mapping, compliance, and checksum nonclaims.
 
-The review shall conclude `HOLD` for public mapping and specify the exact
-permission scope needed for reconsideration.
+- [ ] **Step 3: Create canonical oracle JSON**
 
-- [ ] **Step 3: Add the authoritative readiness record**
+Write one-line, UTF-8/LF, key-sorted canonical JSON. Store the rights review
+path and rights-review commit SHA. Keep source byte length, source SHA-256, page
+count, provision count, and inventory digest null.
 
-Populate the contract with:
-
-- current source identity and public discovery digest;
-- source artifact, checksum, page count, provision count, and inventory digest
-  marked unavailable;
-- publication rights marked blocked;
-- proposed future `esaf_to_external` scope only;
-- required mapper, PCI DSS/QSA subject-matter reviewer, ESAF mapping reviewer,
-  rights reviewer, and overclaiming reviewer qualifications;
-- distinct blockers for source bytes, inventory, publication permission,
-  mapper availability, and independent reviewers;
-- accountable owner `ESAF Project Maintainer`;
-- precise trigger and re-entry test for each blocker; and
-- the full nonclaim boundary.
-
-- [ ] **Step 4: Add the source-readiness review**
-
-Document the official version/date/status evidence, public discovery digest,
-protected access behavior, missing source checksum, missing provision
-inventory, reviewer requirements, and mechanical decision result. State that
-no substantive mapping files exist and that the generated crosswalk counts are
-unchanged.
-
-- [ ] **Step 5: Pin committed content with focused assertions**
-
-Add tests that load the actual repository record and assert the exact decision,
-version, URLs, unavailable fields, blockers, excluded direction, prohibited
-claims, and linked review files.
-
-- [ ] **Step 6: Validate and commit the evidence**
+- [ ] **Step 4: Make source tests GREEN and commit**
 
 ```powershell
 $env:PYTHONDONTWRITEBYTECODE='1'
-python -m unittest tests.test_validate_crosswalk_readiness -v
-python tools/validate_crosswalk_readiness.py --check
-python tools/validate_crosswalks.py --check
+python -m unittest tests.test_pci_dss_source_readiness -v
 git diff --check
-git add crosswalks/readiness `
-  docs/superpowers/reviews/2026-07-25-pci-dss-publication-rights-review.md `
-  docs/superpowers/reviews/2026-07-25-pci-dss-source-readiness-review.md `
-  tests/test_validate_crosswalk_readiness.py
-git commit -m "docs: record PCI DSS mapping readiness hold"
+git add docs/superpowers/specs/2026-07-25-pci-dss-source-readiness-oracle.json `
+  tests/test_pci_dss_source_readiness.py
+git commit -m "docs: pin PCI DSS public source readiness"
 ```
-
-Expected: readiness validation passes, ordinary crosswalk catalog counts remain
-unchanged, and no protected source content is committed.
 
 ---
 
-### Task 3: Publish the HOLD in project surfaces and continuous validation
+### Task 3: Implement the mechanical GO/HOLD decision
 
 **Files:**
 
+- Create:
+  `docs/superpowers/specs/2026-07-25-pci-dss-mapping-readiness-matrix.json`
+- Create: `tools/render_pci_dss_mapping_go_no_go.py`
+- Create: `tests/test_render_pci_dss_mapping_go_no_go.py`
+- Modify: `tests/test_pci_dss_source_readiness.py`
+
+- [ ] **Step 1: Add RED matrix and renderer tests**
+
+Require exact gate order:
+
+```text
+source_identity_and_drift
+authorized_source_artifact
+publication_rights
+provision_inventory
+semantic_and_normative_feasibility
+esaf_1600_and_schema_fit
+mapper_and_reviewer_readiness
+overclaiming_controls
+```
+
+Test that:
+
+- statuses are only `PASS` or `BLOCKED`;
+- each gate has rationale and evidence references;
+- each blocked gate has complete, uniquely identified blockers;
+- GO requires all PASS, zero blockers, positive feasibility, and no open
+  Critical/Important findings;
+- HOLD requires at least one BLOCKED gate and blocker coverage;
+- the matrix binds the exact directional question, complete-publication scope,
+  finest authorized publishable requirement/sub-requirement granularity, and
+  excluded reverse direction;
+- renderer output is deterministic and derives rather than trusts decision;
+- `--write` and `--check` work and operational errors exit `2`; and
+- malformed decisions, stale digests, unknown keys, duplicate blocker IDs, and
+  incomplete evidence fail closed.
+
+- [ ] **Step 2: Create the closed readiness matrix**
+
+Use expected statuses:
+
+- PASS: source identity/drift, ESAF-1600/schema fit, overclaiming controls.
+- BLOCKED: authorized source artifact, publication rights, provision inventory,
+  semantic/normative feasibility, mapper/reviewer readiness.
+
+Every blocker shall name `ESAF Project Maintainer` or a more specific owner and
+record missing evidence, reconsideration trigger, and deterministic re-entry
+test.
+
+The reviewer contract shall require:
+
+- named authorized mapper;
+- independent current QSA or owner-approved equivalent PCI reviewer;
+- independent ESAF specification/mapping reviewer;
+- independent rights reviewer;
+- independent security/overclaiming reviewer;
+- exact candidate SHA and artifact digests;
+- attributable attestation and findings disposition; and
+- separate inventory/specification and security/overclaiming reviews, with
+  redispatch after any candidate change.
+
+- [ ] **Step 3: Implement deterministic renderer**
+
+Expose:
+
+```python
+def validate_matrix(matrix: dict[str, object]) -> None: ...
+def derive_decision(matrix: dict[str, object]) -> str: ...
+def render(matrix: dict[str, object]) -> str: ...
+```
+
+The Markdown review shall show decision, exact question, source boundary, gate
+table, blocker table, reviewer requirements, excluded direction,
+reconsideration sequence, and nonclaims.
+
+- [ ] **Step 4: Generate the review and make tests GREEN**
+
+The output path is:
+
+`docs/superpowers/reviews/2026-07-25-pci-dss-mapping-go-no-go-review.md`
+
+Run:
+
+```powershell
+$env:PYTHONDONTWRITEBYTECODE='1'
+python -m unittest tests.test_pci_dss_source_readiness -v
+python -m unittest tests.test_render_pci_dss_mapping_go_no_go -v
+python tools/render_pci_dss_mapping_go_no_go.py --write
+python tools/render_pci_dss_mapping_go_no_go.py --check
+```
+
+- [ ] **Step 5: Commit matrix, renderer, tests, and generated review**
+
+```powershell
+git add docs/superpowers/specs/2026-07-25-pci-dss-mapping-readiness-matrix.json `
+  tools/render_pci_dss_mapping_go_no_go.py `
+  tests/test_pci_dss_source_readiness.py `
+  tests/test_render_pci_dss_mapping_go_no_go.py `
+  docs/superpowers/reviews/2026-07-25-pci-dss-mapping-go-no-go-review.md
+git commit -m "feat: derive PCI DSS readiness hold"
+```
+
+---
+
+### Task 4: Publish traceability and project status
+
+**Files:**
+
+- Create:
+  `docs/superpowers/reviews/2026-07-25-pci-dss-mapping-go-no-go-traceability.md`
 - Modify: `crosswalks/pci-dss.md`
 - Modify: `project/BACKLOG.md`
 - Modify: `tools/README.md`
 - Modify: `.github/workflows/catalog-validation.yml`
-- Modify: `tests/test_validate_crosswalk_readiness.py`
+- Modify: `tests/test_pci_dss_source_readiness.py`
 
-- [ ] **Step 1: Add RED presentation and workflow tests**
+- [ ] **Step 1: Add RED traceability and presentation tests**
 
 Require:
 
-- `crosswalks/pci-dss.md` says `Readiness HOLD`, links the authoritative record
-  and both reviews, and contains the nonclaim and reconsideration boundary;
-- the active backlog no longer lists the PCI readiness workstream as
-  incomplete and records issue 58 as completed through evidenced HOLD;
-- the workflow path filters include readiness records, their schema, validator,
-  and focused tests; and
-- CI runs `python tools/validate_crosswalk_readiness.py --check`.
+- traceability from every issue #58 acceptance item to exact evidence;
+- the oracle, rights review, matrix, generated review, tests, and review protocol
+  linked from `crosswalks/pci-dss.md`;
+- status exactly `Readiness HOLD`;
+- active backlog no longer lists PCI readiness as incomplete and a completed
+  workstream records issue 58 as closed through evidenced HOLD;
+- CI path filters cover all PCI readiness inputs; and
+- CI runs both focused test modules and renderer `--check`.
 
-- [ ] **Step 2: Update repository presentation**
+- [ ] **Step 2: Add traceability and presentation**
 
-Replace the PCI placeholder with the exact status, blockers, owner,
-reconsideration triggers, and nonclaim. Move the backlog item into a completed
-workstream section without stating or implying that a PCI mapping exists.
+State blocker owners and triggers, zero mapping artifacts, unchanged crosswalk
+catalog counts, exact nonclaims, and the GO closure rule: a future readiness GO
+does not close issue 58 until the approved Draft mapping scope is completed
+under ESAF-1600.
 
-- [ ] **Step 3: Wire continuous validation**
+- [ ] **Step 3: Wire and document CI validation**
 
-Document the command in `tools/README.md`. Update both pull-request and push
-path filters in `catalog-validation.yml`, and add a dedicated readiness
-validation step after the ordinary crosswalk check.
+Add the oracle, matrix, review, renderer, tests, PCI landing page, and backlog
+paths to pull-request and push filters. Add renderer `--check` after ordinary
+crosswalk validation. Document the command in `tools/README.md`.
 
-- [ ] **Step 4: Validate and commit presentation**
+- [ ] **Step 4: Validate and commit**
 
 ```powershell
 $env:PYTHONDONTWRITEBYTECODE='1'
-python -m unittest tests.test_validate_crosswalk_readiness -v
-python tools/validate_crosswalk_readiness.py --check
+python -m unittest tests.test_pci_dss_source_readiness -v
+python -m unittest tests.test_render_pci_dss_mapping_go_no_go -v
+python tools/render_pci_dss_mapping_go_no_go.py --check
+python tools/validate_crosswalks.py --check
 python tools/validate_links.py --check
 git diff --check
-git add crosswalks/pci-dss.md project/BACKLOG.md tools/README.md `
-  .github/workflows/catalog-validation.yml `
-  tests/test_validate_crosswalk_readiness.py
+git add docs/superpowers/reviews/2026-07-25-pci-dss-mapping-go-no-go-traceability.md `
+  crosswalks/pci-dss.md project/BACKLOG.md tools/README.md `
+  .github/workflows/catalog-validation.yml tests/test_pci_dss_source_readiness.py
 git commit -m "docs: publish PCI DSS readiness hold"
 ```
 
 ---
 
-### Task 4: Independently review the exact candidate
+### Task 5: Independently review the exact candidate
 
 **Files:**
 
 - Create:
-  `docs/superpowers/reviews/2026-07-25-pci-dss-exact-sha-source-review.md`
+  `docs/superpowers/reviews/2026-07-25-pci-dss-exact-sha-source-inventory-review.md`
 - Create:
   `docs/superpowers/reviews/2026-07-25-pci-dss-exact-sha-rights-overclaiming-review.md`
-- Modify as findings require: files from Tasks 1–3
+- Modify other files only to resolve findings test-first.
 
-- [ ] **Step 1: Freeze the candidate SHA**
+- [ ] **Step 1: Freeze clean candidate SHA and full diff**
 
 ```powershell
 git status --short
@@ -342,55 +346,42 @@ git rev-parse HEAD
 git diff --check origin/main..HEAD
 ```
 
-Expected: clean worktree and one 40-character candidate SHA.
-
 - [ ] **Step 2: Dispatch independent source/inventory review**
 
-The reviewer shall independently verify, on the exact SHA:
-
-- current PCI DSS version and official URLs;
-- discovery-catalog digest and selected facts;
-- correct distinction between public metadata and protected PDF bytes;
-- absent PDF checksum and absent provision inventory;
-- complete blocker and re-entry contracts; and
-- zero PCI mapping, registry, or generated catalog artifacts.
+Verify current version, URLs, public discovery digest, date precision, protected
+access behavior, absent PDF checksum, absent provision inventory, blocker
+coverage, and zero PCI mapping/registry/catalog artifacts.
 
 - [ ] **Step 3: Dispatch independent rights/overclaiming review**
 
-The reviewer shall independently verify, on the same exact SHA:
+Verify public terms/IPR/permission path, six-field rights partition,
+independence/access attestations, reviewer contract, prohibited claims, and no
+implied PCI SSC authorization, compliance, equivalence, coverage, or
+certification.
 
-- public terms, IPR ownership, and Materials License Agreement path;
-- conservative treatment of identifiers, summaries, and derivative analysis;
-- mapper/reviewer independence and authorized-access requirements;
-- prohibited claims and adoption disclaimer; and
-- no implied PCI SSC authorization, compliance, equivalence, coverage, or
-  certification.
+- [ ] **Step 4: Resolve Critical and Important findings**
 
-- [ ] **Step 4: Resolve findings test-first**
+Add focused regression tests before practical fixes. After any candidate
+change, commit, record the new SHA, and redispatch both reviews.
 
-Add a focused regression test before correcting each practical Critical or
-Important defect. After any change, commit it, record the new SHA, and
-redispatch both exact-SHA reviews.
+- [ ] **Step 5: Commit exact-SHA review records**
 
-- [ ] **Step 5: Commit review records**
-
-Review records shall name the exact reviewed SHA, commands/evidence, finding
-counts, and disposition. Do not claim exact-SHA approval if the commit
-containing review records changes substantive candidate files.
+Record reviewed SHA, commands/evidence, findings, and disposition. The review
+commit may add only review records; any substantive candidate change requires a
+new reviewed SHA.
 
 ---
 
-### Task 5: Run publication gates and publish the branch
+### Task 6: Run publication gates, publish, merge, and clean up
 
-**Files:** Whole branch.
-
-- [ ] **Step 1: Run the focused and full validation suite**
+- [ ] **Step 1: Run focused and full validation**
 
 ```powershell
 $env:PYTHONDONTWRITEBYTECODE='1'
-python -m unittest tests.test_validate_crosswalk_readiness -v
+python -m unittest tests.test_pci_dss_source_readiness -v
+python -m unittest tests.test_render_pci_dss_mapping_go_no_go -v
 python -m unittest discover -s tests -v
-python tools/validate_crosswalk_readiness.py --check
+python tools/render_pci_dss_mapping_go_no_go.py --check
 python tools/validate_crosswalks.py --check
 python tools/validate_crosswalks.py --check --baseline-ref origin/main
 python tools/validate_assessment.py --check
@@ -402,40 +393,23 @@ git diff --check origin/main..HEAD
 git status --short
 ```
 
-Expected: all gates pass, no cache directories or generated output are present,
-and the worktree is clean.
-
 - [ ] **Step 2: Review the complete branch diff**
 
-```powershell
-git diff --stat origin/main..HEAD
-git diff origin/main..HEAD
-git log --oneline origin/main..HEAD
-```
+Confirm no PCI source content, inventory, mapping, registry record, generated
+catalog change, cache, or build output exists.
 
-Confirm that no PCI DSS source material, provision inventory, mapping snapshot,
-registry record, or generated catalog change is present.
+- [ ] **Step 3: Push and open a ready PR**
 
-- [ ] **Step 3: Push and open a reviewable PR**
-
-Push `agent/pci-dss-readiness`, open a ready pull request linked to issue 58,
-and include:
-
-- decision and rationale;
-- exact blocker/re-entry summary;
-- source and rights evidence;
-- unchanged crosswalk catalog counts;
-- exact reviewed head SHA;
-- full validation results; and
-- `Closes #58`.
+Include decision, blockers/re-entry tests, source and rights evidence, unchanged
+catalog counts, exact reviewed head SHA, validation results, and `Closes #58`.
 
 - [ ] **Step 4: Verify and merge**
 
 Require passing GitHub checks, clean merge state, and PR head equality with the
-reviewed SHA before merge. Merge only when all are satisfied.
+reviewed SHA before merge.
 
 - [ ] **Step 5: Validate and clean main**
 
-Update local `main`, rerun proportional readiness/crosswalk/link/full-suite
-validation, verify a clean worktree, and remove the temporary branch and
-worktree. Do not disturb unrelated historical worktree metadata.
+Update local `main`, rerun proportional validation, verify a clean worktree,
+and remove this temporary branch/worktree without disturbing unrelated
+historical worktree metadata.
