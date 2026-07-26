@@ -1,6 +1,6 @@
 # PCI DSS exact-SHA source and inventory review
 
-**Reviewed candidate:** `1c620dd6a782669d0cba9dca3987e1ecb9f416de`
+**Reviewed candidate:** `229c9e2a02156138c2c682e5d5431e0baaaa630d`
 
 **Reviewer:** Independent Codex source and inventory reviewer
 
@@ -11,7 +11,7 @@
 ## Scope and independence
 
 The reviewer examined the complete
-`origin/main..1c620dd6a782669d0cba9dca3987e1ecb9f416de` branch diff and
+`origin/main..229c9e2a02156138c2c682e5d5431e0baaaa630d` branch diff and
 the exact candidate blobs. The review covered public-source identity, source
 drift, artifact and inventory claims, HOLD blockers, catalog invariance, and
 the absence of substantive PCI DSS mapping artifacts. The reviewer made no
@@ -32,9 +32,9 @@ was not accepted and protected PCI DSS bytes were not retrieved.
 - The source-readiness oracle SHA-256 matched
   `fc513985138689085a9ceb8794edc12313a0a5a1f7e47c936d988bbeac294904`.
 - The readiness matrix SHA-256 matched
-  `e2cc73829aae793fe2228929981c661d2ad87fe8e01d40b470de173777879e7d`.
+  `5dfd3dbd487180121ef530d69c269eedfcfb683642ded080f096a317d84618f4`.
 - The generated review SHA-256 matched
-  `56b063180d7b1d24fb330a14f2788aaa127f7e53b82070977e1b9206199ee9e4`.
+  `0920d91910361044064e472e161a044991ed6a0c97180ed2a6d9e46dfab9f652`.
 - The candidate correctly records the protected artifact checksum, byte length,
   page count, and provision inventory as unavailable rather than inferring
   them from public catalog metadata.
@@ -60,5 +60,5 @@ passed on the reviewed candidate.
 - Minor: 0
 
 This approval applies only to candidate
-`1c620dd6a782669d0cba9dca3987e1ecb9f416de`. Any substantive candidate
+`229c9e2a02156138c2c682e5d5431e0baaaa630d`. Any substantive candidate
 change requires a new independent source and inventory review.

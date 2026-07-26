@@ -1,6 +1,6 @@
 # PCI DSS exact-SHA rights and overclaiming review
 
-**Reviewed candidate:** `1c620dd6a782669d0cba9dca3987e1ecb9f416de`
+**Reviewed candidate:** `229c9e2a02156138c2c682e5d5431e0baaaa630d`
 
 **Reviewer:** Independent Codex publication-rights, security, and overclaiming reviewer
 
@@ -11,7 +11,7 @@
 ## Scope and independence
 
 The reviewer examined the complete
-`origin/main..1c620dd6a782669d0cba9dca3987e1ecb9f416de` branch diff and
+`origin/main..229c9e2a02156138c2c682e5d5431e0baaaa630d` branch diff and
 the exact candidate blobs. The review covered the publication-rights basis,
 field-class partition, future mapper and reviewer contract, mechanical HOLD
 decision, security boundary, and prohibited claims. The reviewer made no
@@ -27,7 +27,10 @@ DSS bytes were not retrieved.
 
 - The matrix binds publication-rights review commit
   `5bc0d82ea6dd7af3391497fc4b75be18ceb505a6`, that commit is an
-  ancestor of the candidate, and its rights-review blob is unchanged.
+  ancestor of the candidate, and its canonical rights-review blob is bound by
+  SHA-256 and byte-identical to the live review.
+- HOLD and GO are both unpublishable while any Critical or Important review
+  finding remains open.
 - The six mapping-field classes are exhaustive and disjoint. Only
   `official_links` is permitted; identifiers, titles, structural inventory,
   paraphrases, and derivative mapping analysis are prohibited.
@@ -55,7 +58,7 @@ DSS bytes were not retrieved.
 
 ## Verification
 
-The reviewer independently ran 30 focused tests, the renderer check, crosswalk
+The reviewer independently ran 33 focused tests, the renderer check, crosswalk
 validation, link validation, and the whole-branch diff check. All passed on the
 reviewed candidate.
 
@@ -66,5 +69,5 @@ reviewed candidate.
 - Minor: 0
 
 This approval applies only to candidate
-`1c620dd6a782669d0cba9dca3987e1ecb9f416de`. Any substantive candidate
+`229c9e2a02156138c2c682e5d5431e0baaaa630d`. Any substantive candidate
 change requires a new independent rights, security, and overclaiming review.
