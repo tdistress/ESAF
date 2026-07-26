@@ -53,10 +53,13 @@ Require the rights review to contain:
 - reviewer independence from any future mapper;
 - authorized access to the reviewed public rights sources and a
   publication-basis-reviewed attestation;
-- an exhaustive, disjoint partition of identifiers, titles,
+- an exhaustive, disjoint partition of PCI DSS provision identifiers, provision titles,
   structural_inventory, paraphrases, derivative_mapping_analysis, and
   official_links;
 - only `official_links` permitted and all other classes prohibited;
+- a separately approved, closed set of minimal public bibliographic fields:
+  publisher/publication names, document reference, version, language, format,
+  public dates/status flags, retrieval metadata, and official URLs;
 - case-specific Materials License Agreement trigger; and
 - the non-legal-advice and no-statutory-exception-decision boundaries.
 
@@ -328,7 +331,7 @@ git commit -m "docs: publish PCI DSS readiness hold"
 
 ---
 
-### Task 5: Independently review the exact candidate
+### Task 5: Independently review the substantive candidate
 
 **Files:**
 
@@ -338,7 +341,7 @@ git commit -m "docs: publish PCI DSS readiness hold"
   `docs/superpowers/reviews/2026-07-25-pci-dss-exact-sha-rights-overclaiming-review.md`
 - Modify other files only to resolve findings test-first.
 
-- [ ] **Step 1: Freeze clean candidate SHA and full diff**
+- [ ] **Step 1: Freeze the clean substantive candidate SHA and full diff**
 
 ```powershell
 git status --short
@@ -364,11 +367,21 @@ certification.
 Add focused regression tests before practical fixes. After any candidate
 change, commit, record the new SHA, and redispatch both reviews.
 
-- [ ] **Step 5: Commit exact-SHA review records**
+- [ ] **Step 5: Commit substantive-candidate review records**
 
-Record reviewed SHA, commands/evidence, findings, and disposition. The review
-commit may add only review records; any substantive candidate change requires a
-new reviewed SHA.
+Record the substantive reviewed SHA, commands/evidence, findings, and
+disposition. The review-only commit may add only those review records. Any
+substantive candidate change requires a new reviewed SHA and both reviews to be
+redispatched before the records are committed.
+
+- [ ] **Step 6: Review the final PR head without repository mutation**
+
+After the review-only commit, dispatch fresh independent source/inventory and
+rights/overclaiming reviews on the resulting final PR head. Record that final
+40-character SHA, results, evidence, and finding counts in the PR description
+or external check evidence. Do not mutate the repository afterward. If either
+review finds a defect, fix it, repeat the substantive-candidate review cycle,
+commit new review records, and then rerun both final-head reviews.
 
 ---
 
@@ -401,12 +414,13 @@ catalog change, cache, or build output exists.
 - [ ] **Step 3: Push and open a ready PR**
 
 Include decision, blockers/re-entry tests, source and rights evidence, unchanged
-catalog counts, exact reviewed head SHA, validation results, and `Closes #58`.
+catalog counts, the substantive reviewed SHA, the final externally reviewed PR
+head SHA and results, validation results, and `Closes #58`.
 
 - [ ] **Step 4: Verify and merge**
 
 Require passing GitHub checks, clean merge state, and PR head equality with the
-reviewed SHA before merge.
+final externally reviewed SHA before merge.
 
 - [ ] **Step 5: Validate and clean main**
 

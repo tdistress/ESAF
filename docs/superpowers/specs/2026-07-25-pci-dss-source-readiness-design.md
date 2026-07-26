@@ -52,10 +52,18 @@ six ESAF-1600 field classes exhaustively and without overlap:
 - derivative mapping analysis; and
 - official links.
 
-For the current HOLD, only official links are permitted. All other field
-classes are prohibited pending case-specific written PCI SSC permission. This
-is a fail-closed publication-control decision based on absence of affirmative
-permission, not legal advice or a conclusion about statutory exceptions.
+For the current HOLD, only official links are permitted among those six mapping
+field classes. "Identifiers" and "titles" mean PCI DSS provision identifiers
+and provision titles, not the minimal public bibliographic metadata needed to
+identify the publication. The review shall separately approve this closed
+bibliographic set: publisher name, publication-family name, document reference,
+version label, language, format, public catalog dates and status flags,
+announcement/retirement/effective dates, retrieval metadata, and official
+URLs. All PCI DSS provision identifiers, provision titles, structural
+inventory, paraphrases, and derivative mapping analysis remain prohibited
+pending case-specific written permission. This is a fail-closed
+publication-control decision based on absence of affirmative permission, not
+legal advice or a conclusion about statutory exceptions.
 
 The review shall cite:
 
@@ -252,7 +260,8 @@ Focused tests shall begin red and shall enforce:
 - exact closed oracle and matrix key sets;
 - source identity, URL, date-precision, protected-access, and null-artifact
   invariants;
-- the rights-review path, commit ancestry, six-element partition, independence,
+- the rights-review path, commit ancestry, six-element provision-field
+  partition, separately approved closed bibliographic set, independence,
   access, and publication-basis attestations;
 - exact gate order, status vocabulary, evidence references, blocker coverage,
   and mechanical GO/HOLD derivation;
@@ -266,9 +275,12 @@ Focused tests shall begin red and shall enforce:
 
 The full test suite, crosswalk validator with protected baseline, link
 validator, relevant repository validators, and whole-branch whitespace checks
-shall pass on the exact candidate. Independent source/inventory and
-rights/overclaiming reviews shall approve the exact final candidate SHA with no
-open Critical or Important findings.
+shall pass on the exact candidate. In-repository review records shall review the
+substantive candidate SHA. After those review-only records are committed, fresh
+independent source/inventory and rights/overclaiming reviews shall approve the
+final PR head without another repository mutation; their final-head SHA,
+results, and evidence shall be recorded in the PR description or external check
+evidence. No open Critical or Important findings may remain.
 
 ## Repository presentation
 
