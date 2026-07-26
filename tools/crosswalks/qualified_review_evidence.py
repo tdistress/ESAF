@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import ctypes
+from ctypes import wintypes
 from dataclasses import dataclass
 from datetime import date
 import hashlib
@@ -1136,7 +1138,7 @@ def _is_alias(path: Path, stat_result: os.stat_result) -> bool:
     return bool(is_junction is not None and is_junction())
 
 
-def _inspect_lexical_entry(path: Path, subject: str) -> int:
+def _inspect_lexical_entry(path: Path, subject: str) -> os.stat_result:
     missing = False
     unavailable = False
     try:
@@ -1149,7 +1151,7 @@ def _inspect_lexical_entry(path: Path, subject: str) -> int:
     else:
         if alias:
             raise EvidenceError(f"{subject} must not use a filesystem alias")
-        return result.st_mode
+        return result
     if missing:
         raise EvidenceError(f"{subject} is missing")
     if unavailable:
@@ -1178,18 +1180,73 @@ def _exact_directory_name(parent: Path, name: str, subject: str) -> None:
         raise EvidenceError(f"{subject} does not use a canonical path name")
 
 
-def _inspect_complete_ancestor_chain(root: Path) -> Path:
+@dataclass(frozen=True)
+class _DirectorySnapshot:
+    path: Path
+    state: tuple[tuple[int, int], int]
+
+
+@dataclass(frozen=True)
+class _ValidatedExternalFile:
+    root: Path
+    canonical: PurePosixPath
+    resolved: Path
+    ancestor_directories: tuple[_DirectorySnapshot, ...]
+    relative_directories: tuple[_DirectorySnapshot, ...]
+    file_state: tuple[tuple[int, int], int, int]
+
+
+@dataclass(frozen=True)
+class _AnchoredDirectoryChain:
+    handles: tuple[int, ...]
+    parent_descriptor: int | None
+
+
+def _stable_directory_state(
+    stat_result: os.stat_result,
+    subject: str,
+) -> tuple[tuple[int, int], int]:
+    if not stat.S_ISDIR(stat_result.st_mode):
+        raise EvidenceError(f"{subject} must be a directory")
+    link_count = getattr(stat_result, "st_nlink", None)
+    if type(link_count) is not int or link_count <= 0:
+        raise EvidenceError(f"{subject} link count is unavailable")
+    return _file_identity(stat_result, subject), link_count
+
+
+def _inspect_complete_ancestor_chain(
+    root: Path,
+) -> tuple[Path, tuple[_DirectorySnapshot, ...]]:
     absolute = Path(os.path.abspath(root))
     parts = absolute.parts
     if not parts:
         raise EvidenceError("campaign root is not an absolute path")
     current = Path(parts[0])
-    _inspect_lexical_entry(current, "campaign root ancestor")
+    snapshots = [
+        _DirectorySnapshot(
+            current,
+            _stable_directory_state(
+                _inspect_lexical_entry(current, "campaign root ancestor"),
+                "campaign root ancestor",
+            ),
+        )
+    ]
     for part in parts[1:]:
         _exact_directory_name(current, part, "campaign root ancestor")
         current /= part
-        _inspect_lexical_entry(current, "campaign root ancestor")
-    return absolute
+        snapshots.append(
+            _DirectorySnapshot(
+                current,
+                _stable_directory_state(
+                    _inspect_lexical_entry(
+                        current,
+                        "campaign root ancestor",
+                    ),
+                    "campaign root ancestor",
+                ),
+            )
+        )
+    return absolute, tuple(snapshots)
 
 
 def _require_canonical_case(root: Path, relative: PurePosixPath) -> None:
@@ -1220,22 +1277,29 @@ def _require_canonical_case(root: Path, relative: PurePosixPath) -> None:
         current = current / part
 
 
-def resolve_external_regular_file(
+def _validate_external_regular_file(
     root: Path,
     relative: str,
     worktrees: tuple[Path, ...],
-) -> Path:
-    """Resolve one canonical, unaliased, single-link external regular file."""
+) -> _ValidatedExternalFile:
     canonical = _canonical_relative_path(relative, "evidence path")
-    lexical_root = _inspect_complete_ancestor_chain(root)
+    lexical_root, ancestor_snapshots = _inspect_complete_ancestor_chain(root)
     _require_canonical_case(lexical_root, canonical)
 
     candidate = lexical_root.joinpath(*canonical.parts)
     current = lexical_root
+    relative_directories: list[_DirectorySnapshot] = []
     for index, part in enumerate(canonical.parts):
         current /= part
         subject = "/".join(canonical.parts[: index + 1])
-        _inspect_lexical_entry(current, subject)
+        observed = _inspect_lexical_entry(current, subject)
+        if index < len(canonical.parts) - 1:
+            relative_directories.append(
+                _DirectorySnapshot(
+                    current,
+                    _stable_directory_state(observed, subject),
+                )
+            )
 
     resolution_failed = False
     try:
@@ -1278,7 +1342,23 @@ def resolve_external_regular_file(
         raise EvidenceError(
             f"{relative} must have exactly one filesystem link"
         )
-    return resolved
+    return _ValidatedExternalFile(
+        root=lexical_root,
+        canonical=canonical,
+        resolved=resolved,
+        ancestor_directories=ancestor_snapshots,
+        relative_directories=tuple(relative_directories),
+        file_state=_stable_file_state(stat_result, relative),
+    )
+
+
+def resolve_external_regular_file(
+    root: Path,
+    relative: str,
+    worktrees: tuple[Path, ...],
+) -> Path:
+    """Resolve one canonical, unaliased, single-link external regular file."""
+    return _validate_external_regular_file(root, relative, worktrees).resolved
 
 
 def _file_identity(
@@ -1319,37 +1399,255 @@ def _stable_file_state(
     return _file_identity(stat_result, subject), size, modified
 
 
+class _WindowsFileId128(ctypes.Structure):
+    _fields_ = [("identifier", ctypes.c_ubyte * 16)]
+
+
+class _WindowsFileIdInfo(ctypes.Structure):
+    _fields_ = [
+        ("volume_serial_number", ctypes.c_ulonglong),
+        ("file_id", _WindowsFileId128),
+    ]
+
+
+class _WindowsByHandleFileInformation(ctypes.Structure):
+    _fields_ = [
+        ("file_attributes", wintypes.DWORD),
+        ("creation_time", wintypes.FILETIME),
+        ("last_access_time", wintypes.FILETIME),
+        ("last_write_time", wintypes.FILETIME),
+        ("volume_serial_number", wintypes.DWORD),
+        ("file_size_high", wintypes.DWORD),
+        ("file_size_low", wintypes.DWORD),
+        ("number_of_links", wintypes.DWORD),
+        ("file_index_high", wintypes.DWORD),
+        ("file_index_low", wintypes.DWORD),
+    ]
+
+
+def _windows_kernel32() -> object:
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel32.CreateFileW.argtypes = [
+        wintypes.LPCWSTR,
+        wintypes.DWORD,
+        wintypes.DWORD,
+        ctypes.c_void_p,
+        wintypes.DWORD,
+        wintypes.DWORD,
+        wintypes.HANDLE,
+    ]
+    kernel32.CreateFileW.restype = wintypes.HANDLE
+    kernel32.GetFileInformationByHandleEx.argtypes = [
+        wintypes.HANDLE,
+        ctypes.c_int,
+        ctypes.c_void_p,
+        wintypes.DWORD,
+    ]
+    kernel32.GetFileInformationByHandleEx.restype = wintypes.BOOL
+    kernel32.GetFileInformationByHandle.argtypes = [
+        wintypes.HANDLE,
+        ctypes.POINTER(_WindowsByHandleFileInformation),
+    ]
+    kernel32.GetFileInformationByHandle.restype = wintypes.BOOL
+    kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
+    kernel32.CloseHandle.restype = wintypes.BOOL
+    return kernel32
+
+
+def _windows_directory_handle_state(
+    kernel32: object,
+    handle: int,
+    subject: str,
+) -> tuple[tuple[int, int], int]:
+    identity = _WindowsFileIdInfo()
+    information = _WindowsByHandleFileInformation()
+    identity_ok = kernel32.GetFileInformationByHandleEx(
+        handle,
+        18,
+        ctypes.byref(identity),
+        ctypes.sizeof(identity),
+    )
+    information_ok = kernel32.GetFileInformationByHandle(
+        handle,
+        ctypes.byref(information),
+    )
+    if not identity_ok or not information_ok:
+        raise EvidenceError(f"{subject} handle cannot be inspected")
+    directory_flag = 0x00000010
+    reparse_flag = 0x00000400
+    if (
+        not information.file_attributes & directory_flag
+        or information.file_attributes & reparse_flag
+    ):
+        raise EvidenceError(f"{subject} handle is not a regular directory")
+    file_id = int.from_bytes(
+        bytes(identity.file_id.identifier),
+        "little",
+    )
+    if information.number_of_links <= 0 or file_id <= 0:
+        raise EvidenceError(f"{subject} handle identity is unavailable")
+    return (
+        (identity.volume_serial_number, file_id),
+        information.number_of_links,
+    )
+
+
+def _close_anchored_directory_chain(
+    chain: _AnchoredDirectoryChain,
+) -> bool:
+    if os.name == "nt":
+        kernel32 = _windows_kernel32()
+        closed = True
+        for handle in reversed(chain.handles):
+            if not kernel32.CloseHandle(handle):
+                closed = False
+        return closed
+    closed = True
+    for descriptor in reversed(chain.handles):
+        try:
+            os.close(descriptor)
+        except OSError:
+            closed = False
+    return closed
+
+
+def _open_windows_directory_chain(
+    validated: _ValidatedExternalFile,
+) -> _AnchoredDirectoryChain:
+    kernel32 = _windows_kernel32()
+    desired_access = 0x00000080
+    share_read_write = 0x00000001 | 0x00000002
+    open_existing = 3
+    flags = 0x02000000 | 0x00200000
+    invalid_handle = ctypes.c_void_p(-1).value
+    handles: list[int] = []
+    snapshots = (
+        validated.ancestor_directories + validated.relative_directories
+    )
+    failure: str | None = None
+    for snapshot in snapshots:
+        handle = kernel32.CreateFileW(
+            str(snapshot.path),
+            desired_access,
+            share_read_write,
+            None,
+            open_existing,
+            flags,
+            None,
+        )
+        if handle in {None, invalid_handle}:
+            failure = "directory chain cannot be opened safely"
+            break
+        handle_value = int(handle)
+        handles.append(handle_value)
+        try:
+            observed = _windows_directory_handle_state(
+                kernel32,
+                handle_value,
+                "directory chain",
+            )
+        except EvidenceError:
+            failure = "directory chain contains an alias or changed entry"
+            break
+        if observed != snapshot.state:
+            failure = "directory chain changed before it was anchored"
+            break
+    if failure is not None:
+        chain = _AnchoredDirectoryChain(tuple(handles), None)
+        _close_anchored_directory_chain(chain)
+        raise EvidenceError(failure)
+    return _AnchoredDirectoryChain(tuple(handles), None)
+
+
+def _open_posix_directory_chain(
+    validated: _ValidatedExternalFile,
+) -> _AnchoredDirectoryChain:
+    if (
+        not hasattr(os, "O_DIRECTORY")
+        or not hasattr(os, "O_NOFOLLOW")
+        or os.open not in os.supports_dir_fd
+        or os.stat not in os.supports_dir_fd
+    ):
+        raise EvidenceError(
+            "platform cannot provide anchored no-follow directory traversal"
+        )
+    root_snapshot = validated.ancestor_directories[-1]
+    flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+    handles: list[int] = []
+    failure: str | None = None
+    try:
+        root_descriptor = os.open(validated.root, flags)
+        handles.append(root_descriptor)
+        if (
+            _stable_directory_state(
+                os.fstat(root_descriptor),
+                "campaign root",
+            )
+            != root_snapshot.state
+        ):
+            failure = "campaign root changed before it was anchored"
+        parent = root_descriptor
+        if failure is None:
+            for part, snapshot in zip(
+                validated.canonical.parts[:-1],
+                validated.relative_directories,
+                strict=True,
+            ):
+                descriptor = os.open(part, flags, dir_fd=parent)
+                handles.append(descriptor)
+                if (
+                    _stable_directory_state(
+                        os.fstat(descriptor),
+                        "campaign directory",
+                    )
+                    != snapshot.state
+                ):
+                    failure = "campaign directory changed before it was anchored"
+                    break
+                parent = descriptor
+    except (OSError, EvidenceError):
+        failure = failure or "directory chain cannot be opened safely"
+    if failure is not None:
+        chain = _AnchoredDirectoryChain(tuple(handles), None)
+        _close_anchored_directory_chain(chain)
+        raise EvidenceError(failure)
+    return _AnchoredDirectoryChain(tuple(handles), handles[-1])
+
+
+def _open_anchored_directory_chain(
+    validated: _ValidatedExternalFile,
+) -> _AnchoredDirectoryChain:
+    if os.name == "nt":
+        return _open_windows_directory_chain(validated)
+    return _open_posix_directory_chain(validated)
+
+
 def read_external_regular_file(
     root: Path,
     relative: str,
     worktrees: tuple[Path, ...],
 ) -> bytes:
     """Read one external file through a verified, stable filesystem handle."""
-    resolved = resolve_external_regular_file(root, relative, worktrees)
-    pre_failed = False
-    try:
-        before = resolved.lstat()
-    except OSError:
-        pre_failed = True
-    if pre_failed:
-        raise EvidenceError(f"{relative} cannot be inspected")
-    before_state = _stable_file_state(before, relative)
-
+    validated = _validate_external_regular_file(root, relative, worktrees)
+    chain = _open_anchored_directory_chain(validated)
     flags = os.O_RDONLY | getattr(os, "O_BINARY", 0)
     flags |= getattr(os, "O_NOFOLLOW", 0)
-    open_failed = False
     descriptor: int | None = None
+    validation_failure: str | None = None
+    operational_failure = False
+    close_failure = False
     try:
-        descriptor = os.open(resolved, flags)
-    except OSError:
-        open_failed = True
-    if open_failed or descriptor is None:
-        raise EvidenceError(f"{relative} cannot be opened safely")
-
-    try:
+        if os.name == "nt":
+            descriptor = os.open(validated.resolved, flags)
+        else:
+            descriptor = os.open(
+                validated.canonical.name,
+                flags,
+                dir_fd=chain.parent_descriptor,
+            )
         opened = os.fstat(descriptor)
         opened_state = _stable_file_state(opened, relative)
-        if opened_state != before_state:
+        if opened_state != validated.file_state:
             raise EvidenceError(f"{relative} changed before it was opened")
         chunks: list[bytes] = []
         while True:
@@ -1359,37 +1657,38 @@ def read_external_regular_file(
             chunks.append(chunk)
         content = b"".join(chunks)
         after_handle = os.fstat(descriptor)
-    except EvidenceError:
-        raise
-    except OSError:
-        read_failed = True
-    else:
-        read_failed = False
-    finally:
-        try:
-            os.close(descriptor)
-        except OSError:
-            close_failed = True
+        if os.name == "nt":
+            after_path = validated.resolved.lstat()
         else:
-            close_failed = False
-    if read_failed or close_failed:
-        raise EvidenceError(f"{relative} cannot be read safely")
-
-    handle_state = _stable_file_state(after_handle, relative)
-    path_failed = False
-    try:
-        after_path = resolved.lstat()
+            after_path = os.stat(
+                validated.canonical.name,
+                dir_fd=chain.parent_descriptor,
+                follow_symlinks=False,
+            )
+        handle_state = _stable_file_state(after_handle, relative)
+        path_state = _stable_file_state(after_path, relative)
+        if (
+            handle_state != opened_state
+            or path_state != handle_state
+            or len(content) != handle_state[1]
+        ):
+            raise EvidenceError(f"{relative} changed while it was read")
+    except EvidenceError as error:
+        validation_failure = str(error)
     except OSError:
-        path_failed = True
-    if path_failed:
-        raise EvidenceError(f"{relative} changed while it was read")
-    path_state = _stable_file_state(after_path, relative)
-    if (
-        handle_state != opened_state
-        or path_state != handle_state
-        or len(content) != handle_state[1]
-    ):
-        raise EvidenceError(f"{relative} changed while it was read")
+        operational_failure = True
+    finally:
+        if descriptor is not None:
+            try:
+                os.close(descriptor)
+            except OSError:
+                close_failure = True
+        if not _close_anchored_directory_chain(chain):
+            close_failure = True
+    if validation_failure is not None:
+        raise EvidenceError(validation_failure)
+    if operational_failure or close_failure:
+        raise EvidenceError(f"{relative} cannot be read safely")
     return content
 
 
@@ -1415,7 +1714,7 @@ def _campaign_tree_entries(
     root: Path,
     expected_directories: set[str],
 ) -> tuple[str, ...]:
-    root = _inspect_complete_ancestor_chain(root)
+    root, _ancestor_snapshots = _inspect_complete_ancestor_chain(root)
     root_unavailable = False
     try:
         root_mode = root.stat(follow_symlinks=False).st_mode
@@ -1467,8 +1766,8 @@ def _campaign_tree_entries(
                 )
             seen_casefold[folded] = relative
             path = Path(entry.path)
-            mode = _inspect_lexical_entry(path, relative)
-            if stat.S_ISDIR(mode):
+            observed = _inspect_lexical_entry(path, relative)
+            if stat.S_ISDIR(observed.st_mode):
                 if relative not in expected_directories:
                     raise EvidenceError(
                         f"{relative} is outside the campaign allowlist"

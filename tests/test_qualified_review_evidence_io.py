@@ -15,6 +15,7 @@ import zipfile
 
 from jsonschema import Draft202012Validator
 
+import tools.crosswalks.qualified_review_evidence as evidence_io
 from tools.crosswalks.qualified_review_evidence import (
     AttestationEvidence,
     build_campaign_archive,
@@ -524,6 +525,123 @@ class ExternalPathTests(unittest.TestCase):
                 self.skipTest("Win32 trailing-dot alias is unavailable")
             with self.assertRaisesRegex(EvidenceError, "canonical"):
                 resolve_external_regular_file(root, "evidence.md.", ())
+
+    def test_rejects_root_swapped_before_anchored_open_on_windows(self) -> None:
+        if os.name != "nt":
+            self.skipTest("Windows anchored-directory fixture")
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            root = base / "campaign"
+            original = base / "campaign-original"
+            redirect = base / "redirect"
+            root.mkdir()
+            redirect.mkdir()
+            (root / "evidence.md").write_bytes(b"validated\n")
+            (redirect / "evidence.md").write_bytes(b"redirected\n")
+            real_open_chain = evidence_io._open_anchored_directory_chain
+            swapped = False
+
+            def swap_then_open(validated: object) -> object:
+                nonlocal swapped
+                if not swapped:
+                    swapped = True
+                    root.rename(original)
+                    result = subprocess.run(
+                        [
+                            "cmd",
+                            "/c",
+                            "mklink",
+                            "/J",
+                            str(root),
+                            str(redirect),
+                        ],
+                        capture_output=True,
+                        text=True,
+                    )
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                return real_open_chain(validated)
+
+            try:
+                with mock.patch.object(
+                    evidence_io,
+                    "_open_anchored_directory_chain",
+                    side_effect=swap_then_open,
+                ):
+                    with self.assertRaisesRegex(EvidenceError, "changed|alias"):
+                        read_external_regular_file(
+                            root,
+                            "evidence.md",
+                            (),
+                        )
+            finally:
+                if root.is_junction():
+                    os.rmdir(root)
+                if original.exists():
+                    original.rename(root)
+            self.assertEqual(
+                (root / "evidence.md").read_bytes(),
+                b"validated\n",
+            )
+
+    def test_rejects_intermediate_swapped_before_anchored_open_on_windows(
+        self,
+    ) -> None:
+        if os.name != "nt":
+            self.skipTest("Windows anchored-directory fixture")
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            root = base / "campaign"
+            nested = root / "nested"
+            original = root / "nested-original"
+            redirect = base / "redirect"
+            nested.mkdir(parents=True)
+            redirect.mkdir()
+            (nested / "evidence.md").write_bytes(b"validated\n")
+            (redirect / "evidence.md").write_bytes(b"redirected\n")
+            real_open_chain = evidence_io._open_anchored_directory_chain
+            swapped = False
+
+            def swap_then_open(validated: object) -> object:
+                nonlocal swapped
+                if not swapped:
+                    swapped = True
+                    nested.rename(original)
+                    result = subprocess.run(
+                        [
+                            "cmd",
+                            "/c",
+                            "mklink",
+                            "/J",
+                            str(nested),
+                            str(redirect),
+                        ],
+                        capture_output=True,
+                        text=True,
+                    )
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                return real_open_chain(validated)
+
+            try:
+                with mock.patch.object(
+                    evidence_io,
+                    "_open_anchored_directory_chain",
+                    side_effect=swap_then_open,
+                ):
+                    with self.assertRaisesRegex(EvidenceError, "changed|alias"):
+                        read_external_regular_file(
+                            root,
+                            "nested/evidence.md",
+                            (),
+                        )
+            finally:
+                if nested.is_junction():
+                    os.rmdir(nested)
+                if original.exists():
+                    original.rename(nested)
+            self.assertEqual(
+                (nested / "evidence.md").read_bytes(),
+                b"validated\n",
+            )
 
     def test_rejects_hard_link(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
