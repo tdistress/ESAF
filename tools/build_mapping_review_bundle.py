@@ -14,6 +14,7 @@ import tempfile
 from typing import Literal, NamedTuple
 
 from jsonschema import Draft202012Validator, FormatChecker
+from jsonschema.exceptions import SchemaError
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -327,7 +328,7 @@ def _validate_candidate_metadata(
             schema,
             format_checker=FormatChecker(),
         )
-    except (json.JSONDecodeError, ValueError) as error:
+    except (UnicodeDecodeError, json.JSONDecodeError, SchemaError, ValueError) as error:
         raise ValueError(f"invalid candidate schema: {schema_path}") from error
     errors = sorted(
         validator.iter_errors(metadata),
@@ -337,6 +338,24 @@ def _validate_candidate_metadata(
         raise ValueError(
             f"{subject} candidate schema validation failed: {errors[0].message}"
         )
+
+
+def _candidate_validators(reader: GitReader, commit: str) -> dict[str, object]:
+    validators: dict[str, object] = {}
+    for name in (
+        "mapping-set",
+        "mapping-record",
+        "provision-inventory",
+        "lifecycle-record",
+    ):
+        path = f"crosswalks/schema/{name}.schema.json"
+        try:
+            schema = json.loads(reader.read_bytes(commit, path))
+            Draft202012Validator.check_schema(schema)
+            validators[name] = Draft202012Validator(schema, format_checker=FormatChecker())
+        except (UnicodeDecodeError, json.JSONDecodeError, SchemaError, ValueError) as error:
+            raise ValueError(f"invalid candidate schema: {path}") from error
+    return validators
 
 
 def _require_candidate_state(
@@ -354,6 +373,10 @@ def _require_candidate_state(
         raise ValueError(f"{subject} Draft content cannot contain reviewer metadata")
     if candidate_state == "reviewed" and not isinstance(reviewer, dict):
         raise ValueError(f"{subject} reviewed content requires reviewer metadata")
+    if candidate_state == "reviewed":
+        mapper = metadata.get("mapper")
+        if isinstance(mapper, dict) and reviewer.get("id") == mapper.get("id"):
+            raise ValueError(f"{subject} reviewer must differ from mapper")
 
 
 def _require_reviewed_findings(metadata: dict[str, object]) -> None:
@@ -921,7 +944,8 @@ def _lifecycle_boundary(candidate_state: CandidateState) -> str:
             "This package does not establish qualified review, certification, "
             "compliance, equivalence, endorsement, approval, or assurance. "
             "The mapping remains Draft."
-        )
+        ),
+        _candidate_validators(reader, commit),
     return (
         "This package records mapping content that is reviewed but is not "
         "approved, published, certified, compliant, equivalent, endorsed, "

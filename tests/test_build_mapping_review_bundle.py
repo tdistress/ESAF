@@ -964,6 +964,18 @@ class ReviewedCandidateAssemblyTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "candidate schema validation"):
                     self._assemble_after(relative, lambda metadata: metadata.pop("reviewer"))
 
+    def test_reviewed_candidate_rejects_mapper_self_review(self) -> None:
+        for relative in (f"{self.profile.snapshot_path}/README.md", self._record_relative()):
+            with self.subTest(relative=relative):
+                self._fresh_candidate()
+                def self_review(metadata: dict[str, object]) -> None:
+                    reviewer = metadata["reviewer"]
+                    mapper = metadata["mapper"]
+                    assert isinstance(reviewer, dict) and isinstance(mapper, dict)
+                    reviewer["id"] = mapper["id"]
+                with self.assertRaisesRegex(ValueError, "reviewer must differ from mapper"):
+                    self._assemble_after(relative, self_review)
+
     def test_reviewed_candidate_rejects_critical_and_important_findings(self) -> None:
         readme = f"{self.profile.snapshot_path}/README.md"
         for severity, status in (
