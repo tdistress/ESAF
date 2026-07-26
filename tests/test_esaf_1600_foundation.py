@@ -435,6 +435,7 @@ class Esaf1600FoundationTests(unittest.TestCase):
             "ROADMAP.md",
             "project/**",
             "docs/superpowers/reviews/**",
+            "docs/superpowers/specs/**",
             "architectures/**",
             "assessment/**",
             "controls/**",
@@ -450,6 +451,7 @@ class Esaf1600FoundationTests(unittest.TestCase):
             "tools/validate_controls.py",
             "tools/validate_crosswalks.py",
             "tools/validate_profiles.py",
+            "tools/render_pci_dss_mapping_go_no_go.py",
             "requirements-dev.txt",
         ]
         for event in ("pull_request", "push"):
@@ -472,6 +474,12 @@ class Esaf1600FoundationTests(unittest.TestCase):
         self.assertEqual(current, {
             "name": "Validate crosswalk catalog",
             "run": "python tools/validate_crosswalks.py --check",
+        })
+
+        pci_readiness = unique_step("Validate PCI DSS readiness review")
+        self.assertEqual(pci_readiness, {
+            "name": "Validate PCI DSS readiness review",
+            "run": "python tools/render_pci_dss_mapping_go_no_go.py --check",
         })
 
         pull_request = unique_step("Validate crosswalk history on pull request")
