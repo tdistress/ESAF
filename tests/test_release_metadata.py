@@ -341,17 +341,17 @@ class ReleaseMetadataTests(unittest.TestCase):
             backlog.count("Complete coordinated qualified review"),
         )
         review = backlog.index("Complete coordinated qualified review")
-        pci = backlog.index("Complete PCI DSS source readiness")
+        pci = backlog.index("[Issue 58]")
         self.assertNotIn("Define the minimum ESAF-1500 assessment foundation", backlog)
         self.assertLess(review, pci)
         for mapping_set_id in EXPECTED_MAPPING_SET_IDS:
             with self.subTest(mapping_set_id=mapping_set_id):
                 self.assertIn(mapping_set_id, backlog)
-        self.assertIn("official source boundary", backlog)
-        self.assertIn("publication rights", backlog)
-        self.assertIn("qualified-review requirements", backlog)
-        self.assertIn("approved `GO` scope or evidenced", backlog)
-        self.assertIn("`HOLD` condition", backlog)
+        self.assertNotIn("Complete PCI DSS source readiness", backlog)
+        self.assertIn("completed through the evidenced `HOLD`", backlog)
+        self.assertIn("publication-rights boundary", backlog)
+        self.assertTrue(contains_normalized_phrase(backlog, "qualified-review contract"))
+        self.assertIn("without\n  creating a PCI DSS mapping artifact", backlog)
         self.assertNotIn("This supersedes the former initiative", backlog)
 
     def test_hitrust_is_readiness_gated_and_not_a_v05_blocker(self) -> None:
