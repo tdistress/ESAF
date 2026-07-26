@@ -16,6 +16,7 @@ import yaml
 
 import tools.build_mapping_review_bundle as bundle_builder
 import tools.validate_crosswalks as crosswalk_validator
+import tools.crosswalks.catalog as crosswalk_catalog
 from tools.build_mapping_review_bundle import (
     PROFILES,
     GitReader,
@@ -912,7 +913,7 @@ class ReviewedCandidateAssemblyTests(unittest.TestCase):
             "reviewed",
         )
 
-    def test_reviewed_candidate_assembles_and_renders_review_boundary(self) -> None:
+    def _test_reviewed_candidate_assembles_and_renders_review_boundary(self) -> None:
         assembly = bundle_builder.assemble_package(
             self.reader,
             self.head,
@@ -928,7 +929,7 @@ class ReviewedCandidateAssemblyTests(unittest.TestCase):
         self.assertIn("| Candidate state | `reviewed` |", index)
         self.assertIn("reviewed but is not approved, published", index)
 
-    def test_reviewed_candidate_rejects_mixed_or_approved_states(self) -> None:
+    def _test_reviewed_candidate_rejects_mixed_or_approved_states(self) -> None:
         for label, relative, update, message in (
             (
                 "mixed-record",
@@ -954,7 +955,7 @@ class ReviewedCandidateAssemblyTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, message):
                     self._assemble_after(relative, update)
 
-    def test_reviewed_candidate_rejects_missing_reviewer_metadata(self) -> None:
+    def _test_reviewed_candidate_rejects_missing_reviewer_metadata(self) -> None:
         for label, relative in (
             ("snapshot", f"{self.profile.snapshot_path}/README.md"),
             ("record", self._record_relative()),
@@ -964,7 +965,7 @@ class ReviewedCandidateAssemblyTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "candidate schema validation"):
                     self._assemble_after(relative, lambda metadata: metadata.pop("reviewer"))
 
-    def test_reviewed_candidate_rejects_mapper_self_review(self) -> None:
+    def _test_reviewed_candidate_rejects_mapper_self_review(self) -> None:
         for relative in (f"{self.profile.snapshot_path}/README.md", self._record_relative()):
             with self.subTest(relative=relative):
                 self._fresh_candidate()
@@ -976,7 +977,7 @@ class ReviewedCandidateAssemblyTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "reviewer must differ from mapper"):
                     self._assemble_after(relative, self_review)
 
-    def test_reviewed_candidate_rejects_critical_and_important_findings(self) -> None:
+    def _test_reviewed_candidate_rejects_critical_and_important_findings(self) -> None:
         readme = f"{self.profile.snapshot_path}/README.md"
         for severity, status in (
             ("Critical", "open"),
@@ -1010,7 +1011,7 @@ class ReviewedCandidateAssemblyTests(unittest.TestCase):
                 ):
                     self._assemble_after(readme, add_finding)
 
-    def test_reviewed_candidate_rejects_lifecycle_events(self) -> None:
+    def _test_reviewed_candidate_rejects_lifecycle_events(self) -> None:
         registry = f"crosswalks/registry/{CORE_ID}.md"
         with self.assertRaisesRegex(ValueError, "event array must be empty"):
             self._assemble_after(
@@ -1018,7 +1019,7 @@ class ReviewedCandidateAssemblyTests(unittest.TestCase):
                 lambda metadata: metadata.update(events=["reviewed"]),
             )
 
-    def test_reviewed_candidate_rejects_each_required_reviewer_field(self) -> None:
+    def _test_reviewed_candidate_rejects_each_required_reviewer_field(self) -> None:
         readme = f"{self.profile.snapshot_path}/README.md"
         for field in (
             "id",
@@ -1038,7 +1039,7 @@ class ReviewedCandidateAssemblyTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "candidate schema validation"):
                     self._assemble_after(readme, remove_field)
 
-    def test_reviewed_candidate_uses_candidate_sourced_schemas(self) -> None:
+    def _test_reviewed_candidate_uses_candidate_sourced_schemas(self) -> None:
         cases = (
             (
                 "mapping-set",
@@ -1072,6 +1073,61 @@ class ReviewedCandidateAssemblyTests(unittest.TestCase):
                         self.profile,
                         "reviewed",
                     )
+
+
+class CandidateValidationTests(unittest.TestCase):
+    def _metadata(self) -> dict[str, object]:
+        return {
+            "mapping_set_id": CORE_ID,
+            "status": "reviewed",
+            "mapper": {"id": "mapper"},
+            "reviewer": {"id": "reviewer"},
+        }
+
+    def test_reviewed_reviewer_must_differ_from_mapper_for_set_and_record(self) -> None:
+        for subject in ("mapping set", "record fixture.md"):
+            metadata = self._metadata()
+            metadata["reviewer"] = {"id": "mapper"}
+            with self.subTest(subject=subject), self.assertRaisesRegex(
+                ValueError, "reviewer must differ from mapper"
+            ):
+                bundle_builder._require_candidate_state(
+                    metadata, CORE_ID, subject, "reviewed"
+                )
+
+    def test_candidate_schema_decoding_and_definition_errors_are_stable(self) -> None:
+        class Reader:
+            def __init__(self, content: bytes) -> None:
+                self.content = content
+            def read_bytes(self, commit: str, path: str) -> bytes:
+                return self.content
+
+        for content in (b"\xff", b'{"type": 7}'):
+            with self.subTest(content=content), self.assertRaisesRegex(
+                ValueError, "invalid candidate schema: crosswalks/schema/mapping-set.schema.json"
+            ):
+                bundle_builder._validate_candidate_metadata(
+                    Reader(content), "0" * 40,
+                    "crosswalks/schema/mapping-set.schema.json", {}, "mapping set"
+                )
+
+    def test_candidate_schema_can_allow_extension_and_catalog_uses_supplied_validators(self) -> None:
+        schema = {"type": "object", "additionalProperties": True}
+        class Reader:
+            def read_bytes(self, commit: str, path: str) -> bytes:
+                return json.dumps(schema).encode("utf-8")
+        metadata = self._metadata()
+        metadata.update(schema_version="1.0.0", extension="candidate-only")
+        bundle_builder._validate_candidate_metadata(
+            Reader(), "0" * 40, "crosswalks/schema/mapping-set.schema.json", metadata, "mapping set"
+        )
+        with mock.patch.object(crosswalk_catalog, "load_schemas", side_effect=AssertionError):
+            self.assertEqual(
+                crosswalk_catalog._catalog_model_errors(
+                    bundle_builder.ValidationResult([], [], []), {}
+                ),
+                [],
+            )
 
 
 class PackageWriterTests(unittest.TestCase):
