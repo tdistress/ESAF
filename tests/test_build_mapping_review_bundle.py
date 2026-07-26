@@ -913,7 +913,7 @@ class ReviewedCandidateAssemblyTests(unittest.TestCase):
             "reviewed",
         )
 
-    def _test_reviewed_candidate_assembles_and_renders_review_boundary(self) -> None:
+    def test_reviewed_candidate_assembles_and_renders_review_boundary(self) -> None:
         assembly = bundle_builder.assemble_package(
             self.reader,
             self.head,
@@ -929,7 +929,7 @@ class ReviewedCandidateAssemblyTests(unittest.TestCase):
         self.assertIn("| Candidate state | `reviewed` |", index)
         self.assertIn("reviewed but is not approved, published", index)
 
-    def _test_reviewed_candidate_rejects_mixed_or_approved_states(self) -> None:
+    def test_reviewed_candidate_rejects_mixed_or_approved_states(self) -> None:
         for label, relative, update, message in (
             (
                 "mixed-record",
@@ -1039,7 +1039,7 @@ class ReviewedCandidateAssemblyTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "candidate schema validation"):
                     self._assemble_after(readme, remove_field)
 
-    def _test_reviewed_candidate_uses_candidate_sourced_schemas(self) -> None:
+    def test_reviewed_candidate_uses_candidate_sourced_schemas(self) -> None:
         cases = (
             (
                 "mapping-set",

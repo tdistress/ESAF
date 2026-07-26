@@ -719,7 +719,8 @@ def collect_package_files(
             [],
             [mapping_model],
             [lifecycle_model],
-        )
+        ),
+        _candidate_validators(reader, commit),
     )
     matches = [
         item
@@ -944,8 +945,7 @@ def _lifecycle_boundary(candidate_state: CandidateState) -> str:
             "This package does not establish qualified review, certification, "
             "compliance, equivalence, endorsement, approval, or assurance. "
             "The mapping remains Draft."
-        ),
-        _candidate_validators(reader, commit),
+        )
     return (
         "This package records mapping content that is reviewed but is not "
         "approved, published, certified, compliant, equivalent, endorsed, "
