@@ -77,7 +77,7 @@
     "nonemptyText": {
       "type": "string",
       "minLength": 1,
-      "pattern": "^[^\\r\\n]+$"
+      "pattern": "^(?=.*\\S)[^\\r\\n]+$"
     },
     "canonicalRelativePath": {
       "type": "string",
@@ -90,7 +90,7 @@
           "pattern": "^urn:sha256:[a-f0-9]{64}$"
         },
         {
-          "pattern": "^https://[^\\s]+(?:[?&](?:version|versionId|generation|rev|sha256)=[^\\s&#]+|#[^\\s]+)$"
+          "pattern": "^https://(?=[^\\s\\\\#]*[?&](?:version|versionId|generation|rev|sha256)=[^\\s\\\\&#]+(?:[&#]|$))(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)(?:\\.(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?))*(?::[1-9][0-9]{0,4})?(?:/[^\\s\\\\?#]*)?\\?[^\\s\\\\#]*(?:#[^\\s\\\\]*)?$"
         }
       ]
     },

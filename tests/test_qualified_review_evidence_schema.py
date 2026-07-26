@@ -345,19 +345,65 @@ class QualifiedReviewEvidenceSchemaTests(unittest.TestCase):
         invalid["candidate_commit"] = "A" * 40
         self.assertFalse(self.validator.is_valid(invalid))
 
-    def test_rejects_unsafe_local_path(self) -> None:
-        invalid = deepcopy(self.valid_draft_campaign)
-        invalid["mapping_sets"][0]["roles"][0]["worksheet"]["path"] = (
-            "../outside.md"
-        )
-        self.assertFalse(self.validator.is_valid(invalid))
+    def test_rejects_unsafe_and_aliased_local_paths(self) -> None:
+        for path in (
+            "../outside.md",
+            "/absolute/worksheet.md",
+            r"C:\evidence\worksheet.md",
+            r"C:evidence\worksheet.md",
+            r"\\server\share\worksheet.md",
+            "./worksheet.md",
+            "worksheets/../outside.md",
+            "worksheets/./review.md",
+        ):
+            with self.subTest(path=path):
+                invalid = deepcopy(self.valid_draft_campaign)
+                invalid["mapping_sets"][0]["roles"][0]["worksheet"]["path"] = (
+                    path
+                )
+                self.assertFalse(self.validator.is_valid(invalid))
 
-    def test_rejects_invalid_immutable_locator(self) -> None:
-        invalid = deepcopy(self.valid_draft_campaign)
-        invalid["mapping_sets"][0]["package"]["immutable_locator"] = (
-            "file:///local/package"
-        )
-        self.assertFalse(self.validator.is_valid(invalid))
+    def test_accepts_only_versioned_https_or_lowercase_digest_urn_locators(
+        self,
+    ) -> None:
+        for locator in (
+            "https://evidence.example/object?version=1",
+            "https://evidence.example:8443/object?versionId=abc-123",
+            "https://evidence.example/object?generation=42#receipt",
+            "https://evidence.example/object?rev=release-1",
+            "https://evidence.example/object?sha256=" + "a" * 64,
+            f"urn:sha256:{'b' * 64}",
+        ):
+            with self.subTest(locator=locator):
+                valid = deepcopy(self.valid_draft_campaign)
+                valid["mapping_sets"][0]["package"]["immutable_locator"] = (
+                    locator
+                )
+                self.validator.validate(valid)
+
+    def test_rejects_malformed_mutable_or_unsafe_immutable_locators(
+        self,
+    ) -> None:
+        for locator in (
+            "https:///object?version=1",
+            "https://evidence.example/object",
+            "https://evidence.example/latest#section",
+            r"https://evidence.example\object?version=1",
+            "https://:443/object?version=1",
+            "https://bad_host.example/object?version=1",
+            "https://-bad.example/object?version=1",
+            "https://evidence.example/object?version=",
+            "http://evidence.example/object?version=1",
+            "file:///local/package?version=1",
+            "javascript:alert(1)?version=1",
+            f"URN:SHA256:{'b' * 64}",
+        ):
+            with self.subTest(locator=locator):
+                invalid = deepcopy(self.valid_draft_campaign)
+                invalid["mapping_sets"][0]["package"][
+                    "immutable_locator"
+                ] = locator
+                self.assertFalse(self.validator.is_valid(invalid))
 
     def test_rejects_missing_nested_retention_owner(self) -> None:
         invalid = deepcopy(self.valid_draft_campaign)
@@ -426,6 +472,55 @@ class QualifiedReviewEvidenceSchemaTests(unittest.TestCase):
         ]
         self.validator.validate(valid)
 
+    def test_rejects_whitespace_only_required_human_evidence(self) -> None:
+        mutations = (
+            (
+                ("mapping_sets", 0, "roles", 0, "reviewer", "identity"),
+                " ",
+            ),
+            (
+                (
+                    "mapping_sets",
+                    0,
+                    "roles",
+                    0,
+                    "reviewer",
+                    "qualification",
+                ),
+                "\t",
+            ),
+            (("retention_owner",), " \t "),
+        )
+        for path, value in mutations:
+            with self.subTest(path=path):
+                invalid = deepcopy(self.valid_draft_campaign)
+                target = invalid
+                for component in path[:-1]:
+                    target = target[component]
+                target[path[-1]] = value
+                self.assertFalse(self.validator.is_valid(invalid))
+
+    def test_rejects_whitespace_only_minor_acceptance_evidence(self) -> None:
+        finding = {
+            "finding_id": "finding-001",
+            "affected_record_ids": ["CE-001"],
+            "severity": "Minor",
+            "status": "accepted",
+            "disposition": "Accepted for this release.",
+            "resolver_or_acceptor": "Project owner",
+            "disposition_date": "2026-07-25",
+            "acceptance_rationale": "No material mapping effect.",
+        }
+        for field in ("resolver_or_acceptor", "acceptance_rationale"):
+            with self.subTest(field=field):
+                invalid = deepcopy(self.valid_draft_campaign)
+                invalid_finding = deepcopy(finding)
+                invalid_finding[field] = " \t "
+                invalid["mapping_sets"][0]["roles"][0]["worksheet"][
+                    "findings"
+                ] = [invalid_finding]
+                self.assertFalse(self.validator.is_valid(invalid))
+
     def test_conflict_disposition_tracks_conflict_declaration(self) -> None:
         invalid_without_conflict = deepcopy(self.valid_draft_campaign)
         invalid_without_conflict["mapping_sets"][0]["roles"][0]["reviewer"][
@@ -438,8 +533,18 @@ class QualifiedReviewEvidenceSchemaTests(unittest.TestCase):
             "reviewer"
         ]
         reviewer["conflicts"] = True
-        reviewer["conflict_disposition"] = ""
+        reviewer["conflict_disposition"] = " \t "
         self.assertFalse(self.validator.is_valid(invalid_with_conflict))
+
+    def test_semantic_mapping_set_and_role_uniqueness_remains_task4(
+        self,
+    ) -> None:
+        semantic_duplicate = deepcopy(self.valid_draft_campaign)
+        semantic_duplicate["mapping_sets"][1]["mapping_set_id"] = CORE_ID
+        semantic_duplicate["mapping_sets"][0]["roles"][1]["role"] = (
+            "specification_and_inventory"
+        )
+        self.validator.validate(semantic_duplicate)
 
     def test_post_correction_sha_is_conditional_on_conclusion(self) -> None:
         corrected = deepcopy(self.valid_draft_campaign)

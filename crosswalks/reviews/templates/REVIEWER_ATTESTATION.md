@@ -33,7 +33,7 @@ An unsigned blank form is not review evidence.
 | Conflicts of interest | `[REQUIRED: Yes / No; describe or state none]` |
 | Conflict disposition | `[REQUIRED: resolved disposition and authority]` |
 | Project-owner eligibility acceptance | `[REQUIRED: Accepted / Rejected]` |
-| Project-owner dual-role acceptance | `[REQUIRED: Yes / No / Not applicable]` |
+| Project-owner dual-role acceptance | `[REQUIRED: Yes / No]` |
 | Project-owner identity | `[REQUIRED]` |
 | Project-owner signature | `[REQUIRED]` |
 | Project-owner acceptance date | `[REQUIRED: YYYY-MM-DD]` |

@@ -119,6 +119,33 @@ class MappingReviewProtocolTests(unittest.TestCase):
             "project owner must explicitly accept that arrangement",
             normalized,
         )
+        self.assertIn(
+            "`Yes` maps to `dual_role_accepted: true`; `No` maps to "
+            "`dual_role_accepted: false`",
+            normalized,
+        )
+        attestation = (
+            TEMPLATES / "REVIEWER_ATTESTATION.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn(
+            "| Project-owner dual-role acceptance | "
+            "`[REQUIRED: Yes / No]` |",
+            attestation,
+        )
+        self.assertNotIn("Yes / No / Not applicable", attestation)
+
+    def test_protocol_assigns_semantic_uniqueness_to_task4(self) -> None:
+        normalized = " ".join(PROTOCOL.read_text(encoding="utf-8").split())
+        self.assertIn(
+            "Task 4 validates semantic uniqueness of mapping-set identifiers "
+            "and role assignments",
+            normalized,
+        )
+        self.assertIn(
+            "case-insensitive path aliases, symbolic links, junctions, and "
+            "hard-link aliases",
+            normalized,
+        )
 
     def test_protocol_defines_two_stage_external_campaign(self) -> None:
         text = PROTOCOL.read_text(encoding="utf-8")

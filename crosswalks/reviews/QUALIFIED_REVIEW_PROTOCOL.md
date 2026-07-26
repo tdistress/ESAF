@@ -69,12 +69,22 @@ Every review names one full 40-character Git commit SHA and one package
 manifest digest. Every repository-sourced payload byte shall be read from either the exact candidate commit or an exact historical commit SHA pinned by candidate-commit metadata; working-tree bytes shall never be used. Generated metadata shall be deterministic from those inputs. A changed candidate invalidates final review evidence.
 
 Campaign paths shall be canonical relative paths beneath the external
-campaign root. They shall not be URLs, absolute paths, aliases, traversal
-paths, symbolic links, junctions, or files inside any Git worktree. Immutable
-locators and reviewer verification locators shall be immutable HTTPS
-object/version URLs or `urn:sha256:<lowercase-digest>` values. Every campaign,
-package, attestation, and worksheet retention owner shall accept preservation
-responsibility under the recorded campaign retention commitment.
+campaign root. They shall not be URLs, absolute paths, drive or UNC paths,
+dot-segment aliases, traversal paths, symbolic links, junctions, or files
+inside any Git worktree. Immutable locators and reviewer verification locators
+shall be HTTPS URLs with a valid authority and a nonempty `version`,
+`versionId`, `generation`, `rev`, or `sha256` query value, or exact lowercase
+`urn:sha256:<lowercase-digest>` values. A fragment alone does not establish
+immutability. Every campaign, package, attestation, and worksheet retention
+owner shall accept preservation responsibility under the recorded campaign
+retention commitment.
+
+JSON Schema rejects lexical absolute, drive, UNC, traversal, and dot-segment
+paths. Task 4 validates case-insensitive path aliases, symbolic links,
+junctions, and hard-link aliases against the external campaign tree. Task 4
+validates semantic uniqueness of mapping-set identifiers and role
+assignments because JSON Schema cardinality and `uniqueItems` do not compare
+those nested identity fields.
 
 ## Reviewer eligibility and field binding
 
@@ -90,6 +100,11 @@ and true on both role records when the same identity performs both roles.
 That reviewer shall demonstrate qualifications for both roles, and the
 attestations, worksheets, findings, signatures, and conclusions remain
 separate.
+
+The blank attestation binds its dual-role answer directly to the Boolean
+manifest field: `Yes` maps to `dual_role_accepted: true`; `No` maps to
+`dual_role_accepted: false`. `Not applicable` is not an allowed answer or a
+conversion rule.
 
 The reviewed mapping-set and provision-record reviewer object uses exactly
 `id` from `reviewer.identity`, `date` from `worksheet.review_date`,
