@@ -764,6 +764,9 @@ def collect_package_files(
         "crosswalks/schema/mapping-record.schema.json": "crosswalk schema",
         "crosswalks/schema/mapping-set.schema.json": "crosswalk schema",
         "crosswalks/schema/provision-inventory.schema.json": "crosswalk schema",
+        "crosswalks/schema/qualified-review-evidence.schema.json": (
+            "qualified-review evidence schema"
+        ),
         "crosswalks/reviews/QUALIFIED_REVIEW_PROTOCOL.md": "review protocol",
         "crosswalks/reviews/templates/REVIEWER_ATTESTATION.md": "blank review template",
         "crosswalks/reviews/templates/SPECIFICATION_INVENTORY_REVIEW.md": "blank review template",

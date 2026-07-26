@@ -9,7 +9,14 @@ An unsigned blank form is not review evidence.
 | Verification locator | `[REQUIRED]` |
 | Mapping-set identifier | `[REQUIRED]` |
 | Candidate commit SHA | `[REQUIRED: 40 lowercase hexadecimal characters]` |
-| Package-manifest SHA-256 | `[REQUIRED]` |
+| Package root | `[REQUIRED: canonical relative path]` |
+| Package manifest path | `[REQUIRED: canonical relative path]` |
+| Package-manifest SHA-256 | `[REQUIRED: 64 lowercase hexadecimal characters]` |
+| Package immutable locator | `[REQUIRED: immutable HTTPS URL or urn:sha256 locator]` |
+| Package retention owner | `[REQUIRED]` |
+| Attestation path | `[REQUIRED: canonical relative path]` |
+| Attestation immutable locator | `[REQUIRED: immutable HTTPS URL or urn:sha256 locator]` |
+| Attestation retention owner | `[REQUIRED]` |
 | Review role | `[REQUIRED: Specification and inventory review / Security and overclaiming review]` |
 | Publication identity | `[REQUIRED]` |
 | Exact source version | `[REQUIRED]` |
@@ -20,8 +27,7 @@ An unsigned blank form is not review evidence.
 | Permitted elements | `[REQUIRED]` |
 | Prohibited elements | `[REQUIRED: list or state none]` |
 | Restrictions | `[REQUIRED]` |
-| Scheme qualification | `[REQUIRED]` |
-| ESAF or mapping qualification | `[REQUIRED]` |
+| Qualification | `[REQUIRED: state Scheme qualification and ESAF or mapping qualification]` |
 | Authorized source access | `[REQUIRED: Yes / No]` |
 | Independence from mapper | `[REQUIRED: Yes / No]` |
 | Conflicts of interest | `[REQUIRED: Yes / No; describe or state none]` |
@@ -33,6 +39,9 @@ An unsigned blank form is not review evidence.
 | Project-owner acceptance date | `[REQUIRED: YYYY-MM-DD]` |
 | Signature | `[REQUIRED]` |
 | Date | `[REQUIRED: YYYY-MM-DD]` |
+
+Every table value shall be single-line text without an unescaped pipe
+character. Do not add, remove, duplicate, or reorder rows.
 
 I attest that I had authorized access to the exact publication identity,
 source version, official URL, source checksum(s), and source locator(s)

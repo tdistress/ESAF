@@ -332,11 +332,33 @@ class PackagePopulationTests(unittest.TestCase):
                     "crosswalks/ESAF-1600.md",
                     "crosswalks/schema/mapping-set.schema.json",
                     "crosswalks/schema/mapping-record.schema.json",
+                    "crosswalks/schema/qualified-review-evidence.schema.json",
                     "crosswalks/reviews/QUALIFIED_REVIEW_PROTOCOL.md",
                     "crosswalks/reviews/templates/REVIEWER_ATTESTATION.md",
                     "review-metadata/catalog-entry.json",
                 ):
                     self.assertIn(required, paths)
+
+    def test_evidence_schema_is_candidate_sourced_with_exact_purpose(
+        self,
+    ) -> None:
+        schema_path = (
+            "crosswalks/schema/qualified-review-evidence.schema.json"
+        )
+        for profile in PROFILES.values():
+            with self.subTest(profile=profile.label):
+                files = collect_package_files(self.reader, self.head, profile)
+                evidence_schema = next(
+                    item for item in files if item.path == schema_path
+                )
+                self.assertEqual(
+                    evidence_schema.purpose,
+                    "qualified-review evidence schema",
+                )
+                self.assertEqual(
+                    evidence_schema.content,
+                    self.reader.read_bytes(self.head, schema_path),
+                )
 
     def test_collected_controls_match_manifest_paths_and_digests(self) -> None:
         for profile in PROFILES.values():
