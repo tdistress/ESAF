@@ -13,12 +13,16 @@ import os
 from pathlib import Path, PurePosixPath, PureWindowsPath
 import re
 import stat
-from typing import ClassVar
+from typing import ClassVar, Mapping
 import zipfile
 
 
 class EvidenceError(ValueError):
     """A sanitized qualified-review evidence validation failure."""
+
+
+class EvidenceOperationalError(EvidenceError):
+    """A sanitized external-I/O failure distinct from invalid evidence."""
 
 
 _ORIGINAL_OS_OPEN = os.open
@@ -1710,7 +1714,7 @@ def read_external_regular_file(
     if validation_failure is not None:
         raise EvidenceError(validation_failure)
     if operational_failure or close_failure:
-        raise EvidenceError(f"{relative} cannot be read safely")
+        raise EvidenceOperationalError(f"{relative} cannot be read safely")
     return content
 
 
@@ -1803,6 +1807,8 @@ def _campaign_tree_entries(
 def build_campaign_archive(
     root: Path,
     allowlist: tuple[str, ...],
+    *,
+    content_by_path: Mapping[str, bytes] | None = None,
 ) -> bytes:
     """Build a deterministic ZIP containing exactly the safe allowlisted files."""
     canonical_paths: list[str] = []
@@ -1830,9 +1836,22 @@ def build_campaign_archive(
         raise EvidenceError("campaign tree does not match the exact allowlist")
 
     payloads: list[tuple[str, bytes]] = []
-    for relative in sorted(canonical_paths):
-        content = read_external_regular_file(root, relative, ())
-        payloads.append((relative, content))
+    if content_by_path is not None:
+        if set(content_by_path) != expected_files or any(
+            not isinstance(content, bytes)
+            for content in content_by_path.values()
+        ):
+            raise EvidenceError(
+                "archive byte snapshot does not match the exact allowlist"
+            )
+        payloads.extend(
+            (relative, content_by_path[relative])
+            for relative in sorted(canonical_paths)
+        )
+    else:
+        for relative in sorted(canonical_paths):
+            content = read_external_regular_file(root, relative, ())
+            payloads.append((relative, content))
 
     output = io.BytesIO()
     with zipfile.ZipFile(
