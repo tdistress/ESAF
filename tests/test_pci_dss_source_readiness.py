@@ -3,6 +3,8 @@ import re
 import unittest
 from pathlib import Path
 
+import yaml
+
 
 ROOT = Path(__file__).resolve().parents[1]
 RIGHTS_REVIEW = (
@@ -19,6 +21,64 @@ SOURCE_ORACLE = (
     / "specs"
     / "2026-07-25-pci-dss-source-readiness-oracle.json"
 )
+TRACEABILITY = (
+    ROOT
+    / "docs"
+    / "superpowers"
+    / "reviews"
+    / "2026-07-25-pci-dss-mapping-go-no-go-traceability.md"
+)
+PCI_LANDING = ROOT / "crosswalks" / "pci-dss.md"
+BACKLOG = ROOT / "project" / "BACKLOG.md"
+TOOLS_README = ROOT / "tools" / "README.md"
+CI_WORKFLOW = ROOT / ".github" / "workflows" / "catalog-validation.yml"
+CROSSWALK_CATALOG = ROOT / "crosswalks" / "catalog.json"
+
+EXPECTED_TRACEABILITY_IDS = {
+    "I58-D1A",
+    "I58-D1B",
+    "I58-D1C",
+    "I58-D2",
+    "I58-D3",
+    "I58-D4",
+    "I58-D5",
+    "I58-GO1",
+    "I58-HOLD1",
+    "I58-A1",
+    "I58-A2",
+    "I58-A3",
+    "I58-A4",
+    "I58-B1",
+    "I58-B2",
+    "I58-B3",
+    "I58-B4",
+    "I58-B5",
+    "I58-B6",
+}
+
+EXPECTED_READINESS_LINKS = {
+    (
+        "../docs/superpowers/specs/"
+        "2026-07-25-pci-dss-source-readiness-oracle.json"
+    ),
+    (
+        "../docs/superpowers/reviews/"
+        "2026-07-25-pci-dss-publication-rights-review.md"
+    ),
+    (
+        "../docs/superpowers/specs/"
+        "2026-07-25-pci-dss-mapping-readiness-matrix.json"
+    ),
+    (
+        "../docs/superpowers/reviews/"
+        "2026-07-25-pci-dss-mapping-go-no-go-review.md"
+    ),
+    (
+        "../docs/superpowers/reviews/"
+        "2026-07-25-pci-dss-mapping-go-no-go-traceability.md"
+    ),
+    "reviews/QUALIFIED_REVIEW_PROTOCOL.md",
+}
 
 EXPECTED_SOURCE_URLS = {
     "https://www.pcisecuritystandards.org/terms_and_conditions/",
@@ -357,6 +417,124 @@ class PciDssSourceReadinessOracleTests(unittest.TestCase):
                 "provision_inventory_exists": False,
                 "source_artifact_checksum_available": False,
             },
+        )
+
+
+class PciDssReadinessPublicationTests(unittest.TestCase):
+    def test_traceability_covers_every_issue_58_obligation(self) -> None:
+        text = TRACEABILITY.read_text(encoding="utf-8")
+        rows = re.findall(
+            r"^\| `(I58-[^`]+)` \| ([^|]+) \| ([^|]+) \| ([^|]+) \|$",
+            text,
+            flags=re.MULTILINE,
+        )
+        row_ids = [row[0] for row in rows]
+        self.assertEqual(set(row_ids), EXPECTED_TRACEABILITY_IDS)
+        self.assertEqual(len(row_ids), len(set(row_ids)))
+
+        evidence = {row_id: row for row_id, _kind, _commitment, row in rows}
+        self.assertIn("source-readiness-oracle.json", evidence["I58-D1A"])
+        self.assertIn("source artifact SHA-256 is `null`", evidence["I58-D1B"])
+        self.assertIn("`PCI-READINESS-B001`", evidence["I58-D1B"])
+        self.assertIn("provision count and inventory digest are `null`", evidence["I58-D1C"])
+        self.assertIn("`PCI-READINESS-B003`", evidence["I58-D1C"])
+        self.assertIn("publication-rights-review.md", evidence["I58-D2"])
+        self.assertIn("mapping-readiness-matrix.json", evidence["I58-D3"])
+        self.assertIn("mapping-readiness-matrix.json", evidence["I58-D4"])
+        self.assertIn("mapping-go-no-go-review.md", evidence["I58-D5"])
+        self.assertIn("ESAF-1600", evidence["I58-GO1"])
+        self.assertIn("does not close issue 58", evidence["I58-GO1"])
+        self.assertIn("zero substantive PCI DSS mapping artifacts", evidence["I58-HOLD1"])
+
+    def test_traceability_records_catalog_invariance_and_zero_mapping_artifacts(self) -> None:
+        text = TRACEABILITY.read_text(encoding="utf-8")
+        catalog = json.loads(CROSSWALK_CATALOG.read_text(encoding="utf-8"))
+        counts = catalog["counts"]
+        self.assertEqual(
+            {
+                "mapping_sets": counts["mapping_sets"],
+                "provisions": counts["provisions"],
+                "relationships": counts["relationships"],
+                "negative_dispositions": counts["negative_dispositions"],
+            },
+            {
+                "mapping_sets": 3,
+                "provisions": 404,
+                "relationships": 81,
+                "negative_dispositions": 325,
+            },
+        )
+        self.assertIn("| Mapping sets | 3 | 3 |", text)
+        self.assertIn("| Provisions | 404 | 404 |", text)
+        self.assertIn("| Relationships | 81 | 81 |", text)
+        self.assertIn("| Negative dispositions | 325 | 325 |", text)
+        self.assertIn("PCI DSS mapping artifacts: `0`", text)
+        self.assertFalse(
+            any(
+                "pci" in mapping_set["metadata"]["publication"]["id"].lower()
+                for mapping_set in catalog["mapping_sets"]
+            )
+        )
+
+    def test_pci_landing_page_publishes_hold_and_evidence_links(self) -> None:
+        text = PCI_LANDING.read_text(encoding="utf-8")
+        self.assertRegex(text, r"(?m)^\*\*Status:\*\* Readiness HOLD$")
+        self.assertEqual(
+            set(re.findall(r"\]\(([^)]+)\)", text)) & EXPECTED_READINESS_LINKS,
+            EXPECTED_READINESS_LINKS,
+        )
+        self.assertIn("PCI DSS mapping artifacts: `0`", text)
+        self.assertIn("source artifact checksum is unavailable", text)
+        self.assertIn("provision inventory is unavailable", text)
+        self.assertIn("ESAF Project Maintainer", text)
+
+    def test_backlog_moves_issue_58_to_completed_hold_and_keeps_55_and_59_active(
+        self,
+    ) -> None:
+        text = BACKLOG.read_text(encoding="utf-8")
+        active = section(text, "Active milestone workstreams")
+        completed = section(text, "Completed workstreams")
+        self.assertIn("https://github.com/tdistress/ESAF/issues/55", active)
+        self.assertIn("https://github.com/tdistress/ESAF/issues/59", active)
+        self.assertNotIn("https://github.com/tdistress/ESAF/issues/58", active)
+        self.assertIn("https://github.com/tdistress/ESAF/issues/58", completed)
+        self.assertRegex(
+            completed,
+            r"completed through the evidenced `HOLD`\s+path",
+        )
+
+    def test_ci_covers_readiness_inputs_and_checks_renderer(self) -> None:
+        workflow = yaml.load(
+            CI_WORKFLOW.read_text(encoding="utf-8"),
+            Loader=yaml.BaseLoader,
+        )
+        for event in ("pull_request", "push"):
+            paths = workflow["on"][event]["paths"]
+            self.assertIn("docs/superpowers/specs/**", paths)
+            self.assertIn("docs/superpowers/reviews/**", paths)
+            self.assertIn("crosswalks/**", paths)
+            self.assertIn("project/**", paths)
+            self.assertIn("tests/**", paths)
+            self.assertIn("tools/render_pci_dss_mapping_go_no_go.py", paths)
+
+        steps = workflow["jobs"]["validate"]["steps"]
+        runs = [step.get("run") for step in steps]
+        self.assertEqual(
+            runs.count("python -m unittest discover -s tests -v"),
+            1,
+        )
+        renderer = "python tools/render_pci_dss_mapping_go_no_go.py --check"
+        self.assertEqual(runs.count(renderer), 1)
+        self.assertLess(
+            runs.index("python tools/validate_crosswalks.py --check"),
+            runs.index(renderer),
+        )
+
+    def test_tools_readme_documents_readiness_check(self) -> None:
+        text = TOOLS_README.read_text(encoding="utf-8")
+        self.assertIn(
+            "python tools/render_pci_dss_mapping_go_no_go.py --check",
+            text,
         )
 
 
