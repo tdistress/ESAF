@@ -12,12 +12,16 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
+import yaml
+
 import tools.build_mapping_review_bundle as bundle_builder
+import tools.validate_crosswalks as crosswalk_validator
 from tools.build_mapping_review_bundle import (
     PROFILES,
     GitReader,
     MappingProfile,
     PackageFile,
+    assemble_package,
     collect_package_files,
     main,
     parse_front_matter_bytes,
@@ -703,7 +707,7 @@ class PackagePopulationTests(unittest.TestCase):
             def list_files(self, commit: str, path: str) -> tuple[str, ...]:
                 return base.list_files(commit, path)
 
-        with self.assertRaisesRegex(ValueError, "must remain draft"):
+        with self.assertRaisesRegex(ValueError, "candidate schema validation"):
             collect_package_files(MutatingReader(), self.head, profile)
 
     def test_collector_rejects_reviewer_metadata_on_draft_mapping_set(self) -> None:
@@ -727,7 +731,7 @@ class PackagePopulationTests(unittest.TestCase):
             def list_files(self, commit: str, path: str) -> tuple[str, ...]:
                 return base.list_files(commit, path)
 
-        with self.assertRaisesRegex(ValueError, "must remain draft"):
+        with self.assertRaisesRegex(ValueError, "candidate schema validation"):
             collect_package_files(MutatingReader(), self.head, profile)
 
     def test_collector_rejects_reviewer_metadata_on_draft_mapping_record(self) -> None:
@@ -757,8 +761,305 @@ class PackagePopulationTests(unittest.TestCase):
             def list_files(self, commit: str, path: str) -> tuple[str, ...]:
                 return base.list_files(commit, path)
 
-        with self.assertRaisesRegex(ValueError, "must remain draft"):
+        with self.assertRaisesRegex(ValueError, "candidate schema validation"):
             collect_package_files(MutatingReader(), self.head, profile)
+
+
+class ReviewedCandidateAssemblyTests(unittest.TestCase):
+    """Exercise reviewed candidate content from a real isolated Git repository."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.shared_temporary = tempfile.TemporaryDirectory()
+        cls.base_repository = Path(cls.shared_temporary.name) / "reviewed-candidate"
+        subprocess.run(
+            ["git", "clone", "--no-hardlinks", str(ROOT), str(cls.base_repository)],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        _git(cls.base_repository, "config", "user.name", "ESAF Test")
+        _git(cls.base_repository, "config", "user.email", "esaf-test@example.invalid")
+        fixture = cls("runTest")
+        fixture.repository = cls.base_repository
+        fixture.profile = PROFILES[CORE_ID]
+        fixture._make_reviewed_candidate()
+        cls.base_head = fixture._commit("reviewed candidate")
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls.shared_temporary.cleanup()
+
+    def setUp(self) -> None:
+        self.temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temporary.cleanup)
+        self.repository = Path(self.temporary.name) / "reviewed-candidate"
+        subprocess.run(
+            ["git", "clone", "--no-hardlinks", str(self.base_repository), str(self.repository)],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        _git(self.repository, "config", "user.name", "ESAF Test")
+        _git(self.repository, "config", "user.email", "esaf-test@example.invalid")
+        self.profile = PROFILES[CORE_ID]
+        self.head = self.base_head
+        self.reader = GitReader(self.repository)
+        self._candidate_index = 0
+
+    def _fresh_candidate(self) -> None:
+        self._candidate_index += 1
+        self.repository = (
+            Path(self.temporary.name) / f"reviewed-candidate-{self._candidate_index}"
+        )
+        subprocess.run(
+            ["git", "clone", "--no-hardlinks", str(self.base_repository), str(self.repository)],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        _git(self.repository, "config", "user.name", "ESAF Test")
+        _git(self.repository, "config", "user.email", "esaf-test@example.invalid")
+        self.head = _git(self.repository, "rev-parse", "HEAD")
+        self.reader = GitReader(self.repository)
+
+    def _commit(self, message: str) -> str:
+        _git(self.repository, "add", "--all")
+        _git(self.repository, "commit", "-m", message)
+        return _git(self.repository, "rev-parse", "HEAD")
+
+    def _front_matter(self, path: Path) -> tuple[dict[str, object], str]:
+        return parse_front_matter_bytes(path.read_bytes())
+
+    def _write_front_matter(
+        self,
+        path: Path,
+        metadata: dict[str, object],
+        body: str,
+    ) -> None:
+        rendered = yaml.safe_dump(
+            metadata,
+            allow_unicode=True,
+            sort_keys=False,
+        )
+        path.write_text(
+            f"---\n{rendered}---\n{body}",
+            encoding="utf-8",
+            newline="\n",
+        )
+
+    @staticmethod
+    def _reviewer() -> dict[str, object]:
+        return {
+            "id": "independent-reviewer",
+            "qualification": "Qualified independent mapping reviewer",
+            "date": "2026-07-25",
+            "authorized_source_access": True,
+            "findings_disposition": "No Critical or Important findings remain.",
+        }
+
+    def _snapshot_paths(self) -> list[Path]:
+        return sorted((self.repository / self.profile.snapshot_path).glob("*"))
+
+    def _make_reviewed_candidate(self) -> None:
+        snapshot = self.repository / self.profile.snapshot_path
+        for path in self._snapshot_paths():
+            if path.name in {"PROVISION_INVENTORY.md", "ESAF_CONTROL_MANIFEST.json"}:
+                continue
+            metadata, body = self._front_matter(path)
+            metadata["status"] = "reviewed"
+            metadata["reviewer"] = self._reviewer()
+            self._write_front_matter(path, metadata, body)
+        snapshot_contents = {
+            path.relative_to(self.repository).as_posix(): path.read_bytes()
+            for path in self._snapshot_paths()
+        }
+        digest = snapshot_digest_from_files(self.profile.snapshot_path, snapshot_contents)
+        registry = self.repository / "crosswalks" / "registry" / f"{CORE_ID}.md"
+        metadata, body = self._front_matter(registry)
+        metadata["snapshot_digest"] = digest
+        self._write_front_matter(registry, metadata, body)
+        result = crosswalk_validator.main(["--write"], root=self.repository)
+        self.assertEqual(result, 0)
+
+    def _replace_metadata(
+        self,
+        relative: str,
+        update: object,
+    ) -> None:
+        path = self.repository / relative
+        metadata, body = self._front_matter(path)
+        update(metadata)
+        self._write_front_matter(path, metadata, body)
+
+    def _record_relative(self) -> str:
+        for path in self._snapshot_paths():
+            if path.name not in {
+                "README.md",
+                "PROVISION_INVENTORY.md",
+                "ESAF_CONTROL_MANIFEST.json",
+            }:
+                return path.relative_to(self.repository).as_posix()
+        self.fail("review fixture has no mapping record")
+
+    def _assemble_after(self, relative: str, update: object) -> None:
+        self._replace_metadata(relative, update)
+        head = self._commit("mutate reviewed candidate")
+        bundle_builder.assemble_package(
+            GitReader(self.repository),
+            head,
+            self.profile,
+            "reviewed",
+        )
+
+    def test_reviewed_candidate_assembles_and_renders_review_boundary(self) -> None:
+        assembly = bundle_builder.assemble_package(
+            self.reader,
+            self.head,
+            self.profile,
+            "reviewed",
+        )
+        self.assertEqual(assembly.manifest["candidate_state"], "reviewed")
+        index = next(
+            item.content.decode("utf-8")
+            for item in assembly.payloads
+            if item.path == "PACKAGE_INDEX.md"
+        )
+        self.assertIn("| Candidate state | `reviewed` |", index)
+        self.assertIn("reviewed but is not approved, published", index)
+
+    def test_reviewed_candidate_rejects_mixed_or_approved_states(self) -> None:
+        for label, relative, update, message in (
+            (
+                "mixed-record",
+                self._record_relative(),
+                lambda metadata: metadata.update(status="draft"),
+                "must be reviewed",
+            ),
+            (
+                "approved-snapshot",
+                f"{self.profile.snapshot_path}/README.md",
+                lambda metadata: metadata.update(status="approved"),
+                "candidate schema validation",
+            ),
+            (
+                "approved-record",
+                self._record_relative(),
+                lambda metadata: metadata.update(status="approved"),
+                "candidate schema validation",
+            ),
+        ):
+            with self.subTest(label=label):
+                self._fresh_candidate()
+                with self.assertRaisesRegex(ValueError, message):
+                    self._assemble_after(relative, update)
+
+    def test_reviewed_candidate_rejects_missing_reviewer_metadata(self) -> None:
+        for label, relative in (
+            ("snapshot", f"{self.profile.snapshot_path}/README.md"),
+            ("record", self._record_relative()),
+        ):
+            with self.subTest(label=label):
+                self._fresh_candidate()
+                with self.assertRaisesRegex(ValueError, "candidate schema validation"):
+                    self._assemble_after(relative, lambda metadata: metadata.pop("reviewer"))
+
+    def test_reviewed_candidate_rejects_critical_and_important_findings(self) -> None:
+        readme = f"{self.profile.snapshot_path}/README.md"
+        for severity, status in (
+            ("Critical", "open"),
+            ("Critical", "accepted"),
+            ("Important", "open"),
+            ("Important", "accepted"),
+        ):
+            with self.subTest(severity=severity, status=status):
+                self._fresh_candidate()
+
+                def add_finding(metadata: dict[str, object]) -> None:
+                    finding: dict[str, object] = {
+                        "finding_id": "review-finding",
+                        "affected_record_ids": ["ce33-d-001"],
+                        "severity": severity,
+                        "status": status,
+                        "description": "Fixture finding.",
+                        "disposition": "Fixture disposition.",
+                    }
+                    if status == "accepted":
+                        finding.update(
+                            resolver_or_acceptor="fixture-acceptor",
+                            disposition_date="2026-07-25",
+                            acceptance_rationale="Fixture rationale.",
+                        )
+                    metadata["findings"] = [finding]
+
+                with self.assertRaisesRegex(
+                    ValueError,
+                    f"{severity} finding must be resolved",
+                ):
+                    self._assemble_after(readme, add_finding)
+
+    def test_reviewed_candidate_rejects_lifecycle_events(self) -> None:
+        registry = f"crosswalks/registry/{CORE_ID}.md"
+        with self.assertRaisesRegex(ValueError, "event array must be empty"):
+            self._assemble_after(
+                registry,
+                lambda metadata: metadata.update(events=["reviewed"]),
+            )
+
+    def test_reviewed_candidate_rejects_each_required_reviewer_field(self) -> None:
+        readme = f"{self.profile.snapshot_path}/README.md"
+        for field in (
+            "id",
+            "qualification",
+            "date",
+            "authorized_source_access",
+            "findings_disposition",
+        ):
+            with self.subTest(field=field):
+                self._fresh_candidate()
+
+                def remove_field(metadata: dict[str, object]) -> None:
+                    reviewer = metadata["reviewer"]
+                    assert isinstance(reviewer, dict)
+                    reviewer.pop(field)
+
+                with self.assertRaisesRegex(ValueError, "candidate schema validation"):
+                    self._assemble_after(readme, remove_field)
+
+    def test_reviewed_candidate_uses_candidate_sourced_schemas(self) -> None:
+        cases = (
+            (
+                "mapping-set",
+                "crosswalks/schema/mapping-set.schema.json",
+                "\"reviewed\", \"approved\"",
+                "\"approved\"",
+                "mapping set candidate schema validation",
+            ),
+            (
+                "mapping-record",
+                "crosswalks/schema/mapping-record.schema.json",
+                "\"draft\", \"reviewed\"",
+                "\"draft\"",
+                "record .* candidate schema validation",
+            ),
+        )
+        for label, relative, before, after, message in cases:
+            with self.subTest(schema=label):
+                self._fresh_candidate()
+                path = self.repository / relative
+                path.write_text(
+                    path.read_text(encoding="utf-8").replace(before, after, 1),
+                    encoding="utf-8",
+                    newline="\n",
+                )
+                head = self._commit("tighten candidate schema")
+                with self.assertRaisesRegex(ValueError, message):
+                    bundle_builder.assemble_package(
+                        GitReader(self.repository),
+                        head,
+                        self.profile,
+                        "reviewed",
+                    )
 
 
 class PackageWriterTests(unittest.TestCase):
@@ -923,6 +1224,53 @@ class PackageWriterTests(unittest.TestCase):
                 (output / "PACKAGE_MANIFEST.json").read_text(encoding="utf-8")
             )
             self.assertEqual(manifest["generator_commit"], self.head)
+
+    def test_cli_defaults_to_draft_and_rejects_unknown_candidate_state(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            default_output = Path(directory) / "default-package"
+            default_result = main(
+                [
+                    "--commit",
+                    self.head,
+                    "--mapping-set-id",
+                    CORE_ID,
+                    "--output",
+                    str(default_output),
+                ]
+            )
+            self.assertEqual(default_result, 0)
+            self.assertEqual(
+                json.loads(
+                    (default_output / "PACKAGE_MANIFEST.json").read_bytes()
+                )["candidate_state"],
+                "draft",
+            )
+
+            output = Path(directory) / "unknown-state-package"
+            parser_result = main(
+                [
+                    "--commit",
+                    self.head,
+                    "--mapping-set-id",
+                    CORE_ID,
+                    "--output",
+                    str(output),
+                    "--candidate-state",
+                    "approved",
+                ]
+            )
+            self.assertEqual(parser_result, 2)
+            self.assertFalse(output.exists())
+
+    def test_assembly_is_in_memory_and_manifest_self_excludes(self) -> None:
+        assembly = assemble_package(self.reader, self.head, PROFILES[CORE_ID])
+        self.assertEqual(assembly.manifest["candidate_state"], "draft")
+        self.assertNotIn(
+            "PACKAGE_MANIFEST.json",
+            {item.path for item in assembly.payloads},
+        )
 
     def test_cli_rejects_unknown_mapping_set(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

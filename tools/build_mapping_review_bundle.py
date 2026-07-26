@@ -11,6 +11,9 @@ import re
 import subprocess
 import sys
 import tempfile
+from typing import Literal, NamedTuple
+
+from jsonschema import Draft202012Validator, FormatChecker
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -25,7 +28,7 @@ from tools.crosswalks.validation import ValidationResult
 
 
 FULL_SHA = re.compile(r"^[0-9a-f]{40}$")
-GENERATOR_VERSION = "1.1.0"
+GENERATOR_VERSION = "1.2.0"
 _SOURCE_EVIDENCE_PATH = re.compile(
     r"(?m)^- (?:Oracle|Specification): `([^`]+)`\s*$"
 )
@@ -79,6 +82,15 @@ class PackageFile:
     purpose: str
 
 
+CandidateState = Literal["draft", "reviewed"]
+
+
+class PackageAssembly(NamedTuple):
+    payloads: tuple[PackageFile, ...]
+    manifest: dict[str, object]
+    manifest_bytes: bytes
+
+
 def parse_front_matter_bytes(content: bytes) -> tuple[dict[str, object], str]:
     if content.startswith(b"\xef\xbb\xbf") or b"\r" in content:
         raise ValueError("package Markdown must be canonical UTF-8/LF")
@@ -106,11 +118,12 @@ def canonical_json_bytes(value: object) -> bytes:
 
 @lru_cache(maxsize=None)
 def _deterministic_control_manifest_bytes(
+    root: Path,
     commit: str,
     release: str,
     tag_alias: str | None,
 ) -> bytes:
-    manifest = build_control_manifest(ROOT, commit, release, tag_alias)
+    manifest = build_control_manifest(root, commit, release, tag_alias)
     return render_manifest(manifest).encode("utf-8")
 
 
@@ -155,6 +168,7 @@ class GitReader:
     def __init__(self, root: Path) -> None:
         self.root = root.resolve()
         self._regular_blobs: set[tuple[str, str]] = set()
+        self._contents: dict[tuple[str, str], bytes] = {}
 
     def _run(
         self,
@@ -195,12 +209,18 @@ class GitReader:
     def read_bytes(self, commit: str, path: str) -> bytes:
         _canonical_relative_path(path, "repository")
         self._require_regular_blob(commit, path)
+        key = (commit, path)
+        cached = self._contents.get(key)
+        if cached is not None:
+            return cached
         try:
-            return self._run("show", f"{commit}:{path}").stdout
+            content = self._run("show", f"{commit}:{path}").stdout
         except subprocess.CalledProcessError as error:
             raise ValueError(
                 f"missing tracked file at candidate: {path}"
             ) from error
+        self._contents[key] = content
+        return content
 
     def _require_regular_blob(self, commit: str, path: str) -> None:
         key = (commit, path)
@@ -293,15 +313,59 @@ def _package_file(
     return PackageFile(path, reader.read_bytes(commit, path), purpose)
 
 
-def _require_draft(
+def _validate_candidate_metadata(
+    reader: GitReader,
+    commit: str,
+    schema_path: str,
+    metadata: dict[str, object],
+    subject: str,
+) -> None:
+    try:
+        schema = json.loads(reader.read_bytes(commit, schema_path))
+        Draft202012Validator.check_schema(schema)
+        validator = Draft202012Validator(
+            schema,
+            format_checker=FormatChecker(),
+        )
+    except (json.JSONDecodeError, ValueError) as error:
+        raise ValueError(f"invalid candidate schema: {schema_path}") from error
+    errors = sorted(
+        validator.iter_errors(metadata),
+        key=lambda error: list(error.absolute_path),
+    )
+    if errors:
+        raise ValueError(
+            f"{subject} candidate schema validation failed: {errors[0].message}"
+        )
+
+
+def _require_candidate_state(
     metadata: dict[str, object],
     mapping_set_id: str,
     subject: str,
+    candidate_state: CandidateState,
 ) -> None:
     if metadata.get("mapping_set_id") != mapping_set_id:
         raise ValueError(f"{subject} mapping-set identifier mismatch")
-    if metadata.get("status") != "draft" or "reviewer" in metadata:
-        raise ValueError(f"{subject} must remain draft without reviewer metadata")
+    if metadata.get("status") != candidate_state:
+        raise ValueError(f"{subject} must be {candidate_state}")
+    reviewer = metadata.get("reviewer")
+    if candidate_state == "draft" and reviewer is not None:
+        raise ValueError(f"{subject} Draft content cannot contain reviewer metadata")
+    if candidate_state == "reviewed" and not isinstance(reviewer, dict):
+        raise ValueError(f"{subject} reviewed content requires reviewer metadata")
+
+
+def _require_reviewed_findings(metadata: dict[str, object]) -> None:
+    findings = metadata.get("findings")
+    if not isinstance(findings, list):
+        raise ValueError("mapping set findings must be an array")
+    for finding in findings:
+        if not isinstance(finding, dict):
+            raise ValueError("mapping set finding must be an object")
+        severity = finding.get("severity")
+        if severity in {"Critical", "Important"} and finding.get("status") != "resolved":
+            raise ValueError(f"{severity} finding must be resolved")
 
 
 def _source_evidence_pins(body: str) -> tuple[tuple[str, str], ...]:
@@ -396,6 +460,7 @@ def collect_package_files(
     reader: GitReader,
     commit: str,
     profile: MappingProfile,
+    candidate_state: CandidateState = "draft",
 ) -> tuple[PackageFile, ...]:
     snapshot_paths = reader.list_files(commit, profile.snapshot_path)
     snapshot_contents = {
@@ -430,7 +495,21 @@ def collect_package_files(
         "mapping set",
     )
     set_metadata, set_body = parse_front_matter_bytes(readme.content)
-    _require_draft(set_metadata, profile.mapping_set_id, "mapping set")
+    _validate_candidate_metadata(
+        reader,
+        commit,
+        "crosswalks/schema/mapping-set.schema.json",
+        set_metadata,
+        "mapping set",
+    )
+    _require_candidate_state(
+        set_metadata,
+        profile.mapping_set_id,
+        "mapping set",
+        candidate_state,
+    )
+    if candidate_state == "reviewed":
+        _require_reviewed_findings(set_metadata)
     scope = set_metadata.get("scope")
     if not isinstance(scope, dict) or scope.get("inventory_count") != profile.expected_count:
         raise ValueError("mapping-set inventory count mismatch")
@@ -461,7 +540,19 @@ def collect_package_files(
     for path in record_paths:
         record = PackageFile(path, snapshot_contents[path], "mapping record")
         metadata, body = parse_front_matter_bytes(record.content)
-        _require_draft(metadata, profile.mapping_set_id, f"record {path}")
+        _validate_candidate_metadata(
+            reader,
+            commit,
+            "crosswalks/schema/mapping-record.schema.json",
+            metadata,
+            f"record {path}",
+        )
+        _require_candidate_state(
+            metadata,
+            profile.mapping_set_id,
+            f"record {path}",
+            candidate_state,
+        )
         record_id = metadata.get("record_id")
         provision_id = metadata.get("external_provision_id")
         if not isinstance(record_id, str) or record_id in record_ids:
@@ -529,6 +620,7 @@ def collect_package_files(
     ):
         raise ValueError("mapping set ESAF release pin is invalid")
     expected_manifest = _deterministic_control_manifest_bytes(
+        reader.root if isinstance(reader, GitReader) else ROOT,
         control_source,
         release_id,
         tag_alias,
@@ -733,6 +825,7 @@ def render_package_index(
     commit: str,
     mapping_set_content: bytes,
     payloads: tuple[PackageFile, ...],
+    candidate_state: CandidateState = "draft",
 ) -> bytes:
     metadata, body = parse_front_matter_bytes(mapping_set_content)
     publication = metadata["publication"]
@@ -779,6 +872,7 @@ def render_package_index(
 | Mapping-set identifier | `{profile.mapping_set_id}` |
 | Direction | `{profile.direction}` |
 | Candidate commit | `{commit}` |
+| Candidate state | `{candidate_state}` |
 | Expected provisions | {profile.expected_count} |
 | Publication | {publication["name"]} |
 | Source version | `{source_version["id"]}` ({source_version["label"]}) |
@@ -810,8 +904,7 @@ obtain authorized access to the exact source and attest to that access.
 
 ## Lifecycle and assurance boundary
 
-This package does not establish qualified review, certification, compliance,
-equivalence, endorsement, approval, or assurance. The mapping remains Draft.
+{_lifecycle_boundary(candidate_state)}
 
 ## Payload inventory
 
@@ -820,6 +913,20 @@ equivalence, endorsement, approval, or assurance. The mapping remains Draft.
 {payload_lines}
 """
     return text.encode("utf-8")
+
+
+def _lifecycle_boundary(candidate_state: CandidateState) -> str:
+    if candidate_state == "draft":
+        return (
+            "This package does not establish qualified review, certification, "
+            "compliance, equivalence, endorsement, approval, or assurance. "
+            "The mapping remains Draft."
+        )
+    return (
+        "This package records mapping content that is reviewed but is not "
+        "approved, published, certified, compliant, equivalent, endorsed, "
+        "or assured."
+    )
 
 
 def _validate_package_files(files: tuple[PackageFile, ...]) -> None:
@@ -853,15 +960,15 @@ def _require_generator_execution_state(
     GitReader(ROOT).require_candidate_execution_state(commit)
 
 
-def write_package(
+def assemble_package(
     reader: GitReader,
     commit: str,
     profile: MappingProfile,
-    output: Path,
-) -> dict[str, object]:
-    _require_generator_execution_state(reader, commit)
-    destination = validate_output_directory(output, reader.worktree_roots())
-    collected = list(collect_package_files(reader, commit, profile))
+    candidate_state: CandidateState = "draft",
+) -> PackageAssembly:
+    collected = list(
+        collect_package_files(reader, commit, profile, candidate_state)
+    )
     mapping_set_path = f"{profile.snapshot_path}/README.md"
     mapping_set_content = next(
         item.content for item in collected
@@ -881,6 +988,7 @@ def write_package(
         commit,
         mapping_set_content,
         tuple(collected),
+        candidate_state,
     )
     collected = [
         (
@@ -901,17 +1009,31 @@ def write_package(
             }
         )
     manifest: dict[str, object] = {
-        "schema_version": "1.0.0",
+        "schema_version": "1.1.0",
         "generator_version": GENERATOR_VERSION,
         "mapping_set_id": profile.mapping_set_id,
         "package_label": profile.label,
         "direction": profile.direction,
         "expected_provision_count": profile.expected_count,
         "candidate_commit": commit,
+        "candidate_state": candidate_state,
         "generator_commit": commit,
         "files": manifest_files,
     }
     manifest_content = canonical_json_bytes(manifest)
+    return PackageAssembly(tuple(collected), manifest, manifest_content)
+
+
+def write_package(
+    reader: GitReader,
+    commit: str,
+    profile: MappingProfile,
+    output: Path,
+    candidate_state: CandidateState = "draft",
+) -> dict[str, object]:
+    _require_generator_execution_state(reader, commit)
+    destination = validate_output_directory(output, reader.worktree_roots())
+    assembly = assemble_package(reader, commit, profile, candidate_state)
 
     destination.parent.mkdir(parents=True, exist_ok=True)
     staging = Path(
@@ -920,7 +1042,7 @@ def write_package(
             dir=destination.parent,
         )
     )
-    for item in collected:
+    for item in assembly.payloads:
         relative = _canonical_relative_path(item.path, "package")
         target = staging.joinpath(*relative.parts)
         if not _is_within(target.resolve(), staging.resolve()):
@@ -928,13 +1050,13 @@ def write_package(
         _write_file_exclusively(target, item.content)
     _write_file_exclusively(
         staging / "PACKAGE_MANIFEST.json",
-        manifest_content,
+        assembly.manifest_bytes,
     )
     _require_generator_execution_state(reader, commit)
     if os.path.lexists(destination):
         raise ValueError("output appeared while package was being assembled")
     staging.rename(destination)
-    return manifest
+    return assembly.manifest
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -942,7 +1064,15 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--commit", required=True)
     parser.add_argument("--mapping-set-id", required=True)
     parser.add_argument("--output", type=Path, required=True)
-    args = parser.parse_args(argv)
+    parser.add_argument(
+        "--candidate-state",
+        choices=("draft", "reviewed"),
+        default="draft",
+    )
+    try:
+        args = parser.parse_args(argv)
+    except SystemExit as error:
+        return int(error.code)
     try:
         reader = GitReader(ROOT)
         commit = reader.resolve_commit(args.commit)
@@ -953,7 +1083,7 @@ def main(argv: list[str] | None = None) -> int:
         output = validate_output_directory(
             args.output, reader.worktree_roots()
         )
-        write_package(reader, commit, profile, output)
+        write_package(reader, commit, profile, output, args.candidate_state)
         report = {
             "candidate_commit": commit,
             "mapping_set_id": profile.mapping_set_id,
