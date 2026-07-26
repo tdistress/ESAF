@@ -24,6 +24,9 @@ DEFAULT_OUTPUT = (
     / "reviews"
     / "2026-07-25-pci-dss-mapping-go-no-go-review.md"
 )
+RIGHTS_REVIEW_PATH = (
+    "docs/superpowers/reviews/2026-07-25-pci-dss-publication-rights-review.md"
+)
 
 GATES = (
     "source_identity_and_drift",
@@ -277,11 +280,20 @@ def validate_matrix(
         if hashlib.sha256(source_path.read_bytes()).hexdigest() != source_digest:
             raise ValueError("source oracle digest is stale")
 
-    rights = _require_exact_keys(matrix["rights_review"], {"commit", "path"}, "rights_review")
+    rights = _require_exact_keys(
+        matrix["rights_review"],
+        {"commit", "path", "sha256"},
+        "rights_review",
+    )
     rights_path_text = _require_nonempty_string(rights["path"], "rights_review.path")
+    if rights_path_text != RIGHTS_REVIEW_PATH:
+        raise ValueError("rights_review.path must be the canonical publication-rights review")
     rights_path = _resolve_repository_path(rights_path_text, "rights_review.path")
     if not rights_path.is_file():
         raise ValueError(f"rights review does not exist: {rights_path_text}")
+    rights_digest = _require_nonempty_string(rights["sha256"], "rights_review.sha256")
+    if not HEX_SHA256.fullmatch(rights_digest):
+        raise ValueError("rights_review.sha256 must be lowercase SHA-256")
     rights_commit = _require_nonempty_string(rights["commit"], "rights_review.commit")
     if not HEX_COMMIT.fullmatch(rights_commit):
         raise ValueError("rights_review.commit must be a full commit SHA")
@@ -304,6 +316,21 @@ def validate_matrix(
         "HEAD",
         context="rights review commit is not an ancestor of HEAD",
     )
+    committed_rights = subprocess.run(
+        ["git", "show", f"{rights_commit}:{rights_path_text}"],
+        cwd=ROOT,
+        capture_output=True,
+    )
+    if committed_rights.returncode != 0:
+        detail = committed_rights.stderr.decode("utf-8", errors="replace").strip()
+        raise ValueError(
+            "rights review blob cannot be read from the bound commit: "
+            f"{detail or 'git verification failed'}"
+        )
+    if hashlib.sha256(committed_rights.stdout).hexdigest() != rights_digest:
+        raise ValueError("rights review digest does not match the bound commit")
+    if rights_path.read_bytes() != committed_rights.stdout:
+        raise ValueError("rights review live bytes drift from the bound commit")
 
     contract = _require_exact_keys(
         matrix["mapping_contract"],
@@ -334,6 +361,10 @@ def validate_matrix(
     for name, count in findings.items():
         if not isinstance(count, int) or isinstance(count, bool) or count < 0:
             raise ValueError(f"review_findings.{name} must be a nonnegative integer")
+    if findings["open_critical"] or findings["open_important"]:
+        raise ValueError(
+            "Critical and Important review findings must be resolved before publication"
+        )
 
     gates = matrix["gates"]
     if not isinstance(gates, list) or [
@@ -456,6 +487,7 @@ def render(matrix: dict[str, object]) -> str:
         f"- Source-readiness oracle SHA-256: `{source['sha256']}`",
         f"- Publication-rights review: `{rights['path']}`",
         f"- Publication-rights review commit: `{rights['commit']}`",
+        f"- Publication-rights review SHA-256: `{rights['sha256']}`",
         (
             "- Positive feasibility probe available: "
             f"`{str(contract['positive_feasibility_probe']).lower()}`"

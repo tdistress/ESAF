@@ -8,7 +8,9 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
+import tools.render_pci_dss_mapping_go_no_go as renderer
 from tools.render_pci_dss_mapping_go_no_go import (
     derive_decision,
     render,
@@ -125,7 +127,19 @@ class PciDssMappingGoNoGoTests(unittest.TestCase):
 
     def test_rights_review_commit_is_exact_live_and_ancestral(self) -> None:
         rights = self.matrix["rights_review"]
+        self.assertEqual(
+            set(rights),
+            {"commit", "path", "sha256"},
+        )
         self.assertEqual(rights["commit"], RIGHTS_COMMIT)
+        self.assertEqual(
+            rights["path"],
+            "docs/superpowers/reviews/2026-07-25-pci-dss-publication-rights-review.md",
+        )
+        self.assertEqual(
+            rights["sha256"],
+            hashlib.sha256((ROOT / rights["path"]).read_bytes()).hexdigest(),
+        )
         commit_exists = subprocess.run(
             ["git", "cat-file", "-e", f"{RIGHTS_COMMIT}^{{commit}}"],
             cwd=ROOT,
@@ -147,6 +161,59 @@ class PciDssMappingGoNoGoTests(unittest.TestCase):
             text=True,
         )
         self.assertEqual(ancestor.returncode, 0, ancestor.stderr)
+
+    def test_rights_review_rejects_wrong_path(self) -> None:
+        wrong_path = copy.deepcopy(self.matrix)
+        wrong_path["rights_review"]["path"] = "tests/test_pci_dss_source_readiness.py"
+        with self.assertRaisesRegex(ValueError, "canonical"):
+            validate_matrix(wrong_path, verify_source_digest=False)
+
+    def test_rights_review_rejects_live_bytes_that_drift_from_bound_commit(self) -> None:
+        canonical_path = Path(
+            "docs/superpowers/reviews/2026-07-25-pci-dss-publication-rights-review.md"
+        )
+        with tempfile.TemporaryDirectory() as temp_dir:
+            repository = Path(temp_dir)
+            live_path = repository / canonical_path
+            live_path.parent.mkdir(parents=True)
+            live_path.write_bytes(b"approved rights review\n")
+            subprocess.run(["git", "init", "-q"], cwd=repository, check=True)
+            subprocess.run(
+                ["git", "config", "user.email", "tests@example.invalid"],
+                cwd=repository,
+                check=True,
+            )
+            subprocess.run(
+                ["git", "config", "user.name", "ESAF Tests"],
+                cwd=repository,
+                check=True,
+            )
+            subprocess.run(
+                ["git", "config", "core.autocrlf", "false"],
+                cwd=repository,
+                check=True,
+            )
+            subprocess.run(["git", "add", canonical_path.as_posix()], cwd=repository, check=True)
+            subprocess.run(
+                ["git", "commit", "-q", "-m", "bind rights review"],
+                cwd=repository,
+                check=True,
+            )
+            commit = subprocess.check_output(
+                ["git", "rev-parse", "HEAD"],
+                cwd=repository,
+                text=True,
+            ).strip()
+            drifted = copy.deepcopy(self.matrix)
+            drifted["rights_review"] = {
+                "commit": commit,
+                "path": canonical_path.as_posix(),
+                "sha256": hashlib.sha256(b"approved rights review\n").hexdigest(),
+            }
+            live_path.write_bytes(b"drifted rights review\n")
+            with patch.object(renderer, "ROOT", repository):
+                with self.assertRaisesRegex(ValueError, "drift"):
+                    validate_matrix(drifted, verify_source_digest=False)
 
     def test_gate_order_statuses_evidence_and_blocker_coverage_are_exact(self) -> None:
         self.assertEqual([gate["gate"] for gate in self.matrix["gates"]], list(GATES))
@@ -348,6 +415,14 @@ class PciDssMappingGoNoGoTests(unittest.TestCase):
         stale_digest["source_oracle"]["sha256"] = "0" * 64
         with self.assertRaises(ValueError):
             validate_matrix(stale_digest)
+
+    def test_hold_rejects_open_critical_or_important_findings(self) -> None:
+        for severity in ("open_critical", "open_important"):
+            unresolved = copy.deepcopy(self.matrix)
+            unresolved["review_findings"][severity] = 1
+            with self.subTest(severity=severity):
+                with self.assertRaisesRegex(ValueError, "resolved"):
+                    validate_matrix(unresolved, verify_source_digest=False)
 
     def test_render_is_deterministic_and_covers_hold_contract(self) -> None:
         rendered = render(self.matrix)

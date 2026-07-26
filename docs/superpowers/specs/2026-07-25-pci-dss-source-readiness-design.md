@@ -260,7 +260,8 @@ Focused tests shall begin red and shall enforce:
 - exact closed oracle and matrix key sets;
 - source identity, URL, date-precision, protected-access, and null-artifact
   invariants;
-- the rights-review path, commit ancestry, six-element provision-field
+- the canonical rights-review path, commit ancestry, exact committed and live
+  byte equality, SHA-256 binding, six-element provision-field
   partition, separately approved closed bibliographic set, independence,
   access, and publication-basis attestations;
 - exact gate order, status vocabulary, evidence references, blocker coverage,

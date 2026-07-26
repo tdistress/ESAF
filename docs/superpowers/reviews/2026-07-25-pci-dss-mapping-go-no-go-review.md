@@ -26,6 +26,7 @@ Granularity: `finest_authorized_publishable_numbered_requirement_or_sub_requirem
 - Source-readiness oracle SHA-256: `fc513985138689085a9ceb8794edc12313a0a5a1f7e47c936d988bbeac294904`
 - Publication-rights review: `docs/superpowers/reviews/2026-07-25-pci-dss-publication-rights-review.md`
 - Publication-rights review commit: `5bc0d82ea6dd7af3391497fc4b75be18ceb505a6`
+- Publication-rights review SHA-256: `38baf0d54acc7abc01d40ee7494611eae5dc3f654f0ec1b0f5cf17f4e7ec89d6`
 - Positive feasibility probe available: `false`
 
 The protected PCI DSS source artifact, its digest, and its provision inventory remain unavailable. Public discovery metadata is not a substitute for source bytes.

@@ -151,7 +151,8 @@ Require exact nested key sets and values for:
 - [ ] **Step 3: Create canonical oracle JSON**
 
 Write one-line, UTF-8/LF, key-sorted canonical JSON. Store the rights review
-path and rights-review commit SHA. Keep source byte length, source SHA-256, page
+path, rights-review commit SHA, rights-review SHA-256, and exact committed/live
+byte equality. Keep source byte length, source SHA-256, page
 count, provision count, and inventory digest null.
 
 - [ ] **Step 4: Make source tests GREEN and commit**
