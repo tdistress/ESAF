@@ -43,9 +43,10 @@ stay outside Git at access-appropriate immutable locators. The manifest shall
 contain hashes, durable locators, and local verification paths, not licensed
 source material.
 
-`crosswalks/schema/qualified-review-evidence.schema.json` shall define the
-campaign manifest. Repository tests shall keep the schema, validator, templates,
-and protocol consistent.
+`crosswalks/schema/qualified-review-evidence.schema.json`, with schema identifier
+`https://esaf-standard.org/schemas/qualified-review-evidence.schema.json`, shall
+define the campaign manifest. Repository tests shall keep the schema, validator,
+templates, and protocol consistent.
 
 The existing package generator shall gain an explicit reviewed-candidate mode.
 Draft behavior remains the default. Reviewed mode shall accept only a complete,
@@ -157,6 +158,12 @@ pull-request evidence record. No campaign byte changes after sealing. The seal
 record is not part of the archive it identifies, which avoids a self-referential
 manifest or archive digest.
 
+The sealing CLI shall publish `CAMPAIGN_ARCHIVE.zip` and
+`CAMPAIGN_SEAL.json` together in one new external output directory. It shall
+write both files in a sibling staging directory on the destination filesystem,
+repeat candidate execution-state checks, and atomically rename that directory.
+It shall not accept split archive and seal destinations.
+
 The manifest and local evidence files are verification inputs. They are not
 authoritative mapping records and shall not enter generated crosswalk catalogs.
 
@@ -176,7 +183,11 @@ Final confirmation shall also require:
 ```text
 --draft-evidence-root <preserved-draft-campaign-directory>
 --draft-seal-record <preserved-draft-campaign-seal.json>
+--draft-archive <preserved-draft-campaign-archive.zip>
 ```
+
+The separate archive input lets revalidation compare the retained or downloaded
+archive byte-for-byte with deterministic reconstruction and the seal record.
 
 The validator shall read repository bytes from the exact candidate commit and
 shall fail closed unless:
@@ -235,6 +246,14 @@ also derives `transition_ready`; a final confirmation derives `merge_ready`.
 Valid `stop` evidence has `evidence_valid: true` and the phase readiness result
 set to false. Only a complete `pass` or `pass_after_correction` campaign with
 reconciled findings may be transition-ready or merge-ready.
+
+The reviewer object is derived deterministically from nested role evidence:
+`id` from `reviewer.identity`, `date` from `worksheet.review_date`,
+`qualification` and `authorized_source_access` from the reviewer evidence, and
+`findings_disposition` from a fixed signed worksheet field. Accepted Critical
+or Important findings make the campaign evidence-invalid; they are not merely a
+readiness stop. A `pass_after_correction` conclusion names the exact
+post-correction campaign candidate SHA in either campaign phase.
 
 The validator checks evidence completeness, file and field boundaries, and
 internal consistency. It shall state that it does not prove identity,
