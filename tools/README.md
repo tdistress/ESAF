@@ -190,9 +190,10 @@ not convert a `stop` into approval or a lifecycle transition.
 ### Seal the Draft campaign
 
 When the completed Draft campaign validates, seal its exact bytes
-deterministically. Upload the produced archive to the immutable locator before
-writing the seal record, then preserve the archive digest, locator, and seal
-record SHA-256 in the external issue or pull-request evidence record:
+deterministically. First reserve the immutable archive locator, then supply it
+to the sealing command. The command atomically writes the deterministic
+`CAMPAIGN_ARCHIVE.zip` and its `CAMPAIGN_SEAL.json` together in the new
+external output directory; it does not upload either file:
 
 ```powershell
 $draftSealDirectory = Join-Path $env:USERPROFILE "ESAF-review-evidence\draft-seal"
@@ -203,9 +204,15 @@ python tools/seal_qualified_review_campaign.py --candidate $draftCandidate `
   --archive-locator $draftArchiveLocator
 ```
 
-The command produces `CAMPAIGN_SEAL.json` outside the sealed root. Do not
-modify any campaign byte after sealing; a changed campaign requires a new
-validated and sealed campaign.
+After the command succeeds, upload the exact, unmodified
+`CAMPAIGN_ARCHIVE.zip` bytes to the locator already recorded in the seal.
+Verify the durable object at that locator against the seal's archive digest
+and byte length before relying on the campaign. Preserve the seal record in
+the external evidence system, then record its SHA-256 and durable locator in
+the external issue or pull-request evidence record. Both generated files
+remain outside the sealed campaign root and every Git worktree. Do not modify
+any campaign or archive byte after sealing; a change requires a new validated
+and sealed campaign.
 
 ### Reviewed package and final confirmation
 
