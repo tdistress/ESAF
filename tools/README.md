@@ -146,6 +146,10 @@ completed worksheet, `REVIEW_EVIDENCE.json`, a campaign archive, or a seal
 record. Git contains only the blank templates, schemas, protocol, and
 automation. In particular, do not use a generated review package to
 redistribute an authorized source document.
+Each role attestation must include the reviewer’s separate
+source-content-exclusion signature. Keep single-line reviewer prose to 512
+characters or fewer, use locators instead of source excerpts, and record the
+exact checksum and locator sets derived from the candidate package.
 
 ### Draft package and campaign
 
@@ -218,6 +222,10 @@ external issue or pull-request evidence record. Both generated files remain
 outside the sealed campaign root and every Git worktree. Do not modify any
 campaign or archive byte after sealing. A changed archive byte or locator
 requires a new output directory and a newly materialized pair.
+The output directory’s complete ancestor chain must remain available and
+unaliased. The sealer holds OS directory handles or descriptors through atomic
+publication and fails closed when anchored no-replace publication is
+unavailable.
 
 ### Reviewed package and final confirmation
 
@@ -257,3 +265,5 @@ qualification, source authorization, signature effect, the truth of human
 review conclusions, non-infringement of human-authored prose, approval, or
 compliance. Those remain human decisions recorded in the protected external
 evidence system, never Git.
+The validator checks the signed source-content-exclusion assertion but cannot
+establish its truth, non-infringement, or legal effect.

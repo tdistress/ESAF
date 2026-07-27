@@ -214,12 +214,7 @@ class GitReader:
         cached = self._contents.get(key)
         if cached is not None:
             return cached
-        try:
-            content = self._run("show", f"{commit}:{path}").stdout
-        except subprocess.CalledProcessError as error:
-            raise ValueError(
-                f"missing tracked file at candidate: {path}"
-            ) from error
+        content = self._run("show", f"{commit}:{path}").stdout
         self._contents[key] = content
         return content
 

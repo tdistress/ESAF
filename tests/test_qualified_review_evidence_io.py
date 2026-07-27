@@ -84,6 +84,9 @@ An unsigned blank form is not review evidence.
 | Project-owner identity | Project Owner |
 | Project-owner signature | Project Owner / signed |
 | Project-owner acceptance date | 2026-07-25 |
+| Source-content exclusion | Yes |
+| Source-content exclusion signature | Alice Reviewer / separately signed |
+| Source-content exclusion date | 2026-07-25 |
 | Signature | Alice Reviewer / signed |
 | Date | 2026-07-25 |
 
@@ -101,6 +104,11 @@ I attest that I am independent from the mapper: Yes.
 
 I attest that conflicts of interest and their disposition have been fully
 disclosed: Yes.
+
+I separately attest that the reviewer-authored attestation and worksheet
+contain no copied or close-paraphrased source passage or other licensed source
+text, and use source material only through the recorded identifiers, checksums,
+locators, and concise reviewer analysis: Yes.
 
 I understand that this review does not establish certification, compliance,
 equivalence, endorsement, or assurance beyond the relationships expressly
@@ -757,6 +765,79 @@ class MarkdownParserTests(unittest.TestCase):
         self.assertEqual(result["independence_from_mapper"], "Yes")
         self.assertEqual(result["conflicts_of_interest"], "No")
         self.assertEqual(result["project_owner_dual_role_acceptance"], "No")
+        self.assertEqual(result["source_content_exclusion"], "Yes")
+
+    def test_attestation_closed_grammar_rejects_every_scaffold_mutation(
+        self,
+    ) -> None:
+        mutations = (
+            COMPLETED_ATTESTATION.replace(
+                "\nI attest that I had authorized access",
+                "\nUnheaded contradictory prose.\n\n"
+                "I attest that I had authorized access",
+                1,
+            ),
+            COMPLETED_ATTESTATION.replace(
+                "An unsigned blank form is not review evidence.\n\n",
+                "",
+                1,
+            ),
+            COMPLETED_ATTESTATION.replace(
+                "Every table value shall be single-line text without an "
+                "unescaped pipe\n"
+                "character. Do not add, remove, duplicate, or reorder rows."
+                "\n\n",
+                "",
+                1,
+            ),
+            COMPLETED_ATTESTATION.replace(
+                "An unsigned blank form is not review evidence.",
+                "A signature may be omitted.",
+                1,
+            ),
+        )
+        for content in mutations:
+            with self.subTest(content=content[:100]):
+                with self.assertRaises(EvidenceError):
+                    parse_completed_attestation(content.encode("utf-8"))
+
+    def test_attestation_requires_separately_signed_source_exclusion(
+        self,
+    ) -> None:
+        mutations = (
+            COMPLETED_ATTESTATION.replace(
+                "| Source-content exclusion | Yes |\n",
+                "",
+                1,
+            ),
+            COMPLETED_ATTESTATION.replace(
+                "| Source-content exclusion signature | "
+                "Alice Reviewer / separately signed |\n",
+                "",
+                1,
+            ),
+            COMPLETED_ATTESTATION.replace(
+                "source material only through the recorded identifiers, "
+                "checksums,\n"
+                "locators, and concise reviewer analysis: Yes.\n\n",
+                "source material may be copied into reviewer prose: Yes.\n\n",
+                1,
+            ),
+        )
+        for content in mutations:
+            with self.subTest(content=content[-700:]):
+                with self.assertRaises(EvidenceError):
+                    parse_completed_attestation(content.encode("utf-8"))
+
+    def test_rejects_source_passage_sized_free_text_cells(self) -> None:
+        copied_passage = ("Copied licensed source sentence. " * 20).strip()
+        content = COMPLETED_ATTESTATION.replace(
+            "Scheme qualification and ESAF mapping qualification",
+            copied_passage,
+            1,
+        )
+        with self.assertRaisesRegex(EvidenceError, "length|purpose"):
+            parse_completed_attestation(content.encode("utf-8"))
 
     def test_parses_none_findings_specification_worksheet(self) -> None:
         worksheet = parse_completed_worksheet(
@@ -1417,7 +1498,9 @@ class CanonicalSealTests(unittest.TestCase):
         record, content = build_seal_record(
             manifest_bytes=manifest,
             archive_bytes=archive,
-            archive_locator=LOCATOR,
+            archive_locator=(
+                f"urn:sha256:{hashlib.sha256(archive).hexdigest()}"
+            ),
             campaign_id="draft-review-2026",
             candidate_commit=SHA,
             evidence_valid=True,
@@ -1463,7 +1546,9 @@ class CanonicalSealTests(unittest.TestCase):
         valid = {
             "manifest_bytes": b"manifest\n",
             "archive_bytes": b"archive",
-            "archive_locator": LOCATOR,
+            "archive_locator": (
+                "https://evidence.example/archive?version=1"
+            ),
             "campaign_id": "draft-review-2026",
             "candidate_commit": SHA,
             "evidence_valid": True,
@@ -1488,6 +1573,20 @@ class CanonicalSealTests(unittest.TestCase):
                 with self.assertRaises(EvidenceError):
                     build_seal_record(**{**valid, **change})  # type: ignore[arg-type]
 
+    def test_seal_rejects_sha_locator_for_different_archive_bytes(self) -> None:
+        with self.assertRaisesRegex(EvidenceError, "archive locator"):
+            build_seal_record(
+                manifest_bytes=b"manifest\n",
+                archive_bytes=b"archive",
+                archive_locator=f"urn:sha256:{'0' * 64}",
+                campaign_id="draft-review-2026",
+                candidate_commit=SHA,
+                evidence_valid=True,
+                readiness_name="transition_ready",
+                readiness_value=True,
+                validator_version="1.0.0",
+            )
+
     def test_seal_locator_acceptance_matches_task2_schema_corpus(self) -> None:
         schema = json.loads(
             (
@@ -1509,7 +1608,7 @@ class CanonicalSealTests(unittest.TestCase):
                 "?version=release%2F1&note=a/b?c"
                 "#receipt%20fragment:@!$&'()*+,;=/?"
             ),
-            f"urn:sha256:{'b' * 64}",
+            f"urn:sha256:{hashlib.sha256(b'archive').hexdigest()}",
             "https:///object?version=1",
             "https://evidence.example/object",
             "https://evidence.example/object?%76ersion=1",

@@ -119,6 +119,8 @@ recorded SHA-256 binds the locator to the verified local bytes. The retention
 owner shall accept responsibility for preserving access according to the
 recorded retention commitment. The validator checks locator syntax and hash
 agreement but does not claim that a remote object is available.
+For a `urn:sha256:` locator, the embedded digest shall equal the associated
+verified package-manifest, attestation, worksheet, or archive digest.
 
 The campaign manifest shall not contain its own archive locator. Sealing has
 two boundaries: local materialization and external publication. Before local
@@ -180,6 +182,10 @@ The sealing CLI shall materialize `CAMPAIGN_ARCHIVE.zip` and
 write both files in a sibling staging directory on the destination filesystem,
 repeat candidate execution-state checks, and atomically rename that directory.
 It shall not accept split archive and seal destinations.
+The complete destination ancestor chain shall remain anchored against
+replacement until publication. Publication shall use Windows directory handles
+or POSIX directory descriptors and an atomic anchored no-replace primitive; a
+platform that cannot provide that boundary shall fail closed.
 
 The manifest and local evidence files are verification inputs. They are not
 authoritative mapping records and shall not enter generated crosswalk catalogs.
@@ -231,6 +237,8 @@ shall fail closed unless:
   template marker;
 - the signed-worksheet digest matches the protocol's row-exclusion procedure;
 - each reviewer has affirmative authorized source access and independence;
+- every role has a separately signed affirmative source-content-exclusion
+  assertion covering its reviewer-authored attestation and worksheet;
 - project-owner eligibility acceptance is affirmative;
 - duplicate reviewer identities across the two disciplines have affirmative
   owner dual-role acceptance and both qualifications;
@@ -276,6 +284,8 @@ The validator checks evidence completeness, file and field boundaries, and
 internal consistency. It shall state that it does not prove identity,
 qualifications, source authorization, a signature's legal effect, the truth of
 a human review conclusion, or that human-authored prose is non-infringing.
+It validates the source-content-exclusion assertion but cannot establish its
+truth, non-infringement, or legal effect.
 
 Operational failures shall use concise sanitized diagnostics. Content failures
 shall identify the campaign field or relative evidence path without exposing
@@ -298,6 +308,12 @@ The free-text attestation answers shall all be `Yes` and shall agree with their
 corresponding table values. Duplicate rows, reordered or unknown sections,
 additional fields, multiline cells, escaped ambiguity, and conflicting table
 and body answers shall fail validation.
+The source checksum and locator sets shall equal the unambiguous canonical sets
+derived from candidate-pinned source evidence and mapping-set source pins.
+Actor comparisons shall use Unicode-normalized, case-folded,
+punctuation-stable identities and immutable verification-locator collision
+detection. Single-line reviewer prose and finding cells shall not exceed 512
+characters.
 
 Findings tables may contain zero or more data rows after the fixed header and
 separator. Each row shall contain the exact eleven cells defined by the

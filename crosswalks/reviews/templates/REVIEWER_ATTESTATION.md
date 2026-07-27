@@ -37,6 +37,9 @@ An unsigned blank form is not review evidence.
 | Project-owner identity | `[REQUIRED]` |
 | Project-owner signature | `[REQUIRED]` |
 | Project-owner acceptance date | `[REQUIRED: YYYY-MM-DD]` |
+| Source-content exclusion | `[REQUIRED: Yes / No]` |
+| Source-content exclusion signature | `[REQUIRED: separately signed by the reviewer]` |
+| Source-content exclusion date | `[REQUIRED: YYYY-MM-DD]` |
 | Signature | `[REQUIRED]` |
 | Date | `[REQUIRED: YYYY-MM-DD]` |
 
@@ -54,6 +57,11 @@ I attest that I am independent from the mapper: Yes / No.
 
 I attest that conflicts of interest and their disposition have been fully
 disclosed: Yes / No.
+
+I separately attest that the reviewer-authored attestation and worksheet
+contain no copied or close-paraphrased source passage or other licensed source
+text, and use source material only through the recorded identifiers, checksums,
+locators, and concise reviewer analysis: Yes / No.
 
 I understand that this review does not establish certification, compliance,
 equivalence, endorsement, or assurance beyond the relationships expressly

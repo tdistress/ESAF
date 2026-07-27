@@ -86,9 +86,13 @@ _ATTESTATION_ROWS = (
     "Project-owner identity",
     "Project-owner signature",
     "Project-owner acceptance date",
+    "Source-content exclusion",
+    "Source-content exclusion signature",
+    "Source-content exclusion date",
     "Signature",
     "Date",
 )
+_MAX_PROSE_LENGTH = 512
 _WORKSHEET_IDENTIFICATION_ROWS = (
     "Mapping-set identifier",
     "Candidate commit SHA",
@@ -711,6 +715,10 @@ def _parse_two_column_tables(
                 raise EvidenceError("Markdown table row order is invalid")
             if not value or value != value.strip():
                 raise EvidenceError(f"{label} must be nonempty canonical text")
+            if len(value) > _MAX_PROSE_LENGTH:
+                raise EvidenceError(
+                    f"{label} exceeds the permitted field-purpose length"
+                )
             rows[label] = value
             cursor += 1
         if cursor < len(lines) and lines[cursor].startswith("|"):
@@ -765,6 +773,7 @@ def parse_completed_attestation(content: bytes) -> dict[str, str]:
         "Independence from mapper",
         "Conflicts of interest",
         "Project-owner dual-role acceptance",
+        "Source-content exclusion",
     ):
         if rows[label] not in {"Yes", "No"}:
             raise EvidenceError(f"{label} has an invalid exact enum")
@@ -790,6 +799,14 @@ def parse_completed_attestation(content: bytes) -> dict[str, str]:
         "project-owner acceptance date",
     )
     _require_date(rows["Date"], "attestation date")
+    _require_date(
+        rows["Source-content exclusion date"],
+        "source-content exclusion date",
+    )
+    if rows["Source-content exclusion"] != "Yes":
+        raise EvidenceError(
+            "source-content exclusion must be an affirmative Yes"
+        )
 
     expected_body = (
         "I attest that I had authorized access to the exact publication "
@@ -803,12 +820,37 @@ def parse_completed_attestation(content: bytes) -> dict[str, str]:
         f"{rows['Independence from mapper']}.\n\n"
         "I attest that conflicts of interest and their disposition have been "
         "fully\ndisclosed: Yes.\n\n"
+        "I separately attest that the reviewer-authored attestation and "
+        "worksheet\ncontain no copied or close-paraphrased source passage or "
+        "other licensed source\ntext, and use source material only through "
+        "the recorded identifiers, checksums,\nlocators, and concise reviewer "
+        "analysis: Yes.\n\n"
         "I understand that this review does not establish certification, "
         "compliance,\nequivalence, endorsement, or assurance beyond the "
         "relationships expressly\nrecorded in the mapping snapshot.\n"
     )
-    if not text.endswith(expected_body):
-        raise EvidenceError("attestation body statements do not match the table")
+    table = "\n".join(
+        (
+            "| Field | Value |",
+            "|---|---|",
+            *(
+                f"| {label} | {rows[label]} |"
+                for label in _ATTESTATION_ROWS
+            ),
+        )
+    )
+    expected = (
+        "# Qualified Reviewer Attestation\n\n"
+        "An unsigned blank form is not review evidence.\n\n"
+        f"{table}\n\n"
+        "Every table value shall be single-line text without an unescaped pipe\n"
+        "character. Do not add, remove, duplicate, or reorder rows.\n\n"
+        f"{expected_body}"
+    )
+    if text != expected:
+        raise EvidenceError(
+            "attestation does not match the closed canonical grammar"
+        )
     return {_snake_case(label): value for label, value in rows.items()}
 
 
@@ -847,6 +889,10 @@ def _parse_findings(text: str) -> tuple[ReviewFinding, ...]:
         cells = tuple(cell[1:-1] for cell in raw_cells)
         if any(cell != cell.strip() for cell in cells):
             raise EvidenceError("findings cells must use canonical whitespace")
+        if any(len(cell) > _MAX_PROSE_LENGTH for cell in cells):
+            raise EvidenceError(
+                "findings cell exceeds the permitted field-purpose length"
+            )
         raw_rows.append(cells)
         cursor += 1
     if not raw_rows:
@@ -1892,6 +1938,20 @@ def _require_immutable_locator(value: str, subject: str) -> None:
         raise EvidenceError(f"{subject} is not an immutable locator")
 
 
+def require_locator_digest(
+    locator: str,
+    digest: str,
+    subject: str,
+) -> None:
+    """Bind digest-addressed locators to the associated verified bytes."""
+    _require_digest(digest, f"{subject} digest")
+    _require_immutable_locator(locator, subject)
+    if locator.startswith("urn:sha256:") and locator[11:] != digest:
+        raise EvidenceError(
+            f"{subject} urn:sha256 does not match the verified digest"
+        )
+
+
 def build_seal_record(
     *,
     manifest_bytes: bytes,
@@ -1919,7 +1979,11 @@ def build_seal_record(
     if type(evidence_valid) is not bool or type(readiness_value) is not bool:
         raise EvidenceError("validation and readiness values must be Boolean")
     _require_commit(candidate_commit, "candidate commit")
-    _require_immutable_locator(archive_locator, "archive locator")
+    require_locator_digest(
+        archive_locator,
+        hashlib.sha256(archive_bytes).hexdigest(),
+        "archive locator",
+    )
     if re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", campaign_id) is None:
         raise EvidenceError("campaign identifier is invalid")
     if readiness_name not in {"transition_ready", "merge_ready"}:

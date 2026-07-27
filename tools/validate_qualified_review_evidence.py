@@ -11,6 +11,7 @@ import re
 import subprocess
 import sys
 from typing import Mapping
+import unicodedata
 
 from jsonschema import Draft202012Validator, FormatChecker
 from jsonschema.exceptions import SchemaError
@@ -40,6 +41,7 @@ from tools.crosswalks.qualified_review_evidence import (
     parse_completed_attestation,
     parse_completed_worksheet,
     read_external_regular_file,
+    require_locator_digest,
     signed_worksheet_sha256,
 )
 
@@ -102,6 +104,7 @@ class ValidationReport:
 class _CandidateMapping:
     assembly: PackageAssembly
     mapping_metadata: Mapping[str, object]
+    mapping_body: str
     record_metadata: tuple[Mapping[str, object], ...]
 
 
@@ -268,7 +271,7 @@ def _candidate_mapping(
         payload for payload in assembly.payloads
         if payload.purpose == "mapping set"
     )
-    mapping_metadata, _body = parse_front_matter_bytes(
+    mapping_metadata, mapping_body = parse_front_matter_bytes(
         mapping_payload.content
     )
     record_metadata: list[Mapping[str, object]] = []
@@ -280,6 +283,7 @@ def _candidate_mapping(
     result = _CandidateMapping(
         assembly=assembly,
         mapping_metadata=mapping_metadata,
+        mapping_body=mapping_body,
         record_metadata=tuple(record_metadata),
     )
     _CANDIDATE_CACHE[key] = result
@@ -313,6 +317,14 @@ def _read_package(
         _fail(
             f"{mapping_set.mapping_set_id} package manifest digest does not match"
         )
+    try:
+        require_locator_digest(
+            package.immutable_locator,
+            package.manifest_sha256,
+            f"{mapping_set.mapping_set_id} package immutable locator",
+        )
+    except EvidenceError as error:
+        raise _ValidationFailure(str(error)) from error
     if manifest_bytes != assembly.manifest_bytes:
         _fail(
             f"{mapping_set.mapping_set_id} package manifest differs from "
@@ -426,10 +438,53 @@ def _expected_publication(
         assert isinstance(prohibited, list)
         permitted = rights["permitted_elements"]
         assert isinstance(permitted, list)
+        checksums: set[str] = set()
+        locators: set[str] = set()
+        for payload in candidate_mapping.assembly.payloads:
+            if payload.purpose != "source evidence pin":
+                continue
+            evidence = json.loads(payload.content)
+            assert isinstance(evidence, dict)
+            evidence_source = evidence["source"]
+            assert isinstance(evidence_source, dict)
+            variants = evidence_source["variants"]
+            assert isinstance(variants, list)
+            for variant in variants:
+                assert isinstance(variant, dict)
+                checksum = variant["sha256"]
+                locator = variant["url"]
+                assert isinstance(checksum, str)
+                assert re.fullmatch(r"[0-9a-f]{64}", checksum)
+                assert isinstance(locator, str) and locator
+                checksums.add(checksum)
+                locators.add(locator)
+        if not checksums and not locators:
+            source_section = candidate_mapping.mapping_body.split(
+                "## Source and publication rights\n",
+                1,
+            )
+            if len(source_section) != 2:
+                raise AssertionError("candidate has no source section")
+            source_text = source_section[1].split("\n## ", 1)[0]
+            pinned = set(
+                re.findall(
+                    r"SHA-256 `([0-9a-f]{64})`",
+                    source_text,
+                )
+            )
+            official_url = source.get("official_url")
+            if len(pinned) != 1 or not isinstance(official_url, str):
+                raise AssertionError("candidate source pin is ambiguous")
+            checksums.update(pinned)
+            locators.add(official_url)
+        if not checksums or not locators:
+            raise AssertionError("candidate has no unambiguous source set")
         return {
             "publication_identity": str(publication["name"]),
             "source_version": str(source_version["id"]),
             "official_url": str(source["official_url"]),
+            "source_checksums": ", ".join(sorted(checksums)),
+            "source_locators": ", ".join(sorted(locators)),
             "publication_rights_basis": str(rights["basis"]),
             "permitted_elements": ", ".join(str(item) for item in permitted),
             "prohibited_elements": (
@@ -439,7 +494,13 @@ def _expected_publication(
             ),
             "restrictions": str(rights["restrictions"]),
         }
-    except (AssertionError, KeyError, TypeError) as error:
+    except (
+        AssertionError,
+        json.JSONDecodeError,
+        KeyError,
+        TypeError,
+        UnicodeDecodeError,
+    ) as error:
         raise _ValidationFailure(
             "candidate publication metadata cannot be derived"
         ) from error
@@ -476,6 +537,14 @@ def _validate_role_files(
         != role.attestation.sha256
     ):
         _fail(f"{role.attestation.path} digest does not match")
+    try:
+        require_locator_digest(
+            role.attestation.immutable_locator,
+            role.attestation.sha256,
+            f"{role.attestation.path} immutable locator",
+        )
+    except EvidenceError as error:
+        raise _ValidationFailure(str(error)) from error
     attestation = parse_completed_attestation(attestation_bytes)
 
     worksheet_bytes = _read_external(
@@ -486,6 +555,14 @@ def _validate_role_files(
     )
     if hashlib.sha256(worksheet_bytes).hexdigest() != role.worksheet.sha256:
         _fail(f"{role.worksheet.path} digest does not match")
+    try:
+        require_locator_digest(
+            role.worksheet.immutable_locator,
+            role.worksheet.sha256,
+            f"{role.worksheet.path} immutable locator",
+        )
+    except EvidenceError as error:
+        raise _ValidationFailure(str(error)) from error
     worksheet = parse_completed_worksheet(worksheet_bytes, role.role)
     if (
         signed_worksheet_sha256(worksheet_bytes)
@@ -517,6 +594,8 @@ def _validate_role_files(
         "publication_identity": publication["publication_identity"],
         "exact_source_version": publication["source_version"],
         "official_url": publication["official_url"],
+        "source_checksums": publication["source_checksums"],
+        "source_locators": publication["source_locators"],
         "publication_rights_basis": publication[
             "publication_rights_basis"
         ],
@@ -538,6 +617,8 @@ def _validate_role_files(
         "project_owner_dual_role_acceptance": (
             "Yes" if role.dual_role_accepted else "No"
         ),
+        "source_content_exclusion": "Yes",
+        "source_content_exclusion_date": role.worksheet.review_date,
     }
     for field, expected in expected_attestation.items():
         _require_equal(
@@ -622,6 +703,26 @@ def _derived_reviewer(role: RoleEvidence) -> dict[str, object]:
     }
 
 
+def _canonical_actor_identity(value: object) -> str:
+    if not isinstance(value, str):
+        return ""
+    normalized = unicodedata.normalize("NFKC", value).casefold()
+    return "".join(
+        character
+        for character in normalized
+        if unicodedata.category(character)[0] in {"L", "N"}
+    )
+
+
+def _same_actor(first: RoleEvidence, second: RoleEvidence) -> bool:
+    return (
+        _canonical_actor_identity(first.reviewer.identity)
+        == _canonical_actor_identity(second.reviewer.identity)
+        or first.reviewer.verification_locator
+        == second.reviewer.verification_locator
+    )
+
+
 def _validate_roles_and_readiness(
     *,
     campaign: CampaignEvidence,
@@ -636,16 +737,20 @@ def _validate_roles_and_readiness(
     for mapping_set_id, mapping_set in mapping_entries.items():
         candidate_mapping = candidate_mappings[mapping_set_id]
         mapping_ready = True
-        identities = [role.reviewer.identity for role in mapping_set.roles]
-        duplicate_identity = len(set(identities)) != len(identities)
-        mapper_ids: set[object] = set()
+        duplicate_identity = _same_actor(
+            mapping_set.roles[0],
+            mapping_set.roles[1],
+        )
+        mapper_ids: set[str] = set()
         mapper = candidate_mapping.mapping_metadata.get("mapper")
         if isinstance(mapper, dict):
-            mapper_ids.add(mapper.get("id"))
+            mapper_ids.add(_canonical_actor_identity(mapper.get("id")))
         for metadata in candidate_mapping.record_metadata:
             record_mapper = metadata.get("mapper")
             if isinstance(record_mapper, dict):
-                mapper_ids.add(record_mapper.get("id"))
+                mapper_ids.add(
+                    _canonical_actor_identity(record_mapper.get("id"))
+                )
         record_ids = {
             metadata.get("record_id")
             for metadata in candidate_mapping.record_metadata
@@ -659,7 +764,7 @@ def _validate_roles_and_readiness(
                 _fail(
                     f"{mapping_set_id} {role.role} reviewer is not eligible"
                 )
-            if role.reviewer.identity in mapper_ids:
+            if _canonical_actor_identity(role.reviewer.identity) in mapper_ids:
                 _fail(
                     f"{mapping_set_id} {role.role} reviewer is also a mapper"
                 )

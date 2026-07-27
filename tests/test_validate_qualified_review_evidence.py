@@ -7,6 +7,7 @@ import io
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import tempfile
@@ -89,7 +90,10 @@ def _reviewer(profile_name: str, role: str) -> dict[str, object]:
     return {
         "identity": f"{profile_name} {discipline} reviewer",
         "organization": "Example Assurance Ltd",
-        "verification_locator": LOCATOR,
+        "verification_locator": (
+            "https://identity.example.invalid/reviewer"
+            f"?version={profile_name}-{discipline}"
+        ),
         "qualification": f"Qualified {discipline} mapping reviewer",
         "authorized_source_access": True,
         "independent": True,
@@ -168,6 +172,12 @@ def _attestation_text(
         ("Project-owner identity", "Project Owner"),
         ("Project-owner signature", "Project Owner / signed"),
         ("Project-owner acceptance date", REVIEW_DATE),
+        ("Source-content exclusion", "Yes"),
+        (
+            "Source-content exclusion signature",
+            f"{reviewer['identity']} / separately signed",
+        ),
+        ("Source-content exclusion date", REVIEW_DATE),
         ("Signature", f"{reviewer['identity']} / signed"),
         ("Date", REVIEW_DATE),
     )
@@ -185,6 +195,12 @@ def _attestation_text(
         f"I attest that I am independent from the mapper: {independent}.\n\n"
         "I attest that conflicts of interest and their disposition have been fully\n"
         "disclosed: Yes.\n\n"
+        "I separately attest that the reviewer-authored attestation and worksheet\n"
+        "contain no copied or close-paraphrased source passage or other licensed "
+        "source\n"
+        "text, and use source material only through the recorded identifiers, "
+        "checksums,\n"
+        "locators, and concise reviewer analysis: Yes.\n\n"
         "I understand that this review does not establish certification, compliance,\n"
         "equivalence, endorsement, or assurance beyond the relationships expressly\n"
         "recorded in the mapping snapshot.\n"
@@ -413,7 +429,10 @@ class CampaignFixture:
                 "manifest_sha256": hashlib.sha256(
                     assembly.manifest_bytes
                 ).hexdigest(),
-                "immutable_locator": LOCATOR,
+                "immutable_locator": (
+                    "https://evidence.example.invalid/package"
+                    f"?version={profile_name}"
+                ),
                 "retention_owner": "Records Owner",
             }
             mapping_set = {
@@ -430,13 +449,19 @@ class CampaignFixture:
                     "dual_role_accepted": False,
                     "attestation": {
                         "path": f"attestations/{profile_name}-{role_name}.md",
-                        "immutable_locator": LOCATOR,
+                        "immutable_locator": (
+                            "https://evidence.example.invalid/attestation"
+                            f"?version={profile_name}-{role_name}"
+                        ),
                         "retention_owner": "Records Owner",
                         "sha256": "0" * 64,
                     },
                     "worksheet": {
                         "path": f"worksheets/{profile_name}-{role_name}.md",
-                        "immutable_locator": LOCATOR,
+                        "immutable_locator": (
+                            "https://evidence.example.invalid/worksheet"
+                            f"?version={profile_name}-{role_name}"
+                        ),
                         "retention_owner": "Records Owner",
                         "sha256": "0" * 64,
                         "signed_sha256": "0" * 64,
@@ -463,14 +488,45 @@ class CampaignFixture:
         assert isinstance(rights, dict)
         prohibited = rights["prohibited_elements"]
         assert isinstance(prohibited, list)
+        variants: list[dict[str, object]] = []
+        for payload in assembly.payloads:
+            if payload.purpose != "source evidence pin":
+                continue
+            evidence = json.loads(payload.content)
+            source = evidence["source"]
+            assert isinstance(source, dict)
+            payload_variants = source["variants"]
+            assert isinstance(payload_variants, list)
+            variants.extend(
+                variant
+                for variant in payload_variants
+                if isinstance(variant, dict)
+            )
+        if variants:
+            source_checksums = ", ".join(
+                sorted({str(variant["sha256"]) for variant in variants})
+            )
+            source_locators = ", ".join(
+                sorted({str(variant["url"]) for variant in variants})
+            )
+        else:
+            source_section = _body.split(
+                "## Source and publication rights\n",
+                1,
+            )[1].split("\n## ", 1)[0]
+            pinned = re.findall(
+                r"SHA-256 `([0-9a-f]{64})`",
+                source_section,
+            )
+            assert len(pinned) == 1
+            source_checksums = pinned[0]
+            source_locators = str(metadata["source"]["official_url"])
         return {
             "publication_identity": metadata["publication"]["name"],
             "source_version": metadata["source_version"]["id"],
             "official_url": metadata["source"]["official_url"],
-            "source_checksums": hashlib.sha256(
-                mapping_file.content
-            ).hexdigest(),
-            "source_locators": metadata["source"]["official_url"],
+            "source_checksums": source_checksums,
+            "source_locators": source_locators,
             "publication_rights_basis": rights["basis"],
             "permitted_elements": ", ".join(rights["permitted_elements"]),
             "prohibited_elements": (
@@ -1022,6 +1078,58 @@ class CampaignValidationTests(unittest.TestCase):
             self.campaign_root,
         )
 
+    def _replace_attestation_text(
+        self,
+        old: str,
+        new: str,
+        *,
+        mapping_index: int = 0,
+        role_index: int = 0,
+    ) -> None:
+        manifest = self._manifest()
+        mapping_sets = manifest["mapping_sets"]
+        assert isinstance(mapping_sets, list)
+        mapping_set = mapping_sets[mapping_index]
+        assert isinstance(mapping_set, dict)
+        roles = mapping_set["roles"]
+        assert isinstance(roles, list)
+        role = roles[role_index]
+        assert isinstance(role, dict)
+        attestation = role["attestation"]
+        worksheet = role["worksheet"]
+        assert isinstance(attestation, dict)
+        assert isinstance(worksheet, dict)
+        attestation_path = self.campaign_root.joinpath(
+            *str(attestation["path"]).split("/")
+        )
+        prior_digest = str(attestation["sha256"])
+        content = attestation_path.read_text(encoding="utf-8")
+        self.assertIn(old, content)
+        revised = content.replace(old, new, 1).encode("utf-8")
+        attestation_path.write_bytes(revised)
+        current_digest = hashlib.sha256(revised).hexdigest()
+        attestation["sha256"] = current_digest
+
+        worksheet_path = self.campaign_root.joinpath(
+            *str(worksheet["path"]).split("/")
+        )
+        worksheet_bytes = worksheet_path.read_bytes().replace(
+            prior_digest.encode("ascii"),
+            current_digest.encode("ascii"),
+            1,
+        )
+        previous_signed = str(worksheet["signed_sha256"]).encode("ascii")
+        current_signed = signed_worksheet_sha256(worksheet_bytes)
+        worksheet_bytes = worksheet_bytes.replace(
+            previous_signed,
+            current_signed.encode("ascii"),
+            1,
+        )
+        worksheet_path.write_bytes(worksheet_bytes)
+        worksheet["signed_sha256"] = current_signed
+        worksheet["sha256"] = hashlib.sha256(worksheet_bytes).hexdigest()
+        self._write_manifest(manifest)
+
     def _candidate_mapper_id(self, mapping_index: int) -> str:
         profile = tuple(PROFILES.values())[mapping_index]
         mapping_file = next(
@@ -1255,6 +1363,174 @@ class CampaignValidationTests(unittest.TestCase):
                     assert isinstance(role, dict)
                     mutate(role)
                     self._rewrite_role(manifest, 0, 0)
+                    report = self._report()
+                finally:
+                    self.campaign_root = original
+                self.assertFalse(report.evidence_valid, report)
+
+    def test_actor_aliases_and_shared_locator_cannot_bypass_role_rules(
+        self,
+    ) -> None:
+        aliases = (
+            ("case", None, lambda value: value.swapcase(), False),
+            (
+                "punctuation",
+                None,
+                lambda value: value.replace(" ", "-"),
+                False,
+            ),
+            (
+                "unicode",
+                "Jos\u00e9 Reviewer",
+                lambda _value: "Jose\u0301 Reviewer",
+                False,
+            ),
+            (
+                "shared-locator",
+                None,
+                lambda _value: "Different Display Name",
+                True,
+            ),
+        )
+        for label, first_name, alias, share_locator in aliases:
+            with self.subTest(alias=label):
+                isolated = Path(self.temporary.name) / f"actor-alias-{label}"
+                shutil.copytree(self.pristine_campaign, isolated)
+                original = self.campaign_root
+                self.campaign_root = isolated
+                try:
+                    manifest = self._manifest()
+                    mapping_sets = manifest["mapping_sets"]
+                    assert isinstance(mapping_sets, list)
+                    mapping_set = mapping_sets[0]
+                    assert isinstance(mapping_set, dict)
+                    roles = mapping_set["roles"]
+                    assert isinstance(roles, list)
+                    first, second = roles
+                    assert isinstance(first, dict)
+                    assert isinstance(second, dict)
+                    first_reviewer = first["reviewer"]
+                    second_reviewer = second["reviewer"]
+                    assert isinstance(first_reviewer, dict)
+                    assert isinstance(second_reviewer, dict)
+                    if first_name is not None:
+                        first_reviewer["identity"] = first_name
+                    second_reviewer["identity"] = alias(
+                        str(first_reviewer["identity"])
+                    )
+                    if share_locator:
+                        second_reviewer["verification_locator"] = (
+                            first_reviewer["verification_locator"]
+                        )
+                    self._rewrite_role(manifest, 0, 0)
+                    self._rewrite_role(manifest, 0, 1)
+                    report = self._report()
+                finally:
+                    self.campaign_root = original
+                self.assertFalse(report.evidence_valid, report)
+
+    def test_actor_alias_cannot_bypass_mapper_independence(self) -> None:
+        manifest = self._manifest()
+        mapping_sets = manifest["mapping_sets"]
+        assert isinstance(mapping_sets, list)
+        mapping_set = mapping_sets[0]
+        assert isinstance(mapping_set, dict)
+        roles = mapping_set["roles"]
+        assert isinstance(roles, list)
+        role = roles[0]
+        assert isinstance(role, dict)
+        reviewer = role["reviewer"]
+        assert isinstance(reviewer, dict)
+        reviewer["identity"] = self._candidate_mapper_id(0).swapcase()
+        self._rewrite_role(manifest, 0, 0)
+        self.assertFalse(self._report().evidence_valid)
+
+    def test_sha_locators_bind_package_attestation_and_worksheet_bytes(
+        self,
+    ) -> None:
+        for locator_class in ("package", "attestation", "worksheet"):
+            with self.subTest(locator_class=locator_class):
+                isolated = Path(self.temporary.name) / locator_class
+                shutil.copytree(self.pristine_campaign, isolated)
+                original = self.campaign_root
+                self.campaign_root = isolated
+                try:
+                    manifest = self._manifest()
+                    mapping_sets = manifest["mapping_sets"]
+                    assert isinstance(mapping_sets, list)
+                    mapping_set = mapping_sets[0]
+                    assert isinstance(mapping_set, dict)
+                    roles = mapping_set["roles"]
+                    assert isinstance(roles, list)
+                    if locator_class == "package":
+                        package = mapping_set["package"]
+                        assert isinstance(package, dict)
+                        package["immutable_locator"] = (
+                            f"urn:sha256:{'0' * 64}"
+                        )
+                        self._rewrite_role(manifest, 0, 0)
+                        self._rewrite_role(manifest, 0, 1)
+                    else:
+                        role = roles[0]
+                        assert isinstance(role, dict)
+                        record = role[locator_class]
+                        assert isinstance(record, dict)
+                        record["immutable_locator"] = (
+                            f"urn:sha256:{'0' * 64}"
+                        )
+                        self._rewrite_role(manifest, 0, 0)
+                    report = self._report()
+                finally:
+                    self.campaign_root = original
+                self.assertFalse(report.evidence_valid, report)
+
+    def test_attestation_source_sets_are_exactly_candidate_bound(self) -> None:
+        attestation_path = next(
+            (self.campaign_root / "attestations").glob("*.md")
+        )
+        text = attestation_path.read_text(encoding="utf-8")
+        checksum_line = next(
+            line
+            for line in text.splitlines()
+            if line.startswith("| Source checksum(s) | ")
+        )
+        locator_line = next(
+            line
+            for line in text.splitlines()
+            if line.startswith("| Source locator(s) | ")
+        )
+        checksum_set = checksum_line.removeprefix(
+            "| Source checksum(s) | "
+        ).removesuffix(" |")
+        locator_set = locator_line.removeprefix(
+            "| Source locator(s) | "
+        ).removesuffix(" |")
+        cases = (
+            (checksum_set, "0" * 64),
+            (checksum_set, checksum_set + ", " + "0" * 64),
+            (
+                checksum_set,
+                ", ".join(checksum_set.split(", ")[:-1]) or "0" * 64,
+            ),
+            (
+                locator_set,
+                locator_set + ", https://wrong.invalid/source?version=1",
+            ),
+            (
+                locator_set,
+                ", ".join(locator_set.split(", ")[:-1])
+                or "https://wrong.invalid/source?version=1",
+            ),
+            ("| Exact source version | 3.3 |", "| Exact source version | 3.2 |"),
+        )
+        for index, (old, new) in enumerate(cases):
+            with self.subTest(case=index):
+                isolated = Path(self.temporary.name) / f"source-set-{index}"
+                shutil.copytree(self.pristine_campaign, isolated)
+                original = self.campaign_root
+                self.campaign_root = isolated
+                try:
+                    self._replace_attestation_text(old, new)
                     report = self._report()
                 finally:
                     self.campaign_root = original
@@ -1714,6 +1990,37 @@ class CampaignValidationTests(unittest.TestCase):
                 )
                 self.assertFalse(report.evidence_valid, report)
 
+    def test_retained_draft_revalidation_rejects_mismatched_archive_urn(
+        self,
+    ) -> None:
+        final_root, draft_root, seal_path, archive_path = self._final_inputs(
+            "draft-archive-urn-mismatch"
+        )
+        seal = json.loads(seal_path.read_bytes())
+        seal["archive_locator"] = f"urn:sha256:{'0' * 64}"
+        revised_seal = canonical_json_bytes(seal)
+        seal_path.write_bytes(revised_seal)
+        final_manifest = json.loads(
+            (final_root / MANIFEST_PATH).read_bytes()
+        )
+        reference = final_manifest["draft_campaign_reference"]
+        assert isinstance(reference, dict)
+        reference["seal_record_sha256"] = hashlib.sha256(
+            revised_seal
+        ).hexdigest()
+        (final_root / MANIFEST_PATH).write_bytes(
+            canonical_json_bytes(final_manifest)
+        )
+
+        report = self._final_report(
+            final_root,
+            draft_root,
+            seal_path,
+            archive_path,
+        )
+
+        self.assertFalse(report.evidence_valid, report)
+
     def test_reviewed_candidate_requires_exact_nested_reviewer_objects(
         self,
     ) -> None:
@@ -2041,6 +2348,44 @@ class CampaignValidationTests(unittest.TestCase):
         self.assertEqual(len(stderr.splitlines()), 1)
         self.assertFalse(output.exists())
 
+    def test_validator_cli_keeps_post_blob_git_show_failure_operational(
+        self,
+    ) -> None:
+        original_run = GitReader._run
+
+        def fail_show(
+            reader: GitReader,
+            *arguments: str,
+            text: bool = False,
+        ) -> subprocess.CompletedProcess:
+            if arguments and arguments[0] == "show":
+                raise subprocess.CalledProcessError(
+                    128,
+                    ["git", "show", "host-secret"],
+                    stderr=b"host-secret object failure",
+                )
+            return original_run(reader, *arguments, text=text)
+
+        with mock.patch.object(
+            GitReader,
+            "_run",
+            autospec=True,
+            side_effect=fail_show,
+        ):
+            result, stdout, stderr = self._run_validator_cli(
+                [
+                    "--candidate",
+                    self.candidate,
+                    "--evidence-root",
+                    str(self.campaign_root),
+                    "--check",
+                ]
+            )
+        self.assertEqual(result, 2)
+        self.assertEqual(stdout, "")
+        self.assertEqual(len(stderr.splitlines()), 1)
+        self.assertNotIn("host-secret", stderr)
+
     def _run_seal_cli(
         self,
         arguments: list[str],
@@ -2215,13 +2560,17 @@ class CampaignValidationTests(unittest.TestCase):
         output = Path(self.temporary.name) / "competing-output"
         original_rename = seal_module._rename_directory_no_replace
 
-        def publish_competitor(source: Path, destination: Path) -> None:
+        def publish_competitor(
+            source: Path,
+            destination: Path,
+            *dir_fds: int | None,
+        ) -> None:
             destination.mkdir()
             (destination / "competitor.txt").write_text(
                 "keep",
                 encoding="utf-8",
             )
-            original_rename(source, destination)
+            original_rename(source, destination, *dir_fds)
 
         with mock.patch(
             "tools.seal_qualified_review_campaign."
@@ -2270,6 +2619,47 @@ class CampaignValidationTests(unittest.TestCase):
             ),
             (),
         )
+
+    def test_seal_fails_closed_when_parent_or_ancestor_is_swapped(
+        self,
+    ) -> None:
+        for boundary in ("parent", "ancestor"):
+            with self.subTest(boundary=boundary):
+                base = Path(self.temporary.name) / f"swap-{boundary}"
+                parent = base / "ancestor" / "parent"
+                parent.mkdir(parents=True)
+                output = parent / "sealed"
+                swap_target = parent if boundary == "parent" else parent.parent
+                moved = swap_target.with_name(swap_target.name + "-moved")
+                original_validate = seal_module._validate_campaign_details
+
+                def swap_after_validation(
+                    *args: object,
+                    **kwargs: object,
+                ) -> object:
+                    details = original_validate(*args, **kwargs)
+                    swap_target.rename(moved)
+                    swap_target.mkdir(parents=True)
+                    return details
+
+                with mock.patch(
+                    "tools.seal_qualified_review_campaign."
+                    "_validate_campaign_details",
+                    side_effect=swap_after_validation,
+                ):
+                    result, stdout, stderr = self._run_seal_cli(
+                        self._seal_arguments(output)
+                    )
+                self.assertEqual(result, 2)
+                self.assertEqual(stdout, "")
+                self.assertEqual(len(stderr.splitlines()), 1)
+                self.assertFalse(output.exists())
+                moved_output = (
+                    moved / "sealed"
+                    if boundary == "parent"
+                    else moved / "parent" / "sealed"
+                )
+                self.assertFalse(moved_output.exists())
 
     def test_seal_archives_the_exact_validated_byte_snapshot(self) -> None:
         output = Path(self.temporary.name) / "snapshot-output"

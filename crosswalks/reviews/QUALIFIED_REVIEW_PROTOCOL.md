@@ -90,6 +90,12 @@ those nested identity fields.
 
 A named human records qualification, authorized source access, organization,
 verification locator, independence from the mapper, and conflicts of interest.
+Each role attestation also carries the reviewer’s distinct
+source-content-exclusion signature and date. It asserts that the
+reviewer-authored attestation and worksheet contain no copied or
+close-paraphrased source passage or other licensed source text and use source
+material only through candidate-pinned identifiers, checksums, locators, and
+concise reviewer analysis.
 The project owner accepts or rejects eligibility per mapping set and review
 role. The reviewer must be different from the mapper.
 
@@ -97,6 +103,9 @@ Prefer different qualified humans for the two review disciplines. If one
 human performs both disciplines, the project owner must explicitly accept
 that arrangement. `dual_role_accepted` shall be false for unique reviewers
 and true on both role records when the same identity performs both roles.
+Identity comparison is Unicode-normalized, case-folded, and
+punctuation-stable. A shared immutable verification locator is also the same
+actor, so aliases cannot avoid mapper independence or dual-role acceptance.
 That reviewer shall demonstrate qualifications for both roles, and the
 attestations, worksheets, findings, signatures, and conclusions remain
 separate.
@@ -166,6 +175,10 @@ be added, removed, duplicated, or reordered. A findings table may contain a
 literal `NONE` row or finding rows, but never both. All template markers shall
 be replaced, and the attestation's free-text Yes/No answers shall agree with
 its table.
+Completed attestation bytes shall equal the deterministic canonical rendering.
+Reviewer-authored single-line prose and finding cells are limited to 512
+characters and shall serve only their named field purpose; source passages
+shall be referenced by locator rather than embedded.
 
 ## Signed worksheet digest procedure
 
@@ -201,6 +214,10 @@ An upload failure, absence, or mismatch leaves the local seal unpublished and
 unusable. A changed archive byte or locator requires a newly materialized pair
 in a new output directory. Offline validation does not establish remote
 availability or external verification.
+The sealer anchors and revalidates the complete output ancestor chain through
+publication. Windows directory handles prevent replacement; supported POSIX
+systems publish relative to anchored directory descriptors. Platforms without
+an atomic anchored no-replace primitive fail closed.
 
 The seal is canonical one-line UTF-8/LF JSON with sorted keys, no insignificant
 whitespace, and schema version `1.0.0`.
@@ -234,7 +251,9 @@ Automation checks schema, bytes, hashes, paths, field consistency, campaign
 linkage, and readiness rules. Automation cannot establish human identity,
 qualification, source authorization, signature effect, the truth of human
 review conclusions, or non-infringement of human-authored prose. An automated
-pass therefore validates the evidence contract; it does not create qualified
+check validates the signed source-content-exclusion assertion but cannot
+establish its truth, non-infringement, or legal effect. An automated pass
+therefore validates the evidence contract; it does not create qualified
 review or substitute for the named humans' judgments.
 
 ## Lifecycle transition
