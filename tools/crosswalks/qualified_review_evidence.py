@@ -1167,7 +1167,7 @@ def _inspect_lexical_entry(path: Path, subject: str) -> os.stat_result:
     if missing:
         raise EvidenceError(f"{subject} is missing")
     if unavailable:
-        raise EvidenceError(f"{subject} cannot be inspected")
+        raise EvidenceOperationalError(f"{subject} cannot be inspected")
     raise EvidenceError(f"{subject} cannot be inspected")
 
 
@@ -1183,7 +1183,7 @@ def _exact_directory_name(parent: Path, name: str, subject: str) -> None:
         unavailable = True
         matches = ()
     if unavailable:
-        raise EvidenceError(f"{subject} cannot be inspected")
+        raise EvidenceOperationalError(f"{subject} cannot be inspected")
     if len(matches) > 1:
         raise EvidenceError(
             f"{subject} has a case-insensitive path collision"
@@ -1279,7 +1279,7 @@ def _require_canonical_case(root: Path, relative: PurePosixPath) -> None:
         else:
             unavailable = False
         if unavailable:
-            raise EvidenceError(f"{subject} cannot be inspected")
+            raise EvidenceOperationalError(f"{subject} cannot be inspected")
         if len(matches) > 1:
             raise EvidenceError(
                 f"{subject} has a case-insensitive path collision"
@@ -1313,16 +1313,17 @@ def _validate_external_regular_file(
                 )
             )
 
-    resolution_failed = False
     try:
         resolved_root = lexical_root.resolve(strict=True)
         resolved = candidate.resolve(strict=True)
         resolved_worktrees = tuple(
             worktree.resolve(strict=True) for worktree in worktrees
         )
-    except (OSError, RuntimeError):
-        resolution_failed = True
-    if resolution_failed:
+    except OSError:
+        raise EvidenceOperationalError(
+            f"{relative} cannot be resolved"
+        ) from None
+    except RuntimeError:
         raise EvidenceError(f"{relative} cannot be resolved")
 
     if not _is_within(resolved, resolved_root):
@@ -1343,7 +1344,7 @@ def _validate_external_regular_file(
     if missing:
         raise EvidenceError(f"{relative} is missing")
     if unavailable:
-        raise EvidenceError(f"{relative} cannot be inspected")
+        raise EvidenceOperationalError(f"{relative} cannot be inspected")
     assert stat_result is not None
     if not stat.S_ISREG(stat_result.st_mode):
         raise EvidenceError(f"{relative} must be a regular file")
@@ -1537,6 +1538,7 @@ def _open_windows_directory_chain(
         validated.ancestor_directories + validated.relative_directories
     )
     failure: str | None = None
+    operational_failure = False
     for snapshot in snapshots:
         handle = kernel32.CreateFileW(
             str(snapshot.path),
@@ -1549,6 +1551,7 @@ def _open_windows_directory_chain(
         )
         if handle in {None, invalid_handle}:
             failure = "directory chain cannot be opened safely"
+            operational_failure = True
             break
         handle_value = int(handle)
         handles.append(handle_value)
@@ -1567,6 +1570,8 @@ def _open_windows_directory_chain(
     if failure is not None:
         chain = _AnchoredDirectoryChain(tuple(handles), None)
         _close_anchored_directory_chain(chain)
+        if operational_failure:
+            raise EvidenceOperationalError(failure)
         raise EvidenceError(failure)
     return _AnchoredDirectoryChain(tuple(handles), None)
 
@@ -1575,13 +1580,14 @@ def _open_posix_directory_chain(
     validated: _ValidatedExternalFile,
 ) -> _AnchoredDirectoryChain:
     if not _POSIX_ANCHORED_DIRECTORY_CAPABLE:
-        raise EvidenceError(
+        raise EvidenceOperationalError(
             "platform cannot provide anchored no-follow directory traversal"
         )
     root_snapshot = validated.ancestor_directories[-1]
     flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
     handles: list[int] = []
     failure: str | None = None
+    operational_failure = False
     try:
         root_descriptor = _ORIGINAL_OS_OPEN(validated.root, flags)
         handles.append(root_descriptor)
@@ -1616,11 +1622,16 @@ def _open_posix_directory_chain(
                     failure = "campaign directory changed before it was anchored"
                     break
                 parent = descriptor
-    except (OSError, EvidenceError):
+    except OSError:
+        operational_failure = True
+        failure = failure or "directory chain cannot be opened safely"
+    except EvidenceError:
         failure = failure or "directory chain cannot be opened safely"
     if failure is not None:
         chain = _AnchoredDirectoryChain(tuple(handles), None)
         _close_anchored_directory_chain(chain)
+        if operational_failure:
+            raise EvidenceOperationalError(failure)
         raise EvidenceError(failure)
     return _AnchoredDirectoryChain(tuple(handles), handles[-1])
 
@@ -1747,7 +1758,7 @@ def _campaign_tree_entries(
     except OSError:
         root_unavailable = True
     if root_unavailable:
-        raise EvidenceError("campaign root cannot be inspected")
+        raise EvidenceOperationalError("campaign root cannot be inspected")
     if not stat.S_ISDIR(root_mode):
         raise EvidenceError("campaign root must be a directory")
 
@@ -1764,7 +1775,9 @@ def _campaign_tree_entries(
             entries = ()
         if directory_unavailable:
             subject = prefix or "campaign root"
-            raise EvidenceError(f"{subject} cannot be inspected")
+            raise EvidenceOperationalError(
+                f"{subject} cannot be inspected"
+            )
         component_names: dict[str, str] = {}
         for entry in entries:
             folded_name = entry.name.casefold()

@@ -1015,6 +1015,8 @@ def validate_campaign(
         return details.report
     except EvidenceOperationalError:
         raise
+    except UnicodeError:
+        raise
     except (_ValidationFailure, EvidenceError, ValueError) as error:
         return ValidationReport(
             evidence_valid=False,

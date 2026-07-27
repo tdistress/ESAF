@@ -1905,6 +1905,87 @@ class CampaignValidationTests(unittest.TestCase):
         self.assertEqual(len(stderr.splitlines()), 1)
         self.assertNotIn("host-secret", stderr)
 
+    def test_validator_cli_classifies_preopen_permissions_as_operational(
+        self,
+    ) -> None:
+        arguments = [
+            "--candidate",
+            self.candidate,
+            "--evidence-root",
+            str(self.campaign_root),
+            "--check",
+        ]
+        original_resolve = Path.resolve
+        original_stat = Path.stat
+        manifest_path = self.campaign_root / MANIFEST_PATH
+
+        def deny_campaign_resolve(
+            path: Path,
+            *args: object,
+            **kwargs: object,
+        ) -> Path:
+            if path == self.campaign_root:
+                raise PermissionError("host-secret resolve denied")
+            return original_resolve(path, *args, **kwargs)
+
+        def deny_manifest_stat(
+            path: Path,
+            *args: object,
+            **kwargs: object,
+        ) -> object:
+            if (
+                path == manifest_path
+                and kwargs.get("follow_symlinks") is False
+            ):
+                raise PermissionError("host-secret stat denied")
+            return original_stat(path, *args, **kwargs)
+
+        cases = (
+            (
+                "lstat",
+                mock.patch.object(
+                    Path,
+                    "lstat",
+                    autospec=True,
+                    side_effect=PermissionError("host-secret lstat denied"),
+                ),
+            ),
+            (
+                "iterdir",
+                mock.patch.object(
+                    Path,
+                    "iterdir",
+                    autospec=True,
+                    side_effect=PermissionError("host-secret iterdir denied"),
+                ),
+            ),
+            (
+                "resolve",
+                mock.patch.object(
+                    Path,
+                    "resolve",
+                    autospec=True,
+                    side_effect=deny_campaign_resolve,
+                ),
+            ),
+            (
+                "stat",
+                mock.patch.object(
+                    Path,
+                    "stat",
+                    autospec=True,
+                    side_effect=deny_manifest_stat,
+                ),
+            ),
+        )
+        for boundary, patcher in cases:
+            with self.subTest(boundary=boundary), patcher:
+                result, stdout, stderr = self._run_validator_cli(arguments)
+                self.assertEqual(result, 2)
+                self.assertEqual(stdout, "")
+                self.assertEqual(len(stderr.splitlines()), 1)
+                self.assertNotIn("host-secret", stderr)
+
     def test_clis_sanitize_git_operational_failures(self) -> None:
         git_failure = subprocess.CalledProcessError(128, ["git"])
         validator_arguments = [
@@ -1926,6 +2007,25 @@ class CampaignValidationTests(unittest.TestCase):
         self.assertEqual(stdout, "")
         self.assertEqual(len(stderr.splitlines()), 1)
         self.assertNotIn(str(self.repository), stderr)
+
+        decode_failure = UnicodeDecodeError(
+            "utf-8",
+            b"\xff",
+            0,
+            1,
+            "invalid Git output",
+        )
+        with mock.patch(
+            "tools.build_mapping_review_bundle.GitReader.worktree_roots",
+            autospec=True,
+            side_effect=decode_failure,
+        ):
+            result, stdout, stderr = self._run_validator_cli(
+                validator_arguments
+            )
+        self.assertEqual(result, 2)
+        self.assertEqual(stdout, "")
+        self.assertEqual(len(stderr.splitlines()), 1)
 
         output = Path(self.temporary.name) / "git-failure-output"
         with mock.patch(
