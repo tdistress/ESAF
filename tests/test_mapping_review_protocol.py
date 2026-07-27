@@ -212,6 +212,21 @@ class MappingReviewProtocolTests(unittest.TestCase):
             normalized,
         )
 
+    def test_tools_readme_documents_qualified_review_evidence_commands(self) -> None:
+        """Removing an operator command would make review campaigns unsafe to run."""
+        readme = (ROOT / "tools/README.md").read_text(encoding="utf-8")
+        for command in (
+            "python tools/build_mapping_review_bundle.py --candidate-state draft",
+            "python tools/build_mapping_review_bundle.py --candidate-state reviewed",
+            "python tools/validate_qualified_review_evidence.py --check",
+            "python tools/seal_qualified_review_campaign.py",
+            "--draft-evidence-root",
+            "--draft-seal-record",
+            "--draft-archive",
+        ):
+            with self.subTest(command=command):
+                self.assertIn(command, readme)
+
     def test_review_worksheets_have_separate_scopes_and_findings(self) -> None:
         specification = (
             TEMPLATES / "SPECIFICATION_INVENTORY_REVIEW.md"

@@ -743,6 +743,26 @@ class ReleaseMetadataTests(unittest.TestCase):
         self.assertIn("python tools/release_gates.py --check", workflow)
         self.assertIn("python tools/validate_links.py --check", workflow)
 
+    def test_workflow_path_filters_track_qualified_review_evidence_tools(self) -> None:
+        """Changing any review-evidence tool must trigger repository validation."""
+        workflow = read_repository_file(".github/workflows/catalog-validation.yml")
+        pull_request = workflow.split("  pull_request:\n", 1)[1].split(
+            "  push:\n", 1
+        )[0]
+        main_push = workflow.split("  push:\n", 1)[1].split(
+            "  workflow_dispatch:", 1
+        )[0]
+        for path in (
+            "tools/build_mapping_review_bundle.py",
+            "tools/validate_qualified_review_evidence.py",
+            "tools/seal_qualified_review_campaign.py",
+            "tools/crosswalks/qualified_review_evidence.py",
+        ):
+            with self.subTest(event="pull_request", path=path):
+                self.assertIn(path, pull_request)
+            with self.subTest(event="push", path=path):
+                self.assertIn(path, main_push)
+
     def test_current_changelog_names_all_draft_architecture_patterns(self) -> None:
         patterns = draft_architecture_patterns()
         self.assertEqual(7, len(patterns), "architecture registry must contain seven Draft rows")
