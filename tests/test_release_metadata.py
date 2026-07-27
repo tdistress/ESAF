@@ -372,7 +372,7 @@ class ReleaseMetadataTests(unittest.TestCase):
         ):
             self.assertIn(heading, milestones)
         for required in (
-            "all three UK mapping snapshots",
+            "all three UK mapping sets",
             "minimum ESAF-1500 assessment foundation",
             "one Draft pilot",
             "PCI DSS",
@@ -398,11 +398,11 @@ class ReleaseMetadataTests(unittest.TestCase):
             ):
                 with self.subTest(required=required):
                     self.assertTrue(contains_normalized_phrase(section, required))
-        self.assertIn(
+        self.assertTrue(contains_normalized_phrase(
+            milestones,
             "DEFERRED is a milestone assurance disposition, not an ESAF-1600 "
             "mapping lifecycle state",
-            milestones,
-        )
+        ))
         self.assertTrue(contains_normalized_phrase(
             milestones,
             "all three mapping sets and their records remain Draft",
@@ -494,7 +494,7 @@ class ReleaseMetadataTests(unittest.TestCase):
             "qualified-review availability",
             "does not block `v0.5-beta`",
         ):
-            self.assertIn(required, backlog)
+            self.assertTrue(contains_normalized_phrase(backlog, required))
 
     def test_roadmap_keeps_deferred_mapping_assurance_nonblocking_after_beta(
         self,
