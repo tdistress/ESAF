@@ -4,6 +4,7 @@ import subprocess
 import unittest
 from datetime import date, datetime, timezone
 from pathlib import Path
+from unittest.mock import patch
 
 from tools.release_gates import load_front_matter
 
@@ -123,8 +124,8 @@ _PROTECTED_ASSURANCE_CONCEPT = re.compile(
 _EXPLICIT_NEGATION = re.compile(
     r"\b(?:cannot|neither|never|no|not|without)\b"
 )
-_CONTRASTING_CLAUSE = re.compile(
-    r"\s*(?:;|\bbut\b|\bhowever\b|\byet\b)\s*",
+_COORDINATED_SEGMENT = re.compile(
+    r"\s*(?:;|\b(?:and|or|then|but|however|yet)\b)\s*",
     re.IGNORECASE,
 )
 _ISSUE_55_TARGET = re.compile(r"\b(?:issue 55|this issue)\b")
@@ -177,14 +178,14 @@ def normalized_contract_words(text: str) -> str:
 def affirmative_deferred_assurance_claims(text: str) -> tuple[str, ...]:
     claims: list[str] = []
     for sentence in contract_sentences(text):
-        subject_in_prior_clause = False
+        subject_in_prior_segment = False
         claim_found = False
-        for clause in _CONTRASTING_CLAUSE.split(sentence):
-            normalized = normalized_contract_words(clause)
+        for segment in _COORDINATED_SEGMENT.split(sentence):
+            normalized = normalized_contract_words(segment)
             subjects = tuple(_DEFERRED_ASSURANCE_SUBJECT.finditer(normalized))
             for verb in _AFFIRMATIVE_ASSURANCE_VERB.finditer(normalized):
                 has_governing_subject = (
-                    subject_in_prior_clause
+                    subject_in_prior_segment
                     or any(subject.start() < verb.start() for subject in subjects)
                 )
                 concept = _PROTECTED_ASSURANCE_CONCEPT.search(
@@ -200,30 +201,44 @@ def affirmative_deferred_assurance_claims(text: str) -> tuple[str, ...]:
                 break
             if claim_found:
                 break
-            subject_in_prior_clause = subject_in_prior_clause or bool(subjects)
+            subject_in_prior_segment = (
+                subject_in_prior_segment
+                or bool(subjects)
+            )
     return tuple(claims)
 
 
 def contradictory_issue_closure_claims(text: str) -> tuple[str, ...]:
     claims: list[str] = []
     for sentence in contract_sentences(text):
-        normalized = normalized_contract_words(sentence)
-        if _DIRECT_CLOSURE_CLAIM.search(normalized):
-            claims.append(sentence)
-            continue
-        subjects = tuple(_DEFERRED_ASSURANCE_SUBJECT.finditer(normalized))
-        for verb in _CLOSURE_VERB.finditer(normalized):
-            has_governing_subject = any(
-                subject.start() < verb.start()
-                for subject in subjects
+        subject_in_prior_segment = False
+        claim_found = False
+        for segment in _COORDINATED_SEGMENT.split(sentence):
+            normalized = normalized_contract_words(segment)
+            if _DIRECT_CLOSURE_CLAIM.search(normalized):
+                claims.append(sentence)
+                claim_found = True
+                break
+            subjects = tuple(_DEFERRED_ASSURANCE_SUBJECT.finditer(normalized))
+            for verb in _CLOSURE_VERB.finditer(normalized):
+                has_governing_subject = (
+                    subject_in_prior_segment
+                    or any(subject.start() < verb.start() for subject in subjects)
+                )
+                target = _ISSUE_55_TARGET.search(normalized, verb.end())
+                if not has_governing_subject or target is None:
+                    continue
+                if _EXPLICIT_NEGATION.search(normalized[:target.end()]):
+                    continue
+                claims.append(sentence)
+                claim_found = True
+                break
+            if claim_found:
+                break
+            subject_in_prior_segment = (
+                subject_in_prior_segment
+                or bool(subjects)
             )
-            target = _ISSUE_55_TARGET.search(normalized, verb.end())
-            if not has_governing_subject or target is None:
-                continue
-            if _EXPLICIT_NEGATION.search(normalized[:target.end()]):
-                continue
-            claims.append(sentence)
-            break
     return tuple(claims)
 
 
@@ -486,12 +501,19 @@ class ReleaseMetadataTests(unittest.TestCase):
             release_plan,
             "## v0.5-beta deferred mapping assurance",
         )
-        mutation = "Owner-risk acceptance establishes compliance."
-
-        self.assertEqual(
-            (mutation,),
-            affirmative_deferred_assurance_claims(f"{assurance}\n\n{mutation}"),
+        mutations = (
+            "Owner-risk acceptance establishes compliance.",
+            "Owner-risk acceptance does not complete qualified review and "
+            "establishes compliance.",
         )
+        for mutation in mutations:
+            with self.subTest(mutation=mutation):
+                self.assertEqual(
+                    (mutation,),
+                    affirmative_deferred_assurance_claims(
+                        f"{assurance}\n\n{mutation}"
+                    ),
+                )
 
     def test_issue_55_contract_rejects_appended_affirmative_assurance_claim(
         self,
@@ -522,12 +544,44 @@ class ReleaseMetadataTests(unittest.TestCase):
             plan,
             "## Task 6: Synchronize GitHub Issue 55",
         )
-        mutation = "This issue is closed."
-
-        self.assertEqual(
-            (mutation,),
-            contradictory_issue_closure_claims(f"{issue_body}\n\n{mutation}"),
+        mutations = (
+            "This issue is closed.",
+            "Owner-risk acceptance does not complete qualified review and "
+            "closes this issue.",
         )
+        for mutation in mutations:
+            with self.subTest(mutation=mutation):
+                self.assertEqual(
+                    (mutation,),
+                    contradictory_issue_closure_claims(
+                        f"{issue_body}\n\n{mutation}"
+                    ),
+                )
+
+    def test_issue_59_contract_rejects_appended_closed_state(
+        self,
+    ) -> None:
+        plan = read_repository_file(
+            "docs/superpowers/plans/"
+            "2026-07-27-v05-beta-deferred-mapping-assurance.md"
+        )
+        issue_body = fenced_markdown_in_task(
+            plan,
+            "## Task 7: Synchronize GitHub Issue 59",
+        )
+        mutation = "This issue is closed."
+        mutated_plan = plan.replace(
+            issue_body,
+            f"{issue_body}\n\n{mutation}",
+            1,
+        )
+
+        with patch(
+            f"{__name__}.read_repository_file",
+            return_value=mutated_plan,
+        ):
+            with self.assertRaises(AssertionError):
+                self.test_planned_issue_59_body_preserves_complete_release_gate_set()
 
     def test_affirmative_claim_detector_covers_protected_verbs_and_concepts(
         self,
@@ -832,6 +886,7 @@ class ReleaseMetadataTests(unittest.TestCase):
             with self.subTest(required=required):
                 self.assertTrue(contains_normalized_phrase(issue_body, required))
         self.assertEqual((), affirmative_deferred_assurance_claims(issue_body))
+        self.assertEqual((), contradictory_issue_closure_claims(issue_body))
 
     def test_v05_beta_preserves_bounded_non_goals(self) -> None:
         milestones = read_repository_file("project/MILESTONES.md")
