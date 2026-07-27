@@ -1938,6 +1938,11 @@ def _require_immutable_locator(value: str, subject: str) -> None:
         raise EvidenceError(f"{subject} is not an immutable locator")
 
 
+def require_immutable_locator(value: str, subject: str) -> None:
+    """Validate immutable-locator syntax without an associated byte digest."""
+    _require_immutable_locator(value, subject)
+
+
 def require_locator_digest(
     locator: str,
     digest: str,

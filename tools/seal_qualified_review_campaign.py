@@ -8,6 +8,7 @@ import ctypes
 from ctypes import wintypes
 from dataclasses import dataclass
 import errno
+import hashlib
 import os
 from pathlib import Path
 import secrets
@@ -28,6 +29,8 @@ from tools.crosswalks.qualified_review_evidence import (
     EvidenceOperationalError,
     build_seal_record,
     canonical_json_bytes,
+    require_immutable_locator,
+    require_locator_digest,
 )
 from tools.validate_qualified_review_evidence import (
     VALIDATOR_VERSION,
@@ -86,6 +89,7 @@ class _DestinationAnchor:
     worktrees: tuple[Path, ...]
     chain: tuple[tuple[Path, int, int], ...]
     parent_fd: int | None
+    descriptor_chain: tuple[tuple[int, int, int, int], ...]
     windows_handles: tuple[int, ...]
 
     def revalidate(self) -> None:
@@ -104,9 +108,33 @@ class _DestinationAnchor:
                 raise _OperationalFailure(
                     "output ancestor identity changed"
                 )
+        for descriptor, device, inode, mode in self.descriptor_chain:
+            observed = os.fstat(descriptor)
+            if (
+                observed.st_dev != device
+                or observed.st_ino != inode
+                or observed.st_mode != mode
+                or not stat.S_ISDIR(observed.st_mode)
+            ):
+                raise _OperationalFailure(
+                    "output ancestor descriptor identity changed"
+                )
         resolved_parent = self.destination.parent.resolve(strict=True)
         if resolved_parent != self.destination.parent:
             raise _OperationalFailure("output ancestor became an alias")
+        if self.parent_fd is not None:
+            pathname_parent = self.destination.parent.stat(
+                follow_symlinks=False
+            )
+            descriptor_parent = os.fstat(self.parent_fd)
+            if (
+                pathname_parent.st_dev != descriptor_parent.st_dev
+                or pathname_parent.st_ino != descriptor_parent.st_ino
+                or not stat.S_ISDIR(descriptor_parent.st_mode)
+            ):
+                raise _OperationalFailure(
+                    "output parent descriptor does not match its pathname"
+                )
         if any(
             _is_within(resolved_parent / self.destination.name, root)
             for root in self.worktrees
@@ -156,6 +184,7 @@ def _anchored_destination(
     identities: list[tuple[Path, int, int]] = []
     windows_handles: list[int] = []
     descriptors: list[int] = []
+    descriptor_identities: list[tuple[int, int, int, int]] = []
     parent_fd: int | None = None
     try:
         for path in chain_paths:
@@ -187,19 +216,56 @@ def _anchored_destination(
             flags = os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
             current = os.open(chain_paths[0], flags)
             descriptors.append(current)
-            for path in chain_paths[1:]:
+            observed = os.fstat(current)
+            expected = identities[0]
+            if (
+                observed.st_dev != expected[1]
+                or observed.st_ino != expected[2]
+                or not stat.S_ISDIR(observed.st_mode)
+            ):
+                raise _OperationalFailure(
+                    "output ancestor descriptor identity does not match"
+                )
+            descriptor_identities.append(
+                (
+                    current,
+                    observed.st_dev,
+                    observed.st_ino,
+                    observed.st_mode,
+                )
+            )
+            for index, path in enumerate(chain_paths[1:], start=1):
                 current = os.open(
                     path.name,
                     flags,
                     dir_fd=current,
                 )
                 descriptors.append(current)
+                observed = os.fstat(current)
+                expected = identities[index]
+                if (
+                    observed.st_dev != expected[1]
+                    or observed.st_ino != expected[2]
+                    or not stat.S_ISDIR(observed.st_mode)
+                ):
+                    raise _OperationalFailure(
+                        "output ancestor descriptor identity does not match"
+                    )
+                descriptor_identities.append(
+                    (
+                        current,
+                        observed.st_dev,
+                        observed.st_ino,
+                        observed.st_mode,
+                    )
+                )
             parent_fd = descriptors[-1]
         anchor = _DestinationAnchor(
             destination=destination,
             worktrees=worktrees,
             chain=tuple(identities),
             parent_fd=parent_fd,
+            descriptor_chain=tuple(descriptor_identities),
             windows_handles=tuple(windows_handles),
         )
         anchor.revalidate()
@@ -213,18 +279,19 @@ def _anchored_destination(
                 close_handle(wintypes.HANDLE(handle))
 
 
-def _validate_archive_locator(candidate: str, locator: str) -> None:
+def _validate_archive_locator(locator: str) -> None:
     try:
-        build_seal_record(
-            manifest_bytes=b"",
-            archive_bytes=b"",
-            archive_locator=locator,
-            campaign_id="locator-check",
-            candidate_commit=candidate,
-            evidence_valid=True,
-            readiness_name="transition_ready",
-            readiness_value=True,
-            validator_version=VALIDATOR_VERSION,
+        require_immutable_locator(locator, "archive locator")
+    except EvidenceError as error:
+        raise _OperationalFailure("archive locator is invalid") from error
+
+
+def _bind_archive_locator(locator: str, archive_bytes: bytes) -> None:
+    try:
+        require_locator_digest(
+            locator,
+            hashlib.sha256(archive_bytes).hexdigest(),
+            "archive locator",
         )
     except EvidenceError as error:
         raise _OperationalFailure("archive locator is invalid") from error
@@ -390,7 +457,7 @@ def _publish(
         assert isinstance(anchor_value, _DestinationAnchor)
         anchor = anchor_value
         destination = anchor.destination
-        _validate_archive_locator(resolved_candidate, archive_locator)
+        _validate_archive_locator(archive_locator)
         try:
             reader.require_candidate_execution_state(resolved_candidate)
         except ValueError as error:
@@ -413,6 +480,7 @@ def _publish(
             or not details.report.readiness_value
         ):
             raise _ValidationFailure("campaign is not ready to seal")
+        _bind_archive_locator(archive_locator, details.archive_bytes)
         seal_record, seal_bytes = build_seal_record(
             manifest_bytes=details.manifest_bytes,
             archive_bytes=details.archive_bytes,

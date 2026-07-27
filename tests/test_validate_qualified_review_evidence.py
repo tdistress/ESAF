@@ -11,6 +11,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+from types import SimpleNamespace
 import unittest
 from unittest import mock
 import zipfile
@@ -578,6 +579,97 @@ class CampaignFixture:
         path = self.root.joinpath(*relative.split("/"))
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(content)
+
+
+class SealDestinationAnchorTests(unittest.TestCase):
+    def test_linux_acquisition_rejects_swap_restored_before_revalidation(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            parent = root / "ancestor" / "parent"
+            parent.mkdir(parents=True)
+            output = parent / "sealed"
+            chain = seal_module._ancestor_chain(parent)
+            descriptor_stats: dict[int, object] = {}
+            opened = 0
+
+            def fake_open(
+                path: object,
+                flags: int,
+                mode: int = 0o777,
+                *,
+                dir_fd: int | None = None,
+            ) -> int:
+                del path, flags, mode, dir_fd
+                nonlocal opened
+                descriptor = 1000 + opened
+                inspected = chain[opened]
+                if inspected == parent:
+                    moved = parent.with_name("parent-original")
+                    parent.rename(moved)
+                    parent.mkdir()
+                    descriptor_stats[descriptor] = SimpleNamespace(
+                        **{
+                            name: getattr(parent.stat(), name)
+                            for name in ("st_dev", "st_ino", "st_mode")
+                        }
+                    )
+                    parent.rmdir()
+                    moved.rename(parent)
+                else:
+                    descriptor_stats[descriptor] = SimpleNamespace(
+                        **{
+                            name: getattr(inspected.stat(), name)
+                            for name in ("st_dev", "st_ino", "st_mode")
+                        }
+                    )
+                opened += 1
+                return descriptor
+
+            class SupportsEveryDirFd:
+                def __contains__(self, item: object) -> bool:
+                    del item
+                    return True
+
+            with (
+                mock.patch.object(seal_module.os, "name", "posix"),
+                mock.patch.object(seal_module.sys, "platform", "linux"),
+                mock.patch.object(
+                    seal_module.os,
+                    "supports_dir_fd",
+                    SupportsEveryDirFd(),
+                ),
+                mock.patch.object(
+                    seal_module.os,
+                    "O_DIRECTORY",
+                    0x10000,
+                    create=True,
+                ),
+                mock.patch.object(
+                    seal_module.os,
+                    "O_NOFOLLOW",
+                    0x20000,
+                    create=True,
+                ),
+                mock.patch.object(
+                    seal_module.os,
+                    "open",
+                    side_effect=fake_open,
+                ),
+                mock.patch.object(
+                    seal_module.os,
+                    "fstat",
+                    side_effect=lambda descriptor: descriptor_stats[descriptor],
+                ),
+                mock.patch.object(seal_module.os, "close"),
+            ):
+                with self.assertRaisesRegex(
+                    seal_module._OperationalFailure,
+                    "descriptor|identity",
+                ):
+                    with seal_module._anchored_destination(output, ()):
+                        pass
 
 
 class CampaignValidationTests(unittest.TestCase):
@@ -2453,6 +2545,42 @@ class CampaignValidationTests(unittest.TestCase):
             stdout.encode("utf-8"),
             canonical_json_bytes(expected_record),
         )
+
+    def test_seal_cli_accepts_only_the_real_archive_digest_urn(self) -> None:
+        archive_digest = hashlib.sha256(
+            self.draft_archive_bytes
+        ).hexdigest()
+        output = Path(self.temporary.name) / "sealed-by-archive-urn"
+
+        result, stdout, stderr = self._run_seal_cli(
+            self._seal_arguments(
+                output,
+                archive_locator=f"urn:sha256:{archive_digest}",
+            )
+        )
+
+        self.assertEqual(result, 0, stderr)
+        self.assertEqual(stderr, "")
+        self.assertEqual(
+            (output / "CAMPAIGN_ARCHIVE.zip").read_bytes(),
+            self.draft_archive_bytes,
+        )
+        self.assertEqual(
+            json.loads(stdout)["archive_locator"],
+            f"urn:sha256:{archive_digest}",
+        )
+
+        rejected_output = Path(self.temporary.name) / "rejected-archive-urn"
+        result, stdout, stderr = self._run_seal_cli(
+            self._seal_arguments(
+                rejected_output,
+                archive_locator=f"urn:sha256:{'0' * 64}",
+            )
+        )
+        self.assertEqual(result, 2)
+        self.assertEqual(stdout, "")
+        self.assertEqual(len(stderr.splitlines()), 1)
+        self.assertFalse(rejected_output.exists())
 
     def test_seal_cli_refuses_invalid_or_nonready_campaign(self) -> None:
         invalid_root = Path(self.temporary.name) / "invalid"
