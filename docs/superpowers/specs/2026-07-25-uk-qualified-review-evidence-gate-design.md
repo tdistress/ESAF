@@ -120,12 +120,18 @@ owner shall accept responsibility for preserving access according to the
 recorded retention commitment. The validator checks locator syntax and hash
 agreement but does not claim that a remote object is available.
 
-The campaign manifest shall not contain its own archive locator. After local
-validation, the operator shall hash the final canonical manifest and sealed
-campaign archive, upload the archive to its immutable destination, and create
-`CAMPAIGN_SEAL.json` outside the sealed campaign root. The seal shall be
-canonical one-line UTF-8/LF JSON with sorted keys, no insignificant whitespace,
-schema version `1.0.0`, and this exact key set:
+The campaign manifest shall not contain its own archive locator. Sealing has
+two boundaries: local materialization and external publication. Before local
+materialization, the operator shall reserve an immutable archive locator that
+passes the protocol's locator rules. The sealing CLI shall validate one exact
+campaign snapshot, create the deterministic archive and its seal from that
+same snapshot, and atomically materialize both files outside the sealed
+campaign root. CLI success establishes only that the local pair was
+materialized. It does not establish upload, durable retention, or external
+verification.
+
+The seal shall be canonical one-line UTF-8/LF JSON with sorted keys, no
+insignificant whitespace, schema version `1.0.0`, and this exact key set:
 
 - `archive_byte_length`;
 - `archive_format`, with the exact value `zip`;
@@ -148,17 +154,28 @@ shall contain exactly the validated campaign allowlist. It shall reject
 duplicate or unexpected entries, absolute or traversal paths, symbolic links,
 junction metadata, other special file modes, and path aliases.
 
-The seal record shall contain the archive locator, manifest SHA-256, archive
-byte length and SHA-256, candidate SHA, campaign identifier, validator version,
-and validation results. Revalidation shall reconstruct the deterministic ZIP
-from the preserved local campaign and compare exact archive bytes, byte length,
-and digest with the downloaded or retained archive and seal. The operator shall
-publish the seal-record SHA-256 and locator in an external GitHub issue or
-pull-request evidence record. No campaign byte changes after sealing. The seal
-record is not part of the archive it identifies, which avoids a self-referential
-manifest or archive digest.
+The seal record shall contain the reserved archive locator, manifest SHA-256,
+archive byte length and SHA-256, candidate SHA, campaign identifier, validator
+version, and validation results. The seal record is not part of the archive it
+identifies, which avoids a self-referential manifest or archive digest.
 
-The sealing CLI shall publish `CAMPAIGN_ARCHIVE.zip` and
+After local materialization, the operator shall upload the exact archive bytes
+to the reserved locator and verify the durable object's SHA-256 and byte length
+against the seal. Only then may the operator publish or rely on the seal. The
+external GitHub issue or pull-request evidence record shall bind the
+seal-record SHA-256, its durable locator, and completion of archive upload
+verification. An upload failure, absence, or mismatch leaves the local seal
+unpublished and unusable. If the archive bytes or reserved locator change, the
+operator shall materialize a new archive and seal in a new output directory.
+No campaign, archive, or seal byte may change after materialization.
+
+Revalidation shall reconstruct the deterministic ZIP from the preserved local
+campaign and compare exact archive bytes, byte length, and digest with the
+downloaded or retained archive and seal. Offline validation checks the supplied
+bytes and their bindings. It does not claim that a remote object exists or that
+an operator completed external verification.
+
+The sealing CLI shall materialize `CAMPAIGN_ARCHIVE.zip` and
 `CAMPAIGN_SEAL.json` together in one new external output directory. It shall
 write both files in a sibling staging directory on the destination filesystem,
 repeat candidate execution-state checks, and atomically rename that directory.
