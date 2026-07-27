@@ -123,28 +123,147 @@ Render each input with `@mermaid-js/mermaid-cli@11.16.0`, then record parse and 
 
 ## Qualified mapping review packages
 
-Generate one reviewer package from an exact commit. Supply a new output path
-that does not already exist and is outside every Git worktree.
+Qualified-review evidence is a two-stage, human-operated process. Create every
+package, campaign directory, archive, seal record, and completed review record
+outside every Git worktree, in an externally managed location whose retention
+owner can preserve it. That location shall not be a Git repository, a path
+inside a repository worktree, a symbolic-link or junction alias to one, or a
+temporary location that cannot retain the final immutable record.
 
-The candidate commit must equal the current clean HEAD of this module
-checkout, including for programmatic callers. A failed assembly can leave an
-owned hidden sibling staging directory; the caller destination remains
-unpublished.
+The candidate commit must equal the current clean HEAD of this module checkout.
+A failed assembly can leave an owned hidden sibling staging directory; the
+caller destination remains unpublished.
 
-For example:
+A campaign root contains the canonical `REVIEW_EVIDENCE.json` manifest and
+only the package, attestation, and completed-worksheet files referenced by its
+canonical relative paths. Keep the Draft and final-confirmation campaign roots
+separate. The Draft seal record is written beside, not inside, the sealed
+Draft campaign root; the deterministic ZIP archive and its immutable locator
+are likewise external evidence.
+
+Never commit the external source document, a completed attestation, a
+completed worksheet, `REVIEW_EVIDENCE.json`, a campaign archive, or a seal
+record. Git contains only the blank templates, schemas, protocol, and
+automation. In particular, do not use a generated review package to
+redistribute an authorized source document.
+Each role attestation must include the reviewer’s separate
+source-content-exclusion signature. Keep single-line reviewer prose to 512
+characters or fewer, use locators instead of source excerpts, and record the
+exact checksum and locator sets derived from the candidate package.
+
+### Draft package and campaign
+
+Generate one Draft reviewer package from the exact clean candidate commit.
+Supply a distinct new output path outside every Git worktree for each
+allowlisted mapping-set identifier. Each call shall use a new output path that
+does not already exist:
 
 ```powershell
-$candidate = git rev-parse HEAD
-$output = Join-Path ([System.IO.Path]::GetTempPath()) "esaf-uk-review-core"
-python tools/build_mapping_review_bundle.py `
-  --commit $candidate `
+$draftCandidate = git rev-parse HEAD
+$draftPackage = Join-Path $env:USERPROFILE "ESAF-review-evidence\draft-core-package"
+python tools/build_mapping_review_bundle.py --candidate-state draft `
+  --commit $draftCandidate `
   --mapping-set-id uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0 `
-  --output $output
+  --output $draftPackage
 ```
 
-Repeat with each allowlisted mapping-set identifier and a distinct new output
-path. Preserve the exact commit and printed manifest SHA-256 in the review
-record.
+Record the exact candidate SHA and printed package-manifest SHA-256 in the
+external campaign. The package contains repository evidence and blank forms;
+it does not include the external source document. Reviewers obtain authorized
+source access independently.
 
-The package contains tracked ESAF mapping evidence, referenced controls,
-schemas, protocol, and blank worksheets. It does not include the external source document. Reviewers obtain authorized access independently. Package generation does not change Draft lifecycle state or constitute qualified review.
+After the qualified human reviewers complete the two roles, validate the
+external Draft campaign without rewriting it:
+
+```powershell
+$draftCampaign = Join-Path $env:USERPROFILE "ESAF-review-evidence\draft-campaign"
+python tools/validate_qualified_review_evidence.py --check `
+  --candidate $draftCandidate `
+  --evidence-root $draftCampaign
+```
+
+Only a report with `evidence_valid: true` and `transition_ready: true` can
+support the later authorized Draft-to-reviewed transition. A valid `stop`
+conclusion may have `evidence_valid: true` while readiness remains false; it
+preserves the evidence and blocks the transition. Stop rather than proceeding
+when eligibility, independence, source access, source/version or digest,
+candidate SHA, campaign linkage, template completion, or seal integrity is
+invalid, or when Critical or Important findings remain open. Automation does
+not convert a `stop` into approval or a lifecycle transition.
+
+### Seal the Draft campaign
+
+When the completed Draft campaign validates, seal its exact bytes
+deterministically. First reserve the immutable archive locator, then supply it
+to the sealing command. The CLI remains offline and does not upload either
+file. It atomically writes the deterministic `CAMPAIGN_ARCHIVE.zip` and its
+`CAMPAIGN_SEAL.json` together in the new external output directory:
+
+```powershell
+$draftSealDirectory = Join-Path $env:USERPROFILE "ESAF-review-evidence\draft-seal"
+$draftArchiveLocator = "https://evidence.example.invalid/esaf-draft.zip?version=1"
+python tools/seal_qualified_review_campaign.py --candidate $draftCandidate `
+  --evidence-root $draftCampaign `
+  --output-directory $draftSealDirectory `
+  --archive-locator $draftArchiveLocator
+```
+
+Success means that the archive and seal have been locally materialized. It
+does not establish upload, durable retention, or external verification. Upload
+the exact, unmodified `CAMPAIGN_ARCHIVE.zip` bytes to the locator already
+recorded in the seal, then verify the durable object's SHA-256 and byte length
+against the seal. An upload failure, absence, or mismatch leaves the local
+seal unpublished and unusable. The operator may publish or rely on the seal
+only after successful verification.
+
+Preserve the seal record in the external evidence system, then record its
+SHA-256, durable locator, and completion of archive upload verification in the
+external issue or pull-request evidence record. Both generated files remain
+outside the sealed campaign root and every Git worktree. Do not modify any
+campaign or archive byte after sealing. A changed archive byte or locator
+requires a new output directory and a newly materialized pair.
+The output directory’s complete ancestor chain must remain available and
+unaliased. The sealer holds OS directory handles or descriptors through atomic
+publication and fails closed when anchored no-replace publication is
+unavailable.
+
+### Reviewed package and final confirmation
+
+After the authorized transition, generate reviewed packages from the exact
+reviewed candidate, with a distinct external output path for each mapping set:
+
+```powershell
+$reviewedCandidate = git rev-parse HEAD
+$reviewedPackage = Join-Path $env:USERPROFILE "ESAF-review-evidence\reviewed-core-package"
+python tools/build_mapping_review_bundle.py --candidate-state reviewed `
+  --commit $reviewedCandidate `
+  --mapping-set-id uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0 `
+  --output $reviewedPackage
+```
+
+The separate `final_reviewed_confirmation` campaign shall recursively confirm
+the preserved Draft campaign by its campaign identifier, candidate SHA,
+manifest digest, seal-record digest, external seal record, and deterministic
+archive. Validate it with the Draft inputs:
+
+```powershell
+$finalCampaign = Join-Path $env:USERPROFILE "ESAF-review-evidence\final-confirmation"
+$draftSealRecord = Join-Path $draftSealDirectory "CAMPAIGN_SEAL.json"
+$draftArchive = Join-Path $draftSealDirectory "CAMPAIGN_ARCHIVE.zip"
+python tools/validate_qualified_review_evidence.py --check `
+  --candidate $reviewedCandidate `
+  --evidence-root $finalCampaign `
+  --draft-evidence-root $draftCampaign `
+  --draft-seal-record $draftSealRecord `
+  --draft-archive $draftArchive
+```
+
+Only final evidence with `evidence_valid: true` and `merge_ready: true` can
+support merge. The validator checks schemas, bytes, hashes, paths, linkage,
+and readiness rules. It cannot establish human identity, reviewer
+qualification, source authorization, signature effect, the truth of human
+review conclusions, non-infringement of human-authored prose, approval, or
+compliance. Those remain human decisions recorded in the protected external
+evidence system, never Git.
+The validator checks the signed source-content-exclusion assertion but cannot
+establish its truth, non-infringement, or legal effect.

@@ -6,15 +6,28 @@
 |---|---|
 | Mapping-set identifier | `[REQUIRED]` |
 | Candidate commit SHA | `[REQUIRED: 40 lowercase hexadecimal characters]` |
-| Package-manifest SHA-256 | `[REQUIRED]` |
+| Package root | `[REQUIRED: canonical relative path]` |
+| Package manifest path | `[REQUIRED: canonical relative path]` |
+| Package-manifest SHA-256 | `[REQUIRED: 64 lowercase hexadecimal characters]` |
+| Package immutable locator | `[REQUIRED: immutable HTTPS URL or urn:sha256 locator]` |
+| Package retention owner | `[REQUIRED]` |
 | Reviewer identity | `[REQUIRED]` |
-| Attestation locator | `[REQUIRED]` |
+| Attestation path | `[REQUIRED: canonical relative path]` |
+| Attestation immutable locator | `[REQUIRED: immutable HTTPS URL or urn:sha256 locator]` |
+| Attestation retention owner | `[REQUIRED]` |
+| Attestation SHA-256 | `[REQUIRED: 64 lowercase hexadecimal characters]` |
+| Worksheet path | `[REQUIRED: canonical relative path]` |
+| Worksheet immutable locator | `[REQUIRED: immutable HTTPS URL or urn:sha256 locator]` |
+| Worksheet retention owner | `[REQUIRED]` |
 | Review role | `Specification and inventory review` |
 | Review date | `[REQUIRED: YYYY-MM-DD]` |
 | Coverage summary | `[REQUIRED]` |
 | Review method | `[REQUIRED]` |
 | Provision coverage | `[REQUIRED: population and identifiers reviewed]` |
 | Mapping-record coverage | `[REQUIRED: population and identifiers reviewed]` |
+
+Every table value shall be single-line text without an unescaped pipe
+character. Do not add, remove, duplicate, or reorder rows.
 
 ## Review scope
 
@@ -44,7 +57,11 @@ rationale, and disposition date.
 
 ## Overall conclusion
 
-Select exactly one: `pass`, `pass_after_correction`, or `stop`.
+| Field | Value |
+|---|---|
+| Overall conclusion | `[REQUIRED: pass / pass_after_correction / stop]` |
+| Post-correction candidate SHA | `[REQUIRED for pass_after_correction; otherwise Not applicable]` |
+| Reviewer metadata findings disposition | `[REQUIRED: concise disposition of all findings]` |
 
 ## Worksheet signature
 

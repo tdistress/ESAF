@@ -119,6 +119,175 @@ class MappingReviewProtocolTests(unittest.TestCase):
             "project owner must explicitly accept that arrangement",
             normalized,
         )
+        self.assertIn(
+            "`Yes` maps to `dual_role_accepted: true`; `No` maps to "
+            "`dual_role_accepted: false`",
+            normalized,
+        )
+        attestation = (
+            TEMPLATES / "REVIEWER_ATTESTATION.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn(
+            "| Project-owner dual-role acceptance | "
+            "`[REQUIRED: Yes / No]` |",
+            attestation,
+        )
+        self.assertNotIn("Yes / No / Not applicable", attestation)
+
+    def test_protocol_assigns_semantic_uniqueness_to_task4(self) -> None:
+        normalized = " ".join(PROTOCOL.read_text(encoding="utf-8").split())
+        self.assertIn(
+            "Task 4 validates semantic uniqueness of mapping-set identifiers "
+            "and role assignments",
+            normalized,
+        )
+        self.assertIn(
+            "case-insensitive path aliases, symbolic links, junctions, and "
+            "hard-link aliases",
+            normalized,
+        )
+
+    def test_protocol_defines_two_stage_external_campaign(self) -> None:
+        text = PROTOCOL.read_text(encoding="utf-8")
+        normalized = " ".join(text.split())
+        for value in (
+            "`draft_review`",
+            "`final_reviewed_confirmation`",
+            "`evidence_valid`",
+            "`transition_ready`",
+            "`merge_ready`",
+            "`CAMPAIGN_SEAL.json`",
+            "schema version `1.0.0`",
+        ):
+            self.assertIn(value, text)
+        self.assertIn(
+            "Valid `stop` evidence has `evidence_valid: true`",
+            normalized,
+        )
+        self.assertIn(
+            "completed attestations, completed worksheets, campaign "
+            "manifests, archives, seal records, and source documents remain "
+            "external and uncommitted",
+            normalized,
+        )
+
+    def test_protocol_defines_qualified_review_evidence_campaign(self) -> None:
+        text = PROTOCOL.read_text(encoding="utf-8")
+        section = text.split(
+            "## External sealing sequence\n", 1
+        )[1].split("\n## ", 1)[0]
+        normalized = " ".join(section.split())
+        for rule in (
+            "Sealing has two boundaries: local materialization and external "
+            "publication.",
+            "The CLI remains offline and does not upload either file.",
+            "treat CLI success as local materialization only; it does not "
+            "establish upload, durable retention, or external verification;",
+            "upload the exact archive bytes to the reserved locator;",
+            "An upload failure, absence, or mismatch leaves the local seal "
+            "unpublished and unusable.",
+            "A changed archive byte or locator requires a newly materialized "
+            "pair in a new output directory.",
+            "Offline validation does not establish remote availability or "
+            "external verification.",
+        ):
+            with self.subTest(rule=rule):
+                self.assertIn(rule, normalized)
+        verification_rule = (
+            "verify the durable object's SHA-256 and byte length against the "
+            "seal;"
+        )
+        publication_rule = (
+            "publish or rely on the seal only after successful verification;"
+        )
+        self.assertIn(verification_rule, normalized)
+        self.assertIn(publication_rule, normalized)
+        self.assertLess(
+            normalized.index(verification_rule),
+            normalized.index(publication_rule),
+        )
+        self.assertIn(
+            "No campaign byte may change after sealing",
+            normalized,
+        )
+
+    def test_protocol_defines_exact_reviewer_object_binding(self) -> None:
+        normalized = " ".join(PROTOCOL.read_text(encoding="utf-8").split())
+        self.assertIn(
+            "`id` from `reviewer.identity`, `date` from "
+            "`worksheet.review_date`, `qualification` and "
+            "`authorized_source_access` from the reviewer evidence, and "
+            "`findings_disposition` from the signed worksheet field "
+            "`Reviewer metadata findings disposition`",
+            normalized,
+        )
+
+    def test_protocol_preserves_human_and_lifecycle_boundaries(self) -> None:
+        normalized = " ".join(PROTOCOL.read_text(encoding="utf-8").split())
+        for limitation in (
+            "human identity",
+            "qualification",
+            "source authorization",
+            "signature effect",
+            "human review conclusions",
+            "non-infringement",
+        ):
+            self.assertIn(limitation, normalized)
+        self.assertIn(
+            "This preparation shall not perform a lifecycle transition",
+            normalized,
+        )
+
+    def test_tools_readme_documents_qualified_review_evidence_commands(self) -> None:
+        """Removing an operator command would make review campaigns unsafe to run."""
+        readme = (ROOT / "tools/README.md").read_text(encoding="utf-8")
+        seal_section = readme.split(
+            "### Seal the Draft campaign\n", 1
+        )[1].split("\n### ", 1)[0]
+        normalized_seal_section = " ".join(seal_section.split())
+        for command in (
+            "python tools/build_mapping_review_bundle.py --candidate-state draft",
+            "python tools/build_mapping_review_bundle.py --candidate-state reviewed",
+            "python tools/validate_qualified_review_evidence.py --check",
+            "python tools/seal_qualified_review_campaign.py",
+            "--draft-evidence-root",
+            "--draft-seal-record",
+            "--draft-archive",
+        ):
+            with self.subTest(command=command):
+                self.assertIn(command, readme)
+        self.assertIn(
+            "python tools/seal_qualified_review_campaign.py",
+            seal_section,
+        )
+        for rule in (
+            "The CLI remains offline and does not upload either file.",
+            "Success means that the archive and seal have been locally "
+            "materialized. It does not establish upload, durable retention, "
+            "or external verification.",
+            "Upload the exact, unmodified `CAMPAIGN_ARCHIVE.zip` bytes to the "
+            "locator already recorded in the seal, then verify the durable "
+            "object's SHA-256 and byte length against the seal.",
+            "An upload failure, absence, or mismatch leaves the local seal "
+            "unpublished and unusable.",
+            "A changed archive byte or locator requires a new output "
+            "directory and a newly materialized pair.",
+        ):
+            with self.subTest(rule=rule):
+                self.assertIn(rule, normalized_seal_section)
+        verification_rule = (
+            "verify the durable object's SHA-256 and byte length against the "
+            "seal."
+        )
+        publication_rule = (
+            "The operator may publish or rely on the seal only after "
+            "successful verification."
+        )
+        self.assertIn(publication_rule, normalized_seal_section)
+        self.assertLess(
+            normalized_seal_section.index(verification_rule),
+            normalized_seal_section.index(publication_rule),
+        )
 
     def test_review_worksheets_have_separate_scopes_and_findings(self) -> None:
         specification = (
@@ -131,7 +300,7 @@ class MappingReviewProtocolTests(unittest.TestCase):
             for field in (
                 "Mapping-set identifier",
                 "Candidate commit SHA",
-                "Attestation locator",
+                "Attestation immutable locator",
                 "Coverage",
                 "Finding ID",
                 "Affected record IDs",
@@ -140,9 +309,9 @@ class MappingReviewProtocolTests(unittest.TestCase):
                 "Required action",
                 "Disposition",
                 "Overall conclusion",
-                "`pass`",
-                "`pass_after_correction`",
-                "`stop`",
+                "pass",
+                "pass_after_correction",
+                "stop",
             ):
                 self.assertIn(field, text)
         self.assertIn("Provision population", specification)
@@ -178,6 +347,53 @@ class MappingReviewProtocolTests(unittest.TestCase):
                     text,
                 )
                 self.assertIn("Only Minor findings may be accepted", text)
+
+    def test_templates_define_closed_evidence_rows(self) -> None:
+        attestation = (
+            TEMPLATES / "REVIEWER_ATTESTATION.md"
+        ).read_text(encoding="utf-8")
+        for row in (
+            "| Package root | `[REQUIRED: canonical relative path]` |",
+            "| Package manifest path | `[REQUIRED: canonical relative path]` |",
+            "| Package-manifest SHA-256 | `[REQUIRED: 64 lowercase hexadecimal characters]` |",
+            "| Package immutable locator | `[REQUIRED: immutable HTTPS URL or urn:sha256 locator]` |",
+            "| Package retention owner | `[REQUIRED]` |",
+            "| Attestation path | `[REQUIRED: canonical relative path]` |",
+            "| Attestation immutable locator | `[REQUIRED: immutable HTTPS URL or urn:sha256 locator]` |",
+            "| Attestation retention owner | `[REQUIRED]` |",
+        ):
+            self.assertIn(row, attestation)
+
+        conclusion_rows = (
+            "| Overall conclusion | "
+            "`[REQUIRED: pass / pass_after_correction / stop]` |\n"
+            "| Post-correction candidate SHA | "
+            "`[REQUIRED for pass_after_correction; otherwise Not applicable]` "
+            "|\n"
+            "| Reviewer metadata findings disposition | "
+            "`[REQUIRED: concise disposition of all findings]` |"
+        )
+        for name in (
+            "SPECIFICATION_INVENTORY_REVIEW.md",
+            "SECURITY_OVERCLAIMING_REVIEW.md",
+        ):
+            with self.subTest(template=name):
+                text = (TEMPLATES / name).read_text(encoding="utf-8")
+                self.assertIn(conclusion_rows, text)
+                for row in (
+                    "| Package root | `[REQUIRED: canonical relative path]` |",
+                    "| Package manifest path | `[REQUIRED: canonical relative path]` |",
+                    "| Package immutable locator | `[REQUIRED: immutable HTTPS URL or urn:sha256 locator]` |",
+                    "| Package retention owner | `[REQUIRED]` |",
+                    "| Attestation path | `[REQUIRED: canonical relative path]` |",
+                    "| Attestation immutable locator | `[REQUIRED: immutable HTTPS URL or urn:sha256 locator]` |",
+                    "| Attestation retention owner | `[REQUIRED]` |",
+                    "| Attestation SHA-256 | `[REQUIRED: 64 lowercase hexadecimal characters]` |",
+                    "| Worksheet path | `[REQUIRED: canonical relative path]` |",
+                    "| Worksheet immutable locator | `[REQUIRED: immutable HTTPS URL or urn:sha256 locator]` |",
+                    "| Worksheet retention owner | `[REQUIRED]` |",
+                ):
+                    self.assertIn(row, text)
 
     def test_security_review_preserves_no_outcome_rules(self) -> None:
         protocol = PROTOCOL.read_text(encoding="utf-8")

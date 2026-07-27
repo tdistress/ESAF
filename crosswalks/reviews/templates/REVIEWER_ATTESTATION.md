@@ -9,7 +9,14 @@ An unsigned blank form is not review evidence.
 | Verification locator | `[REQUIRED]` |
 | Mapping-set identifier | `[REQUIRED]` |
 | Candidate commit SHA | `[REQUIRED: 40 lowercase hexadecimal characters]` |
-| Package-manifest SHA-256 | `[REQUIRED]` |
+| Package root | `[REQUIRED: canonical relative path]` |
+| Package manifest path | `[REQUIRED: canonical relative path]` |
+| Package-manifest SHA-256 | `[REQUIRED: 64 lowercase hexadecimal characters]` |
+| Package immutable locator | `[REQUIRED: immutable HTTPS URL or urn:sha256 locator]` |
+| Package retention owner | `[REQUIRED]` |
+| Attestation path | `[REQUIRED: canonical relative path]` |
+| Attestation immutable locator | `[REQUIRED: immutable HTTPS URL or urn:sha256 locator]` |
+| Attestation retention owner | `[REQUIRED]` |
 | Review role | `[REQUIRED: Specification and inventory review / Security and overclaiming review]` |
 | Publication identity | `[REQUIRED]` |
 | Exact source version | `[REQUIRED]` |
@@ -20,19 +27,24 @@ An unsigned blank form is not review evidence.
 | Permitted elements | `[REQUIRED]` |
 | Prohibited elements | `[REQUIRED: list or state none]` |
 | Restrictions | `[REQUIRED]` |
-| Scheme qualification | `[REQUIRED]` |
-| ESAF or mapping qualification | `[REQUIRED]` |
+| Qualification | `[REQUIRED: state Scheme qualification and ESAF or mapping qualification]` |
 | Authorized source access | `[REQUIRED: Yes / No]` |
 | Independence from mapper | `[REQUIRED: Yes / No]` |
 | Conflicts of interest | `[REQUIRED: Yes / No; describe or state none]` |
 | Conflict disposition | `[REQUIRED: resolved disposition and authority]` |
 | Project-owner eligibility acceptance | `[REQUIRED: Accepted / Rejected]` |
-| Project-owner dual-role acceptance | `[REQUIRED: Yes / No / Not applicable]` |
+| Project-owner dual-role acceptance | `[REQUIRED: Yes / No]` |
 | Project-owner identity | `[REQUIRED]` |
 | Project-owner signature | `[REQUIRED]` |
 | Project-owner acceptance date | `[REQUIRED: YYYY-MM-DD]` |
+| Source-content exclusion | `[REQUIRED: Yes / No]` |
+| Source-content exclusion signature | `[REQUIRED: separately signed by the reviewer]` |
+| Source-content exclusion date | `[REQUIRED: YYYY-MM-DD]` |
 | Signature | `[REQUIRED]` |
 | Date | `[REQUIRED: YYYY-MM-DD]` |
+
+Every table value shall be single-line text without an unescaped pipe
+character. Do not add, remove, duplicate, or reorder rows.
 
 I attest that I had authorized access to the exact publication identity,
 source version, official URL, source checksum(s), and source locator(s)
@@ -45,6 +57,11 @@ I attest that I am independent from the mapper: Yes / No.
 
 I attest that conflicts of interest and their disposition have been fully
 disclosed: Yes / No.
+
+I separately attest that the reviewer-authored attestation and worksheet
+contain no copied or close-paraphrased source passage or other licensed source
+text, and use source material only through the recorded identifiers, checksums,
+locators, and concise reviewer analysis: Yes / No.
 
 I understand that this review does not establish certification, compliance,
 equivalence, endorsement, or assurance beyond the relationships expressly

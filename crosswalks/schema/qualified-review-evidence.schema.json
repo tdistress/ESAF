@@ -1,0 +1,353 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://esaf-standard.org/schemas/qualified-review-evidence.schema.json",
+  "title": "ESAF qualified-review evidence campaign",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "campaign_id",
+    "phase",
+    "candidate_state",
+    "candidate_commit",
+    "retention_owner",
+    "retention_commitment",
+    "mapping_sets"
+  ],
+  "properties": {
+    "schema_version": {"const": "1.0.0"},
+    "campaign_id": {"$ref": "#/$defs/campaignId"},
+    "phase": {"$ref": "#/$defs/phase"},
+    "candidate_state": {"$ref": "#/$defs/candidateState"},
+    "candidate_commit": {"$ref": "#/$defs/commitSha"},
+    "retention_owner": {"$ref": "#/$defs/nonemptyText"},
+    "retention_commitment": {"$ref": "#/$defs/nonemptyText"},
+    "mapping_sets": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "uniqueItems": true,
+      "items": {"$ref": "#/$defs/mappingSetEvidence"}
+    },
+    "draft_campaign_reference": {
+      "$ref": "#/$defs/draftCampaignReference"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "phase": {"const": "final_reviewed_confirmation"}
+        }
+      },
+      "then": {
+        "properties": {"candidate_state": {"const": "reviewed"}},
+        "required": ["draft_campaign_reference"]
+      },
+      "else": {
+        "properties": {"candidate_state": {"const": "draft"}},
+        "not": {"required": ["draft_campaign_reference"]}
+      }
+    }
+  ],
+  "$defs": {
+    "campaignId": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "phase": {
+      "enum": ["draft_review", "final_reviewed_confirmation"]
+    },
+    "candidateState": {
+      "enum": ["draft", "reviewed"]
+    },
+    "commitSha": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{40}$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "date": {
+      "type": "string",
+      "format": "date",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "nonemptyText": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512,
+      "pattern": "^(?=.*\\S)[^\\r\\n]+$"
+    },
+    "canonicalRelativePath": {
+      "type": "string",
+      "pattern": "^(?!.*(?:^|/)\\.\\.?(?:/|$))[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*$"
+    },
+    "immutableLocator": {
+      "type": "string",
+      "oneOf": [
+        {
+          "pattern": "^urn:sha256:[a-f0-9]{64}$"
+        },
+        {
+          "pattern": "^https://(?=[^#]*[?&](?:version|versionId|generation|rev|sha256)=(?:[A-Za-z0-9._~!$'()*+,;=:@/?-]|%[0-9A-Fa-f]{2})+(?:[&#]|$))(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)(?:\\.(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?))*(?::[1-9][0-9]{0,4})?(?:/(?:[A-Za-z0-9._~!$&'()*+,;=:@-]|%[0-9A-Fa-f]{2})*)*\\?(?:[A-Za-z0-9._~!$&'()*+,;=:@/?-]|%[0-9A-Fa-f]{2})*(?:#(?:[A-Za-z0-9._~!$&'()*+,;=:@/?-]|%[0-9A-Fa-f]{2})*)?$"
+        }
+      ]
+    },
+    "mappingSetId": {
+      "enum": [
+        "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
+        "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
+        "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0"
+      ]
+    },
+    "role": {
+      "enum": [
+        "specification_and_inventory",
+        "security_and_overclaiming"
+      ]
+    },
+    "conclusion": {
+      "enum": ["pass", "pass_after_correction", "stop"]
+    },
+    "findingSeverity": {
+      "enum": ["Critical", "Important", "Minor"]
+    },
+    "findingStatus": {
+      "enum": ["open", "resolved", "accepted"]
+    },
+    "findingId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "affectedRecordId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$"
+    },
+    "draftCampaignReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "campaign_id",
+        "candidate_commit",
+        "manifest_sha256",
+        "seal_record_sha256"
+      ],
+      "properties": {
+        "campaign_id": {"$ref": "#/$defs/campaignId"},
+        "candidate_commit": {"$ref": "#/$defs/commitSha"},
+        "manifest_sha256": {"$ref": "#/$defs/sha256"},
+        "seal_record_sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "mappingSetEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mapping_set_id", "package", "roles"],
+      "properties": {
+        "mapping_set_id": {"$ref": "#/$defs/mappingSetId"},
+        "package": {"$ref": "#/$defs/packageEvidence"},
+        "roles": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/roleEvidence"}
+        }
+      }
+    },
+    "packageEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "root",
+        "manifest_path",
+        "manifest_sha256",
+        "immutable_locator",
+        "retention_owner"
+      ],
+      "properties": {
+        "root": {"$ref": "#/$defs/canonicalRelativePath"},
+        "manifest_path": {"$ref": "#/$defs/canonicalRelativePath"},
+        "manifest_sha256": {"$ref": "#/$defs/sha256"},
+        "immutable_locator": {"$ref": "#/$defs/immutableLocator"},
+        "retention_owner": {"$ref": "#/$defs/nonemptyText"}
+      }
+    },
+    "roleEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "role",
+        "reviewer",
+        "owner_eligibility_accepted",
+        "dual_role_accepted",
+        "attestation",
+        "worksheet"
+      ],
+      "properties": {
+        "role": {"$ref": "#/$defs/role"},
+        "reviewer": {"$ref": "#/$defs/reviewerEvidence"},
+        "owner_eligibility_accepted": {"type": "boolean"},
+        "dual_role_accepted": {"type": "boolean"},
+        "attestation": {"$ref": "#/$defs/attestationEvidence"},
+        "worksheet": {"$ref": "#/$defs/worksheetEvidence"}
+      }
+    },
+    "reviewerEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "identity",
+        "organization",
+        "verification_locator",
+        "qualification",
+        "authorized_source_access",
+        "independent",
+        "conflicts",
+        "conflict_disposition"
+      ],
+      "properties": {
+        "identity": {"$ref": "#/$defs/nonemptyText"},
+        "organization": {"$ref": "#/$defs/nonemptyText"},
+        "verification_locator": {"$ref": "#/$defs/immutableLocator"},
+        "qualification": {"$ref": "#/$defs/nonemptyText"},
+        "authorized_source_access": {"type": "boolean"},
+        "independent": {"type": "boolean"},
+        "conflicts": {"type": "boolean"},
+        "conflict_disposition": {"$ref": "#/$defs/nonemptyText"}
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {"conflicts": {"const": false}},
+            "required": ["conflicts"]
+          },
+          "then": {
+            "properties": {
+              "conflict_disposition": {"const": "Not applicable"}
+            }
+          },
+          "else": {
+            "properties": {
+              "conflict_disposition": {
+                "allOf": [
+                  {"$ref": "#/$defs/nonemptyText"},
+                  {"not": {"const": "Not applicable"}}
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "attestationEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "immutable_locator",
+        "retention_owner",
+        "sha256"
+      ],
+      "properties": {
+        "path": {"$ref": "#/$defs/canonicalRelativePath"},
+        "immutable_locator": {"$ref": "#/$defs/immutableLocator"},
+        "retention_owner": {"$ref": "#/$defs/nonemptyText"},
+        "sha256": {"$ref": "#/$defs/sha256"}
+      }
+    },
+    "worksheetEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "immutable_locator",
+        "retention_owner",
+        "sha256",
+        "signed_sha256",
+        "review_date",
+        "conclusion",
+        "findings_disposition",
+        "findings"
+      ],
+      "properties": {
+        "path": {"$ref": "#/$defs/canonicalRelativePath"},
+        "immutable_locator": {"$ref": "#/$defs/immutableLocator"},
+        "retention_owner": {"$ref": "#/$defs/nonemptyText"},
+        "sha256": {"$ref": "#/$defs/sha256"},
+        "signed_sha256": {"$ref": "#/$defs/sha256"},
+        "review_date": {"$ref": "#/$defs/date"},
+        "conclusion": {"$ref": "#/$defs/conclusion"},
+        "post_correction_candidate_sha": {"$ref": "#/$defs/commitSha"},
+        "findings_disposition": {"$ref": "#/$defs/nonemptyText"},
+        "findings": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/findingEvidence"}
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "conclusion": {"const": "pass_after_correction"}
+            },
+            "required": ["conclusion"]
+          },
+          "then": {
+            "required": ["post_correction_candidate_sha"]
+          },
+          "else": {
+            "not": {"required": ["post_correction_candidate_sha"]}
+          }
+        }
+      ]
+    },
+    "findingEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "finding_id",
+        "affected_record_ids",
+        "severity",
+        "status",
+        "disposition",
+        "resolver_or_acceptor",
+        "disposition_date",
+        "acceptance_rationale"
+      ],
+      "properties": {
+        "finding_id": {"$ref": "#/$defs/findingId"},
+        "affected_record_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"$ref": "#/$defs/affectedRecordId"}
+        },
+        "severity": {"$ref": "#/$defs/findingSeverity"},
+        "status": {"$ref": "#/$defs/findingStatus"},
+        "disposition": {"$ref": "#/$defs/nonemptyText"},
+        "resolver_or_acceptor": {"$ref": "#/$defs/nonemptyText"},
+        "disposition_date": {"$ref": "#/$defs/date"},
+        "acceptance_rationale": {"$ref": "#/$defs/nonemptyText"}
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {"status": {"const": "accepted"}},
+            "required": ["status"]
+          },
+          "then": {
+            "properties": {
+              "severity": {"const": "Minor"},
+              "resolver_or_acceptor": {"$ref": "#/$defs/nonemptyText"},
+              "disposition_date": {"$ref": "#/$defs/date"},
+              "acceptance_rationale": {"$ref": "#/$defs/nonemptyText"}
+            }
+          }
+        }
+      ]
+    }
+  }
+}

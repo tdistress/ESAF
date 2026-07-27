@@ -72,10 +72,12 @@ def _schema_model_errors(
     )
 
 
-def _catalog_model_errors(result: ValidationResult) -> list[str]:
+def _catalog_model_errors(
+    result: ValidationResult, validators: dict[str, object] | None = None
+) -> list[str]:
     """Validate the complete generator model before sorting or rendering it."""
     errors: list[str] = []
-    validators = load_schemas(SCHEMA_ROOT)
+    validators = validators if validators is not None else load_schemas(SCHEMA_ROOT)
     if not isinstance(result.mapping_sets, list):
         errors.append("mapping_sets: generator collection must be an array")
         mapping_sets: list[object] = []
@@ -332,11 +334,13 @@ def _sorted_counts(counter: Counter[str]) -> dict[str, int]:
     return {key: counter[key] for key in sorted(counter)}
 
 
-def build_catalog(result: ValidationResult) -> dict[str, object]:
+def build_catalog(
+    result: ValidationResult, validators: dict[str, object] | None = None
+) -> dict[str, object]:
     """Build the complete catalog view from a successful validation result."""
     if result.errors:
         raise ValueError("cannot build a catalog from invalid authoritative records")
-    model_errors = _catalog_model_errors(result)
+    model_errors = _catalog_model_errors(result, validators)
     if model_errors:
         raise ValueError(
             "invalid catalog model:\n" + "\n".join(f"- {error}" for error in model_errors)
