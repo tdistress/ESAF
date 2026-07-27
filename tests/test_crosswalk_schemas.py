@@ -154,6 +154,30 @@ def valid_record_with_provenance() -> dict[str, object]:
     return value
 
 
+def valid_qualified_review_evidence() -> dict[str, object]:
+    from tests.test_qualified_review_evidence_schema import (
+        QualifiedReviewEvidenceSchemaTests,
+    )
+
+    QualifiedReviewEvidenceSchemaTests.setUpClass()
+    value = copy.deepcopy(
+        QualifiedReviewEvidenceSchemaTests.valid_draft_campaign
+    )
+    value["mapping_sets"][0]["roles"][0]["worksheet"]["findings"] = [  # type: ignore[index]
+        {
+            "finding_id": "finding-001",
+            "affected_record_ids": ["CE-001"],
+            "severity": "Minor",
+            "status": "accepted",
+            "disposition": "Accepted for this release.",
+            "resolver_or_acceptor": "Project owner",
+            "disposition_date": "2026-07-25",
+            "acceptance_rationale": "No material mapping effect.",
+        }
+    ]
+    return value
+
+
 def valid_identifier_only_record() -> dict[str, object]:
     value = valid_record()
     value["context"] = {
@@ -408,6 +432,7 @@ class CrosswalkSchemaTests(unittest.TestCase):
             ("mapping-record", valid_record("reviewed", "out_of_scope", "domain")),
             ("lifecycle-record", valid_lifecycle()),
             ("esaf-control-manifest", valid_manifest()),
+            ("qualified-review-evidence", valid_qualified_review_evidence()),
         )
         for schema, value in variants:
             with self.subTest(schema=schema, status=value.get("status")):
@@ -606,6 +631,7 @@ class CrosswalkSchemaTests(unittest.TestCase):
             ("mapping-record", valid_record("reviewed", "out_of_scope", "domain")),
             ("lifecycle-record", valid_lifecycle()),
             ("esaf-control-manifest", valid_manifest()),
+            ("qualified-review-evidence", valid_qualified_review_evidence()),
         )
         for schema, document in self.schema_documents.items():
             for path, min_items, unique_items in constrained_array_paths(document):
