@@ -20,9 +20,13 @@
 
 ### Required workstreams
 
-1. **Qualified UK mapping review.** ESAF shall complete independent, qualified
-   human review of all three UK mapping snapshots as one coordinated initiative.
-   Core and Plus remain separate mapping sets.
+1. **UK mapping assurance.** ESAF shall record either completed
+   qualified-review dispositions for all three UK mapping sets or one
+   coordinated owner-risk disposition that defers qualified review for all
+   three sets on the exact `v0.5-beta` release candidate. Core and Plus remain
+   separate mapping sets. Under the deferred path, `DEFERRED` is a milestone
+   assurance disposition, not an ESAF-1600 mapping lifecycle state. All three
+   mapping sets and their records remain Draft.
 2. **Minimum assessment foundation.** ESAF shall define the minimum ESAF-1500
    assessment foundation: the common evidence model, assessment-result
    contract, and maturity-scoring semantics needed by crosswalks and profiles.
@@ -44,8 +48,10 @@
 
 `v0.5-beta` is complete only when:
 
-- all three UK mapping snapshots have qualified-review dispositions recorded
-  under ESAF-1600;
+- all three UK mapping sets have either completed qualified-review
+  dispositions or one coordinated owner-risk disposition that defers
+  qualified review for all three sets on the exact `v0.5-beta` release
+  candidate;
 - the minimum ESAF-1500 assessment foundation is internally consistent, linked
   from applicable indexes, and validated;
 - one Draft pilot profile conforms to the reusable profile contract and uses

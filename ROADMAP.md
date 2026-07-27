@@ -6,8 +6,13 @@
 
 ## 0.5-beta delivery sequence
 
-`v0.5-beta` first closes mapping assurance debt, then establishes minimum shared assessment semantics, validates one pilot profile, and finally expands priority mappings. The Phase 4 and Phase 5 lists remain long-term direction,
-not `v0.5-beta` exit criteria.
+`v0.5-beta` records either completed qualified review or one coordinated
+exact-candidate owner-risk disposition for the three Draft UK mapping sets,
+then completes the minimum shared assessment foundation, one pilot profile,
+and the priority-mapping decision. If owner-risk acceptance is used, deferred
+mapping assurance remains tracked after beta through issue 55 and does not stop
+later engineering work. The Phase 4 and Phase 5 lists remain long-term
+direction, not `v0.5-beta` exit criteria.
 
 ## Phase 0 - Foundation
 
