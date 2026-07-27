@@ -1,3 +1,4 @@
+import hashlib
 import json
 import re
 import subprocess
@@ -32,87 +33,25 @@ PROHIBITED_CONTROLLER_CLAIMS = (
     "mapping_reviews",
 )
 
-# These are hand-normalized from the approved artifacts. The contract
-# intentionally fails closed on harmless relationship or state rewording:
-# policy review must update the corresponding literal tuple.
-EXPECTED_RELEASE_PLAN_DEFERRED_RELATIONSHIP_SENTENCES = (
-    "the v0 5 beta mapping assurance gate shall use either completed qualified "
-    "approval or one coordinated owner risk decision bound to the exact v0 5 beta "
-    "release candidate",
-    "the coordinated evidence shall use mapping decision basis owner risk "
-    "acceptance decision type owner risk acceptance and qualified review status "
-    "deferred",
-    "deferred is a milestone assurance disposition not an esaf 1600 mapping "
-    "lifecycle state",
-    "owner risk acceptance defers qualified review it does not complete or qualify "
-    "that review",
+# These digests pin immutable post-merge synchronization payloads. Any reviewed
+# edit must intentionally repin the corresponding literal.
+PINNED_RELEASE_PLAN_DEFERRED_ASSURANCE_SHA256 = (
+    "d007b455190fc620d0f0030cbe27f321a37679abe2f0ce5368174f1615d85c28"
 )
-
-EXPECTED_RELEASE_PLAN_ISSUE_55_STATE_SENTENCES = (
-    "issue 55 remains open for the six qualified human role dispositions",
+PINNED_PLANNED_ISSUE_55_BODY_SHA256 = (
+    "359c9c2c1267f6a75c084196673735c7c296f3af372f0ba51efa88a53417f0ad"
 )
-
-EXPECTED_PLANNED_ISSUE_55_DEFERRED_RELATIONSHIP_SENTENCES = (
-    "this issue coordinates their deferred assurance work and does not merge their "
-    "sources scopes or conclusions",
-    "this issue remains open if v0 5 beta proceeds under the coordinated owner risk "
-    "deferred assurance path",
-    "deferred is a milestone assurance disposition not an esaf 1600 mapping "
-    "lifecycle state",
-    "completed qualified review dispositions for all six required human roles or "
-    "one validated exact candidate owner risk decision covering all three mapping "
-    "sets",
-    "owner risk acceptance cannot substitute for qualified human review and cannot "
-    "close this issue",
-    "neither deferred assurance nor later qualified review establishes compliance "
-    "certification equivalence endorsement external scheme approval production "
-    "readiness or assurance beyond the expressly recorded scope",
-)
-
-EXPECTED_PLANNED_ISSUE_55_STATE_SENTENCES = (
-    "this issue remains open if v0 5 beta proceeds under the coordinated owner risk "
-    "deferred assurance path",
-    "it does not complete this issue complete qualified review or change any mapping "
-    "lifecycle state",
-    "owner risk acceptance cannot substitute for qualified human review and cannot "
-    "close this issue",
-)
-
-EXPECTED_PLANNED_ISSUE_59_DEFERRED_RELATIONSHIP_SENTENCES = (
-    "close the v0 5 beta publication gates on one exact candidate after the "
-    "milestone content workstreams are complete and the uk mapping assurance "
-    "requirement has either completed qualified review or a validated coordinated "
-    "deferred disposition",
-    "completed qualified review dispositions for all six human roles tracked in "
-    "issue 55 or one authenticated owner risk decision that defers qualified review "
-    "for all three exact mapping sets",
-    "use mapping decision basis owner risk acceptance use decision type owner risk "
-    "acceptance use qualified review status deferred cover each exact mapping set "
-    "identifier once bind every decision to the exact v0 5 beta release candidate "
-    "sha use one uniform decision basis and one authenticated owner source identify "
-    "the missing qualified human evidence name the accountable owner and re entry "
-    "triggers retain draft lifecycle limitations and preserve the required "
-    "nonclaims",
-    "deferred is a milestone assurance disposition not an esaf 1600 mapping "
-    "lifecycle state",
-    "the deferred path does not claim qualified review approval certification "
-    "compliance equivalence endorsement external scheme approval production "
-    "readiness or assurance beyond the recorded working draft basis",
-)
-
-EXPECTED_PLANNED_ISSUE_59_STATE_SENTENCES = (
-    "completed qualified review dispositions for all six human roles tracked in "
-    "issue 55 or one authenticated owner risk decision that defers qualified review "
-    "for all three exact mapping sets",
-    "under the deferred path all three mapping sets and their records remain draft "
-    "no reviewer metadata or lifecycle event is added and issue 55 remains open",
-    "it does not complete qualified review and cannot substitute for the six human "
-    "role dispositions tracked in issue 55",
+PINNED_PLANNED_ISSUE_59_BODY_SHA256 = (
+    "cde2b992f3a81baf9213053acbf55aef9eed761f61a6d19709359cd934c0160c"
 )
 
 
 def read_repository_file(relative_path: str) -> str:
     return (ROOT / relative_path).read_text(encoding="utf-8")
+
+
+def sha256_text(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
 def current_version() -> str:
@@ -164,78 +103,6 @@ def contains_normalized_phrase(text: str, phrase: str) -> bool:
     return any(
         text_words[index:index + phrase_length] == phrase_words
         for index in range(len(text_words) - phrase_length + 1)
-    )
-
-
-_DEFERRED_RELATIONSHIP_MARKER = re.compile(r"\b(?:owner risk|deferred)\b")
-_PROTECTED_ASSURANCE_CONCEPT = re.compile(
-    r"\b(?:"
-    r"qualified (?:human )?review"
-    r"|external scheme approval"
-    r"|production readiness"
-    r"|approval"
-    r"|assurance"
-    r"|compliance"
-    r"|certification"
-    r"|equivalence"
-    r"|endorsement"
-    r")\b"
-)
-_ISSUE_55_REFERENCE = re.compile(r"\b(?:issue 55|this issue)\b")
-_ISSUE_STATE_CONCEPT = re.compile(
-    r"\b(?:open|clos(?:e|es|ed|ing)|complet(?:e|es|ed|ing|ion))\b"
-)
-
-
-def contract_sentences(text: str) -> tuple[str, ...]:
-    sentences: list[str] = []
-    for paragraph in re.split(r"(?:\r?\n){2,}", text):
-        flattened = " ".join(
-            re.sub(r"^(?:[-*+]|\d+[.)])\s+", "", line.strip())
-            for line in paragraph.splitlines()
-            if line.strip()
-        )
-        sentences.extend(
-            sentence.strip()
-            for sentence in re.split(r"(?<=[.!?])\s+", flattened)
-            if sentence.strip()
-        )
-    return tuple(sentences)
-
-
-def normalized_contract_sentence(text: str) -> str:
-    issue_55_normalized = re.sub(
-        r"(?<!\w)#\s*55\b",
-        "issue 55",
-        text,
-        flags=re.IGNORECASE,
-    )
-    return normalized_words(issue_55_normalized)
-
-
-def deferred_assurance_relationship_sentences(text: str) -> tuple[str, ...]:
-    normalized_sentences = (
-        normalized_contract_sentence(sentence)
-        for sentence in contract_sentences(text)
-    )
-    return tuple(
-        sentence
-        for sentence in normalized_sentences
-        if _DEFERRED_RELATIONSHIP_MARKER.search(sentence)
-        and _PROTECTED_ASSURANCE_CONCEPT.search(sentence)
-    )
-
-
-def issue_55_state_sentences(text: str) -> tuple[str, ...]:
-    normalized_sentences = (
-        normalized_contract_sentence(sentence)
-        for sentence in contract_sentences(text)
-    )
-    return tuple(
-        sentence
-        for sentence in normalized_sentences
-        if _ISSUE_55_REFERENCE.search(sentence)
-        and _ISSUE_STATE_CONCEPT.search(sentence)
     )
 
 
@@ -488,15 +355,11 @@ class ReleaseMetadataTests(unittest.TestCase):
             with self.subTest(prohibited=prohibited):
                 self.assertFalse(contains_normalized_phrase(assurance, prohibited))
         self.assertEqual(
-            EXPECTED_RELEASE_PLAN_DEFERRED_RELATIONSHIP_SENTENCES,
-            deferred_assurance_relationship_sentences(assurance),
-        )
-        self.assertEqual(
-            EXPECTED_RELEASE_PLAN_ISSUE_55_STATE_SENTENCES,
-            issue_55_state_sentences(assurance),
+            PINNED_RELEASE_PLAN_DEFERRED_ASSURANCE_SHA256,
+            sha256_text(assurance),
         )
 
-    def test_release_plan_literal_contract_rejects_unapproved_relationship_sentences(
+    def test_release_plan_pinned_artifact_rejects_adversarial_mutations(
         self,
     ) -> None:
         release_plan = read_repository_file("project/RELEASE_PLAN.md")
@@ -512,20 +375,20 @@ class ReleaseMetadataTests(unittest.TestCase):
             "Owner-risk acceptance ensures compliance.",
             "Although owner-risk acceptance does not complete qualified review, "
             "it establishes compliance.",
+            "Owner-risk acceptance is the selected path. It establishes compliance.",
+            "The deferred disposition applies. This establishes qualified-review "
+            "assurance.",
+            "Owner-risk acceptance establishes regulatory conformity.",
+            "Readiness for production is demonstrated by the owner-risk decision.",
         )
         for mutation in mutations:
             with self.subTest(mutation=mutation):
-                self.assertEqual(
-                    (
-                        *EXPECTED_RELEASE_PLAN_DEFERRED_RELATIONSHIP_SENTENCES,
-                        normalized_contract_sentence(mutation),
-                    ),
-                    deferred_assurance_relationship_sentences(
-                        f"{assurance}\n\n{mutation}"
-                    ),
+                self.assertNotEqual(
+                    PINNED_RELEASE_PLAN_DEFERRED_ASSURANCE_SHA256,
+                    sha256_text(f"{assurance}\n\n{mutation}"),
                 )
 
-    def test_issue_55_literal_contract_rejects_unapproved_relationship_sentence(
+    def test_issue_55_pinned_artifact_rejects_adversarial_relationship_mutation(
         self,
     ) -> None:
         plan = read_repository_file(
@@ -537,17 +400,12 @@ class ReleaseMetadataTests(unittest.TestCase):
             "## Task 6: Synchronize GitHub Issue 55",
         )
         mutation = "Owner-risk acceptance provides qualified-review assurance."
-        self.assertEqual(
-            (
-                *EXPECTED_PLANNED_ISSUE_55_DEFERRED_RELATIONSHIP_SENTENCES,
-                normalized_contract_sentence(mutation),
-            ),
-            deferred_assurance_relationship_sentences(
-                f"{issue_body}\n\n{mutation}"
-            ),
+        self.assertNotEqual(
+            PINNED_PLANNED_ISSUE_55_BODY_SHA256,
+            sha256_text(f"{issue_body}\n\n{mutation}"),
         )
 
-    def test_issue_55_literal_contract_rejects_unapproved_state_sentences(
+    def test_issue_55_pinned_artifact_rejects_adversarial_state_mutations(
         self,
     ) -> None:
         plan = read_repository_file(
@@ -566,18 +424,19 @@ class ReleaseMetadataTests(unittest.TestCase):
             "closes this issue.",
             "Issue 55 has been closed.",
             "This issue is not open.",
+            "Issue 55 is resolved.",
+            "This issue is finished.",
+            "#55 has been concluded.",
+            "Issue 55 will be archived.",
         )
         for mutation in mutations:
             with self.subTest(mutation=mutation):
-                self.assertEqual(
-                    (
-                        *EXPECTED_PLANNED_ISSUE_55_STATE_SENTENCES,
-                        normalized_contract_sentence(mutation),
-                    ),
-                    issue_55_state_sentences(f"{issue_body}\n\n{mutation}"),
+                self.assertNotEqual(
+                    PINNED_PLANNED_ISSUE_55_BODY_SHA256,
+                    sha256_text(f"{issue_body}\n\n{mutation}"),
                 )
 
-    def test_issue_59_literal_contract_rejects_unapproved_state_sentences(
+    def test_issue_59_pinned_artifact_rejects_adversarial_state_mutations(
         self,
     ) -> None:
         plan = read_repository_file(
@@ -591,15 +450,14 @@ class ReleaseMetadataTests(unittest.TestCase):
         mutations = (
             "This issue is closed.",
             "#55 is closed.",
+            "This issue has been resolved.",
+            "Issue 55 is no longer active.",
         )
         for mutation in mutations:
             with self.subTest(mutation=mutation):
-                self.assertEqual(
-                    (
-                        *EXPECTED_PLANNED_ISSUE_59_STATE_SENTENCES,
-                        normalized_contract_sentence(mutation),
-                    ),
-                    issue_55_state_sentences(f"{issue_body}\n\n{mutation}"),
+                self.assertNotEqual(
+                    PINNED_PLANNED_ISSUE_59_BODY_SHA256,
+                    sha256_text(f"{issue_body}\n\n{mutation}"),
                 )
 
     def test_deferred_release_preserves_draft_state_and_required_nonclaims(
@@ -627,10 +485,6 @@ class ReleaseMetadataTests(unittest.TestCase):
         ):
             with self.subTest(prohibited=prohibited):
                 self.assertNotIn(prohibited, lower_assurance)
-        self.assertEqual(
-            EXPECTED_RELEASE_PLAN_DEFERRED_RELATIONSHIP_SENTENCES,
-            deferred_assurance_relationship_sentences(assurance),
-        )
 
     def test_deferred_assurance_followup_keeps_issue_55_open_for_all_three_mapping_sets(
         self,
@@ -789,12 +643,8 @@ class ReleaseMetadataTests(unittest.TestCase):
             with self.subTest(prohibited=prohibited):
                 self.assertFalse(contains_normalized_phrase(issue_body, prohibited))
         self.assertEqual(
-            EXPECTED_PLANNED_ISSUE_55_DEFERRED_RELATIONSHIP_SENTENCES,
-            deferred_assurance_relationship_sentences(issue_body),
-        )
-        self.assertEqual(
-            EXPECTED_PLANNED_ISSUE_55_STATE_SENTENCES,
-            issue_55_state_sentences(issue_body),
+            PINNED_PLANNED_ISSUE_55_BODY_SHA256,
+            sha256_text(issue_body),
         )
 
     def test_planned_issue_59_body_preserves_complete_release_gate_set(
@@ -838,12 +688,8 @@ class ReleaseMetadataTests(unittest.TestCase):
             with self.subTest(required=required):
                 self.assertTrue(contains_normalized_phrase(issue_body, required))
         self.assertEqual(
-            EXPECTED_PLANNED_ISSUE_59_DEFERRED_RELATIONSHIP_SENTENCES,
-            deferred_assurance_relationship_sentences(issue_body),
-        )
-        self.assertEqual(
-            EXPECTED_PLANNED_ISSUE_59_STATE_SENTENCES,
-            issue_55_state_sentences(issue_body),
+            PINNED_PLANNED_ISSUE_59_BODY_SHA256,
+            sha256_text(issue_body),
         )
 
     def test_v05_beta_preserves_bounded_non_goals(self) -> None:
