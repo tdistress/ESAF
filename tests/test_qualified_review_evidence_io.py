@@ -726,10 +726,21 @@ class ExternalPathTests(unittest.TestCase):
             root = Path(directory)
             evidence = root / "evidence.md"
             evidence.write_bytes(b"evidence\n")
+            real_stat = Path.stat
+
+            def fail_evidence_stat(
+                path: Path,
+                *,
+                follow_symlinks: bool = True,
+            ) -> object:
+                if path == evidence:
+                    raise PermissionError(str(root / "host-secret"))
+                return real_stat(path, follow_symlinks=follow_symlinks)
+
             with mock.patch.object(
                 Path,
                 "stat",
-                side_effect=PermissionError(str(root / "host-secret")),
+                fail_evidence_stat,
             ):
                 with self.assertRaises(EvidenceError) as raised:
                     resolve_external_regular_file(

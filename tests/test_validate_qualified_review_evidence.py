@@ -2722,15 +2722,33 @@ class CampaignValidationTests(unittest.TestCase):
 
         partial_output = Path(self.temporary.name) / "partial-output"
         original_write = seal_module._write_exclusive_fsync
+        original_write_at = seal_module._write_exclusive_fsync_at
 
         def fail_seal_write(path: Path, content: bytes) -> None:
             if path.name == "CAMPAIGN_SEAL.json":
                 raise OSError("simulated partial publication failure")
             original_write(path, content)
 
-        with mock.patch(
-            "tools.seal_qualified_review_campaign._write_exclusive_fsync",
-            side_effect=fail_seal_write,
+        def fail_seal_write_at(
+            directory_fd: int,
+            name: str,
+            content: bytes,
+        ) -> None:
+            if name == "CAMPAIGN_SEAL.json":
+                raise OSError("simulated partial publication failure")
+            original_write_at(directory_fd, name, content)
+
+        with (
+            mock.patch(
+                "tools.seal_qualified_review_campaign."
+                "_write_exclusive_fsync",
+                side_effect=fail_seal_write,
+            ),
+            mock.patch(
+                "tools.seal_qualified_review_campaign."
+                "_write_exclusive_fsync_at",
+                side_effect=fail_seal_write_at,
+            ),
         ):
             result, stdout, stderr = self._run_seal_cli(
                 self._seal_arguments(partial_output)
