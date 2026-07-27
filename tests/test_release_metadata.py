@@ -89,6 +89,27 @@ def contains_normalized_phrase(text: str, phrase: str) -> bool:
     )
 
 
+def uk_mapping_set_ids(text: str) -> tuple[str, ...]:
+    return tuple(re.findall(
+        r"`(uk-ncsc--[a-z0-9.-]+(?:--[a-z0-9.-]+)*)`",
+        text,
+    ))
+
+
+def fenced_markdown_in_task(plan: str, task_heading: str) -> str:
+    task_start = plan.index(task_heading)
+    next_task = re.search(r"^## Task \d+:", plan[task_start + 1:], re.MULTILINE)
+    task_end = (
+        task_start + 1 + next_task.start()
+        if next_task is not None
+        else len(plan)
+    )
+    task = plan[task_start:task_end]
+    fence_start = task.index("```markdown\n") + len("```markdown\n")
+    fence_end = task.index("\n```", fence_start)
+    return task[fence_start:fence_end]
+
+
 def markdown_list_items(text: str) -> list[str]:
     item_pattern = re.compile(
         r"^(?P<indent>\s*)(?:[-+*]|\d+[.)])\s+"
@@ -297,7 +318,7 @@ class ReleaseMetadataTests(unittest.TestCase):
             "exact v0.5-beta release candidate",
             "one authenticated owner source",
             "remain Draft",
-            "issue 55 remains open",
+            "Issue 55 remains open for the six qualified human role dispositions.",
         ):
             with self.subTest(required=required):
                 self.assertTrue(contains_normalized_phrase(assurance, required))
@@ -308,9 +329,14 @@ class ReleaseMetadataTests(unittest.TestCase):
         ):
             with self.subTest(required=required):
                 self.assertIn(required, assurance)
-        for mapping_set_id in EXPECTED_MAPPING_SET_IDS:
-            with self.subTest(mapping_set_id=mapping_set_id):
-                self.assertEqual(1, assurance.count(mapping_set_id))
+        self.assertEqual(EXPECTED_MAPPING_SET_IDS, uk_mapping_set_ids(assurance))
+        for prohibited in (
+            "issue 55 is closed",
+            "issue 55 shall close",
+            "owner-risk acceptance closes issue 55",
+        ):
+            with self.subTest(prohibited=prohibited):
+                self.assertFalse(contains_normalized_phrase(assurance, prohibited))
 
     def test_deferred_release_preserves_draft_state_and_required_nonclaims(
         self,
@@ -324,20 +350,13 @@ class ReleaseMetadataTests(unittest.TestCase):
             assurance,
             "all three mapping sets and their records remain Draft",
         ))
+        self.assertTrue(contains_normalized_phrase(
+            assurance,
+            "It does not establish qualified review, approval, assurance, compliance, "
+            "certification, equivalence, endorsement, external-scheme approval, or "
+            "production readiness.",
+        ))
         lower_assurance = assurance.casefold()
-        for required in (
-            "qualified review",
-            "approval",
-            "assurance",
-            "compliance",
-            "certification",
-            "equivalence",
-            "endorsement",
-            "external-scheme approval",
-            "production readiness",
-        ):
-            with self.subTest(required=required):
-                self.assertIn(required, lower_assurance)
         for prohibited in (
             "qualified review completed",
             "approved mappings",
@@ -356,11 +375,10 @@ class ReleaseMetadataTests(unittest.TestCase):
         self.assertIn("https://github.com/tdistress/ESAF/issues/55", deferred)
         self.assertTrue(contains_normalized_phrase(
             deferred,
-            "remains open until qualified review is complete",
+            "remains open until qualified review is complete for all three exact "
+            "mapping sets",
         ))
-        for mapping_set_id in EXPECTED_MAPPING_SET_IDS:
-            with self.subTest(mapping_set_id=mapping_set_id):
-                self.assertEqual(1, deferred.count(mapping_set_id))
+        self.assertEqual(EXPECTED_MAPPING_SET_IDS, uk_mapping_set_ids(deferred))
 
     def test_v05_beta_has_bounded_workstreams_and_exit_criteria(self) -> None:
         milestones = read_repository_file("project/MILESTONES.md")
@@ -408,7 +426,7 @@ class ReleaseMetadataTests(unittest.TestCase):
             "all three mapping sets and their records remain Draft",
         ))
 
-    def test_v05_beta_exit_and_closure_issue_require_complete_gate_set(self) -> None:
+    def test_historical_v05_closure_issue_body_requires_complete_gate_set(self) -> None:
         required_gate_set = (
             "The full test suite, control, architecture, crosswalk, link, release, "
             "working-tree, and applicable Mermaid-rendering gates pass on the exact "
@@ -421,14 +439,20 @@ class ReleaseMetadataTests(unittest.TestCase):
         ]
         self.assertTrue(contains_normalized_phrase(exit_criteria, required_gate_set))
 
-        plan = read_repository_file(
+        historical_plan = read_repository_file(
             "docs/superpowers/plans/2026-07-23-v05-beta-plan-reconciliation.md"
         )
-        closure_body = plan[
-            plan.index("$closureBody=@'"):
-            plan.index("'@", plan.index("$closureBody=@'"))
+        historical_closure_body = historical_plan[
+            historical_plan.index("$closureBody=@'"):
+            historical_plan.index(
+                "'@",
+                historical_plan.index("$closureBody=@'"),
+            )
         ]
-        self.assertTrue(contains_normalized_phrase(closure_body, required_gate_set))
+        self.assertTrue(contains_normalized_phrase(
+            historical_closure_body,
+            required_gate_set,
+        ))
 
         backlog = read_repository_file("project/BACKLOG.md")
         active_workstreams = markdown_section(
@@ -445,6 +469,98 @@ class ReleaseMetadataTests(unittest.TestCase):
                 self.assertTrue(
                     contains_normalized_phrase(active_workstreams, required)
                 )
+
+    def test_planned_issue_55_body_preserves_deferred_assurance_boundaries(
+        self,
+    ) -> None:
+        plan = read_repository_file(
+            "docs/superpowers/plans/"
+            "2026-07-27-v05-beta-deferred-mapping-assurance.md"
+        )
+        issue_body = fenced_markdown_in_task(
+            plan,
+            "## Task 6: Synchronize GitHub Issue 55",
+        )
+
+        self.assertIn(
+            "For `v0.5-beta`, the mapping-assurance release gate may be satisfied "
+            "by either:",
+            issue_body,
+        )
+        self.assertEqual(EXPECTED_MAPPING_SET_IDS, uk_mapping_set_ids(issue_body))
+        for required in (
+            "This issue remains open if v0.5-beta proceeds under the coordinated "
+            "owner-risk deferred-assurance path.",
+            "Owner-risk acceptance cannot substitute for qualified human review and "
+            "cannot close this issue.",
+            "specification and inventory review for Core",
+            "security and overclaiming review for Core",
+            "specification and inventory review for Plus forward",
+            "security and overclaiming review for Plus forward",
+            "specification and inventory review for Plus reverse",
+            "security and overclaiming review for Plus reverse",
+            "The second path permits Working Draft publication only. It does not "
+            "complete this issue, complete qualified review, or change any mapping "
+            "lifecycle state.",
+            "All three mapping sets and all records remain draft.",
+            "Update reviewer metadata, lifecycle events, approval state, or "
+            "publication state only when every ESAF-1600 transition condition is "
+            "satisfied.",
+            "Neither deferred assurance nor later qualified review establishes "
+            "compliance, certification, equivalence, endorsement, external-scheme "
+            "approval, production readiness, or assurance beyond the expressly "
+            "recorded scope.",
+        ):
+            with self.subTest(required=required):
+                self.assertTrue(contains_normalized_phrase(issue_body, required))
+        for prohibited in (
+            "issue 55 is closed",
+            "issue 55 shall close",
+            "owner-risk acceptance closes issue 55",
+        ):
+            with self.subTest(prohibited=prohibited):
+                self.assertFalse(contains_normalized_phrase(issue_body, prohibited))
+
+    def test_planned_issue_59_body_preserves_complete_release_gate_set(
+        self,
+    ) -> None:
+        plan = read_repository_file(
+            "docs/superpowers/plans/"
+            "2026-07-27-v05-beta-deferred-mapping-assurance.md"
+        )
+        issue_body = fenced_markdown_in_task(
+            plan,
+            "## Task 7: Synchronize GitHub Issue 59",
+        )
+
+        self.assertEqual(EXPECTED_MAPPING_SET_IDS, uk_mapping_set_ids(issue_body))
+        for required in (
+            "completed qualified-review dispositions for all six human roles tracked "
+            "in #55",
+            "one authenticated owner-risk decision that defers qualified review for "
+            "all three exact mapping sets",
+            "bind every decision to the exact v0.5-beta release candidate SHA",
+            "use one uniform decision basis and one authenticated owner source",
+            "all three mapping sets and their records remain draft, no reviewer "
+            "metadata or lifecycle event is added, and #55 remains open",
+            "Technical, editorial, terminology, mapping, profile-scope, and governance "
+            "reviews are complete.",
+            "The full test suite, control, architecture, crosswalk, assessment, link, "
+            "release, working-tree, and applicable Mermaid-rendering gates pass on "
+            "the exact candidate.",
+            "The complete branch diff is reviewed, GitHub checks pass, and merge state "
+            "is clean.",
+            "Post-merge validation passes before an immutable tag or publication "
+            "statement is created.",
+            "Critical and Important findings are resolved.",
+            "The deferred path does not claim qualified review, approval, "
+            "certification, compliance, equivalence, endorsement, external-scheme "
+            "approval, production readiness, or assurance beyond the recorded "
+            "Working Draft basis.",
+            "Evidence from v0.4-alpha is historical and cannot approve v0.5-beta.",
+        ):
+            with self.subTest(required=required):
+                self.assertTrue(contains_normalized_phrase(issue_body, required))
 
     def test_v05_beta_preserves_bounded_non_goals(self) -> None:
         milestones = read_repository_file("project/MILESTONES.md")

@@ -695,7 +695,7 @@ This issue remains open if `v0.5-beta` proceeds under the coordinated owner-risk
 
 ## Release relationship
 
-For `v0.5-beta`, qualified-review assurance may be satisfied by either:
+For `v0.5-beta`, the mapping-assurance release gate may be satisfied by either:
 
 1. completed qualified-review dispositions for all six required human roles; or
 2. one validated, exact-candidate owner-risk decision covering all three mapping sets.
