@@ -89,6 +89,144 @@ def contains_normalized_phrase(text: str, phrase: str) -> bool:
     )
 
 
+_DEFERRED_ASSURANCE_SUBJECT = re.compile(
+    r"\b(?:"
+    r"owner risk(?: acceptance| decision| disposition| evidence| path)?"
+    r"|deferred(?: acceptance| assurance| decision| disposition| evidence| path)"
+    r")\b"
+)
+_AFFIRMATIVE_ASSURANCE_VERB = re.compile(
+    r"\b(?:"
+    r"establish(?:es|ed|ing)?"
+    r"|provid(?:e|es|ed|ing)"
+    r"|constitut(?:e|es|ed|ing)"
+    r"|complet(?:e|es|ed|ing)"
+    r"|qualif(?:y|ies|ied|ying)"
+    r"|confer(?:s|red|ring)?"
+    r"|demonstrat(?:e|es|ed|ing)"
+    r"|prov(?:e|es|ed|ing)"
+    r")\b"
+)
+_PROTECTED_ASSURANCE_CONCEPT = re.compile(
+    r"\b(?:"
+    r"qualified (?:human )?review"
+    r"|external scheme approval"
+    r"|production readiness"
+    r"|approval"
+    r"|assurance"
+    r"|compliance"
+    r"|certification"
+    r"|equivalence"
+    r"|endorsement"
+    r")\b"
+)
+_EXPLICIT_NEGATION = re.compile(
+    r"\b(?:cannot|neither|never|no|not|without)\b"
+)
+_CONTRASTING_CLAUSE = re.compile(
+    r"\s*(?:;|\bbut\b|\bhowever\b|\byet\b)\s*",
+    re.IGNORECASE,
+)
+_ISSUE_55_TARGET = re.compile(r"\b(?:issue 55|this issue)\b")
+_DIRECT_CLOSURE_CLAIM = re.compile(
+    r"\b(?:issue 55|this issue) "
+    r"(?:(?:is|was|stands|remains) closed|(?:shall|will|must|may|can) close)\b"
+)
+_CLOSURE_VERB = re.compile(r"\bclos(?:e|es|ed|ing)\b")
+
+_NEGATION_CONTRACTIONS = {
+    "can't": "cannot",
+    "couldn't": "could not",
+    "didn't": "did not",
+    "doesn't": "does not",
+    "don't": "do not",
+    "isn't": "is not",
+    "mustn't": "must not",
+    "shan't": "shall not",
+    "shouldn't": "should not",
+    "wasn't": "was not",
+    "weren't": "were not",
+    "won't": "will not",
+    "wouldn't": "would not",
+}
+
+
+def contract_sentences(text: str) -> tuple[str, ...]:
+    sentences: list[str] = []
+    for paragraph in re.split(r"(?:\r?\n){2,}", text):
+        flattened = " ".join(
+            line.strip()
+            for line in paragraph.splitlines()
+            if line.strip()
+        )
+        sentences.extend(
+            sentence.strip()
+            for sentence in re.split(r"(?<=[.!?])\s+", flattened)
+            if sentence.strip()
+        )
+    return tuple(sentences)
+
+
+def normalized_contract_words(text: str) -> str:
+    expanded = text.casefold().replace("’", "'")
+    for contraction, replacement in _NEGATION_CONTRACTIONS.items():
+        expanded = expanded.replace(contraction, replacement)
+    return normalized_words(expanded)
+
+
+def affirmative_deferred_assurance_claims(text: str) -> tuple[str, ...]:
+    claims: list[str] = []
+    for sentence in contract_sentences(text):
+        subject_in_prior_clause = False
+        claim_found = False
+        for clause in _CONTRASTING_CLAUSE.split(sentence):
+            normalized = normalized_contract_words(clause)
+            subjects = tuple(_DEFERRED_ASSURANCE_SUBJECT.finditer(normalized))
+            for verb in _AFFIRMATIVE_ASSURANCE_VERB.finditer(normalized):
+                has_governing_subject = (
+                    subject_in_prior_clause
+                    or any(subject.start() < verb.start() for subject in subjects)
+                )
+                concept = _PROTECTED_ASSURANCE_CONCEPT.search(
+                    normalized,
+                    verb.end(),
+                )
+                if not has_governing_subject or concept is None:
+                    continue
+                if _EXPLICIT_NEGATION.search(normalized[:concept.end()]):
+                    continue
+                claims.append(sentence)
+                claim_found = True
+                break
+            if claim_found:
+                break
+            subject_in_prior_clause = subject_in_prior_clause or bool(subjects)
+    return tuple(claims)
+
+
+def contradictory_issue_closure_claims(text: str) -> tuple[str, ...]:
+    claims: list[str] = []
+    for sentence in contract_sentences(text):
+        normalized = normalized_contract_words(sentence)
+        if _DIRECT_CLOSURE_CLAIM.search(normalized):
+            claims.append(sentence)
+            continue
+        subjects = tuple(_DEFERRED_ASSURANCE_SUBJECT.finditer(normalized))
+        for verb in _CLOSURE_VERB.finditer(normalized):
+            has_governing_subject = any(
+                subject.start() < verb.start()
+                for subject in subjects
+            )
+            target = _ISSUE_55_TARGET.search(normalized, verb.end())
+            if not has_governing_subject or target is None:
+                continue
+            if _EXPLICIT_NEGATION.search(normalized[:target.end()]):
+                continue
+            claims.append(sentence)
+            break
+    return tuple(claims)
+
+
 def uk_mapping_set_ids(text: str) -> tuple[str, ...]:
     return tuple(re.findall(
         r"`(uk-ncsc--[a-z0-9.-]+(?:--[a-z0-9.-]+)*)`",
@@ -337,6 +475,135 @@ class ReleaseMetadataTests(unittest.TestCase):
         ):
             with self.subTest(prohibited=prohibited):
                 self.assertFalse(contains_normalized_phrase(assurance, prohibited))
+        self.assertEqual((), affirmative_deferred_assurance_claims(assurance))
+        self.assertEqual((), contradictory_issue_closure_claims(assurance))
+
+    def test_release_plan_contract_rejects_appended_affirmative_compliance_claim(
+        self,
+    ) -> None:
+        release_plan = read_repository_file("project/RELEASE_PLAN.md")
+        assurance = markdown_section(
+            release_plan,
+            "## v0.5-beta deferred mapping assurance",
+        )
+        mutation = "Owner-risk acceptance establishes compliance."
+
+        self.assertEqual(
+            (mutation,),
+            affirmative_deferred_assurance_claims(f"{assurance}\n\n{mutation}"),
+        )
+
+    def test_issue_55_contract_rejects_appended_affirmative_assurance_claim(
+        self,
+    ) -> None:
+        plan = read_repository_file(
+            "docs/superpowers/plans/"
+            "2026-07-27-v05-beta-deferred-mapping-assurance.md"
+        )
+        issue_body = fenced_markdown_in_task(
+            plan,
+            "## Task 6: Synchronize GitHub Issue 55",
+        )
+        mutation = "Owner-risk acceptance provides qualified-review assurance."
+
+        self.assertEqual(
+            (mutation,),
+            affirmative_deferred_assurance_claims(f"{issue_body}\n\n{mutation}"),
+        )
+
+    def test_issue_55_contract_rejects_appended_closed_state(
+        self,
+    ) -> None:
+        plan = read_repository_file(
+            "docs/superpowers/plans/"
+            "2026-07-27-v05-beta-deferred-mapping-assurance.md"
+        )
+        issue_body = fenced_markdown_in_task(
+            plan,
+            "## Task 6: Synchronize GitHub Issue 55",
+        )
+        mutation = "This issue is closed."
+
+        self.assertEqual(
+            (mutation,),
+            contradictory_issue_closure_claims(f"{issue_body}\n\n{mutation}"),
+        )
+
+    def test_affirmative_claim_detector_covers_protected_verbs_and_concepts(
+        self,
+    ) -> None:
+        claims = (
+            "Owner-risk acceptance establishes compliance.",
+            "Owner-risk acceptance provides qualified-review assurance.",
+            "Deferred acceptance constitutes approval.",
+            "Deferred assurance completes certification.",
+            "Owner-risk decision qualifies equivalence.",
+            "Deferred disposition confers endorsement.",
+            "Owner-risk acceptance demonstrates external-scheme approval.",
+            "The deferred path proves production readiness.",
+        )
+        for claim in claims:
+            with self.subTest(claim=claim):
+                self.assertEqual(
+                    (claim,),
+                    affirmative_deferred_assurance_claims(claim),
+                )
+
+    def test_affirmative_claim_detector_ignores_explicitly_negated_boundaries(
+        self,
+    ) -> None:
+        boundaries = (
+            "Owner-risk acceptance does not establish compliance.",
+            "Owner-risk acceptance cannot provide qualified-review assurance.",
+            "Deferred acceptance does not constitute approval.",
+            "Deferred assurance shall not complete certification.",
+            "Owner-risk decision does not qualify equivalence.",
+            "Deferred disposition cannot confer endorsement.",
+            "Owner-risk acceptance never demonstrates external-scheme approval.",
+            "No deferred path proves production readiness.",
+            "Neither deferred assurance nor later qualified review establishes "
+            "compliance.",
+        )
+        for boundary in boundaries:
+            with self.subTest(boundary=boundary):
+                self.assertEqual(
+                    (),
+                    affirmative_deferred_assurance_claims(boundary),
+                )
+
+    def test_closure_detector_covers_issue_55_and_this_issue_variants(
+        self,
+    ) -> None:
+        claims = (
+            "This issue is closed.",
+            "Issue 55 is closed.",
+            "This issue shall close.",
+            "Issue 55 shall close.",
+            "Owner-risk acceptance closes this issue.",
+            "Deferred acceptance closes issue 55.",
+        )
+        for claim in claims:
+            with self.subTest(claim=claim):
+                self.assertEqual(
+                    (claim,),
+                    contradictory_issue_closure_claims(claim),
+                )
+
+    def test_closure_detector_ignores_explicitly_negated_open_boundaries(
+        self,
+    ) -> None:
+        boundaries = (
+            "This issue is not closed.",
+            "Issue 55 shall not close.",
+            "Owner-risk acceptance cannot close this issue.",
+            "Deferred acceptance does not close issue 55.",
+        )
+        for boundary in boundaries:
+            with self.subTest(boundary=boundary):
+                self.assertEqual(
+                    (),
+                    contradictory_issue_closure_claims(boundary),
+                )
 
     def test_deferred_release_preserves_draft_state_and_required_nonclaims(
         self,
@@ -363,6 +630,7 @@ class ReleaseMetadataTests(unittest.TestCase):
         ):
             with self.subTest(prohibited=prohibited):
                 self.assertNotIn(prohibited, lower_assurance)
+        self.assertEqual((), affirmative_deferred_assurance_claims(assurance))
 
     def test_deferred_assurance_followup_keeps_issue_55_open_for_all_three_mapping_sets(
         self,
@@ -520,6 +788,8 @@ class ReleaseMetadataTests(unittest.TestCase):
         ):
             with self.subTest(prohibited=prohibited):
                 self.assertFalse(contains_normalized_phrase(issue_body, prohibited))
+        self.assertEqual((), affirmative_deferred_assurance_claims(issue_body))
+        self.assertEqual((), contradictory_issue_closure_claims(issue_body))
 
     def test_planned_issue_59_body_preserves_complete_release_gate_set(
         self,
@@ -561,6 +831,7 @@ class ReleaseMetadataTests(unittest.TestCase):
         ):
             with self.subTest(required=required):
                 self.assertTrue(contains_normalized_phrase(issue_body, required))
+        self.assertEqual((), affirmative_deferred_assurance_claims(issue_body))
 
     def test_v05_beta_preserves_bounded_non_goals(self) -> None:
         milestones = read_repository_file("project/MILESTONES.md")
