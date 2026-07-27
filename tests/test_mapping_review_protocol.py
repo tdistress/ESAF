@@ -171,15 +171,21 @@ class MappingReviewProtocolTests(unittest.TestCase):
             normalized,
         )
 
-    def test_protocol_defines_external_seal_sequence(self) -> None:
+    def test_protocol_defines_qualified_review_evidence_campaign(self) -> None:
         normalized = " ".join(PROTOCOL.read_text(encoding="utf-8").split())
-        self.assertIn(
-            "validate the completed campaign, hash the canonical manifest, "
-            "create and hash the deterministic archive, upload the archive "
-            "to its immutable locator, then write `CAMPAIGN_SEAL.json` "
-            "outside the sealed campaign root",
-            normalized,
-        )
+        for contract in (
+            "local materialization",
+            "external publication",
+            "CLI success",
+            "does not establish upload",
+            "upload the exact archive bytes",
+            "SHA-256 and byte length",
+            "publish or rely on the seal",
+            "unpublished and unusable",
+            "new output directory",
+        ):
+            with self.subTest(contract=contract):
+                self.assertIn(contract, normalized)
         self.assertIn(
             "No campaign byte may change after sealing",
             normalized,
@@ -215,6 +221,7 @@ class MappingReviewProtocolTests(unittest.TestCase):
     def test_tools_readme_documents_qualified_review_evidence_commands(self) -> None:
         """Removing an operator command would make review campaigns unsafe to run."""
         readme = (ROOT / "tools/README.md").read_text(encoding="utf-8")
+        normalized_readme = " ".join(readme.split())
         for command in (
             "python tools/build_mapping_review_bundle.py --candidate-state draft",
             "python tools/build_mapping_review_bundle.py --candidate-state reviewed",
@@ -226,6 +233,15 @@ class MappingReviewProtocolTests(unittest.TestCase):
         ):
             with self.subTest(command=command):
                 self.assertIn(command, readme)
+        for outcome in (
+            "locally materialized",
+            "does not establish upload",
+            "publish or rely on the seal",
+            "unpublished and unusable",
+            "new output directory",
+        ):
+            with self.subTest(outcome=outcome):
+                self.assertIn(outcome, normalized_readme)
 
     def test_review_worksheets_have_separate_scopes_and_findings(self) -> None:
         specification = (

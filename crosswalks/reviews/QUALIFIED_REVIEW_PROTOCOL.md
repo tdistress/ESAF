@@ -180,11 +180,29 @@ No non-excluded byte may change after the digest is recorded.
 
 ## External sealing sequence
 
-After evidence completion, validate the completed campaign, hash the canonical
-manifest, create and hash the deterministic archive, upload the archive to its
-immutable locator, then write `CAMPAIGN_SEAL.json` outside the sealed campaign
-root. The seal is canonical one-line UTF-8/LF JSON with sorted keys, no
-insignificant whitespace, and schema version `1.0.0`.
+Sealing has two boundaries: local materialization and external publication.
+Before local materialization, the operator shall reserve a syntactically valid
+immutable archive locator. After evidence completion, the operator shall:
+
+1. validate one exact campaign snapshot;
+2. atomically materialize the deterministic `CAMPAIGN_ARCHIVE.zip` and the
+   canonical `CAMPAIGN_SEAL.json` from that same snapshot in one new external
+   output directory;
+3. treat CLI success as local materialization only; it does not establish
+   upload, durable retention, or external verification;
+4. upload the exact archive bytes to the reserved locator;
+5. verify the durable object's SHA-256 and byte length against the seal;
+6. publish or rely on the seal only after successful verification; and
+7. record the seal-record SHA-256, durable locator, and completion of archive
+   upload verification in the external issue or pull-request evidence record.
+
+An upload failure, absence, or mismatch leaves the local seal unpublished and
+unusable. A changed archive byte or locator requires a newly materialized pair
+in a new output directory. Offline validation does not establish remote
+availability or external verification.
+
+The seal is canonical one-line UTF-8/LF JSON with sorted keys, no insignificant
+whitespace, and schema version `1.0.0`.
 
 The seal has exactly these keys:
 
@@ -203,8 +221,11 @@ The seal has exactly these keys:
 - `validator_version`.
 
 The archive contains the validated campaign allowlist, but not its own seal.
-Publish the seal-record SHA-256 and locator in the external issue or pull
-request evidence record. No campaign byte may change after sealing.
+It shall use sorted canonical POSIX paths, implicit directories, stored
+compression, fixed `1980-01-01 00:00:00` timestamps, and regular-file mode
+`0644`. It shall reject duplicate or unexpected entries, absolute or traversal
+paths, symbolic links, junction metadata, other special file modes, and path
+aliases. No campaign byte may change after sealing.
 
 ## Automation and human judgment boundary
 

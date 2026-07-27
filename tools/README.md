@@ -204,15 +204,20 @@ python tools/seal_qualified_review_campaign.py --candidate $draftCandidate `
   --archive-locator $draftArchiveLocator
 ```
 
-After the command succeeds, upload the exact, unmodified
-`CAMPAIGN_ARCHIVE.zip` bytes to the locator already recorded in the seal.
-Verify the durable object at that locator against the seal's archive digest
-and byte length before relying on the campaign. Preserve the seal record in
-the external evidence system, then record its SHA-256 and durable locator in
-the external issue or pull-request evidence record. Both generated files
-remain outside the sealed campaign root and every Git worktree. Do not modify
-any campaign or archive byte after sealing; a change requires a new validated
-and sealed campaign.
+Success means that the archive and seal have been locally materialized. It
+does not establish upload, durable retention, or external verification. Upload
+the exact, unmodified `CAMPAIGN_ARCHIVE.zip` bytes to the locator already
+recorded in the seal, then verify the durable object's SHA-256 and byte length
+against the seal. An upload failure, absence, or mismatch leaves the local
+seal unpublished and unusable. The operator may publish or rely on the seal
+only after successful verification.
+
+Preserve the seal record in the external evidence system, then record its
+SHA-256, durable locator, and completion of archive upload verification in the
+external issue or pull-request evidence record. Both generated files remain
+outside the sealed campaign root and every Git worktree. Do not modify any
+campaign or archive byte after sealing. A changed archive byte or locator
+requires a new output directory and a newly materialized pair.
 
 ### Reviewed package and final confirmation
 
