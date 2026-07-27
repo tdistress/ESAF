@@ -172,20 +172,40 @@ class MappingReviewProtocolTests(unittest.TestCase):
         )
 
     def test_protocol_defines_qualified_review_evidence_campaign(self) -> None:
-        normalized = " ".join(PROTOCOL.read_text(encoding="utf-8").split())
-        for contract in (
-            "local materialization",
-            "external publication",
-            "CLI success",
-            "does not establish upload",
-            "upload the exact archive bytes",
-            "SHA-256 and byte length",
-            "publish or rely on the seal",
-            "unpublished and unusable",
-            "new output directory",
+        text = PROTOCOL.read_text(encoding="utf-8")
+        section = text.split(
+            "## External sealing sequence\n", 1
+        )[1].split("\n## ", 1)[0]
+        normalized = " ".join(section.split())
+        for rule in (
+            "Sealing has two boundaries: local materialization and external "
+            "publication.",
+            "The CLI remains offline and does not upload either file.",
+            "treat CLI success as local materialization only; it does not "
+            "establish upload, durable retention, or external verification;",
+            "upload the exact archive bytes to the reserved locator;",
+            "An upload failure, absence, or mismatch leaves the local seal "
+            "unpublished and unusable.",
+            "A changed archive byte or locator requires a newly materialized "
+            "pair in a new output directory.",
+            "Offline validation does not establish remote availability or "
+            "external verification.",
         ):
-            with self.subTest(contract=contract):
-                self.assertIn(contract, normalized)
+            with self.subTest(rule=rule):
+                self.assertIn(rule, normalized)
+        verification_rule = (
+            "verify the durable object's SHA-256 and byte length against the "
+            "seal;"
+        )
+        publication_rule = (
+            "publish or rely on the seal only after successful verification;"
+        )
+        self.assertIn(verification_rule, normalized)
+        self.assertIn(publication_rule, normalized)
+        self.assertLess(
+            normalized.index(verification_rule),
+            normalized.index(publication_rule),
+        )
         self.assertIn(
             "No campaign byte may change after sealing",
             normalized,
@@ -221,7 +241,10 @@ class MappingReviewProtocolTests(unittest.TestCase):
     def test_tools_readme_documents_qualified_review_evidence_commands(self) -> None:
         """Removing an operator command would make review campaigns unsafe to run."""
         readme = (ROOT / "tools/README.md").read_text(encoding="utf-8")
-        normalized_readme = " ".join(readme.split())
+        seal_section = readme.split(
+            "### Seal the Draft campaign\n", 1
+        )[1].split("\n### ", 1)[0]
+        normalized_seal_section = " ".join(seal_section.split())
         for command in (
             "python tools/build_mapping_review_bundle.py --candidate-state draft",
             "python tools/build_mapping_review_bundle.py --candidate-state reviewed",
@@ -233,15 +256,38 @@ class MappingReviewProtocolTests(unittest.TestCase):
         ):
             with self.subTest(command=command):
                 self.assertIn(command, readme)
-        for outcome in (
-            "locally materialized",
-            "does not establish upload",
-            "publish or rely on the seal",
-            "unpublished and unusable",
-            "new output directory",
+        self.assertIn(
+            "python tools/seal_qualified_review_campaign.py",
+            seal_section,
+        )
+        for rule in (
+            "The CLI remains offline and does not upload either file.",
+            "Success means that the archive and seal have been locally "
+            "materialized. It does not establish upload, durable retention, "
+            "or external verification.",
+            "Upload the exact, unmodified `CAMPAIGN_ARCHIVE.zip` bytes to the "
+            "locator already recorded in the seal, then verify the durable "
+            "object's SHA-256 and byte length against the seal.",
+            "An upload failure, absence, or mismatch leaves the local seal "
+            "unpublished and unusable.",
+            "A changed archive byte or locator requires a new output "
+            "directory and a newly materialized pair.",
         ):
-            with self.subTest(outcome=outcome):
-                self.assertIn(outcome, normalized_readme)
+            with self.subTest(rule=rule):
+                self.assertIn(rule, normalized_seal_section)
+        verification_rule = (
+            "verify the durable object's SHA-256 and byte length against the "
+            "seal."
+        )
+        publication_rule = (
+            "The operator may publish or rely on the seal only after "
+            "successful verification."
+        )
+        self.assertIn(publication_rule, normalized_seal_section)
+        self.assertLess(
+            normalized_seal_section.index(verification_rule),
+            normalized_seal_section.index(publication_rule),
+        )
 
     def test_review_worksheets_have_separate_scopes_and_findings(self) -> None:
         specification = (

@@ -181,6 +181,7 @@ No non-excluded byte may change after the digest is recorded.
 ## External sealing sequence
 
 Sealing has two boundaries: local materialization and external publication.
+The CLI remains offline and does not upload either file.
 Before local materialization, the operator shall reserve a syntactically valid
 immutable archive locator. After evidence completion, the operator shall:
 

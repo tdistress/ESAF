@@ -191,9 +191,9 @@ not convert a `stop` into approval or a lifecycle transition.
 
 When the completed Draft campaign validates, seal its exact bytes
 deterministically. First reserve the immutable archive locator, then supply it
-to the sealing command. The command atomically writes the deterministic
-`CAMPAIGN_ARCHIVE.zip` and its `CAMPAIGN_SEAL.json` together in the new
-external output directory; it does not upload either file:
+to the sealing command. The CLI remains offline and does not upload either
+file. It atomically writes the deterministic `CAMPAIGN_ARCHIVE.zip` and its
+`CAMPAIGN_SEAL.json` together in the new external output directory:
 
 ```powershell
 $draftSealDirectory = Join-Path $env:USERPROFILE "ESAF-review-evidence\draft-seal"
