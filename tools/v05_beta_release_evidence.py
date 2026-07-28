@@ -6,7 +6,7 @@ from __future__ import annotations
 import argparse
 from copy import deepcopy
 from dataclasses import dataclass
-from datetime import date, datetime, timezone
+from datetime import datetime, timezone
 from hashlib import sha256
 import json
 import os
@@ -41,10 +41,16 @@ API_ROOT = "https://api.github.com/"
 WEB_ROOT = "https://github.com/tdistress/ESAF"
 FRESHNESS_SECONDS = 15 * 60
 CHECK_NAME = "Validate ESAF sources"
+WORKFLOW_NAME = "Repository validation"
+WORKFLOW_PATH = ".github/workflows/catalog-validation.yml"
+ISSUE_55_RESOURCE = f"repos/{REPOSITORY}/issues/55"
 TAG_RESOURCE = f"repos/{REPOSITORY}/git/ref/tags/v0.5-beta"
 VERDICT_SCHEMA = "esaf-v05-release-verdict-v1"
 GOVERNANCE_SCHEMA = "esaf-v05-governance-verdict-v1"
 POST_MERGE_SCHEMA = "esaf-v05-post-merge-results-v1"
+POST_MERGE_RENDERING_SCHEMA = (
+    "esaf-v05-post-merge-rendering-verdict-v1"
+)
 SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 HEADER_NAME_RE = re.compile(r"^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$")
 REQUEST_RE = re.compile(r"^> ([A-Z]+) (\S+) HTTP/\d(?:\.\d)?$")
@@ -100,6 +106,22 @@ GOVERNANCE_KEYS = {
     "disposition",
     "critical",
     "important",
+}
+POST_MERGE_RENDERING_KEYS = {
+    "schema",
+    "release",
+    "sha",
+    "tree",
+    "kind",
+    "reviewer",
+    "role",
+    "date",
+    "disposition",
+    "critical",
+    "important",
+    "rendered_blocks",
+    "renderer",
+    "visual_review",
 }
 COMMENT_REQUIRED_KEYS = {
     "url",
@@ -794,7 +816,8 @@ def collect_closure_evidence(
     rendering_comment_id: int,
     profile_scope_comment_id: int,
     governance_comment_id: int,
-    publication_date: str,
+    security_overclaiming_comment_id: int,
+    whole_range_comment_id: int,
     now: datetime | None = None,
     validation_runner: ValidationRunner | None = None,
     repository_runner: Callable[..., object] | None = None,
@@ -809,8 +832,6 @@ def collect_closure_evidence(
     )
     if SHA_RE.fullmatch(expected_head) is None:
         raise ValueError("expected closure head shall be a 40-character SHA")
-    if not _calendar_date(publication_date):
-        raise ValueError("publication date shall be YYYY-MM-DD")
     if not _integer(pr_number) or pr_number < 1:
         raise ValueError("pull request number shall be positive")
     _require_local_tag_absent(
@@ -945,6 +966,28 @@ def collect_closure_evidence(
     tag_digest = sha256(tag_response.raw_body).hexdigest()
     responses.append((tag_response, f"{API_ROOT}{TAG_RESOURCE}"))
 
+    issue_55_response = client.get(ISSUE_55_RESOURCE)
+    issue_55 = _validated_object(
+        issue_55_response, _reference_now(fixed_now)
+    )
+    issue_55_url = f"{WEB_ROOT}/issues/55"
+    if (
+        issue_55.get("url") != f"{API_ROOT}{ISSUE_55_RESOURCE}"
+        or issue_55.get("html_url") != issue_55_url
+        or issue_55.get("repository_url")
+        != f"{API_ROOT}repos/{REPOSITORY}"
+        or issue_55.get("number") != 55
+        or issue_55.get("state") != "open"
+        or "pull_request" in issue_55
+    ):
+        raise ValueError(
+            "issue 55 shall be the canonical open repository issue"
+        )
+    issue_55_digest = sha256(
+        issue_55_response.raw_body
+    ).hexdigest()
+    responses.append((issue_55_response, issue_55_url))
+
     requested_comments = {
         "owner": owner_comment_id,
         "technical": technical_comment_id,
@@ -953,6 +996,8 @@ def collect_closure_evidence(
         "rendering": rendering_comment_id,
         "profile_scope": profile_scope_comment_id,
         "governance": governance_comment_id,
+        "security_overclaiming": security_overclaiming_comment_id,
+        "whole_range": whole_range_comment_id,
     }
     if (
         any(not _integer(value) or value < 1 for value in requested_comments.values())
@@ -971,7 +1016,7 @@ def collect_closure_evidence(
             response,
             payload,
             pr_number=pr_number,
-            verified_at=response_reference,
+            verified_at=response.retrieved_at,
         )
         if _parse_rfc3339(source["created_at"], "GitHub comment timestamp") <= commit_time:
             raise ValueError("GitHub comment shall postdate closure commit")
@@ -995,6 +1040,8 @@ def collect_closure_evidence(
         "terminology",
         "rendering",
         "profile_scope",
+        "security_overclaiming",
+        "whole_range",
     ):
         structured, source, _ = comments[kind]
         _validate_release_verdict(
@@ -1002,7 +1049,6 @@ def collect_closure_evidence(
             source,
             kind,
             expected_head,
-            publication_date,
         )
         verdicts[kind] = _release_verdict(structured, source)
     governance, governance_source, _ = comments["governance"]
@@ -1010,7 +1056,6 @@ def collect_closure_evidence(
         governance,
         governance_source,
         expected_head,
-        publication_date,
     )
 
     checks_resource = f"repos/{REPOSITORY}/commits/{expected_head}/check-runs"
@@ -1018,9 +1063,32 @@ def collect_closure_evidence(
     check_run, page_entry = _validated_check_runs(
         page_set, expected_head, _reference_now(fixed_now)
     )
-    check_url = check_run.get("details_url") or check_run.get("html_url")
-    if not _https(check_url):
-        raise ValueError("GitHub check URL shall use HTTPS")
+    run_id = check_run["run_id"]
+    run_resource = f"repos/{REPOSITORY}/actions/runs/{run_id}"
+    run_response = client.get(run_resource)
+    workflow_run = _validated_object(
+        run_response, _reference_now(fixed_now)
+    )
+    run_url = f"{WEB_ROOT}/actions/runs/{run_id}"
+    repository = workflow_run.get("repository")
+    head_repository = workflow_run.get("head_repository")
+    if (
+        workflow_run.get("id") != run_id
+        or workflow_run.get("name") != WORKFLOW_NAME
+        or workflow_run.get("path") != WORKFLOW_PATH
+        or workflow_run.get("head_sha") != expected_head
+        or workflow_run.get("status") != "completed"
+        or workflow_run.get("conclusion") != "success"
+        or workflow_run.get("html_url") != run_url
+        or not isinstance(repository, dict)
+        or repository.get("full_name") != REPOSITORY
+        or not isinstance(head_repository, dict)
+        or head_repository.get("full_name") != REPOSITORY
+    ):
+        raise ValueError(
+            "check shall bind the canonical GitHub Actions workflow run"
+        )
+    responses.append((run_response, run_url))
 
     rendering = comments["rendering"][0]
     executed_results = (
@@ -1041,7 +1109,7 @@ def collect_closure_evidence(
             "candidate_inventory_equal": True,
             "candidate_review_url": verdicts["rendering"]["url"],
             "candidate_reviewer": verdicts["rendering"]["reviewer"],
-            "reviewed_at": comments["rendering"][1]["source_verified_at"],
+            "reviewed_at": comments["rendering"][1]["created_at"],
         },
     }
     candidate_commands = [
@@ -1054,7 +1122,7 @@ def collect_closure_evidence(
         "sha": expected_head,
         "reviewer": owner["accountable_owner"],
         "role": "repository owner",
-        "date": publication_date,
+        "date": str(owner_source["created_at"])[:10],
         "disposition": scope_approval["disposition"],
         "url": owner_source["comment_url"],
         "critical": 0,
@@ -1122,6 +1190,8 @@ def collect_closure_evidence(
         "terminology": verdicts["terminology"],
         "rendering": verdicts["rendering"],
         "profile_scope": verdicts["profile_scope"],
+        "security_overclaiming": verdicts["security_overclaiming"],
+        "whole_range": verdicts["whole_range"],
         "governance": governance_verdict,
         "candidate_commands": candidate_commands,
         "mapping_decision_schema": OWNER_DECISION_SCHEMA,
@@ -1134,9 +1204,21 @@ def collect_closure_evidence(
                     "name": CHECK_NAME,
                     "sha": expected_head,
                     "conclusion": "success",
-                    "url": check_url,
+                    "url": run_url,
+                    "app_slug": "github-actions",
+                    "run_id": run_id,
+                    "workflow_name": WORKFLOW_NAME,
+                    "workflow_path": WORKFLOW_PATH,
+                    "repository": REPOSITORY,
                 }
             ],
+        },
+        "issue_55": {
+            "resource": ISSUE_55_RESOURCE,
+            "number": 55,
+            "state": "open",
+            "url": issue_55_url,
+            "response_sha256": issue_55_digest,
         },
         "merge_state": {
             "sha": expected_head,
@@ -1165,16 +1247,11 @@ def refresh_taggable_evidence(
     *,
     base_evidence: dict[str, object],
     merge_head: str,
-    post_merge_results: dict[str, object],
+    post_merge_rendering_comment_id: int,
+    post_merge_validation_runner: ValidationRunner | None = None,
     **collection_arguments: object,
 ) -> dict[str, object]:
     """Re-fetch closure sources and bind post-merge evidence to an equal tree."""
-    if (
-        not isinstance(post_merge_results, dict)
-        or set(post_merge_results)
-        != {"schema", "sha", "tree", "commands"}
-    ):
-        raise ValueError("post-merge results keys are invalid")
     expected_head = collection_arguments.get("expected_head")
     if (
         not isinstance(expected_head, str)
@@ -1254,19 +1331,95 @@ def refresh_taggable_evidence(
         or merge_tree.get("sha") != fresh["closure_tree"]
     ):
         raise ValueError("merged tree shall equal closure tree")
+
+    post_resource = (
+        f"repos/{REPOSITORY}/issues/comments/"
+        f"{post_merge_rendering_comment_id}"
+    )
+    post_response = client.get(post_resource)
+    post_payload = _validated_object(
+        post_response, _reference_now(fixed_now)
+    )
+    post_source = source_record(
+        post_response,
+        post_payload,
+        pr_number=int(collection_arguments["pr_number"]),
+        verified_at=post_response.retrieved_at,
+    )
+    merge_commit_time = _parse_rfc3339(
+        merge_details["committer"].get("date"),
+        "GitHub merge commit timestamp",
+    )
     if (
-        not isinstance(post_merge_results, dict)
-        or post_merge_results.get("schema") != POST_MERGE_SCHEMA
-        or post_merge_results.get("sha") != merge_head
-        or post_merge_results.get("tree") != merge_tree["sha"]
+        _parse_rfc3339(
+            post_source["created_at"],
+            "GitHub comment timestamp",
+        )
+        <= merge_commit_time
     ):
-        raise ValueError("post-merge results shall match merged head and tree")
+        raise ValueError(
+            "post-merge rendering comment shall postdate merge commit"
+        )
+    post_rendering = parse_fenced_json(str(post_payload["body"]))
+    _validate_post_merge_rendering_verdict(
+        post_rendering,
+        post_source,
+        merge_head,
+        str(merge_tree["sha"]),
+    )
+
+    merge_results = (
+        post_merge_validation_runner or DetachedValidationRunner()
+    ).run(
+        Path(collection_arguments["root"]),
+        merge_head,
+        closure_base,
+    )
+    _validate_local_results(merge_results, merge_head)
+    merge_by_name = {
+        str(item["name"]): deepcopy(item) for item in merge_results
+    }
+    candidate_rendering = fresh["rendering"]
+    assert isinstance(candidate_rendering, dict)
+    merge_by_name["mermaid_rendering"] = {
+        "name": "mermaid_rendering",
+        "sha": merge_head,
+        "exit_code": 0,
+        "result": {
+            "rendered_blocks": post_rendering["rendered_blocks"],
+            "renderer": post_rendering["renderer"],
+            "visual_review": post_rendering["visual_review"],
+            "candidate_inventory_equal": True,
+            "merge_tree_equal": True,
+            "candidate_review_url": candidate_rendering["url"],
+            "candidate_reviewer": candidate_rendering["reviewer"],
+            "post_merge_reviewer": post_rendering["reviewer"],
+            "post_merge_review_url": post_source["comment_url"],
+            "reviewed_at": post_source["created_at"],
+        },
+    }
+    post_commands = []
+    for name in COMMAND_IDS:
+        command = deepcopy(merge_by_name[name])
+        command.pop("sha")
+        post_commands.append(command)
     result = deepcopy(fresh)
     result["merge_head"] = merge_head
     result["merge_tree"] = merge_tree["sha"]
-    result["post_merge"] = deepcopy(post_merge_results)
+    result["post_merge"] = {
+        "schema": POST_MERGE_SCHEMA,
+        "sha": merge_head,
+        "tree": merge_tree["sha"],
+        "commands": post_commands,
+        "rendering_source": post_source,
+    }
     result["acquisition"]["resources"].append(
         _acquisition_entry(merge_response, merge_url)
+    )
+    result["acquisition"]["resources"].append(
+        _acquisition_entry(
+            post_response, str(post_source["comment_url"])
+        )
     )
     result["acquisition"]["retrieved_at"] = _format_utc(
         max(
@@ -1275,6 +1428,7 @@ def refresh_taggable_evidence(
                 "acquisition timestamp",
             ),
             merge_response.retrieved_at,
+            post_response.retrieved_at,
         )
     )
     return result
@@ -1475,17 +1629,39 @@ def _validated_check_runs(
     if len(matches) != 1:
         raise ValueError("GitHub required check shall appear exactly once")
     check = matches[0]
+    app = check.get("app")
+    details_url = check.get("details_url")
+    run_match = (
+        re.fullmatch(
+            (
+                r"https://github\.com/tdistress/ESAF/"
+                r"actions/runs/([1-9][0-9]*)"
+                r"(?:/job/[1-9][0-9]*)?"
+            ),
+            details_url,
+        )
+        if isinstance(details_url, str)
+        else None
+    )
     if (
         check.get("head_sha") != expected_head
         or check.get("status") != "completed"
         or check.get("conclusion") != "success"
+        or not isinstance(app, dict)
+        or app.get("slug") != "github-actions"
+        or app.get("name") != "GitHub Actions"
+        or app.get("html_url")
+        != "https://github.com/apps/github-actions"
+        or run_match is None
     ):
-        raise ValueError("GitHub required check shall be successful")
-    check_url = check.get("details_url") or check.get("html_url")
-    if not _https(check_url):
-        raise ValueError("GitHub check URL shall use HTTPS")
-    return check, _page_acquisition_entry(
-        page_set, str(check_url)
+        raise ValueError(
+            "check shall bind the canonical GitHub Actions workflow run"
+        )
+    result = deepcopy(check)
+    result["run_id"] = int(run_match.group(1))
+    return result, _page_acquisition_entry(
+        page_set,
+        f"{WEB_ROOT}/actions/runs/{result['run_id']}",
     )
 
 
@@ -1568,7 +1744,6 @@ def _validate_release_verdict(
     source: dict[str, object],
     expected_kind: str,
     expected_head: str,
-    publication_date: str,
 ) -> None:
     expected_keys = VERDICT_KEYS | (
         RENDERING_KEYS if expected_kind == "rendering" else set()
@@ -1579,7 +1754,7 @@ def _validate_release_verdict(
         value.get("schema") != VERDICT_SCHEMA
         or value.get("release") != RELEASE
         or value.get("sha") != expected_head
-        or value.get("date") != publication_date
+        or value.get("date") != str(source.get("created_at"))[:10]
         or value.get("disposition") != "approved"
         or value.get("critical") != 0
         or value.get("important") != 0
@@ -1604,7 +1779,6 @@ def _validate_governance_verdict(
     value: dict[str, object],
     source: dict[str, object],
     expected_head: str,
-    publication_date: str,
 ) -> None:
     if set(value) != GOVERNANCE_KEYS:
         raise ValueError("governance verdict keys are invalid")
@@ -1615,7 +1789,7 @@ def _validate_governance_verdict(
         or value.get("sha") != expected_head
         or value.get("kind") != "governance"
         or value.get("approver") != source.get("author_login")
-        or value.get("date") != publication_date
+        or value.get("date") != str(source.get("created_at"))[:10]
         or value.get("disposition")
         != "approved_for_working_draft_publication"
         or value.get("critical") != 0
@@ -1630,6 +1804,37 @@ def _validate_governance_verdict(
         != "GOVERNANCE.md#21-steering-committee"
     ):
         raise ValueError("governance authority attestation is invalid")
+
+
+def _validate_post_merge_rendering_verdict(
+    value: dict[str, object],
+    source: dict[str, object],
+    merge_head: str,
+    merge_tree: str,
+) -> None:
+    if set(value) != POST_MERGE_RENDERING_KEYS:
+        raise ValueError(
+            "post-merge rendering verdict keys are invalid"
+        )
+    if (
+        value.get("schema") != POST_MERGE_RENDERING_SCHEMA
+        or value.get("release") != RELEASE
+        or value.get("sha") != merge_head
+        or value.get("tree") != merge_tree
+        or value.get("kind") != "post_merge_rendering"
+        or value.get("reviewer") != source.get("author_login")
+        or not _nonblank(value.get("role"))
+        or value.get("date") != str(source.get("created_at"))[:10]
+        or value.get("disposition") != "approved"
+        or value.get("critical") != 0
+        or value.get("important") != 0
+        or value.get("rendered_blocks") != MERMAID_BLOCKS
+        or value.get("renderer") != MERMAID_RENDERER
+        or value.get("visual_review") != "approved"
+    ):
+        raise ValueError(
+            "post-merge rendering verdict is invalid"
+        )
 
 
 def _release_verdict(
@@ -1676,6 +1881,7 @@ def _acquisition_entry(
         "observed_canonical_url": canonical_url,
         "page_count": 1,
         "response_sha256": sha256(response.raw_body).hexdigest(),
+        "retrieved_at": _format_utc(response.retrieved_at),
     }
 
 
@@ -1695,6 +1901,9 @@ def _page_acquisition_entry(
         "observed_canonical_url": canonical_url,
         "page_count": len(page_set.pages),
         "response_sha256": response_digest,
+        "retrieved_at": _format_utc(
+            max(page.retrieved_at for page in page_set.pages)
+        ),
     }
 
 
@@ -1722,6 +1931,8 @@ def _require_unchanged_sources(
         "terminology",
         "rendering",
         "profile_scope",
+        "security_overclaiming",
+        "whole_range",
         "governance",
     )
     for name in names:
@@ -1763,18 +1974,6 @@ def _https(value: object) -> bool:
     return isinstance(value, str) and value.startswith("https://")
 
 
-def _calendar_date(value: object) -> bool:
-    if (
-        not isinstance(value, str)
-        or re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", value) is None
-    ):
-        return False
-    try:
-        return date.fromisoformat(value).isoformat() == value
-    except ValueError:
-        return False
-
-
 def _reference_now(fixed: datetime | None) -> datetime:
     return fixed or datetime.now(timezone.utc)
 
@@ -1813,11 +2012,16 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--rendering-comment-id", type=int, required=True)
     parser.add_argument("--profile-scope-comment-id", type=int, required=True)
     parser.add_argument("--governance-comment-id", type=int, required=True)
-    parser.add_argument("--publication-date", required=True)
+    parser.add_argument(
+        "--security-overclaiming-comment-id",
+        type=int,
+        required=True,
+    )
+    parser.add_argument("--whole-range-comment-id", type=int, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--base-evidence", type=Path)
     parser.add_argument("--merge-head")
-    parser.add_argument("--post-merge-results", type=Path)
+    parser.add_argument("--post-merge-rendering-comment-id", type=int)
     return parser
 
 
@@ -1843,12 +2047,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     taggable_values = (
         arguments.base_evidence,
         arguments.merge_head,
-        arguments.post_merge_results,
+        arguments.post_merge_rendering_comment_id,
     )
     taggable_count = sum(value is not None for value in taggable_values)
     if taggable_count not in {0, 3}:
         print(
-            "base-evidence, merge-head, and post-merge-results "
+            "base-evidence, merge-head, and "
+            "post-merge-rendering-comment-id "
             "shall be supplied together",
             file=sys.stderr,
         )
@@ -1864,7 +2069,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         "rendering_comment_id": arguments.rendering_comment_id,
         "profile_scope_comment_id": arguments.profile_scope_comment_id,
         "governance_comment_id": arguments.governance_comment_id,
-        "publication_date": arguments.publication_date,
+        "security_overclaiming_comment_id": (
+            arguments.security_overclaiming_comment_id
+        ),
+        "whole_range_comment_id": arguments.whole_range_comment_id,
     }
     try:
         client = GhApiClient()
@@ -1874,12 +2082,13 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
         else:
             base_evidence = _load_json(arguments.base_evidence)
-            post_merge = _load_json(arguments.post_merge_results)
             evidence = refresh_taggable_evidence(
                 client,
                 base_evidence=base_evidence,
                 merge_head=arguments.merge_head,
-                post_merge_results=post_merge,
+                post_merge_rendering_comment_id=(
+                    arguments.post_merge_rendering_comment_id
+                ),
                 **collection_arguments,
             )
         output.parent.mkdir(parents=True, exist_ok=True)

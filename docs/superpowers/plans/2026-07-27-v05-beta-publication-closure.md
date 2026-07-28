@@ -228,7 +228,9 @@ git commit -m "feat: define v0.5-beta release contract"
 
 **Interfaces:**
 - Consumes: v0.5 closure record, external evidence JSON, exact expected head, validation phase, and validation time.
-- Produces: `validate_external_evidence(root, record, evidence, expected_head, phase, now=None) -> list[str]`.
+- Produces: `validate_external_evidence(root, record, evidence, expected_head,
+  phase, now=None, *, baseline_ref=None, git_runner=subprocess.run) ->
+  list[str]`.
 
 - [ ] **Step 1: Add fail-first exact-schema and SHA-domain tests**
 
@@ -434,6 +436,8 @@ Closure evidence shall use exact keys:
     "terminology",
     "rendering",
     "profile_scope",
+    "security_overclaiming",
+    "whole_range",
     "governance",
     "candidate_commands",
     "mapping_decision_schema",
@@ -441,6 +445,7 @@ Closure evidence shall use exact keys:
     "mapping_decisions",
     "github_checks",
     "merge_state",
+    "issue_55",
     "acquisition",
 }
 ```
@@ -510,7 +515,8 @@ git commit -m "feat: validate v0.5 release evidence"
 - Modify: `tests/test_v05_beta_release_gates.py`
 
 **Interfaces:**
-- Consumes: authenticated `gh api`, fixed repository, exact PR number, exact comment IDs, expected closure head, publication date, and output path.
+- Consumes: authenticated `gh api`, fixed repository, exact PR number, exact
+  comment IDs, expected closure head, and output path.
 - Produces: validated closure or taggable evidence JSON outside Git.
 
 - [ ] **Step 1: Write the fail-first acquisition-adapter tests**
@@ -693,7 +699,7 @@ Verdict schema:
   "kind": "technical",
   "reviewer": "${reviewerIdentity}",
   "role": "technical reviewer",
-  "date": "${publicationDate}",
+  "date": "${authenticatedCommentCreationDate}",
   "disposition": "approved",
   "critical": 0,
   "important": 0
@@ -718,7 +724,7 @@ Governance schema:
   "authority_attestation": true,
   "authority_verification": "manual",
   "authority_basis": "GOVERNANCE.md#21-steering-committee",
-  "date": "${publicationDate}",
+  "date": "${authenticatedCommentCreationDate}",
   "disposition": "approved_for_working_draft_publication",
   "critical": 0,
   "important": 0
@@ -753,14 +759,18 @@ The CLI shall accept resource identifiers and resolved execution values only:
 --rendering-comment-id
 --profile-scope-comment-id
 --governance-comment-id
---publication-date
+--security-overclaiming-comment-id
+--whole-range-comment-id
 --output
 ```
 
 Taggable mode additionally accepts `--base-evidence`, `--merge-head`, and
-`--post-merge-results`. It shall not accept raw comment JSON, PR JSON,
-check JSON, merge-state JSON, author identity, body digest, or derived verdict
-JSON.
+`--post-merge-rendering-comment-id`. It shall execute the 16 canonical
+nonvisual commands in a detached, tree-verified merge-head worktree and fetch
+the authenticated post-merge rendering comment. It shall construct post-merge
+results itself. It shall not accept caller post-merge results, publication
+dates, raw comment JSON, PR JSON, check JSON, merge-state JSON, author
+identity, body digest, or derived verdict JSON.
 
 The collector shall query:
 
@@ -770,6 +780,8 @@ repos/tdistress/ESAF/commits/{sha}
 repos/tdistress/ESAF/issues/comments/{id}
 repos/tdistress/ESAF/pulls/{pr}
 repos/tdistress/ESAF/commits/{sha}/check-runs
+repos/tdistress/ESAF/actions/runs/{run_id}
+repos/tdistress/ESAF/issues/55
 repos/tdistress/ESAF/git/ref/tags/v0.5-beta
 ```
 
@@ -1207,9 +1219,11 @@ Every metadata surface shall say publication is conditional on the remote
 annotated `v0.5-beta` tag resolving to the exact validated merge. Do not state
 that the tag exists.
 
-Change the readiness record to `closure_candidate`, set the resolved UTC
-publication date, set all non-post-merge gates to `ready`, leave `post_merge`
-`open`, and add only stable HTTPS evidence locators that actually exist.
+Change the readiness record to `closure_candidate`, keep the publication date
+null, set all non-post-merge gates to `ready`, leave `post_merge` `open`, and
+add only stable HTTPS evidence locators that actually exist. Candidate records
+shall not contain tag objects, tagged commits, or issue-publication evidence
+identity.
 
 Replace exactly these three normalized paragraphs in their existing ordered
 positions in the readiness body:
@@ -1284,8 +1298,10 @@ subagent review as human qualified mapping review.
 
 - [ ] **Step 3: Prepare the exact owner and governance decision text**
 
-Resolve `$closureHead`, current UTC date, and the six exact missing-role
-objects into the Task 3 schemas. Present the complete owner/scope JSON and
+Resolve `$closureHead` and the six exact missing-role objects into the Task 3
+schemas. Each review and governance verdict date shall be the UTC calendar
+date of its own authenticated comment creation. Present the complete
+owner/scope JSON and
 governance JSON to the repository owner and the actual governance approver,
 respectively.
 
@@ -1318,7 +1334,8 @@ python -m tools.v05_beta_release_evidence `
   --rendering-comment-id $renderingCommentId `
   --profile-scope-comment-id $profileScopeCommentId `
   --governance-comment-id $governanceCommentId `
-  --publication-date $publicationDate `
+  --security-overclaiming-comment-id $securityOverclaimingCommentId `
+  --whole-range-comment-id $wholeRangeCommentId `
   --output $closureEvidence
 ```
 
@@ -1362,155 +1379,32 @@ if ($mergeTree -ne $closureTree) { throw "Merged tree differs from closure tree"
 If the trees differ, do not tag. Create a new closure candidate and return to
 Task 7.
 
-- [ ] **Step 2: Run and record every post-merge command**
+- [ ] **Step 2: Authenticate the post-merge visual review**
 
-On clean merged `main`, set `PYTHONDONTWRITEBYTECODE=1` and use this
-PowerShell-safe capture helper:
+Create a separate issue 59 comment after the merge that records the authenticated
+post-merge Mermaid review. The comment shall use the
+`esaf-v05-post-merge-rendering-verdict-v1` schema and bind the merge commit,
+merge tree, 23/23 disposition, exact Mermaid renderer, reviewer identity, and
+review time.
+The collector shall fetch this comment directly and shall not accept any
+caller-provided command or rendering result file.
 
-```powershell
-function Invoke-RecordedGate {
-  param([string]$Name, [scriptblock]$Command)
-  $global:LASTEXITCODE = 0
-  $output = (& $Command 2>&1 | Out-String).Trim()
-  $exitCode = if ($null -eq $LASTEXITCODE) { 0 } else { $LASTEXITCODE }
-  if ($exitCode -ne 0) { throw "$Name failed with exit code $exitCode`n$output" }
-  if ([string]::IsNullOrWhiteSpace($output)) { $output = 'passed' }
-  [pscustomobject]@{name=$Name; exit_code=$exitCode; result=$output}
-}
-
-$results = @()
-$results += Invoke-RecordedGate 'full_suite' {
-  python -m unittest discover -s tests -v
-}
-$results += Invoke-RecordedGate 'assessment' {
-  python tools/validate_assessment.py --check
-}
-$results += Invoke-RecordedGate 'profiles' {
-  python tools/validate_profiles.py --check
-}
-$results += Invoke-RecordedGate 'controls' {
-  python tools/validate_controls.py --check
-}
-$results += Invoke-RecordedGate 'architectures' {
-  python tools/validate_architectures.py
-}
-$results += Invoke-RecordedGate 'migration' {
-  python tools/migrate_control_mappings.py --check
-}
-$results += Invoke-RecordedGate 'crosswalk_current' {
-  python tools/validate_crosswalks.py --check
-}
-$results += Invoke-RecordedGate 'crosswalk_baseline' {
-  python tools/validate_crosswalks.py --check --baseline-ref $closureBase
-}
-$results += Invoke-RecordedGate 'pci_readiness' {
-  python tools/render_pci_dss_mapping_go_no_go.py --check
-}
-$results += Invoke-RecordedGate 'links' {
-  python tools/validate_links.py --check
-}
-$results += Invoke-RecordedGate 'release_v04' {
-  python tools/release_gates.py --check
-}
-$results += Invoke-RecordedGate 'release_v05' {
-  python tools/v05_beta_release_gates.py --check --baseline-ref $closureBase
-}
-$results += Invoke-RecordedGate 'mermaid_inventory' {
-  python tools/mermaid_inventory.py --check-record `
-    docs/superpowers/reviews/2026-07-27-v05-beta-mermaid-rendering.md
-}
-
-$mermaidRoot = Join-Path ([IO.Path]::GetTempPath()) (
-  'esaf-v05-postmerge-' + [guid]::NewGuid().ToString('N')
-)
-$mermaidExecution = Invoke-RecordedGate 'mermaid_rendering' {
-  python tools/mermaid_inventory.py --write --output-dir $mermaidRoot
-  if ($LASTEXITCODE -ne 0) { throw 'Mermaid inventory generation failed' }
-  $inventory = Get-Content -Raw (Join-Path $mermaidRoot 'inventory.json') |
-    ConvertFrom-Json
-  foreach ($item in $inventory) {
-    $input = Join-Path $mermaidRoot $item.input
-    $output = [IO.Path]::ChangeExtension($input, '.svg')
-    & pnpm dlx '@mermaid-js/mermaid-cli@11.16.0' -i $input -o $output
-    if ($LASTEXITCODE -ne 0) { throw "Mermaid render failed for $input" }
-  }
-  if (@($inventory).Count -ne 23) {
-    throw "Expected 23 Mermaid blocks, observed $(@($inventory).Count)"
-  }
-  "Rendered 23/23 Mermaid blocks with @mermaid-js/mermaid-cli@11.16.0"
-}
-
-# Perform the visual review before constructing the post-merge result.
-# Set this to the actual reviewer identity after that reviewer has opened all
-# 23 generated SVGs and approved readability.
-if ([string]::IsNullOrWhiteSpace($postMergeRenderingReviewer)) {
-  throw 'Post-merge rendering reviewer identity is required'
-}
-$closureEvidenceObject = Get-Content -Raw $closureEvidence | ConvertFrom-Json
-$candidateRendering = $closureEvidenceObject.rendering
-$mermaidReview = [ordered]@{
-  rendered_blocks=23
-  renderer='@mermaid-js/mermaid-cli@11.16.0'
-  visual_review='approved'
-  candidate_inventory_equal=$true
-  merge_tree_equal=($mergeTree -eq $closureTree)
-  candidate_review_url=$candidateRendering.url
-  candidate_reviewer=$candidateRendering.reviewer
-  post_merge_reviewer=$postMergeRenderingReviewer
-  reviewed_at=(Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
-}
-if (-not $mermaidReview.merge_tree_equal) {
-  throw 'Merged tree differs from visually reviewed candidate tree'
-}
-$mermaidExecution.result = $mermaidReview
-$results += $mermaidExecution
-$results += Invoke-RecordedGate 'whole_range_diff' {
-  git diff --check "$closureBase..$mergeHead"
-}
-
-$cacheCount = @(
-  Get-ChildItem -Path . -Directory -Filter __pycache__ -Recurse -Force
-).Count
-if ($cacheCount -ne 0) { throw "Found $cacheCount Python cache directories" }
-$results += [pscustomobject]@{
-  name='cache_count'; exit_code=0; result='0 __pycache__ directories'
-}
-
-$status = (git status --porcelain=v1 | Out-String).Trim()
-if (-not [string]::IsNullOrEmpty($status)) {
-  throw "Working tree is dirty`n$status"
-}
-$results += [pscustomobject]@{
-  name='clean_status'; exit_code=0; result='clean'
-}
-
-$postMergeObject = @{
-  schema='esaf-v05-post-merge-results-v1'
-  sha=$mergeHead
-  tree=$mergeTree
-  commands=$results
-}
-$postMergeJson = $postMergeObject | ConvertTo-Json -Depth 8
-$utf8NoBom = New-Object Text.UTF8Encoding($false)
-[IO.File]::WriteAllText($postMergeResults, $postMergeJson + "`n", $utf8NoBom)
-```
-
-Open and visually inspect every generated SVG before setting
-`$postMergeRenderingReviewer`. If any diagram is unreadable, do not add the
-`mermaid_rendering` result, do not construct `$postMergeResults`, and do not
-tag. The taggable validator shall parse the structured command result and
-require the reviewer identities, 23/23 disposition, candidate inventory
-equality, and tree equality.
+The authenticated reviewer shall open every generated SVG before posting the
+comment. If any diagram is unreadable, do not post an approved disposition and
+do not tag.
 
 - [ ] **Step 3: Build and validate fresh taggable evidence**
 
-Re-fetch all comment, PR, check, and tag resources. Run:
+Fully re-fetch the user, closure and merge commits, PR, issue 55, every comment,
+check-run page, canonical Actions run, and tag resources. Give every acquired
+resource its own retrieval time and reject any resource older than the
+15-minute freshness window. Run:
 
 ```powershell
 python -m tools.v05_beta_release_evidence `
   --base-evidence $closureEvidence `
   --merge-head $mergeHead `
-  --post-merge-results $postMergeResults `
+  --post-merge-rendering-comment-id $postMergeRenderingCommentId `
   --pr-number $prNumber `
   --expected-head $closureHead `
   --owner-comment-id $ownerCommentId `
@@ -1520,7 +1414,8 @@ python -m tools.v05_beta_release_evidence `
   --rendering-comment-id $renderingCommentId `
   --profile-scope-comment-id $profileScopeCommentId `
   --governance-comment-id $governanceCommentId `
-  --publication-date $publicationDate `
+  --security-overclaiming-comment-id $securityOverclaimingCommentId `
+  --whole-range-comment-id $wholeRangeCommentId `
   --output $taggableEvidence
 
 python tools/v05_beta_release_gates.py --check `
@@ -1576,12 +1471,15 @@ close issue 59. Leave issue 55 open.
 Require the exact fixed publication date, tag object, tagged commit, evidence
 URL, owner-risk basis, closed gate matrix, issue 55 open state, and local
 annotated-tag resolution. Reject external closure evidence as a substitute for
-the published record.
+the published record. Permit a `published` record to be checked against a
+`published` baseline only when the complete gate matrix and all publication
+identity fields are unchanged; reject every published-to-candidate transition.
 
 - [ ] **Step 2: Update the durable record and planning truth**
 
 Set the readiness record phase to `published`, every gate to `closed`, and add
-the resolved tag object, tagged commit, and issue evidence URL. Set
+the UTC calendar date derived from the annotated tag operation, resolved tag
+object, tagged commit, and issue evidence URL. Set
 `mapping_decision_basis` explicitly to `owner_risk_acceptance`; the published
 body below is valid only for that basis. A future `qualified_approval`
 publication path requires separately reviewed prose and an explicit issue 55

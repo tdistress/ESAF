@@ -57,11 +57,16 @@ TERMINOLOGY_ID = 13
 RENDERING_ID = 14
 PROFILE_SCOPE_ID = 15
 GOVERNANCE_ID = 16
+SECURITY_OVERCLAIMING_ID = 17
+WHOLE_RANGE_ID = 18
+POST_MERGE_RENDERING_ID = 19
 COMMIT_RESOURCE = f"repos/tdistress/ESAF/commits/{CLOSURE_SHA}"
 MERGE_COMMIT_RESOURCE = f"repos/tdistress/ESAF/commits/{MERGE_SHA}"
 PR_RESOURCE = f"repos/tdistress/ESAF/pulls/{PR_NUMBER}"
 CHECKS_RESOURCE = f"repos/tdistress/ESAF/commits/{CLOSURE_SHA}/check-runs"
 CHECKS_PAGE_ONE = f"{CHECKS_RESOURCE}?per_page=100&page=1"
+ACTIONS_RUN_RESOURCE = "repos/tdistress/ESAF/actions/runs/9001"
+ISSUE_55_RESOURCE = "repos/tdistress/ESAF/issues/55"
 USER_RESOURCE = "user"
 TAG_RESOURCE = "repos/tdistress/ESAF/git/ref/tags/v0.5-beta"
 CLOSURE_PARENT = "a" * 40
@@ -152,6 +157,25 @@ def governance_payload() -> dict[str, object]:
         "disposition": "approved_for_working_draft_publication",
         "critical": 0,
         "important": 0,
+    }
+
+
+def post_merge_rendering_payload() -> dict[str, object]:
+    return {
+        "schema": "esaf-v05-post-merge-rendering-verdict-v1",
+        "release": "0.5-beta",
+        "sha": MERGE_SHA,
+        "tree": CLOSURE_TREE,
+        "kind": "post_merge_rendering",
+        "reviewer": "post-merge-rendering-reviewer",
+        "role": "post-merge rendering reviewer",
+        "date": PUBLICATION_DATE,
+        "disposition": "approved",
+        "critical": 0,
+        "important": 0,
+        "rendered_blocks": 23,
+        "renderer": "@mermaid-js/mermaid-cli@11.16.0",
+        "visual_review": "approved",
     }
 
 
@@ -266,7 +290,11 @@ class FakeValidationRunner(ValidationRunner):
         baseline_head: str,
     ) -> list[dict[str, object]]:
         self.calls.append((root, expected_head, baseline_head))
-        return deepcopy(self.results)
+        results = deepcopy(self.results)
+        for result in results:
+            if result.get("sha") == CLOSURE_SHA:
+                result["sha"] = expected_head
+        return results
 
 
 def valid_fake_client() -> FakeClient:
@@ -363,6 +391,35 @@ def valid_fake_client() -> FakeClient:
             },
             status=404,
         ),
+        ISSUE_55_RESOURCE: api_response(
+            ISSUE_55_RESOURCE,
+            {
+                "url": f"https://api.github.com/{ISSUE_55_RESOURCE}",
+                "html_url": "https://github.com/tdistress/ESAF/issues/55",
+                "repository_url": (
+                    "https://api.github.com/repos/tdistress/ESAF"
+                ),
+                "number": 55,
+                "state": "open",
+                "title": "Complete qualified review",
+            },
+        ),
+        ACTIONS_RUN_RESOURCE: api_response(
+            ACTIONS_RUN_RESOURCE,
+            {
+                "id": 9001,
+                "name": "Repository validation",
+                "path": ".github/workflows/catalog-validation.yml",
+                "head_sha": CLOSURE_SHA,
+                "status": "completed",
+                "conclusion": "success",
+                "html_url": (
+                    "https://github.com/tdistress/ESAF/actions/runs/9001"
+                ),
+                "repository": {"full_name": "tdistress/ESAF"},
+                "head_repository": {"full_name": "tdistress/ESAF"},
+            },
+        ),
     }
     comment_specs = (
         (OWNER_ID, "tdistress", owner_payload(), "OWNER"),
@@ -382,12 +439,36 @@ def valid_fake_client() -> FakeClient:
             "MEMBER",
         ),
         (GOVERNANCE_ID, "governance-approver", governance_payload(), "MEMBER"),
+        (
+            SECURITY_OVERCLAIMING_ID,
+            "security_overclaiming-reviewer",
+            verdict_payload("security_overclaiming"),
+            "MEMBER",
+        ),
+        (
+            WHOLE_RANGE_ID,
+            "whole_range-reviewer",
+            verdict_payload("whole_range"),
+            "MEMBER",
+        ),
+        (
+            POST_MERGE_RENDERING_ID,
+            "post-merge-rendering-reviewer",
+            post_merge_rendering_payload(),
+            "MEMBER",
+        ),
     )
     for comment_id, author, body, association in comment_specs:
         resource = comment_resource(comment_id)
+        payload = comment_payload(
+            comment_id, author, body, association
+        )
+        if comment_id == POST_MERGE_RENDERING_ID:
+            payload["created_at"] = "2026-07-27T12:07:00Z"
+            payload["updated_at"] = "2026-07-27T12:07:00Z"
         responses[resource] = api_response(
             resource,
-            comment_payload(comment_id, author, body, association),
+            payload,
         )
     checks_payload = {
         "total_count": 1,
@@ -400,6 +481,12 @@ def valid_fake_client() -> FakeClient:
                 "conclusion": "success",
                 "html_url": "https://github.com/tdistress/ESAF/actions/runs/9001",
                 "details_url": "https://github.com/tdistress/ESAF/actions/runs/9001",
+                "app": {
+                    "id": 15368,
+                    "slug": "github-actions",
+                    "name": "GitHub Actions",
+                    "html_url": "https://github.com/apps/github-actions",
+                },
             }
         ],
     }
@@ -429,7 +516,8 @@ def valid_collection_args() -> dict[str, object]:
         "rendering_comment_id": RENDERING_ID,
         "profile_scope_comment_id": PROFILE_SCOPE_ID,
         "governance_comment_id": GOVERNANCE_ID,
-        "publication_date": PUBLICATION_DATE,
+        "security_overclaiming_comment_id": SECURITY_OVERCLAIMING_ID,
+        "whole_range_comment_id": WHOLE_RANGE_ID,
         "now": NOW,
         "validation_runner": FakeValidationRunner(),
     }
@@ -1130,6 +1218,250 @@ class V05LocalValidationRunnerTests(unittest.TestCase):
 
 
 class V05AcquisitionTests(unittest.TestCase):
+    def test_operational_cli_removes_caller_dates_and_postmerge_results(
+        self,
+    ) -> None:
+        required = [
+            "--pr-number", str(PR_NUMBER),
+            "--expected-head", CLOSURE_SHA,
+            "--owner-comment-id", str(OWNER_ID),
+            "--technical-comment-id", str(TECHNICAL_ID),
+            "--editorial-comment-id", str(EDITORIAL_ID),
+            "--terminology-comment-id", str(TERMINOLOGY_ID),
+            "--rendering-comment-id", str(RENDERING_ID),
+            "--profile-scope-comment-id", str(PROFILE_SCOPE_ID),
+            "--governance-comment-id", str(GOVERNANCE_ID),
+            "--security-overclaiming-comment-id",
+            str(SECURITY_OVERCLAIMING_ID),
+            "--whole-range-comment-id", str(WHOLE_RANGE_ID),
+            "--output", str(ROOT.parent / "evidence.json"),
+        ]
+        parsed = build_parser().parse_args(required)
+        self.assertFalse(hasattr(parsed, "publication_date"))
+        self.assertFalse(hasattr(parsed, "post_merge_results"))
+        for removed in ("--publication-date", "--post-merge-results"):
+            with self.subTest(removed=removed):
+                with redirect_stderr(io.StringIO()), self.assertRaises(
+                    SystemExit
+                ):
+                    build_parser().parse_args(
+                        [*required, removed, "fabricated.json"]
+                    )
+
+    def test_collector_requires_live_open_canonical_issue_55(self) -> None:
+        evidence = collect_closure_evidence(
+            valid_fake_client(), **valid_collection_args()
+        )
+        self.assertEqual(
+            {
+                "resource": ISSUE_55_RESOURCE,
+                "number": 55,
+                "state": "open",
+                "url": "https://github.com/tdistress/ESAF/issues/55",
+                "response_sha256": sha256(
+                    valid_fake_client().responses[
+                        ISSUE_55_RESOURCE
+                    ].raw_body
+                ).hexdigest(),
+            },
+            evidence["issue_55"],
+        )
+        for label, mutation in (
+            ("closed", {"state": "closed"}),
+            ("pull request", {"pull_request": {"url": "https://example.test"}}),
+            ("foreign number", {"number": 56}),
+        ):
+            with self.subTest(label=label):
+                client = valid_fake_client()
+                response = client.responses[ISSUE_55_RESOURCE]
+                payload = response.json_object()
+                payload.update(mutation)
+                client.responses[ISSUE_55_RESOURCE] = api_response(
+                    ISSUE_55_RESOURCE, payload
+                )
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "issue 55 shall be the canonical open repository issue",
+                ):
+                    collect_closure_evidence(
+                        client, **valid_collection_args()
+                    )
+
+    def test_collector_binds_github_actions_app_and_canonical_workflow_run(
+        self,
+    ) -> None:
+        evidence = collect_closure_evidence(
+            valid_fake_client(), **valid_collection_args()
+        )
+        check = evidence["github_checks"]["observed"][0]
+        self.assertEqual("github-actions", check["app_slug"])
+        self.assertEqual(9001, check["run_id"])
+        self.assertEqual(
+            ".github/workflows/catalog-validation.yml",
+            check["workflow_path"],
+        )
+        self.assertEqual("Repository validation", check["workflow_name"])
+        self.assertEqual("tdistress/ESAF", check["repository"])
+
+        mutations = (
+            (
+                "foreign app",
+                lambda client: client.page_sets[
+                    CHECKS_RESOURCE
+                ].pages[0].json_object()["check_runs"][0]["app"].update(
+                    slug="attacker-app"
+                ),
+            ),
+            (
+                "foreign workflow",
+                lambda client: client.responses[
+                    ACTIONS_RUN_RESOURCE
+                ].json_object().__setitem__(
+                    "path", ".github/workflows/attacker.yml"
+                ),
+            ),
+        )
+        for label, mutate in mutations:
+            with self.subTest(label=label):
+                client = valid_fake_client()
+                if label == "foreign app":
+                    page = client.page_sets[CHECKS_RESOURCE].pages[0]
+                    payload = page.json_object()
+                    payload["check_runs"][0]["app"]["slug"] = "attacker-app"
+                    client.page_sets[CHECKS_RESOURCE] = replace(
+                        client.page_sets[CHECKS_RESOURCE],
+                        pages=(
+                            api_response(
+                                CHECKS_PAGE_ONE,
+                                payload,
+                            ),
+                        ),
+                    )
+                else:
+                    response = client.responses[ACTIONS_RUN_RESOURCE]
+                    payload = response.json_object()
+                    payload["path"] = ".github/workflows/attacker.yml"
+                    client.responses[ACTIONS_RUN_RESOURCE] = api_response(
+                        ACTIONS_RUN_RESOURCE, payload
+                    )
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "canonical GitHub Actions workflow run",
+                ):
+                    collect_closure_evidence(
+                        client, **valid_collection_args()
+                    )
+
+    def test_every_resource_records_its_own_retrieval_time(self) -> None:
+        evidence = collect_closure_evidence(
+            valid_fake_client(), **valid_collection_args()
+        )
+        resources = {
+            item["resource_id"]: item
+            for item in evidence["acquisition"]["resources"]
+        }
+        self.assertTrue(resources)
+        self.assertTrue(
+            all(
+                item["retrieved_at"] == "2026-07-27T12:10:00Z"
+                for item in resources.values()
+            )
+        )
+        for verdict in (
+            "scope",
+            "technical",
+            "editorial",
+            "terminology",
+            "rendering",
+            "profile_scope",
+            "security_overclaiming",
+            "whole_range",
+            "governance",
+        ):
+            resource = resources[
+                evidence[verdict]["source"]["acquisition_resource_id"]
+            ]
+            self.assertEqual(
+                resource["retrieved_at"],
+                evidence[verdict]["source"]["source_verified_at"],
+            )
+
+    def test_review_dates_follow_independent_comment_dates_not_tag_day(
+        self,
+    ) -> None:
+        client = valid_fake_client()
+        dates = {
+            TECHNICAL_ID: "2026-07-27T20:00:00Z",
+            EDITORIAL_ID: "2026-07-28T20:00:00Z",
+            GOVERNANCE_ID: "2026-07-29T20:00:00Z",
+        }
+        acquired_at = datetime(
+            2026, 7, 30, 12, 10, tzinfo=timezone.utc
+        )
+        client.responses = {
+            resource: replace(response, retrieved_at=acquired_at)
+            for resource, response in client.responses.items()
+        }
+        client.page_sets = {
+            resource: replace(
+                page_set,
+                pages=tuple(
+                    replace(page, retrieved_at=acquired_at)
+                    for page in page_set.pages
+                ),
+            )
+            for resource, page_set in client.page_sets.items()
+        }
+        for comment_id, created_at in dates.items():
+            resource = comment_resource(comment_id)
+            response = client.responses[resource]
+            payload = response.json_object()
+            body = parse_fenced_json(payload["body"])
+            body["date"] = created_at[:10]
+            payload["body"] = fenced(body)
+            payload["created_at"] = created_at
+            payload["updated_at"] = created_at
+            client.responses[resource] = api_response(
+                resource, payload, retrieved_at=acquired_at
+            )
+        arguments = valid_collection_args()
+        arguments["now"] = acquired_at
+        evidence = collect_closure_evidence(client, **arguments)
+        self.assertEqual("2026-07-27", evidence["technical"]["date"])
+        self.assertEqual("2026-07-28", evidence["editorial"]["date"])
+        self.assertEqual("2026-07-29", evidence["governance"]["date"])
+
+    def test_taggable_refresh_executes_merge_head_and_fetches_visual_review(
+        self,
+    ) -> None:
+        client = valid_fake_client()
+        closure = collect_closure_evidence(
+            client, **valid_collection_args()
+        )
+        mark_pull_request_merged(client)
+        merge_runner = FakeValidationRunner()
+        taggable = refresh_taggable_evidence(
+            client,
+            base_evidence=closure,
+            merge_head=MERGE_SHA,
+            post_merge_rendering_comment_id=POST_MERGE_RENDERING_ID,
+            post_merge_validation_runner=merge_runner,
+            **valid_collection_args(),
+        )
+        self.assertEqual(
+            [(ROOT, MERGE_SHA, CLOSURE_BASE)],
+            merge_runner.calls,
+        )
+        self.assertEqual(
+            MERGE_SHA, taggable["post_merge"]["sha"]
+        )
+        self.assertEqual(
+            comment_resource(POST_MERGE_RENDERING_ID),
+            taggable["post_merge"]["rendering_source"][
+                "acquisition_resource_id"
+            ],
+        )
+
     def test_collector_requires_pr_base_sha_to_equal_authenticated_closure_base(
         self,
     ) -> None:
@@ -1299,12 +1631,8 @@ class V05AcquisitionTests(unittest.TestCase):
             client,
             base_evidence=closure,
             merge_head=MERGE_SHA,
-            post_merge_results={
-                "schema": "esaf-v05-post-merge-results-v1",
-                "sha": MERGE_SHA,
-                "tree": CLOSURE_TREE,
-                "commands": command_results(None, taggable=True),
-            },
+            post_merge_rendering_comment_id=POST_MERGE_RENDERING_ID,
+            post_merge_validation_runner=FakeValidationRunner(),
             **valid_collection_args(),
         )
         self.assertEqual(CLOSURE_TREE, taggable["merge_tree"])
@@ -1656,12 +1984,8 @@ class V05AcquisitionTests(unittest.TestCase):
             client,
             base_evidence=closure,
             merge_head=MERGE_SHA,
-            post_merge_results={
-                "schema": "esaf-v05-post-merge-results-v1",
-                "sha": MERGE_SHA,
-                "tree": CLOSURE_TREE,
-                "commands": command_results(None, taggable=True),
-            },
+            post_merge_rendering_comment_id=POST_MERGE_RENDERING_ID,
+            post_merge_validation_runner=FakeValidationRunner(),
             **valid_collection_args(),
         )
         record = record_fixture("closure_candidate")
@@ -1697,12 +2021,9 @@ class V05AcquisitionTests(unittest.TestCase):
                         client,
                         base_evidence=changed,
                         merge_head=MERGE_SHA,
-                        post_merge_results={
-                            "schema": "esaf-v05-post-merge-results-v1",
-                            "sha": MERGE_SHA,
-                            "tree": CLOSURE_TREE,
-                            "commands": command_results(None, taggable=True),
-                        },
+                        post_merge_rendering_comment_id=(
+                            POST_MERGE_RENDERING_ID
+                        ),
                         **arguments,
                     )
                 self.assertEqual(
@@ -1710,40 +2031,57 @@ class V05AcquisitionTests(unittest.TestCase):
                     runner.calls,
                 )
 
-    def test_collector_requires_exact_calendar_publication_date(self) -> None:
-        for invalid in ("20260727", "2026-W31-1", "2026-7-27"):
-            with self.subTest(invalid=invalid):
-                arguments = valid_collection_args()
-                arguments["publication_date"] = invalid
-                with self.assertRaisesRegex(
-                    ValueError,
-                    "publication date shall be YYYY-MM-DD",
-                ):
-                    collect_closure_evidence(
-                        valid_fake_client(), **arguments
-                    )
-
-    def test_refresh_rejects_unknown_postmerge_keys_before_collection(
+    def test_collector_binds_verdict_date_to_comment_creation_date(
         self,
     ) -> None:
-        closure = collect_closure_evidence(
-            valid_fake_client(), **valid_collection_args()
+        client = valid_fake_client()
+        response = client.responses[comment_resource(TECHNICAL_ID)]
+        payload = response.json_object()
+        body = parse_fenced_json(payload["body"])
+        body["date"] = "2026-07-26"
+        payload["body"] = fenced(body)
+        client.responses[comment_resource(TECHNICAL_ID)] = api_response(
+            comment_resource(TECHNICAL_ID), payload
         )
-        post_merge = {
-            "schema": "esaf-v05-post-merge-results-v1",
-            "sha": MERGE_SHA,
-            "tree": CLOSURE_TREE,
-            "commands": command_results(None, taggable=True),
-            "unexpected": True,
-        }
         with self.assertRaisesRegex(
-            ValueError, "post-merge results keys are invalid"
+            ValueError, "release verdict disposition is invalid"
+        ):
+            collect_closure_evidence(
+                client, **valid_collection_args()
+            )
+
+    def test_refresh_rejects_postmerge_visual_review_for_wrong_tree(
+        self,
+    ) -> None:
+        client = valid_fake_client()
+        closure = collect_closure_evidence(
+            client, **valid_collection_args()
+        )
+        mark_pull_request_merged(client)
+        response = client.responses[
+            comment_resource(POST_MERGE_RENDERING_ID)
+        ]
+        payload = response.json_object()
+        body = parse_fenced_json(payload["body"])
+        body["tree"] = "f" * 40
+        payload["body"] = fenced(body)
+        client.responses[
+            comment_resource(POST_MERGE_RENDERING_ID)
+        ] = api_response(
+            comment_resource(POST_MERGE_RENDERING_ID),
+            payload,
+        )
+        with self.assertRaisesRegex(
+            ValueError, "post-merge rendering verdict is invalid"
         ):
             refresh_taggable_evidence(
-                valid_fake_client(),
+                client,
                 base_evidence=closure,
                 merge_head=MERGE_SHA,
-                post_merge_results=post_merge,
+                post_merge_rendering_comment_id=(
+                    POST_MERGE_RENDERING_ID
+                ),
+                post_merge_validation_runner=FakeValidationRunner(),
                 **valid_collection_args(),
             )
 
@@ -1759,12 +2097,8 @@ class V05AcquisitionTests(unittest.TestCase):
             merged,
             base_evidence=closure,
             merge_head=MERGE_SHA,
-            post_merge_results={
-                "schema": "esaf-v05-post-merge-results-v1",
-                "sha": MERGE_SHA,
-                "tree": CLOSURE_TREE,
-                "commands": command_results(None, taggable=True),
-            },
+            post_merge_rendering_comment_id=POST_MERGE_RENDERING_ID,
+            post_merge_validation_runner=FakeValidationRunner(),
             **valid_collection_args(),
         )
         self.assertEqual(closure["merge_state"], taggable["merge_state"])
@@ -1777,12 +2111,9 @@ class V05AcquisitionTests(unittest.TestCase):
                 wrong_merge,
                 base_evidence=closure,
                 merge_head=MERGE_SHA,
-                post_merge_results={
-                    "schema": "esaf-v05-post-merge-results-v1",
-                    "sha": MERGE_SHA,
-                    "tree": CLOSURE_TREE,
-                    "commands": command_results(None, taggable=True),
-                },
+                post_merge_rendering_comment_id=(
+                    POST_MERGE_RENDERING_ID
+                ),
                 **valid_collection_args(),
             )
 
@@ -1799,12 +2130,9 @@ class V05AcquisitionTests(unittest.TestCase):
                 client,
                 base_evidence=changed,
                 merge_head=MERGE_SHA,
-                post_merge_results={
-                    "schema": "esaf-v05-post-merge-results-v1",
-                    "sha": MERGE_SHA,
-                    "tree": CLOSURE_TREE,
-                    "commands": command_results(None, taggable=True),
-                },
+                post_merge_rendering_comment_id=(
+                    POST_MERGE_RENDERING_ID
+                ),
                 **valid_collection_args(),
             )
         client = valid_fake_client()
@@ -1822,12 +2150,9 @@ class V05AcquisitionTests(unittest.TestCase):
                 client,
                 base_evidence=closure,
                 merge_head=MERGE_SHA,
-                post_merge_results={
-                    "schema": "esaf-v05-post-merge-results-v1",
-                    "sha": MERGE_SHA,
-                    "tree": "f" * 40,
-                    "commands": command_results(None, taggable=True),
-                },
+                post_merge_rendering_comment_id=(
+                    POST_MERGE_RENDERING_ID
+                ),
                 **valid_collection_args(),
             )
 
@@ -1857,12 +2182,9 @@ class V05AcquisitionTests(unittest.TestCase):
                 changed,
                 base_evidence=closure,
                 merge_head=MERGE_SHA,
-                post_merge_results={
-                    "schema": "esaf-v05-post-merge-results-v1",
-                    "sha": MERGE_SHA,
-                    "tree": CLOSURE_TREE,
-                    "commands": command_results(None, taggable=True),
-                },
+                post_merge_rendering_comment_id=(
+                    POST_MERGE_RENDERING_ID
+                ),
                 **arguments,
             )
         self.assertEqual([], runner.calls)
@@ -1888,12 +2210,9 @@ class V05AcquisitionTests(unittest.TestCase):
                 client,
                 base_evidence=changed,
                 merge_head=MERGE_SHA,
-                post_merge_results={
-                    "schema": "esaf-v05-post-merge-results-v1",
-                    "sha": MERGE_SHA,
-                    "tree": CLOSURE_TREE,
-                    "commands": command_results(None, taggable=True),
-                },
+                post_merge_rendering_comment_id=(
+                    POST_MERGE_RENDERING_ID
+                ),
                 **arguments,
             )
         self.assertEqual([], runner.calls)
@@ -1910,7 +2229,9 @@ class V05AcquisitionTests(unittest.TestCase):
             "--rendering-comment-id", str(RENDERING_ID),
             "--profile-scope-comment-id", str(PROFILE_SCOPE_ID),
             "--governance-comment-id", str(GOVERNANCE_ID),
-            "--publication-date", PUBLICATION_DATE,
+            "--security-overclaiming-comment-id",
+            str(SECURITY_OVERCLAIMING_ID),
+            "--whole-range-comment-id", str(WHOLE_RANGE_ID),
             "--output", str(ROOT.parent / "evidence.json"),
         ]
         for option in (
@@ -1973,7 +2294,9 @@ class V05AcquisitionTests(unittest.TestCase):
                 "--rendering-comment-id", str(RENDERING_ID),
                 "--profile-scope-comment-id", str(PROFILE_SCOPE_ID),
                 "--governance-comment-id", str(GOVERNANCE_ID),
-                "--publication-date", PUBLICATION_DATE,
+                "--security-overclaiming-comment-id",
+                str(SECURITY_OVERCLAIMING_ID),
+                "--whole-range-comment-id", str(WHOLE_RANGE_ID),
             ]
             for forbidden in (
                 other_worktree / "evidence.json",

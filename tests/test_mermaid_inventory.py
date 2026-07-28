@@ -60,6 +60,14 @@ class MermaidInventoryTests(unittest.TestCase):
         self.assertEqual([], failures)
         self.assertNotEqual(APPROVED_STATUS, V05_BASELINE_STATUS)
 
+    def test_v05_baseline_identifies_codex_agent_visual_inspection(self) -> None:
+        ledger = V05_LEDGER.read_text(encoding="utf-8")
+        normalized = " ".join(ledger.split())
+        self.assertIn("Codex agent", normalized)
+        self.assertIn("agent visual inspection", normalized)
+        self.assertNotIn("human inspection", normalized)
+        self.assertNotIn("human approval", normalized)
+
     def test_cli_rejects_unregistered_ledger_path(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             unregistered = Path(directory) / "untracked.md"

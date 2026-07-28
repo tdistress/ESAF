@@ -15,7 +15,7 @@ Canonical render configuration SHA-256: `2a144e5017e94d7e563d4573daa714ed5ca6608
 ## Scope and method
 
 - Mermaid source baseline: `ebe050c2f21b900c75dfe3ad4e1a77fcb71ff957`
-- Reviewer: `/root/v05_task4_implementer`
+- Reviewer: Codex agent `/root/v05_task4_implementer`
 - Inventory SHA-256: `7224aa1a517e0392f0777d90c92f2aace9bad143cbcabacb65d6d13806600a88`
 
 The inventory was regenerated outside the repository from every Mermaid block in
@@ -35,8 +35,9 @@ The render contract binds the inputs and requires the operational validator to
 render every block successfully. It does not digest PNG bytes. Browser
 rasterization can change antialiased pixels without changing the source or
 review result, so PNG byte hashes are intentionally not a durable repository
-invariant. `Visual Review` and the named reviewer record the separate human
-inspection of the temporary scale-3 PNGs.
+invariant. `Visual Review` and the named Codex agent record the separate agent
+visual inspection of the temporary scale-3 PNGs. This baseline is not human
+review or approval.
 
 This record proves renderer capability and establishes a baseline inventory.
 It is not v0.5-beta closure-candidate approval. The exact closure head requires

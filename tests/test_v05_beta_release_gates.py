@@ -235,6 +235,18 @@ def record_fixture(phase: str) -> dict[str, object]:
             "condition": "remote_annotated_tag_matches_exact_validated_commit",
             "date": "2026-07-27" if phase == "published" else None,
             "evidence": ["https://example.test/release-record"],
+            **(
+                {
+                    "tag_object": "1" * 40,
+                    "tagged_commit": MERGE_SHA,
+                    "issue_evidence_url": (
+                        "https://github.com/tdistress/ESAF/issues/59"
+                        "#issuecomment-999"
+                    ),
+                }
+                if phase == "published"
+                else {}
+            ),
         },
         "gates": {
             gate: {
@@ -300,7 +312,11 @@ def mermaid_result(*, taggable: bool = False) -> dict[str, object]:
         result.update(
             {
                 "merge_tree_equal": True,
-                "post_merge_reviewer": "post-merge rendering reviewer",
+                "post_merge_reviewer": "post-merge-reviewer",
+                "post_merge_review_url": (
+                    "https://github.com/tdistress/ESAF/issues/59"
+                    "#issuecomment-19"
+                ),
             }
         )
     return result
@@ -395,6 +411,10 @@ def closure_evidence() -> dict[str, object]:
         "terminology": sourced_verdict("terminology", "13"),
         "rendering": sourced_verdict("rendering", "14"),
         "profile_scope": sourced_verdict("profile scope", "15"),
+        "security_overclaiming": sourced_verdict(
+            "security overclaiming", "17"
+        ),
+        "whole_range": sourced_verdict("whole range", "18"),
         "governance": governance,
         "candidate_commands": command_results(CLOSURE_SHA),
         "mapping_decision_schema": "esaf-v05-owner-decision-v1",
@@ -410,8 +430,22 @@ def closure_evidence() -> dict[str, object]:
                     "sha": CLOSURE_SHA,
                     "conclusion": "success",
                     "url": "https://github.com/tdistress/ESAF/actions/runs/1",
+                    "app_slug": "github-actions",
+                    "run_id": 1,
+                    "workflow_name": "Repository validation",
+                    "workflow_path": (
+                        ".github/workflows/catalog-validation.yml"
+                    ),
+                    "repository": "tdistress/ESAF",
                 }
             ],
+        },
+        "issue_55": {
+            "resource": "repos/tdistress/ESAF/issues/55",
+            "number": 55,
+            "state": "open",
+            "url": "https://github.com/tdistress/ESAF/issues/55",
+            "response_sha256": "2" * 64,
         },
         "merge_state": {
             "sha": CLOSURE_SHA,
@@ -440,6 +474,7 @@ def closure_evidence() -> dict[str, object]:
                     "response_sha256": source_fixture(identifier)[
                         "response_sha256"
                     ],
+                    "retrieved_at": "2026-07-27T12:05:00Z",
                 }
                 for identifier in (
                     "11",
@@ -448,6 +483,8 @@ def closure_evidence() -> dict[str, object]:
                     "14",
                     "15",
                     "16",
+                    "17",
+                    "18",
                     "20",
                     "21",
                 )
@@ -460,6 +497,7 @@ def closure_evidence() -> dict[str, object]:
                     ),
                     "page_count": 1,
                     "response_sha256": "d" * 64,
+                    "retrieved_at": "2026-07-27T12:05:00Z",
                 },
                 {
                     "resource_id": (
@@ -471,6 +509,7 @@ def closure_evidence() -> dict[str, object]:
                     ),
                     "page_count": 1,
                     "response_sha256": "e" * 64,
+                    "retrieved_at": "2026-07-27T12:05:00Z",
                 },
                 {
                     "resource_id": "repos/tdistress/ESAF/pulls/59",
@@ -479,6 +518,7 @@ def closure_evidence() -> dict[str, object]:
                     ),
                     "page_count": 1,
                     "response_sha256": "f" * 64,
+                    "retrieved_at": "2026-07-27T12:05:00Z",
                 },
                 {
                     "resource_id": (
@@ -490,6 +530,27 @@ def closure_evidence() -> dict[str, object]:
                     ),
                     "page_count": 1,
                     "response_sha256": "0" * 64,
+                    "retrieved_at": "2026-07-27T12:05:00Z",
+                },
+                {
+                    "resource_id": (
+                        "repos/tdistress/ESAF/actions/runs/1"
+                    ),
+                    "observed_canonical_url": (
+                        "https://github.com/tdistress/ESAF/actions/runs/1"
+                    ),
+                    "page_count": 1,
+                    "response_sha256": "3" * 64,
+                    "retrieved_at": "2026-07-27T12:05:00Z",
+                },
+                {
+                    "resource_id": "repos/tdistress/ESAF/issues/55",
+                    "observed_canonical_url": (
+                        "https://github.com/tdistress/ESAF/issues/55"
+                    ),
+                    "page_count": 1,
+                    "response_sha256": "2" * 64,
+                    "retrieved_at": "2026-07-27T12:05:00Z",
                 },
                 {
                     "resource_id": (
@@ -501,6 +562,7 @@ def closure_evidence() -> dict[str, object]:
                     ),
                     "page_count": 1,
                     "response_sha256": "c" * 64,
+                    "retrieved_at": "2026-07-27T12:05:00Z",
                 }
             ],
         },
@@ -518,6 +580,20 @@ def taggable_evidence() -> dict[str, object]:
             ),
             "page_count": 1,
             "response_sha256": "1" * 64,
+            "retrieved_at": "2026-07-27T12:05:00Z",
+        }
+    )
+    post_source = source_fixture("19")
+    post_source["author_login"] = "post-merge-reviewer"
+    post_source["created_at"] = "2026-07-27T12:05:00Z"
+    post_source["updated_at"] = "2026-07-27T12:05:00Z"
+    evidence["acquisition"]["resources"].append(
+        {
+            "resource_id": post_source["resource_path"],
+            "observed_canonical_url": post_source["comment_url"],
+            "page_count": 1,
+            "response_sha256": post_source["response_sha256"],
+            "retrieved_at": "2026-07-27T12:05:00Z",
         }
     )
     evidence.update(
@@ -529,6 +605,7 @@ def taggable_evidence() -> dict[str, object]:
                 "sha": MERGE_SHA,
                 "tree": CLOSURE_TREE,
                 "commands": command_results(None, taggable=True),
+                "rendering_source": post_source,
             },
         }
     )
@@ -545,6 +622,8 @@ def bind_closure_head(evidence: dict[str, object], sha: str) -> None:
         "terminology",
         "rendering",
         "profile_scope",
+        "security_overclaiming",
+        "whole_range",
         "governance",
     ):
         evidence[name]["sha"] = sha
@@ -765,6 +844,227 @@ class V05ExternalEvidenceTests(unittest.TestCase):
                 FIXED_NOW,
             ),
         )
+
+    def test_external_evidence_binds_local_head_tree_base_and_ancestry(
+        self,
+    ) -> None:
+        evidence = closure_evidence()
+        record = record_fixture("closure_candidate")
+        record["mapping_decision_basis"] = "owner_risk_acceptance"
+
+        def runner(
+            arguments: list[str], **kwargs: object
+        ) -> subprocess.CompletedProcess[str]:
+            del kwargs
+            outputs = {
+                ("git", "rev-parse", "HEAD"): CLOSURE_SHA,
+                (
+                    "git",
+                    "rev-parse",
+                    f"{CLOSURE_SHA}^{{tree}}",
+                ): CLOSURE_TREE,
+                (
+                    "git",
+                    "rev-parse",
+                    f"{CLOSURE_BASE}^{{commit}}",
+                ): CLOSURE_BASE,
+                (
+                    "git",
+                    "merge-base",
+                    CLOSURE_BASE,
+                    CLOSURE_SHA,
+                ): CLOSURE_BASE,
+            }
+            output = outputs.get(tuple(arguments), "")
+            return subprocess.CompletedProcess(
+                arguments,
+                0 if output else 1,
+                output + ("\n" if output else ""),
+                "",
+            )
+
+        self.assertEqual(
+            [],
+            validate_external_evidence(
+                ROOT,
+                record,
+                evidence,
+                CLOSURE_SHA,
+                "closure",
+                FIXED_NOW,
+                baseline_ref=CLOSURE_BASE,
+                git_runner=runner,
+            ),
+        )
+        mutations = (
+            (
+                "HEAD",
+                lambda value: None,
+                "local Git HEAD shall equal expected head",
+                "a" * 40,
+                CLOSURE_TREE,
+                CLOSURE_BASE,
+            ),
+            (
+                "tree",
+                lambda value: None,
+                "closure tree shall equal expected head tree",
+                CLOSURE_SHA,
+                "a" * 40,
+                CLOSURE_BASE,
+            ),
+            (
+                "baseline",
+                lambda value: value.__setitem__(
+                    "closure_base", "a" * 40
+                ),
+                "closure base shall equal baseline ref",
+                CLOSURE_SHA,
+                CLOSURE_TREE,
+                CLOSURE_BASE,
+            ),
+            (
+                "ancestry",
+                lambda value: None,
+                "closure base shall be an exact ancestor of expected head",
+                CLOSURE_SHA,
+                CLOSURE_TREE,
+                "a" * 40,
+            ),
+        )
+        for label, mutate, diagnostic, head, tree, merge_base in mutations:
+            with self.subTest(label=label):
+                changed = deepcopy(evidence)
+                mutate(changed)
+
+                def changed_runner(
+                    arguments: list[str], **kwargs: object
+                ) -> subprocess.CompletedProcess[str]:
+                    del kwargs
+                    key = tuple(arguments)
+                    output = {
+                        ("git", "rev-parse", "HEAD"): head,
+                        (
+                            "git",
+                            "rev-parse",
+                            f"{CLOSURE_SHA}^{{tree}}",
+                        ): tree,
+                        (
+                            "git",
+                            "rev-parse",
+                            f"{CLOSURE_BASE}^{{commit}}",
+                        ): CLOSURE_BASE,
+                        (
+                            "git",
+                            "merge-base",
+                            CLOSURE_BASE,
+                            CLOSURE_SHA,
+                        ): merge_base,
+                    }.get(key, "")
+                    return subprocess.CompletedProcess(
+                        arguments,
+                        0 if output else 1,
+                        output + ("\n" if output else ""),
+                        "",
+                    )
+
+                self.assertIn(
+                    diagnostic,
+                    validate_external_evidence(
+                        ROOT,
+                        record,
+                        changed,
+                        CLOSURE_SHA,
+                        "closure",
+                        FIXED_NOW,
+                        baseline_ref=CLOSURE_BASE,
+                        git_runner=changed_runner,
+                    ),
+                )
+
+    def test_issue_55_requires_fresh_open_non_pull_request_evidence(
+        self,
+    ) -> None:
+        for field, value in (
+            ("state", "closed"),
+            ("number", 56),
+            ("resource", "repos/tdistress/ESAF/issues/56"),
+            ("url", "https://github.com/tdistress/ESAF/pull/55"),
+        ):
+            with self.subTest(field=field):
+                evidence = closure_evidence()
+                evidence["issue_55"][field] = value
+                self.assert_rejected(
+                    evidence,
+                    "issue 55 shall prove the canonical issue remains open",
+                    "closure",
+                )
+
+    def test_acquisition_freshness_is_enforced_per_resource(self) -> None:
+        evidence = closure_evidence()
+        evidence["acquisition"]["resources"][0]["retrieved_at"] = (
+            "2020-01-01T00:00:00Z"
+        )
+        evidence["acquisition"]["retrieved_at"] = (
+            "2026-07-27T12:10:00Z"
+        )
+        self.assert_rejected(
+            evidence,
+            "acquisition resource shall be no more than 15 minutes old",
+            "closure",
+        )
+
+    def test_source_verification_equals_resource_acquisition_time(
+        self,
+    ) -> None:
+        evidence = closure_evidence()
+        evidence["technical"]["source"]["source_verified_at"] = (
+            "2026-07-27T12:06:00Z"
+        )
+        self.assert_rejected(
+            evidence,
+            (
+                "technical source verification timestamp shall equal "
+                "resource acquisition time"
+            ),
+            "closure",
+        )
+
+    def test_security_and_whole_range_verdicts_are_exact_head_gates(
+        self,
+    ) -> None:
+        for name in ("security_overclaiming", "whole_range"):
+            with self.subTest(name=name):
+                evidence = closure_evidence()
+                evidence[name]["important"] = 1
+                self.assert_rejected(
+                    evidence,
+                    f"{name} verdict findings shall be zero",
+                    "closure",
+                )
+
+    def test_github_check_requires_actions_app_and_canonical_workflow(
+        self,
+    ) -> None:
+        cases = (
+            ("app_slug", "attacker-app"),
+            ("run_id", 999),
+            ("workflow_name", "Attacker workflow"),
+            ("workflow_path", ".github/workflows/attacker.yml"),
+            ("repository", "attacker/repository"),
+        )
+        for field, value in cases:
+            with self.subTest(field=field):
+                evidence = closure_evidence()
+                evidence["github_checks"]["observed"][0][field] = value
+                self.assert_rejected(
+                    evidence,
+                    (
+                        "GitHub check shall bind the canonical GitHub "
+                        "Actions workflow run"
+                    ),
+                    "closure",
+                )
 
     def test_closure_evidence_rejects_extra_top_level_key(self) -> None:
         evidence = closure_evidence()
@@ -1024,6 +1324,7 @@ class V05ExternalEvidenceTests(unittest.TestCase):
 
     def test_taggable_accepts_exact_task8_post_merge_results_shape(self) -> None:
         evidence = taggable_evidence()
+        rendering_source = evidence["post_merge"]["rendering_source"]
         evidence["post_merge"] = {
             "schema": "esaf-v05-post-merge-results-v1",
             "sha": MERGE_SHA,
@@ -1056,7 +1357,12 @@ class V05ExternalEvidenceTests(unittest.TestCase):
                             "#issuecomment-14"
                         ),
                         "candidate_reviewer": "candidate rendering reviewer",
-                        "post_merge_reviewer": "post-merge rendering reviewer",
+                        "post_merge_reviewer": (
+                            rendering_source["author_login"]
+                        ),
+                        "post_merge_review_url": (
+                            rendering_source["comment_url"]
+                        ),
                         "reviewed_at": "2026-07-27T12:05:00Z",
                     },
                 },
@@ -1068,6 +1374,7 @@ class V05ExternalEvidenceTests(unittest.TestCase):
                 },
                 {"name": "clean_status", "exit_code": 0, "result": "clean"},
             ],
+            "rendering_source": rendering_source,
         }
         owner_record = record_fixture("closure_candidate")
         owner_record["mapping_decision_basis"] = "owner_risk_acceptance"
@@ -2186,6 +2493,128 @@ class V05ReleaseRecordTests(unittest.TestCase):
             "published record shall not transition to a candidate phase",
             validate_transition(previous, candidate),
         )
+
+    def test_published_record_requires_immutable_tag_identity(self) -> None:
+        published = record_fixture("published")
+        self.assertEqual([], validate_record(ROOT, published))
+        diagnostics = {
+            "tag_object": "published tag object shall be a 40-character SHA",
+            "tagged_commit": (
+                "published tagged commit shall be a 40-character SHA"
+            ),
+            "issue_evidence_url": (
+                "published issue evidence URL shall identify issue 59 evidence"
+            ),
+        }
+        for field, diagnostic in diagnostics.items():
+            with self.subTest(field=field):
+                changed = deepcopy(published)
+                del changed["publication"][field]
+                self.assertIn(diagnostic, validate_record(ROOT, changed))
+
+        for phase in ("evidence_candidate", "closure_candidate"):
+            for field, value in (
+                ("tag_object", "1" * 40),
+                ("tagged_commit", MERGE_SHA),
+                (
+                    "issue_evidence_url",
+                    (
+                        "https://github.com/tdistress/ESAF/issues/59"
+                        "#issuecomment-999"
+                    ),
+                ),
+            ):
+                with self.subTest(phase=phase, field=field):
+                    candidate = record_fixture(phase)
+                    candidate["publication"][field] = value
+                    self.assertIn(
+                        "candidate publication identity fields shall be absent",
+                        validate_record(ROOT, candidate),
+                    )
+
+    def test_local_annotated_tag_matches_published_identity(self) -> None:
+        record = record_fixture("published")
+
+        def runner(
+            arguments: list[str], **kwargs: object
+        ) -> subprocess.CompletedProcess[str]:
+            del kwargs
+            outputs = {
+                (
+                    "git",
+                    "rev-parse",
+                    "refs/tags/v0.5-beta^{tag}",
+                ): "1" * 40,
+                (
+                    "git",
+                    "rev-parse",
+                    "refs/tags/v0.5-beta^{commit}",
+                ): MERGE_SHA,
+                (
+                    "git",
+                    "for-each-ref",
+                    "--format=%(taggerdate:iso-strict)",
+                    "refs/tags/v0.5-beta",
+                ): "2026-07-27T18:30:00-05:00",
+            }
+            output = outputs.get(tuple(arguments), "")
+            return subprocess.CompletedProcess(
+                arguments,
+                0 if output else 1,
+                output + ("\n" if output else ""),
+                "",
+            )
+
+        self.assertEqual(
+            [],
+            v05_beta_release_gates.validate_published_tag_identity(
+                ROOT, record, runner=runner
+            ),
+        )
+        record["publication"]["tagged_commit"] = "a" * 40
+        self.assertIn(
+            "local annotated v0.5-beta tag shall match published identity",
+            v05_beta_release_gates.validate_published_tag_identity(
+                ROOT, record, runner=runner
+            ),
+        )
+        record["publication"]["tagged_commit"] = MERGE_SHA
+        record["publication"]["date"] = "2026-07-28"
+        self.assertIn(
+            "published date shall equal the annotated tag UTC date",
+            v05_beta_release_gates.validate_published_tag_identity(
+                ROOT, record, runner=runner
+            ),
+        )
+
+    def test_transition_allows_only_unchanged_published_baseline(self) -> None:
+        previous = record_fixture("published")
+        candidate = deepcopy(previous)
+        self.assertEqual([], validate_transition(previous, candidate))
+        for label, mutate in (
+            (
+                "identity",
+                lambda value: value["publication"].__setitem__(
+                    "tag_object", "a" * 40
+                ),
+            ),
+            (
+                "closed gate truth",
+                lambda value: value["gates"]["technical"].__setitem__(
+                    "evidence", ["https://example.test/changed"]
+                ),
+            ),
+        ):
+            with self.subTest(label=label):
+                changed = deepcopy(candidate)
+                mutate(changed)
+                self.assertIn(
+                    (
+                        "published publication identity and closed gate "
+                        "truth shall remain unchanged"
+                    ),
+                    validate_transition(previous, changed),
+                )
 
     def test_transition_requires_a_v05_evidence_baseline_for_closure(self) -> None:
         candidate = record_fixture("closure_candidate")

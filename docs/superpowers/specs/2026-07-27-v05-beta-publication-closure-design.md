@@ -159,6 +159,14 @@ The authoritative Markdown front matter shall identify:
 - all required gates and their evidence locators; and
 - fixed publication data only after the remote tag exists.
 
+Candidate records shall keep the publication date null and shall omit tag
+identity. Published records shall record the UTC tag-operation date, annotated
+tag object, peeled tagged commit, and issue 59 evidence-comment URL. The local
+annotated tag object, peel, and UTC tagger date shall match those published
+fields. A later
+`published`-phase edit may use the published record as its baseline only when
+the immutable publication identity and closed-gate truth are unchanged.
+
 Gate states shall follow these exact phase rules:
 
 - `evidence_candidate`: every gate is `open`;
@@ -205,6 +213,7 @@ The external closure evidence shall contain exact keys for:
 - derived scope inventory and counts;
 - technical, editorial, terminology, rendering, profile-scope, and governance
   verdicts;
+- security/overclaiming and whole-range verdicts;
 - candidate validation commands;
 - mapping decision schema, basis, and decisions;
 - the required GitHub check; and
@@ -230,7 +239,10 @@ Taggable evidence shall retain the closure-head evidence and add:
 
 - `merge_head` and `merge_tree`;
 - proof that `merge_tree` equals `closure_tree`; and
-- the complete post-merge command results bound to `merge_head`.
+- the complete post-merge command results constructed from canonical execution
+  in a detached, tree-verified `merge_head` worktree; and
+- a separately fetched authenticated post-merge rendering verdict bound to the
+  exact merge head and tree.
 
 A merge tree difference invalidates the candidate. The release shall return to
 Stage 2 with fresh reviews, decisions, checks, and evidence.
@@ -387,12 +399,25 @@ retrieval timestamp, authenticated login, complete page count, and the exact
 response-body digest used to derive evidence. The release gates shall require
 the acquisition manifest and bind every derived object to one of its resources.
 
-An acquisition manifest is fresh for no more than 15 minutes. A stale manifest
-shall be discarded and fetched again. Decision and verdict comments may be
-older than 15 minutes when they remain unchanged, but each shall have been
-created after the fetched closure commit and shall bind the exact closure SHA.
-Publication dates are based on the tag operation date, not forced to equal
-comment creation dates. All timestamps shall be RFC 3339 UTC values.
+Each acquired resource shall carry its own retrieval timestamp and shall be
+fresh for no more than 15 minutes at final evidence construction. A newer
+manifest timestamp shall not mask an older resource. Every source-verification
+timestamp shall equal its bound resource's retrieval timestamp. Taggable
+construction shall re-fetch the complete closure source set rather than reuse a
+closure manifest. Decision and verdict comments may have older creation dates
+when they remain unchanged, but each shall have been created after the fetched
+closure commit and shall bind the exact closure SHA. Each verdict date shall
+equal its own authenticated comment creation date. Candidate records have no
+publication date; the publication date is derived immediately from the UTC tag
+operation. All timestamps shall be RFC 3339 UTC values.
+
+Issue 55 shall be fetched as the canonical `tdistress/ESAF` issue during both
+closure and taggable construction. It shall remain open and shall not be a pull
+request. `Validate ESAF sources` shall be produced by the GitHub Actions app
+and bind a fetched canonical Actions run for
+`.github/workflows/catalog-validation.yml`, workflow name
+`Repository validation`, the exact closure head, successful conclusion, and
+the fixed repository.
 
 Each fetched comment shall preserve:
 
@@ -407,6 +432,13 @@ Each fetched comment shall preserve:
 Sources shall be fetched immediately before evidence construction, immediately
 before merge, and immediately before tag creation. A changed field stops the
 release.
+
+External validation shall bind the evidence to local Git: `HEAD` shall equal
+the phase's expected head, the expected-head tree shall equal the recorded
+closure tree, the recorded closure base shall exactly equal the supplied
+baseline SHA, and that baseline shall be the exact merge base. In taggable
+phase the expected head is the merge head and merge-tree equality preserves the
+reviewed closure tree.
 
 The current v0.4 owner-risk helper works when invoked as a module but fails as
 a direct script in this checkout because its package import cannot resolve.

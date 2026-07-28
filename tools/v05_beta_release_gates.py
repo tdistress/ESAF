@@ -13,7 +13,7 @@ import re
 import subprocess
 import tarfile
 import tempfile
-from typing import Any, Sequence
+from typing import Any, Callable, Sequence
 
 import yaml
 from yaml.constructor import ConstructorError
@@ -83,7 +83,14 @@ ALLOWED_TOP_LEVEL_KEYS = {
 SHA_RE = re.compile(r"(?<![0-9a-f])[0-9a-f]{40}(?![0-9a-f])", re.IGNORECASE)
 PATTERN_FILE_RE = re.compile(r"ARC-P[1-9][0-9]{2}\.md$")
 PROFILE_PATH_RE = re.compile(r"profiles/[^/]+/[^/]+/profile\.json$")
-ALLOWED_PUBLICATION_KEYS = {"condition", "date", "evidence"}
+ALLOWED_PUBLICATION_KEYS = {
+    "condition",
+    "date",
+    "evidence",
+    "tag_object",
+    "tagged_commit",
+    "issue_evidence_url",
+}
 ALLOWED_GATE_KEYS = {"state", "evidence"}
 PREVIOUS_PHASE = {
     "closure_candidate": "evidence_candidate",
@@ -154,6 +161,8 @@ EVIDENCE_KEYS = {
     "terminology",
     "rendering",
     "profile_scope",
+    "security_overclaiming",
+    "whole_range",
     "governance",
     "candidate_commands",
     "mapping_decision_schema",
@@ -161,6 +170,7 @@ EVIDENCE_KEYS = {
     "mapping_decisions",
     "github_checks",
     "merge_state",
+    "issue_55",
     "tag_state",
     "acquisition",
 }
@@ -232,7 +242,29 @@ ACQUISITION_RESOURCE_KEYS = {
     "observed_canonical_url",
     "page_count",
     "response_sha256",
+    "retrieved_at",
 }
+ISSUE_55_RESOURCE = "repos/tdistress/ESAF/issues/55"
+ISSUE_55_KEYS = {
+    "resource",
+    "number",
+    "state",
+    "url",
+    "response_sha256",
+}
+CHECK_KEYS = {
+    "name",
+    "sha",
+    "conclusion",
+    "url",
+    "app_slug",
+    "run_id",
+    "workflow_name",
+    "workflow_path",
+    "repository",
+}
+WORKFLOW_NAME = "Repository validation"
+WORKFLOW_PATH = ".github/workflows/catalog-validation.yml"
 TAG_STATE_KEYS = {
     "resource",
     "exists",
@@ -652,6 +684,11 @@ def validate_transition(previous: dict[str, object], candidate: dict[str, object
     if candidate_phase == "evidence_candidate":
         errors.append("evidence_candidate shall not have a predecessor")
     expected_previous = PREVIOUS_PHASE.get(candidate_phase)
+    if (
+        candidate_phase == "published"
+        and previous.get("phase") == "published"
+    ):
+        expected_previous = "published"
     if expected_previous is not None and previous.get("phase") != expected_previous:
         errors.append(
             f"{candidate_phase} shall transition only from {expected_previous}"
@@ -661,6 +698,41 @@ def validate_transition(previous: dict[str, object], candidate: dict[str, object
         and candidate_phase in {"evidence_candidate", "closure_candidate"}
     ):
         errors.append("published record shall not transition to a candidate phase")
+    if previous.get("phase") == candidate_phase == "published":
+        previous_publication = previous.get("publication")
+        candidate_publication = candidate.get("publication")
+        immutable_fields = {
+            "condition",
+            "date",
+            "evidence",
+            "tag_object",
+            "tagged_commit",
+            "issue_evidence_url",
+        }
+        previous_identity = (
+            {
+                field: previous_publication.get(field)
+                for field in immutable_fields
+            }
+            if isinstance(previous_publication, dict)
+            else None
+        )
+        candidate_identity = (
+            {
+                field: candidate_publication.get(field)
+                for field in immutable_fields
+            }
+            if isinstance(candidate_publication, dict)
+            else None
+        )
+        if (
+            previous_identity != candidate_identity
+            or previous.get("gates") != candidate.get("gates")
+        ):
+            errors.append(
+                "published publication identity and closed gate truth "
+                "shall remain unchanged"
+            )
     return errors
 
 
@@ -671,6 +743,9 @@ def validate_external_evidence(
     expected_head: str,
     phase: str,
     now: datetime | None = None,
+    *,
+    baseline_ref: str | None = None,
+    git_runner: Callable[..., object] = subprocess.run,
 ) -> list[str]:
     """Validate exact-candidate closure or taggable external evidence."""
     errors: list[str] = []
@@ -724,12 +799,24 @@ def validate_external_evidence(
             errors.append("merge head shall differ from closure head")
         if merge_tree != closure_tree:
             errors.append("merged tree shall equal closure tree")
+    if baseline_ref is not None:
+        _validate_git_binding(
+            errors,
+            root,
+            evidence,
+            expected_head,
+            baseline_ref,
+            git_runner,
+        )
 
     acquired_resources = _validate_acquisition(
         errors, evidence.get("acquisition"), now
     )
     _validate_tag_state(
         errors, evidence.get("tag_state"), acquired_resources
+    )
+    _validate_issue_55(
+        errors, evidence.get("issue_55"), acquired_resources
     )
     _validate_acquisition_coverage(
         errors, evidence, acquired_resources, phase
@@ -741,6 +828,8 @@ def validate_external_evidence(
         "terminology",
         "rendering",
         "profile_scope",
+        "security_overclaiming",
+        "whole_range",
         "governance",
     ):
         _validate_sourced_verdict(
@@ -765,9 +854,62 @@ def validate_external_evidence(
     _validate_merge_state(errors, evidence.get("merge_state"), closure_head)
     if phase == "taggable":
         _validate_post_merge(
-            errors, evidence.get("post_merge"), merge_head, merge_tree
+            errors,
+            evidence.get("post_merge"),
+            merge_head,
+            merge_tree,
+            acquired_resources,
         )
     return errors
+
+
+def _git_output(
+    root: Path,
+    arguments: list[str],
+    runner: Callable[..., object],
+) -> str | None:
+    completed = runner(
+        ["git", *arguments],
+        cwd=root,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    if getattr(completed, "returncode", None) != 0:
+        return None
+    stdout = getattr(completed, "stdout", None)
+    return stdout.strip() if isinstance(stdout, str) else None
+
+
+def _validate_git_binding(
+    errors: list[str],
+    root: Path,
+    evidence: dict[str, object],
+    expected_head: str,
+    baseline_ref: str,
+    runner: Callable[..., object],
+) -> None:
+    closure_base = evidence.get("closure_base")
+    if closure_base != baseline_ref or not _sha(baseline_ref):
+        errors.append("closure base shall equal baseline ref")
+    head = _git_output(root, ["rev-parse", "HEAD"], runner)
+    if head != expected_head:
+        errors.append("local Git HEAD shall equal expected head")
+    tree = _git_output(
+        root, ["rev-parse", f"{expected_head}^{{tree}}"], runner
+    )
+    if tree != evidence.get("closure_tree"):
+        errors.append("closure tree shall equal expected head tree")
+    baseline_commit = _git_output(
+        root, ["rev-parse", f"{baseline_ref}^{{commit}}"], runner
+    )
+    merge_base = _git_output(
+        root, ["merge-base", baseline_ref, expected_head], runner
+    )
+    if baseline_commit != baseline_ref or merge_base != baseline_ref:
+        errors.append(
+            "closure base shall be an exact ancestor of expected head"
+        )
 
 
 def _sha(value: object) -> bool:
@@ -817,6 +959,7 @@ def _validate_acquisition(
     if value.get("complete") is not True:
         errors.append("acquisition manifest shall be complete")
     resources = value.get("resources")
+    reference = now or datetime.now(timezone.utc)
     if (
         not isinstance(resources, list)
         or not all(
@@ -828,6 +971,7 @@ def _validate_acquisition(
             and item.get("page_count", 0) > 0
             and isinstance(item.get("response_sha256"), str)
             and SHA256_RE.fullmatch(item["response_sha256"]) is not None
+            and _rfc3339_utc(item.get("retrieved_at")) is not None
             for item in resources
         )
     ):
@@ -843,13 +987,57 @@ def _validate_acquisition(
                 str(item["resource_id"]): item
                 for item in resources
             }
+            for item in resources:
+                resource_time = _rfc3339_utc(item["retrieved_at"])
+                assert resource_time is not None
+                if (
+                    resource_time > reference
+                    or (reference - resource_time).total_seconds() > 900
+                ):
+                    errors.append(
+                        "acquisition resource shall be no more than "
+                        "15 minutes old"
+                    )
+                    break
     retrieved_at = _rfc3339_utc(value.get("retrieved_at"))
-    reference = now or datetime.now(timezone.utc)
     if retrieved_at is None:
         errors.append("acquisition retrieval timestamp shall be RFC 3339 UTC")
     elif retrieved_at > reference or (reference - retrieved_at).total_seconds() > 900:
         errors.append("acquisition manifest shall be no more than 15 minutes old")
     return result
+
+
+def _validate_issue_55(
+    errors: list[str],
+    value: object,
+    acquired_resources: dict[str, dict[str, object]],
+) -> None:
+    if (
+        not isinstance(value, dict)
+        or set(value) != ISSUE_55_KEYS
+        or value.get("resource") != ISSUE_55_RESOURCE
+        or value.get("number") != 55
+        or value.get("state") != "open"
+        or value.get("url")
+        != "https://github.com/tdistress/ESAF/issues/55"
+        or not isinstance(value.get("response_sha256"), str)
+        or SHA256_RE.fullmatch(value["response_sha256"]) is None
+    ):
+        errors.append(
+            "issue 55 shall prove the canonical issue remains open"
+        )
+        return
+    acquired = acquired_resources.get(ISSUE_55_RESOURCE)
+    if (
+        not isinstance(acquired, dict)
+        or acquired.get("page_count") != 1
+        or acquired.get("observed_canonical_url") != value.get("url")
+        or acquired.get("response_sha256")
+        != value.get("response_sha256")
+    ):
+        errors.append(
+            "issue 55 shall bind the acquired canonical issue response"
+        )
 
 
 def _validate_tag_state(
@@ -894,9 +1082,26 @@ def _validate_acquisition_coverage(
     expected = {
         "user",
         TAG_RESOURCE,
+        ISSUE_55_RESOURCE,
         f"repos/tdistress/ESAF/commits/{closure_head}",
         f"repos/tdistress/ESAF/commits/{closure_head}/check-runs",
     }
+    github_checks = evidence.get("github_checks")
+    observed = (
+        github_checks.get("observed")
+        if isinstance(github_checks, dict)
+        else None
+    )
+    if (
+        isinstance(observed, list)
+        and len(observed) == 1
+        and isinstance(observed[0], dict)
+        and _numeric(observed[0].get("run_id"))
+    ):
+        expected.add(
+            "repos/tdistress/ESAF/actions/runs/"
+            f"{observed[0]['run_id']}"
+        )
     scope = evidence.get("scope")
     source = scope.get("source") if isinstance(scope, dict) else None
     comment_url = (
@@ -924,6 +1129,16 @@ def _validate_acquisition_coverage(
         expected.add(
             f"repos/tdistress/ESAF/commits/{evidence.get('merge_head')}"
         )
+        post_merge = evidence.get("post_merge")
+        rendering_source = (
+            post_merge.get("rendering_source")
+            if isinstance(post_merge, dict)
+            else None
+        )
+        if isinstance(rendering_source, dict):
+            expected.add(
+                str(rendering_source.get("acquisition_resource_id"))
+            )
     if expected - set(acquired_resources):
         errors.append(
             "acquisition manifest is missing required resources"
@@ -991,6 +1206,13 @@ def _validate_source(
         ):
             errors.append(
                 f"{name} source response digest shall equal acquired response"
+            )
+        if value.get("source_verified_at") != acquired.get(
+            "retrieved_at"
+        ):
+            errors.append(
+                f"{name} source verification timestamp shall equal "
+                "resource acquisition time"
             )
     comment_id = value.get("comment_id")
     resource_path = value.get("resource_path")
@@ -1174,7 +1396,12 @@ def _validate_mermaid_result(
         "reviewed_at",
     }
     keys = (
-        candidate_keys | {"merge_tree_equal", "post_merge_reviewer"}
+        candidate_keys
+        | {
+            "merge_tree_equal",
+            "post_merge_reviewer",
+            "post_merge_review_url",
+        }
         if label == "post-merge"
         else candidate_keys
     )
@@ -1195,6 +1422,12 @@ def _validate_mermaid_result(
         errors.append("mermaid_rendering equality flags shall be true")
     if not _https(value.get("candidate_review_url")):
         errors.append("mermaid_rendering candidate review URL shall use HTTPS")
+    if label == "post-merge" and not _https(
+        value.get("post_merge_review_url")
+    ):
+        errors.append(
+            "mermaid_rendering post-merge review URL shall use HTTPS"
+        )
     if not _nonblank(value.get("candidate_reviewer")) or (
         label == "post-merge"
         and not _nonblank(value.get("post_merge_reviewer"))
@@ -1515,7 +1748,7 @@ def _validate_github_checks(
         errors.append("GitHub checks shall contain the required check exactly once")
         return
     check = observed[0]
-    if set(check) != {"name", "sha", "conclusion", "url"}:
+    if set(check) != CHECK_KEYS:
         errors.append("GitHub check keys are invalid")
     if check.get("sha") != closure_head:
         errors.append("GitHub check shall be bound to closure head")
@@ -1523,6 +1756,21 @@ def _validate_github_checks(
         errors.append("GitHub check shall be successful")
     if not _https(check.get("url")):
         errors.append("GitHub check URL shall use HTTPS")
+    run_id = check.get("run_id")
+    if (
+        check.get("app_slug") != "github-actions"
+        or not _numeric(run_id)
+        or run_id < 1
+        or check.get("workflow_name") != WORKFLOW_NAME
+        or check.get("workflow_path") != WORKFLOW_PATH
+        or check.get("repository") != "tdistress/ESAF"
+        or check.get("url")
+        != f"https://github.com/tdistress/ESAF/actions/runs/{run_id}"
+    ):
+        errors.append(
+            "GitHub check shall bind the canonical GitHub Actions "
+            "workflow run"
+        )
 
 
 def _validate_merge_state(
@@ -1540,12 +1788,22 @@ def _validate_merge_state(
 
 
 def _validate_post_merge(
-    errors: list[str], value: object, merge_head: object, merge_tree: object
+    errors: list[str],
+    value: object,
+    merge_head: object,
+    merge_tree: object,
+    acquired_resources: dict[str, dict[str, object]],
 ) -> None:
     if not isinstance(value, dict):
         errors.append("post-merge evidence is required")
         return
-    if set(value) != {"schema", "sha", "tree", "commands"}:
+    if set(value) != {
+        "schema",
+        "sha",
+        "tree",
+        "commands",
+        "rendering_source",
+    }:
         errors.append("post-merge evidence keys are invalid")
     if value.get("schema") != POST_MERGE_SCHEMA:
         errors.append("post-merge evidence schema is invalid")
@@ -1553,7 +1811,46 @@ def _validate_post_merge(
         errors.append("post-merge evidence shall be bound to merge head")
     if value.get("tree") != merge_tree:
         errors.append("post-merge tree shall equal merged tree")
+    rendering_source = value.get("rendering_source")
+    _validate_source(
+        errors,
+        "post_merge rendering",
+        rendering_source,
+        acquired_resources,
+    )
     _validate_commands(errors, value.get("commands"), merge_head, "post-merge")
+    commands = value.get("commands")
+    if isinstance(commands, list):
+        rendering = next(
+            (
+                command
+                for command in commands
+                if isinstance(command, dict)
+                and command.get("name") == "mermaid_rendering"
+            ),
+            None,
+        )
+        result = (
+            rendering.get("result")
+            if isinstance(rendering, dict)
+            else None
+        )
+        if (
+            isinstance(result, dict)
+            and isinstance(rendering_source, dict)
+            and (
+                result.get("post_merge_review_url")
+                != rendering_source.get("comment_url")
+                or result.get("post_merge_reviewer")
+                != rendering_source.get("author_login")
+                or result.get("reviewed_at")
+                != rendering_source.get("created_at")
+            )
+        ):
+            errors.append(
+                "post-merge rendering review shall bind its "
+                "authenticated source"
+            )
 
 
 def _load_json(path: Path) -> dict[str, Any]:
@@ -1596,6 +1893,41 @@ def _validate_publication(errors: list[str], phase: object, publication: object)
         errors.append("candidate publication date shall be null")
     elif phase == "published" and not _iso_date(publication_date):
         errors.append("published publication date shall be an ISO date")
+    identity_fields = {
+        "tag_object",
+        "tagged_commit",
+        "issue_evidence_url",
+    }
+    if phase in {"evidence_candidate", "closure_candidate"} and any(
+        field in publication for field in identity_fields
+    ):
+        errors.append(
+            "candidate publication identity fields shall be absent"
+        )
+    if phase == "published":
+        if not _sha(publication.get("tag_object")):
+            errors.append(
+                "published tag object shall be a 40-character SHA"
+            )
+        if not _sha(publication.get("tagged_commit")):
+            errors.append(
+                "published tagged commit shall be a 40-character SHA"
+            )
+        issue_evidence = publication.get("issue_evidence_url")
+        if (
+            not isinstance(issue_evidence, str)
+            or re.fullmatch(
+                (
+                    r"https://github\.com/tdistress/ESAF/issues/59"
+                    r"#issuecomment-[1-9][0-9]*"
+                ),
+                issue_evidence,
+            )
+            is None
+        ):
+            errors.append(
+                "published issue evidence URL shall identify issue 59 evidence"
+            )
     evidence = publication.get("evidence")
     if not isinstance(evidence, list) or not evidence:
         errors.append("publication evidence is required")
@@ -1824,6 +2156,61 @@ def _load_baseline(
     return _front_matter_parts(result.stdout, "baseline record")
 
 
+def validate_published_tag_identity(
+    root: Path,
+    record: dict[str, object],
+    *,
+    runner: Callable[..., object] = subprocess.run,
+) -> list[str]:
+    """Bind published front matter to the local annotated tag and peel."""
+    if record.get("phase") != "published":
+        return []
+    publication = record.get("publication")
+    if not isinstance(publication, dict):
+        return [
+            "local annotated v0.5-beta tag shall match published identity"
+        ]
+    tag_object = _git_output(
+        root, ["rev-parse", "refs/tags/v0.5-beta^{tag}"], runner
+    )
+    tagged_commit = _git_output(
+        root, ["rev-parse", "refs/tags/v0.5-beta^{commit}"], runner
+    )
+    tagger_timestamp = _git_output(
+        root,
+        [
+            "for-each-ref",
+            "--format=%(taggerdate:iso-strict)",
+            "refs/tags/v0.5-beta",
+        ],
+        runner,
+    )
+    if (
+        tag_object != publication.get("tag_object")
+        or tagged_commit != publication.get("tagged_commit")
+    ):
+        return [
+            "local annotated v0.5-beta tag shall match published identity"
+        ]
+    try:
+        parsed_tagger_time = datetime.fromisoformat(tagger_timestamp)
+        if parsed_tagger_time.tzinfo is None:
+            raise ValueError("tagger timestamp lacks a UTC offset")
+        tagger_date = (
+            parsed_tagger_time
+            .astimezone(timezone.utc)
+            .date()
+            .isoformat()
+        )
+    except (TypeError, ValueError):
+        tagger_date = None
+    if publication.get("date") != tagger_date:
+        return [
+            "published date shall equal the annotated tag UTC date"
+        ]
+    return []
+
+
 def _validate_baseline_at_ref(
     root: Path,
     ref: str,
@@ -1930,6 +2317,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     external_evidence,
                     arguments.expected_head,
                     arguments.phase,
+                    baseline_ref=arguments.baseline_ref,
                 )
             )
         phase = record.get("phase")
@@ -1947,6 +2335,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                 errors.extend(
                     _validate_closure_allowlist(root, arguments.baseline_ref)
                 )
+        if phase == "published":
+            errors.extend(validate_published_tag_identity(root, record))
     except (OSError, ValueError, subprocess.CalledProcessError, json.JSONDecodeError) as exc:
         errors = [f"release record could not be validated: {exc}"]
     for error in errors:
