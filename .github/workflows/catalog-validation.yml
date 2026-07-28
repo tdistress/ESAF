@@ -101,6 +101,8 @@ jobs:
   validate:
     name: Validate ESAF sources
     runs-on: ubuntu-latest
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
     steps:
       - name: Check out repository
         uses: actions/checkout@v5

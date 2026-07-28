@@ -485,7 +485,12 @@ class Esaf1600FoundationTests(unittest.TestCase):
             self.assertEqual(triggers[event]["paths"], expected_paths)
         self.assertEqual(triggers["push"]["branches"], ["main"])
 
-        steps = workflow["jobs"]["validate"]["steps"]
+        validation_job = workflow["jobs"]["validate"]
+        self.assertEqual(
+            validation_job["env"],
+            {"PYTHONDONTWRITEBYTECODE": "1"},
+        )
+        steps = validation_job["steps"]
 
         def unique_step(name: str) -> dict[str, object]:
             matches = [step for step in steps if step.get("name") == name]
