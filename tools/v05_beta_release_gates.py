@@ -6,10 +6,13 @@ from __future__ import annotations
 import argparse
 from datetime import date
 from functools import lru_cache
+import io
 import json
 from pathlib import Path
 import re
 import subprocess
+import tarfile
+import tempfile
 from typing import Any, Sequence
 
 import yaml
@@ -164,6 +167,8 @@ def validate_transition(previous: dict[str, object], candidate: dict[str, object
             "baseline repository scope shall equal complete_git_tracked_repository"
         )
     candidate_phase = candidate.get("phase")
+    if candidate_phase == "evidence_candidate":
+        errors.append("evidence_candidate shall not have a predecessor")
     expected_previous = PREVIOUS_PHASE.get(candidate_phase)
     if expected_previous is not None and previous.get("phase") != expected_previous:
         errors.append(
@@ -254,10 +259,17 @@ def _validate_mapping_sets(errors: list[str], root: Path, value: object) -> None
         errors.append("crosswalk catalog cannot be parsed")
         return
     try:
-        draft = draft and _mapping_sources_are_draft(root, tuple(source_paths))
+        sources_draft, missing_sources, untracked_sources = _mapping_sources_are_draft(
+            root, tuple(source_paths)
+        )
     except (OSError, ValueError, json.JSONDecodeError, subprocess.CalledProcessError):
         errors.append("crosswalk catalog cannot be parsed")
         return
+    if missing_sources:
+        errors.append("catalog-declared mapping source is missing")
+    if untracked_sources:
+        errors.append("catalog-declared mapping source shall be Git-tracked")
+    draft = draft and sources_draft
     if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
         errors.append("mapping_sets shall equal the tracked catalog mapping sets")
         return
@@ -355,14 +367,24 @@ def _iso_date(value: object) -> bool:
         return False
 
 
-def _mapping_sources_are_draft(root: Path, source_paths: tuple[str, ...]) -> bool:
+def _mapping_sources_are_draft(
+    root: Path, source_paths: tuple[str, ...]
+) -> tuple[bool, bool, bool]:
+    tracked = _tracked_paths(root)
+    missing = any(not (root / relative).is_file() for relative in source_paths)
+    untracked = any(
+        (root / relative).is_file() and relative not in tracked
+        for relative in source_paths
+    )
+    if missing or untracked:
+        return False, missing, untracked
     result = subprocess.run(
         ["git", "status", "--porcelain", "--untracked-files=all", "--", "crosswalks/mappings"],
         cwd=root,
         check=True,
         capture_output=True,
     )
-    return _cached_mapping_sources_are_draft(root, source_paths, result.stdout)
+    return _cached_mapping_sources_are_draft(root, source_paths, result.stdout), False, False
 
 
 @lru_cache
@@ -431,6 +453,29 @@ def _load_baseline(root: Path, ref: str) -> dict[str, object]:
     return value
 
 
+def _validate_baseline_at_ref(
+    root: Path, ref: str, record: dict[str, object]
+) -> list[str]:
+    archive = subprocess.run(
+        ["git", "archive", "--format=tar", ref],
+        cwd=root,
+        check=True,
+        capture_output=True,
+    )
+    with tempfile.TemporaryDirectory() as temporary:
+        snapshot = Path(temporary)
+        with tarfile.open(fileobj=io.BytesIO(archive.stdout)) as bundle:
+            bundle.extractall(snapshot, filter="data")
+        subprocess.run(["git", "init", "--quiet"], cwd=snapshot, check=True)
+        subprocess.run(
+            ["git", "-c", "core.autocrlf=false", "add", "."],
+            cwd=snapshot,
+            check=True,
+            capture_output=True,
+        )
+        return validate_record(snapshot, record)
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true", required=True)
@@ -448,7 +493,9 @@ def main(argv: Sequence[str] | None = None) -> int:
             baseline = _load_baseline(root, arguments.baseline_ref)
             errors.extend(
                 f"baseline record: {error}"
-                for error in validate_record(root, baseline)
+                for error in _validate_baseline_at_ref(
+                    root, arguments.baseline_ref, baseline
+                )
             )
             errors.extend(validate_transition(baseline, record))
     except (OSError, ValueError, subprocess.CalledProcessError, json.JSONDecodeError) as exc:

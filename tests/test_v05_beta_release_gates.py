@@ -149,6 +149,16 @@ class V05ReleaseRecordTests(unittest.TestCase):
             ),
         )
 
+    def test_transition_rejects_any_predecessor_for_evidence_candidate(self) -> None:
+        for phase in ("closure_candidate", "published"):
+            with self.subTest(phase=phase):
+                self.assertIn(
+                    "evidence_candidate shall not have a predecessor",
+                    validate_transition(
+                        record_fixture(phase), record_fixture("evidence_candidate")
+                    ),
+                )
+
     def test_contract_rejects_each_wrong_phase_gate_state(self) -> None:
         for phase, gates in PHASE_GATE_STATES.items():
             for gate, expected in gates.items():
@@ -315,6 +325,27 @@ class V05ReleaseRecordTests(unittest.TestCase):
                         validate_record(root, record_fixture("evidence_candidate")),
                     )
 
+    def test_contract_requires_catalog_mapping_sources_to_exist_and_be_tracked(self) -> None:
+        for mutation, diagnostic in (
+            ("missing", "catalog-declared mapping source is missing"),
+            ("untracked", "catalog-declared mapping source shall be Git-tracked"),
+        ):
+            with self.subTest(mutation=mutation):
+                with tempfile.TemporaryDirectory() as temporary:
+                    root = Path(temporary)
+                    self._copy_scope_inputs(root)
+                    catalog = json.loads((root / "crosswalks/catalog.json").read_text())
+                    relative = catalog["mapping_sets"][0]["provisions"][0]["path"]
+                    self._initialize_repository(root)
+                    if mutation == "untracked":
+                        target = root / relative
+                        target.parent.mkdir(parents=True, exist_ok=True)
+                        shutil.copy2(ROOT / relative, target)
+                    self.assertIn(
+                        diagnostic,
+                        validate_record(root, record_fixture("evidence_candidate")),
+                    )
+
     def test_contract_rejects_untracked_pattern_and_profile_scope_files(self) -> None:
         for relative, source in (
             ("architectures/patterns/ARC-P999.md", "architectures/patterns/ARC-P100.md"),
@@ -457,6 +488,101 @@ class V05ReleaseRecordTests(unittest.TestCase):
                     self.assertEqual(1, result.returncode)
                     self.assertIn(diagnostic, result.stdout)
 
+    def test_cli_validates_baseline_against_its_git_ref(self) -> None:
+        for mutation, diagnostic in (
+            ("scope", "baseline record: scope shall equal the derived repository scope"),
+            ("mapping", "baseline record: tracked mapping sets shall remain draft"),
+        ):
+            with self.subTest(mutation=mutation):
+                with tempfile.TemporaryDirectory() as temporary:
+                    root = Path(temporary)
+                    self._copy_scope_inputs(root)
+                    self._reduce_catalog_mapping_sources(root)
+                    (root / "tools").mkdir()
+                    shutil.copy2(
+                        ROOT / "tools/v05_beta_release_gates.py",
+                        root / "tools/v05_beta_release_gates.py",
+                    )
+                    record_path = root / RECORD_RELATIVE
+                    record_path.parent.mkdir(parents=True)
+                    record_path.write_text(
+                        "---\n" + json.dumps(record_fixture("evidence_candidate")) + "\n---\n",
+                        encoding="utf-8",
+                    )
+                    if mutation == "scope":
+                        controls_path = root / "controls/catalog.json"
+                        controls = json.loads(controls_path.read_text(encoding="utf-8"))
+                        controls["control_count"] = 92
+                        controls_path.write_text(json.dumps(controls), encoding="utf-8")
+                    else:
+                        catalog_path = root / "crosswalks/catalog.json"
+                        catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
+                        catalog["mapping_sets"][0]["metadata"]["status"] = "published"
+                        catalog_path.write_text(json.dumps(catalog), encoding="utf-8")
+                    self._initialize_repository(root, commit=True)
+                    if mutation == "scope":
+                        shutil.copy2(ROOT / "controls/catalog.json", root / "controls/catalog.json")
+                    else:
+                        shutil.copy2(ROOT / "crosswalks/catalog.json", root / "crosswalks/catalog.json")
+                    record_path.write_text(
+                        "---\n" + json.dumps(record_fixture("closure_candidate")) + "\n---\n",
+                        encoding="utf-8",
+                    )
+                    result = subprocess.run(
+                        [
+                            sys.executable,
+                            "tools/v05_beta_release_gates.py",
+                            "--check",
+                            "--baseline-ref",
+                            "HEAD",
+                        ],
+                        cwd=root,
+                        capture_output=True,
+                        text=True,
+                    )
+                    self.assertEqual(1, result.returncode)
+                    self.assertIn(diagnostic, result.stdout)
+
+    def test_cli_accepts_valid_baseline_when_current_scope_changes(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._copy_scope_inputs(root)
+            self._reduce_catalog_mapping_sources(root)
+            (root / "tools").mkdir()
+            shutil.copy2(
+                ROOT / "tools/v05_beta_release_gates.py",
+                root / "tools/v05_beta_release_gates.py",
+            )
+            record_path = root / RECORD_RELATIVE
+            record_path.parent.mkdir(parents=True)
+            record_path.write_text(
+                "---\n" + json.dumps(record_fixture("evidence_candidate")) + "\n---\n",
+                encoding="utf-8",
+            )
+            self._initialize_repository(root, commit=True)
+            controls_path = root / "controls/catalog.json"
+            controls = json.loads(controls_path.read_text(encoding="utf-8"))
+            controls["control_count"] = 92
+            controls_path.write_text(json.dumps(controls), encoding="utf-8")
+            candidate = record_fixture("closure_candidate")
+            candidate["scope"] = derive_scope(root)
+            record_path.write_text(
+                "---\n" + json.dumps(candidate) + "\n---\n", encoding="utf-8"
+            )
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "tools/v05_beta_release_gates.py",
+                    "--check",
+                    "--baseline-ref",
+                    "HEAD",
+                ],
+                cwd=root,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(0, result.returncode, result.stdout)
+
     def _copy_scope_inputs(self, destination: Path) -> None:
         for relative in (
             "controls/catalog.json",
@@ -497,6 +623,22 @@ class V05ReleaseRecordTests(unittest.TestCase):
                 cwd=root,
                 check=True,
             )
+
+    def _reduce_catalog_mapping_sources(self, root: Path) -> None:
+        source = (
+            ROOT
+            / "crosswalks/mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/"
+            "3.3/0.4-alpha/0.1.0/README.md"
+        )
+        target = root / "crosswalks/mappings/source.md"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, target)
+        catalog_path = root / "crosswalks/catalog.json"
+        catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
+        for mapping_set in catalog["mapping_sets"]:
+            mapping_set["path"] = "crosswalks/mappings/source.md"
+            mapping_set["provisions"] = []
+        catalog_path.write_text(json.dumps(catalog), encoding="utf-8")
 
 
 if __name__ == "__main__":
