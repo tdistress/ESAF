@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 import argparse
-from datetime import date
+from datetime import date, datetime, timezone
 from functools import lru_cache
 import io
 import json
@@ -78,6 +78,114 @@ PREVIOUS_PHASE = {
     "closure_candidate": "evidence_candidate",
     "published": "closure_candidate",
 }
+COMMAND_IDS = (
+    "full_suite",
+    "assessment",
+    "profiles",
+    "controls",
+    "architectures",
+    "migration",
+    "crosswalk_current",
+    "crosswalk_baseline",
+    "pci_readiness",
+    "links",
+    "release_v04",
+    "release_v05",
+    "mermaid_inventory",
+    "mermaid_rendering",
+    "whole_range_diff",
+    "cache_count",
+    "clean_status",
+)
+OWNER_DECISION_SCHEMA = "esaf-v05-owner-decision-v1"
+QUALIFIED_REVIEW_STATUS = "deferred"
+OWNER_DISPOSITION = "accepted_for_working_draft"
+MISSING_ROLES = (
+    "specification_and_inventory",
+    "security_and_overclaiming",
+)
+REENTRY_TRIGGERS = {
+    "eligible_qualified_reviewer_available",
+    "mapping_or_source_inventory_changes",
+    "owner_decision_expires_withdrawn_edited_or_superseded",
+    "accountable_owner_requires_earlier_completion",
+    "closure_candidate_or_merged_tree_changes",
+}
+CLAIMS_NOT_MADE = {
+    "qualified_review",
+    "qualified_mapping_approval",
+    "artifact_lifecycle_approval",
+    "certification",
+    "compliance",
+    "equivalence",
+    "endorsement",
+    "external_scheme_approval",
+    "production_readiness",
+    "assurance",
+    "implementation_assessment",
+    "legal_sufficiency",
+    "replacement_of_qualified_professional_judgment",
+}
+EVIDENCE_SCHEMA = "esaf-v05-release-evidence-v1"
+POST_MERGE_SCHEMA = "esaf-v05-post-merge-results-v1"
+ACQUISITION_SCHEMA = "esaf-v05-acquisition-v1"
+MERMAID_RENDERER = "@mermaid-js/mermaid-cli@11.16.0"
+MERMAID_BLOCKS = 23
+EVIDENCE_KEYS = {
+    "schema",
+    "release",
+    "closure_head",
+    "closure_tree",
+    "scope",
+    "technical",
+    "editorial",
+    "terminology",
+    "rendering",
+    "profile_scope",
+    "governance",
+    "candidate_commands",
+    "mapping_decision_schema",
+    "mapping_decision_basis",
+    "mapping_decisions",
+    "github_checks",
+    "merge_state",
+    "acquisition",
+}
+TAGGABLE_KEYS = EVIDENCE_KEYS | {"merge_head", "merge_tree", "post_merge"}
+VERDICT_KEYS = {
+    "sha",
+    "reviewer",
+    "role",
+    "date",
+    "disposition",
+    "url",
+    "critical",
+    "important",
+    "source",
+}
+SOURCE_KEYS = {
+    "repository",
+    "resource_path",
+    "comment_url",
+    "comment_id",
+    "author_login",
+    "author_user_id",
+    "author_association",
+    "created_at",
+    "updated_at",
+    "body_sha256",
+    "response_sha256",
+    "acquisition_resource_id",
+    "source_verified_at",
+}
+GOVERNANCE_KEYS = {
+    "authority",
+    "authority_attestation",
+    "authority_verification",
+    "authority_basis",
+}
+SCOPE_KEYS = {"scope", "milestone"}
+SHA256_RE = re.compile(r"^[0-9a-f]{64}$")
 
 
 def load_front_matter(path: Path) -> dict[str, object]:
@@ -180,6 +288,542 @@ def validate_transition(previous: dict[str, object], candidate: dict[str, object
     ):
         errors.append("published record shall not transition to a candidate phase")
     return errors
+
+
+def validate_external_evidence(
+    root: Path,
+    record: dict[str, object],
+    evidence: dict[str, object],
+    expected_head: str,
+    phase: str,
+    now: datetime | None = None,
+) -> list[str]:
+    """Validate exact-candidate closure or taggable external evidence."""
+    del root
+    errors: list[str] = []
+    if record.get("phase") != "closure_candidate":
+        errors.append("external evidence requires a closure_candidate record")
+    if phase not in {"closure", "taggable"}:
+        return [*errors, "external evidence phase shall be closure or taggable"]
+    if not isinstance(evidence, dict):
+        return [*errors, f"{phase} evidence shall be an object"]
+
+    expected_keys = TAGGABLE_KEYS if phase == "taggable" else EVIDENCE_KEYS
+    missing = sorted(expected_keys - set(evidence))
+    unknown = sorted(set(evidence) - expected_keys)
+    if missing:
+        errors.append(f"{phase} evidence is missing keys: {', '.join(missing)}")
+    if unknown:
+        errors.append(f"{phase} evidence has unknown keys: {', '.join(unknown)}")
+    if missing:
+        return errors
+
+    if evidence.get("schema") != EVIDENCE_SCHEMA:
+        errors.append("external evidence schema is invalid")
+    if evidence.get("release") != RELEASE:
+        errors.append("external evidence release shall equal 0.5-beta")
+    closure_head = evidence.get("closure_head")
+    closure_tree = evidence.get("closure_tree")
+    if not _sha(closure_head):
+        errors.append("closure head shall be a 40-character SHA")
+    if not _sha(closure_tree):
+        errors.append("closure tree shall be a 40-character SHA")
+    if phase == "closure" and closure_head != expected_head:
+        errors.append("closure head shall equal expected head")
+
+    merge_head: object = None
+    merge_tree: object = None
+    if phase == "taggable":
+        merge_head = evidence.get("merge_head")
+        merge_tree = evidence.get("merge_tree")
+        if not _sha(merge_head):
+            errors.append("merge head shall be a 40-character SHA")
+        if not _sha(merge_tree):
+            errors.append("merge tree shall be a 40-character SHA")
+        if merge_head != expected_head:
+            errors.append("merge head shall equal expected head")
+        if merge_tree != closure_tree:
+            errors.append("merged tree shall equal closure tree")
+
+    acquisition_ids = _validate_acquisition(
+        errors, evidence.get("acquisition"), now
+    )
+    for name in (
+        "scope",
+        "technical",
+        "editorial",
+        "terminology",
+        "rendering",
+        "profile_scope",
+        "governance",
+    ):
+        _validate_sourced_verdict(
+            errors,
+            name,
+            evidence.get(name),
+            closure_head,
+            acquisition_ids,
+        )
+
+    _validate_commands(
+        errors,
+        evidence.get("candidate_commands"),
+        closure_head,
+        "candidate",
+    )
+    _validate_mapping_basis(
+        errors, record, evidence, closure_head, acquisition_ids
+    )
+    _validate_github_checks(errors, evidence.get("github_checks"), closure_head)
+    _validate_merge_state(errors, evidence.get("merge_state"), closure_head)
+    if phase == "taggable":
+        _validate_post_merge(
+            errors, evidence.get("post_merge"), merge_head, merge_tree
+        )
+    return errors
+
+
+def _sha(value: object) -> bool:
+    return isinstance(value, str) and SHA_RE.fullmatch(value) is not None
+
+
+def _nonblank(value: object) -> bool:
+    return isinstance(value, str) and bool(value.strip())
+
+
+def _numeric(value: object) -> bool:
+    return isinstance(value, int) and not isinstance(value, bool)
+
+
+def _rfc3339_utc(value: object) -> datetime | None:
+    if not isinstance(value, str) or not value.endswith("Z"):
+        return None
+    try:
+        parsed = datetime.fromisoformat(value[:-1] + "+00:00")
+    except ValueError:
+        return None
+    return parsed if parsed.tzinfo == timezone.utc else None
+
+
+def _validate_acquisition(
+    errors: list[str], value: object, now: datetime | None
+) -> set[str]:
+    if not isinstance(value, dict):
+        errors.append("acquisition manifest is required")
+        return set()
+    required = {
+        "schema",
+        "repository",
+        "authenticated_login",
+        "retrieved_at",
+        "complete",
+        "resource_ids",
+    }
+    if set(value) != required:
+        errors.append("acquisition manifest keys are invalid")
+    if value.get("schema") != ACQUISITION_SCHEMA:
+        errors.append("acquisition manifest schema is invalid")
+    if value.get("repository") != "tdistress/ESAF":
+        errors.append("acquisition repository shall equal tdistress/ESAF")
+    if not _nonblank(value.get("authenticated_login")):
+        errors.append("acquisition authenticated login is required")
+    if value.get("complete") is not True:
+        errors.append("acquisition manifest shall be complete")
+    identifiers = value.get("resource_ids")
+    if (
+        not isinstance(identifiers, list)
+        or not all(_nonblank(item) for item in identifiers)
+        or len(identifiers) != len(set(identifiers))
+    ):
+        errors.append("acquisition resource identifiers are invalid")
+        result: set[str] = set()
+    else:
+        result = set(identifiers)
+    retrieved_at = _rfc3339_utc(value.get("retrieved_at"))
+    reference = now or datetime.now(timezone.utc)
+    if retrieved_at is None:
+        errors.append("acquisition retrieval timestamp shall be RFC 3339 UTC")
+    elif retrieved_at > reference or (reference - retrieved_at).total_seconds() > 900:
+        errors.append("acquisition manifest shall be no more than 15 minutes old")
+    return result
+
+
+def _validate_source(
+    errors: list[str],
+    name: str,
+    value: object,
+    acquisition_ids: set[str],
+) -> None:
+    if not isinstance(value, dict) or set(value) != SOURCE_KEYS:
+        errors.append(f"{name} source keys are invalid")
+        return
+    if value.get("repository") != "tdistress/ESAF":
+        errors.append(f"{name} source repository shall equal tdistress/ESAF")
+    if not _nonblank(value.get("resource_path")):
+        errors.append(f"{name} source resource path is required")
+    if not _https(value.get("comment_url")):
+        errors.append(f"{name} source comment URL shall use HTTPS")
+    if not _numeric(value.get("comment_id")):
+        errors.append(f"{name} source comment ID shall be numeric")
+    for field in ("author_login", "author_association"):
+        if not _nonblank(value.get(field)):
+            errors.append(f"{name} source {field} is required")
+    if not _numeric(value.get("author_user_id")):
+        errors.append(f"{name} source author user ID shall be numeric")
+    for field in ("created_at", "updated_at", "source_verified_at"):
+        if _rfc3339_utc(value.get(field)) is None:
+            errors.append(f"{name} source {field} shall be RFC 3339 UTC")
+    for field in ("body_sha256", "response_sha256"):
+        if not isinstance(value.get(field), str) or SHA256_RE.fullmatch(
+            value[field]
+        ) is None:
+            errors.append(f"{name} source {field} shall be a SHA-256")
+    resource_id = value.get("acquisition_resource_id")
+    if resource_id not in acquisition_ids:
+        errors.append(f"{name} source shall bind an acquired resource")
+
+
+def _validate_sourced_verdict(
+    errors: list[str],
+    name: str,
+    value: object,
+    closure_head: object,
+    acquisition_ids: set[str],
+) -> None:
+    additional = GOVERNANCE_KEYS if name == "governance" else (
+        SCOPE_KEYS if name == "scope" else set()
+    )
+    if not isinstance(value, dict) or set(value) != VERDICT_KEYS | additional:
+        errors.append(f"{name} verdict keys are invalid")
+        return
+    if value.get("sha") != closure_head:
+        errors.append(f"{name} verdict shall be bound to closure head")
+    if not _nonblank(value.get("reviewer")):
+        errors.append(f"{name} reviewer shall be named")
+    if not _nonblank(value.get("role")):
+        errors.append(f"{name} verdict role shall be named")
+    try:
+        date.fromisoformat(str(value.get("date")))
+    except ValueError:
+        errors.append(f"{name} verdict date shall be an ISO date")
+    expected_disposition = {
+        "scope": "approved_for_working_draft_closure",
+        "governance": "approved_for_working_draft_publication",
+    }.get(name, "approved")
+    if value.get("disposition") != expected_disposition:
+        errors.append(f"{name} verdict disposition is invalid")
+    if not _https(value.get("url")):
+        errors.append(f"{name} verdict URL shall use HTTPS")
+    if value.get("critical") != 0 or value.get("important") != 0:
+        errors.append(f"{name} verdict findings shall be zero")
+    _validate_source(errors, name, value.get("source"), acquisition_ids)
+    if name == "scope":
+        if (
+            value.get("scope") != REPOSITORY_SCOPE
+            or value.get("milestone") != TAG
+        ):
+            errors.append("scope verdict shall approve the complete v0.5-beta scope")
+    if name == "governance":
+        if (
+            value.get("authority") != "Steering Committee"
+            or value.get("authority_attestation") is not True
+            or value.get("authority_verification") != "manual"
+            or value.get("authority_basis")
+            != "GOVERNANCE.md#21-steering-committee"
+        ):
+            errors.append(
+                "governance shall contain an express manual authority attestation"
+            )
+
+
+def _validate_commands(
+    errors: list[str],
+    value: object,
+    sha: object,
+    label: str,
+) -> None:
+    diagnostic = (
+        f"{label} commands shall contain each required command exactly once"
+    )
+    if not isinstance(value, list) or not all(isinstance(item, dict) for item in value):
+        errors.append(diagnostic)
+        return
+    names = [item.get("name") for item in value]
+    if (
+        len(names) != len(COMMAND_IDS)
+        or len(set(names)) != len(names)
+        or set(names) != set(COMMAND_IDS)
+    ):
+        errors.append(diagnostic)
+        return
+    for command in value:
+        name = str(command["name"])
+        if command.get("exit_code") != 0:
+            errors.append(f"{name} {label} command shall succeed")
+        if command.get("sha") != sha:
+            domain = "merge head" if label == "post-merge" else "closure head"
+            errors.append(f"{name} {label} command shall be bound to {domain}")
+        result = command.get("result")
+        if name == "mermaid_rendering":
+            _validate_mermaid_result(errors, result)
+        elif not _nonblank(result):
+            errors.append(f"{name} {label} command result shall be nonempty")
+
+
+def _validate_mermaid_result(errors: list[str], value: object) -> None:
+    keys = {
+        "rendered_blocks",
+        "renderer",
+        "visual_review",
+        "candidate_inventory_equal",
+        "merge_tree_equal",
+        "candidate_review_url",
+        "candidate_reviewer",
+        "post_merge_reviewer",
+        "reviewed_at",
+    }
+    if not isinstance(value, dict) or set(value) != keys:
+        errors.append(
+            "mermaid_rendering result shall be a structured visual review"
+        )
+        return
+    if value.get("rendered_blocks") != MERMAID_BLOCKS:
+        errors.append("mermaid_rendering shall cover exactly 23 blocks")
+    if value.get("renderer") != MERMAID_RENDERER:
+        errors.append("mermaid_rendering renderer is invalid")
+    if value.get("visual_review") != "approved":
+        errors.append("mermaid_rendering visual review shall be approved")
+    if (
+        value.get("candidate_inventory_equal") is not True
+        or value.get("merge_tree_equal") is not True
+    ):
+        errors.append("mermaid_rendering equality flags shall be true")
+    if not _https(value.get("candidate_review_url")):
+        errors.append("mermaid_rendering candidate review URL shall use HTTPS")
+    if not _nonblank(value.get("candidate_reviewer")) or not _nonblank(
+        value.get("post_merge_reviewer")
+    ):
+        errors.append("mermaid_rendering reviewer identities shall be named")
+    if _rfc3339_utc(value.get("reviewed_at")) is None:
+        errors.append("mermaid_rendering review timestamp shall be RFC 3339 UTC")
+
+
+def _mapping_set_ids(record: dict[str, object]) -> list[str]:
+    value = record.get("mapping_sets")
+    if not isinstance(value, list):
+        return []
+    return [item for item in value if isinstance(item, str)]
+
+
+def _validate_mapping_basis(
+    errors: list[str],
+    record: dict[str, object],
+    evidence: dict[str, object],
+    closure_head: object,
+    acquisition_ids: set[str],
+) -> None:
+    basis = evidence.get("mapping_decision_basis")
+    decisions = evidence.get("mapping_decisions")
+    if basis != record.get("mapping_decision_basis"):
+        errors.append("external mapping basis shall match the release record")
+    if basis == "owner_risk_acceptance":
+        _validate_owner_risk(
+            errors,
+            record,
+            evidence.get("mapping_decision_schema"),
+            decisions,
+            closure_head,
+            acquisition_ids,
+        )
+    elif basis == "qualified_approval":
+        _validate_qualified_campaign(errors, record, decisions, closure_head)
+    else:
+        errors.append("external mapping decision basis is invalid")
+
+
+def _validate_owner_risk(
+    errors: list[str],
+    record: dict[str, object],
+    schema: object,
+    value: object,
+    closure_head: object,
+    acquisition_ids: set[str],
+) -> None:
+    if schema != OWNER_DECISION_SCHEMA:
+        errors.append("owner-risk evidence shall use esaf-v05-owner-decision-v1")
+    if not isinstance(value, list):
+        errors.append("owner-risk evidence shall contain exactly three decisions")
+        return
+    if len(value) != 3 or not all(isinstance(item, dict) for item in value):
+        errors.append("owner-risk evidence shall contain exactly three decisions")
+    decisions = [item for item in value if isinstance(item, dict)]
+    expected_ids = _mapping_set_ids(record)
+    observed_ids = [item.get("mapping_set_id") for item in decisions]
+    if (
+        len(observed_ids) != len(expected_ids)
+        or len(set(observed_ids)) != len(observed_ids)
+        or set(observed_ids) != set(expected_ids)
+    ):
+        errors.append(
+            "owner-risk decisions shall contain each mapping set exactly once"
+        )
+    sources: list[object] = []
+    for decision in decisions:
+        if decision.get("mapping_decision_basis") != "owner_risk_acceptance":
+            errors.append("mapping decisions shall use one uniform basis")
+        if (
+            decision.get("decision_type") != "owner_risk_acceptance"
+            or decision.get("disposition") != OWNER_DISPOSITION
+            or decision.get("qualified_review_status") != QUALIFIED_REVIEW_STATUS
+        ):
+            errors.append("owner-risk decision disposition is invalid")
+        if decision.get("sha") != closure_head:
+            errors.append("owner-risk decision shall be bound to closure head")
+        roles = decision.get("missing_qualified_roles")
+        expected_roles = {
+            (mapping_set_id, role)
+            for mapping_set_id in expected_ids
+            for role in MISSING_ROLES
+        }
+        observed_roles: set[tuple[object, object]] = set()
+        if isinstance(roles, list):
+            observed_roles = {
+                (item.get("mapping_set_id"), item.get("role"))
+                for item in roles
+                if isinstance(item, dict)
+            }
+        if (
+            not isinstance(roles, list)
+            or len(roles) != 6
+            or len(observed_roles) != 6
+            or observed_roles != expected_roles
+        ):
+            errors.append(
+                "owner-risk decision shall contain exactly six missing roles"
+            )
+        source = decision.get("source")
+        sources.append(source)
+        _validate_source(errors, "owner-risk", source, acquisition_ids)
+        if not isinstance(source, dict):
+            errors.append("owner-risk decision source is required")
+            continue
+        if decision.get("accountable_owner") != source.get("author_login"):
+            errors.append(
+                "owner-risk accountable owner shall match authenticated author"
+            )
+        if source.get("author_association") != "OWNER":
+            errors.append("owner-risk source association shall be OWNER")
+        if decision.get("url") != source.get("comment_url"):
+            errors.append("owner-risk decision URL shall match source")
+        if decision.get("issue_55_status") != "remains_open":
+            errors.append("owner-risk decision shall leave issue 55 open")
+        if decision.get("lifecycle") != "draft":
+            errors.append("owner-risk decision lifecycle shall remain draft")
+        if _string_set(decision.get("claims_not_made")) != CLAIMS_NOT_MADE:
+            errors.append("owner-risk nonclaims shall equal the required set")
+        if _string_set(decision.get("reentry_triggers")) != REENTRY_TRIGGERS:
+            errors.append(
+                "owner-risk re-entry triggers shall equal the required set"
+            )
+    if sources and any(source != sources[0] for source in sources[1:]):
+        errors.append("owner-risk decisions shall use one unchanged source")
+
+
+def _string_set(value: object) -> set[str]:
+    if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
+        return set()
+    if len(value) != len(set(value)):
+        return set()
+    return set(value)
+
+
+def _validate_qualified_campaign(
+    errors: list[str],
+    record: dict[str, object],
+    value: object,
+    closure_head: object,
+) -> None:
+    valid = isinstance(value, list) and len(value) == 1
+    report = value[0] if valid else None
+    if not isinstance(report, dict):
+        valid = False
+    else:
+        valid = valid and (
+            report.get("evidence_valid") is True
+            and report.get("readiness_name") == "transition_ready"
+            and report.get("candidate_state") == "draft"
+            and report.get("candidate_sha") == closure_head
+        )
+        mapping_sets = report.get("mapping_sets")
+        expected_ids = _mapping_set_ids(record)
+        if not isinstance(mapping_sets, list) or len(mapping_sets) != 3:
+            valid = False
+        else:
+            observed: dict[object, object] = {
+                item.get("mapping_set_id"): item.get("roles")
+                for item in mapping_sets
+                if isinstance(item, dict)
+            }
+            valid = valid and set(observed) == set(expected_ids) and all(
+                _string_set(observed.get(mapping_set_id)) == set(MISSING_ROLES)
+                for mapping_set_id in expected_ids
+            )
+    if not valid:
+        errors.append(
+            "qualified approval requires a valid exact-candidate six-role Draft campaign"
+        )
+
+
+def _validate_github_checks(
+    errors: list[str], value: object, closure_head: object
+) -> None:
+    if not isinstance(value, dict):
+        errors.append("GitHub checks are required")
+        return
+    observed = value.get("observed")
+    if (
+        value.get("expected") != ["Validate ESAF sources"]
+        or not isinstance(observed, list)
+        or len(observed) != 1
+        or not isinstance(observed[0], dict)
+        or observed[0].get("name") != "Validate ESAF sources"
+    ):
+        errors.append("GitHub checks shall contain the required check exactly once")
+        return
+    check = observed[0]
+    if check.get("sha") != closure_head:
+        errors.append("GitHub check shall be bound to closure head")
+    if check.get("conclusion") != "success":
+        errors.append("GitHub check shall be successful")
+    if not _https(check.get("url")):
+        errors.append("GitHub check URL shall use HTTPS")
+
+
+def _validate_merge_state(
+    errors: list[str], value: object, closure_head: object
+) -> None:
+    if not isinstance(value, dict):
+        errors.append("merge state is required")
+        return
+    if value.get("sha") != closure_head:
+        errors.append("merge state shall be bound to closure head")
+    if value.get("mergeable") is not True or value.get("state") != "clean":
+        errors.append("merge state shall be clean")
+
+
+def _validate_post_merge(
+    errors: list[str], value: object, merge_head: object, merge_tree: object
+) -> None:
+    if not isinstance(value, dict):
+        errors.append("post-merge evidence is required")
+        return
+    if value.get("schema") != POST_MERGE_SCHEMA:
+        errors.append("post-merge evidence schema is invalid")
+    if value.get("sha") != merge_head:
+        errors.append("post-merge evidence shall be bound to merge head")
+    if value.get("tree") != merge_tree:
+        errors.append("post-merge tree shall equal merged tree")
+    _validate_commands(errors, value.get("commands"), merge_head, "post-merge")
 
 
 def _load_json(path: Path) -> dict[str, Any]:
@@ -480,11 +1124,35 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true", required=True)
     parser.add_argument("--baseline-ref")
+    parser.add_argument("--external-evidence", type=Path)
+    parser.add_argument("--expected-head")
+    parser.add_argument("--phase", choices=("closure", "taggable"))
     arguments = parser.parse_args(argv)
     root = Path.cwd().resolve()
     try:
         record = load_front_matter(root / RECORD_RELATIVE)
         errors = validate_record(root, record)
+        external_arguments = (
+            arguments.external_evidence,
+            arguments.expected_head,
+            arguments.phase,
+        )
+        external_count = sum(value is not None for value in external_arguments)
+        if external_count not in {0, 3}:
+            errors.append(
+                "external-evidence, expected-head, and phase shall be supplied together"
+            )
+        elif external_count == 3:
+            external_evidence = _load_json(arguments.external_evidence)
+            errors.extend(
+                validate_external_evidence(
+                    root,
+                    record,
+                    external_evidence,
+                    arguments.expected_head,
+                    arguments.phase,
+                )
+            )
         phase = record.get("phase")
         if phase in PREVIOUS_PHASE and not arguments.baseline_ref:
             label = "closure candidate" if phase == "closure_candidate" else "published"
