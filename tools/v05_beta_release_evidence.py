@@ -183,12 +183,14 @@ class LocalValidationRunner:
         head = self._git_text(root, ["rev-parse", "HEAD"])
         if head != expected_head:
             raise ValueError("local Git HEAD shall equal expected closure head")
-        parent = self._git_text(
-            root, ["rev-parse", f"{expected_head}^"]
+        merge_base = self._git_text(
+            root,
+            ["merge-base", baseline_head, expected_head],
         )
-        if parent != baseline_head:
+        if merge_base != baseline_head:
             raise ValueError(
-                "local closure parent shall equal authenticated closure base"
+                "authenticated pull request base shall be an ancestor "
+                "of closure head"
             )
         python = sys.executable
         commands: dict[str, list[str]] = {
@@ -348,13 +350,14 @@ class DetachedValidationRunner:
         tree = self._git_text(
             root, ["rev-parse", f"{expected_head}^{{tree}}"]
         )
-        parent = self._git_text(
-            root, ["rev-parse", f"{expected_head}^"]
+        merge_base = self._git_text(
+            root,
+            ["merge-base", baseline_head, expected_head],
         )
         if (
             commit != expected_head
             or SHA_RE.fullmatch(tree) is None
-            or parent != baseline_head
+            or merge_base != baseline_head
         ):
             raise ValueError("closure snapshot could not be verified")
         with tempfile.TemporaryDirectory(
@@ -747,6 +750,37 @@ def source_record(
     }
 
 
+def _canonical_pr_side(
+    value: object,
+    *,
+    expected_sha: str | None,
+    expected_ref: str | None,
+) -> bool:
+    if not isinstance(value, dict):
+        return False
+    sha = value.get("sha")
+    ref = value.get("ref")
+    repo = value.get("repo")
+    if (
+        not isinstance(sha, str)
+        or SHA_RE.fullmatch(sha) is None
+        or (expected_sha is not None and sha != expected_sha)
+        or not _nonblank(ref)
+        or (expected_ref is not None and ref != expected_ref)
+        or value.get("label") != f"tdistress:{ref}"
+        or not isinstance(repo, dict)
+    ):
+        return False
+    owner = repo.get("owner")
+    return (
+        repo.get("full_name") == REPOSITORY
+        and repo.get("url") == f"{API_ROOT}repos/{REPOSITORY}"
+        and repo.get("html_url") == WEB_ROOT
+        and isinstance(owner, dict)
+        and owner.get("login") == "tdistress"
+    )
+
+
 def collect_closure_evidence(
     client: ApiClient,
     *,
@@ -827,30 +861,26 @@ def collect_closure_evidence(
     commit_url = f"{WEB_ROOT}/commit/{expected_head}"
     if commit.get("html_url") != commit_url:
         raise ValueError("GitHub closure commit canonical URL mismatch")
-    if (
-        not isinstance(parents, list)
-        or len(parents) != 1
-        or not isinstance(parents[0], dict)
-    ):
+    if not isinstance(parents, list) or not parents:
         raise ValueError(
-            "GitHub closure commit shall have exactly one parent"
+            "GitHub closure commit parents are invalid"
         )
-    closure_base = parents[0].get("sha")
-    if (
-        not isinstance(closure_base, str)
-        or SHA_RE.fullmatch(closure_base) is None
-        or closure_base == expected_head
-        or parents[0].get("url")
-        != f"{API_ROOT}repos/{REPOSITORY}/commits/{closure_base}"
-    ):
-        raise ValueError("GitHub closure commit parent is invalid")
-    if (
-        expected_closure_base is not None
-        and closure_base != expected_closure_base
-    ):
-        raise ValueError(
-            "authenticated closure base changed during refresh"
-        )
+    for parent in parents:
+        if not isinstance(parent, dict):
+            raise ValueError(
+                "GitHub closure commit parents are invalid"
+            )
+        parent_sha = parent.get("sha")
+        if (
+            not isinstance(parent_sha, str)
+            or SHA_RE.fullmatch(parent_sha) is None
+            or parent_sha == expected_head
+            or parent.get("url")
+            != f"{API_ROOT}repos/{REPOSITORY}/commits/{parent_sha}"
+        ):
+            raise ValueError(
+                "GitHub closure commit parents are invalid"
+            )
     responses.append((commit_response, commit_url))
 
     pr_resource = f"repos/{REPOSITORY}/pulls/{pr_number}"
@@ -859,15 +889,36 @@ def collect_closure_evidence(
         pr_response, _reference_now(fixed_now)
     )
     head = pull_request.get("head")
+    base = pull_request.get("base")
     pr_url = f"{WEB_ROOT}/pull/{pr_number}"
     if (
         pull_request.get("number") != pr_number
         or pull_request.get("url") != f"{API_ROOT}{pr_resource}"
         or pull_request.get("html_url") != pr_url
-        or not isinstance(head, dict)
-        or head.get("sha") != expected_head
+        or not _canonical_pr_side(
+            head,
+            expected_sha=expected_head,
+            expected_ref=None,
+        )
     ):
         raise ValueError("GitHub pull request does not match closure head")
+    if not _canonical_pr_side(
+        base,
+        expected_sha=None,
+        expected_ref="main",
+    ):
+        raise ValueError("GitHub pull request base is invalid")
+    assert isinstance(base, dict)
+    closure_base = str(base["sha"])
+    if closure_base == expected_head:
+        raise ValueError("GitHub pull request base is invalid")
+    if (
+        expected_closure_base is not None
+        and closure_base != expected_closure_base
+    ):
+        raise ValueError(
+            "authenticated pull request base changed during refresh"
+        )
     if merged_head is None:
         if (
             pull_request.get("state") != "open"
@@ -1151,7 +1202,7 @@ def refresh_taggable_evidence(
     fresh = collect_closure_evidence(client, **refresh_arguments)
     if fresh.get("closure_base") != closure_base:
         raise ValueError(
-            "authenticated closure base changed during refresh"
+            "authenticated pull request base changed during refresh"
         )
     _require_unchanged_sources(base_evidence, fresh)
     fresh_commands = _validated_candidate_commands(

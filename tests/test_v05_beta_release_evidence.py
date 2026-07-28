@@ -64,6 +64,8 @@ CHECKS_RESOURCE = f"repos/tdistress/ESAF/commits/{CLOSURE_SHA}/check-runs"
 CHECKS_PAGE_ONE = f"{CHECKS_RESOURCE}?per_page=100&page=1"
 USER_RESOURCE = "user"
 TAG_RESOURCE = "repos/tdistress/ESAF/git/ref/tags/v0.5-beta"
+CLOSURE_PARENT = "a" * 40
+HEAD_REF = "agent/v05-beta-publication-closure"
 
 
 def comment_resource(comment_id: int) -> str:
@@ -293,10 +295,10 @@ def valid_fake_client() -> FakeClient:
                 },
                 "parents": [
                     {
-                        "sha": CLOSURE_BASE,
+                        "sha": CLOSURE_PARENT,
                         "url": (
                             "https://api.github.com/repos/tdistress/ESAF/"
-                            f"commits/{CLOSURE_BASE}"
+                            f"commits/{CLOSURE_PARENT}"
                         ),
                     }
                 ],
@@ -324,7 +326,28 @@ def valid_fake_client() -> FakeClient:
                 "html_url": f"https://github.com/tdistress/ESAF/pull/{PR_NUMBER}",
                 "number": PR_NUMBER,
                 "state": "open",
-                "head": {"sha": CLOSURE_SHA},
+                "head": {
+                    "sha": CLOSURE_SHA,
+                    "ref": HEAD_REF,
+                    "label": f"tdistress:{HEAD_REF}",
+                    "repo": {
+                        "full_name": "tdistress/ESAF",
+                        "url": "https://api.github.com/repos/tdistress/ESAF",
+                        "html_url": "https://github.com/tdistress/ESAF",
+                        "owner": {"login": "tdistress"},
+                    },
+                },
+                "base": {
+                    "sha": CLOSURE_BASE,
+                    "ref": "main",
+                    "label": "tdistress:main",
+                    "repo": {
+                        "full_name": "tdistress/ESAF",
+                        "url": "https://api.github.com/repos/tdistress/ESAF",
+                        "html_url": "https://github.com/tdistress/ESAF",
+                        "owner": {"login": "tdistress"},
+                    },
+                },
                 "mergeable": True,
                 "mergeable_state": "clean",
             },
@@ -453,7 +476,9 @@ class RecordingCommandExecutor:
         self.calls.append((args, kwargs))
         if args == ["git", "rev-parse", "HEAD"]:
             stdout = f"{CLOSURE_SHA}\n".encode("ascii")
-        elif args == ["git", "rev-parse", f"{CLOSURE_SHA}^"]:
+        elif args == [
+            "git", "merge-base", CLOSURE_BASE, CLOSURE_SHA
+        ]:
             stdout = f"{CLOSURE_BASE}\n".encode("ascii")
         elif args == ["git", "status", "--porcelain=v1"]:
             stdout = b""
@@ -821,6 +846,100 @@ class V05StructuredCommentTests(unittest.TestCase):
 
 
 class V05LocalValidationRunnerTests(unittest.TestCase):
+    def test_detached_runner_validates_entire_multi_commit_pr_range_from_authenticated_base(
+        self,
+    ) -> None:
+        class RealGitTopologyExecutor:
+            def __init__(self) -> None:
+                self.calls: list[tuple[list[str], Path]] = []
+
+            def __call__(
+                executor_self, args: list[str], **kwargs: object
+            ) -> subprocess.CompletedProcess[bytes]:
+                cwd = Path(kwargs["cwd"])
+                executor_self.calls.append((args, cwd))
+                if args[0] == "git":
+                    return subprocess.run(args, **kwargs)
+                return subprocess.CompletedProcess(
+                    args, 0, b"validated\n", b""
+                )
+
+        with tempfile.TemporaryDirectory(
+            prefix="esaf-v05-real-topology-"
+        ) as temporary:
+            repository = Path(temporary).resolve() / "repository"
+            repository.mkdir()
+            for command in (
+                ["git", "init", "--quiet"],
+                ["git", "config", "user.name", "ESAF Test"],
+                ["git", "config", "user.email", "esaf@example.invalid"],
+                ["git", "commit", "--allow-empty", "-m", "base"],
+            ):
+                subprocess.run(
+                    command,
+                    cwd=repository,
+                    check=True,
+                    capture_output=True,
+                )
+            closure_base = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                cwd=repository,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+            for message in ("first PR commit", "closure head"):
+                subprocess.run(
+                    ["git", "commit", "--allow-empty", "-m", message],
+                    cwd=repository,
+                    check=True,
+                    capture_output=True,
+                )
+            closure_head = subprocess.run(
+                ["git", "rev-parse", "HEAD"],
+                cwd=repository,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+            immediate_parent = subprocess.run(
+                ["git", "rev-parse", f"{closure_head}^"],
+                cwd=repository,
+                check=True,
+                capture_output=True,
+                text=True,
+            ).stdout.strip()
+            self.assertNotEqual(closure_base, immediate_parent)
+
+            executor = RealGitTopologyExecutor()
+            results = DetachedValidationRunner(
+                validation_runner=LocalValidationRunner(executor),
+                runner=executor,
+            ).run(repository, closure_head, closure_base)
+            called = [args for args, _ in executor.calls]
+            self.assertIn(
+                [
+                    "git",
+                    "diff",
+                    "--check",
+                    f"{closure_base}..{closure_head}",
+                ],
+                called,
+            )
+            self.assertNotIn(
+                [
+                    "git",
+                    "diff",
+                    "--check",
+                    f"{immediate_parent}..{closure_head}",
+                ],
+                called,
+            )
+            self.assertEqual(
+                set(COMMAND_IDS) - {"mermaid_rendering"},
+                {item["name"] for item in results},
+            )
+
     def test_detached_runner_reexecutes_after_main_contains_closure_head_using_original_closure_base(
         self,
     ) -> None:
@@ -842,7 +961,10 @@ class V05LocalValidationRunnerTests(unittest.TestCase):
                 ]:
                     stdout = f"{CLOSURE_TREE}\n".encode("ascii")
                 elif args == [
-                    "git", "rev-parse", f"{CLOSURE_SHA}^"
+                    "git",
+                    "merge-base",
+                    CLOSURE_BASE,
+                    CLOSURE_SHA,
                 ]:
                     stdout = f"{CLOSURE_BASE}\n".encode("ascii")
                 elif args[:4] == [
@@ -921,7 +1043,7 @@ class V05LocalValidationRunnerTests(unittest.TestCase):
             ]:
                 stdout = f"{CLOSURE_TREE}\n".encode("ascii")
             elif args == [
-                "git", "rev-parse", f"{CLOSURE_SHA}^"
+                "git", "merge-base", CLOSURE_BASE, CLOSURE_SHA
             ]:
                 stdout = f"{CLOSURE_BASE}\n".encode("ascii")
             elif args[:4] == ["git", "worktree", "add", "--detach"]:
@@ -1008,18 +1130,144 @@ class V05LocalValidationRunnerTests(unittest.TestCase):
 
 
 class V05AcquisitionTests(unittest.TestCase):
-    def test_collector_requires_exact_authenticated_closure_parent(
+    def test_collector_requires_pr_base_sha_to_equal_authenticated_closure_base(
         self,
     ) -> None:
         evidence = collect_closure_evidence(
             valid_fake_client(), **valid_collection_args()
         )
         self.assertEqual(CLOSURE_BASE, evidence["closure_base"])
+        cases = (
+            (
+                "missing",
+                lambda pull: pull.pop("base"),
+            ),
+            (
+                "substituted",
+                lambda pull: pull["base"].__setitem__(
+                    "sha", CLOSURE_SHA
+                ),
+            ),
+            (
+                "non-main",
+                lambda pull: pull["base"].__setitem__(
+                    "ref", "release"
+                ),
+            ),
+            (
+                "wrong-repo",
+                lambda pull: pull["base"]["repo"].__setitem__(
+                    "full_name", "other/ESAF"
+                ),
+            ),
+            (
+                "wrong-owner",
+                lambda pull: pull["base"]["repo"]["owner"].__setitem__(
+                    "login", "other"
+                ),
+            ),
+            (
+                "wrong-url",
+                lambda pull: pull["base"]["repo"].__setitem__(
+                    "url", "https://api.github.com/repos/other/ESAF"
+                ),
+            ),
+        )
+        for label, mutate in cases:
+            with self.subTest(label=label):
+                client = valid_fake_client()
+                response = client.responses[PR_RESOURCE]
+                payload = response.json_object()
+                mutate(payload)
+                client.responses[PR_RESOURCE] = api_response(
+                    PR_RESOURCE, payload
+                )
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "GitHub pull request base is invalid",
+                ):
+                    collect_closure_evidence(
+                        client, **valid_collection_args()
+                    )
+
+    def test_collector_requires_canonical_authenticated_pr_head(
+        self,
+    ) -> None:
+        cases = (
+            (
+                "sha",
+                lambda head: head.__setitem__("sha", "f" * 40),
+            ),
+            (
+                "ref",
+                lambda head: head.__setitem__("ref", ""),
+            ),
+            (
+                "label",
+                lambda head: head.__setitem__(
+                    "label", "other:branch"
+                ),
+            ),
+            (
+                "repo",
+                lambda head: head["repo"].__setitem__(
+                    "full_name", "other/ESAF"
+                ),
+            ),
+        )
+        for label, mutate in cases:
+            with self.subTest(label=label):
+                client = valid_fake_client()
+                response = client.responses[PR_RESOURCE]
+                payload = response.json_object()
+                mutate(payload["head"])
+                client.responses[PR_RESOURCE] = api_response(
+                    PR_RESOURCE, payload
+                )
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "GitHub pull request does not match closure head",
+                ):
+                    collect_closure_evidence(
+                        client, **valid_collection_args()
+                    )
+
+    def test_collector_requires_nonempty_canonical_closure_parents(
+        self,
+    ) -> None:
+        multiple = valid_fake_client()
+        response = multiple.responses[COMMIT_RESOURCE]
+        payload = response.json_object()
+        payload["parents"].append(
+            {
+                "sha": "f" * 40,
+                "url": (
+                    "https://api.github.com/repos/tdistress/ESAF/"
+                    f"commits/{'f' * 40}"
+                ),
+            }
+        )
+        multiple.responses[COMMIT_RESOURCE] = api_response(
+            COMMIT_RESOURCE, payload
+        )
+        evidence = collect_closure_evidence(
+            multiple, **valid_collection_args()
+        )
+        self.assertEqual(CLOSURE_BASE, evidence["closure_base"])
         for parents in (
             [],
             [
-                {"sha": CLOSURE_BASE},
-                {"sha": "a" * 40},
+                {
+                    "sha": "not-a-sha",
+                    "url": "https://api.github.com/repos/tdistress/ESAF/commits/not-a-sha",
+                }
+            ],
+            [
+                {
+                    "sha": CLOSURE_PARENT,
+                    "url": "https://api.github.com/repos/other/ESAF/commits/"
+                    f"{CLOSURE_PARENT}",
+                }
             ],
         ):
             with self.subTest(parent_count=len(parents)):
@@ -1032,7 +1280,7 @@ class V05AcquisitionTests(unittest.TestCase):
                 )
                 with self.assertRaisesRegex(
                     ValueError,
-                    "GitHub closure commit shall have exactly one parent",
+                    "GitHub closure commit parents are invalid",
                 ):
                     collect_closure_evidence(
                         client, **valid_collection_args()
@@ -1583,7 +1831,7 @@ class V05AcquisitionTests(unittest.TestCase):
                 **valid_collection_args(),
             )
 
-    def test_refresh_rejects_changed_authenticated_closure_base_before_reexecution(
+    def test_refresh_rejects_changed_authenticated_pr_base_before_reexecution(
         self,
     ) -> None:
         initial = valid_fake_client()
@@ -1592,30 +1840,53 @@ class V05AcquisitionTests(unittest.TestCase):
         )
         changed = valid_fake_client()
         mark_pull_request_merged(changed)
-        response = changed.responses[COMMIT_RESOURCE]
+        response = changed.responses[PR_RESOURCE]
         payload = response.json_object()
-        payload["parents"] = [
-            {
-                "sha": "a" * 40,
-                "url": (
-                    "https://api.github.com/repos/tdistress/ESAF/"
-                    f"commits/{'a' * 40}"
-                ),
-            }
-        ]
-        changed.responses[COMMIT_RESOURCE] = api_response(
-            COMMIT_RESOURCE, payload
+        payload["base"]["sha"] = "f" * 40
+        changed.responses[PR_RESOURCE] = api_response(
+            PR_RESOURCE, payload
         )
         runner = FakeValidationRunner()
         arguments = valid_collection_args()
         arguments["validation_runner"] = runner
         with self.assertRaisesRegex(
             ValueError,
-            "authenticated closure base changed during refresh",
+            "authenticated pull request base changed during refresh",
         ):
             refresh_taggable_evidence(
                 changed,
                 base_evidence=closure,
+                merge_head=MERGE_SHA,
+                post_merge_results={
+                    "schema": "esaf-v05-post-merge-results-v1",
+                    "sha": MERGE_SHA,
+                    "tree": CLOSURE_TREE,
+                    "commands": command_results(None, taggable=True),
+                },
+                **arguments,
+            )
+        self.assertEqual([], runner.calls)
+
+    def test_refresh_rejects_immediate_parent_as_base_before_runner(
+        self,
+    ) -> None:
+        client = valid_fake_client()
+        closure = collect_closure_evidence(
+            client, **valid_collection_args()
+        )
+        changed = deepcopy(closure)
+        changed["closure_base"] = CLOSURE_PARENT
+        mark_pull_request_merged(client)
+        runner = FakeValidationRunner()
+        arguments = valid_collection_args()
+        arguments["validation_runner"] = runner
+        with self.assertRaisesRegex(
+            ValueError,
+            "authenticated pull request base changed during refresh",
+        ):
+            refresh_taggable_evidence(
+                client,
+                base_evidence=changed,
                 merge_head=MERGE_SHA,
                 post_merge_results={
                     "schema": "esaf-v05-post-merge-results-v1",
