@@ -278,6 +278,7 @@ class ReleaseMetadataTests(unittest.TestCase):
             "tools/v05_beta_release_evidence.py",
             "tests/test_v05_beta_release_gates.py",
             "tests/test_v05_beta_release_evidence.py",
+            "tools/mermaid-render-config.json",
             (
                 "docs/superpowers/reviews/"
                 "2026-07-27-v05-beta-publication-readiness.md"
@@ -293,6 +294,28 @@ class ReleaseMetadataTests(unittest.TestCase):
             with self.subTest(event="push", path=path):
                 self.assertIn(path, main_push)
 
+    def test_workflow_runs_operational_v05_mermaid_validation(self) -> None:
+        workflow = read_repository_file(
+            ".github/workflows/catalog-validation.yml"
+        )
+        self.assertIn("uses: actions/setup-node@v6", workflow)
+        self.assertIn('node-version: "22.23.1"', workflow)
+        self.assertIn(
+            (
+                "npm install --global "
+                "@mermaid-js/mermaid-cli@11.16.0"
+            ),
+            workflow,
+        )
+        self.assertIn(
+            (
+                "python tools/mermaid_inventory.py --check-record "
+                "docs/superpowers/reviews/"
+                "2026-07-27-v05-beta-mermaid-rendering.md"
+            ),
+            workflow,
+        )
+
     def test_workflow_runs_both_release_validators(self) -> None:
         workflow = read_repository_file(
             ".github/workflows/catalog-validation.yml"
@@ -302,6 +325,45 @@ class ReleaseMetadataTests(unittest.TestCase):
             "python tools/v05_beta_release_gates.py --check",
             workflow,
         )
+
+    def test_workflow_supplies_v05_baseline_for_each_event_phase(self) -> None:
+        workflow = read_repository_file(
+            ".github/workflows/catalog-validation.yml"
+        )
+        expected_steps = (
+            (
+                "Validate v0.5-beta release record on pull request",
+                "if: github.event_name == 'pull_request'",
+                (
+                    "python tools/v05_beta_release_gates.py --check "
+                    '--baseline-ref "${{ github.event.pull_request.base.sha }}"'
+                ),
+            ),
+            (
+                "Validate v0.5-beta release record on protected-branch push",
+                "if: github.event_name == 'push'",
+                (
+                    "python tools/v05_beta_release_gates.py --check "
+                    '--baseline-ref "${{ github.event.before }}"'
+                ),
+            ),
+            (
+                "Validate v0.5-beta release record on workflow dispatch",
+                "if: github.event_name == 'workflow_dispatch'",
+                (
+                    "python tools/v05_beta_release_gates.py --check "
+                    '--baseline-ref "HEAD^"'
+                ),
+            ),
+        )
+        for name, condition, command in expected_steps:
+            with self.subTest(name=name):
+                step = workflow.split(f"- name: {name}\n", 1)[1].split(
+                    "\n      - name:",
+                    1,
+                )[0]
+                self.assertIn(condition, step)
+                self.assertIn(command, step)
 
     def test_readme_badge_matches_current_version(self) -> None:
         version = current_version()

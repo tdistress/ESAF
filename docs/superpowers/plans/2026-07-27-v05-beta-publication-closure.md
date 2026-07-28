@@ -811,6 +811,7 @@ git commit -m "feat: collect authenticated v0.5 evidence"
 - Modify: `tests/test_release_metadata.py`
 - Modify: `tests/test_v05_beta_release_gates.py`
 - Modify: `tools/mermaid_inventory.py`
+- Create: `tools/mermaid-render-config.json`
 - Modify: `tests/test_mermaid_inventory.py`
 
 **Interfaces:**
@@ -988,7 +989,17 @@ retention, and the conditional publication boundary.
 
 Generate the exact inventory for the Task 4 head, render all 23 blocks with
 Mermaid CLI 11.16.0, and visually inspect every PNG. Record path, diagram
-ordinal, source SHA-256, output SHA-256, renderer version, result, and reviewer.
+ordinal, source SHA-256, render-contract SHA-256, renderer version, render
+profile, visual-review result, and reviewer.
+
+The render contract is canonical JSON over the exact Mermaid source, source
+digest, path, block ordinal, diagram type, pinned renderer and Node versions,
+render options, and the complete checked-in render configuration. Prefix the
+canonical bytes with `ESAF-MERMAID-RENDER-CONTRACT-V1\0` before hashing. The
+operational ledger check shall render every block into a temporary directory
+and fail closed if the pinned renderer is missing or any render fails. PNG byte
+hashes are not durable evidence because browser rasterization is
+nondeterministic. Visual review remains a separate named human attestation.
 
 The record shall say:
 
@@ -1053,6 +1064,7 @@ python -m unittest `
 python tools/release_gates.py --check
 python tools/v05_beta_release_gates.py --check
 python tools/validate_links.py --check
+python tools/mermaid_inventory.py --check-record docs/superpowers/reviews/2026-07-27-v05-beta-mermaid-rendering.md
 git diff --check
 ```
 
@@ -1069,6 +1081,7 @@ git add -- `
   docs/superpowers/reviews/2026-07-27-v05-beta-mermaid-rendering.md `
   tests/test_release_metadata.py `
   tests/test_v05_beta_release_gates.py `
+  tools/mermaid-render-config.json `
   tools/mermaid_inventory.py `
   tests/test_mermaid_inventory.py
 git diff --cached --check

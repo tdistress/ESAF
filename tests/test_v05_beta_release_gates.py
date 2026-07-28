@@ -42,6 +42,10 @@ from tools.v05_beta_release_gates import (
 ROOT = Path(__file__).resolve().parents[1]
 V04_RECORD = ROOT / "docs/superpowers/reviews/2026-07-21-v04-alpha-publication-readiness.md"
 V05_RECORD = ROOT / RECORD_RELATIVE
+CANONICAL_READINESS_BODY = V05_RECORD.read_text(encoding="utf-8").split(
+    "\n---\n",
+    1,
+)[1]
 EXPECTED_SCOPE = {
     "controls": 91,
     "control_families": 16,
@@ -54,6 +58,21 @@ EXPECTED_SCOPE = {
     "draft_profiles": 1,
     "pci_dss_disposition": "HOLD",
 }
+EXPECTED_CLOSURE_ALLOWLIST = {
+    "VERSION.md",
+    "README.md",
+    "ROADMAP.md",
+    "CHANGELOG.md",
+    "project/RELEASE_PLAN.md",
+    RECORD_RELATIVE,
+}
+
+
+def readiness_document(
+    record: dict[str, object],
+    body: str = CANONICAL_READINESS_BODY,
+) -> str:
+    return "---\n" + json.dumps(record) + "\n---\n" + body
 MAPPING_SETS = [
     "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
     "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
@@ -1672,21 +1691,143 @@ class V05ReleaseRecordTests(unittest.TestCase):
         self.assertEqual("open", record["gates"]["post_merge"]["state"])
 
     def test_closure_allowlist_is_exact(self) -> None:
-        expected = {
-            "VERSION.md",
-            "README.md",
-            "ROADMAP.md",
-            "CHANGELOG.md",
-            "project/RELEASE_PLAN.md",
-            (
-                "docs/superpowers/reviews/"
-                "2026-07-27-v05-beta-publication-readiness.md"
-            ),
-        }
         self.assertEqual(
-            expected,
+            EXPECTED_CLOSURE_ALLOWLIST,
             set(v05_beta_release_gates.CLOSURE_ALLOWLIST),
         )
+
+    def test_readiness_loader_rejects_duplicate_yaml_keys(self) -> None:
+        source = V05_RECORD.read_text(encoding="utf-8")
+        mutations = (
+            source.replace(
+                "phase: evidence_candidate",
+                "phase: evidence_candidate\nphase: published",
+                1,
+            ),
+            source.replace(
+                "  controls: 91",
+                "  controls: 91\n  controls: 92",
+                1,
+            ),
+            source.replace(
+                "  scope: {state: open, evidence: []}",
+                (
+                    "  scope: {state: open, evidence: []}\n"
+                    "  scope: {state: closed, evidence: []}"
+                ),
+                1,
+            ),
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "readiness.md"
+            for index, mutation in enumerate(mutations):
+                with self.subTest(index=index):
+                    path.write_text(mutation, encoding="utf-8")
+                    with self.assertRaisesRegex(ValueError, "duplicate YAML key"):
+                        load_front_matter(path)
+
+    def test_readiness_body_rejects_publication_or_approval_claims(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._prepare_cli_root(root)
+            record_path = root / RECORD_RELATIVE
+            record_path.parent.mkdir(parents=True)
+            record_path.write_text(
+                readiness_document(record_fixture("evidence_candidate")),
+                encoding="utf-8",
+            )
+            self._initialize_repository(root)
+            canonical = subprocess.run(
+                [
+                    sys.executable,
+                    "tools/v05_beta_release_gates.py",
+                    "--check",
+                ],
+                cwd=root,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(0, canonical.returncode, canonical.stdout)
+
+            mutations = (
+                CANONICAL_READINESS_BODY.replace(
+                    "This\nrecord does not approve publication.",
+                    "This record approves publication.",
+                    1,
+                ),
+                (
+                    CANONICAL_READINESS_BODY
+                    + "\nQualified review is complete and the mappings are approved.\n"
+                ),
+            )
+            for body in mutations:
+                with self.subTest(body=body[-90:]):
+                    record_path.write_text(
+                        readiness_document(
+                            record_fixture("evidence_candidate"),
+                            body,
+                        ),
+                        encoding="utf-8",
+                    )
+                    result = subprocess.run(
+                        [
+                            sys.executable,
+                            "tools/v05_beta_release_gates.py",
+                            "--check",
+                        ],
+                        cwd=root,
+                        capture_output=True,
+                        text=True,
+                    )
+                    self.assertEqual(1, result.returncode)
+                    self.assertIn("readiness body", result.stdout)
+
+    def test_cli_accepts_event_baseline_for_evidence_candidate(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            self._prepare_cli_root(root)
+            record_path = root / RECORD_RELATIVE
+            record_path.parent.mkdir(parents=True)
+            record_path.write_text(
+                readiness_document(record_fixture("evidence_candidate")),
+                encoding="utf-8",
+            )
+            self._initialize_repository(root, commit=True)
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "tools/v05_beta_release_gates.py",
+                    "--check",
+                    "--baseline-ref",
+                    "HEAD",
+                ],
+                cwd=root,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(0, result.returncode, result.stdout)
+
+    def test_cli_rejects_closure_candidate_when_range_exceeds_exact_allowlist(
+        self,
+    ) -> None:
+        for name, changes in (
+            ("extra", {*EXPECTED_CLOSURE_ALLOWLIST, "unexpected.md"}),
+            (
+                "missing",
+                EXPECTED_CLOSURE_ALLOWLIST - {"ROADMAP.md"},
+            ),
+        ):
+            with self.subTest(name=name):
+                result = self._run_closure_candidate(changes)
+                self.assertEqual(1, result.returncode)
+                self.assertIn(
+                    "closure candidate changed paths shall equal the exact allowlist",
+                    result.stdout,
+                )
+
+    def test_cli_accepts_closure_candidate_with_exact_allowlist(self) -> None:
+        result = self._run_closure_candidate(EXPECTED_CLOSURE_ALLOWLIST)
+        self.assertEqual(0, result.returncode, result.stdout)
 
     def test_uk_mapping_sets_and_records_remain_unreviewed_drafts(self) -> None:
         catalog = json.loads(
@@ -2190,7 +2331,7 @@ class V05ReleaseRecordTests(unittest.TestCase):
                     self.assertEqual(1, result.returncode)
                     self.assertIn(diagnostic, result.stdout)
 
-    def test_cli_accepts_valid_baseline_when_current_scope_changes(self) -> None:
+    def test_cli_rejects_scope_change_outside_closure_allowlist(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             self._copy_scope_inputs(root)
@@ -2228,7 +2369,84 @@ class V05ReleaseRecordTests(unittest.TestCase):
                 capture_output=True,
                 text=True,
             )
-            self.assertEqual(0, result.returncode, result.stdout)
+            self.assertEqual(1, result.returncode)
+            self.assertIn(
+                "closure candidate changed paths shall equal the exact allowlist",
+                result.stdout,
+            )
+
+    def _prepare_cli_root(self, root: Path) -> None:
+        self._copy_scope_inputs(root)
+        self._reduce_catalog_mapping_sources(root)
+        (root / "tools").mkdir()
+        shutil.copy2(
+            ROOT / "tools/v05_beta_release_gates.py",
+            root / "tools/v05_beta_release_gates.py",
+        )
+
+    def _run_closure_candidate(
+        self,
+        changed_paths: set[str],
+    ) -> subprocess.CompletedProcess[str]:
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        root = Path(temporary.name)
+        self._prepare_cli_root(root)
+        record_path = root / RECORD_RELATIVE
+        record_path.parent.mkdir(parents=True)
+        record_path.write_text(
+            readiness_document(record_fixture("evidence_candidate")),
+            encoding="utf-8",
+        )
+        for relative in EXPECTED_CLOSURE_ALLOWLIST - {RECORD_RELATIVE}:
+            path = root / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(f"baseline {relative}\n", encoding="utf-8")
+        self._initialize_repository(root, commit=True)
+
+        for relative in changed_paths:
+            path = root / relative
+            path.parent.mkdir(parents=True, exist_ok=True)
+            if relative == RECORD_RELATIVE:
+                path.write_text(
+                    readiness_document(record_fixture("closure_candidate")),
+                    encoding="utf-8",
+                )
+            else:
+                path.write_text(f"closure {relative}\n", encoding="utf-8")
+        subprocess.run(
+            ["git", "add", "--all"],
+            cwd=root,
+            check=True,
+            capture_output=True,
+        )
+        subprocess.run(
+            [
+                "git",
+                "-c",
+                "user.name=Test User",
+                "-c",
+                "user.email=test@example.test",
+                "commit",
+                "--quiet",
+                "-m",
+                "closure",
+            ],
+            cwd=root,
+            check=True,
+        )
+        return subprocess.run(
+            [
+                sys.executable,
+                "tools/v05_beta_release_gates.py",
+                "--check",
+                "--baseline-ref",
+                "HEAD^",
+            ],
+            cwd=root,
+            capture_output=True,
+            text=True,
+        )
 
     def _copy_scope_inputs(self, destination: Path) -> None:
         for relative in (

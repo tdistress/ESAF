@@ -36,6 +36,7 @@ on:
       - "tests/test_v05_beta_release_evidence.py"
       - "docs/superpowers/reviews/2026-07-27-v05-beta-publication-readiness.md"
       - "docs/superpowers/reviews/2026-07-27-v05-beta-mermaid-rendering.md"
+      - "tools/mermaid-render-config.json"
       - "tools/mermaid_inventory.py"
       - "tools/validate_links.py"
       - "tools/validate_architectures.py"
@@ -81,6 +82,7 @@ on:
       - "tests/test_v05_beta_release_evidence.py"
       - "docs/superpowers/reviews/2026-07-27-v05-beta-publication-readiness.md"
       - "docs/superpowers/reviews/2026-07-27-v05-beta-mermaid-rendering.md"
+      - "tools/mermaid-render-config.json"
       - "tools/mermaid_inventory.py"
       - "tools/validate_links.py"
       - "tools/validate_architectures.py"
@@ -110,6 +112,13 @@ jobs:
           python-version: "3.13"
           cache: pip
           cache-dependency-path: requirements-dev.txt
+      - name: Set up Node for Mermaid rendering
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22.23.1"
+          package-manager-cache: false
+      - name: Install pinned Mermaid renderer
+        run: npm install --global @mermaid-js/mermaid-cli@11.16.0
       - name: Install validation dependencies
         run: python -m pip install --requirement requirements-dev.txt
       - name: Run repository unit tests
@@ -141,7 +150,16 @@ jobs:
       - name: Validate historical release record on workflow dispatch
         if: github.event_name == 'workflow_dispatch'
         run: python tools/release_gates.py --check --baseline-ref "HEAD^"
-      - name: Validate v0.5-beta release record
-        run: python tools/v05_beta_release_gates.py --check
+      - name: Validate v0.5-beta release record on pull request
+        if: github.event_name == 'pull_request'
+        run: python tools/v05_beta_release_gates.py --check --baseline-ref "${{ github.event.pull_request.base.sha }}"
+      - name: Validate v0.5-beta release record on protected-branch push
+        if: github.event_name == 'push'
+        run: python tools/v05_beta_release_gates.py --check --baseline-ref "${{ github.event.before }}"
+      - name: Validate v0.5-beta release record on workflow dispatch
+        if: github.event_name == 'workflow_dispatch'
+        run: python tools/v05_beta_release_gates.py --check --baseline-ref "HEAD^"
+      - name: Render and validate the v0.5-beta Mermaid baseline
+        run: python tools/mermaid_inventory.py --check-record docs/superpowers/reviews/2026-07-27-v05-beta-mermaid-rendering.md
       - name: Validate repository-local links
         run: python tools/validate_links.py --check

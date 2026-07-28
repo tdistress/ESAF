@@ -16,6 +16,9 @@ import tempfile
 from typing import Any, Sequence
 
 import yaml
+from yaml.constructor import ConstructorError
+from yaml.nodes import MappingNode
+from yaml.resolver import BaseResolver
 
 
 RELEASE = "0.5-beta"
@@ -237,17 +240,148 @@ TAG_STATE_KEYS = {
     "response_sha256",
 }
 TAG_RESOURCE = "repos/tdistress/ESAF/git/ref/tags/v0.5-beta"
+COMMON_READINESS_BODY_STATEMENTS = (
+    (
+        "All controls, architecture patterns, the pilot profile, mapping sets, "
+        "and mapping records remain Draft."
+    ),
+    "Issue 55 remains open for qualified review.",
+    "It would not complete qualified review or approve the mappings.",
+    (
+        "It would not establish qualified mapping approval, artifact lifecycle "
+        "approval, certification, compliance, equivalence, endorsement, "
+        "external scheme approval, production readiness, assurance, "
+        "implementation assessment, legal sufficiency, or replacement of "
+        "qualified professional judgment."
+    ),
+)
+EVIDENCE_CANDIDATE_BODY_STATEMENTS = (
+    "The current ESAF version remains `0.4-alpha`.",
+    (
+        "The v0.5 gates are open, no closure candidate exists, and the "
+        "`v0.5-beta` tag has not been created."
+    ),
+    "This record does not approve publication.",
+    "No such v0.5 decision is recorded here.",
+    (
+        "A later closure candidate requires its own exact-head reviews, "
+        "rendering evidence, owner and scope decision, governance decision, "
+        "successful checks, and clean merge state."
+    ),
+)
+PROHIBITED_CANDIDATE_BODY_CLAIMS = (
+    re.compile(r"\bthis record approves? publication\b", re.IGNORECASE),
+    re.compile(
+        r"\bv0\.5-beta (?:is|was|has been) published\b",
+        re.IGNORECASE,
+    ),
+    re.compile(r"\bpublication (?:is|was|has been) approved\b", re.IGNORECASE),
+)
+PROHIBITED_MAPPING_BODY_CLAIMS = (
+    re.compile(
+        r"\bqualified review (?:is|was|has been) (?:complete|completed|approved)\b",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"\b(?:the )?mappings?(?: sets?)? "
+        r"(?:are|were|have been) approved\b",
+        re.IGNORECASE,
+    ),
+)
+
+
+class _UniqueKeySafeLoader(yaml.SafeLoader):
+    """Safe YAML loader that rejects duplicate mapping keys at every depth."""
+
+
+def _construct_unique_mapping(
+    loader: _UniqueKeySafeLoader,
+    node: MappingNode,
+    deep: bool = False,
+) -> dict[object, object]:
+    loader.flatten_mapping(node)
+    mapping: dict[object, object] = {}
+    for key_node, value_node in node.value:
+        key = loader.construct_object(key_node, deep=deep)
+        try:
+            duplicate = key in mapping
+        except TypeError as exc:
+            raise ConstructorError(
+                "while constructing a mapping",
+                node.start_mark,
+                "found an unhashable YAML key",
+                key_node.start_mark,
+            ) from exc
+        if duplicate:
+            raise ConstructorError(
+                "while constructing a mapping",
+                node.start_mark,
+                f"duplicate YAML key {key!r}",
+                key_node.start_mark,
+            )
+        mapping[key] = loader.construct_object(value_node, deep=deep)
+    return mapping
+
+
+_UniqueKeySafeLoader.add_constructor(
+    BaseResolver.DEFAULT_MAPPING_TAG,
+    _construct_unique_mapping,
+)
+
+
+def _front_matter_parts(text: str, label: str) -> tuple[dict[str, object], str]:
+    if not text.startswith("---\n") or "\n---\n" not in text[4:]:
+        raise ValueError(f"{label}: YAML front matter is required")
+    boundary = text.index("\n---\n", 4)
+    try:
+        value = yaml.load(
+            text[4:boundary],
+            Loader=_UniqueKeySafeLoader,
+        )
+    except yaml.YAMLError as exc:
+        raise ValueError(f"{label}: {exc}") from exc
+    if not isinstance(value, dict):
+        raise ValueError(f"{label}: front matter shall be a mapping")
+    return value, text[boundary + len("\n---\n") :]
 
 
 def load_front_matter(path: Path) -> dict[str, object]:
     """Load the YAML front matter from one readiness record."""
     text = path.read_text(encoding="utf-8")
-    if not text.startswith("---\n") or "\n---\n" not in text[4:]:
-        raise ValueError(f"{path}: YAML front matter is required")
-    value = yaml.safe_load(text[4:text.index("\n---\n", 4)])
-    if not isinstance(value, dict):
-        raise ValueError(f"{path}: front matter shall be a mapping")
+    value, _ = _front_matter_parts(text, str(path))
     return value
+
+
+def load_readiness_document(path: Path) -> tuple[dict[str, object], str]:
+    """Load the readiness record and its normative Markdown body."""
+    return _front_matter_parts(path.read_text(encoding="utf-8"), str(path))
+
+
+def validate_readiness_body(
+    record: dict[str, object],
+    body: str,
+) -> list[str]:
+    """Reject missing boundaries and contradictory readiness prose."""
+    normalized = " ".join(body.split())
+    errors: list[str] = []
+    required = list(COMMON_READINESS_BODY_STATEMENTS)
+    if record.get("phase") == "evidence_candidate":
+        required.extend(EVIDENCE_CANDIDATE_BODY_STATEMENTS)
+    for statement in required:
+        if " ".join(statement.split()) not in normalized:
+            errors.append(
+                "readiness body is missing required canonical boundary: "
+                + " ".join(statement.split())
+            )
+    prohibited = list(PROHIBITED_MAPPING_BODY_CLAIMS)
+    if record.get("phase") != "published":
+        prohibited.extend(PROHIBITED_CANDIDATE_BODY_CLAIMS)
+    for pattern in prohibited:
+        if pattern.search(normalized):
+            errors.append(
+                f"readiness body contains prohibited claim matching {pattern.pattern}"
+            )
+    return errors
 
 
 def derive_scope(root: Path) -> dict[str, object]:
@@ -1487,7 +1621,10 @@ def _https(value: object) -> bool:
     return isinstance(value, str) and value.startswith("https://")
 
 
-def _load_baseline(root: Path, ref: str) -> dict[str, object]:
+def _load_baseline(
+    root: Path,
+    ref: str,
+) -> tuple[dict[str, object], str]:
     result = subprocess.run(
         ["git", "show", f"{ref}:{RECORD_RELATIVE}"],
         cwd=root,
@@ -1495,17 +1632,12 @@ def _load_baseline(root: Path, ref: str) -> dict[str, object]:
         capture_output=True,
         text=True,
     )
-    text = result.stdout
-    if not text.startswith("---\n") or "\n---\n" not in text[4:]:
-        raise ValueError("baseline record: YAML front matter is required")
-    value = yaml.safe_load(text[4:text.index("\n---\n", 4)])
-    if not isinstance(value, dict):
-        raise ValueError("baseline record: front matter shall be a mapping")
-    return value
+    return _front_matter_parts(result.stdout, "baseline record")
 
 
 def _validate_baseline_at_ref(
-    root: Path, ref: str, record: dict[str, object]
+    root: Path,
+    ref: str,
 ) -> list[str]:
     archive = subprocess.run(
         ["git", "archive", "--format=tar", ref],
@@ -1524,7 +1656,55 @@ def _validate_baseline_at_ref(
             check=True,
             capture_output=True,
         )
-        return validate_record(snapshot, record)
+        record, body = load_readiness_document(snapshot / RECORD_RELATIVE)
+        return [
+            *validate_record(snapshot, record),
+            *validate_readiness_body(record, body),
+        ]
+
+
+def _changed_paths(root: Path, baseline_ref: str) -> set[str]:
+    result = subprocess.run(
+        [
+            "git",
+            "diff",
+            "--name-only",
+            "--no-renames",
+            f"{baseline_ref}..HEAD",
+            "--",
+        ],
+        cwd=root,
+        check=True,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+    )
+    return {
+        PurePosixPath(line).as_posix()
+        for line in result.stdout.splitlines()
+        if line
+    }
+
+
+def _validate_closure_allowlist(
+    root: Path,
+    baseline_ref: str,
+) -> list[str]:
+    actual = _changed_paths(root, baseline_ref)
+    expected = set(CLOSURE_ALLOWLIST)
+    if actual == expected:
+        return []
+    missing = sorted(expected - actual)
+    extra = sorted(actual - expected)
+    details = []
+    if missing:
+        details.append("missing: " + ", ".join(missing))
+    if extra:
+        details.append("extra: " + ", ".join(extra))
+    return [
+        "closure candidate changed paths shall equal the exact allowlist; "
+        + "; ".join(details)
+    ]
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -1537,8 +1717,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     arguments = parser.parse_args(argv)
     root = Path.cwd().resolve()
     try:
-        record = load_front_matter(root / RECORD_RELATIVE)
-        errors = validate_record(root, record)
+        record, body = load_readiness_document(root / RECORD_RELATIVE)
+        errors = [
+            *validate_record(root, record),
+            *validate_readiness_body(record, body),
+        ]
         external_arguments = (
             arguments.external_evidence,
             arguments.expected_head,
@@ -1564,15 +1747,17 @@ def main(argv: Sequence[str] | None = None) -> int:
         if phase in PREVIOUS_PHASE and not arguments.baseline_ref:
             label = "closure candidate" if phase == "closure_candidate" else "published"
             errors.append(f"baseline-ref is required for {label}")
-        elif arguments.baseline_ref:
-            baseline = _load_baseline(root, arguments.baseline_ref)
+        elif arguments.baseline_ref and phase in PREVIOUS_PHASE:
+            baseline, _ = _load_baseline(root, arguments.baseline_ref)
             errors.extend(
                 f"baseline record: {error}"
-                for error in _validate_baseline_at_ref(
-                    root, arguments.baseline_ref, baseline
-                )
+                for error in _validate_baseline_at_ref(root, arguments.baseline_ref)
             )
             errors.extend(validate_transition(baseline, record))
+            if phase == "closure_candidate":
+                errors.extend(
+                    _validate_closure_allowlist(root, arguments.baseline_ref)
+                )
     except (OSError, ValueError, subprocess.CalledProcessError, json.JSONDecodeError) as exc:
         errors = [f"release record could not be validated: {exc}"]
     for error in errors:

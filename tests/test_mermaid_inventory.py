@@ -6,7 +6,14 @@ import sys
 import tempfile
 import unittest
 
-from tools.mermaid_inventory import check_record, discover, extract_blocks, ledger_rows, write_render_inputs
+from tools.mermaid_inventory import (
+    check_record,
+    discover,
+    extract_blocks,
+    ledger_rows,
+    render_contract_sha256,
+    write_render_inputs,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 LEDGER = ROOT / "docs/superpowers/reviews/2026-07-21-v04-alpha-mermaid-rendering.md"
@@ -18,6 +25,11 @@ V05_BASELINE_STATUS = (
 )
 PINNED_RENDERER = "@mermaid-js/mermaid-cli@11.16.0"
 SYNTHETIC_REVIEWER = "Avery Chen (synthetic reviewer)"
+
+
+def successful_test_renderer(blocks, root) -> None:
+    if not blocks or not root.is_dir():
+        raise AssertionError("test renderer requires blocks and repository root")
 
 
 def passing_record(blocks, reviewer: str = SYNTHETIC_REVIEWER) -> str:
@@ -41,6 +53,7 @@ class MermaidInventoryTests(unittest.TestCase):
             discover(ROOT),
             V05_LEDGER,
             expected_status=V05_BASELINE_STATUS,
+            renderer=successful_test_renderer,
         )
         self.assertEqual([], failures)
         self.assertNotEqual(APPROVED_STATUS, V05_BASELINE_STATUS)
@@ -67,24 +80,8 @@ class MermaidInventoryTests(unittest.TestCase):
         self.assertIn("registered release ledger", result.stderr)
 
     def test_v05_rows_require_structured_render_evidence(self) -> None:
-        blocks = discover(ROOT)[:2]
-        rows = "\n".join(
-            (
-                f"| `{block.path}` | {block.index} | `{block.digest}` | "
-                f"`{'a' * 64}` | `{PINNED_RENDERER}` | Pass | "
-                "Avery Chen (synthetic reviewer) |"
-            )
-            for block in blocks
-        )
-        record_text = (
-            "# Rendering ledger\n\n"
-            f"Status: {V05_BASELINE_STATUS}\n\n"
-            f"Renderer version: `{PINNED_RENDERER}`\n\n"
-            "| Path | Block | Source SHA-256 | Output SHA-256 | Renderer | "
-            "Result | Reviewer |\n"
-            "|---|---:|---|---|---|---|---|\n"
-            f"{rows}\n"
-        )
+        blocks = discover(ROOT)
+        record_text = V05_LEDGER.read_text(encoding="utf-8")
         with tempfile.TemporaryDirectory() as directory:
             record = Path(directory) / "ledger.md"
             record.write_text(record_text, encoding="utf-8")
@@ -94,10 +91,15 @@ class MermaidInventoryTests(unittest.TestCase):
                     blocks,
                     record,
                     expected_status=V05_BASELINE_STATUS,
+                    renderer=successful_test_renderer,
                 ),
             )
             record.write_text(
-                record_text.replace(f"`{'a' * 64}`", "`missing`", 1),
+                record_text.replace(
+                    "`esaf-mermaid-review-v1` | Pass |",
+                    "`wrong-profile` | Pending |",
+                    1,
+                ),
                 encoding="utf-8",
             )
             self.assertIn(
@@ -107,9 +109,115 @@ class MermaidInventoryTests(unittest.TestCase):
                         blocks,
                         record,
                         expected_status=V05_BASELINE_STATUS,
+                        renderer=successful_test_renderer,
                     )
                 ),
             )
+
+    def test_v05_operational_check_fails_closed_on_render_error(self) -> None:
+        def failing_renderer(blocks, root) -> None:
+            raise ValueError("synthetic renderer failure")
+
+        self.assertIn(
+            "operational Mermaid rendering failed: synthetic renderer failure",
+            check_record(
+                discover(ROOT),
+                V05_LEDGER,
+                expected_status=V05_BASELINE_STATUS,
+                renderer=failing_renderer,
+            ),
+        )
+
+    def test_render_contract_known_answer(self) -> None:
+        block = discover(ROOT)[0]
+        self.assertEqual(
+            "803fd5421c0b3a000f18c453fd1ec59dc0b5da4bce928cca5cae0f47191f28b8",
+            render_contract_sha256(block, ROOT),
+        )
+
+    def test_v05_ledger_rejects_any_unparsed_table_row(self) -> None:
+        blocks = discover(ROOT)
+        record_text = V05_LEDGER.read_text(encoding="utf-8")
+        malformed_row = (
+            "| `architectures/patterns/ARC-P110.md` | 1 | "
+            f"`{blocks[0].digest}` | `{'a' * 64}` | "
+            f"`{PINNED_RENDERER}` | Pass | {SYNTHETIC_REVIEWER} | extra |\n"
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            record = Path(directory) / "ledger.md"
+            record.write_text(
+                record_text + "\n" + malformed_row,
+                encoding="utf-8",
+            )
+            self.assertIn(
+                "unparsed table row",
+                "\n".join(
+                    check_record(
+                        blocks,
+                        record,
+                        expected_status=V05_BASELINE_STATUS,
+                        renderer=successful_test_renderer,
+                    )
+                ),
+            )
+
+    def test_v05_ledger_rejects_mutated_render_contract_digest(
+        self,
+    ) -> None:
+        blocks = discover(ROOT)
+        record_text = V05_LEDGER.read_text(encoding="utf-8")
+        first_row = next(
+            line
+            for line in record_text.splitlines()
+            if line.startswith("| `architectures/")
+        )
+        output_digest = first_row.split("`")[5]
+        replacement = (
+            ("0" if output_digest[0] != "0" else "1")
+            + output_digest[1:]
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            record = Path(directory) / "ledger.md"
+            record.write_text(
+                record_text.replace(output_digest, replacement, 1),
+                encoding="utf-8",
+            )
+            self.assertIn(
+                "render contract digest does not match",
+                "\n".join(
+                    check_record(
+                        blocks,
+                        record,
+                        expected_status=V05_BASELINE_STATUS,
+                        renderer=successful_test_renderer,
+                    )
+                ),
+            )
+
+    def test_v05_ledger_rejects_mutated_output_digest_without_matching_render_artifact(
+        self,
+    ) -> None:
+        self.test_v05_ledger_rejects_mutated_render_contract_digest()
+
+    def test_cli_rejects_noncanonical_registered_ledger_alias(self) -> None:
+        alias = (
+            "docs/superpowers/reviews/../reviews/"
+            "2026-07-27-v05-beta-mermaid-rendering.md"
+        )
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(SCRIPT),
+                "--check-record",
+                alias,
+            ],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+        )
+        self.assertEqual(2, result.returncode)
+        self.assertIn("canonical registered release ledger", result.stderr)
 
     def test_extract_blocks_accepts_lf_and_crlf_fences(self) -> None:
         text = "```mermaid\r\ngraph TD\r\nA-->B\r\n```\r\n\n```mermaid\nsequenceDiagram\nA->>B: ok\n```\n"
