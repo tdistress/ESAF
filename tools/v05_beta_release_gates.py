@@ -240,8 +240,20 @@ TAG_STATE_KEYS = {
     "response_sha256",
 }
 TAG_RESOURCE = "repos/tdistress/ESAF/git/ref/tags/v0.5-beta"
-READINESS_SCOPE_INVENTORY = (
+EVIDENCE_SCOPE_INVENTORY = (
     "This evidence candidate covers the complete Git-tracked repository. Its "
+    "derived inventory contains 91 controls in 16 families, 7 architecture "
+    "patterns, 3 mapping sets, and 404 mapping provisions. The mappings "
+    "contain 81 relationship legs and 325 negative dispositions."
+)
+CLOSURE_SCOPE_INVENTORY = (
+    "This closure candidate covers the complete Git-tracked repository. Its "
+    "derived inventory contains 91 controls in 16 families, 7 architecture "
+    "patterns, 3 mapping sets, and 404 mapping provisions. The mappings "
+    "contain 81 relationship legs and 325 negative dispositions."
+)
+PUBLISHED_SCOPE_INVENTORY = (
+    "This published record covers the complete Git-tracked repository. Its "
     "derived inventory contains 91 controls in 16 families, 7 architecture "
     "patterns, 3 mapping sets, and 404 mapping provisions. The mappings "
     "contain 81 relationship legs and 325 negative dispositions."
@@ -287,6 +299,32 @@ CLOSURE_LIFECYCLE_BOUNDARY = (
     "created. The `v0.5-beta` release status is Working Draft. This closure "
     "candidate does not approve publication."
 )
+PUBLISHED_LIFECYCLE_BOUNDARY = (
+    "The current ESAF version is `0.5-beta`. The `v0.5-beta` Working Draft is "
+    "published. Publication is limited to the repository Working Draft and "
+    "does not change any artifact lifecycle state."
+)
+PUBLISHED_DRAFT_BOUNDARY = (
+    "All controls, architecture patterns, the pilot profile, mapping sets, and "
+    "mapping records remain Draft. The three mapping lifecycle records have "
+    "empty event arrays. This publication does not add reviewer metadata, "
+    "approval metadata, or lifecycle events to those artifacts."
+)
+PUBLISHED_MAPPING_BASIS = (
+    "This published Working Draft uses the owner-risk-acceptance mapping basis "
+    "recorded in front matter. Qualified approval remains deferred and "
+    "requires a validated six-role Draft campaign bound to the exact published "
+    "commit. The owner-risk decision permits only Working Draft publication; "
+    "it does not approve mappings or change artifact lifecycle state."
+)
+PUBLISHED_MAPPING_NONCLAIMS = (
+    "Issue 55 remains open for qualified review. Owner-risk acceptance does "
+    "not complete qualified review or approve the mappings. It does not "
+    "establish qualified mapping approval, artifact lifecycle approval, "
+    "certification, compliance, equivalence, endorsement, external scheme "
+    "approval, production readiness, assurance, implementation assessment, "
+    "legal sufficiency, or replacement of qualified professional judgment."
+)
 EVIDENCE_PUBLICATION_BOUNDARY = (
     "Publication remains conditional on the remote annotated `v0.5-beta` tag "
     "resolving to the exact validated merged commit. A later closure candidate "
@@ -303,10 +341,17 @@ CLOSURE_PUBLICATION_BOUNDARY = (
     "The post-merge gate remains open until merged-main validation and remote "
     "tag verification are complete."
 )
+PUBLISHED_EVIDENCE_BOUNDARY = (
+    "The exact annotated `v0.5-beta` tag object, tagged commit, publication "
+    "date, and issue 59 evidence URL are recorded in this record's front "
+    "matter. This body does not independently identify or replace that durable "
+    "publication evidence."
+)
 READINESS_BODY_SHARED_PREFIX = (
     ("heading", "# v0.5-beta publication readiness"),
     ("heading", "## Scope"),
-    ("paragraph", READINESS_SCOPE_INVENTORY),
+)
+READINESS_BODY_SHARED_SCOPE_TAIL = (
     ("paragraph", READINESS_SCOPE_BOUNDARY),
     ("heading", "## Lifecycle boundary"),
 )
@@ -320,15 +365,31 @@ READINESS_BODY_SHARED_MIDDLE = (
 READINESS_BODY_BLOCKS_BY_PHASE = {
     "evidence_candidate": (
         *READINESS_BODY_SHARED_PREFIX,
+        ("paragraph", EVIDENCE_SCOPE_INVENTORY),
+        *READINESS_BODY_SHARED_SCOPE_TAIL,
         ("paragraph", EVIDENCE_LIFECYCLE_BOUNDARY),
         *READINESS_BODY_SHARED_MIDDLE,
         ("paragraph", EVIDENCE_PUBLICATION_BOUNDARY),
     ),
     "closure_candidate": (
         *READINESS_BODY_SHARED_PREFIX,
+        ("paragraph", CLOSURE_SCOPE_INVENTORY),
+        *READINESS_BODY_SHARED_SCOPE_TAIL,
         ("paragraph", CLOSURE_LIFECYCLE_BOUNDARY),
         *READINESS_BODY_SHARED_MIDDLE,
         ("paragraph", CLOSURE_PUBLICATION_BOUNDARY),
+    ),
+    "published": (
+        *READINESS_BODY_SHARED_PREFIX,
+        ("paragraph", PUBLISHED_SCOPE_INVENTORY),
+        *READINESS_BODY_SHARED_SCOPE_TAIL,
+        ("paragraph", PUBLISHED_LIFECYCLE_BOUNDARY),
+        ("paragraph", PUBLISHED_DRAFT_BOUNDARY),
+        ("heading", "## Mapping assurance"),
+        ("paragraph", PUBLISHED_MAPPING_BASIS),
+        ("paragraph", PUBLISHED_MAPPING_NONCLAIMS),
+        ("heading", "## Publication evidence"),
+        ("paragraph", PUBLISHED_EVIDENCE_BOUNDARY),
     ),
 }
 OPTIONAL_NEGATED_DISCUSSION_BLOCK = (

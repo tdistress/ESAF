@@ -80,6 +80,10 @@ def closure_readiness_body() -> str:
     return (
         CANONICAL_READINESS_BODY
         .replace(
+            "This evidence candidate covers",
+            "This closure candidate covers",
+        )
+        .replace(
             "The current ESAF version remains `0.4-alpha`.",
             "The current ESAF version is `0.5-beta`.",
         )
@@ -105,6 +109,56 @@ def closure_readiness_body() -> str:
             "This closure candidate requires",
         )
     )
+
+
+PUBLISHED_READINESS_BODY = """# v0.5-beta publication readiness
+
+## Scope
+
+This published record covers the complete Git-tracked repository. Its derived
+inventory contains 91 controls in 16 families, 7 architecture patterns, 3
+mapping sets, and 404 mapping provisions. The mappings contain 81 relationship
+legs and 325 negative dispositions.
+
+The scope includes the ESAF-1500 assessment foundation and one Draft UK pilot
+profile under the reusable profile contract. The PCI DSS readiness record has
+the approved `HOLD` disposition. That disposition does not establish a PCI DSS
+mapping, assessment, certification, compliance, equivalence, endorsement, or
+legal conclusion.
+
+## Lifecycle boundary
+
+The current ESAF version is `0.5-beta`. The `v0.5-beta` Working Draft is
+published. Publication is limited to the repository Working Draft and does not
+change any artifact lifecycle state.
+
+All controls, architecture patterns, the pilot profile, mapping sets, and
+mapping records remain Draft. The three mapping lifecycle records have empty
+event arrays. This publication does not add reviewer metadata, approval
+metadata, or lifecycle events to those artifacts.
+
+## Mapping assurance
+
+This published Working Draft uses the owner-risk-acceptance mapping basis
+recorded in front matter. Qualified approval remains deferred and requires a
+validated six-role Draft campaign bound to the exact published commit. The
+owner-risk decision permits only Working Draft publication; it does not
+approve mappings or change artifact lifecycle state.
+
+Issue 55 remains open for qualified review. Owner-risk acceptance does not
+complete qualified review or approve the mappings. It does not establish
+qualified mapping approval, artifact lifecycle approval, certification,
+compliance, equivalence, endorsement, external scheme approval, production
+readiness, assurance, implementation assessment, legal sufficiency, or
+replacement of qualified professional judgment.
+
+## Publication evidence
+
+The exact annotated `v0.5-beta` tag object, tagged commit, publication date,
+and issue 59 evidence URL are recorded in this record's front matter. This
+body does not independently identify or replace that durable publication
+evidence.
+"""
 MAPPING_SETS = [
     "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
     "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
@@ -1930,6 +1984,58 @@ class V05ReleaseRecordTests(unittest.TestCase):
         for body in malformed_sequences:
             with self.subTest(sequence=body[:80]):
                 self.assertTrue(validate_readiness_body(evidence_record, body))
+
+    def test_closure_body_uses_phase_accurate_scope_language(self) -> None:
+        body = closure_readiness_body()
+        self.assertIn(
+            "This closure candidate covers the complete Git-tracked repository.",
+            " ".join(body.split()),
+        )
+        self.assertNotIn("This evidence candidate covers", body)
+        self.assertEqual(
+            [],
+            validate_readiness_body(record_fixture("closure_candidate"), body),
+        )
+        self.assertTrue(
+            validate_readiness_body(
+                record_fixture("closure_candidate"),
+                body.replace(
+                    "This closure candidate covers",
+                    "This evidence candidate covers",
+                    1,
+                ),
+            )
+        )
+
+    def test_published_readiness_body_has_exact_ordered_contract(self) -> None:
+        published_record = record_fixture("published")
+        self.assertEqual(
+            [],
+            validate_readiness_body(
+                published_record,
+                PUBLISHED_READINESS_BODY,
+            ),
+        )
+
+        blocks = PUBLISHED_READINESS_BODY.strip().split("\n\n")
+        invalid_bodies = (
+            "\n\n".join(blocks[:-1]) + "\n",
+            PUBLISHED_READINESS_BODY
+            + "\nThis published record has extra prose.\n",
+            "\n\n".join([blocks[1], blocks[0], *blocks[2:]]) + "\n",
+            PUBLISHED_READINESS_BODY.replace(
+                "it does not\napprove mappings",
+                "it approves mappings",
+                1,
+            ),
+        )
+        for body in invalid_bodies:
+            with self.subTest(body=body[-120:]):
+                self.assertTrue(validate_readiness_body(published_record, body))
+
+        for body in (CANONICAL_READINESS_BODY, closure_readiness_body()):
+            with self.subTest(wrong_phase_body=body[:50]):
+                self.assertTrue(validate_readiness_body(published_record, body))
 
     def test_cli_accepts_event_baseline_for_evidence_candidate(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

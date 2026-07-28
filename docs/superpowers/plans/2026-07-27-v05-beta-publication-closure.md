@@ -1211,24 +1211,22 @@ Change the readiness record to `closure_candidate`, set the resolved UTC
 publication date, set all non-post-merge gates to `ready`, leave `post_merge`
 `open`, and add only stable HTTPS evidence locators that actually exist.
 
-Use these prewritten controlled boundary statements in the readiness body:
+Replace exactly these three normalized paragraphs in their existing ordered
+positions in the readiness body:
 
 ```text
-The current ESAF version is `0.5-beta`.
-The non-post-merge v0.5 gates are ready, the post-merge gate is open, and the `v0.5-beta` tag has not been created.
-The `v0.5-beta` release status is Working Draft.
-This closure candidate does not approve publication.
-This closure candidate requires its own exact-head reviews, rendering evidence, owner and scope decision, governance decision, successful checks, and clean merge state.
+This closure candidate covers the complete Git-tracked repository. Its derived inventory contains 91 controls in 16 families, 7 architecture patterns, 3 mapping sets, and 404 mapping provisions. The mappings contain 81 relationship legs and 325 negative dispositions.
+
+The current ESAF version is `0.5-beta`. The non-post-merge v0.5 gates are ready, the post-merge gate is open, and the `v0.5-beta` tag has not been created. The `v0.5-beta` release status is Working Draft. This closure candidate does not approve publication.
+
+Publication remains conditional on the remote annotated `v0.5-beta` tag resolving to the exact validated merged commit. This closure candidate requires its own exact-head reviews, rendering evidence, owner and scope decision, governance decision, successful checks, and clean merge state. The post-merge gate remains open until merged-main validation and remote tag verification are complete.
 ```
 
-The first four sentences above shall form the complete normalized Lifecycle
-boundary paragraph in that order. The fifth shall replace only the existing
-`A later closure candidate requires...` sentence within the normalized
-Conditional publication paragraph. Retain every other heading and paragraph
-exactly, allowing only paragraph line wrapping and whitespace normalization.
-Do not add the optional evidence-candidate discussion paragraph or any other
-block. The phase-aware prose validator accepts this exact ordered closure form
-without changes to the validator or its tests.
+Retain every other heading and paragraph exactly, allowing only paragraph line
+wrapping and whitespace normalization. Do not add the optional
+evidence-candidate discussion paragraph or any other block. The phase-aware
+prose validator accepts this exact ordered closure form without changes to the
+validator or its tests.
 
 - [ ] **Step 4: Commit the six-file candidate, then validate and freeze**
 
@@ -1587,6 +1585,61 @@ the resolved tag object, tagged commit, and issue evidence URL. Update release
 plan, backlog, milestone, roadmap, and changelog to describe the published
 Working Draft without changing any artifact lifecycle state or closing issue
 55.
+
+Use this complete exact readiness body, allowing only paragraph line wrapping
+and whitespace normalization:
+
+```markdown
+# v0.5-beta publication readiness
+
+## Scope
+
+This published record covers the complete Git-tracked repository. Its derived
+inventory contains 91 controls in 16 families, 7 architecture patterns, 3
+mapping sets, and 404 mapping provisions. The mappings contain 81 relationship
+legs and 325 negative dispositions.
+
+The scope includes the ESAF-1500 assessment foundation and one Draft UK pilot
+profile under the reusable profile contract. The PCI DSS readiness record has
+the approved `HOLD` disposition. That disposition does not establish a PCI DSS
+mapping, assessment, certification, compliance, equivalence, endorsement, or
+legal conclusion.
+
+## Lifecycle boundary
+
+The current ESAF version is `0.5-beta`. The `v0.5-beta` Working Draft is
+published. Publication is limited to the repository Working Draft and does not
+change any artifact lifecycle state.
+
+All controls, architecture patterns, the pilot profile, mapping sets, and
+mapping records remain Draft. The three mapping lifecycle records have empty
+event arrays. This publication does not add reviewer metadata, approval
+metadata, or lifecycle events to those artifacts.
+
+## Mapping assurance
+
+This published Working Draft uses the owner-risk-acceptance mapping basis
+recorded in front matter. Qualified approval remains deferred and requires a
+validated six-role Draft campaign bound to the exact published commit. The
+owner-risk decision permits only Working Draft publication; it does not
+approve mappings or change artifact lifecycle state.
+
+Issue 55 remains open for qualified review. Owner-risk acceptance does not
+complete qualified review or approve the mappings. It does not establish
+qualified mapping approval, artifact lifecycle approval, certification,
+compliance, equivalence, endorsement, external scheme approval, production
+readiness, assurance, implementation assessment, legal sufficiency, or
+replacement of qualified professional judgment.
+
+## Publication evidence
+
+The exact annotated `v0.5-beta` tag object, tagged commit, publication date,
+and issue 59 evidence URL are recorded in this record's front matter. This
+body does not independently identify or replace that durable publication
+evidence.
+```
+
+Do not add the evidence-candidate optional paragraph or any other block.
 
 - [ ] **Step 3: Validate and independently review the publication record**
 
