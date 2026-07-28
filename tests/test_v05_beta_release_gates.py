@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from copy import deepcopy
 from datetime import datetime, timezone
-import hashlib
 import json
 from pathlib import Path
 import shutil
@@ -15,6 +14,19 @@ from tools.release_gates import (
     load_front_matter as load_v04_front_matter,
     validate_record as validate_v04_record,
 )
+from tools.build_mapping_review_bundle import (
+    PROFILES,
+    GitReader,
+    assemble_package,
+    parse_front_matter_bytes,
+)
+from tools.crosswalks.qualified_review_evidence import (
+    build_campaign_archive,
+    build_seal_record,
+    canonical_json_bytes as official_canonical_json_bytes,
+)
+from tools.validate_qualified_review_evidence import VALIDATOR_VERSION
+from tests.test_validate_qualified_review_evidence import CampaignFixture
 from tools.v05_beta_release_gates import (
     PHASE_GATE_STATES,
     RECORD_RELATIVE,
@@ -234,134 +246,6 @@ def owner_decision(mapping_set_id: str) -> dict[str, object]:
     }
 
 
-def qualified_manifest() -> dict[str, object]:
-    def role(mapping_index: int, role_name: str) -> dict[str, object]:
-        digest = f"{mapping_index + 1:x}" * 64
-        return {
-            "role": role_name,
-            "reviewer": {
-                "identity": f"{role_name}-{mapping_index}",
-                "organization": "Independent reviewer",
-                "verification_locator": (
-                    f"https://example.test/reviewer/{mapping_index}"
-                    f"?version={role_name}"
-                ),
-                "qualification": "Qualified independent reviewer",
-                "authorized_source_access": True,
-                "independent": True,
-                "conflicts": False,
-                "conflict_disposition": "none",
-            },
-            "owner_eligibility_accepted": True,
-            "dual_role_accepted": False,
-            "attestation": {
-                "path": f"mapping-{mapping_index}/{role_name}-attestation.md",
-                "immutable_locator": f"urn:sha256:{digest}",
-                "retention_owner": "ESAF repository owner",
-                "sha256": digest,
-            },
-            "worksheet": {
-                "path": f"mapping-{mapping_index}/{role_name}-worksheet.md",
-                "immutable_locator": f"urn:sha256:{digest}",
-                "retention_owner": "ESAF repository owner",
-                "sha256": digest,
-                "signed_sha256": digest,
-                "review_date": "2026-07-27",
-                "conclusion": "pass",
-                "findings_disposition": "all_resolved",
-                "findings": [],
-            },
-        }
-
-    return {
-        "schema_version": "1.0.0",
-        "campaign_id": "issue-55-draft-review",
-        "phase": "draft_review",
-        "candidate_state": "draft",
-        "candidate_commit": CLOSURE_SHA,
-        "retention_owner": "ESAF repository owner",
-        "retention_commitment": "Retain the immutable evidence campaign.",
-        "mapping_sets": [
-            {
-                "mapping_set_id": mapping_set_id,
-                "package": {
-                    "root": f"mapping-{index}",
-                    "manifest_path": f"mapping-{index}/manifest.json",
-                    "manifest_sha256": f"{index + 1:x}" * 64,
-                    "immutable_locator": f"urn:sha256:{f'{index + 1:x}' * 64}",
-                    "retention_owner": "ESAF repository owner",
-                },
-                "roles": [
-                    role(index, "specification_and_inventory"),
-                    role(index, "security_and_overclaiming"),
-                ],
-            }
-            for index, mapping_set_id in enumerate(MAPPING_SETS)
-        ],
-    }
-
-
-def canonical_json_bytes(value: object) -> bytes:
-    return (
-        json.dumps(
-            value,
-            ensure_ascii=False,
-            sort_keys=True,
-            separators=(",", ":"),
-        )
-        + "\n"
-    ).encode("utf-8")
-
-
-def qualified_decision() -> dict[str, object]:
-    manifest = qualified_manifest()
-    archive_sha256 = "9" * 64
-    source = source_fixture("21")
-    return {
-        "manifest": manifest,
-        "seal_record": {
-            "archive_byte_length": 4096,
-            "archive_format": "zip",
-            "archive_locator": f"urn:sha256:{archive_sha256}",
-            "archive_media_type": "application/zip",
-            "archive_sha256": archive_sha256,
-            "campaign_id": "issue-55-draft-review",
-            "candidate_commit": CLOSURE_SHA,
-            "evidence_valid": True,
-            "manifest_sha256": hashlib.sha256(
-                canonical_json_bytes(manifest)
-            ).hexdigest(),
-            "readiness_name": "transition_ready",
-            "readiness_value": True,
-            "schema_version": "1.0.0",
-            "validator_version": "1.0.0",
-        },
-        "source": source,
-    }
-
-
-def add_untrusted_qualified_finding(evidence: dict[str, object]) -> None:
-    decision = evidence["mapping_decisions"][0]
-    manifest = decision["manifest"]
-    worksheet = manifest["mapping_sets"][0]["roles"][0]["worksheet"]
-    worksheet["findings"].append(
-        {
-            "finding_id": "F-1",
-            "affected_record_ids": [],
-            "severity": "Minor",
-            "status": "resolved",
-            "disposition": "corrected",
-            "resolver_or_acceptor": "reviewer",
-            "disposition_date": "2026-07-27",
-            "acceptance_rationale": "",
-            "untrusted": True,
-        }
-    )
-    decision["seal_record"]["manifest_sha256"] = hashlib.sha256(
-        canonical_json_bytes(manifest)
-    ).hexdigest()
-
-
 def closure_evidence() -> dict[str, object]:
     governance = sourced_verdict("governance", "16")
     governance["reviewer"] = "governance-approver"
@@ -431,15 +315,23 @@ def closure_evidence() -> dict[str, object]:
             "authenticated_login": "tdistress",
             "retrieved_at": "2026-07-27T12:05:00Z",
             "complete": True,
-            "resource_ids": [
-                "repos/tdistress/ESAF/issues/comments/11",
-                "repos/tdistress/ESAF/issues/comments/12",
-                "repos/tdistress/ESAF/issues/comments/13",
-                "repos/tdistress/ESAF/issues/comments/14",
-                "repos/tdistress/ESAF/issues/comments/15",
-                "repos/tdistress/ESAF/issues/comments/16",
-                "repos/tdistress/ESAF/issues/comments/20",
-                "repos/tdistress/ESAF/issues/comments/21",
+            "resources": [
+                {
+                    "resource_id": source_fixture(identifier)["resource_path"],
+                    "observed_canonical_url": source_fixture(identifier)[
+                        "comment_url"
+                    ],
+                }
+                for identifier in (
+                    "11",
+                    "12",
+                    "13",
+                    "14",
+                    "15",
+                    "16",
+                    "20",
+                    "21",
+                )
             ],
         },
     }
@@ -462,15 +354,181 @@ def taggable_evidence() -> dict[str, object]:
     return evidence
 
 
-def qualified_evidence() -> dict[str, object]:
-    evidence = closure_evidence()
-    evidence["mapping_decision_schema"] = QUALIFIED_SCHEMA
-    evidence["mapping_decision_basis"] = "qualified_approval"
-    evidence["mapping_decisions"] = [qualified_decision()]
-    return evidence
+def bind_closure_head(evidence: dict[str, object], sha: str) -> None:
+    evidence["closure_head"] = sha
+    for name in (
+        "scope",
+        "technical",
+        "editorial",
+        "terminology",
+        "rendering",
+        "profile_scope",
+        "governance",
+    ):
+        evidence[name]["sha"] = sha
+    for command in evidence["candidate_commands"]:
+        command["sha"] = sha
+    evidence["github_checks"]["observed"][0]["sha"] = sha
+    evidence["merge_state"]["sha"] = sha
 
 
 class V05ExternalEvidenceTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.qualified_template_temporary = tempfile.TemporaryDirectory()
+        cls.qualified_template_root = (
+            Path(cls.qualified_template_temporary.name) / "retained"
+        )
+        campaign_root = cls.qualified_template_root / "campaign"
+        sealed_root = cls.qualified_template_root / "sealed"
+        campaign_root.mkdir(parents=True)
+        sealed_root.mkdir()
+        cls.qualified_candidate = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        cls.qualified_reader = GitReader(ROOT)
+        cls.qualified_assemblies = {
+            profile.mapping_set_id: assemble_package(
+                cls.qualified_reader,
+                cls.qualified_candidate,
+                profile,
+            )
+            for profile in PROFILES.values()
+        }
+        CampaignFixture(
+            campaign_root,
+            cls.qualified_candidate,
+            cls.qualified_assemblies,
+        )
+        allowlist = tuple(
+            sorted(
+                path.relative_to(campaign_root).as_posix()
+                for path in campaign_root.rglob("*")
+                if path.is_file()
+            )
+        )
+        archive_bytes = build_campaign_archive(campaign_root, allowlist)
+        manifest_bytes = (campaign_root / "REVIEW_EVIDENCE.json").read_bytes()
+        _seal_record, seal_bytes = build_seal_record(
+            manifest_bytes=manifest_bytes,
+            archive_bytes=archive_bytes,
+            archive_locator=(
+                "https://evidence.example.invalid/campaign.zip?version=1"
+            ),
+            campaign_id="issue-55-draft-review",
+            candidate_commit=cls.qualified_candidate,
+            evidence_valid=True,
+            readiness_name="transition_ready",
+            readiness_value=True,
+            validator_version=VALIDATOR_VERSION,
+        )
+        (sealed_root / "CAMPAIGN_ARCHIVE.zip").write_bytes(archive_bytes)
+        (sealed_root / "CAMPAIGN_SEAL.json").write_bytes(seal_bytes)
+        cls.qualified_affected_record_id = ""
+        for assembly in cls.qualified_assemblies.values():
+            for payload in assembly.payloads:
+                if payload.purpose == "mapping record":
+                    metadata, _body = parse_front_matter_bytes(payload.content)
+                    cls.qualified_affected_record_id = str(metadata["record_id"])
+                    break
+            if cls.qualified_affected_record_id:
+                break
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls.qualified_template_temporary.cleanup()
+
+    def official_qualified_evidence(self) -> dict[str, object]:
+        temporary = tempfile.TemporaryDirectory()
+        self.addCleanup(temporary.cleanup)
+        retained_root = Path(temporary.name) / "retained"
+        shutil.copytree(self.qualified_template_root, retained_root)
+        evidence = closure_evidence()
+        bind_closure_head(evidence, self.qualified_candidate)
+        evidence["mapping_decision_schema"] = QUALIFIED_SCHEMA
+        evidence["mapping_decision_basis"] = "qualified_approval"
+        evidence["mapping_decisions"] = [
+            {
+                "retained_root": str(retained_root),
+                "campaign_path": "campaign",
+                "archive_path": "sealed/CAMPAIGN_ARCHIVE.zip",
+                "seal_path": "sealed/CAMPAIGN_SEAL.json",
+                "source": source_fixture("21"),
+            }
+        ]
+        return evidence
+
+    def official_qualified_paths(
+        self, evidence: dict[str, object]
+    ) -> tuple[Path, Path, Path]:
+        decision = evidence["mapping_decisions"][0]
+        retained_root = Path(decision["retained_root"])
+        return (
+            retained_root / decision["campaign_path"],
+            retained_root / decision["archive_path"],
+            retained_root / decision["seal_path"],
+        )
+
+    def rewrite_official_role(
+        self,
+        evidence: dict[str, object],
+        mutate: object,
+    ) -> None:
+        campaign_root, _archive_path, _seal_path = (
+            self.official_qualified_paths(evidence)
+        )
+        manifest_path = campaign_root / "REVIEW_EVIDENCE.json"
+        manifest = json.loads(manifest_path.read_bytes())
+        mapping_set = manifest["mapping_sets"][0]
+        role = mapping_set["roles"][0]
+        mutate(role)
+        fixture = CampaignFixture.__new__(CampaignFixture)
+        fixture.root = campaign_root
+        fixture.candidate = self.qualified_candidate
+        fixture.assemblies = self.qualified_assemblies
+        fixture.phase = "draft_review"
+        fixture.campaign_id = "issue-55-draft-review"
+        fixture.candidate_state = "draft"
+        fixture.manifest = manifest
+        profile = PROFILES[str(mapping_set["mapping_set_id"])]
+        fixture.write_role(profile, mapping_set, role)
+        fixture.write_manifest()
+
+    def reseal_official_campaign(
+        self, evidence: dict[str, object]
+    ) -> None:
+        campaign_root, archive_path, seal_path = self.official_qualified_paths(
+            evidence
+        )
+        allowlist = tuple(
+            sorted(
+                path.relative_to(campaign_root).as_posix()
+                for path in campaign_root.rglob("*")
+                if path.is_file()
+            )
+        )
+        archive_bytes = build_campaign_archive(campaign_root, allowlist)
+        manifest_bytes = (campaign_root / "REVIEW_EVIDENCE.json").read_bytes()
+        _seal_record, seal_bytes = build_seal_record(
+            manifest_bytes=manifest_bytes,
+            archive_bytes=archive_bytes,
+            archive_locator=(
+                "https://evidence.example.invalid/campaign.zip?version=1"
+            ),
+            campaign_id="issue-55-draft-review",
+            candidate_commit=self.qualified_candidate,
+            evidence_valid=True,
+            readiness_name="transition_ready",
+            readiness_value=True,
+            validator_version=VALIDATOR_VERSION,
+        )
+        archive_path.write_bytes(archive_bytes)
+        seal_path.write_bytes(seal_bytes)
+
     def assert_rejected(
         self, evidence: dict[str, object], diagnostic: str, phase: str
     ) -> None:
@@ -955,6 +1013,32 @@ class V05ExternalEvidenceTests(unittest.TestCase):
                     "closure",
                 )
 
+    def test_source_comment_url_matches_sourced_verdict_url(self) -> None:
+        evidence = closure_evidence()
+        evidence["technical"]["url"] = (
+            "https://github.com/tdistress/ESAF/issues/55#issuecomment-12"
+        )
+        self.assert_rejected(
+            evidence,
+            "technical verdict URL shall equal source comment URL",
+            "closure",
+        )
+
+    def test_source_comment_url_matches_canonical_url_from_acquired_response(
+        self,
+    ) -> None:
+        evidence = closure_evidence()
+        alternate = (
+            "https://github.com/tdistress/ESAF/issues/55#issuecomment-12"
+        )
+        evidence["technical"]["source"]["comment_url"] = alternate
+        evidence["technical"]["url"] = alternate
+        self.assert_rejected(
+            evidence,
+            "technical source canonical URL shall equal acquired response",
+            "closure",
+        )
+
     def test_nested_evidence_objects_reject_unknown_keys(self) -> None:
         cases = (
             (
@@ -1116,141 +1200,160 @@ class V05ExternalEvidenceTests(unittest.TestCase):
                 mutate(evidence["mapping_decisions"][0])
                 self.assert_rejected(evidence, diagnostic, "closure")
 
-    def test_qualified_basis_requires_validated_six_role_draft_campaign(
-        self,
-    ) -> None:
-        evidence = qualified_evidence()
+    def test_qualified_manifest_must_pass_tracked_official_schema(self) -> None:
+        evidence = self.official_qualified_evidence()
         self.assertEqual(
             [],
             validate_external_evidence(
                 ROOT,
                 record_fixture("closure_candidate"),
                 evidence,
-                CLOSURE_SHA,
+                self.qualified_candidate,
                 "closure",
                 FIXED_NOW,
             ),
         )
-        corrected = qualified_evidence()
-        corrected_decision = corrected["mapping_decisions"][0]
-        worksheet = corrected_decision["manifest"]["mapping_sets"][0]["roles"][
-            0
-        ]["worksheet"]
-        worksheet["conclusion"] = "pass_after_correction"
-        worksheet["post_correction_candidate_sha"] = CLOSURE_SHA
-        corrected_decision["seal_record"]["manifest_sha256"] = hashlib.sha256(
-            canonical_json_bytes(corrected_decision["manifest"])
-        ).hexdigest()
-        self.assertEqual(
-            [],
+        campaign_root, _archive_path, _seal_path = (
+            self.official_qualified_paths(evidence)
+        )
+        manifest_path = campaign_root / "REVIEW_EVIDENCE.json"
+        manifest = json.loads(manifest_path.read_bytes())
+        manifest["untrusted"] = True
+        manifest_path.write_bytes(official_canonical_json_bytes(manifest))
+        self.reseal_official_campaign(evidence)
+        self.assertIn(
+            "qualified campaign shall pass the tracked official validator",
             validate_external_evidence(
                 ROOT,
                 record_fixture("closure_candidate"),
-                corrected,
-                CLOSURE_SHA,
+                evidence,
+                self.qualified_candidate,
                 "closure",
                 FIXED_NOW,
             ),
         )
-        wrong_correction = deepcopy(corrected)
-        wrong_decision = wrong_correction["mapping_decisions"][0]
-        wrong_decision["manifest"]["mapping_sets"][0]["roles"][0][
-            "worksheet"
-        ]["post_correction_candidate_sha"] = "a" * 40
-        wrong_decision["seal_record"]["manifest_sha256"] = hashlib.sha256(
-            canonical_json_bytes(wrong_decision["manifest"])
-        ).hexdigest()
-        self.assert_rejected(
-            wrong_correction,
-            "qualified approval requires a valid exact-candidate six-role Draft campaign",
-            "closure",
-        )
-        for name, mutate in (
-            (
-                "merge ready",
-                lambda decision: decision["seal_record"].__setitem__(
-                    "readiness_name", "merge_ready"
-                ),
-            ),
-            (
-                "reviewed",
-                lambda decision: decision["manifest"].__setitem__(
-                    "candidate_state", "reviewed"
-                ),
-            ),
-            (
-                "wrong candidate",
-                lambda decision: decision["seal_record"].__setitem__(
-                    "candidate_commit", "a" * 40
-                ),
-            ),
-            (
-                "missing role",
-                lambda decision: decision["manifest"]["mapping_sets"][0][
-                    "roles"
-                ].pop(),
-            ),
-        ):
-            with self.subTest(name=name):
-                candidate = deepcopy(evidence)
-                mutate(candidate["mapping_decisions"][0])
-                self.assert_rejected(
-                    candidate,
-                    "qualified approval requires a valid exact-candidate six-role Draft campaign",
-                    "closure",
-                )
 
-    def test_qualified_basis_rejects_unrecognized_schema_and_unproven_report(
+    def test_qualified_campaign_must_be_verified_by_official_validator(
         self,
     ) -> None:
-        cases = (
-            (
-                "arbitrary schema",
-                lambda value: value.__setitem__(
-                    "mapping_decision_schema", "arbitrary"
-                ),
-            ),
-            (
-                "absent schema",
-                lambda value: value.__setitem__("mapping_decision_schema", None),
-            ),
-            (
-                "wrapper extra",
-                lambda value: value["mapping_decisions"][0].__setitem__(
-                    "untrusted", True
-                ),
-            ),
-            (
-                "missing immutable source digest",
-                lambda value: value["mapping_decisions"][0]["source"].pop(
-                    "body_sha256"
-                ),
-            ),
-            (
-                "missing campaign identifier",
-                lambda value: value["mapping_decisions"][0][
-                    "seal_record"
-                ].pop("campaign_id"),
-            ),
-            (
-                "wrong validator provenance",
-                lambda value: value["mapping_decisions"][0][
-                    "seal_record"
-                ].__setitem__("validator_version", "unrecognized"),
-            ),
-            (
-                "untrusted nested campaign finding",
-                add_untrusted_qualified_finding,
+        evidence = self.official_qualified_evidence()
+        campaign_root, _archive_path, _seal_path = (
+            self.official_qualified_paths(evidence)
+        )
+        manifest = json.loads(
+            (campaign_root / "REVIEW_EVIDENCE.json").read_bytes()
+        )
+        attestation_path = manifest["mapping_sets"][0]["roles"][0][
+            "attestation"
+        ]["path"]
+        (campaign_root / attestation_path).write_bytes(b"forged attestation\n")
+        self.reseal_official_campaign(evidence)
+        self.assertIn(
+            "qualified campaign shall pass the tracked official validator",
+            validate_external_evidence(
+                ROOT,
+                record_fixture("closure_candidate"),
+                evidence,
+                self.qualified_candidate,
+                "closure",
+                FIXED_NOW,
             ),
         )
-        for name, mutate in cases:
-            with self.subTest(name=name):
-                evidence = qualified_evidence()
-                mutate(evidence)
-                self.assert_rejected(
-                    evidence,
-                    "qualified approval requires recognized immutable campaign evidence",
-                    "closure",
+
+    def test_qualified_seal_requires_retained_archive_and_exact_bytes(
+        self,
+    ) -> None:
+        evidence = self.official_qualified_evidence()
+        _campaign_root, archive_path, _seal_path = (
+            self.official_qualified_paths(evidence)
+        )
+        archive_path.write_bytes(archive_path.read_bytes() + b"forged")
+        self.assertIn(
+            "qualified retained archive and seal shall match exact campaign bytes",
+            validate_external_evidence(
+                ROOT,
+                record_fixture("closure_candidate"),
+                evidence,
+                self.qualified_candidate,
+                "closure",
+                FIXED_NOW,
+            ),
+        )
+
+        escaped_evidence = self.official_qualified_evidence()
+        escaped_evidence["mapping_decisions"][0]["archive_path"] = (
+            "../outside.zip"
+        )
+        self.assertIn(
+            "qualified retained evidence locators shall remain within one external root",
+            validate_external_evidence(
+                ROOT,
+                record_fixture("closure_candidate"),
+                escaped_evidence,
+                self.qualified_candidate,
+                "closure",
+                FIXED_NOW,
+            ),
+        )
+
+        seal_evidence = self.official_qualified_evidence()
+        _campaign_root, _archive_path, seal_path = (
+            self.official_qualified_paths(seal_evidence)
+        )
+        seal_record = json.loads(seal_path.read_bytes())
+        seal_record["untrusted"] = True
+        seal_path.write_bytes(official_canonical_json_bytes(seal_record))
+        self.assertIn(
+            "qualified retained archive and seal shall match exact campaign bytes",
+            validate_external_evidence(
+                ROOT,
+                record_fixture("closure_candidate"),
+                seal_evidence,
+                self.qualified_candidate,
+                "closure",
+                FIXED_NOW,
+            ),
+        )
+
+    def test_qualified_campaign_rejects_accepted_critical_or_important_findings(
+        self,
+    ) -> None:
+        for severity in ("Critical", "Important"):
+            with self.subTest(severity=severity):
+                evidence = self.official_qualified_evidence()
+
+                def accept_high_severity(role: dict[str, object]) -> None:
+                    worksheet = role["worksheet"]
+                    worksheet["findings_disposition"] = "Accepted finding"
+                    worksheet["findings"] = [
+                        {
+                            "finding_id": f"release-{severity.lower()}",
+                            "affected_record_ids": [
+                                self.qualified_affected_record_id
+                            ],
+                            "severity": severity,
+                            "status": "accepted",
+                            "disposition": "Accepted risk",
+                            "resolver_or_acceptor": "ESAF Project Owner",
+                            "disposition_date": "2026-07-27",
+                            "acceptance_rationale": (
+                                "Accepted only to exercise the release gate."
+                            ),
+                        }
+                    ]
+
+                self.rewrite_official_role(evidence, accept_high_severity)
+                self.reseal_official_campaign(evidence)
+                self.assertIn(
+                    "qualified campaign shall pass the tracked official validator",
+                    validate_external_evidence(
+                        ROOT,
+                        record_fixture("closure_candidate"),
+                        evidence,
+                        self.qualified_candidate,
+                        "closure",
+                        FIXED_NOW,
+                    ),
                 )
 
     def test_qualified_basis_rejects_synthetic_approval_decisions(self) -> None:

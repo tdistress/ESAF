@@ -6,10 +6,9 @@ from __future__ import annotations
 import argparse
 from datetime import date, datetime, timezone
 from functools import lru_cache
-import hashlib
 import io
 import json
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import re
 import subprocess
 import tarfile
@@ -191,85 +190,12 @@ QUALIFIED_SCHEMA = (
     "https://esaf-standard.org/schemas/"
     "qualified-review-evidence.schema.json"
 )
-QUALIFIED_WRAPPER_KEYS = {"manifest", "seal_record", "source"}
-QUALIFIED_MANIFEST_KEYS = {
-    "schema_version",
-    "campaign_id",
-    "phase",
-    "candidate_state",
-    "candidate_commit",
-    "retention_owner",
-    "retention_commitment",
-    "mapping_sets",
-}
-QUALIFIED_MAPPING_SET_KEYS = {"mapping_set_id", "package", "roles"}
-QUALIFIED_PACKAGE_KEYS = {
-    "root",
-    "manifest_path",
-    "manifest_sha256",
-    "immutable_locator",
-    "retention_owner",
-}
-QUALIFIED_ROLE_KEYS = {
-    "role",
-    "reviewer",
-    "owner_eligibility_accepted",
-    "dual_role_accepted",
-    "attestation",
-    "worksheet",
-}
-QUALIFIED_REVIEWER_KEYS = {
-    "identity",
-    "organization",
-    "verification_locator",
-    "qualification",
-    "authorized_source_access",
-    "independent",
-    "conflicts",
-    "conflict_disposition",
-}
-QUALIFIED_ATTESTATION_KEYS = {
-    "path",
-    "immutable_locator",
-    "retention_owner",
-    "sha256",
-}
-QUALIFIED_WORKSHEET_KEYS = {
-    "path",
-    "immutable_locator",
-    "retention_owner",
-    "sha256",
-    "signed_sha256",
-    "review_date",
-    "conclusion",
-    "findings_disposition",
-    "findings",
-}
-QUALIFIED_WORKSHEET_OPTIONAL_KEYS = {"post_correction_candidate_sha"}
-QUALIFIED_FINDING_KEYS = {
-    "finding_id",
-    "affected_record_ids",
-    "severity",
-    "status",
-    "disposition",
-    "resolver_or_acceptor",
-    "disposition_date",
-    "acceptance_rationale",
-}
-QUALIFIED_SEAL_KEYS = {
-    "archive_byte_length",
-    "archive_format",
-    "archive_locator",
-    "archive_media_type",
-    "archive_sha256",
-    "campaign_id",
-    "candidate_commit",
-    "evidence_valid",
-    "manifest_sha256",
-    "readiness_name",
-    "readiness_value",
-    "schema_version",
-    "validator_version",
+QUALIFIED_WRAPPER_KEYS = {
+    "retained_root",
+    "campaign_path",
+    "archive_path",
+    "seal_path",
+    "source",
 }
 OWNER_DECISION_KEYS = {
     "mapping_set_id",
@@ -401,7 +327,6 @@ def validate_external_evidence(
     now: datetime | None = None,
 ) -> list[str]:
     """Validate exact-candidate closure or taggable external evidence."""
-    del root
     errors: list[str] = []
     if record.get("phase") != "closure_candidate":
         errors.append("external evidence requires a closure_candidate record")
@@ -449,7 +374,7 @@ def validate_external_evidence(
         if merge_tree != closure_tree:
             errors.append("merged tree shall equal closure tree")
 
-    acquisition_ids = _validate_acquisition(
+    acquired_resources = _validate_acquisition(
         errors, evidence.get("acquisition"), now
     )
     for name in (
@@ -466,7 +391,7 @@ def validate_external_evidence(
             name,
             evidence.get(name),
             closure_head,
-            acquisition_ids,
+            acquired_resources,
         )
     _validate_human_authorities(errors, evidence)
 
@@ -477,7 +402,7 @@ def validate_external_evidence(
         "candidate",
     )
     _validate_mapping_basis(
-        errors, record, evidence, closure_head, acquisition_ids
+        errors, root, record, evidence, closure_head, acquired_resources
     )
     _validate_github_checks(errors, evidence.get("github_checks"), closure_head)
     _validate_merge_state(errors, evidence.get("merge_state"), closure_head)
@@ -512,17 +437,17 @@ def _rfc3339_utc(value: object) -> datetime | None:
 
 def _validate_acquisition(
     errors: list[str], value: object, now: datetime | None
-) -> set[str]:
+) -> dict[str, str]:
     if not isinstance(value, dict):
         errors.append("acquisition manifest is required")
-        return set()
+        return {}
     required = {
         "schema",
         "repository",
         "authenticated_login",
         "retrieved_at",
         "complete",
-        "resource_ids",
+        "resources",
     }
     if set(value) != required:
         errors.append("acquisition manifest keys are invalid")
@@ -534,16 +459,31 @@ def _validate_acquisition(
         errors.append("acquisition authenticated login is required")
     if value.get("complete") is not True:
         errors.append("acquisition manifest shall be complete")
-    identifiers = value.get("resource_ids")
+    resources = value.get("resources")
     if (
-        not isinstance(identifiers, list)
-        or not all(_nonblank(item) for item in identifiers)
-        or len(identifiers) != len(set(identifiers))
+        not isinstance(resources, list)
+        or not all(
+            isinstance(item, dict)
+            and set(item) == {"resource_id", "observed_canonical_url"}
+            and _nonblank(item.get("resource_id"))
+            and _https(item.get("observed_canonical_url"))
+            for item in resources
+        )
     ):
         errors.append("acquisition resource identifiers are invalid")
-        result: set[str] = set()
+        result: dict[str, str] = {}
     else:
-        result = set(identifiers)
+        identifiers = [str(item["resource_id"]) for item in resources]
+        if len(identifiers) != len(set(identifiers)):
+            errors.append("acquisition resource identifiers are invalid")
+            result = {}
+        else:
+            result = {
+                str(item["resource_id"]): str(
+                    item["observed_canonical_url"]
+                )
+                for item in resources
+            }
     retrieved_at = _rfc3339_utc(value.get("retrieved_at"))
     reference = now or datetime.now(timezone.utc)
     if retrieved_at is None:
@@ -557,7 +497,7 @@ def _validate_source(
     errors: list[str],
     name: str,
     value: object,
-    acquisition_ids: set[str],
+    acquired_resources: dict[str, str],
 ) -> None:
     if not isinstance(value, dict) or set(value) != SOURCE_KEYS:
         errors.append(f"{name} source keys are invalid")
@@ -584,8 +524,12 @@ def _validate_source(
         ) is None:
             errors.append(f"{name} source {field} shall be a SHA-256")
     resource_id = value.get("acquisition_resource_id")
-    if resource_id not in acquisition_ids:
+    if resource_id not in acquired_resources:
         errors.append(f"{name} source shall bind an acquired resource")
+    elif value.get("comment_url") != acquired_resources[resource_id]:
+        errors.append(
+            f"{name} source canonical URL shall equal acquired response"
+        )
     comment_id = value.get("comment_id")
     resource_path = value.get("resource_path")
     comment_url = value.get("comment_url")
@@ -612,7 +556,7 @@ def _validate_sourced_verdict(
     name: str,
     value: object,
     closure_head: object,
-    acquisition_ids: set[str],
+    acquired_resources: dict[str, str],
 ) -> None:
     additional = GOVERNANCE_KEYS if name == "governance" else (
         SCOPE_KEYS if name == "scope" else set()
@@ -640,7 +584,15 @@ def _validate_sourced_verdict(
         errors.append(f"{name} verdict URL shall use HTTPS")
     if value.get("critical") != 0 or value.get("important") != 0:
         errors.append(f"{name} verdict findings shall be zero")
-    _validate_source(errors, name, value.get("source"), acquisition_ids)
+    source = value.get("source")
+    _validate_source(errors, name, source, acquired_resources)
+    if (
+        isinstance(source, dict)
+        and value.get("url") != source.get("comment_url")
+    ):
+        errors.append(
+            f"{name} verdict URL shall equal source comment URL"
+        )
     if name == "scope":
         if (
             value.get("scope") != REPOSITORY_SCOPE
@@ -801,10 +753,11 @@ def _mapping_set_ids(record: dict[str, object]) -> list[str]:
 
 def _validate_mapping_basis(
     errors: list[str],
+    root: Path,
     record: dict[str, object],
     evidence: dict[str, object],
     closure_head: object,
-    acquisition_ids: set[str],
+    acquired_resources: dict[str, str],
 ) -> None:
     basis = evidence.get("mapping_decision_basis")
     decisions = evidence.get("mapping_decisions")
@@ -817,7 +770,7 @@ def _validate_mapping_basis(
             evidence.get("mapping_decision_schema"),
             decisions,
             closure_head,
-            acquisition_ids,
+            acquired_resources,
         )
         if (
             isinstance(decisions, list)
@@ -833,11 +786,12 @@ def _validate_mapping_basis(
     elif basis == "qualified_approval":
         _validate_qualified_campaign(
             errors,
+            root,
             record,
             evidence.get("mapping_decision_schema"),
             decisions,
             closure_head,
-            acquisition_ids,
+            acquired_resources,
         )
     else:
         errors.append("external mapping decision basis is invalid")
@@ -849,7 +803,7 @@ def _validate_owner_risk(
     schema: object,
     value: object,
     closure_head: object,
-    acquisition_ids: set[str],
+    acquired_resources: dict[str, str],
 ) -> None:
     if schema != OWNER_DECISION_SCHEMA:
         errors.append("owner-risk evidence shall use esaf-v05-owner-decision-v1")
@@ -913,7 +867,7 @@ def _validate_owner_risk(
             )
         source = decision.get("source")
         sources.append(source)
-        _validate_source(errors, "owner-risk", source, acquisition_ids)
+        _validate_source(errors, "owner-risk", source, acquired_resources)
         if not isinstance(source, dict):
             errors.append("owner-risk decision source is required")
             continue
@@ -949,271 +903,137 @@ def _string_set(value: object) -> set[str]:
 
 def _validate_qualified_campaign(
     errors: list[str],
+    root: Path,
     record: dict[str, object],
     schema: object,
     value: object,
     closure_head: object,
-    acquisition_ids: set[str],
+    acquired_resources: dict[str, str],
 ) -> None:
-    valid = (
-        schema == QUALIFIED_SCHEMA
-        and isinstance(value, list)
-        and len(value) == 1
-        and isinstance(value[0], dict)
-        and set(value[0]) == QUALIFIED_WRAPPER_KEYS
-    )
-    decision = value[0] if valid else None
-    if isinstance(decision, dict):
-        manifest = decision.get("manifest")
-        seal = decision.get("seal_record")
-        source_errors: list[str] = []
-        _validate_source(
-            source_errors,
-            "qualified",
-            decision.get("source"),
-            acquisition_ids,
-        )
-        valid = valid and not source_errors
-        valid = valid and _valid_qualified_manifest(
-            manifest, _mapping_set_ids(record), closure_head
-        )
-        valid = valid and _valid_qualified_seal(
-            seal, manifest, closure_head
-        )
-    if not valid:
+    del record
+    if (
+        schema != QUALIFIED_SCHEMA
+        or not isinstance(value, list)
+        or len(value) != 1
+        or not isinstance(value[0], dict)
+        or set(value[0]) != QUALIFIED_WRAPPER_KEYS
+    ):
         errors.append(
             "qualified approval requires recognized immutable campaign evidence"
         )
         errors.append(
             "qualified approval requires a valid exact-candidate six-role Draft campaign"
         )
-
-
-def _valid_qualified_manifest(
-    value: object, expected_ids: list[str], closure_head: object
-) -> bool:
-    if not isinstance(value, dict) or set(value) != QUALIFIED_MANIFEST_KEYS:
-        return False
-    if (
-        value.get("schema_version") != "1.0.0"
-        or value.get("phase") != "draft_review"
-        or value.get("candidate_state") != "draft"
-        or value.get("candidate_commit") != closure_head
-        or not _nonblank(value.get("campaign_id"))
-        or not _nonblank(value.get("retention_owner"))
-        or not _nonblank(value.get("retention_commitment"))
-    ):
-        return False
-    mapping_sets = value.get("mapping_sets")
-    if (
-        not isinstance(mapping_sets, list)
-        or len(mapping_sets) != len(expected_ids)
-        or not all(isinstance(item, dict) for item in mapping_sets)
-    ):
-        return False
-    observed_ids = [item.get("mapping_set_id") for item in mapping_sets]
-    if len(set(observed_ids)) != len(observed_ids) or set(observed_ids) != set(
-        expected_ids
-    ):
-        return False
-    for mapping_set in mapping_sets:
-        if set(mapping_set) != QUALIFIED_MAPPING_SET_KEYS:
-            return False
-        package = mapping_set.get("package")
-        if (
-            not isinstance(package, dict)
-            or set(package) != QUALIFIED_PACKAGE_KEYS
-            or not _digest_locator_pair(
-                package.get("manifest_sha256"),
-                package.get("immutable_locator"),
-            )
-            or not all(
-                _nonblank(package.get(field))
-                for field in ("root", "manifest_path", "retention_owner")
-            )
-        ):
-            return False
-        roles = mapping_set.get("roles")
-        if (
-            not isinstance(roles, list)
-            or len(roles) != 2
-            or not all(isinstance(role, dict) for role in roles)
-            or {role.get("role") for role in roles} != set(MISSING_ROLES)
-            or not all(
-                _valid_qualified_role(role, closure_head) for role in roles
-            )
-        ):
-            return False
-    return True
-
-
-def _valid_qualified_role(
-    value: dict[str, object], closure_head: object
-) -> bool:
-    if set(value) != QUALIFIED_ROLE_KEYS:
-        return False
-    reviewer = value.get("reviewer")
-    if (
-        not isinstance(reviewer, dict)
-        or set(reviewer) != QUALIFIED_REVIEWER_KEYS
-        or not all(
-            _nonblank(reviewer.get(field))
-            for field in (
-                "identity",
-                "organization",
-                "verification_locator",
-                "qualification",
-                "conflict_disposition",
-            )
+        return
+    decision = value[0]
+    source_errors: list[str] = []
+    _validate_source(
+        source_errors,
+        "qualified",
+        decision.get("source"),
+        acquired_resources,
+    )
+    if source_errors:
+        errors.extend(source_errors)
+        errors.append(
+            "qualified approval requires recognized immutable campaign evidence"
         )
-        or reviewer.get("authorized_source_access") is not True
-        or reviewer.get("independent") is not True
-        or not isinstance(reviewer.get("conflicts"), bool)
-    ):
-        return False
-    attestation = value.get("attestation")
-    worksheet = value.get("worksheet")
-    if (
-        value.get("owner_eligibility_accepted") is not True
-        or not isinstance(value.get("dual_role_accepted"), bool)
-        or not isinstance(attestation, dict)
-        or set(attestation) != QUALIFIED_ATTESTATION_KEYS
-        or not _digest_locator_pair(
-            attestation.get("sha256"),
-            attestation.get("immutable_locator"),
+        return
+    paths = _qualified_retained_paths(decision)
+    if paths is None or not isinstance(closure_head, str):
+        errors.append(
+            "qualified retained evidence locators shall remain within one external root"
         )
-        or not all(
-            _nonblank(attestation.get(field))
-            for field in ("path", "retention_owner")
+        errors.append(
+            "qualified approval requires a valid exact-candidate six-role Draft campaign"
         )
-        or not isinstance(worksheet, dict)
-        or not QUALIFIED_WORKSHEET_KEYS <= set(worksheet)
-        or not set(worksheet)
-        <= QUALIFIED_WORKSHEET_KEYS | QUALIFIED_WORKSHEET_OPTIONAL_KEYS
-        or not _digest_locator_pair(
-            worksheet.get("sha256"),
-            worksheet.get("immutable_locator"),
-        )
-        or not isinstance(worksheet.get("signed_sha256"), str)
-        or SHA256_RE.fullmatch(worksheet["signed_sha256"]) is None
-        or not all(
-            _nonblank(worksheet.get(field))
-            for field in ("path", "retention_owner", "findings_disposition")
-        )
-        or worksheet.get("conclusion") not in {"pass", "pass_after_correction"}
-        or not isinstance(worksheet.get("findings"), list)
-        or not all(
-            _valid_qualified_finding(finding)
-            for finding in worksheet.get("findings", [])
-        )
-    ):
-        return False
-    has_post_correction = "post_correction_candidate_sha" in worksheet
-    if (
-        (worksheet.get("conclusion") == "pass_after_correction")
-        != has_post_correction
-        or (
-            has_post_correction
-            and worksheet.get("post_correction_candidate_sha")
-            != closure_head
-        )
-    ):
-        return False
+        return
+    campaign_root, archive_path, seal_path = paths
     try:
-        date.fromisoformat(str(worksheet.get("review_date")))
-    except ValueError:
-        return False
-    return True
-
-
-def _valid_qualified_finding(value: object) -> bool:
-    if not isinstance(value, dict) or set(value) != QUALIFIED_FINDING_KEYS:
-        return False
-    affected = value.get("affected_record_ids")
-    if (
-        not _nonblank(value.get("finding_id"))
-        or not isinstance(affected, list)
-        or not all(_nonblank(item) for item in affected)
-        or value.get("severity") not in {"Critical", "Important", "Minor"}
-        or value.get("status") not in {"open", "resolved", "accepted"}
-        or not all(
-            isinstance(value.get(field), str)
-            for field in (
-                "disposition",
-                "resolver_or_acceptor",
-                "disposition_date",
-                "acceptance_rationale",
-            )
+        from tools.build_mapping_review_bundle import GitReader
+        from tools.validate_qualified_review_evidence import (
+            validate_retained_campaign,
         )
+
+        report = validate_retained_campaign(
+            GitReader(root),
+            closure_head,
+            campaign_root,
+            seal_path,
+            archive_path,
+        )
+    except (OSError, RuntimeError, UnicodeError, ValueError):
+        errors.append(
+            "qualified campaign shall pass the tracked official validator"
+        )
+        return
+    if report.evidence_valid is not True:
+        if any(
+            message.startswith("retained archive")
+            or message.startswith("retained seal")
+            for message in report.errors
+        ):
+            errors.append(
+                "qualified retained archive and seal shall match exact campaign bytes"
+            )
+        else:
+            errors.append(
+                "qualified campaign shall pass the tracked official validator"
+            )
+        return
+    if (
+        report.candidate_commit != closure_head
+        or report.readiness_name != "transition_ready"
+        or report.readiness_value is not True
+        or not _nonblank(report.campaign_id)
     ):
-        return False
-    disposition_date = value.get("disposition_date")
-    if disposition_date:
+        errors.append(
+            "qualified approval requires a valid exact-candidate six-role Draft campaign"
+        )
+
+
+def _qualified_retained_paths(
+    decision: dict[str, object],
+) -> tuple[Path, Path, Path] | None:
+    retained_root_value = decision.get("retained_root")
+    if not isinstance(retained_root_value, str):
+        return None
+    retained_root = Path(retained_root_value)
+    if not retained_root.is_absolute():
+        return None
+    try:
+        resolved_root = retained_root.resolve(strict=True)
+    except OSError:
+        return None
+    if not resolved_root.is_dir():
+        return None
+
+    resolved: list[Path] = []
+    for field in ("campaign_path", "archive_path", "seal_path"):
+        relative = decision.get(field)
+        if not isinstance(relative, str) or "\\" in relative:
+            return None
+        pure = PurePosixPath(relative)
+        if (
+            pure.is_absolute()
+            or not pure.parts
+            or any(part in {"", ".", ".."} for part in pure.parts)
+        ):
+            return None
         try:
-            date.fromisoformat(disposition_date)
-        except ValueError:
-            return False
-    return True
-
-
-def _digest_locator_pair(digest: object, locator: object) -> bool:
-    return (
-        isinstance(digest, str)
-        and SHA256_RE.fullmatch(digest) is not None
-        and isinstance(locator, str)
-        and (
-            locator == f"urn:sha256:{digest}"
-            or (
-                locator.startswith("https://")
-                and re.search(
-                    rf"[?&](?:version|versionId|generation|rev|sha256)={digest}",
-                    locator,
-                )
-                is not None
-            )
-        )
-    )
-
-
-def _valid_qualified_seal(
-    value: object, manifest: object, closure_head: object
-) -> bool:
+            candidate = resolved_root.joinpath(*pure.parts).resolve(strict=True)
+            candidate.relative_to(resolved_root)
+        except (OSError, ValueError):
+            return None
+        resolved.append(candidate)
+    campaign_root, archive_path, seal_path = resolved
     if (
-        not isinstance(value, dict)
-        or set(value) != QUALIFIED_SEAL_KEYS
-        or not isinstance(manifest, dict)
+        not campaign_root.is_dir()
+        or not archive_path.is_file()
+        or not seal_path.is_file()
     ):
-        return False
-    archive_digest = value.get("archive_sha256")
-    archive_locator = value.get("archive_locator")
-    return (
-        value.get("schema_version") == "1.0.0"
-        and value.get("validator_version") == "1.0.0"
-        and value.get("evidence_valid") is True
-        and value.get("readiness_name") == "transition_ready"
-        and value.get("readiness_value") is True
-        and value.get("candidate_commit") == closure_head
-        and value.get("campaign_id") == manifest.get("campaign_id")
-        and value.get("manifest_sha256")
-        == hashlib.sha256(_canonical_json_bytes(manifest)).hexdigest()
-        and _numeric(value.get("archive_byte_length"))
-        and value["archive_byte_length"] > 0
-        and value.get("archive_format") == "zip"
-        and value.get("archive_media_type") == "application/zip"
-        and _digest_locator_pair(archive_digest, archive_locator)
-    )
-
-
-def _canonical_json_bytes(value: object) -> bytes:
-    return (
-        json.dumps(
-            value,
-            ensure_ascii=False,
-            sort_keys=True,
-            separators=(",", ":"),
-        )
-        + "\n"
-    ).encode("utf-8")
+        return None
+    return campaign_root, archive_path, seal_path
 
 
 def _validate_github_checks(
