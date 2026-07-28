@@ -33,6 +33,7 @@ from tools.v05_beta_release_gates import (
     RECORD_RELATIVE,
     derive_scope,
     load_front_matter,
+    validate_readiness_body,
     validate_external_evidence,
     validate_record,
     validate_transition,
@@ -73,6 +74,37 @@ def readiness_document(
     body: str = CANONICAL_READINESS_BODY,
 ) -> str:
     return "---\n" + json.dumps(record) + "\n---\n" + body
+
+
+def closure_readiness_body() -> str:
+    return (
+        CANONICAL_READINESS_BODY
+        .replace(
+            "The current ESAF version remains `0.4-alpha`.",
+            "The current ESAF version is `0.5-beta`.",
+        )
+        .replace(
+            (
+                "The v0.5 gates are open, no\nclosure candidate exists, and "
+                "the `v0.5-beta` tag has not been created."
+            ),
+            (
+                "The non-post-merge v0.5 gates are ready, the post-merge "
+                "gate is open, and the `v0.5-beta` tag has not been created."
+            ),
+        )
+        .replace(
+            "This\nrecord does not approve publication.",
+            (
+                "The `v0.5-beta` release status is Working Draft. "
+                "This closure candidate does not approve publication."
+            ),
+        )
+        .replace(
+            "A later closure candidate\nrequires",
+            "This closure candidate requires",
+        )
+    )
 MAPPING_SETS = [
     "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
     "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
@@ -1782,6 +1814,54 @@ class V05ReleaseRecordTests(unittest.TestCase):
                     self.assertEqual(1, result.returncode)
                     self.assertIn("readiness body", result.stdout)
 
+    def test_readiness_body_claim_contract_rejects_authorization_variants_and_accepts_negated_discussion(
+        self,
+    ) -> None:
+        evidence_record = record_fixture("evidence_candidate")
+        harmless_negation = (
+            CANONICAL_READINESS_BODY
+            + "\nThis record does not say the mappings are approved.\n"
+        )
+        self.assertEqual(
+            [],
+            validate_readiness_body(evidence_record, harmless_negation),
+        )
+
+        closure_body = closure_readiness_body()
+        self.assertEqual(
+            [],
+            validate_readiness_body(
+                record_fixture("closure_candidate"),
+                closure_body,
+            ),
+        )
+
+        contradictions = (
+            "This record authorizes publication.",
+            "Publication is live.",
+            "This release is approved for publication.",
+            "Qualified review authorizes this release.",
+            "The mappings have mapping approval.",
+            "The mappings are not only approved.",
+            "The mappings are not unapproved.",
+            "The mappings are not not approved.",
+            (
+                "This record does not approve publication. "
+                "This record approves publication."
+            ),
+        )
+        for contradiction in contradictions:
+            with self.subTest(contradiction=contradiction):
+                errors = validate_readiness_body(
+                    evidence_record,
+                    CANONICAL_READINESS_BODY + "\n" + contradiction + "\n",
+                )
+                self.assertTrue(errors)
+                self.assertIn(
+                    "controlled prose claim contract",
+                    "\n".join(errors),
+                )
+
     def test_cli_accepts_event_baseline_for_evidence_candidate(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -2409,7 +2489,10 @@ class V05ReleaseRecordTests(unittest.TestCase):
             path.parent.mkdir(parents=True, exist_ok=True)
             if relative == RECORD_RELATIVE:
                 path.write_text(
-                    readiness_document(record_fixture("closure_candidate")),
+                    readiness_document(
+                        record_fixture("closure_candidate"),
+                        closure_readiness_body(),
+                    ),
                     encoding="utf-8",
                 )
             else:

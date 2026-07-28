@@ -5,6 +5,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
 from tools.mermaid_inventory import (
     check_record,
@@ -12,6 +13,7 @@ from tools.mermaid_inventory import (
     extract_blocks,
     ledger_rows,
     render_contract_sha256,
+    render_mermaid_blocks,
     write_render_inputs,
 )
 
@@ -160,6 +162,73 @@ class MermaidInventoryTests(unittest.TestCase):
                     )
                 ),
             )
+
+    def test_v05_ledger_rejects_all_markdown_table_row_variants(self) -> None:
+        blocks = discover(ROOT)
+        record_text = V05_LEDGER.read_text(encoding="utf-8")
+        first_row = next(
+            line
+            for line in record_text.splitlines()
+            if line.startswith("| `architectures/")
+        )
+        variants = (
+            " " + first_row,
+            "   " + first_row,
+            "\t" + first_row,
+            first_row.removeprefix("| "),
+            first_row.removesuffix(" |"),
+            first_row + " extra |",
+            first_row.replace(" | Pass |", " | extra | Pass |", 1),
+            first_row,
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            record = Path(directory) / "ledger.md"
+            for index, variant in enumerate(variants):
+                with self.subTest(index=index, variant=variant[:40]):
+                    record.write_text(
+                        record_text + "\n" + variant + "\n",
+                        encoding="utf-8",
+                    )
+                    self.assertTrue(
+                        check_record(
+                            blocks,
+                            record,
+                            expected_status=V05_BASELINE_STATUS,
+                            renderer=successful_test_renderer,
+                        )
+                    )
+
+    def test_operational_renderer_rejects_wrong_node_version(self) -> None:
+        blocks = discover(ROOT)[:1]
+        completed = subprocess.CompletedProcess(
+            args=["node", "--version"],
+            returncode=0,
+            stdout="v20.0.0\n",
+            stderr="",
+        )
+        with (
+            mock.patch(
+                "tools.mermaid_inventory.shutil.which",
+                side_effect=lambda name: f"C:/synthetic/{name}.cmd",
+            ),
+            mock.patch(
+                "tools.mermaid_inventory.subprocess.run",
+                return_value=completed,
+            ) as run,
+        ):
+            with self.assertRaisesRegex(
+                ValueError,
+                "Node version shall equal 22.23.1",
+            ):
+                render_mermaid_blocks(blocks, ROOT)
+        run.assert_called_once_with(
+            ["C:/synthetic/node.cmd", "--version"],
+            cwd=ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+        )
 
     def test_v05_ledger_rejects_mutated_render_contract_digest(
         self,

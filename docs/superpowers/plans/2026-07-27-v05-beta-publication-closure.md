@@ -1211,6 +1211,20 @@ Change the readiness record to `closure_candidate`, set the resolved UTC
 publication date, set all non-post-merge gates to `ready`, leave `post_merge`
 `open`, and add only stable HTTPS evidence locators that actually exist.
 
+Use these prewritten controlled boundary statements in the readiness body:
+
+```text
+The current ESAF version is `0.5-beta`.
+The non-post-merge v0.5 gates are ready, the post-merge gate is open, and the `v0.5-beta` tag has not been created.
+The `v0.5-beta` release status is Working Draft.
+This closure candidate does not approve publication.
+This closure candidate requires its own exact-head reviews, rendering evidence, owner and scope decision, governance decision, successful checks, and clean merge state.
+```
+
+Retain the common Draft, issue 55, conditional-tag, and mapping nonclaim
+statements exactly. The phase-aware prose validator accepts this prewritten
+closure form without changes to the validator or its tests.
+
 - [ ] **Step 4: Commit the six-file candidate, then validate and freeze**
 
 Verify the complete branch path set equals the six-path

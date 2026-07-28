@@ -269,25 +269,79 @@ EVIDENCE_CANDIDATE_BODY_STATEMENTS = (
         "successful checks, and clean merge state."
     ),
 )
-PROHIBITED_CANDIDATE_BODY_CLAIMS = (
-    re.compile(r"\bthis record approves? publication\b", re.IGNORECASE),
-    re.compile(
-        r"\bv0\.5-beta (?:is|was|has been) published\b",
-        re.IGNORECASE,
+CLOSURE_CANDIDATE_BODY_STATEMENTS = (
+    "The current ESAF version is `0.5-beta`.",
+    (
+        "The non-post-merge v0.5 gates are ready, the post-merge gate is open, "
+        "and the `v0.5-beta` tag has not been created."
     ),
-    re.compile(r"\bpublication (?:is|was|has been) approved\b", re.IGNORECASE),
-)
-PROHIBITED_MAPPING_BODY_CLAIMS = (
-    re.compile(
-        r"\bqualified review (?:is|was|has been) (?:complete|completed|approved)\b",
-        re.IGNORECASE,
-    ),
-    re.compile(
-        r"\b(?:the )?mappings?(?: sets?)? "
-        r"(?:are|were|have been) approved\b",
-        re.IGNORECASE,
+    "The `v0.5-beta` release status is Working Draft.",
+    "This closure candidate does not approve publication.",
+    (
+        "This closure candidate requires its own exact-head reviews, rendering "
+        "evidence, owner and scope decision, governance decision, successful "
+        "checks, and clean merge state."
     ),
 )
+SENSITIVE_BODY_CLAIM_RE = re.compile(
+    r"(?:"
+    r"\b\w*publish\w*\b|"
+    r"\bpublication\b|"
+    r"\blive\b|"
+    r"\b\w*authoriz\w*\b|"
+    r"\b\w*approv\w*\b|"
+    r"\bqualified\s+review\b|"
+    r"\bmapping\s+approval\b|"
+    r"\brelease\s+status\b"
+    r")",
+    re.IGNORECASE,
+)
+CONTROLLED_BODY_HEADINGS = {
+    "# v0.5-beta publication readiness",
+    "## Conditional publication",
+}
+CONTROLLED_COMMON_SENSITIVE_SENTENCES = {
+    "The PCI DSS readiness record has the approved `HOLD` disposition.",
+    (
+        "This release work does not add reviewer metadata, approval metadata, "
+        "or lifecycle events to those artifacts."
+    ),
+    (
+        "Qualified approval requires a validated six-role Draft campaign bound "
+        "to the exact closure candidate."
+    ),
+    "Issue 55 remains open for qualified review.",
+    (
+        "Owner-risk acceptance, if later given for the exact candidate, would "
+        "permit only Working Draft publication."
+    ),
+    "It would not complete qualified review or approve the mappings.",
+    (
+        "It would not establish qualified mapping approval, artifact lifecycle "
+        "approval, certification, compliance, equivalence, endorsement, "
+        "external scheme approval, production readiness, assurance, "
+        "implementation assessment, legal sufficiency, or replacement of "
+        "qualified professional judgment."
+    ),
+    (
+        "Publication remains conditional on the remote annotated `v0.5-beta` "
+        "tag resolving to the exact validated merged commit."
+    ),
+    "This record does not say the mappings are approved.",
+}
+CONTROLLED_PHASE_SENSITIVE_SENTENCES = {
+    "evidence_candidate": {
+        "This record does not approve publication.",
+    },
+    "closure_candidate": {
+        "The `v0.5-beta` release status is Working Draft.",
+        "This closure candidate does not approve publication.",
+    },
+    "published": {
+        "The `v0.5-beta` release status is Working Draft.",
+        "This publication does not approve the mappings.",
+    },
+}
 
 
 class _UniqueKeySafeLoader(yaml.SafeLoader):
@@ -365,22 +419,55 @@ def validate_readiness_body(
     normalized = " ".join(body.split())
     errors: list[str] = []
     required = list(COMMON_READINESS_BODY_STATEMENTS)
-    if record.get("phase") == "evidence_candidate":
+    phase = record.get("phase")
+    if phase == "evidence_candidate":
         required.extend(EVIDENCE_CANDIDATE_BODY_STATEMENTS)
+    elif phase == "closure_candidate":
+        required.extend(CLOSURE_CANDIDATE_BODY_STATEMENTS)
     for statement in required:
         if " ".join(statement.split()) not in normalized:
             errors.append(
                 "readiness body is missing required canonical boundary: "
                 + " ".join(statement.split())
             )
-    prohibited = list(PROHIBITED_MAPPING_BODY_CLAIMS)
-    if record.get("phase") != "published":
-        prohibited.extend(PROHIBITED_CANDIDATE_BODY_CLAIMS)
-    for pattern in prohibited:
-        if pattern.search(normalized):
-            errors.append(
-                f"readiness body contains prohibited claim matching {pattern.pattern}"
-            )
+    allowed_sensitive_sentences = (
+        CONTROLLED_COMMON_SENSITIVE_SENTENCES
+        | CONTROLLED_PHASE_SENSITIVE_SENTENCES.get(phase, set())
+    )
+    paragraphs: list[str] = []
+    current: list[str] = []
+    for raw_line in body.splitlines():
+        line = raw_line.strip()
+        if line.startswith("#"):
+            if current:
+                paragraphs.append(" ".join(current))
+                current = []
+            if (
+                SENSITIVE_BODY_CLAIM_RE.search(line)
+                and line not in CONTROLLED_BODY_HEADINGS
+            ):
+                errors.append(
+                    "readiness body controlled prose claim contract rejects "
+                    f"heading: {line}"
+                )
+        elif line:
+            current.append(line)
+        elif current:
+            paragraphs.append(" ".join(current))
+            current = []
+    if current:
+        paragraphs.append(" ".join(current))
+    for paragraph in paragraphs:
+        for sentence in re.split(r"(?<=[.!?])\s+", paragraph):
+            candidate = sentence.strip()
+            if (
+                SENSITIVE_BODY_CLAIM_RE.search(candidate)
+                and candidate not in allowed_sensitive_sentences
+            ):
+                errors.append(
+                    "readiness body controlled prose claim contract rejects "
+                    f"sentence: {candidate}"
+                )
     return errors
 
 

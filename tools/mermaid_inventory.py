@@ -229,6 +229,25 @@ def render_mermaid_blocks(
         raise ValueError(
             f"{PINNED_RENDERER} is required on PATH for operational validation"
         )
+    node_executable = shutil.which("node")
+    if node_executable is None:
+        raise ValueError(
+            f"Node {PINNED_NODE_VERSION} is required on PATH for operational validation"
+        )
+    node_version = subprocess.run(
+        [node_executable, "--version"],
+        cwd=root,
+        check=True,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+    ).stdout.strip()
+    observed_node_version = node_version.removeprefix("v")
+    if observed_node_version != PINNED_NODE_VERSION:
+        raise ValueError(
+            "Node version shall equal "
+            f"{PINNED_NODE_VERSION}; observed {node_version!r}"
+        )
     version = subprocess.run(
         [executable, "--version"],
         cwd=root,
@@ -303,7 +322,10 @@ def check_record(
             observed.append(match.groupdict())
         elif (
             structured_baseline
-            and line.startswith("|")
+            and (
+                line.lstrip(" \t").startswith("|")
+                or line.count("|") >= 2
+            )
             and line not in {V05_TABLE_HEADER, V05_TABLE_SEPARATOR}
         ):
             unparsed_rows.append(line)
