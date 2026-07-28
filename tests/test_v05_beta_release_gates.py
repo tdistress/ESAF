@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 from datetime import datetime, timezone
+import hashlib
 import json
 from pathlib import Path
 import shutil
@@ -93,6 +94,10 @@ CLAIMS_NOT_MADE = {
     "legal_sufficiency",
     "replacement_of_qualified_professional_judgment",
 }
+QUALIFIED_SCHEMA = (
+    "https://esaf-standard.org/schemas/"
+    "qualified-review-evidence.schema.json"
+)
 
 
 def record_fixture(phase: str) -> dict[str, object]:
@@ -124,9 +129,10 @@ def record_fixture(phase: str) -> dict[str, object]:
 
 
 def source_fixture(resource_id: str) -> dict[str, object]:
+    resource_path = f"repos/tdistress/ESAF/issues/comments/{resource_id}"
     return {
         "repository": "tdistress/ESAF",
-        "resource_path": f"repos/tdistress/ESAF/issues/comments/{resource_id}",
+        "resource_path": resource_path,
         "comment_url": (
             "https://github.com/tdistress/ESAF/issues/59"
             f"#issuecomment-{resource_id}"
@@ -139,7 +145,7 @@ def source_fixture(resource_id: str) -> dict[str, object]:
         "updated_at": "2026-07-27T12:00:00Z",
         "body_sha256": "a" * 64,
         "response_sha256": "b" * 64,
-        "acquisition_resource_id": f"comment-{resource_id}",
+        "acquisition_resource_id": resource_path,
         "source_verified_at": "2026-07-27T12:05:00Z",
     }
 
@@ -158,29 +164,41 @@ def sourced_verdict(name: str, resource_id: str) -> dict[str, object]:
     }
 
 
-def mermaid_result() -> dict[str, object]:
-    return {
+def mermaid_result(*, taggable: bool = False) -> dict[str, object]:
+    result: dict[str, object] = {
         "rendered_blocks": 23,
         "renderer": "@mermaid-js/mermaid-cli@11.16.0",
         "visual_review": "approved",
         "candidate_inventory_equal": True,
-        "merge_tree_equal": True,
         "candidate_review_url": (
             "https://github.com/tdistress/ESAF/issues/59#issuecomment-14"
         ),
         "candidate_reviewer": "candidate rendering reviewer",
-        "post_merge_reviewer": "post-merge rendering reviewer",
         "reviewed_at": "2026-07-27T12:05:00Z",
     }
+    if taggable:
+        result.update(
+            {
+                "merge_tree_equal": True,
+                "post_merge_reviewer": "post-merge rendering reviewer",
+            }
+        )
+    return result
 
 
-def command_results(sha: str) -> list[dict[str, object]]:
+def command_results(
+    sha: str | None, *, taggable: bool = False
+) -> list[dict[str, object]]:
     return [
         {
             "name": name,
-            "sha": sha,
             "exit_code": 0,
-            "result": mermaid_result() if name == "mermaid_rendering" else "passed",
+            "result": (
+                mermaid_result(taggable=taggable)
+                if name == "mermaid_rendering"
+                else "passed"
+            ),
+            **({"sha": sha} if sha is not None else {}),
         }
         for name in COMMAND_IDS
     ]
@@ -216,8 +234,139 @@ def owner_decision(mapping_set_id: str) -> dict[str, object]:
     }
 
 
+def qualified_manifest() -> dict[str, object]:
+    def role(mapping_index: int, role_name: str) -> dict[str, object]:
+        digest = f"{mapping_index + 1:x}" * 64
+        return {
+            "role": role_name,
+            "reviewer": {
+                "identity": f"{role_name}-{mapping_index}",
+                "organization": "Independent reviewer",
+                "verification_locator": (
+                    f"https://example.test/reviewer/{mapping_index}"
+                    f"?version={role_name}"
+                ),
+                "qualification": "Qualified independent reviewer",
+                "authorized_source_access": True,
+                "independent": True,
+                "conflicts": False,
+                "conflict_disposition": "none",
+            },
+            "owner_eligibility_accepted": True,
+            "dual_role_accepted": False,
+            "attestation": {
+                "path": f"mapping-{mapping_index}/{role_name}-attestation.md",
+                "immutable_locator": f"urn:sha256:{digest}",
+                "retention_owner": "ESAF repository owner",
+                "sha256": digest,
+            },
+            "worksheet": {
+                "path": f"mapping-{mapping_index}/{role_name}-worksheet.md",
+                "immutable_locator": f"urn:sha256:{digest}",
+                "retention_owner": "ESAF repository owner",
+                "sha256": digest,
+                "signed_sha256": digest,
+                "review_date": "2026-07-27",
+                "conclusion": "pass",
+                "findings_disposition": "all_resolved",
+                "findings": [],
+            },
+        }
+
+    return {
+        "schema_version": "1.0.0",
+        "campaign_id": "issue-55-draft-review",
+        "phase": "draft_review",
+        "candidate_state": "draft",
+        "candidate_commit": CLOSURE_SHA,
+        "retention_owner": "ESAF repository owner",
+        "retention_commitment": "Retain the immutable evidence campaign.",
+        "mapping_sets": [
+            {
+                "mapping_set_id": mapping_set_id,
+                "package": {
+                    "root": f"mapping-{index}",
+                    "manifest_path": f"mapping-{index}/manifest.json",
+                    "manifest_sha256": f"{index + 1:x}" * 64,
+                    "immutable_locator": f"urn:sha256:{f'{index + 1:x}' * 64}",
+                    "retention_owner": "ESAF repository owner",
+                },
+                "roles": [
+                    role(index, "specification_and_inventory"),
+                    role(index, "security_and_overclaiming"),
+                ],
+            }
+            for index, mapping_set_id in enumerate(MAPPING_SETS)
+        ],
+    }
+
+
+def canonical_json_bytes(value: object) -> bytes:
+    return (
+        json.dumps(
+            value,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        + "\n"
+    ).encode("utf-8")
+
+
+def qualified_decision() -> dict[str, object]:
+    manifest = qualified_manifest()
+    archive_sha256 = "9" * 64
+    source = source_fixture("21")
+    return {
+        "manifest": manifest,
+        "seal_record": {
+            "archive_byte_length": 4096,
+            "archive_format": "zip",
+            "archive_locator": f"urn:sha256:{archive_sha256}",
+            "archive_media_type": "application/zip",
+            "archive_sha256": archive_sha256,
+            "campaign_id": "issue-55-draft-review",
+            "candidate_commit": CLOSURE_SHA,
+            "evidence_valid": True,
+            "manifest_sha256": hashlib.sha256(
+                canonical_json_bytes(manifest)
+            ).hexdigest(),
+            "readiness_name": "transition_ready",
+            "readiness_value": True,
+            "schema_version": "1.0.0",
+            "validator_version": "1.0.0",
+        },
+        "source": source,
+    }
+
+
+def add_untrusted_qualified_finding(evidence: dict[str, object]) -> None:
+    decision = evidence["mapping_decisions"][0]
+    manifest = decision["manifest"]
+    worksheet = manifest["mapping_sets"][0]["roles"][0]["worksheet"]
+    worksheet["findings"].append(
+        {
+            "finding_id": "F-1",
+            "affected_record_ids": [],
+            "severity": "Minor",
+            "status": "resolved",
+            "disposition": "corrected",
+            "resolver_or_acceptor": "reviewer",
+            "disposition_date": "2026-07-27",
+            "acceptance_rationale": "",
+            "untrusted": True,
+        }
+    )
+    decision["seal_record"]["manifest_sha256"] = hashlib.sha256(
+        canonical_json_bytes(manifest)
+    ).hexdigest()
+
+
 def closure_evidence() -> dict[str, object]:
     governance = sourced_verdict("governance", "16")
+    governance["reviewer"] = "governance-approver"
+    governance["role"] = "Steering Committee approver"
+    governance["source"]["author_login"] = "governance-approver"
     governance.update(
         {
             "disposition": "approved_for_working_draft_publication",
@@ -228,6 +377,13 @@ def closure_evidence() -> dict[str, object]:
         }
     )
     scope = sourced_verdict("scope", "10")
+    owner_source = source_fixture("20")
+    owner_source["author_login"] = "tdistress"
+    owner_source["author_association"] = "OWNER"
+    scope["reviewer"] = "tdistress"
+    scope["role"] = "repository owner"
+    scope["url"] = owner_source["comment_url"]
+    scope["source"] = owner_source
     scope.update(
         {
             "disposition": "approved_for_working_draft_closure",
@@ -276,14 +432,14 @@ def closure_evidence() -> dict[str, object]:
             "retrieved_at": "2026-07-27T12:05:00Z",
             "complete": True,
             "resource_ids": [
-                "comment-10",
-                "comment-11",
-                "comment-12",
-                "comment-13",
-                "comment-14",
-                "comment-15",
-                "comment-16",
-                "comment-20",
+                "repos/tdistress/ESAF/issues/comments/11",
+                "repos/tdistress/ESAF/issues/comments/12",
+                "repos/tdistress/ESAF/issues/comments/13",
+                "repos/tdistress/ESAF/issues/comments/14",
+                "repos/tdistress/ESAF/issues/comments/15",
+                "repos/tdistress/ESAF/issues/comments/16",
+                "repos/tdistress/ESAF/issues/comments/20",
+                "repos/tdistress/ESAF/issues/comments/21",
             ],
         },
     }
@@ -299,10 +455,18 @@ def taggable_evidence() -> dict[str, object]:
                 "schema": "esaf-v05-post-merge-results-v1",
                 "sha": MERGE_SHA,
                 "tree": CLOSURE_TREE,
-                "commands": command_results(MERGE_SHA),
+                "commands": command_results(None, taggable=True),
             },
         }
     )
+    return evidence
+
+
+def qualified_evidence() -> dict[str, object]:
+    evidence = closure_evidence()
+    evidence["mapping_decision_schema"] = QUALIFIED_SCHEMA
+    evidence["mapping_decision_basis"] = "qualified_approval"
+    evidence["mapping_decisions"] = [qualified_decision()]
     return evidence
 
 
@@ -517,13 +681,6 @@ class V05ExternalEvidenceTests(unittest.TestCase):
                 1,
                 "full_suite post-merge command shall succeed",
             ),
-            (
-                "taggable",
-                "post_merge",
-                "sha",
-                "a" * 40,
-                "full_suite post-merge command shall be bound to merge head",
-            ),
         ):
             with self.subTest(phase=phase, field=field):
                 evidence = (
@@ -536,6 +693,108 @@ class V05ExternalEvidenceTests(unittest.TestCase):
                 )
                 commands[0][field] = value
                 self.assert_rejected(evidence, diagnostic, phase)
+
+    def test_taggable_accepts_exact_task8_post_merge_results_shape(self) -> None:
+        evidence = taggable_evidence()
+        evidence["post_merge"] = {
+            "schema": "esaf-v05-post-merge-results-v1",
+            "sha": MERGE_SHA,
+            "tree": CLOSURE_TREE,
+            "commands": [
+                {"name": "full_suite", "exit_code": 0, "result": "passed"},
+                {"name": "assessment", "exit_code": 0, "result": "passed"},
+                {"name": "profiles", "exit_code": 0, "result": "passed"},
+                {"name": "controls", "exit_code": 0, "result": "passed"},
+                {"name": "architectures", "exit_code": 0, "result": "passed"},
+                {"name": "migration", "exit_code": 0, "result": "passed"},
+                {"name": "crosswalk_current", "exit_code": 0, "result": "passed"},
+                {"name": "crosswalk_baseline", "exit_code": 0, "result": "passed"},
+                {"name": "pci_readiness", "exit_code": 0, "result": "passed"},
+                {"name": "links", "exit_code": 0, "result": "passed"},
+                {"name": "release_v04", "exit_code": 0, "result": "passed"},
+                {"name": "release_v05", "exit_code": 0, "result": "passed"},
+                {"name": "mermaid_inventory", "exit_code": 0, "result": "passed"},
+                {
+                    "name": "mermaid_rendering",
+                    "exit_code": 0,
+                    "result": {
+                        "rendered_blocks": 23,
+                        "renderer": "@mermaid-js/mermaid-cli@11.16.0",
+                        "visual_review": "approved",
+                        "candidate_inventory_equal": True,
+                        "merge_tree_equal": True,
+                        "candidate_review_url": (
+                            "https://github.com/tdistress/ESAF/issues/59"
+                            "#issuecomment-14"
+                        ),
+                        "candidate_reviewer": "candidate rendering reviewer",
+                        "post_merge_reviewer": "post-merge rendering reviewer",
+                        "reviewed_at": "2026-07-27T12:05:00Z",
+                    },
+                },
+                {"name": "whole_range_diff", "exit_code": 0, "result": "passed"},
+                {
+                    "name": "cache_count",
+                    "exit_code": 0,
+                    "result": "0 __pycache__ directories",
+                },
+                {"name": "clean_status", "exit_code": 0, "result": "clean"},
+            ],
+        }
+        owner_record = record_fixture("closure_candidate")
+        owner_record["mapping_decision_basis"] = "owner_risk_acceptance"
+        self.assertEqual(
+            [],
+            validate_external_evidence(
+                ROOT,
+                owner_record,
+                evidence,
+                MERGE_SHA,
+                "taggable",
+                FIXED_NOW,
+            ),
+        )
+
+    def test_closure_mermaid_requires_candidate_review_only(self) -> None:
+        evidence = closure_evidence()
+        command = next(
+            item
+            for item in evidence["candidate_commands"]
+            if item["name"] == "mermaid_rendering"
+        )
+        self.assertNotIn("post_merge_reviewer", command["result"])
+        self.assertNotIn("merge_tree_equal", command["result"])
+        owner_record = record_fixture("closure_candidate")
+        owner_record["mapping_decision_basis"] = "owner_risk_acceptance"
+        self.assertEqual(
+            [],
+            validate_external_evidence(
+                ROOT,
+                owner_record,
+                evidence,
+                CLOSURE_SHA,
+                "closure",
+                FIXED_NOW,
+            ),
+        )
+
+    def test_taggable_mermaid_requires_postmerge_review_and_tree_equality(
+        self,
+    ) -> None:
+        for field in ("post_merge_reviewer", "merge_tree_equal"):
+            with self.subTest(field=field):
+                evidence = taggable_evidence()
+                command = next(
+                    item
+                    for item in evidence["post_merge"]["commands"]
+                    if item["name"] == "mermaid_rendering"
+                )
+                command["result"].pop(field)
+                self.assert_rejected(
+                    evidence,
+                    "mermaid_rendering result shall be a structured visual review",
+                    "taggable",
+                )
 
     def test_mermaid_rendering_result_is_structured_and_exact(self) -> None:
         cases = (
@@ -614,6 +873,162 @@ class V05ExternalEvidenceTests(unittest.TestCase):
                 evidence = closure_evidence()
                 mutate(evidence)
                 self.assert_rejected(evidence, diagnostic, "closure")
+
+    def test_taggable_rejects_merge_head_equal_to_closure_head(self) -> None:
+        evidence = taggable_evidence()
+        evidence["merge_head"] = CLOSURE_SHA
+        evidence["post_merge"]["sha"] = CLOSURE_SHA
+        self.assert_rejected(
+            evidence,
+            "merge head shall differ from closure head",
+            "taggable",
+        )
+
+    def test_owner_risk_scope_requires_authenticated_owner_source(self) -> None:
+        for field, value in (
+            ("author_association", "COLLABORATOR"),
+            ("author_login", "other"),
+        ):
+            with self.subTest(field=field):
+                evidence = closure_evidence()
+                evidence["scope"]["source"][field] = value
+                self.assert_rejected(
+                    evidence,
+                    "scope approval shall use its authenticated OWNER source",
+                    "closure",
+                )
+
+    def test_governance_approver_matches_authenticated_source(self) -> None:
+        evidence = closure_evidence()
+        evidence["governance"]["reviewer"] = "different-approver"
+        self.assert_rejected(
+            evidence,
+            "governance approver shall match its authenticated source author",
+            "closure",
+        )
+
+    def test_governance_source_is_distinct_from_owner_scope_source(self) -> None:
+        evidence = closure_evidence()
+        evidence["governance"]["source"] = deepcopy(evidence["scope"]["source"])
+        evidence["governance"]["reviewer"] = "tdistress"
+        evidence["governance"]["url"] = evidence["scope"]["url"]
+        self.assert_rejected(
+            evidence,
+            "governance source shall be distinct from owner and scope source",
+            "closure",
+        )
+
+    def test_source_path_comment_id_url_and_acquisition_id_are_consistent(
+        self,
+    ) -> None:
+        cases = (
+            (
+                "resource path",
+                lambda source: source.__setitem__(
+                    "resource_path",
+                    "repos/tdistress/ESAF/issues/comments/999",
+                ),
+            ),
+            (
+                "comment URL",
+                lambda source: source.__setitem__(
+                    "comment_url",
+                    "https://github.com/tdistress/ESAF/issues/59"
+                    "#issuecomment-999",
+                ),
+            ),
+            (
+                "acquisition resource",
+                lambda source: source.__setitem__(
+                    "acquisition_resource_id",
+                    "repos/tdistress/ESAF/issues/comments/999",
+                ),
+            ),
+        )
+        for name, mutate in cases:
+            with self.subTest(name=name):
+                evidence = closure_evidence()
+                mutate(evidence["technical"]["source"])
+                self.assert_rejected(
+                    evidence,
+                    "technical source identity is inconsistent",
+                    "closure",
+                )
+
+    def test_nested_evidence_objects_reject_unknown_keys(self) -> None:
+        cases = (
+            (
+                "candidate command",
+                "closure",
+                lambda value: value["candidate_commands"][0].__setitem__(
+                    "untrusted", True
+                ),
+                "candidate command keys are invalid",
+            ),
+            (
+                "owner decision",
+                "closure",
+                lambda value: value["mapping_decisions"][0].__setitem__(
+                    "untrusted", True
+                ),
+                "owner-risk decision keys are invalid",
+            ),
+            (
+                "owner missing role",
+                "closure",
+                lambda value: value["mapping_decisions"][0][
+                    "missing_qualified_roles"
+                ][0].__setitem__("untrusted", True),
+                "owner-risk missing-role keys are invalid",
+            ),
+            (
+                "GitHub checks",
+                "closure",
+                lambda value: value["github_checks"].__setitem__(
+                    "untrusted", True
+                ),
+                "GitHub checks keys are invalid",
+            ),
+            (
+                "GitHub check",
+                "closure",
+                lambda value: value["github_checks"]["observed"][0].__setitem__(
+                    "untrusted", True
+                ),
+                "GitHub check keys are invalid",
+            ),
+            (
+                "merge state",
+                "closure",
+                lambda value: value["merge_state"].__setitem__(
+                    "untrusted", True
+                ),
+                "merge state keys are invalid",
+            ),
+            (
+                "post-merge evidence",
+                "taggable",
+                lambda value: value["post_merge"].__setitem__(
+                    "untrusted", True
+                ),
+                "post-merge evidence keys are invalid",
+            ),
+            (
+                "post-merge command",
+                "taggable",
+                lambda value: value["post_merge"]["commands"][0].__setitem__(
+                    "untrusted", True
+                ),
+                "post-merge command keys are invalid",
+            ),
+        )
+        for name, phase, mutate, diagnostic in cases:
+            with self.subTest(name=name):
+                evidence = (
+                    taggable_evidence() if phase == "taggable" else closure_evidence()
+                )
+                mutate(evidence)
+                self.assert_rejected(evidence, diagnostic, phase)
 
     def test_owner_risk_basis_is_uniform_and_complete(self) -> None:
         cases = (
@@ -704,24 +1119,7 @@ class V05ExternalEvidenceTests(unittest.TestCase):
     def test_qualified_basis_requires_validated_six_role_draft_campaign(
         self,
     ) -> None:
-        evidence = closure_evidence()
-        evidence["mapping_decision_schema"] = "esaf-qualified-review-campaign-v1"
-        evidence["mapping_decision_basis"] = "qualified_approval"
-        evidence["mapping_decisions"] = [
-            {
-                "evidence_valid": True,
-                "readiness_name": "transition_ready",
-                "candidate_state": "draft",
-                "candidate_sha": CLOSURE_SHA,
-                "mapping_sets": [
-                    {
-                        "mapping_set_id": mapping_set_id,
-                        "roles": list(MISSING_ROLES),
-                    }
-                    for mapping_set_id in MAPPING_SETS
-                ],
-            }
-        ]
+        evidence = qualified_evidence()
         self.assertEqual(
             [],
             validate_external_evidence(
@@ -733,22 +1131,64 @@ class V05ExternalEvidenceTests(unittest.TestCase):
                 FIXED_NOW,
             ),
         )
+        corrected = qualified_evidence()
+        corrected_decision = corrected["mapping_decisions"][0]
+        worksheet = corrected_decision["manifest"]["mapping_sets"][0]["roles"][
+            0
+        ]["worksheet"]
+        worksheet["conclusion"] = "pass_after_correction"
+        worksheet["post_correction_candidate_sha"] = CLOSURE_SHA
+        corrected_decision["seal_record"]["manifest_sha256"] = hashlib.sha256(
+            canonical_json_bytes(corrected_decision["manifest"])
+        ).hexdigest()
+        self.assertEqual(
+            [],
+            validate_external_evidence(
+                ROOT,
+                record_fixture("closure_candidate"),
+                corrected,
+                CLOSURE_SHA,
+                "closure",
+                FIXED_NOW,
+            ),
+        )
+        wrong_correction = deepcopy(corrected)
+        wrong_decision = wrong_correction["mapping_decisions"][0]
+        wrong_decision["manifest"]["mapping_sets"][0]["roles"][0][
+            "worksheet"
+        ]["post_correction_candidate_sha"] = "a" * 40
+        wrong_decision["seal_record"]["manifest_sha256"] = hashlib.sha256(
+            canonical_json_bytes(wrong_decision["manifest"])
+        ).hexdigest()
+        self.assert_rejected(
+            wrong_correction,
+            "qualified approval requires a valid exact-candidate six-role Draft campaign",
+            "closure",
+        )
         for name, mutate in (
             (
                 "merge ready",
-                lambda report: report.__setitem__("readiness_name", "merge_ready"),
+                lambda decision: decision["seal_record"].__setitem__(
+                    "readiness_name", "merge_ready"
+                ),
             ),
             (
                 "reviewed",
-                lambda report: report.__setitem__("candidate_state", "reviewed"),
+                lambda decision: decision["manifest"].__setitem__(
+                    "candidate_state", "reviewed"
+                ),
             ),
             (
                 "wrong candidate",
-                lambda report: report.__setitem__("candidate_sha", "a" * 40),
+                lambda decision: decision["seal_record"].__setitem__(
+                    "candidate_commit", "a" * 40
+                ),
             ),
             (
                 "missing role",
-                lambda report: report["mapping_sets"][0]["roles"].pop(),
+                lambda decision: decision["manifest"]["mapping_sets"][0][
+                    "roles"
+                ].pop(),
             ),
         ):
             with self.subTest(name=name):
@@ -760,9 +1200,62 @@ class V05ExternalEvidenceTests(unittest.TestCase):
                     "closure",
                 )
 
+    def test_qualified_basis_rejects_unrecognized_schema_and_unproven_report(
+        self,
+    ) -> None:
+        cases = (
+            (
+                "arbitrary schema",
+                lambda value: value.__setitem__(
+                    "mapping_decision_schema", "arbitrary"
+                ),
+            ),
+            (
+                "absent schema",
+                lambda value: value.__setitem__("mapping_decision_schema", None),
+            ),
+            (
+                "wrapper extra",
+                lambda value: value["mapping_decisions"][0].__setitem__(
+                    "untrusted", True
+                ),
+            ),
+            (
+                "missing immutable source digest",
+                lambda value: value["mapping_decisions"][0]["source"].pop(
+                    "body_sha256"
+                ),
+            ),
+            (
+                "missing campaign identifier",
+                lambda value: value["mapping_decisions"][0][
+                    "seal_record"
+                ].pop("campaign_id"),
+            ),
+            (
+                "wrong validator provenance",
+                lambda value: value["mapping_decisions"][0][
+                    "seal_record"
+                ].__setitem__("validator_version", "unrecognized"),
+            ),
+            (
+                "untrusted nested campaign finding",
+                add_untrusted_qualified_finding,
+            ),
+        )
+        for name, mutate in cases:
+            with self.subTest(name=name):
+                evidence = qualified_evidence()
+                mutate(evidence)
+                self.assert_rejected(
+                    evidence,
+                    "qualified approval requires recognized immutable campaign evidence",
+                    "closure",
+                )
+
     def test_qualified_basis_rejects_synthetic_approval_decisions(self) -> None:
         evidence = closure_evidence()
-        evidence["mapping_decision_schema"] = "esaf-qualified-review-campaign-v1"
+        evidence["mapping_decision_schema"] = QUALIFIED_SCHEMA
         evidence["mapping_decision_basis"] = "qualified_approval"
         evidence["mapping_decisions"] = [
             {
