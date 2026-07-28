@@ -174,6 +174,31 @@ def section(text: str, heading: str) -> str:
     return match.group(1)
 
 
+def top_level_list_item(text: str, marker: str) -> str:
+    items: list[str] = []
+    current: list[str] | None = None
+    for line in text.splitlines():
+        if line.startswith("- "):
+            if current is not None:
+                items.append("\n".join(current))
+            current = [line]
+        elif line.startswith("#"):
+            if current is not None:
+                items.append("\n".join(current))
+                current = None
+        elif current is not None:
+            current.append(line)
+    if current is not None:
+        items.append("\n".join(current))
+
+    matches = [item for item in items if marker in item]
+    if len(matches) != 1:
+        raise AssertionError(
+            f"expected exactly one top-level list item containing {marker!r}, found {len(matches)}"
+        )
+    return matches[0]
+
+
 def markdown_table_dispositions(text: str) -> dict[str, str]:
     rows: dict[str, str] = {}
     for line in text.splitlines():
@@ -495,24 +520,57 @@ class PciDssReadinessPublicationTests(unittest.TestCase):
         active = section(text, "Active release workstreams")
         deferred = section(text, "Deferred assurance follow-up")
         completed = section(text, "Completed workstreams")
-        self.assertIn("https://github.com/tdistress/ESAF/issues/59", active)
+        issue_59_url = "https://github.com/tdistress/ESAF/issues/59"
+        issue_55_url = "https://github.com/tdistress/ESAF/issues/55"
+        self.assertIn(issue_59_url, active)
         self.assertNotIn("https://github.com/tdistress/ESAF/issues/55", active)
         self.assertNotIn("https://github.com/tdistress/ESAF/issues/58", active)
+        issue_59 = top_level_list_item(active, issue_59_url)
         self.assertRegex(
-            active,
+            issue_59,
             r"validated exact-candidate owner-risk\s+acceptance",
         )
-        self.assertIn("https://github.com/tdistress/ESAF/issues/55", deferred)
         self.assertNotIn("https://github.com/tdistress/ESAF/issues/59", deferred)
+        issue_55 = top_level_list_item(deferred, issue_55_url)
+        self.assertIn(issue_55_url, issue_55)
         self.assertRegex(
-            deferred,
+            issue_55,
             r"remains open until\s+qualified review is complete",
+        )
+        self.assertRegex(
+            issue_55,
+            r"owner-risk disposition defers this work and does not complete\s+qualified review or change a mapping lifecycle state",
         )
         self.assertIn("https://github.com/tdistress/ESAF/issues/58", completed)
         self.assertRegex(
             completed,
             r"completed through the evidenced `HOLD`\s+path",
         )
+
+    def test_top_level_list_item_excludes_decoy_conditions_and_rejects_duplicate_markers(
+        self,
+    ) -> None:
+        issue_url = "https://github.com/tdistress/ESAF/issues/55"
+        decoy_condition = (
+            "owner-risk disposition defers this work and does not complete "
+            "qualified review or change a mapping lifecycle state"
+        )
+        item = top_level_list_item(
+            "\n".join(
+                (
+                    f"- [Issue 55]({issue_url}) remains open",
+                    "  until qualified review is complete.",
+                    f"- Decoy item keeps the {decoy_condition}.",
+                )
+            ),
+            issue_url,
+        )
+        self.assertIn("remains open", item)
+        self.assertNotIn(decoy_condition, item)
+        with self.assertRaisesRegex(AssertionError, "exactly one"):
+            top_level_list_item("- another item", "marker")
+        with self.assertRaisesRegex(AssertionError, "exactly one"):
+            top_level_list_item("- marker\n- marker", "marker")
 
     def test_ci_covers_readiness_inputs_and_checks_renderer(self) -> None:
         workflow = yaml.load(
