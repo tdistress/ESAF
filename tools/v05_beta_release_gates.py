@@ -144,6 +144,24 @@ CLAIMS_NOT_MADE = {
     "legal_sufficiency",
     "replacement_of_qualified_professional_judgment",
 }
+TAG_LIMITATION_LINES = (
+    "Status: Working Draft",
+    "Decision basis: owner_risk_acceptance",
+    "Owner-risk decision: permits Working Draft publication only",
+    "Qualified review: deferred",
+    "Issue 55: open",
+    "All mappings: Draft",
+    "Artifact lifecycle approval: not granted",
+)
+TAG_MESSAGE = "\n".join(
+    (
+        "ESAF v0.5-beta",
+        *TAG_LIMITATION_LINES,
+        "Claims not made:",
+        *(f"- {claim}" for claim in sorted(CLAIMS_NOT_MADE)),
+        "",
+    )
+)
 EVIDENCE_SCHEMA = "esaf-v05-release-evidence-v1"
 POST_MERGE_SCHEMA = "esaf-v05-post-merge-results-v1"
 ACQUISITION_SCHEMA = "esaf-v05-acquisition-v1"
@@ -818,8 +836,15 @@ def validate_external_evidence(
     _validate_issue_55(
         errors, evidence.get("issue_55"), acquired_resources
     )
+    closure_pr_number = _validate_closure_pr_resource(
+        errors, acquired_resources
+    )
     _validate_acquisition_coverage(
-        errors, evidence, acquired_resources, phase
+        errors,
+        evidence,
+        acquired_resources,
+        phase,
+        closure_pr_number,
     )
     for name in (
         "scope",
@@ -838,6 +863,11 @@ def validate_external_evidence(
             evidence.get(name),
             closure_head,
             acquired_resources,
+            expected_container=(
+                ("pull", closure_pr_number)
+                if closure_pr_number is not None
+                else None
+            ),
         )
     _validate_human_authorities(errors, evidence)
 
@@ -848,7 +878,13 @@ def validate_external_evidence(
         "candidate",
     )
     _validate_mapping_basis(
-        errors, root, record, evidence, closure_head, acquired_resources
+        errors,
+        root,
+        record,
+        evidence,
+        closure_head,
+        acquired_resources,
+        closure_pr_number,
     )
     _validate_github_checks(errors, evidence.get("github_checks"), closure_head)
     _validate_merge_state(errors, evidence.get("merge_state"), closure_head)
@@ -879,6 +915,57 @@ def _git_output(
         return None
     stdout = getattr(completed, "stdout", None)
     return stdout.strip() if isinstance(stdout, str) else None
+
+
+def _git_raw_utf8_output(
+    root: Path,
+    arguments: list[str],
+    runner: Callable[..., object],
+) -> str | None:
+    completed = runner(
+        ["git", *arguments],
+        cwd=root,
+        check=False,
+        capture_output=True,
+        text=False,
+    )
+    if getattr(completed, "returncode", None) != 0:
+        return None
+    stdout = getattr(completed, "stdout", None)
+    if isinstance(stdout, str):
+        return stdout
+    if not isinstance(stdout, bytes):
+        return None
+    try:
+        return stdout.decode("utf-8", errors="strict")
+    except UnicodeDecodeError:
+        return None
+
+
+def _canonical_local_tag_message(
+    root: Path,
+    tagged_commit: object,
+    runner: Callable[..., object],
+) -> str | None:
+    tag_object = _git_raw_utf8_output(
+        root,
+        ["cat-file", "tag", "refs/tags/v0.5-beta"],
+        runner,
+    )
+    if tag_object is None:
+        return None
+    header, separator, message = tag_object.partition("\n\n")
+    lines = header.splitlines()
+    if (
+        separator != "\n\n"
+        or len(lines) != 4
+        or lines[0] != f"object {tagged_commit}"
+        or lines[1] != "type commit"
+        or lines[2] != "tag v0.5-beta"
+        or not lines[3].startswith("tagger ")
+    ):
+        return None
+    return message
 
 
 def _validate_git_binding(
@@ -1072,11 +1159,44 @@ def _validate_tag_state(
         )
 
 
+def _validate_closure_pr_resource(
+    errors: list[str],
+    acquired_resources: dict[str, dict[str, object]],
+) -> int | None:
+    matches: list[tuple[int, dict[str, object]]] = []
+    for resource_id, acquired in acquired_resources.items():
+        match = re.fullmatch(
+            r"repos/tdistress/ESAF/pulls/([1-9][0-9]*)",
+            resource_id,
+        )
+        if match is not None:
+            matches.append((int(match.group(1)), acquired))
+    if len(matches) != 1:
+        errors.append(
+            "acquisition shall contain exactly one canonical closure "
+            "pull request"
+        )
+        return None
+    number, acquired = matches[0]
+    if (
+        acquired.get("page_count") != 1
+        or acquired.get("observed_canonical_url")
+        != f"https://github.com/tdistress/ESAF/pull/{number}"
+    ):
+        errors.append(
+            "acquisition shall contain exactly one canonical closure "
+            "pull request"
+        )
+        return None
+    return number
+
+
 def _validate_acquisition_coverage(
     errors: list[str],
     evidence: dict[str, object],
     acquired_resources: dict[str, dict[str, object]],
     phase: str,
+    closure_pr_number: int | None,
 ) -> None:
     closure_head = evidence.get("closure_head")
     expected = {
@@ -1102,28 +1222,9 @@ def _validate_acquisition_coverage(
             "repos/tdistress/ESAF/actions/runs/"
             f"{observed[0]['run_id']}"
         )
-    scope = evidence.get("scope")
-    source = scope.get("source") if isinstance(scope, dict) else None
-    comment_url = (
-        source.get("comment_url")
-        if isinstance(source, dict)
-        else None
-    )
-    pull_match = (
-        re.fullmatch(
-            (
-                r"https://github\.com/tdistress/ESAF/"
-                r"(?:issues|pull)/([1-9][0-9]*)"
-                r"#issuecomment-[1-9][0-9]*"
-            ),
-            comment_url,
-        )
-        if isinstance(comment_url, str)
-        else None
-    )
-    if pull_match is not None:
+    if closure_pr_number is not None:
         expected.add(
-            f"repos/tdistress/ESAF/pulls/{pull_match.group(1)}"
+            f"repos/tdistress/ESAF/pulls/{closure_pr_number}"
         )
     if phase == "taggable":
         expected.add(
@@ -1163,6 +1264,8 @@ def _validate_source(
     name: str,
     value: object,
     acquired_resources: dict[str, dict[str, object]],
+    *,
+    expected_container: tuple[str, int] | None = None,
 ) -> None:
     if not isinstance(value, dict) or set(value) != SOURCE_KEYS:
         errors.append(f"{name} source keys are invalid")
@@ -1233,6 +1336,24 @@ def _validate_source(
         is None
     ):
         errors.append(f"{name} source identity is inconsistent")
+    if expected_container is not None and _numeric(comment_id):
+        container_type, container_number = expected_container
+        segment = "pull" if container_type == "pull" else "issues"
+        expected_url = (
+            f"https://github.com/tdistress/ESAF/{segment}/"
+            f"{container_number}#issuecomment-{comment_id}"
+        )
+        if comment_url != expected_url:
+            if container_type == "pull":
+                errors.append(
+                    f"{name} source shall belong to closure pull request "
+                    f"{container_number}"
+                )
+            else:
+                errors.append(
+                    f"{name} source shall belong to issue "
+                    f"{container_number}"
+                )
 
 
 def _validate_sourced_verdict(
@@ -1241,6 +1362,8 @@ def _validate_sourced_verdict(
     value: object,
     closure_head: object,
     acquired_resources: dict[str, dict[str, object]],
+    *,
+    expected_container: tuple[str, int] | None = None,
 ) -> None:
     additional = GOVERNANCE_KEYS if name == "governance" else (
         SCOPE_KEYS if name == "scope" else set()
@@ -1267,7 +1390,13 @@ def _validate_sourced_verdict(
     if value.get("critical") != 0 or value.get("important") != 0:
         errors.append(f"{name} verdict findings shall be zero")
     source = value.get("source")
-    _validate_source(errors, name, source, acquired_resources)
+    _validate_source(
+        errors,
+        name,
+        source,
+        acquired_resources,
+        expected_container=expected_container,
+    )
     if (
         isinstance(source, dict)
         and value.get("url") != source.get("comment_url")
@@ -1451,6 +1580,7 @@ def _validate_mapping_basis(
     evidence: dict[str, object],
     closure_head: object,
     acquired_resources: dict[str, dict[str, object]],
+    closure_pr_number: int | None,
 ) -> None:
     basis = evidence.get("mapping_decision_basis")
     decisions = evidence.get("mapping_decisions")
@@ -1464,6 +1594,7 @@ def _validate_mapping_basis(
             decisions,
             closure_head,
             acquired_resources,
+            closure_pr_number,
         )
         if (
             isinstance(decisions, list)
@@ -1485,6 +1616,7 @@ def _validate_mapping_basis(
             decisions,
             closure_head,
             acquired_resources,
+            closure_pr_number,
         )
     else:
         errors.append("external mapping decision basis is invalid")
@@ -1497,6 +1629,7 @@ def _validate_owner_risk(
     value: object,
     closure_head: object,
     acquired_resources: dict[str, dict[str, object]],
+    closure_pr_number: int | None,
 ) -> None:
     if schema != OWNER_DECISION_SCHEMA:
         errors.append("owner-risk evidence shall use esaf-v05-owner-decision-v1")
@@ -1560,7 +1693,17 @@ def _validate_owner_risk(
             )
         source = decision.get("source")
         sources.append(source)
-        _validate_source(errors, "owner-risk", source, acquired_resources)
+        _validate_source(
+            errors,
+            "owner-risk",
+            source,
+            acquired_resources,
+            expected_container=(
+                ("pull", closure_pr_number)
+                if closure_pr_number is not None
+                else None
+            ),
+        )
         if not isinstance(source, dict):
             errors.append("owner-risk decision source is required")
             continue
@@ -1602,6 +1745,7 @@ def _validate_qualified_campaign(
     value: object,
     closure_head: object,
     acquired_resources: dict[str, dict[str, object]],
+    closure_pr_number: int | None,
 ) -> None:
     del record
     if (
@@ -1625,6 +1769,11 @@ def _validate_qualified_campaign(
         "qualified",
         decision.get("source"),
         acquired_resources,
+        expected_container=(
+            ("pull", closure_pr_number)
+            if closure_pr_number is not None
+            else None
+        ),
     )
     if source_errors:
         errors.extend(source_errors)
@@ -1817,6 +1966,7 @@ def _validate_post_merge(
         "post_merge rendering",
         rendering_source,
         acquired_resources,
+        expected_container=("issue", ISSUE),
     )
     _validate_commands(errors, value.get("commands"), merge_head, "post-merge")
     commands = value.get("commands")
@@ -2208,6 +2358,14 @@ def validate_published_tag_identity(
         return [
             "published date shall equal the annotated tag UTC date"
         ]
+    if (
+        _canonical_local_tag_message(root, tagged_commit, runner)
+        != TAG_MESSAGE
+    ):
+        return [
+            "annotated v0.5-beta tag message shall equal the "
+            "canonical contract"
+        ]
     return []
 
 
@@ -2283,15 +2441,149 @@ def _validate_closure_allowlist(
     ]
 
 
+def _path_is_within(path: Path, boundary: Path) -> bool:
+    try:
+        path.relative_to(boundary)
+    except ValueError:
+        return False
+    return True
+
+
+def _git_storage_boundaries(
+    root: Path,
+    runner: Callable[..., object],
+) -> tuple[Path, ...]:
+    worktrees = runner(
+        ["git", "worktree", "list", "--porcelain"],
+        cwd=root,
+        check=False,
+        capture_output=True,
+        text=False,
+    )
+    common = runner(
+        ["git", "rev-parse", "--git-common-dir"],
+        cwd=root,
+        check=False,
+        capture_output=True,
+        text=False,
+    )
+    worktree_stdout = getattr(worktrees, "stdout", None)
+    common_stdout = getattr(common, "stdout", None)
+    if (
+        getattr(worktrees, "returncode", None) != 0
+        or getattr(common, "returncode", None) != 0
+        or not isinstance(worktree_stdout, bytes)
+        or not isinstance(common_stdout, bytes)
+    ):
+        raise ValueError("Git storage boundaries could not be verified")
+    worktree_text = worktree_stdout.decode("utf-8", errors="strict")
+    common_text = common_stdout.decode(
+        "utf-8", errors="strict"
+    ).strip()
+    boundaries = [
+        Path(line.removeprefix("worktree ")).resolve()
+        for line in worktree_text.splitlines()
+        if line.startswith("worktree ")
+    ]
+    if not boundaries or not common_text:
+        raise ValueError("Git storage boundaries could not be verified")
+    common_path = Path(common_text)
+    if not common_path.is_absolute():
+        common_path = root / common_path
+    boundaries.append(common_path.resolve())
+    return tuple(dict.fromkeys(boundaries))
+
+
+def write_tag_message(
+    root: Path,
+    output: Path,
+    *,
+    runner: Callable[..., object] = subprocess.run,
+) -> list[str]:
+    """Create the canonical tag message exclusively outside Git storage."""
+    if output.exists() or output.is_symlink():
+        return [
+            "tag message output shall be a non-existent path outside "
+            "every Git worktree and common directory"
+        ]
+    try:
+        resolved = output.resolve()
+        boundaries = _git_storage_boundaries(root, runner)
+    except (OSError, UnicodeError, ValueError) as exc:
+        return [f"tag message output could not be validated: {exc}"]
+    if (
+        resolved.exists()
+        or not resolved.parent.is_dir()
+        or any(
+            _path_is_within(resolved, boundary)
+            for boundary in boundaries
+        )
+    ):
+        return [
+            "tag message output shall be a non-existent path outside "
+            "every Git worktree and common directory"
+        ]
+    try:
+        with resolved.open("xb") as stream:
+            stream.write(TAG_MESSAGE.encode("utf-8"))
+    except OSError as exc:
+        return [f"tag message output could not be created: {exc}"]
+    return []
+
+
+def validate_local_tag_message(
+    root: Path,
+    *,
+    runner: Callable[..., object] = subprocess.run,
+) -> list[str]:
+    """Require an annotated local v0.5-beta tag with the exact message."""
+    tag_object = _git_output(
+        root, ["rev-parse", "refs/tags/v0.5-beta^{tag}"], runner
+    )
+    tagged_commit = _git_output(
+        root, ["rev-parse", "refs/tags/v0.5-beta^{commit}"], runner
+    )
+    if not _sha(tag_object) or not _sha(tagged_commit):
+        return ["local v0.5-beta tag shall be annotated"]
+    if (
+        _canonical_local_tag_message(root, tagged_commit, runner)
+        != TAG_MESSAGE
+    ):
+        return [
+            "annotated v0.5-beta tag message shall equal the "
+            "canonical contract"
+        ]
+    return []
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--check", action="store_true", required=True)
+    mode = parser.add_mutually_exclusive_group(required=True)
+    mode.add_argument("--check", action="store_true")
+    mode.add_argument("--write-tag-message", type=Path)
+    mode.add_argument("--check-tag-message", action="store_true")
     parser.add_argument("--baseline-ref")
     parser.add_argument("--external-evidence", type=Path)
     parser.add_argument("--expected-head")
     parser.add_argument("--phase", choices=("closure", "taggable"))
     arguments = parser.parse_args(argv)
     root = Path.cwd().resolve()
+    if arguments.write_tag_message is not None:
+        errors = write_tag_message(
+            root,
+            arguments.write_tag_message,
+            runner=subprocess.run,
+        )
+        for error in errors:
+            print(error)
+        return 1 if errors else 0
+    if arguments.check_tag_message:
+        errors = validate_local_tag_message(
+            root, runner=subprocess.run
+        )
+        for error in errors:
+            print(error)
+        return 1 if errors else 0
     try:
         record, body = load_readiness_document(root / RECORD_RELATIVE)
         errors = [

@@ -9,6 +9,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from unittest.mock import patch
 
 from tools.release_gates import (
     load_front_matter as load_v04_front_matter,
@@ -215,6 +216,24 @@ CLAIMS_NOT_MADE = {
     "legal_sufficiency",
     "replacement_of_qualified_professional_judgment",
 }
+TAG_LIMITATION_LINES = (
+    "Status: Working Draft",
+    "Decision basis: owner_risk_acceptance",
+    "Owner-risk decision: permits Working Draft publication only",
+    "Qualified review: deferred",
+    "Issue 55: open",
+    "All mappings: Draft",
+    "Artifact lifecycle approval: not granted",
+)
+EXPECTED_TAG_MESSAGE = "\n".join(
+    (
+        "ESAF v0.5-beta",
+        *TAG_LIMITATION_LINES,
+        "Claims not made:",
+        *(f"- {claim}" for claim in sorted(CLAIMS_NOT_MADE)),
+        "",
+    )
+)
 QUALIFIED_SCHEMA = (
     "https://esaf-standard.org/schemas/"
     "qualified-review-evidence.schema.json"
@@ -1146,9 +1165,16 @@ class V05ExternalEvidenceTests(unittest.TestCase):
                     for item in evidence["acquisition"]["resources"]
                     if item["resource_id"] != resource
                 ]
+                diagnostic = (
+                    "acquisition shall contain exactly one canonical "
+                    "closure pull request"
+                    if resource
+                    == f"repos/tdistress/ESAF/pulls/{PR_NUMBER}"
+                    else "acquisition manifest is missing required resources"
+                )
                 self.assert_rejected(
                     evidence,
-                    "acquisition manifest is missing required resources",
+                    diagnostic,
                     "closure",
                 )
         evidence = closure_evidence()
@@ -1604,6 +1630,121 @@ class V05ExternalEvidenceTests(unittest.TestCase):
                     "technical source identity is inconsistent",
                     "closure",
                 )
+
+    def test_gate_enforces_exact_comment_container_domains(self) -> None:
+        closure_sources = (
+            ("scope", lambda value: value["scope"]["source"]),
+            ("technical", lambda value: value["technical"]["source"]),
+            ("editorial", lambda value: value["editorial"]["source"]),
+            ("terminology", lambda value: value["terminology"]["source"]),
+            ("rendering", lambda value: value["rendering"]["source"]),
+            (
+                "profile_scope",
+                lambda value: value["profile_scope"]["source"],
+            ),
+            (
+                "security_overclaiming",
+                lambda value: value["security_overclaiming"]["source"],
+            ),
+            (
+                "whole_range",
+                lambda value: value["whole_range"]["source"],
+            ),
+            ("governance", lambda value: value["governance"]["source"]),
+            (
+                "owner-risk",
+                lambda value: value["mapping_decisions"][0]["source"],
+            ),
+        )
+        for label, source_getter in closure_sources:
+            with self.subTest(label=label):
+                evidence = closure_evidence()
+                source = source_getter(evidence)
+                comment_id = source["comment_id"]
+                issue_url = (
+                    f"https://github.com/tdistress/ESAF/issues/{PR_NUMBER}"
+                    f"#issuecomment-{comment_id}"
+                )
+                source["comment_url"] = issue_url
+                if label != "owner-risk":
+                    evidence[label]["url"] = issue_url
+                else:
+                    evidence["mapping_decisions"][0]["url"] = issue_url
+                acquired = next(
+                    item
+                    for item in evidence["acquisition"]["resources"]
+                    if item["resource_id"] == source["resource_path"]
+                )
+                acquired["observed_canonical_url"] = issue_url
+                self.assert_rejected(
+                    evidence,
+                    f"{label} source shall belong to closure pull request "
+                    f"{PR_NUMBER}",
+                    "closure",
+                )
+
+        for container_url in (
+            f"https://github.com/tdistress/ESAF/pull/{PR_NUMBER}",
+            "https://github.com/tdistress/ESAF/issues/60",
+        ):
+            with self.subTest(post_merge_container=container_url):
+                evidence = taggable_evidence()
+                source = evidence["post_merge"]["rendering_source"]
+                review_url = (
+                    f"{container_url}#issuecomment-{source['comment_id']}"
+                )
+                source["comment_url"] = review_url
+                rendering = next(
+                    item
+                    for item in evidence["post_merge"]["commands"]
+                    if item["name"] == "mermaid_rendering"
+                )
+                rendering["result"]["post_merge_review_url"] = review_url
+                acquired = next(
+                    item
+                    for item in evidence["acquisition"]["resources"]
+                    if item["resource_id"] == source["resource_path"]
+                )
+                acquired["observed_canonical_url"] = review_url
+                self.assert_rejected(
+                    evidence,
+                    "post_merge rendering source shall belong to issue 59",
+                    "taggable",
+                )
+
+    def test_gate_requires_one_canonical_closure_pr_resource(self) -> None:
+        missing = closure_evidence()
+        missing["acquisition"]["resources"] = [
+            item
+            for item in missing["acquisition"]["resources"]
+            if item["resource_id"]
+            != f"repos/tdistress/ESAF/pulls/{PR_NUMBER}"
+        ]
+        self.assert_rejected(
+            missing,
+            "acquisition shall contain exactly one canonical closure "
+            "pull request",
+            "closure",
+        )
+
+        multiple = closure_evidence()
+        multiple["acquisition"]["resources"].append(
+            {
+                "resource_id": "repos/tdistress/ESAF/pulls/74",
+                "observed_canonical_url": (
+                    "https://github.com/tdistress/ESAF/pull/74"
+                ),
+                "page_count": 1,
+                "response_sha256": "9" * 64,
+                "retrieved_at": "2026-07-27T12:05:00Z",
+            }
+        )
+        self.assert_rejected(
+            multiple,
+            "acquisition shall contain exactly one canonical closure "
+            "pull request",
+            "closure",
+        )
 
     def test_source_comment_url_matches_sourced_verdict_url(self) -> None:
         evidence = closure_evidence()
@@ -2571,12 +2712,30 @@ class V05ReleaseRecordTests(unittest.TestCase):
                     "--format=%(taggerdate:iso-strict)",
                     "refs/tags/v0.5-beta",
                 ): "2026-07-27T18:30:00-05:00",
+                (
+                    "git",
+                    "cat-file",
+                    "tag",
+                    "refs/tags/v0.5-beta",
+                ): (
+                    f"object {MERGE_SHA}\n"
+                    "type commit\n"
+                    "tag v0.5-beta\n"
+                    "tagger Release Owner <owner@example.test> "
+                    "1785195000 -0500\n\n"
+                    f"{EXPECTED_TAG_MESSAGE}"
+                ),
             }
             output = outputs.get(tuple(arguments), "")
+            stdout = (
+                output
+                if arguments[1:3] == ["cat-file", "tag"]
+                else output + ("\n" if output else "")
+            )
             return subprocess.CompletedProcess(
                 arguments,
                 0 if output else 1,
-                output + ("\n" if output else ""),
+                stdout,
                 "",
             )
 
@@ -2599,6 +2758,246 @@ class V05ReleaseRecordTests(unittest.TestCase):
             "published date shall equal the annotated tag UTC date",
             v05_beta_release_gates.validate_published_tag_identity(
                 ROOT, record, runner=runner
+            ),
+        )
+
+    def test_published_tag_message_contract_is_exact(self) -> None:
+        self.assertEqual(
+            EXPECTED_TAG_MESSAGE,
+            v05_beta_release_gates.TAG_MESSAGE,
+        )
+        record = record_fixture("published")
+
+        def validate_message(message: str) -> list[str]:
+            def runner(
+                arguments: list[str], **kwargs: object
+            ) -> subprocess.CompletedProcess[str]:
+                del kwargs
+                outputs = {
+                    (
+                        "git",
+                        "rev-parse",
+                        "refs/tags/v0.5-beta^{tag}",
+                    ): "1" * 40,
+                    (
+                        "git",
+                        "rev-parse",
+                        "refs/tags/v0.5-beta^{commit}",
+                    ): MERGE_SHA,
+                    (
+                        "git",
+                        "for-each-ref",
+                        "--format=%(taggerdate:iso-strict)",
+                        "refs/tags/v0.5-beta",
+                    ): "2026-07-27T18:30:00-05:00",
+                    (
+                        "git",
+                        "cat-file",
+                        "tag",
+                        "refs/tags/v0.5-beta",
+                    ): (
+                        f"object {MERGE_SHA}\n"
+                        "type commit\n"
+                        "tag v0.5-beta\n"
+                        "tagger Release Owner <owner@example.test> "
+                        "1785195000 -0500\n\n"
+                        f"{message}"
+                    ),
+                }
+                output = outputs.get(tuple(arguments), "")
+                return subprocess.CompletedProcess(
+                    arguments,
+                    0 if output else 1,
+                    output,
+                    "",
+                )
+
+            return v05_beta_release_gates.validate_published_tag_identity(
+                ROOT, record, runner=runner
+            )
+
+        mutation_cases = [
+            (
+                f"missing limitation: {line}",
+                EXPECTED_TAG_MESSAGE.replace(f"{line}\n", "", 1),
+            )
+            for line in TAG_LIMITATION_LINES
+        ]
+        mutation_cases.extend(
+            (
+                f"missing nonclaim: {claim}",
+                EXPECTED_TAG_MESSAGE.replace(f"- {claim}\n", "", 1),
+            )
+            for claim in sorted(CLAIMS_NOT_MADE)
+        )
+        mutation_cases.extend(
+            (
+                (
+                    "overclaim",
+                    EXPECTED_TAG_MESSAGE.replace(
+                        "Status: Working Draft",
+                        "Status: Approved",
+                    ),
+                ),
+                ("CRLF", EXPECTED_TAG_MESSAGE.replace("\n", "\r\n")),
+                ("missing final newline", EXPECTED_TAG_MESSAGE.rstrip("\n")),
+                ("extra final newline", EXPECTED_TAG_MESSAGE + "\n"),
+            )
+        )
+        for label, message in mutation_cases:
+            with self.subTest(label=label):
+                self.assertIn(
+                    "annotated v0.5-beta tag message shall equal the "
+                    "canonical contract",
+                    validate_message(message),
+                )
+
+    def test_tag_message_cli_writes_exact_utf8_lf_outside_repository(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary) / "v0.5-beta-tag-message.txt"
+            self.assertEqual(
+                0,
+                v05_beta_release_gates.main(
+                    ["--write-tag-message", str(output)]
+                ),
+            )
+            self.assertEqual(
+                EXPECTED_TAG_MESSAGE.encode("utf-8"),
+                output.read_bytes(),
+            )
+            self.assertNotIn(b"\r\n", output.read_bytes())
+            self.assertEqual(
+                1,
+                v05_beta_release_gates.main(
+                    ["--write-tag-message", str(output)]
+                ),
+            )
+
+        repository_output = ROOT / "v0.5-beta-tag-message.txt"
+        self.assertEqual(
+            1,
+            v05_beta_release_gates.main(
+                ["--write-tag-message", str(repository_output)]
+            ),
+        )
+        self.assertFalse(repository_output.exists())
+
+        def tag_runner(
+            arguments: list[str], **kwargs: object
+        ) -> subprocess.CompletedProcess[object]:
+            del kwargs
+            if arguments == [
+                "git",
+                "rev-parse",
+                "refs/tags/v0.5-beta^{tag}",
+            ]:
+                return subprocess.CompletedProcess(
+                    arguments, 0, "1" * 40 + "\n", ""
+                )
+            if arguments == [
+                "git",
+                "rev-parse",
+                "refs/tags/v0.5-beta^{commit}",
+            ]:
+                return subprocess.CompletedProcess(
+                    arguments, 0, MERGE_SHA + "\n", ""
+                )
+            if arguments == [
+                "git",
+                "cat-file",
+                "tag",
+                "refs/tags/v0.5-beta",
+            ]:
+                body = (
+                    f"object {MERGE_SHA}\n"
+                    "type commit\n"
+                    "tag v0.5-beta\n"
+                    "tagger Release Owner <owner@example.test> "
+                    "1785195000 -0500\n\n"
+                    f"{EXPECTED_TAG_MESSAGE}"
+                ).encode("utf-8")
+                return subprocess.CompletedProcess(
+                    arguments, 0, body, b""
+                )
+            raise AssertionError(arguments)
+
+        with patch(
+            "tools.v05_beta_release_gates.subprocess.run",
+            side_effect=tag_runner,
+        ):
+            self.assertEqual(
+                0,
+                v05_beta_release_gates.main(["--check-tag-message"]),
+            )
+
+    def test_tag_message_output_rejects_all_git_storage_boundaries(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            base = Path(temporary).resolve()
+            other_worktree = base / "other-worktree"
+            common_dir = base / "repository.git"
+            other_worktree.mkdir()
+            common_dir.mkdir()
+
+            def runner(
+                arguments: list[str], **kwargs: object
+            ) -> subprocess.CompletedProcess[bytes]:
+                del kwargs
+                if arguments == [
+                    "git",
+                    "worktree",
+                    "list",
+                    "--porcelain",
+                ]:
+                    stdout = (
+                        f"worktree {ROOT}\nHEAD {CLOSURE_SHA}\n\n"
+                        f"worktree {other_worktree}\n"
+                        f"HEAD {MERGE_SHA}\n\n"
+                    ).encode("utf-8")
+                    return subprocess.CompletedProcess(
+                        arguments, 0, stdout, b""
+                    )
+                if arguments == [
+                    "git",
+                    "rev-parse",
+                    "--git-common-dir",
+                ]:
+                    return subprocess.CompletedProcess(
+                        arguments,
+                        0,
+                        f"{common_dir}\n".encode("utf-8"),
+                        b"",
+                    )
+                raise AssertionError(arguments)
+
+            for forbidden in (
+                other_worktree / "tag-message.txt",
+                common_dir / "tag-message.txt",
+            ):
+                with self.subTest(forbidden=forbidden):
+                    self.assertIn(
+                        "tag message output shall be a non-existent path "
+                        "outside every Git worktree and common directory",
+                        v05_beta_release_gates.write_tag_message(
+                            ROOT, forbidden, runner=runner
+                        ),
+                    )
+                    self.assertFalse(forbidden.exists())
+
+    def test_published_validation_rejects_lightweight_tag(self) -> None:
+        def runner(
+            arguments: list[str], **kwargs: object
+        ) -> subprocess.CompletedProcess[str]:
+            del kwargs
+            return subprocess.CompletedProcess(arguments, 1, "", "")
+
+        self.assertIn(
+            "local annotated v0.5-beta tag shall match published identity",
+            v05_beta_release_gates.validate_published_tag_identity(
+                ROOT, record_fixture("published"), runner=runner
             ),
         )
 

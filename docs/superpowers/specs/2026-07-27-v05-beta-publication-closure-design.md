@@ -134,8 +134,9 @@ After every non-post-merge closure gate is `ready`, the post-merge gate is
 4. run the full post-merge command set on merged `main`;
 5. rebuild taggable evidence from freshly fetched sources;
 6. verify that no local or remote `v0.5-beta` tag exists;
-7. create and push an annotated `v0.5-beta` tag that peels to the validated
-   merge commit;
+7. generate the canonical UTF-8/LF tag message outside Git storage, create an
+   annotated `v0.5-beta` tag that peels to the validated merge commit, and
+   validate the actual tag object message before push;
 8. verify the remote tag object and peeled commit;
 9. post one consolidated evidence comment to issue 59; and
 10. close issue 59 only after the tag and evidence comment are verified.
@@ -163,7 +164,10 @@ Candidate records shall keep the publication date null and shall omit tag
 identity. Published records shall record the UTC tag-operation date, annotated
 tag object, peeled tagged commit, and issue 59 evidence-comment URL. The local
 annotated tag object, peel, and UTC tagger date shall match those published
-fields. A later
+fields. Its message shall exactly match the production-owned canonical
+contract: Working Draft, owner-risk permission for Working Draft publication
+only, deferred qualified review, issue 55 open, all mappings Draft, no artifact
+lifecycle approval, and the complete required nonclaim set. A later
 `published`-phase edit may use the published record as its baseline only when
 the immutable publication identity and closed-gate truth are unchanged.
 
@@ -434,6 +438,13 @@ container type and number. Closure owner, review, and governance comments shall
 belong to the closure pull request. The post-merge rendering verdict shall
 belong to issue 59; a pull-request comment with the same comment identifier
 shall not substitute for it.
+
+Independent of collector checks, release-gate validation shall derive exactly
+one closure pull-request number from the canonical acquired pull resource and
+require every closure decision and verdict source to use that pull container.
+Taggable validation shall require the post-merge rendering source and command
+review URL to use issue 59 exactly. Missing, multiple, cross-container, or
+internally consistent substitute resources shall fail closed.
 
 Sources shall be fetched immediately before evidence construction, immediately
 before merge, and immediately before tag creation. A changed field stops the

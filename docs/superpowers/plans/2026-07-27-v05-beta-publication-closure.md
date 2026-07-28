@@ -1431,12 +1431,36 @@ python tools/v05_beta_release_gates.py --check `
 - [ ] **Step 4: Create and verify the annotated tag**
 
 Verify neither local nor remote `v0.5-beta` exists. Create an annotated tag
-whose message states Working Draft status, the owner-risk basis, deferred
-qualified review, issue 55 retention, and every required nonclaim.
+from the exact production-owned message contract. The contract states Working
+Draft status, owner-risk permission for Working Draft publication only,
+deferred qualified review, issue 55 retention, Draft mapping state, no artifact
+lifecycle approval, and every exact required nonclaim.
 
-Push only the tag. Fetch it back and verify:
+Generate the UTF-8/LF message exclusively at a new temporary path outside every
+Git worktree and the common Git directory. Create the tag from that file and
+compare the actual annotated-tag object message to the contract before push:
 
 ```powershell
+$tagMessage = Join-Path ([IO.Path]::GetTempPath()) (
+  'esaf-v05-tag-message-' + [guid]::NewGuid().ToString('N') + '.txt'
+)
+python tools/v05_beta_release_gates.py --write-tag-message $tagMessage
+if ($LASTEXITCODE -ne 0) { throw 'Canonical tag message generation failed' }
+git tag --annotate v0.5-beta --file $tagMessage $mergeHead
+if ($LASTEXITCODE -ne 0) { throw 'Annotated tag creation failed' }
+python tools/v05_beta_release_gates.py --check-tag-message
+if ($LASTEXITCODE -ne 0) { throw 'Annotated tag message mismatch' }
+Remove-Item -LiteralPath $tagMessage
+```
+
+Push only the tag. Fetch it back and verify the message again before resolving
+the object and peel:
+
+```powershell
+git push origin refs/tags/v0.5-beta
+git fetch origin refs/tags/v0.5-beta:refs/tags/v0.5-beta
+python tools/v05_beta_release_gates.py --check-tag-message
+if ($LASTEXITCODE -ne 0) { throw 'Fetched tag message mismatch' }
 $tagObject = (git rev-parse 'v0.5-beta^{tag}').Trim()
 $peeled = (git rev-parse 'v0.5-beta^{}').Trim()
 if ($peeled -ne $mergeHead) { throw "Remote tag does not peel to validated merge" }
