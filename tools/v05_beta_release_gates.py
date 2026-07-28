@@ -149,6 +149,7 @@ EVIDENCE_KEYS = {
     "mapping_decisions",
     "github_checks",
     "merge_state",
+    "tag_state",
     "acquisition",
 }
 TAGGABLE_KEYS = EVIDENCE_KEYS | {"merge_head", "merge_tree", "post_merge"}
@@ -214,6 +215,19 @@ OWNER_DECISION_KEYS = {
     "source",
 }
 MISSING_ROLE_KEYS = {"mapping_set_id", "role"}
+ACQUISITION_RESOURCE_KEYS = {
+    "resource_id",
+    "observed_canonical_url",
+    "page_count",
+    "response_sha256",
+}
+TAG_STATE_KEYS = {
+    "resource",
+    "exists",
+    "status",
+    "response_sha256",
+}
+TAG_RESOURCE = "repos/tdistress/ESAF/git/ref/tags/v0.5-beta"
 
 
 def load_front_matter(path: Path) -> dict[str, object]:
@@ -377,6 +391,12 @@ def validate_external_evidence(
     acquired_resources = _validate_acquisition(
         errors, evidence.get("acquisition"), now
     )
+    _validate_tag_state(
+        errors, evidence.get("tag_state"), acquired_resources
+    )
+    _validate_acquisition_coverage(
+        errors, evidence, acquired_resources, phase
+    )
     for name in (
         "scope",
         "technical",
@@ -437,7 +457,7 @@ def _rfc3339_utc(value: object) -> datetime | None:
 
 def _validate_acquisition(
     errors: list[str], value: object, now: datetime | None
-) -> dict[str, str]:
+) -> dict[str, dict[str, object]]:
     if not isinstance(value, dict):
         errors.append("acquisition manifest is required")
         return {}
@@ -464,14 +484,18 @@ def _validate_acquisition(
         not isinstance(resources, list)
         or not all(
             isinstance(item, dict)
-            and set(item) == {"resource_id", "observed_canonical_url"}
+            and set(item) == ACQUISITION_RESOURCE_KEYS
             and _nonblank(item.get("resource_id"))
             and _https(item.get("observed_canonical_url"))
+            and _numeric(item.get("page_count"))
+            and item.get("page_count", 0) > 0
+            and isinstance(item.get("response_sha256"), str)
+            and SHA256_RE.fullmatch(item["response_sha256"]) is not None
             for item in resources
         )
     ):
         errors.append("acquisition resource identifiers are invalid")
-        result: dict[str, str] = {}
+        result: dict[str, dict[str, object]] = {}
     else:
         identifiers = [str(item["resource_id"]) for item in resources]
         if len(identifiers) != len(set(identifiers)):
@@ -479,9 +503,7 @@ def _validate_acquisition(
             result = {}
         else:
             result = {
-                str(item["resource_id"]): str(
-                    item["observed_canonical_url"]
-                )
+                str(item["resource_id"]): item
                 for item in resources
             }
     retrieved_at = _rfc3339_utc(value.get("retrieved_at"))
@@ -493,11 +515,102 @@ def _validate_acquisition(
     return result
 
 
+def _validate_tag_state(
+    errors: list[str],
+    value: object,
+    acquired_resources: dict[str, dict[str, object]],
+) -> None:
+    if (
+        not isinstance(value, dict)
+        or set(value) != TAG_STATE_KEYS
+        or value.get("resource") != TAG_RESOURCE
+        or value.get("exists") is not False
+        or value.get("status") != 404
+        or not isinstance(value.get("response_sha256"), str)
+        or SHA256_RE.fullmatch(value["response_sha256"]) is None
+    ):
+        errors.append(
+            "remote tag state shall prove exact v0.5-beta absence"
+        )
+        return
+    acquired = acquired_resources.get(TAG_RESOURCE)
+    if (
+        not isinstance(acquired, dict)
+        or acquired.get("page_count") != 1
+        or acquired.get("observed_canonical_url")
+        != f"https://api.github.com/{TAG_RESOURCE}"
+        or acquired.get("response_sha256")
+        != value.get("response_sha256")
+    ):
+        errors.append(
+            "remote tag state shall bind the acquired tag response"
+        )
+
+
+def _validate_acquisition_coverage(
+    errors: list[str],
+    evidence: dict[str, object],
+    acquired_resources: dict[str, dict[str, object]],
+    phase: str,
+) -> None:
+    closure_head = evidence.get("closure_head")
+    expected = {
+        "user",
+        TAG_RESOURCE,
+        f"repos/tdistress/ESAF/commits/{closure_head}",
+        f"repos/tdistress/ESAF/commits/{closure_head}/check-runs",
+    }
+    scope = evidence.get("scope")
+    source = scope.get("source") if isinstance(scope, dict) else None
+    comment_url = (
+        source.get("comment_url")
+        if isinstance(source, dict)
+        else None
+    )
+    pull_match = (
+        re.fullmatch(
+            (
+                r"https://github\.com/tdistress/ESAF/"
+                r"(?:issues|pull)/([1-9][0-9]*)"
+                r"#issuecomment-[1-9][0-9]*"
+            ),
+            comment_url,
+        )
+        if isinstance(comment_url, str)
+        else None
+    )
+    if pull_match is not None:
+        expected.add(
+            f"repos/tdistress/ESAF/pulls/{pull_match.group(1)}"
+        )
+    if phase == "taggable":
+        expected.add(
+            f"repos/tdistress/ESAF/commits/{evidence.get('merge_head')}"
+        )
+    if expected - set(acquired_resources):
+        errors.append(
+            "acquisition manifest is missing required resources"
+        )
+        return
+    acquisition = evidence.get("acquisition")
+    login = (
+        acquisition.get("authenticated_login")
+        if isinstance(acquisition, dict)
+        else None
+    )
+    if acquired_resources["user"].get(
+        "observed_canonical_url"
+    ) != f"https://github.com/{login}":
+        errors.append(
+            "acquisition authenticated user resource is inconsistent"
+        )
+
+
 def _validate_source(
     errors: list[str],
     name: str,
     value: object,
-    acquired_resources: dict[str, str],
+    acquired_resources: dict[str, dict[str, object]],
 ) -> None:
     if not isinstance(value, dict) or set(value) != SOURCE_KEYS:
         errors.append(f"{name} source keys are invalid")
@@ -526,10 +639,22 @@ def _validate_source(
     resource_id = value.get("acquisition_resource_id")
     if resource_id not in acquired_resources:
         errors.append(f"{name} source shall bind an acquired resource")
-    elif value.get("comment_url") != acquired_resources[resource_id]:
-        errors.append(
-            f"{name} source canonical URL shall equal acquired response"
-        )
+    else:
+        acquired = acquired_resources[resource_id]
+        if value.get("comment_url") != acquired.get(
+            "observed_canonical_url"
+        ):
+            errors.append(
+                f"{name} source canonical URL shall equal acquired response"
+            )
+        if (
+            acquired.get("page_count") != 1
+            or value.get("response_sha256")
+            != acquired.get("response_sha256")
+        ):
+            errors.append(
+                f"{name} source response digest shall equal acquired response"
+            )
     comment_id = value.get("comment_id")
     resource_path = value.get("resource_path")
     comment_url = value.get("comment_url")
@@ -556,7 +681,7 @@ def _validate_sourced_verdict(
     name: str,
     value: object,
     closure_head: object,
-    acquired_resources: dict[str, str],
+    acquired_resources: dict[str, dict[str, object]],
 ) -> None:
     additional = GOVERNANCE_KEYS if name == "governance" else (
         SCOPE_KEYS if name == "scope" else set()
@@ -757,7 +882,7 @@ def _validate_mapping_basis(
     record: dict[str, object],
     evidence: dict[str, object],
     closure_head: object,
-    acquired_resources: dict[str, str],
+    acquired_resources: dict[str, dict[str, object]],
 ) -> None:
     basis = evidence.get("mapping_decision_basis")
     decisions = evidence.get("mapping_decisions")
@@ -803,7 +928,7 @@ def _validate_owner_risk(
     schema: object,
     value: object,
     closure_head: object,
-    acquired_resources: dict[str, str],
+    acquired_resources: dict[str, dict[str, object]],
 ) -> None:
     if schema != OWNER_DECISION_SCHEMA:
         errors.append("owner-risk evidence shall use esaf-v05-owner-decision-v1")
@@ -908,7 +1033,7 @@ def _validate_qualified_campaign(
     schema: object,
     value: object,
     closure_head: object,
-    acquired_resources: dict[str, str],
+    acquired_resources: dict[str, dict[str, object]],
 ) -> None:
     del record
     if (

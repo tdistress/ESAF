@@ -309,6 +309,12 @@ def closure_evidence() -> dict[str, object]:
             "mergeable": True,
             "state": "clean",
         },
+        "tag_state": {
+            "resource": "repos/tdistress/ESAF/git/ref/tags/v0.5-beta",
+            "exists": False,
+            "status": 404,
+            "response_sha256": "c" * 64,
+        },
         "acquisition": {
             "schema": "esaf-v05-acquisition-v1",
             "repository": "tdistress/ESAF",
@@ -321,6 +327,10 @@ def closure_evidence() -> dict[str, object]:
                     "observed_canonical_url": source_fixture(identifier)[
                         "comment_url"
                     ],
+                    "page_count": 1,
+                    "response_sha256": source_fixture(identifier)[
+                        "response_sha256"
+                    ],
                 }
                 for identifier in (
                     "11",
@@ -332,6 +342,57 @@ def closure_evidence() -> dict[str, object]:
                     "20",
                     "21",
                 )
+            ]
+            + [
+                {
+                    "resource_id": "user",
+                    "observed_canonical_url": (
+                        "https://github.com/tdistress"
+                    ),
+                    "page_count": 1,
+                    "response_sha256": "d" * 64,
+                },
+                {
+                    "resource_id": (
+                        f"repos/tdistress/ESAF/commits/{CLOSURE_SHA}"
+                    ),
+                    "observed_canonical_url": (
+                        "https://github.com/tdistress/ESAF/commit/"
+                        f"{CLOSURE_SHA}"
+                    ),
+                    "page_count": 1,
+                    "response_sha256": "e" * 64,
+                },
+                {
+                    "resource_id": "repos/tdistress/ESAF/pulls/59",
+                    "observed_canonical_url": (
+                        "https://github.com/tdistress/ESAF/pull/59"
+                    ),
+                    "page_count": 1,
+                    "response_sha256": "f" * 64,
+                },
+                {
+                    "resource_id": (
+                        f"repos/tdistress/ESAF/commits/{CLOSURE_SHA}/"
+                        "check-runs"
+                    ),
+                    "observed_canonical_url": (
+                        "https://github.com/tdistress/ESAF/actions/runs/1"
+                    ),
+                    "page_count": 1,
+                    "response_sha256": "0" * 64,
+                },
+                {
+                    "resource_id": (
+                        "repos/tdistress/ESAF/git/ref/tags/v0.5-beta"
+                    ),
+                    "observed_canonical_url": (
+                        "https://api.github.com/repos/tdistress/ESAF/"
+                        "git/ref/tags/v0.5-beta"
+                    ),
+                    "page_count": 1,
+                    "response_sha256": "c" * 64,
+                }
             ],
         },
     }
@@ -339,6 +400,17 @@ def closure_evidence() -> dict[str, object]:
 
 def taggable_evidence() -> dict[str, object]:
     evidence = closure_evidence()
+    evidence["acquisition"]["resources"].append(
+        {
+            "resource_id": f"repos/tdistress/ESAF/commits/{MERGE_SHA}",
+            "observed_canonical_url": (
+                "https://github.com/tdistress/ESAF/commit/"
+                f"{MERGE_SHA}"
+            ),
+            "page_count": 1,
+            "response_sha256": "1" * 64,
+        }
+    )
     evidence.update(
         {
             "merge_head": MERGE_SHA,
@@ -355,6 +427,7 @@ def taggable_evidence() -> dict[str, object]:
 
 
 def bind_closure_head(evidence: dict[str, object], sha: str) -> None:
+    previous = evidence["closure_head"]
     evidence["closure_head"] = sha
     for name in (
         "scope",
@@ -370,6 +443,22 @@ def bind_closure_head(evidence: dict[str, object], sha: str) -> None:
         command["sha"] = sha
     evidence["github_checks"]["observed"][0]["sha"] = sha
     evidence["merge_state"]["sha"] = sha
+    for resource in evidence["acquisition"]["resources"]:
+        if resource["resource_id"] == (
+            f"repos/tdistress/ESAF/commits/{previous}"
+        ):
+            resource["resource_id"] = (
+                f"repos/tdistress/ESAF/commits/{sha}"
+            )
+            resource["observed_canonical_url"] = (
+                f"https://github.com/tdistress/ESAF/commit/{sha}"
+            )
+        elif resource["resource_id"] == (
+            f"repos/tdistress/ESAF/commits/{previous}/check-runs"
+        ):
+            resource["resource_id"] = (
+                f"repos/tdistress/ESAF/commits/{sha}/check-runs"
+            )
 
 
 class V05ExternalEvidenceTests(unittest.TestCase):
@@ -573,6 +662,77 @@ class V05ExternalEvidenceTests(unittest.TestCase):
         evidence["untrusted"] = {}
         self.assert_rejected(
             evidence, "closure evidence has unknown keys: untrusted", "closure"
+        )
+
+    def test_tag_state_requires_exact_live_absence_proof(self) -> None:
+        for field, value in (
+            ("resource", "repos/other/project/git/ref/tags/v0.5-beta"),
+            ("exists", True),
+            ("status", 200),
+            ("response_sha256", "not-a-digest"),
+        ):
+            with self.subTest(field=field):
+                evidence = closure_evidence()
+                evidence["tag_state"][field] = value
+                self.assert_rejected(
+                    evidence,
+                    "remote tag state shall prove exact v0.5-beta absence",
+                    "closure",
+                )
+
+    def test_acquisition_resource_requires_page_count_and_response_digest(
+        self,
+    ) -> None:
+        for field in ("page_count", "response_sha256"):
+            with self.subTest(field=field):
+                evidence = closure_evidence()
+                del evidence["acquisition"]["resources"][0][field]
+                self.assert_rejected(
+                    evidence,
+                    "acquisition resource identifiers are invalid",
+                    "closure",
+                )
+
+    def test_source_and_tag_digests_match_their_acquired_responses(
+        self,
+    ) -> None:
+        evidence = closure_evidence()
+        evidence["technical"]["source"]["response_sha256"] = "d" * 64
+        self.assert_rejected(
+            evidence,
+            "technical source response digest shall equal acquired response",
+            "closure",
+        )
+
+    def test_acquisition_manifest_covers_user_commit_pr_checks_and_tag(
+        self,
+    ) -> None:
+        required = (
+            "user",
+            f"repos/tdistress/ESAF/commits/{CLOSURE_SHA}",
+            "repos/tdistress/ESAF/pulls/59",
+            f"repos/tdistress/ESAF/commits/{CLOSURE_SHA}/check-runs",
+            "repos/tdistress/ESAF/git/ref/tags/v0.5-beta",
+        )
+        for resource in required:
+            with self.subTest(resource=resource):
+                evidence = closure_evidence()
+                evidence["acquisition"]["resources"] = [
+                    item
+                    for item in evidence["acquisition"]["resources"]
+                    if item["resource_id"] != resource
+                ]
+                self.assert_rejected(
+                    evidence,
+                    "acquisition manifest is missing required resources",
+                    "closure",
+                )
+        evidence = closure_evidence()
+        evidence["tag_state"]["response_sha256"] = "d" * 64
+        self.assert_rejected(
+            evidence,
+            "remote tag state shall bind the acquired tag response",
+            "closure",
         )
 
     def test_exact_schema_requires_all_phase_keys(self) -> None:
