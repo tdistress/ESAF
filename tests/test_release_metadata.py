@@ -7,6 +7,11 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 
 from tools.release_gates import load_front_matter
+from tools.v05_beta_release_gates import (
+    PHASE_GATE_STATES as V05_PHASE_GATE_STATES,
+    RECORD_RELATIVE as V05_RECORD_RELATIVE,
+    load_front_matter as load_v05_front_matter,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -191,6 +196,113 @@ def release_readiness_rows() -> list[tuple[str, str, str]]:
 
 
 class ReleaseMetadataTests(unittest.TestCase):
+    def test_v05_version_matches_release_record_phase(self) -> None:
+        record = load_v05_front_matter(ROOT / V05_RECORD_RELATIVE)
+        version = read_repository_file("VERSION.md")
+        expected = (
+            "Current Version: **0.4-alpha**"
+            if record["phase"] == "evidence_candidate"
+            else "Current Version: **0.5-beta**"
+        )
+        self.assertIn(expected, version)
+        self.assertEqual(
+            V05_PHASE_GATE_STATES[record["phase"]],
+            {
+                gate: value["state"]
+                for gate, value in record["gates"].items()
+            },
+        )
+        if record["phase"] == "closure_candidate":
+            self.assertIn("conditional", version.casefold())
+            self.assertNotIn(
+                "tag condition was satisfied",
+                version.casefold(),
+            )
+
+    def test_v05_operator_commands_use_module_invocation(self) -> None:
+        readme = read_repository_file("tools/README.md")
+        self.assertIn(
+            "python tools/v05_beta_release_gates.py --check",
+            readme,
+        )
+        self.assertIn(
+            "python -m tools.v05_beta_release_evidence --help",
+            readme,
+        )
+
+    def test_v05_unreleased_changelog_preserves_working_draft_boundary(self) -> None:
+        changelog = read_repository_file("CHANGELOG.md")
+        self.assertEqual(1, changelog.count("## 0.5-beta - Unreleased"))
+        section = changelog.split("## 0.5-beta - Unreleased", 1)[1].split(
+            "\n## ",
+            1,
+        )[0].casefold()
+        section = " ".join(section.split())
+        for phrase in (
+            "assessment foundation",
+            "draft uk pilot profile",
+            "pci dss",
+            "hold",
+            "qualified review",
+            "mapping approval",
+            "certification",
+            "compliance",
+            "equivalence",
+            "endorsement",
+            "assurance",
+            "legal sufficiency",
+            "implementation assessment",
+            "production readiness",
+            "professional judgment",
+            "issue 55 remains open",
+        ):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, section)
+        self.assertNotIn("v0.5-beta was published", section)
+        self.assertNotIn("v0.5-beta is published", section)
+
+    def test_v05_workflow_paths_cover_release_capability(self) -> None:
+        workflow = read_repository_file(
+            ".github/workflows/catalog-validation.yml"
+        )
+        pull_request = workflow.split("  pull_request:\n", 1)[1].split(
+            "  push:\n",
+            1,
+        )[0]
+        main_push = workflow.split("  push:\n", 1)[1].split(
+            "  workflow_dispatch:",
+            1,
+        )[0]
+        required = (
+            "tools/v05_beta_release_gates.py",
+            "tools/v05_beta_release_evidence.py",
+            "tests/test_v05_beta_release_gates.py",
+            "tests/test_v05_beta_release_evidence.py",
+            (
+                "docs/superpowers/reviews/"
+                "2026-07-27-v05-beta-publication-readiness.md"
+            ),
+            (
+                "docs/superpowers/reviews/"
+                "2026-07-27-v05-beta-mermaid-rendering.md"
+            ),
+        )
+        for path in required:
+            with self.subTest(event="pull_request", path=path):
+                self.assertIn(path, pull_request)
+            with self.subTest(event="push", path=path):
+                self.assertIn(path, main_push)
+
+    def test_workflow_runs_both_release_validators(self) -> None:
+        workflow = read_repository_file(
+            ".github/workflows/catalog-validation.yml"
+        )
+        self.assertIn("python tools/release_gates.py --check", workflow)
+        self.assertIn(
+            "python tools/v05_beta_release_gates.py --check",
+            workflow,
+        )
+
     def test_readme_badge_matches_current_version(self) -> None:
         version = current_version()
         readme = read_repository_file("README.md")

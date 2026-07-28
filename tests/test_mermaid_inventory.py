@@ -10,8 +10,12 @@ from tools.mermaid_inventory import check_record, discover, extract_blocks, ledg
 
 ROOT = Path(__file__).resolve().parents[1]
 LEDGER = ROOT / "docs/superpowers/reviews/2026-07-21-v04-alpha-mermaid-rendering.md"
+V05_LEDGER = ROOT / "docs/superpowers/reviews/2026-07-27-v05-beta-mermaid-rendering.md"
 SCRIPT = ROOT / "tools/mermaid_inventory.py"
 APPROVED_STATUS = "Approved on candidate content; pending final exact-head recheck"
+V05_BASELINE_STATUS = (
+    "Baseline renderer capability verified; not closure candidate approval"
+)
 PINNED_RENDERER = "@mermaid-js/mermaid-cli@11.16.0"
 SYNTHETIC_REVIEWER = "Avery Chen (synthetic reviewer)"
 
@@ -32,6 +36,81 @@ def passing_record(blocks, reviewer: str = SYNTHETIC_REVIEWER) -> str:
 
 
 class MermaidInventoryTests(unittest.TestCase):
+    def test_v05_baseline_record_is_allowed_but_not_candidate_approval(self) -> None:
+        failures = check_record(
+            discover(ROOT),
+            V05_LEDGER,
+            expected_status=V05_BASELINE_STATUS,
+        )
+        self.assertEqual([], failures)
+        self.assertNotEqual(APPROVED_STATUS, V05_BASELINE_STATUS)
+
+    def test_cli_rejects_unregistered_ledger_path(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            unregistered = Path(directory) / "untracked.md"
+            unregistered.write_text(
+                "# not a release ledger\n",
+                encoding="utf-8",
+            )
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPT),
+                    "--check-record",
+                    str(unregistered),
+                ],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+            )
+        self.assertEqual(2, result.returncode)
+        self.assertIn("registered release ledger", result.stderr)
+
+    def test_v05_rows_require_structured_render_evidence(self) -> None:
+        blocks = discover(ROOT)[:2]
+        rows = "\n".join(
+            (
+                f"| `{block.path}` | {block.index} | `{block.digest}` | "
+                f"`{'a' * 64}` | `{PINNED_RENDERER}` | Pass | "
+                "Avery Chen (synthetic reviewer) |"
+            )
+            for block in blocks
+        )
+        record_text = (
+            "# Rendering ledger\n\n"
+            f"Status: {V05_BASELINE_STATUS}\n\n"
+            f"Renderer version: `{PINNED_RENDERER}`\n\n"
+            "| Path | Block | Source SHA-256 | Output SHA-256 | Renderer | "
+            "Result | Reviewer |\n"
+            "|---|---:|---|---|---|---|---|\n"
+            f"{rows}\n"
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            record = Path(directory) / "ledger.md"
+            record.write_text(record_text, encoding="utf-8")
+            self.assertEqual(
+                [],
+                check_record(
+                    blocks,
+                    record,
+                    expected_status=V05_BASELINE_STATUS,
+                ),
+            )
+            record.write_text(
+                record_text.replace(f"`{'a' * 64}`", "`missing`", 1),
+                encoding="utf-8",
+            )
+            self.assertIn(
+                "structured render evidence is incomplete",
+                "\n".join(
+                    check_record(
+                        blocks,
+                        record,
+                        expected_status=V05_BASELINE_STATUS,
+                    )
+                ),
+            )
+
     def test_extract_blocks_accepts_lf_and_crlf_fences(self) -> None:
         text = "```mermaid\r\ngraph TD\r\nA-->B\r\n```\r\n\n```mermaid\nsequenceDiagram\nA->>B: ok\n```\n"
         self.assertEqual(extract_blocks(text), ["graph TD\nA-->B", "sequenceDiagram\nA->>B: ok"])

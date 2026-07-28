@@ -5,6 +5,30 @@ All notable changes to ESAF are documented in this file.
 Versions 0.2-alpha and 0.3-alpha remain unreleased working-draft stages.
 Version 0.4-alpha is a tagged Working Draft.
 
+## 0.5-beta - Unreleased
+
+### Added
+
+- Added the ESAF-1500 assessment foundation and one Draft UK pilot profile.
+- Recorded the PCI DSS mapping-readiness decision as `HOLD`.
+- Added v0.5 release validation and authenticated evidence-collection tooling.
+- Added an evidence-candidate readiness record and a baseline Mermaid
+  rendering ledger. These records do not claim publication or
+  closure-candidate approval.
+
+### Changed
+
+- Selected owner-risk acceptance as the planned uniform basis for the three
+  Draft UK mapping sets. Qualified review remains deferred, all mapping sets
+  and records remain Draft, and issue 55 remains open.
+- Kept Working Draft publication conditional on a future exact closure
+  candidate and verified remote annotated tag.
+- Clarified that this stage does not establish qualified review, mapping
+  approval, artifact lifecycle approval, certification, compliance,
+  equivalence, endorsement, external scheme approval, assurance, legal
+  sufficiency, implementation assessment, production readiness, or
+  replacement of qualified professional judgment.
+
 ## 0.4-alpha - 2026-07-23
 
 ### Added

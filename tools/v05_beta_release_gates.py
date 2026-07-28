@@ -25,6 +25,14 @@ RECORD_RELATIVE = (
     "docs/superpowers/reviews/"
     "2026-07-27-v05-beta-publication-readiness.md"
 )
+CLOSURE_ALLOWLIST = (
+    "VERSION.md",
+    "README.md",
+    "ROADMAP.md",
+    "CHANGELOG.md",
+    "project/RELEASE_PLAN.md",
+    RECORD_RELATIVE,
+)
 REPOSITORY_SCOPE = "complete_git_tracked_repository"
 PUBLICATION_CONDITION = "remote_annotated_tag_matches_exact_validated_commit"
 MAPPING_DECISION_BASES = {"qualified_approval", "owner_risk_acceptance"}

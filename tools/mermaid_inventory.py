@@ -12,8 +12,20 @@ import sys
 import tempfile
 
 MERMAID_RE = re.compile(r"```mermaid\r?\n(.*?)\r?\n```", re.DOTALL)
-RELEASE_LEDGER = Path("docs/superpowers/reviews/2026-07-21-v04-alpha-mermaid-rendering.md")
+V04_RELEASE_LEDGER = Path(
+    "docs/superpowers/reviews/2026-07-21-v04-alpha-mermaid-rendering.md"
+)
+V05_RELEASE_LEDGER = Path(
+    "docs/superpowers/reviews/2026-07-27-v05-beta-mermaid-rendering.md"
+)
 APPROVED_STATUS = "Approved on candidate content; pending final exact-head recheck"
+V05_BASELINE_STATUS = (
+    "Baseline renderer capability verified; not closure candidate approval"
+)
+RELEASE_LEDGERS = {
+    V04_RELEASE_LEDGER: APPROVED_STATUS,
+    V05_RELEASE_LEDGER: V05_BASELINE_STATUS,
+}
 PINNED_RENDERER = "@mermaid-js/mermaid-cli@11.16.0"
 STATUS_FIELD_RE = re.compile(r"^Status:\s*(?P<value>.*?)\s*$", re.MULTILINE)
 RENDERER_FIELD_RE = re.compile(
@@ -27,6 +39,13 @@ GENERIC_REVIEWER_RE = re.compile(
 LEDGER_ROW_RE = re.compile(
     r"^\| `(?P<path>[^`]+)` \| (?P<index>\d+) \| `(?P<digest>[0-9a-f]{64})` \| "
     r"(?P<diagram_type>[^|]+) \| (?P<render>[^|]+) \| (?P<readability>[^|]+) \| "
+    r"(?P<reviewer>[^|]+) \|$"
+)
+BASELINE_LEDGER_ROW_RE = re.compile(
+    r"^\| `(?P<path>[^`]+)` \| (?P<index>\d+) \| "
+    r"`(?P<digest>[0-9a-f]{64})` \| "
+    r"`(?P<output_digest>[^`]+)` \| "
+    r"`(?P<renderer>[^`]+)` \| (?P<result>[^|]+) \| "
     r"(?P<reviewer>[^|]+) \|$"
 )
 
@@ -118,32 +137,70 @@ def ledger_rows(blocks: list[MermaidBlock]) -> str:
     )
 
 
-def check_record(blocks: list[MermaidBlock], record: Path) -> list[str]:
+def check_record(
+    blocks: list[MermaidBlock],
+    record: Path,
+    expected_status: str = APPROVED_STATUS,
+) -> list[str]:
     text = record.read_text(encoding="utf-8")
+    structured_baseline = expected_status == V05_BASELINE_STATUS
+    row_pattern = BASELINE_LEDGER_ROW_RE if structured_baseline else LEDGER_ROW_RE
     observed = []
     for line in text.splitlines():
-        match = LEDGER_ROW_RE.match(line)
+        match = row_pattern.match(line)
         if match:
             observed.append(match.groupdict())
-    expected = [
-        (block.path, str(block.index), block.digest, block.diagram_type)
-        for block in blocks
-    ]
-    actual = [
-        (row["path"], row["index"], row["digest"], row["diagram_type"].strip())
-        for row in observed
-    ]
+    if structured_baseline:
+        expected = [
+            (block.path, str(block.index), block.digest)
+            for block in blocks
+        ]
+        actual = [
+            (row["path"], row["index"], row["digest"])
+            for row in observed
+        ]
+    else:
+        expected = [
+            (block.path, str(block.index), block.digest, block.diagram_type)
+            for block in blocks
+        ]
+        actual = [
+            (
+                row["path"],
+                row["index"],
+                row["digest"],
+                row["diagram_type"].strip(),
+            )
+            for row in observed
+        ]
     failures = []
     statuses = [match.group("value") for match in STATUS_FIELD_RE.finditer(text)]
-    if statuses != [APPROVED_STATUS]:
-        failures.append("ledger status is not approved on candidate content")
+    if statuses != [expected_status]:
+        failures.append(
+            "ledger status does not match registered release ledger"
+            if structured_baseline
+            else "ledger status is not approved on candidate content"
+        )
     renderers = [match.group("value") for match in RENDERER_FIELD_RE.finditer(text)]
     if renderers != [PINNED_RENDERER]:
         failures.append("renderer version is not pinned to the publication candidate")
     if actual != expected:
         failures.append("ledger rows do not exactly match the current Mermaid inventory")
     for row in observed:
-        if row["render"].strip() != "Pass" or row["readability"].strip() != "Pass":
+        if structured_baseline:
+            if (
+                row["renderer"].strip() != PINNED_RENDERER
+                or row["result"].strip() != "Pass"
+                or not re.fullmatch(r"[0-9a-f]{64}", row["output_digest"])
+            ):
+                failures.append(
+                    f"{row['path']} block {row['index']} structured render "
+                    "evidence is incomplete"
+                )
+        elif (
+            row["render"].strip() != "Pass"
+            or row["readability"].strip() != "Pass"
+        ):
             failures.append(f"{row['path']} block {row['index']} is not fully reviewed")
         reviewer = " ".join(row["reviewer"].split()).casefold()
         if reviewer in PLACEHOLDER_REVIEWERS or GENERIC_REVIEWER_RE.fullmatch(reviewer):
@@ -170,13 +227,24 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(sys.argv[1:] if argv is None else argv)
     root = Path(__file__).resolve().parents[1]
+    expected_status = None
     if args.check_record:
-        expected_record = (root / RELEASE_LEDGER).resolve()
-        if expected_record.relative_to(root).as_posix() not in tracked_markdown(root):
-            raise ValueError("the exact tracked release ledger is unavailable")
-        if args.check_record.resolve() != expected_record:
-            print("--check-record requires the exact tracked release ledger", file=sys.stderr)
+        resolved_record = args.check_record.resolve()
+        registered = [
+            (relative, status)
+            for relative, status in RELEASE_LEDGERS.items()
+            if (root / relative).resolve() == resolved_record
+        ]
+        if len(registered) != 1:
+            print(
+                "--check-record requires the exact tracked release ledger or "
+                "another registered release ledger",
+                file=sys.stderr,
+            )
             return 2
+        relative_record, expected_status = registered[0]
+        if relative_record.as_posix() not in tracked_markdown(root):
+            raise ValueError("the exact tracked release ledger is unavailable")
     blocks = discover(root)
     if args.record_template:
         print(ledger_rows(blocks))
@@ -185,7 +253,11 @@ def main(argv: list[str] | None = None) -> int:
         inventory = write_render_inputs(blocks, output_dir)
         print(f"Wrote {len(blocks)} Mermaid blocks to {inventory.parent}")
     if args.check_record:
-        failures = check_record(blocks, args.check_record)
+        failures = check_record(
+            blocks,
+            args.check_record,
+            expected_status=expected_status,
+        )
         if failures:
             print("\n".join(failures), file=sys.stderr)
             return 1

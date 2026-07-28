@@ -101,14 +101,21 @@ Architecture validation requires linked pattern records to match registry status
 
 ## Release-gate validation
 
-Validate the authoritative 0.4-alpha readiness record without changing files:
+Validate the authoritative 0.4-alpha record and the current v0.5-beta
+readiness record without changing files:
 
 ```shell
 python tools/release_gates.py --check
+python tools/v05_beta_release_gates.py --check
+python -m tools.v05_beta_release_evidence --help
 ```
 
-Exact candidate, approval, merge, and tag SHAs remain in GitHub evidence and an
-external temporary JSON file; they are never written into the tracked record.
+Use module invocation for the v0.5 evidence collector. The help command does
+not fetch GitHub evidence. Operational collection requires the authenticated
+resource identifiers and exact values documented by the command.
+
+Exact candidate, approval, merge, and tag SHAs remain in GitHub evidence and
+an external temporary JSON file until durable publication evidence exists.
 
 ## Mermaid publication rendering
 

@@ -27,6 +27,7 @@ from tools.crosswalks.qualified_review_evidence import (
 )
 from tools.validate_qualified_review_evidence import VALIDATOR_VERSION
 from tests.test_validate_qualified_review_evidence import CampaignFixture
+from tools import v05_beta_release_gates
 from tools.v05_beta_release_gates import (
     PHASE_GATE_STATES,
     RECORD_RELATIVE,
@@ -40,6 +41,7 @@ from tools.v05_beta_release_gates import (
 
 ROOT = Path(__file__).resolve().parents[1]
 V04_RECORD = ROOT / "docs/superpowers/reviews/2026-07-21-v04-alpha-publication-readiness.md"
+V05_RECORD = ROOT / RECORD_RELATIVE
 EXPECTED_SCOPE = {
     "controls": 91,
     "control_families": 16,
@@ -1649,6 +1651,75 @@ class V05ExternalEvidenceTests(unittest.TestCase):
 
 
 class V05ReleaseRecordTests(unittest.TestCase):
+    def test_v05_readiness_record_matches_its_phase(self) -> None:
+        record = load_front_matter(V05_RECORD)
+        self.assertIn(
+            record["phase"],
+            {"evidence_candidate", "closure_candidate", "published"},
+        )
+        self.assertEqual(
+            PHASE_GATE_STATES[record["phase"]],
+            {
+                gate: value["state"]
+                for gate, value in record["gates"].items()
+            },
+        )
+        self.assertEqual([], validate_record(ROOT, record))
+
+    def test_closure_candidate_fixture_uses_exact_gate_matrix(self) -> None:
+        record = record_fixture("closure_candidate")
+        self.assertEqual([], validate_record(ROOT, record))
+        self.assertEqual("open", record["gates"]["post_merge"]["state"])
+
+    def test_closure_allowlist_is_exact(self) -> None:
+        expected = {
+            "VERSION.md",
+            "README.md",
+            "ROADMAP.md",
+            "CHANGELOG.md",
+            "project/RELEASE_PLAN.md",
+            (
+                "docs/superpowers/reviews/"
+                "2026-07-27-v05-beta-publication-readiness.md"
+            ),
+        }
+        self.assertEqual(
+            expected,
+            set(v05_beta_release_gates.CLOSURE_ALLOWLIST),
+        )
+
+    def test_uk_mapping_sets_and_records_remain_unreviewed_drafts(self) -> None:
+        catalog = json.loads(
+            (ROOT / "crosswalks/catalog.json").read_text(encoding="utf-8")
+        )
+        mapping_sets = catalog["mapping_sets"]
+        self.assertEqual(3, len(mapping_sets))
+        self.assertEqual(set(MAPPING_SETS), {
+            item["metadata"]["mapping_set_id"]
+            for item in mapping_sets
+        })
+        provision_count = 0
+        for mapping_set in mapping_sets:
+            with self.subTest(mapping_set=mapping_set["path"]):
+                self.assertEqual("draft", mapping_set["metadata"]["status"])
+                registry = load_front_matter(
+                    ROOT
+                    / "crosswalks/registry"
+                    / f"{mapping_set['metadata']['mapping_set_id']}.md"
+                )
+                self.assertEqual([], registry["events"])
+                self.assertNotIn("reviewer", registry)
+                self.assertNotIn("approver", registry)
+                self.assertNotIn("approval", registry)
+                for provision in mapping_set["provisions"]:
+                    provision_count += 1
+                    record = load_front_matter(ROOT / provision["path"])
+                    self.assertEqual("draft", record["status"])
+                    self.assertNotIn("reviewer", record)
+                    self.assertNotIn("approver", record)
+                    self.assertNotIn("approval", record)
+        self.assertEqual(404, provision_count)
+
     def test_v04_published_validator_remains_green(self) -> None:
         historical = load_v04_front_matter(V04_RECORD)
         self.assertEqual([], validate_v04_record(ROOT, historical))
