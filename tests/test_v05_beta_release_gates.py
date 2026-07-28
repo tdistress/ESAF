@@ -1184,6 +1184,17 @@ class V05ExternalEvidenceTests(unittest.TestCase):
             "closure",
         )
 
+    def test_sourced_verdict_requires_exact_calendar_date(self) -> None:
+        for invalid in ("20260727", "2026-W31-1", "2026-7-27"):
+            with self.subTest(invalid=invalid):
+                evidence = closure_evidence()
+                evidence["technical"]["date"] = invalid
+                self.assert_rejected(
+                    evidence,
+                    "technical verdict date shall be YYYY-MM-DD",
+                    "closure",
+                )
+
     def test_source_comment_url_matches_canonical_url_from_acquired_response(
         self,
     ) -> None:

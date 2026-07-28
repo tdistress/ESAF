@@ -10,7 +10,9 @@ import io
 import os
 from pathlib import Path
 import subprocess
+import tempfile
 import unittest
+from unittest.mock import patch
 
 from tests.test_v05_beta_release_gates import (
     CLOSURE_SHA,
@@ -28,11 +30,13 @@ from tools.v05_beta_release_evidence import (
     ApiClient,
     ApiPageSet,
     ApiResponse,
+    DetachedValidationRunner,
     GhApiClient,
     LocalValidationRunner,
     ValidationRunner,
     build_parser,
     collect_closure_evidence,
+    main,
     parse_fenced_json,
     refresh_taggable_evidence,
     source_record,
@@ -259,15 +263,6 @@ class FakeValidationRunner(ValidationRunner):
         return deepcopy(self.results)
 
 
-class RejectingValidationRunner(ValidationRunner):
-    def run(
-        self, root: Path, expected_head: str
-    ) -> list[dict[str, object]]:
-        raise AssertionError(
-            "taggable refresh shall not rerun closure commands on merged HEAD"
-        )
-
-
 def valid_fake_client() -> FakeClient:
     responses = {
         USER_RESOURCE: api_response(
@@ -290,8 +285,8 @@ def valid_fake_client() -> FakeClient:
                 "commit": {
                     "author": {"date": COMMIT_TIME},
                     "committer": {"date": COMMIT_TIME},
+                    "tree": {"sha": CLOSURE_TREE},
                 },
-                "tree": {"sha": CLOSURE_TREE},
             },
         ),
         MERGE_COMMIT_RESOURCE: api_response(
@@ -305,8 +300,8 @@ def valid_fake_client() -> FakeClient:
                 "commit": {
                     "author": {"date": "2026-07-27T12:06:00Z"},
                     "committer": {"date": "2026-07-27T12:06:00Z"},
+                    "tree": {"sha": CLOSURE_TREE},
                 },
-                "tree": {"sha": CLOSURE_TREE},
             },
         ),
         PR_RESOURCE: api_response(
@@ -496,6 +491,38 @@ def completed(
 
 
 class V05GhApiTransportTests(unittest.TestCase):
+    def test_gh_client_pins_github_com_and_rejects_host_drift(self) -> None:
+        runner = QueueRunner(
+            [completed(USER_RESOURCE, {"login": "tdistress"})]
+        )
+        with patch.dict(os.environ, {"GH_HOST": "enterprise.example"}, clear=False):
+            GhApiClient(runner=runner, clock=lambda: NOW).get(USER_RESOURCE)
+        self.assertEqual(
+            ["gh", "api", "--hostname", "github.com", USER_RESOURCE],
+            runner.calls[0][0],
+        )
+        self.assertNotIn("GH_HOST", runner.calls[0][1])
+
+        drift_trace = debug_trace(USER_RESOURCE).replace(
+            b"> Host: api.github.com\n",
+            b"> Host: enterprise.example\n",
+        )
+        with self.assertRaisesRegex(
+            ValueError, "GitHub API host changed"
+        ):
+            GhApiClient(
+                runner=QueueRunner(
+                    [
+                        completed(
+                            USER_RESOURCE,
+                            {"login": "tdistress"},
+                            trace=drift_trace,
+                        )
+                    ]
+                ),
+                clock=lambda: NOW,
+            ).get(USER_RESOURCE)
+
     def test_captured_secret_free_debug_fixtures_parse_each_resource_kind(self) -> None:
         resources = (
             "user",
@@ -668,7 +695,10 @@ class V05GhApiTransportTests(unittest.TestCase):
             page.requested_resource for page in pages.pages
         ))
         self.assertEqual(
-            [["gh", "api", page_one], ["gh", "api", page_two]],
+            [
+                ["gh", "api", "--hostname", "github.com", page_one],
+                ["gh", "api", "--hostname", "github.com", page_two],
+            ],
             [call[0] for call in runner.calls],
         )
 
@@ -778,6 +808,50 @@ class V05StructuredCommentTests(unittest.TestCase):
 
 
 class V05LocalValidationRunnerTests(unittest.TestCase):
+    def test_detached_runner_executes_at_verified_immutable_closure_head(
+        self,
+    ) -> None:
+        inner = FakeValidationRunner()
+
+        def git_runner(
+            args: list[str], **kwargs: object
+        ) -> subprocess.CompletedProcess[bytes]:
+            cwd = Path(kwargs["cwd"])
+            if args == [
+                "git", "rev-parse", f"{CLOSURE_SHA}^{{commit}}"
+            ]:
+                stdout = f"{CLOSURE_SHA}\n".encode("ascii")
+            elif args == [
+                "git", "rev-parse", f"{CLOSURE_SHA}^{{tree}}"
+            ]:
+                stdout = f"{CLOSURE_TREE}\n".encode("ascii")
+            elif args[:4] == ["git", "worktree", "add", "--detach"]:
+                Path(args[4]).mkdir()
+                stdout = b""
+            elif args == ["git", "rev-parse", "HEAD"]:
+                self.assertNotEqual(ROOT, cwd)
+                stdout = f"{CLOSURE_SHA}\n".encode("ascii")
+            elif args == ["git", "rev-parse", "HEAD^{tree}"]:
+                self.assertNotEqual(ROOT, cwd)
+                stdout = f"{CLOSURE_TREE}\n".encode("ascii")
+            elif args[:4] == ["git", "worktree", "remove", "--force"]:
+                stdout = b""
+            else:
+                raise AssertionError(args)
+            return subprocess.CompletedProcess(args, 0, stdout, b"")
+
+        results = DetachedValidationRunner(
+            validation_runner=inner,
+            runner=git_runner,
+        ).run(ROOT, CLOSURE_SHA)
+        self.assertEqual(1, len(inner.calls))
+        self.assertNotEqual(ROOT, inner.calls[0][0])
+        self.assertEqual(CLOSURE_SHA, inner.calls[0][1])
+        self.assertEqual(
+            set(COMMAND_IDS) - {"mermaid_rendering"},
+            {item["name"] for item in results},
+        )
+
     def test_runner_executes_exact_canonical_nonvisual_commands(self) -> None:
         executor = RecordingCommandExecutor()
         results = LocalValidationRunner(executor).run(ROOT, CLOSURE_SHA)
@@ -830,6 +904,29 @@ class V05LocalValidationRunnerTests(unittest.TestCase):
 
 
 class V05AcquisitionTests(unittest.TestCase):
+    def test_collector_uses_real_github_commit_tree_shape_for_closure_and_merge(
+        self,
+    ) -> None:
+        client = valid_fake_client()
+        closure = collect_closure_evidence(
+            client, **valid_collection_args()
+        )
+        self.assertEqual(CLOSURE_TREE, closure["closure_tree"])
+        mark_pull_request_merged(client)
+        taggable = refresh_taggable_evidence(
+            client,
+            base_evidence=closure,
+            merge_head=MERGE_SHA,
+            post_merge_results={
+                "schema": "esaf-v05-post-merge-results-v1",
+                "sha": MERGE_SHA,
+                "tree": CLOSURE_TREE,
+                "commands": command_results(None, taggable=True),
+            },
+            **valid_collection_args(),
+        )
+        self.assertEqual(CLOSURE_TREE, taggable["merge_tree"])
+
     def test_collector_builds_gate_valid_evidence_from_live_envelopes(self) -> None:
         evidence = collect_closure_evidence(
             valid_fake_client(), **valid_collection_args()
@@ -964,6 +1061,32 @@ class V05AcquisitionTests(unittest.TestCase):
                     collect_closure_evidence(
                         client, **valid_collection_args()
                     )
+
+    def test_collector_rejects_preexisting_local_v05_tag(self) -> None:
+        def local_tag_runner(
+            args: list[str], **kwargs: object
+        ) -> subprocess.CompletedProcess[bytes]:
+            del kwargs
+            self.assertEqual(
+                [
+                    "git",
+                    "show-ref",
+                    "--verify",
+                    "--quiet",
+                    "refs/tags/v0.5-beta",
+                ],
+                args,
+            )
+            return subprocess.CompletedProcess(args, 0, b"", b"")
+
+        arguments = valid_collection_args()
+        arguments["repository_runner"] = local_tag_runner
+        with self.assertRaisesRegex(
+            ValueError, "local v0.5-beta tag already exists"
+        ):
+            collect_closure_evidence(
+                valid_fake_client(), **arguments
+            )
 
     def test_collector_rejects_redirected_resource(self) -> None:
         client = valid_fake_client()
@@ -1166,7 +1289,7 @@ class V05AcquisitionTests(unittest.TestCase):
             ),
         )
 
-    def test_refresh_preserves_executed_base_commands_without_rerunning_them(
+    def test_refresh_rejects_check_inferred_or_tampered_base_commands(
         self,
     ) -> None:
         client = valid_fake_client()
@@ -1174,24 +1297,69 @@ class V05AcquisitionTests(unittest.TestCase):
             client, **valid_collection_args()
         )
         mark_pull_request_merged(client)
-        arguments = valid_collection_args()
-        arguments["validation_runner"] = RejectingValidationRunner()
-        taggable = refresh_taggable_evidence(
-            client,
-            base_evidence=closure,
-            merge_head=MERGE_SHA,
-            post_merge_results={
-                "schema": "esaf-v05-post-merge-results-v1",
-                "sha": MERGE_SHA,
-                "tree": CLOSURE_TREE,
-                "commands": command_results(None, taggable=True),
-            },
-            **arguments,
+        check_url = closure["github_checks"]["observed"][0]["url"]
+        for replacement in ("tampered", check_url):
+            with self.subTest(replacement=replacement):
+                changed = deepcopy(closure)
+                changed["candidate_commands"][0]["result"] = replacement
+                runner = FakeValidationRunner()
+                arguments = valid_collection_args()
+                arguments["validation_runner"] = runner
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "base candidate commands shall equal fresh execution",
+                ):
+                    refresh_taggable_evidence(
+                        client,
+                        base_evidence=changed,
+                        merge_head=MERGE_SHA,
+                        post_merge_results={
+                            "schema": "esaf-v05-post-merge-results-v1",
+                            "sha": MERGE_SHA,
+                            "tree": CLOSURE_TREE,
+                            "commands": command_results(None, taggable=True),
+                        },
+                        **arguments,
+                    )
+                self.assertEqual([(ROOT, CLOSURE_SHA)], runner.calls)
+
+    def test_collector_requires_exact_calendar_publication_date(self) -> None:
+        for invalid in ("20260727", "2026-W31-1", "2026-7-27"):
+            with self.subTest(invalid=invalid):
+                arguments = valid_collection_args()
+                arguments["publication_date"] = invalid
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "publication date shall be YYYY-MM-DD",
+                ):
+                    collect_closure_evidence(
+                        valid_fake_client(), **arguments
+                    )
+
+    def test_refresh_rejects_unknown_postmerge_keys_before_collection(
+        self,
+    ) -> None:
+        closure = collect_closure_evidence(
+            valid_fake_client(), **valid_collection_args()
         )
-        self.assertEqual(
-            closure["candidate_commands"],
-            taggable["candidate_commands"],
-        )
+        post_merge = {
+            "schema": "esaf-v05-post-merge-results-v1",
+            "sha": MERGE_SHA,
+            "tree": CLOSURE_TREE,
+            "commands": command_results(None, taggable=True),
+            "unexpected": True,
+        }
+        with self.assertRaisesRegex(
+            ValueError, "post-merge results keys are invalid"
+        ):
+            refresh_taggable_evidence(
+                valid_fake_client(),
+                base_evidence=closure,
+                merge_head=MERGE_SHA,
+                post_merge_results=post_merge,
+                **valid_collection_args(),
+            )
+
 
     def test_refresh_requires_pr_merged_to_exact_merge_head(self) -> None:
         initial = valid_fake_client()
@@ -1256,7 +1424,7 @@ class V05AcquisitionTests(unittest.TestCase):
         mark_pull_request_merged(client)
         merge = client.responses[MERGE_COMMIT_RESOURCE]
         payload = merge.json_object()
-        payload["tree"]["sha"] = "f" * 40
+        payload["commit"]["tree"]["sha"] = "f" * 40
         client.responses[MERGE_COMMIT_RESOURCE] = api_response(
             MERGE_COMMIT_RESOURCE, payload
         )
@@ -1310,3 +1478,72 @@ class V05AcquisitionTests(unittest.TestCase):
                     f"unrecognized arguments: {option} fabricated.json",
                     error.getvalue(),
                 )
+
+    def test_cli_rejects_output_in_any_registered_worktree_or_git_common_dir(
+        self,
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            base = Path(temporary).resolve()
+            other_worktree = base / "registered worktree"
+            common_dir = base / "repository.git"
+            other_worktree.mkdir()
+            common_dir.mkdir()
+
+            def git_runner(
+                args: list[str], **kwargs: object
+            ) -> subprocess.CompletedProcess[bytes]:
+                del kwargs
+                if args == ["git", "worktree", "list", "--porcelain"]:
+                    body = (
+                        f"worktree {ROOT}\nHEAD {CLOSURE_SHA}\n"
+                        "branch refs/heads/main\n\n"
+                        f"worktree {other_worktree}\nHEAD {CLOSURE_SHA}\n"
+                        "detached\n\n"
+                    )
+                    return subprocess.CompletedProcess(
+                        args, 0, body.encode("utf-8"), b""
+                    )
+                if args == ["git", "rev-parse", "--git-common-dir"]:
+                    return subprocess.CompletedProcess(
+                        args, 0, f"{common_dir}\n".encode("utf-8"), b""
+                    )
+                raise AssertionError(args)
+
+            required = [
+                "--pr-number", str(PR_NUMBER),
+                "--expected-head", CLOSURE_SHA,
+                "--owner-comment-id", str(OWNER_ID),
+                "--technical-comment-id", str(TECHNICAL_ID),
+                "--editorial-comment-id", str(EDITORIAL_ID),
+                "--terminology-comment-id", str(TERMINOLOGY_ID),
+                "--rendering-comment-id", str(RENDERING_ID),
+                "--profile-scope-comment-id", str(PROFILE_SCOPE_ID),
+                "--governance-comment-id", str(GOVERNANCE_ID),
+                "--publication-date", PUBLICATION_DATE,
+            ]
+            for forbidden in (
+                other_worktree / "evidence.json",
+                common_dir / "artifacts" / "evidence.json",
+            ):
+                with self.subTest(forbidden=forbidden):
+                    error = io.StringIO()
+                    with (
+                        patch(
+                            "tools.v05_beta_release_evidence.subprocess.run",
+                            side_effect=git_runner,
+                        ),
+                        patch(
+                            "tools.v05_beta_release_evidence.GhApiClient"
+                        ) as client_class,
+                        redirect_stderr(error),
+                    ):
+                        self.assertEqual(
+                            1,
+                            main([*required, "--output", str(forbidden)]),
+                        )
+                    client_class.assert_not_called()
+                    self.assertIn(
+                        "output shall remain outside every Git worktree "
+                        "and the Git common directory",
+                        error.getvalue(),
+                    )

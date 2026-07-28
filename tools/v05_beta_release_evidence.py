@@ -14,6 +14,7 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+import tempfile
 from typing import Callable, Protocol, Sequence
 from urllib.parse import parse_qsl, urlencode, urlsplit
 
@@ -268,8 +269,7 @@ class LocalValidationRunner:
                     raise ValueError(
                         f"{name} failed with exit code {return_code}"
                     )
-                text = output.decode("utf-8", errors="replace").strip()
-                result = text or "passed"
+                result = "passed"
             results.append(
                 {
                     "name": name,
@@ -304,45 +304,103 @@ class LocalValidationRunner:
         return text
 
 
-class _RetainedValidationRunner:
+class DetachedValidationRunner:
+    """Run candidate gates in a temporary detached closure-head worktree."""
+
     def __init__(
         self,
-        candidate_commands: object,
-        expected_head: str,
+        validation_runner: ValidationRunner | None = None,
+        runner: Callable[..., object] | None = None,
     ) -> None:
-        if not isinstance(candidate_commands, list):
-            raise ValueError("base candidate commands are invalid")
-        by_name = {
-            item.get("name"): item
-            for item in candidate_commands
-            if isinstance(item, dict)
-        }
-        if (
-            len(candidate_commands) != len(COMMAND_IDS)
-            or set(by_name) != set(COMMAND_IDS)
-        ):
-            raise ValueError("base candidate commands are invalid")
-        retained = [
-            deepcopy(by_name[name])
-            for name in COMMAND_IDS
-            if name != "mermaid_rendering"
-        ]
-        _validate_local_results(retained, expected_head)
-        rendering = by_name["mermaid_rendering"]
-        if (
-            set(rendering) != {"name", "sha", "exit_code", "result"}
-            or rendering.get("sha") != expected_head
-            or rendering.get("exit_code") != 0
-            or not isinstance(rendering.get("result"), dict)
-        ):
-            raise ValueError("base candidate commands are invalid")
-        self._retained = retained
+        self._runner = runner or subprocess.run
+        self._validation_runner = (
+            validation_runner or LocalValidationRunner()
+        )
 
     def run(
         self, root: Path, expected_head: str
     ) -> list[dict[str, object]]:
-        del root, expected_head
-        return deepcopy(self._retained)
+        root = root.resolve()
+        commit = self._git_text(
+            root, ["rev-parse", f"{expected_head}^{{commit}}"]
+        )
+        tree = self._git_text(
+            root, ["rev-parse", f"{expected_head}^{{tree}}"]
+        )
+        if commit != expected_head or SHA_RE.fullmatch(tree) is None:
+            raise ValueError("closure snapshot could not be verified")
+        with tempfile.TemporaryDirectory(
+            prefix="esaf-v05-closure-"
+        ) as temporary:
+            snapshot = Path(temporary).resolve() / "worktree"
+            added = False
+            try:
+                self._git_call(
+                    root,
+                    [
+                        "worktree",
+                        "add",
+                        "--detach",
+                        str(snapshot),
+                        expected_head,
+                    ],
+                )
+                added = True
+                if (
+                    self._git_text(snapshot, ["rev-parse", "HEAD"])
+                    != expected_head
+                    or self._git_text(
+                        snapshot, ["rev-parse", "HEAD^{tree}"]
+                    )
+                    != tree
+                ):
+                    raise ValueError(
+                        "detached closure snapshot is not immutable"
+                    )
+                results = self._validation_runner.run(
+                    snapshot, expected_head
+                )
+                _validate_local_results(results, expected_head)
+                return results
+            finally:
+                if added:
+                    self._git_call(
+                        root,
+                        [
+                            "worktree",
+                            "remove",
+                            "--force",
+                            str(snapshot),
+                        ],
+                    )
+
+    def _git_call(self, root: Path, arguments: list[str]) -> object:
+        completed = self._runner(
+            ["git", *arguments],
+            cwd=root,
+            check=False,
+            capture_output=True,
+        )
+        if getattr(completed, "returncode", None) != 0:
+            raise ValueError(f"git {' '.join(arguments)} failed")
+        return completed
+
+    def _git_text(self, root: Path, arguments: list[str]) -> str:
+        completed = self._git_call(root, arguments)
+        stdout = getattr(completed, "stdout", None)
+        if not isinstance(stdout, bytes):
+            raise ValueError("Git command did not return exact byte output")
+        try:
+            text = stdout.decode("utf-8", errors="strict").strip()
+        except UnicodeDecodeError as exc:
+            raise ValueError(
+                "Git command did not return exact byte output"
+            ) from exc
+        if not text:
+            raise ValueError(
+                f"git {' '.join(arguments)} returned no result"
+            )
+        return text
 
 
 class GhApiClient:
@@ -376,8 +434,9 @@ class GhApiClient:
     def _get_included_response(self, resource: str) -> ApiResponse:
         environment = os.environ.copy()
         environment["GH_DEBUG"] = "api"
+        environment.pop("GH_HOST", None)
         completed = self._runner(
-            ["gh", "api", resource],
+            ["gh", "api", "--hostname", "github.com", resource],
             check=False,
             capture_output=True,
             env=environment,
@@ -452,7 +511,31 @@ def _parse_debug_response(
     response_index, response_match = responses[0]
     if request_index >= response_index or request_match.group(1) != "GET":
         raise ValueError("GitHub debug transport is malformed")
-    observed_uri = request_match.group(2)
+    observed_target = request_match.group(2)
+    parsed_target = urlsplit(observed_target)
+    if parsed_target.scheme or parsed_target.netloc:
+        if (
+            parsed_target.scheme != "https"
+            or parsed_target.netloc != "api.github.com"
+        ):
+            raise ValueError("GitHub API host changed")
+        observed_uri = parsed_target.path
+        if parsed_target.query:
+            observed_uri += f"?{parsed_target.query}"
+    else:
+        observed_uri = observed_target
+    request_hosts: list[str] = []
+    for line in lines[request_index + 1 : response_index]:
+        if not line.startswith("> "):
+            continue
+        header = line[2:]
+        if ":" not in header:
+            raise ValueError("GitHub debug transport is malformed")
+        name, value = header.split(":", 1)
+        if name.casefold() == "host":
+            request_hosts.append(value.strip().casefold())
+    if request_hosts != ["api.github.com"]:
+        raise ValueError("GitHub API host changed")
     if observed_uri != f"/{resource}":
         raise ValueError("GitHub request URI changed")
     status = int(response_match.group(1))
@@ -652,6 +735,7 @@ def collect_closure_evidence(
     publication_date: str,
     now: datetime | None = None,
     validation_runner: ValidationRunner | None = None,
+    repository_runner: Callable[..., object] | None = None,
     merged_head: str | None = None,
 ) -> dict[str, object]:
     """Collect closure evidence from authenticated, exact GitHub resources."""
@@ -662,12 +746,13 @@ def collect_closure_evidence(
     )
     if SHA_RE.fullmatch(expected_head) is None:
         raise ValueError("expected closure head shall be a 40-character SHA")
-    try:
-        date.fromisoformat(publication_date)
-    except ValueError as exc:
-        raise ValueError("publication date shall be an ISO date") from exc
+    if not _calendar_date(publication_date):
+        raise ValueError("publication date shall be YYYY-MM-DD")
     if not _integer(pr_number) or pr_number < 1:
         raise ValueError("pull request number shall be positive")
+    _require_local_tag_absent(
+        root, repository_runner or subprocess.run
+    )
 
     login = client.auth_login()
     if not _nonblank(login):
@@ -692,8 +777,12 @@ def collect_closure_evidence(
     )
     if commit.get("sha") != expected_head:
         raise ValueError("GitHub closure commit shall equal expected head")
-    tree = commit.get("tree")
     commit_details = commit.get("commit")
+    tree = (
+        commit_details.get("tree")
+        if isinstance(commit_details, dict)
+        else None
+    )
     if (
         not isinstance(tree, dict)
         or SHA_RE.fullmatch(str(tree.get("sha"))) is None
@@ -974,23 +1063,48 @@ def refresh_taggable_evidence(
     **collection_arguments: object,
 ) -> dict[str, object]:
     """Re-fetch closure sources and bind post-merge evidence to an equal tree."""
+    if (
+        not isinstance(post_merge_results, dict)
+        or set(post_merge_results)
+        != {"schema", "sha", "tree", "commands"}
+    ):
+        raise ValueError("post-merge results keys are invalid")
     expected_head = collection_arguments.get("expected_head")
     if (
         not isinstance(expected_head, str)
         or base_evidence.get("closure_head") != expected_head
     ):
         raise ValueError("base evidence shall match expected closure head")
-    retained_runner = _RetainedValidationRunner(
+    base_commands = _validated_candidate_commands(
         base_evidence.get("candidate_commands"), expected_head
     )
     refresh_arguments = dict(collection_arguments)
-    refresh_arguments["validation_runner"] = retained_runner
+    if refresh_arguments.get("validation_runner") is None:
+        refresh_arguments["validation_runner"] = DetachedValidationRunner()
     refresh_arguments["merged_head"] = merge_head
     fresh = collect_closure_evidence(client, **refresh_arguments)
     _require_unchanged_sources(base_evidence, fresh)
-    fresh["candidate_commands"] = deepcopy(
-        base_evidence["candidate_commands"]
+    fresh_commands = _validated_candidate_commands(
+        fresh.get("candidate_commands"), expected_head
     )
+    nonvisual_names = [
+        name for name in COMMAND_IDS if name != "mermaid_rendering"
+    ]
+    base_by_name = {
+        str(item["name"]): item for item in base_commands
+    }
+    fresh_by_name = {
+        str(item["name"]): item for item in fresh_commands
+    }
+    if [
+        base_by_name[name] for name in nonvisual_names
+    ] != [
+        fresh_by_name[name] for name in nonvisual_names
+    ]:
+        raise ValueError(
+            "base candidate commands shall equal fresh execution"
+        )
+    fresh["candidate_commands"] = fresh_commands
     fresh["merge_state"] = deepcopy(base_evidence.get("merge_state"))
     if SHA_RE.fullmatch(merge_head) is None or merge_head == fresh["closure_head"]:
         raise ValueError("merge head shall be a distinct 40-character SHA")
@@ -1005,7 +1119,12 @@ def refresh_taggable_evidence(
     merge_commit = _validated_object(
         merge_response, _reference_now(fixed_now)
     )
-    merge_tree = merge_commit.get("tree")
+    merge_details = merge_commit.get("commit")
+    merge_tree = (
+        merge_details.get("tree")
+        if isinstance(merge_details, dict)
+        else None
+    )
     merge_url = f"{WEB_ROOT}/commit/{merge_head}"
     if (
         merge_commit.get("sha") != merge_head
@@ -1048,6 +1167,29 @@ def _validated_object(
         return response.json_object()
     except (json.JSONDecodeError, UnicodeDecodeError) as exc:
         raise ValueError("GitHub API response body is invalid") from exc
+
+
+def _require_local_tag_absent(
+    root: Path, runner: Callable[..., object]
+) -> None:
+    command = [
+        "git",
+        "show-ref",
+        "--verify",
+        "--quiet",
+        f"refs/tags/{TAG}",
+    ]
+    completed = runner(
+        command,
+        cwd=root,
+        check=False,
+        capture_output=True,
+    )
+    return_code = getattr(completed, "returncode", None)
+    if return_code == 0:
+        raise ValueError("local v0.5-beta tag already exists")
+    if return_code != 1:
+        raise ValueError("local v0.5-beta tag state could not be verified")
 
 
 def _validate_response(response: ApiResponse, now: datetime) -> None:
@@ -1131,6 +1273,36 @@ def _validate_local_results(
             or not _nonblank(item.get("result"))
         ):
             raise ValueError("local validation command results are invalid")
+
+
+def _validated_candidate_commands(
+    value: object, expected_head: str
+) -> list[dict[str, object]]:
+    if not isinstance(value, list) or not all(
+        isinstance(item, dict) for item in value
+    ):
+        raise ValueError("base candidate commands are invalid")
+    by_name = {item.get("name"): item for item in value}
+    if len(value) != len(COMMAND_IDS) or set(by_name) != set(COMMAND_IDS):
+        raise ValueError("base candidate commands are invalid")
+    nonvisual = [
+        deepcopy(by_name[name])
+        for name in COMMAND_IDS
+        if name != "mermaid_rendering"
+    ]
+    try:
+        _validate_local_results(nonvisual, expected_head)
+    except ValueError as exc:
+        raise ValueError("base candidate commands are invalid") from exc
+    rendering = by_name["mermaid_rendering"]
+    if (
+        set(rendering) != {"name", "sha", "exit_code", "result"}
+        or rendering.get("sha") != expected_head
+        or rendering.get("exit_code") != 0
+        or not isinstance(rendering.get("result"), dict)
+    ):
+        raise ValueError("base candidate commands are invalid")
+    return [deepcopy(by_name[name]) for name in COMMAND_IDS]
 
 
 def _validated_check_runs(
@@ -1470,6 +1642,18 @@ def _https(value: object) -> bool:
     return isinstance(value, str) and value.startswith("https://")
 
 
+def _calendar_date(value: object) -> bool:
+    if (
+        not isinstance(value, str)
+        or re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", value) is None
+    ):
+        return False
+    try:
+        return date.fromisoformat(value).isoformat() == value
+    except ValueError:
+        return False
+
+
 def _reference_now(fixed: datetime | None) -> datetime:
     return fixed or datetime.now(timezone.utc)
 
@@ -1521,11 +1705,19 @@ def main(argv: Sequence[str] | None = None) -> int:
     root = Path.cwd().resolve()
     output = arguments.output.resolve()
     try:
-        output.relative_to(root)
-    except ValueError:
-        pass
-    else:
-        print("output shall remain outside the Git working tree", file=sys.stderr)
+        forbidden_roots = _git_storage_roots(root, subprocess.run)
+    except (OSError, UnicodeDecodeError, ValueError) as exc:
+        print(
+            f"v0.5-beta evidence collection failed: {exc}",
+            file=sys.stderr,
+        )
+        return 1
+    if any(_path_is_within(output, boundary) for boundary in forbidden_roots):
+        print(
+            "output shall remain outside every Git worktree "
+            "and the Git common directory",
+            file=sys.stderr,
+        )
         return 1
     taggable_values = (
         arguments.base_evidence,
@@ -1589,6 +1781,54 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"v0.5-beta evidence collection failed: {exc}", file=sys.stderr)
         return 1
     return 0
+
+
+def _git_storage_roots(
+    root: Path, runner: Callable[..., object]
+) -> tuple[Path, ...]:
+    worktrees = runner(
+        ["git", "worktree", "list", "--porcelain"],
+        cwd=root,
+        check=False,
+        capture_output=True,
+    )
+    common = runner(
+        ["git", "rev-parse", "--git-common-dir"],
+        cwd=root,
+        check=False,
+        capture_output=True,
+    )
+    if (
+        getattr(worktrees, "returncode", None) != 0
+        or getattr(common, "returncode", None) != 0
+        or not isinstance(getattr(worktrees, "stdout", None), bytes)
+        or not isinstance(getattr(common, "stdout", None), bytes)
+    ):
+        raise ValueError("Git storage boundaries could not be verified")
+    worktree_text = worktrees.stdout.decode(
+        "utf-8", errors="strict"
+    )
+    common_text = common.stdout.decode("utf-8", errors="strict").strip()
+    paths = [
+        Path(line.removeprefix("worktree ")).resolve()
+        for line in worktree_text.splitlines()
+        if line.startswith("worktree ")
+    ]
+    if not paths or not common_text:
+        raise ValueError("Git storage boundaries could not be verified")
+    common_path = Path(common_text)
+    if not common_path.is_absolute():
+        common_path = root / common_path
+    paths.append(common_path.resolve())
+    return tuple(dict.fromkeys(paths))
+
+
+def _path_is_within(path: Path, boundary: Path) -> bool:
+    try:
+        path.relative_to(boundary)
+    except ValueError:
+        return False
+    return True
 
 
 def _load_json(path: Path) -> dict[str, object]:

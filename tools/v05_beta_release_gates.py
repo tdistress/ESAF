@@ -695,10 +695,8 @@ def _validate_sourced_verdict(
         errors.append(f"{name} reviewer shall be named")
     if not _nonblank(value.get("role")):
         errors.append(f"{name} verdict role shall be named")
-    try:
-        date.fromisoformat(str(value.get("date")))
-    except ValueError:
-        errors.append(f"{name} verdict date shall be an ISO date")
+    if not _iso_date(value.get("date")):
+        errors.append(f"{name} verdict date shall be YYYY-MM-DD")
     expected_disposition = {
         "scope": "approved_for_working_draft_closure",
         "governance": "approved_for_working_draft_publication",
