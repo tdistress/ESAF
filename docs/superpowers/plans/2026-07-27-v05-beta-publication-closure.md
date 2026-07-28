@@ -1221,9 +1221,14 @@ This closure candidate does not approve publication.
 This closure candidate requires its own exact-head reviews, rendering evidence, owner and scope decision, governance decision, successful checks, and clean merge state.
 ```
 
-Retain the common Draft, issue 55, conditional-tag, and mapping nonclaim
-statements exactly. The phase-aware prose validator accepts this prewritten
-closure form without changes to the validator or its tests.
+The first four sentences above shall form the complete normalized Lifecycle
+boundary paragraph in that order. The fifth shall replace only the existing
+`A later closure candidate requires...` sentence within the normalized
+Conditional publication paragraph. Retain every other heading and paragraph
+exactly, allowing only paragraph line wrapping and whitespace normalization.
+Do not add the optional evidence-candidate discussion paragraph or any other
+block. The phase-aware prose validator accepts this exact ordered closure form
+without changes to the validator or its tests.
 
 - [ ] **Step 4: Commit the six-file candidate, then validate and freeze**
 

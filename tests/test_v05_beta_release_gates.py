@@ -1858,9 +1858,78 @@ class V05ReleaseRecordTests(unittest.TestCase):
                 )
                 self.assertTrue(errors)
                 self.assertIn(
-                    "controlled prose claim contract",
+                    "controlled prose block contract",
                     "\n".join(errors),
                 )
+
+    def test_readiness_body_rejects_markdown_obfuscated_and_oblique_claims(
+        self,
+    ) -> None:
+        evidence_record = record_fixture("evidence_candidate")
+        closure_record = record_fixture("closure_candidate")
+        harmless_negation = (
+            CANONICAL_READINESS_BODY
+            + "\nThis record does not say the mappings are approved.\n"
+        )
+        for record, body in (
+            (evidence_record, CANONICAL_READINESS_BODY),
+            (closure_record, closure_readiness_body()),
+            (evidence_record, harmless_negation),
+        ):
+            with self.subTest(valid_phase=record["phase"]):
+                self.assertEqual([], validate_readiness_body(record, body))
+        self.assertTrue(
+            validate_readiness_body(
+                closure_record,
+                closure_readiness_body()
+                + "\nThis record does not say the mappings are approved.\n",
+            )
+        )
+
+        reviewer_examples = (
+            "The release is **li**ve.",
+            "The mappings are ap**proved**.",
+            "The release is l<!-- -->ive.",
+            "The v0.5-beta release may now proceed.",
+            "The Working Draft is now generally available.",
+            "The qualified-review is finished.",
+            "The mappings have clearance.",
+        )
+        markdown_obfuscations = (
+            "The mappings are **approved**.",
+            "The mappings are appro<!-- hidden -->ved.",
+            "The mappings are approv&#101;d.",
+            "The mappings are [appro](https://example.com)[ved](https://example.com).",
+            "The mappings are appro\nved.",
+            "The mappings are appro-\nved.",
+            "The mappings are apprоved.",
+            "<span>The mappings have clearance.</span>",
+            "This paragraph is neutral but not part of the controlled record.",
+            "- This neutral list item is not part of the controlled record.",
+            "> This neutral quotation is not part of the controlled record.",
+            "```text\nThis neutral code block is unknown.\n```",
+        )
+        for addition in reviewer_examples + markdown_obfuscations:
+            with self.subTest(addition=addition):
+                errors = validate_readiness_body(
+                    evidence_record,
+                    CANONICAL_READINESS_BODY + "\n" + addition + "\n",
+                )
+                self.assertTrue(errors)
+                self.assertIn(
+                    "controlled prose block contract",
+                    "\n".join(errors),
+                )
+
+        blocks = CANONICAL_READINESS_BODY.strip().split("\n\n")
+        malformed_sequences = (
+            "\n\n".join(blocks[:-1]) + "\n",
+            "\n\n".join(blocks + [blocks[-1]]) + "\n",
+            "\n\n".join([blocks[1], blocks[0], *blocks[2:]]) + "\n",
+        )
+        for body in malformed_sequences:
+            with self.subTest(sequence=body[:80]):
+                self.assertTrue(validate_readiness_body(evidence_record, body))
 
     def test_cli_accepts_event_baseline_for_evidence_candidate(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

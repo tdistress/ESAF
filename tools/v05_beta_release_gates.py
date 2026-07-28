@@ -240,108 +240,107 @@ TAG_STATE_KEYS = {
     "response_sha256",
 }
 TAG_RESOURCE = "repos/tdistress/ESAF/git/ref/tags/v0.5-beta"
-COMMON_READINESS_BODY_STATEMENTS = (
-    (
-        "All controls, architecture patterns, the pilot profile, mapping sets, "
-        "and mapping records remain Draft."
-    ),
-    "Issue 55 remains open for qualified review.",
-    "It would not complete qualified review or approve the mappings.",
-    (
-        "It would not establish qualified mapping approval, artifact lifecycle "
-        "approval, certification, compliance, equivalence, endorsement, "
-        "external scheme approval, production readiness, assurance, "
-        "implementation assessment, legal sufficiency, or replacement of "
-        "qualified professional judgment."
-    ),
+READINESS_SCOPE_INVENTORY = (
+    "This evidence candidate covers the complete Git-tracked repository. Its "
+    "derived inventory contains 91 controls in 16 families, 7 architecture "
+    "patterns, 3 mapping sets, and 404 mapping provisions. The mappings "
+    "contain 81 relationship legs and 325 negative dispositions."
 )
-EVIDENCE_CANDIDATE_BODY_STATEMENTS = (
-    "The current ESAF version remains `0.4-alpha`.",
-    (
-        "The v0.5 gates are open, no closure candidate exists, and the "
-        "`v0.5-beta` tag has not been created."
-    ),
-    "This record does not approve publication.",
-    "No such v0.5 decision is recorded here.",
-    (
-        "A later closure candidate requires its own exact-head reviews, "
-        "rendering evidence, owner and scope decision, governance decision, "
-        "successful checks, and clean merge state."
-    ),
+READINESS_SCOPE_BOUNDARY = (
+    "The scope includes the ESAF-1500 assessment foundation and one Draft UK "
+    "pilot profile under the reusable profile contract. The PCI DSS readiness "
+    "record has the approved `HOLD` disposition. That disposition does not "
+    "establish a PCI DSS mapping, assessment, certification, compliance, "
+    "equivalence, endorsement, or legal conclusion."
 )
-CLOSURE_CANDIDATE_BODY_STATEMENTS = (
-    "The current ESAF version is `0.5-beta`.",
-    (
-        "The non-post-merge v0.5 gates are ready, the post-merge gate is open, "
-        "and the `v0.5-beta` tag has not been created."
-    ),
-    "The `v0.5-beta` release status is Working Draft.",
-    "This closure candidate does not approve publication.",
-    (
-        "This closure candidate requires its own exact-head reviews, rendering "
-        "evidence, owner and scope decision, governance decision, successful "
-        "checks, and clean merge state."
-    ),
+READINESS_DRAFT_BOUNDARY = (
+    "All controls, architecture patterns, the pilot profile, mapping sets, and "
+    "mapping records remain Draft. The three mapping lifecycle records have "
+    "empty event arrays. This release work does not add reviewer metadata, "
+    "approval metadata, or lifecycle events to those artifacts."
 )
-SENSITIVE_BODY_CLAIM_RE = re.compile(
-    r"(?:"
-    r"\b\w*publish\w*\b|"
-    r"\bpublication\b|"
-    r"\blive\b|"
-    r"\b\w*authoriz\w*\b|"
-    r"\b\w*approv\w*\b|"
-    r"\bqualified\s+review\b|"
-    r"\bmapping\s+approval\b|"
-    r"\brelease\s+status\b"
-    r")",
-    re.IGNORECASE,
+READINESS_MAPPING_BASIS = (
+    "The release design permits one uniform mapping basis for all three "
+    "mapping sets. Qualified approval requires a validated six-role Draft "
+    "campaign bound to the exact closure candidate. Owner-risk acceptance "
+    "requires a separate, authenticated repository-owner decision created "
+    "after that exact candidate exists. No such v0.5 decision is recorded here."
 )
-CONTROLLED_BODY_HEADINGS = {
-    "# v0.5-beta publication readiness",
-    "## Conditional publication",
+READINESS_MAPPING_NONCLAIMS = (
+    "Issue 55 remains open for qualified review. Owner-risk acceptance, if "
+    "later given for the exact candidate, would permit only Working Draft "
+    "publication. It would not complete qualified review or approve the "
+    "mappings. It would not establish qualified mapping approval, artifact "
+    "lifecycle approval, certification, compliance, equivalence, endorsement, "
+    "external scheme approval, production readiness, assurance, implementation "
+    "assessment, legal sufficiency, or replacement of qualified professional "
+    "judgment."
+)
+EVIDENCE_LIFECYCLE_BOUNDARY = (
+    "The current ESAF version remains `0.4-alpha`. The v0.5 gates are open, no "
+    "closure candidate exists, and the `v0.5-beta` tag has not been created. "
+    "This record does not approve publication."
+)
+CLOSURE_LIFECYCLE_BOUNDARY = (
+    "The current ESAF version is `0.5-beta`. The non-post-merge v0.5 gates are "
+    "ready, the post-merge gate is open, and the `v0.5-beta` tag has not been "
+    "created. The `v0.5-beta` release status is Working Draft. This closure "
+    "candidate does not approve publication."
+)
+EVIDENCE_PUBLICATION_BOUNDARY = (
+    "Publication remains conditional on the remote annotated `v0.5-beta` tag "
+    "resolving to the exact validated merged commit. A later closure candidate "
+    "requires its own exact-head reviews, rendering evidence, owner and scope "
+    "decision, governance decision, successful checks, and clean merge state. "
+    "The post-merge gate remains open until merged-main validation and remote "
+    "tag verification are complete."
+)
+CLOSURE_PUBLICATION_BOUNDARY = (
+    "Publication remains conditional on the remote annotated `v0.5-beta` tag "
+    "resolving to the exact validated merged commit. This closure candidate "
+    "requires its own exact-head reviews, rendering evidence, owner and scope "
+    "decision, governance decision, successful checks, and clean merge state. "
+    "The post-merge gate remains open until merged-main validation and remote "
+    "tag verification are complete."
+)
+READINESS_BODY_SHARED_PREFIX = (
+    ("heading", "# v0.5-beta publication readiness"),
+    ("heading", "## Scope"),
+    ("paragraph", READINESS_SCOPE_INVENTORY),
+    ("paragraph", READINESS_SCOPE_BOUNDARY),
+    ("heading", "## Lifecycle boundary"),
+)
+READINESS_BODY_SHARED_MIDDLE = (
+    ("paragraph", READINESS_DRAFT_BOUNDARY),
+    ("heading", "## Mapping assurance"),
+    ("paragraph", READINESS_MAPPING_BASIS),
+    ("paragraph", READINESS_MAPPING_NONCLAIMS),
+    ("heading", "## Conditional publication"),
+)
+READINESS_BODY_BLOCKS_BY_PHASE = {
+    "evidence_candidate": (
+        *READINESS_BODY_SHARED_PREFIX,
+        ("paragraph", EVIDENCE_LIFECYCLE_BOUNDARY),
+        *READINESS_BODY_SHARED_MIDDLE,
+        ("paragraph", EVIDENCE_PUBLICATION_BOUNDARY),
+    ),
+    "closure_candidate": (
+        *READINESS_BODY_SHARED_PREFIX,
+        ("paragraph", CLOSURE_LIFECYCLE_BOUNDARY),
+        *READINESS_BODY_SHARED_MIDDLE,
+        ("paragraph", CLOSURE_PUBLICATION_BOUNDARY),
+    ),
 }
-CONTROLLED_COMMON_SENSITIVE_SENTENCES = {
-    "The PCI DSS readiness record has the approved `HOLD` disposition.",
-    (
-        "This release work does not add reviewer metadata, approval metadata, "
-        "or lifecycle events to those artifacts."
-    ),
-    (
-        "Qualified approval requires a validated six-role Draft campaign bound "
-        "to the exact closure candidate."
-    ),
-    "Issue 55 remains open for qualified review.",
-    (
-        "Owner-risk acceptance, if later given for the exact candidate, would "
-        "permit only Working Draft publication."
-    ),
-    "It would not complete qualified review or approve the mappings.",
-    (
-        "It would not establish qualified mapping approval, artifact lifecycle "
-        "approval, certification, compliance, equivalence, endorsement, "
-        "external scheme approval, production readiness, assurance, "
-        "implementation assessment, legal sufficiency, or replacement of "
-        "qualified professional judgment."
-    ),
-    (
-        "Publication remains conditional on the remote annotated `v0.5-beta` "
-        "tag resolving to the exact validated merged commit."
-    ),
+OPTIONAL_NEGATED_DISCUSSION_BLOCK = (
+    "paragraph",
     "This record does not say the mappings are approved.",
-}
-CONTROLLED_PHASE_SENSITIVE_SENTENCES = {
-    "evidence_candidate": {
-        "This record does not approve publication.",
-    },
-    "closure_candidate": {
-        "The `v0.5-beta` release status is Working Draft.",
-        "This closure candidate does not approve publication.",
-    },
-    "published": {
-        "The `v0.5-beta` release status is Working Draft.",
-        "This publication does not approve the mappings.",
-    },
-}
+)
+UNSUPPORTED_READINESS_BLOCK_RE = re.compile(
+    r"^(?:>|```|~~~| {4}\S|\t\S|\|)",
+)
+HTML_COMMENT_RE = re.compile(r"<!--|-->")
+INLINE_HTML_RE = re.compile(r"</?[A-Za-z][^>\n]*>")
+HTML_ENTITY_RE = re.compile(r"&(?:#[0-9]+|#x[0-9A-Fa-f]+|[A-Za-z][A-Za-z0-9]+);")
 
 
 class _UniqueKeySafeLoader(yaml.SafeLoader):
@@ -411,63 +410,95 @@ def load_readiness_document(path: Path) -> tuple[dict[str, object], str]:
     return _front_matter_parts(path.read_text(encoding="utf-8"), str(path))
 
 
+def _parse_readiness_blocks(
+    body: str,
+) -> tuple[tuple[tuple[str, str], ...], list[str]]:
+    """Parse only the Markdown block forms used by the controlled record."""
+    errors: list[str] = []
+    if HTML_COMMENT_RE.search(body):
+        errors.append(
+            "readiness body controlled prose block contract rejects HTML comments"
+        )
+    if INLINE_HTML_RE.search(body):
+        errors.append(
+            "readiness body controlled prose block contract rejects inline HTML"
+        )
+    if HTML_ENTITY_RE.search(body):
+        errors.append(
+            "readiness body controlled prose block contract rejects HTML entities"
+        )
+
+    blocks: list[tuple[str, str]] = []
+    paragraph_lines: list[str] = []
+
+    def flush_paragraph() -> None:
+        if paragraph_lines:
+            blocks.append(
+                ("paragraph", " ".join(" ".join(paragraph_lines).split()))
+            )
+            paragraph_lines.clear()
+
+    for raw_line in body.splitlines():
+        if raw_line.endswith("  ") or raw_line.endswith("\\"):
+            errors.append(
+                "readiness body controlled prose block contract rejects "
+                "Markdown hard line breaks"
+            )
+        if not raw_line.strip():
+            flush_paragraph()
+            continue
+        if raw_line.startswith("#"):
+            flush_paragraph()
+            if not re.fullmatch(r"#{1,6} [^\n]+", raw_line):
+                errors.append(
+                    "readiness body controlled prose block contract rejects "
+                    f"malformed heading: {raw_line}"
+                )
+                blocks.append(("unsupported", raw_line))
+            else:
+                blocks.append(("heading", raw_line))
+            continue
+        if re.match(r"^[-*+] ", raw_line):
+            flush_paragraph()
+            blocks.append(("list_item", " ".join(raw_line[2:].split())))
+            continue
+        if UNSUPPORTED_READINESS_BLOCK_RE.match(raw_line):
+            flush_paragraph()
+            errors.append(
+                "readiness body controlled prose block contract rejects "
+                f"unsupported Markdown block: {raw_line}"
+            )
+            blocks.append(("unsupported", raw_line))
+            continue
+        paragraph_lines.append(raw_line.strip())
+    flush_paragraph()
+    return tuple(blocks), errors
+
+
 def validate_readiness_body(
     record: dict[str, object],
     body: str,
 ) -> list[str]:
-    """Reject missing boundaries and contradictory readiness prose."""
-    normalized = " ".join(body.split())
-    errors: list[str] = []
-    required = list(COMMON_READINESS_BODY_STATEMENTS)
+    """Require the exact phase-specific controlled Markdown block sequence."""
     phase = record.get("phase")
+    expected = READINESS_BODY_BLOCKS_BY_PHASE.get(phase)
+    if expected is None:
+        return [
+            "readiness body controlled prose block contract does not define "
+            f"phase {phase!r}"
+        ]
+    blocks, errors = _parse_readiness_blocks(body)
+    accepted_sequences = (expected,)
     if phase == "evidence_candidate":
-        required.extend(EVIDENCE_CANDIDATE_BODY_STATEMENTS)
-    elif phase == "closure_candidate":
-        required.extend(CLOSURE_CANDIDATE_BODY_STATEMENTS)
-    for statement in required:
-        if " ".join(statement.split()) not in normalized:
-            errors.append(
-                "readiness body is missing required canonical boundary: "
-                + " ".join(statement.split())
-            )
-    allowed_sensitive_sentences = (
-        CONTROLLED_COMMON_SENSITIVE_SENTENCES
-        | CONTROLLED_PHASE_SENSITIVE_SENTENCES.get(phase, set())
-    )
-    paragraphs: list[str] = []
-    current: list[str] = []
-    for raw_line in body.splitlines():
-        line = raw_line.strip()
-        if line.startswith("#"):
-            if current:
-                paragraphs.append(" ".join(current))
-                current = []
-            if (
-                SENSITIVE_BODY_CLAIM_RE.search(line)
-                and line not in CONTROLLED_BODY_HEADINGS
-            ):
-                errors.append(
-                    "readiness body controlled prose claim contract rejects "
-                    f"heading: {line}"
-                )
-        elif line:
-            current.append(line)
-        elif current:
-            paragraphs.append(" ".join(current))
-            current = []
-    if current:
-        paragraphs.append(" ".join(current))
-    for paragraph in paragraphs:
-        for sentence in re.split(r"(?<=[.!?])\s+", paragraph):
-            candidate = sentence.strip()
-            if (
-                SENSITIVE_BODY_CLAIM_RE.search(candidate)
-                and candidate not in allowed_sensitive_sentences
-            ):
-                errors.append(
-                    "readiness body controlled prose claim contract rejects "
-                    f"sentence: {candidate}"
-                )
+        accepted_sequences = (
+            *accepted_sequences,
+            (*expected, OPTIONAL_NEGATED_DISCUSSION_BLOCK),
+        )
+    if blocks not in accepted_sequences:
+        errors.append(
+            "readiness body controlled prose block contract requires the "
+            f"complete exact ordered {phase} block sequence"
+        )
     return errors
 
 
