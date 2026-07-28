@@ -471,6 +471,7 @@ class Esaf1600FoundationTests(unittest.TestCase):
             "docs/superpowers/reviews/2026-07-27-v05-beta-publication-readiness.md",
             "docs/superpowers/reviews/2026-07-27-v05-beta-mermaid-rendering.md",
             "tools/mermaid-render-config.json",
+            "tools/mermaid-puppeteer-ci.json",
             "tools/mermaid_inventory.py",
             "tools/validate_links.py",
             "tools/validate_architectures.py",
@@ -677,6 +678,11 @@ class Esaf1600FoundationTests(unittest.TestCase):
         )
         self.assertEqual(mermaid_render, {
             "name": "Render and validate the v0.5-beta Mermaid baseline",
+            "env": {
+                "ESAF_MERMAID_PUPPETEER_CONFIG": (
+                    "tools/mermaid-puppeteer-ci.json"
+                ),
+            },
             "run": (
                 "python tools/mermaid_inventory.py --check-record "
                 "docs/superpowers/reviews/"

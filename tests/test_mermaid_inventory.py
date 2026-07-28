@@ -1,5 +1,6 @@
 from hashlib import sha256
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -237,6 +238,132 @@ class MermaidInventoryTests(unittest.TestCase):
             text=True,
             encoding="utf-8",
         )
+
+    def test_ci_renderer_uses_only_the_tracked_no_sandbox_launch_config(
+        self,
+    ) -> None:
+        config = ROOT / "tools/mermaid-puppeteer-ci.json"
+        self.assertEqual(
+            json.loads(config.read_text(encoding="utf-8")),
+            {"args": ["--no-sandbox"]},
+        )
+        blocks = discover(ROOT)[:1]
+        calls: list[list[str]] = []
+
+        def execute(command: list[str], **kwargs: object) -> subprocess.CompletedProcess:
+            calls.append(command)
+            if command[-1] == "--version" and "node" in command[0]:
+                return subprocess.CompletedProcess(command, 0, "v22.23.1\n", "")
+            if command[-1] == "--version":
+                return subprocess.CompletedProcess(command, 0, "11.16.0\n", "")
+            if command[0] == "git":
+                return subprocess.CompletedProcess(
+                    command,
+                    0,
+                    f"{ROOT}\n",
+                    "",
+                )
+            output = Path(command[command.index("--output") + 1])
+            output.write_bytes(b"synthetic png")
+            return subprocess.CompletedProcess(command, 0, "", "")
+
+        with (
+            mock.patch(
+                "tools.mermaid_inventory.shutil.which",
+                side_effect=lambda name: f"C:/synthetic/{name}.cmd",
+            ),
+            mock.patch(
+                "tools.mermaid_inventory.subprocess.run",
+                side_effect=execute,
+            ),
+            mock.patch.dict(
+                os.environ,
+                {"ESAF_MERMAID_PUPPETEER_CONFIG": config.as_posix()},
+            ),
+        ):
+            render_mermaid_blocks(blocks, ROOT)
+
+        render_command = next(
+            command for command in calls if "--puppeteerConfigFile" in command
+        )
+        self.assertEqual(
+            render_command[
+                render_command.index("--puppeteerConfigFile") + 1
+            ],
+            str(config),
+        )
+
+    def test_ci_renderer_rejects_substituted_or_expanded_launch_config(
+        self,
+    ) -> None:
+        blocks = discover(ROOT)[:1]
+        completed = [
+            subprocess.CompletedProcess(
+                ["node", "--version"],
+                0,
+                "v22.23.1\n",
+                "",
+            ),
+            subprocess.CompletedProcess(
+                ["mmdc", "--version"],
+                0,
+                "11.16.0\n",
+                "",
+            ),
+        ]
+        with (
+            mock.patch(
+                "tools.mermaid_inventory.shutil.which",
+                side_effect=lambda name: f"C:/synthetic/{name}.cmd",
+            ),
+            mock.patch(
+                "tools.mermaid_inventory.subprocess.run",
+                side_effect=completed,
+            ),
+            mock.patch.dict(
+                os.environ,
+                {
+                    "ESAF_MERMAID_PUPPETEER_CONFIG": (
+                        ROOT / "tools/substituted.json"
+                    ).as_posix()
+                },
+            ),
+        ):
+            with self.assertRaisesRegex(
+                ValueError,
+                "shall resolve to the tracked CI launch configuration",
+            ):
+                render_mermaid_blocks(blocks, ROOT)
+
+        with (
+            mock.patch(
+                "tools.mermaid_inventory.shutil.which",
+                side_effect=lambda name: f"C:/synthetic/{name}.cmd",
+            ),
+            mock.patch(
+                "tools.mermaid_inventory.subprocess.run",
+                side_effect=completed,
+            ),
+            mock.patch(
+                "tools.mermaid_inventory.json.loads",
+                return_value={
+                    "args": ["--no-sandbox", "--disable-web-security"],
+                },
+            ),
+            mock.patch.dict(
+                os.environ,
+                {
+                    "ESAF_MERMAID_PUPPETEER_CONFIG": (
+                        ROOT / "tools/mermaid-puppeteer-ci.json"
+                    ).as_posix()
+                },
+            ),
+        ):
+            with self.assertRaisesRegex(
+                ValueError,
+                "shall contain only the no-sandbox argument",
+            ):
+                render_mermaid_blocks(blocks, ROOT)
 
     def test_v05_ledger_rejects_mutated_render_contract_digest(
         self,

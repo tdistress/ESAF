@@ -5,6 +5,7 @@ import argparse
 from dataclasses import asdict, dataclass
 from hashlib import sha256
 import json
+import os
 from pathlib import Path
 import re
 import shutil
@@ -32,6 +33,7 @@ PINNED_RENDERER = "@mermaid-js/mermaid-cli@11.16.0"
 PINNED_RENDERER_VERSION = "11.16.0"
 PINNED_NODE_VERSION = "22.23.1"
 RENDER_CONFIG = Path("tools/mermaid-render-config.json")
+CI_PUPPETEER_CONFIG = Path("tools/mermaid-puppeteer-ci.json")
 RENDER_CONTRACT_SCHEMA = "esaf-mermaid-render-contract-v1"
 RENDER_PROFILE = "esaf-mermaid-review-v1"
 RENDER_CONTRACT_DOMAIN = b"ESAF-MERMAID-RENDER-CONTRACT-V1\0"
@@ -261,6 +263,29 @@ def render_mermaid_blocks(
             "Mermaid renderer version shall equal "
             f"{PINNED_RENDERER_VERSION}; observed {version!r}"
         )
+    puppeteer_arguments: list[str] = []
+    configured_puppeteer = os.environ.get("ESAF_MERMAID_PUPPETEER_CONFIG")
+    if configured_puppeteer:
+        supplied = Path(configured_puppeteer)
+        if not supplied.is_absolute():
+            supplied = root / supplied
+        supplied = supplied.resolve()
+        expected = (root / CI_PUPPETEER_CONFIG).resolve()
+        if supplied != expected:
+            raise ValueError(
+                "ESAF_MERMAID_PUPPETEER_CONFIG shall resolve to the tracked "
+                "CI launch configuration"
+            )
+        launch_config = json.loads(supplied.read_text(encoding="utf-8"))
+        if launch_config != {"args": ["--no-sandbox"]}:
+            raise ValueError(
+                "CI Mermaid launch configuration shall contain only "
+                "the no-sandbox argument"
+            )
+        puppeteer_arguments = [
+            "--puppeteerConfigFile",
+            str(supplied),
+        ]
     with tempfile.TemporaryDirectory(prefix="esaf-mermaid-check-") as directory:
         output_root = Path(directory)
         inventory = write_render_inputs(blocks, output_root)
@@ -275,6 +300,7 @@ def render_mermaid_blocks(
                     str(input_path),
                     "--output",
                     str(output_path),
+                    *puppeteer_arguments,
                     "--configFile",
                     str(root / RENDER_CONFIG),
                     "--backgroundColor",

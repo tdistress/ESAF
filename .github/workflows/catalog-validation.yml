@@ -37,6 +37,7 @@ on:
       - "docs/superpowers/reviews/2026-07-27-v05-beta-publication-readiness.md"
       - "docs/superpowers/reviews/2026-07-27-v05-beta-mermaid-rendering.md"
       - "tools/mermaid-render-config.json"
+      - "tools/mermaid-puppeteer-ci.json"
       - "tools/mermaid_inventory.py"
       - "tools/validate_links.py"
       - "tools/validate_architectures.py"
@@ -83,6 +84,7 @@ on:
       - "docs/superpowers/reviews/2026-07-27-v05-beta-publication-readiness.md"
       - "docs/superpowers/reviews/2026-07-27-v05-beta-mermaid-rendering.md"
       - "tools/mermaid-render-config.json"
+      - "tools/mermaid-puppeteer-ci.json"
       - "tools/mermaid_inventory.py"
       - "tools/validate_links.py"
       - "tools/validate_architectures.py"
@@ -162,6 +164,8 @@ jobs:
         if: github.event_name == 'workflow_dispatch'
         run: python tools/v05_beta_release_gates.py --check --baseline-ref "HEAD^"
       - name: Render and validate the v0.5-beta Mermaid baseline
+        env:
+          ESAF_MERMAID_PUPPETEER_CONFIG: tools/mermaid-puppeteer-ci.json
         run: python tools/mermaid_inventory.py --check-record docs/superpowers/reviews/2026-07-27-v05-beta-mermaid-rendering.md
       - name: Validate repository-local links
         run: python tools/validate_links.py --check
