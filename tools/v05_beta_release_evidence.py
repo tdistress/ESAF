@@ -43,6 +43,7 @@ FRESHNESS_SECONDS = 15 * 60
 CHECK_NAME = "Validate ESAF sources"
 WORKFLOW_NAME = "Repository validation"
 WORKFLOW_PATH = ".github/workflows/catalog-validation.yml"
+PUBLICATION_ISSUE_NUMBER = 59
 ISSUE_55_RESOURCE = f"repos/{REPOSITORY}/issues/55"
 TAG_RESOURCE = f"repos/{REPOSITORY}/git/ref/tags/v0.5-beta"
 VERDICT_SCHEMA = "esaf-v05-release-verdict-v1"
@@ -717,10 +718,17 @@ def source_record(
     response: ApiResponse,
     payload: dict[str, object],
     *,
-    pr_number: int,
+    expected_container_type: str,
+    expected_container_number: int,
     verified_at: datetime,
 ) -> dict[str, object]:
     """Derive one immutable comment-source record from exact response bytes."""
+    if (
+        expected_container_type not in {"pull", "issue"}
+        or not _integer(expected_container_number)
+        or expected_container_number < 1
+    ):
+        raise ValueError("expected GitHub comment container is invalid")
     if not COMMENT_REQUIRED_KEYS.issubset(payload):
         raise ValueError("GitHub comment response is incomplete")
     comment_id = payload.get("id")
@@ -736,11 +744,16 @@ def source_record(
         raise ValueError("GitHub comment response is incomplete")
     resource = f"repos/{REPOSITORY}/issues/comments/{comment_id}"
     expected_api_url = f"{API_ROOT}{resource}"
+    html_container = (
+        "pull" if expected_container_type == "pull" else "issues"
+    )
     expected_html_url = (
-        f"{WEB_ROOT}/pull/{pr_number}#issuecomment-{comment_id}"
+        f"{WEB_ROOT}/{html_container}/{expected_container_number}"
+        f"#issuecomment-{comment_id}"
     )
     expected_issue_url = (
-        f"{API_ROOT}repos/{REPOSITORY}/issues/{pr_number}"
+        f"{API_ROOT}repos/{REPOSITORY}/issues/"
+        f"{expected_container_number}"
     )
     if (
         payload.get("url") != expected_api_url
@@ -1015,7 +1028,8 @@ def collect_closure_evidence(
         source = source_record(
             response,
             payload,
-            pr_number=pr_number,
+            expected_container_type="pull",
+            expected_container_number=pr_number,
             verified_at=response.retrieved_at,
         )
         if _parse_rfc3339(source["created_at"], "GitHub comment timestamp") <= commit_time:
@@ -1343,7 +1357,8 @@ def refresh_taggable_evidence(
     post_source = source_record(
         post_response,
         post_payload,
-        pr_number=int(collection_arguments["pr_number"]),
+        expected_container_type="issue",
+        expected_container_number=PUBLICATION_ISSUE_NUMBER,
         verified_at=post_response.retrieved_at,
     )
     merge_commit_time = _parse_rfc3339(

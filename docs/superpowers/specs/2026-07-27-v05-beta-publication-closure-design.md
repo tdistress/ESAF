@@ -429,6 +429,12 @@ Each fetched comment shall preserve:
 - exact body SHA-256; and
 - verification timestamp.
 
+Comment acquisition shall bind both `html_url` and `issue_url` to an explicit
+container type and number. Closure owner, review, and governance comments shall
+belong to the closure pull request. The post-merge rendering verdict shall
+belong to issue 59; a pull-request comment with the same comment identifier
+shall not substitute for it.
+
 Sources shall be fetched immediately before evidence construction, immediately
 before merge, and immediately before tag creation. A changed field stops the
 release.

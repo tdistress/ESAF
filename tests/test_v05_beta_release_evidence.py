@@ -49,7 +49,8 @@ ROOT = Path(__file__).resolve().parents[1]
 NOW = datetime(2026, 7, 27, 12, 10, tzinfo=timezone.utc)
 COMMIT_TIME = "2026-07-27T11:00:00Z"
 PUBLICATION_DATE = "2026-07-27"
-PR_NUMBER = 59
+PR_NUMBER = 73
+PUBLICATION_ISSUE_NUMBER = 59
 OWNER_ID = 20
 TECHNICAL_ID = 11
 EDITORIAL_ID = 12
@@ -204,15 +205,25 @@ def comment_payload(
     author: str,
     body: dict[str, object],
     association: str = "COLLABORATOR",
+    *,
+    container_type: str = "pull",
+    container_number: int = PR_NUMBER,
 ) -> dict[str, object]:
     resource = comment_resource(comment_id)
+    html_container = (
+        "pull" if container_type == "pull" else "issues"
+    )
     return {
         "url": f"https://api.github.com/{resource}",
         "html_url": (
-            f"https://github.com/tdistress/ESAF/pull/{PR_NUMBER}"
+            f"https://github.com/tdistress/ESAF/{html_container}/"
+            f"{container_number}"
             f"#issuecomment-{comment_id}"
         ),
-        "issue_url": f"https://api.github.com/repos/tdistress/ESAF/issues/{PR_NUMBER}",
+        "issue_url": (
+            "https://api.github.com/repos/tdistress/ESAF/issues/"
+            f"{container_number}"
+        ),
         "id": comment_id,
         "user": {
             "login": author,
@@ -461,7 +472,18 @@ def valid_fake_client() -> FakeClient:
     for comment_id, author, body, association in comment_specs:
         resource = comment_resource(comment_id)
         payload = comment_payload(
-            comment_id, author, body, association
+            comment_id,
+            author,
+            body,
+            association,
+            **(
+                {
+                    "container_type": "issue",
+                    "container_number": PUBLICATION_ISSUE_NUMBER,
+                }
+                if comment_id == POST_MERGE_RENDERING_ID
+                else {}
+            ),
         )
         if comment_id == POST_MERGE_RENDERING_ID:
             payload["created_at"] = "2026-07-27T12:07:00Z"
@@ -889,7 +911,8 @@ class V05StructuredCommentTests(unittest.TestCase):
         record = source_record(
             response,
             payload,
-            pr_number=PR_NUMBER,
+            expected_container_type="pull",
+            expected_container_number=PR_NUMBER,
             verified_at=NOW,
         )
         self.assertEqual(
@@ -901,6 +924,104 @@ class V05StructuredCommentTests(unittest.TestCase):
             record["response_sha256"],
         )
         self.assertNotIn("headers", record)
+
+    def test_source_record_binds_distinct_pr_and_issue_containers(self) -> None:
+        client = valid_fake_client()
+        post_response = client.responses[
+            comment_resource(POST_MERGE_RENDERING_ID)
+        ]
+        post_source = source_record(
+            post_response,
+            post_response.json_object(),
+            expected_container_type="issue",
+            expected_container_number=PUBLICATION_ISSUE_NUMBER,
+            verified_at=NOW,
+        )
+        self.assertEqual(
+            (
+                "https://github.com/tdistress/ESAF/issues/59"
+                f"#issuecomment-{POST_MERGE_RENDERING_ID}"
+            ),
+            post_source["comment_url"],
+        )
+        cases = (
+            (
+                "closure verdict on issue 59",
+                OWNER_RESOURCE,
+                "pull",
+                PR_NUMBER,
+                {
+                    "html_url": (
+                        "https://github.com/tdistress/ESAF/issues/59"
+                        f"#issuecomment-{OWNER_ID}"
+                    ),
+                    "issue_url": (
+                        "https://api.github.com/repos/tdistress/ESAF/"
+                        "issues/59"
+                    ),
+                },
+            ),
+            (
+                "post-merge review on PR",
+                comment_resource(POST_MERGE_RENDERING_ID),
+                "issue",
+                PUBLICATION_ISSUE_NUMBER,
+                {
+                    "html_url": (
+                        f"https://github.com/tdistress/ESAF/pull/{PR_NUMBER}"
+                        f"#issuecomment-{POST_MERGE_RENDERING_ID}"
+                    ),
+                    "issue_url": (
+                        "https://api.github.com/repos/tdistress/ESAF/issues/"
+                        f"{PR_NUMBER}"
+                    ),
+                },
+            ),
+            (
+                "wrong issue number",
+                comment_resource(POST_MERGE_RENDERING_ID),
+                "issue",
+                PUBLICATION_ISSUE_NUMBER,
+                {
+                    "html_url": (
+                        "https://github.com/tdistress/ESAF/issues/60"
+                        f"#issuecomment-{POST_MERGE_RENDERING_ID}"
+                    ),
+                    "issue_url": (
+                        "https://api.github.com/repos/tdistress/ESAF/"
+                        "issues/60"
+                    ),
+                },
+            ),
+            (
+                "mismatched issue and HTML URLs",
+                comment_resource(POST_MERGE_RENDERING_ID),
+                "issue",
+                PUBLICATION_ISSUE_NUMBER,
+                {
+                    "issue_url": (
+                        "https://api.github.com/repos/tdistress/ESAF/"
+                        "issues/60"
+                    ),
+                },
+            ),
+        )
+        for label, resource, container_type, number, mutation in cases:
+            with self.subTest(label=label):
+                response = client.responses[resource]
+                payload = response.json_object()
+                payload.update(mutation)
+                mutated = api_response(resource, payload)
+                with self.assertRaisesRegex(
+                    ValueError, "GitHub comment canonical URL mismatch"
+                ):
+                    source_record(
+                        mutated,
+                        payload,
+                        expected_container_type=container_type,
+                        expected_container_number=number,
+                        verified_at=NOW,
+                    )
 
     def test_owner_verdict_and_governance_schemas_reject_unknown_or_wrong_fields(self) -> None:
         cases = (

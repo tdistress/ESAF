@@ -518,6 +518,9 @@ git commit -m "feat: validate v0.5 release evidence"
 - Consumes: authenticated `gh api`, fixed repository, exact PR number, exact
   comment IDs, expected closure head, and output path.
 - Produces: validated closure or taggable evidence JSON outside Git.
+- Comment-source boundary: `source_record(response, payload, *,
+  expected_container_type, expected_container_number, verified_at)` shall bind
+  both canonical comment URLs to the explicitly named PR or issue container.
 
 - [ ] **Step 1: Write the fail-first acquisition-adapter tests**
 

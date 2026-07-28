@@ -168,6 +168,7 @@ CLOSURE_SHA = "c" * 40
 CLOSURE_BASE = "b" * 40
 MERGE_SHA = "d" * 40
 CLOSURE_TREE = "e" * 40
+PR_NUMBER = 73
 FIXED_NOW = datetime(2026, 7, 27, 12, 10, tzinfo=timezone.utc)
 COMMAND_IDS = (
     "full_suite",
@@ -260,13 +261,22 @@ def record_fixture(phase: str) -> dict[str, object]:
     }
 
 
-def source_fixture(resource_id: str) -> dict[str, object]:
+def source_fixture(
+    resource_id: str,
+    *,
+    container_type: str = "pull",
+    container_number: int = PR_NUMBER,
+) -> dict[str, object]:
     resource_path = f"repos/tdistress/ESAF/issues/comments/{resource_id}"
+    html_container = (
+        "pull" if container_type == "pull" else "issues"
+    )
     return {
         "repository": "tdistress/ESAF",
         "resource_path": resource_path,
         "comment_url": (
-            "https://github.com/tdistress/ESAF/issues/59"
+            f"https://github.com/tdistress/ESAF/{html_container}/"
+            f"{container_number}"
             f"#issuecomment-{resource_id}"
         ),
         "comment_id": int(resource_id),
@@ -303,7 +313,8 @@ def mermaid_result(*, taggable: bool = False) -> dict[str, object]:
         "visual_review": "approved",
         "candidate_inventory_equal": True,
         "candidate_review_url": (
-            "https://github.com/tdistress/ESAF/issues/59#issuecomment-14"
+            f"https://github.com/tdistress/ESAF/pull/{PR_NUMBER}"
+            "#issuecomment-14"
         ),
         "candidate_reviewer": "candidate rendering reviewer",
         "reviewed_at": "2026-07-27T12:05:00Z",
@@ -512,9 +523,11 @@ def closure_evidence() -> dict[str, object]:
                     "retrieved_at": "2026-07-27T12:05:00Z",
                 },
                 {
-                    "resource_id": "repos/tdistress/ESAF/pulls/59",
+                    "resource_id": (
+                        f"repos/tdistress/ESAF/pulls/{PR_NUMBER}"
+                    ),
                     "observed_canonical_url": (
-                        "https://github.com/tdistress/ESAF/pull/59"
+                        f"https://github.com/tdistress/ESAF/pull/{PR_NUMBER}"
                     ),
                     "page_count": 1,
                     "response_sha256": "f" * 64,
@@ -583,7 +596,9 @@ def taggable_evidence() -> dict[str, object]:
             "retrieved_at": "2026-07-27T12:05:00Z",
         }
     )
-    post_source = source_fixture("19")
+    post_source = source_fixture(
+        "19", container_type="issue", container_number=59
+    )
     post_source["author_login"] = "post-merge-reviewer"
     post_source["created_at"] = "2026-07-27T12:05:00Z"
     post_source["updated_at"] = "2026-07-27T12:05:00Z"
@@ -1119,7 +1134,7 @@ class V05ExternalEvidenceTests(unittest.TestCase):
         required = (
             "user",
             f"repos/tdistress/ESAF/commits/{CLOSURE_SHA}",
-            "repos/tdistress/ESAF/pulls/59",
+            f"repos/tdistress/ESAF/pulls/{PR_NUMBER}",
             f"repos/tdistress/ESAF/commits/{CLOSURE_SHA}/check-runs",
             "repos/tdistress/ESAF/git/ref/tags/v0.5-beta",
         )
@@ -1353,7 +1368,7 @@ class V05ExternalEvidenceTests(unittest.TestCase):
                         "candidate_inventory_equal": True,
                         "merge_tree_equal": True,
                         "candidate_review_url": (
-                            "https://github.com/tdistress/ESAF/issues/59"
+                            f"https://github.com/tdistress/ESAF/pull/{PR_NUMBER}"
                             "#issuecomment-14"
                         ),
                         "candidate_reviewer": "candidate rendering reviewer",
