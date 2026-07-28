@@ -58,6 +58,7 @@ MAPPING_SETS = [
     "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
 ]
 CLOSURE_SHA = "c" * 40
+CLOSURE_BASE = "b" * 40
 MERGE_SHA = "d" * 40
 CLOSURE_TREE = "e" * 40
 FIXED_NOW = datetime(2026, 7, 27, 12, 10, tzinfo=timezone.utc)
@@ -278,6 +279,7 @@ def closure_evidence() -> dict[str, object]:
     return {
         "schema": "esaf-v05-release-evidence-v1",
         "release": "0.5-beta",
+        "closure_base": CLOSURE_BASE,
         "closure_head": CLOSURE_SHA,
         "closure_tree": CLOSURE_TREE,
         "scope": scope,
@@ -737,6 +739,7 @@ class V05ExternalEvidenceTests(unittest.TestCase):
 
     def test_exact_schema_requires_all_phase_keys(self) -> None:
         for phase, field, diagnostic in (
+            ("closure", "closure_base", "closure evidence is missing keys: closure_base"),
             ("closure", "closure_head", "closure evidence is missing keys: closure_head"),
             ("closure", "closure_tree", "closure evidence is missing keys: closure_tree"),
             ("taggable", "merge_head", "taggable evidence is missing keys: merge_head"),
@@ -1614,6 +1617,35 @@ class V05ExternalEvidenceTests(unittest.TestCase):
                 "external-evidence, expected-head, and phase shall be supplied together",
                 result.stdout,
             )
+
+    def test_closure_base_is_exact_distinct_sha(self) -> None:
+        for phase, fixture in (
+            ("closure", closure_evidence),
+            ("taggable", taggable_evidence),
+        ):
+            evidence = fixture()
+            record = record_fixture("closure_candidate")
+            record["mapping_decision_basis"] = "owner_risk_acceptance"
+            self.assertNotIn(
+                "closure base shall be a distinct 40-character SHA",
+                validate_external_evidence(
+                    ROOT,
+                    record,
+                    evidence,
+                    CLOSURE_SHA if phase == "closure" else MERGE_SHA,
+                    phase,
+                    FIXED_NOW,
+                ),
+            )
+            for invalid in ("not-a-sha", CLOSURE_SHA):
+                with self.subTest(phase=phase, invalid=invalid):
+                    changed = deepcopy(evidence)
+                    changed["closure_base"] = invalid
+                    self.assert_rejected(
+                        changed,
+                        "closure base shall be a distinct 40-character SHA",
+                        phase,
+                    )
 
 
 class V05ReleaseRecordTests(unittest.TestCase):

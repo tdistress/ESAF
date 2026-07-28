@@ -134,6 +134,7 @@ MERMAID_BLOCKS = 23
 EVIDENCE_KEYS = {
     "schema",
     "release",
+    "closure_base",
     "closure_head",
     "closure_tree",
     "scope",
@@ -364,7 +365,12 @@ def validate_external_evidence(
     if evidence.get("release") != RELEASE:
         errors.append("external evidence release shall equal 0.5-beta")
     closure_head = evidence.get("closure_head")
+    closure_base = evidence.get("closure_base")
     closure_tree = evidence.get("closure_tree")
+    if not _sha(closure_base) or closure_base == closure_head:
+        errors.append(
+            "closure base shall be a distinct 40-character SHA"
+        )
     if not _sha(closure_head):
         errors.append("closure head shall be a 40-character SHA")
     if not _sha(closure_tree):

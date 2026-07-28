@@ -151,7 +151,10 @@ class ApiClient(Protocol):
 
 class ValidationRunner(Protocol):
     def run(
-        self, root: Path, expected_head: str
+        self,
+        root: Path,
+        expected_head: str,
+        baseline_head: str,
     ) -> list[dict[str, object]]:
         raise NotImplementedError
 
@@ -165,16 +168,28 @@ class LocalValidationRunner:
         self._runner = runner or subprocess.run
 
     def run(
-        self, root: Path, expected_head: str
+        self,
+        root: Path,
+        expected_head: str,
+        baseline_head: str,
     ) -> list[dict[str, object]]:
+        if (
+            SHA_RE.fullmatch(baseline_head) is None
+            or baseline_head == expected_head
+        ):
+            raise ValueError(
+                "closure baseline shall be a distinct 40-character SHA"
+            )
         head = self._git_text(root, ["rev-parse", "HEAD"])
         if head != expected_head:
             raise ValueError("local Git HEAD shall equal expected closure head")
-        baseline = self._git_text(
-            root, ["merge-base", expected_head, "main"]
+        parent = self._git_text(
+            root, ["rev-parse", f"{expected_head}^"]
         )
-        if SHA_RE.fullmatch(baseline) is None or baseline == expected_head:
-            raise ValueError("closure baseline could not be derived from main")
+        if parent != baseline_head:
+            raise ValueError(
+                "local closure parent shall equal authenticated closure base"
+            )
         python = sys.executable
         commands: dict[str, list[str]] = {
             "full_suite": [
@@ -195,7 +210,7 @@ class LocalValidationRunner:
                 "tools/validate_crosswalks.py",
                 "--check",
                 "--baseline-ref",
-                baseline,
+                baseline_head,
             ],
             "pci_readiness": [
                 python,
@@ -209,7 +224,7 @@ class LocalValidationRunner:
                 "tools/v05_beta_release_gates.py",
                 "--check",
                 "--baseline-ref",
-                baseline,
+                baseline_head,
             ],
             "mermaid_inventory": [
                 python,
@@ -221,7 +236,10 @@ class LocalValidationRunner:
                 ),
             ],
             "whole_range_diff": [
-                "git", "diff", "--check", f"{baseline}..{expected_head}"
+                "git",
+                "diff",
+                "--check",
+                f"{baseline_head}..{expected_head}",
             ],
         }
         environment = os.environ.copy()
@@ -318,7 +336,10 @@ class DetachedValidationRunner:
         )
 
     def run(
-        self, root: Path, expected_head: str
+        self,
+        root: Path,
+        expected_head: str,
+        baseline_head: str,
     ) -> list[dict[str, object]]:
         root = root.resolve()
         commit = self._git_text(
@@ -327,7 +348,14 @@ class DetachedValidationRunner:
         tree = self._git_text(
             root, ["rev-parse", f"{expected_head}^{{tree}}"]
         )
-        if commit != expected_head or SHA_RE.fullmatch(tree) is None:
+        parent = self._git_text(
+            root, ["rev-parse", f"{expected_head}^"]
+        )
+        if (
+            commit != expected_head
+            or SHA_RE.fullmatch(tree) is None
+            or parent != baseline_head
+        ):
             raise ValueError("closure snapshot could not be verified")
         with tempfile.TemporaryDirectory(
             prefix="esaf-v05-closure-"
@@ -358,7 +386,7 @@ class DetachedValidationRunner:
                         "detached closure snapshot is not immutable"
                     )
                 results = self._validation_runner.run(
-                    snapshot, expected_head
+                    snapshot, expected_head, baseline_head
                 )
                 _validate_local_results(results, expected_head)
                 return results
@@ -737,6 +765,7 @@ def collect_closure_evidence(
     validation_runner: ValidationRunner | None = None,
     repository_runner: Callable[..., object] | None = None,
     merged_head: str | None = None,
+    expected_closure_base: str | None = None,
 ) -> dict[str, object]:
     """Collect closure evidence from authenticated, exact GitHub resources."""
     fixed_now = (
@@ -783,6 +812,7 @@ def collect_closure_evidence(
         if isinstance(commit_details, dict)
         else None
     )
+    parents = commit.get("parents")
     if (
         not isinstance(tree, dict)
         or SHA_RE.fullmatch(str(tree.get("sha"))) is None
@@ -797,6 +827,30 @@ def collect_closure_evidence(
     commit_url = f"{WEB_ROOT}/commit/{expected_head}"
     if commit.get("html_url") != commit_url:
         raise ValueError("GitHub closure commit canonical URL mismatch")
+    if (
+        not isinstance(parents, list)
+        or len(parents) != 1
+        or not isinstance(parents[0], dict)
+    ):
+        raise ValueError(
+            "GitHub closure commit shall have exactly one parent"
+        )
+    closure_base = parents[0].get("sha")
+    if (
+        not isinstance(closure_base, str)
+        or SHA_RE.fullmatch(closure_base) is None
+        or closure_base == expected_head
+        or parents[0].get("url")
+        != f"{API_ROOT}repos/{REPOSITORY}/commits/{closure_base}"
+    ):
+        raise ValueError("GitHub closure commit parent is invalid")
+    if (
+        expected_closure_base is not None
+        and closure_base != expected_closure_base
+    ):
+        raise ValueError(
+            "authenticated closure base changed during refresh"
+        )
     responses.append((commit_response, commit_url))
 
     pr_resource = f"repos/{REPOSITORY}/pulls/{pr_number}"
@@ -920,7 +974,7 @@ def collect_closure_evidence(
     rendering = comments["rendering"][0]
     executed_results = (
         validation_runner or LocalValidationRunner()
-    ).run(root, expected_head)
+    ).run(root, expected_head, closure_base)
     _validate_local_results(executed_results, expected_head)
     result_by_name = {
         str(item["name"]): deepcopy(item) for item in executed_results
@@ -1008,6 +1062,7 @@ def collect_closure_evidence(
     return {
         "schema": EVIDENCE_SCHEMA,
         "release": RELEASE,
+        "closure_base": closure_base,
         "closure_head": expected_head,
         "closure_tree": tree["sha"],
         "scope": scope,
@@ -1075,6 +1130,16 @@ def refresh_taggable_evidence(
         or base_evidence.get("closure_head") != expected_head
     ):
         raise ValueError("base evidence shall match expected closure head")
+    closure_base = base_evidence.get("closure_base")
+    if (
+        not isinstance(closure_base, str)
+        or SHA_RE.fullmatch(closure_base) is None
+        or closure_base == expected_head
+    ):
+        raise ValueError(
+            "base evidence closure base shall be a distinct "
+            "40-character SHA"
+        )
     base_commands = _validated_candidate_commands(
         base_evidence.get("candidate_commands"), expected_head
     )
@@ -1082,7 +1147,12 @@ def refresh_taggable_evidence(
     if refresh_arguments.get("validation_runner") is None:
         refresh_arguments["validation_runner"] = DetachedValidationRunner()
     refresh_arguments["merged_head"] = merge_head
+    refresh_arguments["expected_closure_base"] = closure_base
     fresh = collect_closure_evidence(client, **refresh_arguments)
+    if fresh.get("closure_base") != closure_base:
+        raise ValueError(
+            "authenticated closure base changed during refresh"
+        )
     _require_unchanged_sources(base_evidence, fresh)
     fresh_commands = _validated_candidate_commands(
         fresh.get("candidate_commands"), expected_head

@@ -15,6 +15,7 @@ import unittest
 from unittest.mock import patch
 
 from tests.test_v05_beta_release_gates import (
+    CLOSURE_BASE,
     CLOSURE_SHA,
     CLOSURE_TREE,
     COMMAND_IDS,
@@ -244,7 +245,7 @@ class LiveTimestampFakeClient(FakeClient):
 
 class FakeValidationRunner(ValidationRunner):
     def __init__(self) -> None:
-        self.calls: list[tuple[Path, str]] = []
+        self.calls: list[tuple[Path, str, str]] = []
         self.results = [
             {
                 "name": name,
@@ -257,9 +258,12 @@ class FakeValidationRunner(ValidationRunner):
         ]
 
     def run(
-        self, root: Path, expected_head: str
+        self,
+        root: Path,
+        expected_head: str,
+        baseline_head: str,
     ) -> list[dict[str, object]]:
-        self.calls.append((root, expected_head))
+        self.calls.append((root, expected_head, baseline_head))
         return deepcopy(self.results)
 
 
@@ -287,6 +291,15 @@ def valid_fake_client() -> FakeClient:
                     "committer": {"date": COMMIT_TIME},
                     "tree": {"sha": CLOSURE_TREE},
                 },
+                "parents": [
+                    {
+                        "sha": CLOSURE_BASE,
+                        "url": (
+                            "https://api.github.com/repos/tdistress/ESAF/"
+                            f"commits/{CLOSURE_BASE}"
+                        ),
+                    }
+                ],
             },
         ),
         MERGE_COMMIT_RESOURCE: api_response(
@@ -440,8 +453,8 @@ class RecordingCommandExecutor:
         self.calls.append((args, kwargs))
         if args == ["git", "rev-parse", "HEAD"]:
             stdout = f"{CLOSURE_SHA}\n".encode("ascii")
-        elif args == ["git", "merge-base", CLOSURE_SHA, "main"]:
-            stdout = (("b" * 40) + "\n").encode("ascii")
+        elif args == ["git", "rev-parse", f"{CLOSURE_SHA}^"]:
+            stdout = f"{CLOSURE_BASE}\n".encode("ascii")
         elif args == ["git", "status", "--porcelain=v1"]:
             stdout = b""
         else:
@@ -808,6 +821,88 @@ class V05StructuredCommentTests(unittest.TestCase):
 
 
 class V05LocalValidationRunnerTests(unittest.TestCase):
+    def test_detached_runner_reexecutes_after_main_contains_closure_head_using_original_closure_base(
+        self,
+    ) -> None:
+        class PostMergeTopologyExecutor:
+            def __init__(self) -> None:
+                self.calls: list[tuple[list[str], Path]] = []
+
+            def __call__(
+                executor_self, args: list[str], **kwargs: object
+            ) -> subprocess.CompletedProcess[bytes]:
+                cwd = Path(kwargs["cwd"])
+                executor_self.calls.append((args, cwd))
+                if args == [
+                    "git", "rev-parse", f"{CLOSURE_SHA}^{{commit}}"
+                ]:
+                    stdout = f"{CLOSURE_SHA}\n".encode("ascii")
+                elif args == [
+                    "git", "rev-parse", f"{CLOSURE_SHA}^{{tree}}"
+                ]:
+                    stdout = f"{CLOSURE_TREE}\n".encode("ascii")
+                elif args == [
+                    "git", "rev-parse", f"{CLOSURE_SHA}^"
+                ]:
+                    stdout = f"{CLOSURE_BASE}\n".encode("ascii")
+                elif args[:4] == [
+                    "git", "worktree", "add", "--detach"
+                ]:
+                    Path(args[4]).mkdir()
+                    stdout = b""
+                elif args == ["git", "rev-parse", "HEAD"]:
+                    stdout = f"{CLOSURE_SHA}\n".encode("ascii")
+                elif args == ["git", "rev-parse", "HEAD^{tree}"]:
+                    stdout = f"{CLOSURE_TREE}\n".encode("ascii")
+                elif args == [
+                    "git", "merge-base", CLOSURE_SHA, "main"
+                ]:
+                    stdout = f"{CLOSURE_SHA}\n".encode("ascii")
+                elif args == ["git", "status", "--porcelain=v1"]:
+                    stdout = b""
+                elif args[:4] == [
+                    "git", "worktree", "remove", "--force"
+                ]:
+                    stdout = b""
+                else:
+                    stdout = f"executed {' '.join(args)}\n".encode()
+                return subprocess.CompletedProcess(
+                    args, 0, stdout, b""
+                )
+
+        executor = PostMergeTopologyExecutor()
+        results = DetachedValidationRunner(
+            validation_runner=LocalValidationRunner(executor),
+            runner=executor,
+        ).run(ROOT, CLOSURE_SHA, CLOSURE_BASE)
+        called = [args for args, _ in executor.calls]
+        self.assertNotIn(
+            ["git", "merge-base", CLOSURE_SHA, "main"], called
+        )
+        self.assertIn(
+            [
+                os.fsdecode(Path(os.sys.executable)),
+                "tools/validate_crosswalks.py",
+                "--check",
+                "--baseline-ref",
+                CLOSURE_BASE,
+            ],
+            called,
+        )
+        self.assertIn(
+            [
+                "git",
+                "diff",
+                "--check",
+                f"{CLOSURE_BASE}..{CLOSURE_SHA}",
+            ],
+            called,
+        )
+        self.assertEqual(
+            set(COMMAND_IDS) - {"mermaid_rendering"},
+            {item["name"] for item in results},
+        )
+
     def test_detached_runner_executes_at_verified_immutable_closure_head(
         self,
     ) -> None:
@@ -825,6 +920,10 @@ class V05LocalValidationRunnerTests(unittest.TestCase):
                 "git", "rev-parse", f"{CLOSURE_SHA}^{{tree}}"
             ]:
                 stdout = f"{CLOSURE_TREE}\n".encode("ascii")
+            elif args == [
+                "git", "rev-parse", f"{CLOSURE_SHA}^"
+            ]:
+                stdout = f"{CLOSURE_BASE}\n".encode("ascii")
             elif args[:4] == ["git", "worktree", "add", "--detach"]:
                 Path(args[4]).mkdir()
                 stdout = b""
@@ -843,10 +942,13 @@ class V05LocalValidationRunnerTests(unittest.TestCase):
         results = DetachedValidationRunner(
             validation_runner=inner,
             runner=git_runner,
-        ).run(ROOT, CLOSURE_SHA)
+        ).run(ROOT, CLOSURE_SHA, CLOSURE_BASE)
         self.assertEqual(1, len(inner.calls))
         self.assertNotEqual(ROOT, inner.calls[0][0])
-        self.assertEqual(CLOSURE_SHA, inner.calls[0][1])
+        self.assertEqual(
+            (CLOSURE_SHA, CLOSURE_BASE),
+            inner.calls[0][1:],
+        )
         self.assertEqual(
             set(COMMAND_IDS) - {"mermaid_rendering"},
             {item["name"] for item in results},
@@ -854,7 +956,9 @@ class V05LocalValidationRunnerTests(unittest.TestCase):
 
     def test_runner_executes_exact_canonical_nonvisual_commands(self) -> None:
         executor = RecordingCommandExecutor()
-        results = LocalValidationRunner(executor).run(ROOT, CLOSURE_SHA)
+        results = LocalValidationRunner(executor).run(
+            ROOT, CLOSURE_SHA, CLOSURE_BASE
+        )
         self.assertEqual(
             set(COMMAND_IDS) - {"mermaid_rendering"},
             {item["name"] for item in results},
@@ -904,6 +1008,36 @@ class V05LocalValidationRunnerTests(unittest.TestCase):
 
 
 class V05AcquisitionTests(unittest.TestCase):
+    def test_collector_requires_exact_authenticated_closure_parent(
+        self,
+    ) -> None:
+        evidence = collect_closure_evidence(
+            valid_fake_client(), **valid_collection_args()
+        )
+        self.assertEqual(CLOSURE_BASE, evidence["closure_base"])
+        for parents in (
+            [],
+            [
+                {"sha": CLOSURE_BASE},
+                {"sha": "a" * 40},
+            ],
+        ):
+            with self.subTest(parent_count=len(parents)):
+                client = valid_fake_client()
+                response = client.responses[COMMIT_RESOURCE]
+                payload = response.json_object()
+                payload["parents"] = parents
+                client.responses[COMMIT_RESOURCE] = api_response(
+                    COMMIT_RESOURCE, payload
+                )
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "GitHub closure commit shall have exactly one parent",
+                ):
+                    collect_closure_evidence(
+                        client, **valid_collection_args()
+                    )
+
     def test_collector_uses_real_github_commit_tree_shape_for_closure_and_merge(
         self,
     ) -> None:
@@ -962,7 +1096,9 @@ class V05AcquisitionTests(unittest.TestCase):
         evidence = collect_closure_evidence(
             valid_fake_client(), **arguments
         )
-        self.assertEqual([(ROOT, CLOSURE_SHA)], runner.calls)
+        self.assertEqual(
+            [(ROOT, CLOSURE_SHA, CLOSURE_BASE)], runner.calls
+        )
         self.assertEqual(
             set(COMMAND_IDS) - {"mermaid_rendering"},
             {
@@ -1321,7 +1457,10 @@ class V05AcquisitionTests(unittest.TestCase):
                         },
                         **arguments,
                     )
-                self.assertEqual([(ROOT, CLOSURE_SHA)], runner.calls)
+                self.assertEqual(
+                    [(ROOT, CLOSURE_SHA, CLOSURE_BASE)],
+                    runner.calls,
+                )
 
     def test_collector_requires_exact_calendar_publication_date(self) -> None:
         for invalid in ("20260727", "2026-W31-1", "2026-7-27"):
@@ -1443,6 +1582,50 @@ class V05AcquisitionTests(unittest.TestCase):
                 },
                 **valid_collection_args(),
             )
+
+    def test_refresh_rejects_changed_authenticated_closure_base_before_reexecution(
+        self,
+    ) -> None:
+        initial = valid_fake_client()
+        closure = collect_closure_evidence(
+            initial, **valid_collection_args()
+        )
+        changed = valid_fake_client()
+        mark_pull_request_merged(changed)
+        response = changed.responses[COMMIT_RESOURCE]
+        payload = response.json_object()
+        payload["parents"] = [
+            {
+                "sha": "a" * 40,
+                "url": (
+                    "https://api.github.com/repos/tdistress/ESAF/"
+                    f"commits/{'a' * 40}"
+                ),
+            }
+        ]
+        changed.responses[COMMIT_RESOURCE] = api_response(
+            COMMIT_RESOURCE, payload
+        )
+        runner = FakeValidationRunner()
+        arguments = valid_collection_args()
+        arguments["validation_runner"] = runner
+        with self.assertRaisesRegex(
+            ValueError,
+            "authenticated closure base changed during refresh",
+        ):
+            refresh_taggable_evidence(
+                changed,
+                base_evidence=closure,
+                merge_head=MERGE_SHA,
+                post_merge_results={
+                    "schema": "esaf-v05-post-merge-results-v1",
+                    "sha": MERGE_SHA,
+                    "tree": CLOSURE_TREE,
+                    "commands": command_results(None, taggable=True),
+                },
+                **arguments,
+            )
+        self.assertEqual([], runner.calls)
 
     def test_operational_cli_rejects_local_snapshot_switches(self) -> None:
         parser = build_parser()
