@@ -1,3 +1,4 @@
+import hashlib
 import json
 import re
 import subprocess
@@ -32,9 +33,25 @@ PROHIBITED_CONTROLLER_CLAIMS = (
     "mapping_reviews",
 )
 
+# These digests pin immutable post-merge synchronization payloads. Any reviewed
+# edit must intentionally repin the corresponding literal.
+PINNED_RELEASE_PLAN_DEFERRED_ASSURANCE_SHA256 = (
+    "d007b455190fc620d0f0030cbe27f321a37679abe2f0ce5368174f1615d85c28"
+)
+PINNED_PLANNED_ISSUE_55_BODY_SHA256 = (
+    "359c9c2c1267f6a75c084196673735c7c296f3af372f0ba51efa88a53417f0ad"
+)
+PINNED_PLANNED_ISSUE_59_BODY_SHA256 = (
+    "cde2b992f3a81baf9213053acbf55aef9eed761f61a6d19709359cd934c0160c"
+)
+
 
 def read_repository_file(relative_path: str) -> str:
     return (ROOT / relative_path).read_text(encoding="utf-8")
+
+
+def sha256_text(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
 def current_version() -> str:
@@ -89,6 +106,27 @@ def contains_normalized_phrase(text: str, phrase: str) -> bool:
     )
 
 
+def uk_mapping_set_ids(text: str) -> tuple[str, ...]:
+    return tuple(re.findall(
+        r"`(uk-ncsc--[a-z0-9.-]+(?:--[a-z0-9.-]+)*)`",
+        text,
+    ))
+
+
+def fenced_markdown_in_task(plan: str, task_heading: str) -> str:
+    task_start = plan.index(task_heading)
+    next_task = re.search(r"^## Task \d+:", plan[task_start + 1:], re.MULTILINE)
+    task_end = (
+        task_start + 1 + next_task.start()
+        if next_task is not None
+        else len(plan)
+    )
+    task = plan[task_start:task_end]
+    fence_start = task.index("```markdown\n") + len("```markdown\n")
+    fence_end = task.index("\n```", fence_start)
+    return task[fence_start:fence_end]
+
+
 def markdown_list_items(text: str) -> list[str]:
     item_pattern = re.compile(
         r"^(?P<indent>\s*)(?:[-+*]|\d+[.)])\s+"
@@ -106,6 +144,28 @@ def markdown_list_items(text: str) -> list[str]:
             items.append(" ".join([item for _, item in ancestors] + [body]))
             ancestors.append((indentation, body))
     return items
+
+
+def markdown_section(text: str, heading: str) -> str:
+    start_match = re.search(
+        rf"^{re.escape(heading)}\s*$",
+        text,
+        re.MULTILINE,
+    )
+    if start_match is None:
+        raise AssertionError(f"missing Markdown section {heading!r}")
+    section_start = start_match.end()
+    next_heading = re.search(
+        r"^#{1,6}\s+.+$",
+        text[section_start:],
+        re.MULTILINE,
+    )
+    section_end = (
+        section_start + next_heading.start()
+        if next_heading is not None
+        else len(text)
+    )
+    return text[section_start:section_end]
 
 
 def release_readiness_rows() -> list[tuple[str, str, str]]:
@@ -267,15 +327,180 @@ class ReleaseMetadataTests(unittest.TestCase):
             release_plan,
         )
 
-    def test_owner_risk_acceptance_retains_exact_mapping_review_backlog(self) -> None:
-        backlog = read_repository_file("project/BACKLOG.md")
-        item = next(
-            value for value in markdown_list_items(backlog)
-            if "Complete coordinated qualified review" in value
+        assurance = markdown_section(
+            release_plan,
+            "## v0.5-beta deferred mapping assurance",
         )
-        for mapping_set_id in EXPECTED_MAPPING_SET_IDS:
-            with self.subTest(mapping_set_id=mapping_set_id):
-                self.assertIn(mapping_set_id, item)
+        for required in (
+            "exact v0.5-beta release candidate",
+            "one authenticated owner source",
+            "remain Draft",
+            "Issue 55 remains open for the six qualified human role dispositions.",
+        ):
+            with self.subTest(required=required):
+                self.assertTrue(contains_normalized_phrase(assurance, required))
+        for required in (
+            "mapping_decision_basis: owner_risk_acceptance",
+            "decision_type: owner_risk_acceptance",
+            "qualified_review_status: deferred",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, assurance)
+        self.assertEqual(EXPECTED_MAPPING_SET_IDS, uk_mapping_set_ids(assurance))
+        for prohibited in (
+            "issue 55 is closed",
+            "issue 55 shall close",
+            "owner-risk acceptance closes issue 55",
+        ):
+            with self.subTest(prohibited=prohibited):
+                self.assertFalse(contains_normalized_phrase(assurance, prohibited))
+        self.assertEqual(
+            PINNED_RELEASE_PLAN_DEFERRED_ASSURANCE_SHA256,
+            sha256_text(assurance),
+        )
+
+    def test_release_plan_pinned_artifact_rejects_adversarial_mutations(
+        self,
+    ) -> None:
+        release_plan = read_repository_file("project/RELEASE_PLAN.md")
+        assurance = markdown_section(
+            release_plan,
+            "## v0.5-beta deferred mapping assurance",
+        )
+        mutations = (
+            "Owner-risk acceptance establishes compliance.",
+            "Owner-risk acceptance does not complete qualified review and "
+            "establishes compliance.",
+            "Qualified-review assurance is satisfied by owner-risk acceptance.",
+            "Owner-risk acceptance ensures compliance.",
+            "Although owner-risk acceptance does not complete qualified review, "
+            "it establishes compliance.",
+            "Owner-risk acceptance is the selected path. It establishes compliance.",
+            "The deferred disposition applies. This establishes qualified-review "
+            "assurance.",
+            "Owner-risk acceptance establishes regulatory conformity.",
+            "Readiness for production is demonstrated by the owner-risk decision.",
+        )
+        for mutation in mutations:
+            with self.subTest(mutation=mutation):
+                self.assertNotEqual(
+                    PINNED_RELEASE_PLAN_DEFERRED_ASSURANCE_SHA256,
+                    sha256_text(f"{assurance}\n\n{mutation}"),
+                )
+
+    def test_issue_55_pinned_artifact_rejects_adversarial_relationship_mutation(
+        self,
+    ) -> None:
+        plan = read_repository_file(
+            "docs/superpowers/plans/"
+            "2026-07-27-v05-beta-deferred-mapping-assurance.md"
+        )
+        issue_body = fenced_markdown_in_task(
+            plan,
+            "## Task 6: Synchronize GitHub Issue 55",
+        )
+        mutation = "Owner-risk acceptance provides qualified-review assurance."
+        self.assertNotEqual(
+            PINNED_PLANNED_ISSUE_55_BODY_SHA256,
+            sha256_text(f"{issue_body}\n\n{mutation}"),
+        )
+
+    def test_issue_55_pinned_artifact_rejects_adversarial_state_mutations(
+        self,
+    ) -> None:
+        plan = read_repository_file(
+            "docs/superpowers/plans/"
+            "2026-07-27-v05-beta-deferred-mapping-assurance.md"
+        )
+        issue_body = fenced_markdown_in_task(
+            plan,
+            "## Task 6: Synchronize GitHub Issue 55",
+        )
+        mutations = (
+            "This issue is closed.",
+            "Owner-risk acceptance does not complete qualified review and "
+            "closes this issue.",
+            "Owner-risk acceptance does not complete qualified review while it "
+            "closes this issue.",
+            "Issue 55 has been closed.",
+            "This issue is not open.",
+            "Issue 55 is resolved.",
+            "This issue is finished.",
+            "#55 has been concluded.",
+            "Issue 55 will be archived.",
+        )
+        for mutation in mutations:
+            with self.subTest(mutation=mutation):
+                self.assertNotEqual(
+                    PINNED_PLANNED_ISSUE_55_BODY_SHA256,
+                    sha256_text(f"{issue_body}\n\n{mutation}"),
+                )
+
+    def test_issue_59_pinned_artifact_rejects_adversarial_state_mutations(
+        self,
+    ) -> None:
+        plan = read_repository_file(
+            "docs/superpowers/plans/"
+            "2026-07-27-v05-beta-deferred-mapping-assurance.md"
+        )
+        issue_body = fenced_markdown_in_task(
+            plan,
+            "## Task 7: Synchronize GitHub Issue 59",
+        )
+        mutations = (
+            "This issue is closed.",
+            "#55 is closed.",
+            "This issue has been resolved.",
+            "Issue 55 is no longer active.",
+        )
+        for mutation in mutations:
+            with self.subTest(mutation=mutation):
+                self.assertNotEqual(
+                    PINNED_PLANNED_ISSUE_59_BODY_SHA256,
+                    sha256_text(f"{issue_body}\n\n{mutation}"),
+                )
+
+    def test_deferred_release_preserves_draft_state_and_required_nonclaims(
+        self,
+    ) -> None:
+        release_plan = read_repository_file("project/RELEASE_PLAN.md")
+        assurance = markdown_section(
+            release_plan,
+            "## v0.5-beta deferred mapping assurance",
+        )
+        self.assertTrue(contains_normalized_phrase(
+            assurance,
+            "all three mapping sets and their records remain Draft",
+        ))
+        self.assertTrue(contains_normalized_phrase(
+            assurance,
+            "It does not establish qualified review, approval, assurance, compliance, "
+            "certification, equivalence, endorsement, external-scheme approval, or "
+            "production readiness.",
+        ))
+        lower_assurance = assurance.casefold()
+        for prohibited in (
+            "qualified review completed",
+            "approved mappings",
+        ):
+            with self.subTest(prohibited=prohibited):
+                self.assertNotIn(prohibited, lower_assurance)
+
+    def test_deferred_assurance_followup_keeps_issue_55_open_for_all_three_mapping_sets(
+        self,
+    ) -> None:
+        backlog = read_repository_file("project/BACKLOG.md")
+        deferred = markdown_section(
+            backlog,
+            "## Deferred assurance follow-up",
+        )
+        self.assertIn("https://github.com/tdistress/ESAF/issues/55", deferred)
+        self.assertTrue(contains_normalized_phrase(
+            deferred,
+            "remains open until qualified review is complete for all three exact "
+            "mapping sets",
+        ))
+        self.assertEqual(EXPECTED_MAPPING_SET_IDS, uk_mapping_set_ids(deferred))
 
     def test_v05_beta_has_bounded_workstreams_and_exit_criteria(self) -> None:
         milestones = read_repository_file("project/MILESTONES.md")
@@ -287,7 +512,7 @@ class ReleaseMetadataTests(unittest.TestCase):
         ):
             self.assertIn(heading, milestones)
         for required in (
-            "all three UK mapping snapshots",
+            "all three UK mapping sets",
             "minimum ESAF-1500 assessment foundation",
             "one Draft pilot",
             "PCI DSS",
@@ -297,7 +522,33 @@ class ReleaseMetadataTests(unittest.TestCase):
         ):
             self.assertIn(required, milestones)
 
-    def test_v05_beta_exit_and_closure_issue_require_complete_gate_set(self) -> None:
+    def test_v05_beta_accepts_qualified_or_coordinated_deferred_mapping_assurance(
+        self,
+    ) -> None:
+        milestones = read_repository_file("project/MILESTONES.md")
+        for section in (
+            markdown_section(milestones, "### Required workstreams"),
+            markdown_section(milestones, "### Exit criteria"),
+        ):
+            for required in (
+                "completed qualified-review dispositions",
+                "one coordinated owner-risk disposition",
+                "all three",
+                "exact v0.5-beta release candidate",
+            ):
+                with self.subTest(required=required):
+                    self.assertTrue(contains_normalized_phrase(section, required))
+        self.assertTrue(contains_normalized_phrase(
+            milestones,
+            "DEFERRED is a milestone assurance disposition, not an ESAF-1600 "
+            "mapping lifecycle state",
+        ))
+        self.assertTrue(contains_normalized_phrase(
+            milestones,
+            "all three mapping sets and their records remain Draft",
+        ))
+
+    def test_historical_v05_closure_issue_body_requires_complete_gate_set(self) -> None:
         required_gate_set = (
             "The full test suite, control, architecture, crosswalk, link, release, "
             "working-tree, and applicable Mermaid-rendering gates pass on the exact "
@@ -310,14 +561,136 @@ class ReleaseMetadataTests(unittest.TestCase):
         ]
         self.assertTrue(contains_normalized_phrase(exit_criteria, required_gate_set))
 
-        plan = read_repository_file(
+        historical_plan = read_repository_file(
             "docs/superpowers/plans/2026-07-23-v05-beta-plan-reconciliation.md"
         )
-        closure_body = plan[
-            plan.index("$closureBody=@'"):
-            plan.index("'@", plan.index("$closureBody=@'"))
+        historical_closure_body = historical_plan[
+            historical_plan.index("$closureBody=@'"):
+            historical_plan.index(
+                "'@",
+                historical_plan.index("$closureBody=@'"),
+            )
         ]
-        self.assertTrue(contains_normalized_phrase(closure_body, required_gate_set))
+        self.assertTrue(contains_normalized_phrase(
+            historical_closure_body,
+            required_gate_set,
+        ))
+
+        backlog = read_repository_file("project/BACKLOG.md")
+        active_workstreams = markdown_section(
+            backlog,
+            "## Active release workstreams",
+        )
+        self.assertIn("https://github.com/tdistress/ESAF/issues/59", active_workstreams)
+        for required in (
+            "completed qualified approval or validated exact-candidate "
+            "owner-risk acceptance",
+            "every other release gate remains required",
+        ):
+            with self.subTest(required=required):
+                self.assertTrue(
+                    contains_normalized_phrase(active_workstreams, required)
+                )
+
+    def test_planned_issue_55_body_preserves_deferred_assurance_boundaries(
+        self,
+    ) -> None:
+        plan = read_repository_file(
+            "docs/superpowers/plans/"
+            "2026-07-27-v05-beta-deferred-mapping-assurance.md"
+        )
+        issue_body = fenced_markdown_in_task(
+            plan,
+            "## Task 6: Synchronize GitHub Issue 55",
+        )
+
+        self.assertIn(
+            "For `v0.5-beta`, the mapping-assurance release gate may be satisfied "
+            "by either:",
+            issue_body,
+        )
+        self.assertEqual(EXPECTED_MAPPING_SET_IDS, uk_mapping_set_ids(issue_body))
+        for required in (
+            "This issue remains open if v0.5-beta proceeds under the coordinated "
+            "owner-risk deferred-assurance path.",
+            "Owner-risk acceptance cannot substitute for qualified human review and "
+            "cannot close this issue.",
+            "specification and inventory review for Core",
+            "security and overclaiming review for Core",
+            "specification and inventory review for Plus forward",
+            "security and overclaiming review for Plus forward",
+            "specification and inventory review for Plus reverse",
+            "security and overclaiming review for Plus reverse",
+            "The second path permits Working Draft publication only. It does not "
+            "complete this issue, complete qualified review, or change any mapping "
+            "lifecycle state.",
+            "All three mapping sets and all records remain draft.",
+            "Update reviewer metadata, lifecycle events, approval state, or "
+            "publication state only when every ESAF-1600 transition condition is "
+            "satisfied.",
+            "Neither deferred assurance nor later qualified review establishes "
+            "compliance, certification, equivalence, endorsement, external-scheme "
+            "approval, production readiness, or assurance beyond the expressly "
+            "recorded scope.",
+        ):
+            with self.subTest(required=required):
+                self.assertTrue(contains_normalized_phrase(issue_body, required))
+        for prohibited in (
+            "issue 55 is closed",
+            "issue 55 shall close",
+            "owner-risk acceptance closes issue 55",
+        ):
+            with self.subTest(prohibited=prohibited):
+                self.assertFalse(contains_normalized_phrase(issue_body, prohibited))
+        self.assertEqual(
+            PINNED_PLANNED_ISSUE_55_BODY_SHA256,
+            sha256_text(issue_body),
+        )
+
+    def test_planned_issue_59_body_preserves_complete_release_gate_set(
+        self,
+    ) -> None:
+        plan = read_repository_file(
+            "docs/superpowers/plans/"
+            "2026-07-27-v05-beta-deferred-mapping-assurance.md"
+        )
+        issue_body = fenced_markdown_in_task(
+            plan,
+            "## Task 7: Synchronize GitHub Issue 59",
+        )
+
+        self.assertEqual(EXPECTED_MAPPING_SET_IDS, uk_mapping_set_ids(issue_body))
+        for required in (
+            "completed qualified-review dispositions for all six human roles tracked "
+            "in #55",
+            "one authenticated owner-risk decision that defers qualified review for "
+            "all three exact mapping sets",
+            "bind every decision to the exact v0.5-beta release candidate SHA",
+            "use one uniform decision basis and one authenticated owner source",
+            "all three mapping sets and their records remain draft, no reviewer "
+            "metadata or lifecycle event is added, and #55 remains open",
+            "Technical, editorial, terminology, mapping, profile-scope, and governance "
+            "reviews are complete.",
+            "The full test suite, control, architecture, crosswalk, assessment, link, "
+            "release, working-tree, and applicable Mermaid-rendering gates pass on "
+            "the exact candidate.",
+            "The complete branch diff is reviewed, GitHub checks pass, and merge state "
+            "is clean.",
+            "Post-merge validation passes before an immutable tag or publication "
+            "statement is created.",
+            "Critical and Important findings are resolved.",
+            "The deferred path does not claim qualified review, approval, "
+            "certification, compliance, equivalence, endorsement, external-scheme "
+            "approval, production readiness, or assurance beyond the recorded "
+            "Working Draft basis.",
+            "Evidence from v0.4-alpha is historical and cannot approve v0.5-beta.",
+        ):
+            with self.subTest(required=required):
+                self.assertTrue(contains_normalized_phrase(issue_body, required))
+        self.assertEqual(
+            PINNED_PLANNED_ISSUE_59_BODY_SHA256,
+            sha256_text(issue_body),
+        )
 
     def test_v05_beta_preserves_bounded_non_goals(self) -> None:
         milestones = read_repository_file("project/MILESTONES.md")
@@ -336,14 +709,19 @@ class ReleaseMetadataTests(unittest.TestCase):
         backlog = read_repository_file("project/BACKLOG.md")
         self.assertNotIn("Complete open 0.4-alpha publication gates", backlog)
         self.assertNotIn("Select and publish one Draft pilot", backlog)
-        self.assertEqual(
-            1,
-            backlog.count("Complete coordinated qualified review"),
+        active_workstreams = markdown_section(
+            backlog,
+            "## Active release workstreams",
         )
-        review = backlog.index("Complete coordinated qualified review")
-        pci = backlog.index("[Issue 58]")
+        deferred_assurance = markdown_section(
+            backlog,
+            "## Deferred assurance follow-up",
+        )
+        self.assertIn("[issue 59]", active_workstreams.casefold())
+        self.assertNotIn("[issue 59]", deferred_assurance.casefold())
+        self.assertIn("[issue 55]", deferred_assurance.casefold())
+        self.assertNotIn("[issue 55]", active_workstreams.casefold())
         self.assertNotIn("Define the minimum ESAF-1500 assessment foundation", backlog)
-        self.assertLess(review, pci)
         for mapping_set_id in EXPECTED_MAPPING_SET_IDS:
             with self.subTest(mapping_set_id=mapping_set_id):
                 self.assertIn(mapping_set_id, backlog)
@@ -362,28 +740,27 @@ class ReleaseMetadataTests(unittest.TestCase):
             "qualified-review availability",
             "does not block `v0.5-beta`",
         ):
-            self.assertIn(required, backlog)
+            self.assertTrue(contains_normalized_phrase(backlog, required))
 
-    def test_roadmap_sequences_v05_beta_delivery_before_long_term_phases(self) -> None:
+    def test_roadmap_keeps_deferred_mapping_assurance_nonblocking_after_beta(
+        self,
+    ) -> None:
         roadmap = read_repository_file("ROADMAP.md")
-        section = re.search(
-            r"^## 0\.5-beta delivery sequence$"
-            r"(?P<section>.*?)"
-            r"(?=^## |\Z)",
+        sequence = markdown_section(
             roadmap,
-            re.MULTILINE | re.DOTALL,
+            "## 0.5-beta delivery sequence",
         )
-        self.assertIsNotNone(section)
-        assert section is not None
-        sequence = section.group("section")
-        stages = (
-            "mapping assurance debt",
-            "minimum shared assessment semantics",
-            "one pilot profile",
-            "priority mappings",
-        )
-        positions = [sequence.index(stage) for stage in stages]
-        self.assertEqual(positions, sorted(positions))
+        for required in (
+            "deferred mapping assurance remains tracked after beta",
+            "does not stop later engineering work",
+            "issue 55",
+        ):
+            with self.subTest(required=required):
+                self.assertTrue(contains_normalized_phrase(sequence, required))
+        self.assertFalse(contains_normalized_phrase(
+            sequence,
+            "first closes mapping assurance debt",
+        ))
 
     def test_v05_issue_bodies_state_their_dependencies(self) -> None:
         plan = read_repository_file(

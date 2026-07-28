@@ -199,6 +199,31 @@ EXPECTED_OBSERVATION_PROFILE_ENTRIES = (
 )
 
 
+def top_level_list_item(text: str, marker: str) -> str:
+    items: list[str] = []
+    current: list[str] | None = None
+    for line in text.splitlines():
+        if line.startswith("- "):
+            if current is not None:
+                items.append("\n".join(current))
+            current = [line]
+        elif line.startswith("#"):
+            if current is not None:
+                items.append("\n".join(current))
+                current = None
+        elif current is not None:
+            current.append(line)
+    if current is not None:
+        items.append("\n".join(current))
+
+    matches = [item for item in items if marker in item]
+    if len(matches) != 1:
+        raise AssertionError(
+            f"expected exactly one top-level list item containing {marker!r}, found {len(matches)}"
+        )
+    return matches[0]
+
+
 def load_snapshot_records() -> list[dict[str, object]]:
     return [
         parse_front_matter(path)[0]
@@ -772,9 +797,31 @@ class CyberEssentialsPlusExternalToEsafMappingTests(unittest.TestCase):
             "Design the Cyber Essentials Plus v3.2 external_to_esaf mapping.",
             backlog,
         )
-        self.assertIn(
-            "Complete coordinated qualified review of all three UK mapping snapshots",
+        deferred_assurance = re.search(
+            r"(?ms)^## Deferred assurance follow-up\n(.*?)(?=^## |\Z)",
             backlog,
+        )
+        self.assertIsNotNone(deferred_assurance)
+        deferred_text = deferred_assurance.group(0)
+        issue_55_url = "https://github.com/tdistress/ESAF/issues/55"
+        issue_55 = top_level_list_item(deferred_text, issue_55_url)
+        self.assertIn(
+            issue_55_url,
+            issue_55,
+        )
+        self.assertEqual(
+            issue_55.count(
+                "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0"
+            ),
+            1,
+        )
+        self.assertRegex(
+            issue_55,
+            r"remains open until\s+qualified review is complete",
+        )
+        self.assertRegex(
+            issue_55,
+            r"owner-risk disposition defers this work and does not complete\s+qualified review or change a mapping lifecycle state",
         )
         self.assertTrue(TRACEABILITY.is_file())
         final_reviews = (FINAL_SPECIFICATION_REVIEW, FINAL_OVERCLAIMING_REVIEW)

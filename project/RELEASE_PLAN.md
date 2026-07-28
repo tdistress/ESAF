@@ -10,6 +10,39 @@ Each release shall complete the following gates:
 6. Changelog and version metadata updated.
 7. Release approved under `GOVERNANCE.md`.
 
+## v0.5-beta deferred mapping assurance
+
+The `v0.5-beta` mapping-assurance gate shall use either completed qualified
+approval or one coordinated owner-risk decision bound to the exact
+`v0.5-beta` release candidate. The owner-risk path shall cover each of these
+mapping sets exactly once:
+
+- `uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0`
+- `uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0`
+- `uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0`
+
+The coordinated evidence shall use
+`mapping_decision_basis: owner_risk_acceptance`,
+`decision_type: owner_risk_acceptance`, and
+`qualified_review_status: deferred`. Every mapping decision shall use one
+uniform basis and one authenticated owner source, identify the missing
+qualified human evidence, preserve the required nonclaims, and bind to the
+exact candidate SHA.
+
+`DEFERRED` is a milestone assurance disposition, not an ESAF-1600 mapping
+lifecycle state. All three mapping sets and their records remain Draft. No
+reviewer metadata, lifecycle event, approval state, or publication state is
+added. Issue 55 remains open for the six qualified human role dispositions.
+Issue 59 may proceed under validated deferred evidence, but every other
+technical, editorial, mapping, governance, validation, merge, and post-merge
+release gate remains required.
+
+Owner-risk acceptance defers qualified review; it does not complete or qualify
+that review. It does not establish qualified review, approval, assurance,
+compliance, certification, equivalence, endorsement, external-scheme approval,
+or production readiness. Historical `v0.4-alpha` evidence cannot approve
+`v0.5-beta`.
+
 ## 0.4-alpha publication
 
 Publication gates are Closed.
