@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import argparse
+from datetime import date
+from functools import lru_cache
 import json
 from pathlib import Path
 import re
@@ -66,6 +68,13 @@ ALLOWED_TOP_LEVEL_KEYS = {
 }
 SHA_RE = re.compile(r"(?<![0-9a-f])[0-9a-f]{40}(?![0-9a-f])", re.IGNORECASE)
 PATTERN_FILE_RE = re.compile(r"ARC-P[1-9][0-9]{2}\.md$")
+PROFILE_PATH_RE = re.compile(r"profiles/[^/]+/[^/]+/profile\.json$")
+ALLOWED_PUBLICATION_KEYS = {"condition", "date", "evidence"}
+ALLOWED_GATE_KEYS = {"state", "evidence"}
+PREVIOUS_PHASE = {
+    "closure_candidate": "evidence_candidate",
+    "published": "closure_candidate",
+}
 
 
 def load_front_matter(path: Path) -> dict[str, object]:
@@ -81,26 +90,24 @@ def load_front_matter(path: Path) -> dict[str, object]:
 
 def derive_scope(root: Path) -> dict[str, object]:
     """Derive release scope directly from authoritative tracked artifacts."""
+    tracked = _tracked_paths(root)
     controls = _load_json(root / "controls/catalog.json")
     crosswalks = _load_json(root / "crosswalks/catalog.json")
     matrix = _load_json(
         root / "docs/superpowers/specs/2026-07-25-pci-dss-mapping-readiness-matrix.json"
     )
     profiles = 0
-    for profile_path in (root / "profiles").glob("*/*/profile.json"):
+    for profile_path in _tracked_profile_paths(root, tracked):
         profile = _load_json(profile_path)
         if (
             profile.get("status") == "draft"
             and profile.get("target_esaf_release") == TAG
         ):
             profiles += 1
-    pattern_directory = root / "architectures/patterns"
     return {
         "controls": _integer(controls, "control_count"),
         "control_families": len(_mapping(controls, "families")),
-        "architecture_patterns": len(
-            [path for path in pattern_directory.iterdir() if PATTERN_FILE_RE.fullmatch(path.name)]
-        ),
+        "architecture_patterns": len(_tracked_pattern_paths(root, tracked)),
         "mapping_sets": _integer(_mapping(crosswalks, "counts"), "mapping_sets"),
         "mapping_provisions": _integer(_mapping(crosswalks, "counts"), "provisions"),
         "relationship_legs": _integer(_mapping(crosswalks, "counts"), "relationships"),
@@ -133,7 +140,7 @@ def validate_record(root: Path, record: dict[str, object]) -> list[str]:
         errors.append("phase shall be evidence_candidate, closure_candidate, or published")
     if record.get("mapping_decision_basis") not in MAPPING_DECISION_BASES:
         errors.append("mapping_decision_basis shall be supported")
-    _validate_publication(errors, record.get("publication"))
+    _validate_publication(errors, phase, record.get("publication"))
     _validate_mapping_sets(errors, root, record.get("mapping_sets"))
     _validate_scope(errors, root, record.get("scope"))
     _validate_scope_inputs(errors, root, record.get("scope_inputs"))
@@ -144,13 +151,30 @@ def validate_record(root: Path, record: dict[str, object]) -> list[str]:
 
 
 def validate_transition(previous: dict[str, object], candidate: dict[str, object]) -> list[str]:
-    """Reject release phase regression from a published record."""
+    """Validate the fixed v0.5-beta release-phase transition sequence."""
+    errors: list[str] = []
+    if previous.get("release") != RELEASE:
+        errors.append("baseline release shall equal 0.5-beta")
+    if previous.get("tag") != TAG:
+        errors.append("baseline tag shall equal v0.5-beta")
+    if previous.get("issue") != ISSUE:
+        errors.append("baseline issue shall equal 59")
+    if previous.get("repository_scope") != REPOSITORY_SCOPE:
+        errors.append(
+            "baseline repository scope shall equal complete_git_tracked_repository"
+        )
+    candidate_phase = candidate.get("phase")
+    expected_previous = PREVIOUS_PHASE.get(candidate_phase)
+    if expected_previous is not None and previous.get("phase") != expected_previous:
+        errors.append(
+            f"{candidate_phase} shall transition only from {expected_previous}"
+        )
     if (
         previous.get("phase") == "published"
-        and candidate.get("phase") in {"evidence_candidate", "closure_candidate"}
+        and candidate_phase in {"evidence_candidate", "closure_candidate"}
     ):
-        return ["published record shall not transition to a candidate phase"]
-    return []
+        errors.append("published record shall not transition to a candidate phase")
+    return errors
 
 
 def _load_json(path: Path) -> dict[str, Any]:
@@ -179,12 +203,20 @@ def _assessment_foundation(root: Path) -> bool:
     return text.startswith("# ESAF-1500 Assessment Guide\n") and "**Status:** Working Draft" in text
 
 
-def _validate_publication(errors: list[str], publication: object) -> None:
+def _validate_publication(errors: list[str], phase: object, publication: object) -> None:
     if not isinstance(publication, dict):
         errors.append("publication is required")
         return
+    for key in publication:
+        if key not in ALLOWED_PUBLICATION_KEYS:
+            errors.append(f"unknown publication key {key}")
     if publication.get("condition") != PUBLICATION_CONDITION:
         errors.append("publication condition is invalid")
+    publication_date = publication.get("date")
+    if phase in {"evidence_candidate", "closure_candidate"} and publication_date is not None:
+        errors.append("candidate publication date shall be null")
+    elif phase == "published" and not _iso_date(publication_date):
+        errors.append("published publication date shall be an ISO date")
     evidence = publication.get("evidence")
     if not isinstance(evidence, list) or not evidence:
         errors.append("publication evidence is required")
@@ -193,14 +225,39 @@ def _validate_publication(errors: list[str], publication: object) -> None:
 
 
 def _validate_mapping_sets(errors: list[str], root: Path, value: object) -> None:
-    catalog = _load_json(root / "crosswalks/catalog.json")
-    expected = [
-        item["metadata"]["mapping_set_id"]
-        for item in catalog.get("mapping_sets", [])
-        if isinstance(item, dict)
-        and isinstance(item.get("metadata"), dict)
-        and isinstance(item["metadata"].get("mapping_set_id"), str)
-    ]
+    try:
+        catalog = _load_json(root / "crosswalks/catalog.json")
+    except (OSError, ValueError, json.JSONDecodeError):
+        errors.append("crosswalk catalog cannot be parsed")
+        return
+    mapping_sets = catalog.get("mapping_sets")
+    if not isinstance(mapping_sets, list):
+        errors.append("crosswalk catalog cannot be parsed")
+        return
+    expected: list[str] = []
+    draft = True
+    source_paths: list[str] = []
+    try:
+        for item in mapping_sets:
+            metadata = item["metadata"]
+            identifier = metadata["mapping_set_id"]
+            if not isinstance(identifier, str):
+                raise ValueError("mapping set identifier is invalid")
+            expected.append(identifier)
+            draft = draft and metadata.get("status") == "draft"
+            source_paths.append(item["path"])
+            for provision in item["provisions"]:
+                provision_metadata = provision["metadata"]
+                draft = draft and provision_metadata.get("status") == "draft"
+                source_paths.append(provision["path"])
+    except (KeyError, TypeError, OSError, ValueError):
+        errors.append("crosswalk catalog cannot be parsed")
+        return
+    try:
+        draft = draft and _mapping_sources_are_draft(root, tuple(source_paths))
+    except (OSError, ValueError, json.JSONDecodeError, subprocess.CalledProcessError):
+        errors.append("crosswalk catalog cannot be parsed")
+        return
     if not isinstance(value, list) or not all(isinstance(item, str) for item in value):
         errors.append("mapping_sets shall equal the tracked catalog mapping sets")
         return
@@ -208,6 +265,8 @@ def _validate_mapping_sets(errors: list[str], root: Path, value: object) -> None
         errors.append("mapping_sets shall not contain duplicates")
     if sorted(value) != sorted(expected):
         errors.append("mapping_sets shall equal the tracked catalog mapping sets")
+    if not draft:
+        errors.append("tracked mapping sets shall remain draft")
 
 
 def _validate_scope(errors: list[str], root: Path, value: object) -> None:
@@ -221,10 +280,12 @@ def _validate_scope(errors: list[str], root: Path, value: object) -> None:
 
 
 def _validate_scope_inputs(errors: list[str], root: Path, value: object) -> None:
-    inputs = REQUIRED_SCOPE_INPUTS if value is None else value
-    if not isinstance(inputs, list | tuple) or not all(isinstance(item, str) for item in inputs):
-        errors.append("required scope inputs shall be Git-tracked")
-        return
+    if value is not None and (
+        not isinstance(value, list | tuple)
+        or tuple(value) != REQUIRED_SCOPE_INPUTS
+    ):
+        errors.append("scope_inputs shall not override fixed authoritative scope inputs")
+    inputs = REQUIRED_SCOPE_INPUTS
     try:
         tracked = _tracked_paths(root)
     except (OSError, subprocess.CalledProcessError, UnicodeDecodeError):
@@ -232,6 +293,8 @@ def _validate_scope_inputs(errors: list[str], root: Path, value: object) -> None
         return
     if any(input_path not in tracked and not any(path.startswith(f"{input_path}/") for path in tracked) for input_path in inputs):
         errors.append("required scope inputs shall be Git-tracked")
+    if _untracked_scope_population(root, tracked):
+        errors.append("scope inputs shall not contain untracked files")
 
 
 def _tracked_paths(root: Path) -> set[str]:
@@ -253,6 +316,9 @@ def _validate_gates(errors: list[str], phase: object, gates: object) -> None:
         if not isinstance(item, dict):
             errors.append(f"missing gate {gate}")
             continue
+        for key in item:
+            if key not in ALLOWED_GATE_KEYS:
+                errors.append(f"{gate}: unknown gate key {key}")
         expected = PHASE_GATE_STATES.get(phase, {}).get(gate)
         if item.get("state") != expected:
             errors.append(f"{phase} phase shall set {gate} gate to {expected}")
@@ -271,13 +337,77 @@ def _validate_candidate_sha_fields(errors: list[str], value: object) -> None:
 
 
 def _contains_candidate_sha(value: object, key: str = "") -> bool:
+    if "sha" in key.casefold() or "commit" in key.casefold():
+        return True
     if isinstance(value, dict):
         return any(_contains_candidate_sha(child, str(child_key)) for child_key, child in value.items())
     if isinstance(value, list):
         return any(_contains_candidate_sha(child, key) for child in value)
-    return ("sha" in key.casefold() or "commit" in key.casefold()) or (
-        isinstance(value, str) and SHA_RE.search(value) is not None
+    return isinstance(value, str) and SHA_RE.search(value) is not None
+
+
+def _iso_date(value: object) -> bool:
+    if not isinstance(value, str):
+        return False
+    try:
+        return date.fromisoformat(value).isoformat() == value
+    except ValueError:
+        return False
+
+
+def _mapping_sources_are_draft(root: Path, source_paths: tuple[str, ...]) -> bool:
+    result = subprocess.run(
+        ["git", "status", "--porcelain", "--untracked-files=all", "--", "crosswalks/mappings"],
+        cwd=root,
+        check=True,
+        capture_output=True,
     )
+    return _cached_mapping_sources_are_draft(root, source_paths, result.stdout)
+
+
+@lru_cache
+def _cached_mapping_sources_are_draft(
+    root: Path, source_paths: tuple[str, ...], _working_tree_state: bytes
+) -> bool:
+    for relative in source_paths:
+        path = root / relative
+        if not path.is_file():
+            continue
+        text = path.read_text(encoding="utf-8")
+        if text.lstrip().startswith("{"):
+            value = json.loads(text)
+        else:
+            value = load_front_matter(path)
+        if not isinstance(value, dict) or value.get("status") != "draft":
+            return False
+    return True
+
+
+def _tracked_pattern_paths(root: Path, tracked: set[str]) -> list[Path]:
+    return [
+        root / relative
+        for relative in sorted(tracked)
+        if relative.startswith("architectures/patterns/")
+        and PATTERN_FILE_RE.fullmatch(Path(relative).name)
+    ]
+
+
+def _tracked_profile_paths(root: Path, tracked: set[str]) -> list[Path]:
+    return [root / relative for relative in sorted(tracked) if PROFILE_PATH_RE.fullmatch(relative)]
+
+
+def _untracked_scope_population(root: Path, tracked: set[str]) -> bool:
+    patterns = root / "architectures/patterns"
+    if patterns.exists():
+        for path in patterns.iterdir():
+            if PATTERN_FILE_RE.fullmatch(path.name) and path.relative_to(root).as_posix() not in tracked:
+                return True
+    profiles = root / "profiles"
+    if profiles.exists():
+        for path in profiles.glob("*/*/profile.json"):
+            if path.relative_to(root).as_posix() not in tracked:
+                return True
+    return False
 
 
 def _https(value: object) -> bool:
@@ -310,10 +440,17 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         record = load_front_matter(root / RECORD_RELATIVE)
         errors = validate_record(root, record)
-        if record.get("phase") == "closure_candidate" and not arguments.baseline_ref:
-            errors.append("baseline-ref is required for closure candidate")
+        phase = record.get("phase")
+        if phase in PREVIOUS_PHASE and not arguments.baseline_ref:
+            label = "closure candidate" if phase == "closure_candidate" else "published"
+            errors.append(f"baseline-ref is required for {label}")
         elif arguments.baseline_ref:
-            errors.extend(validate_transition(_load_baseline(root, arguments.baseline_ref), record))
+            baseline = _load_baseline(root, arguments.baseline_ref)
+            errors.extend(
+                f"baseline record: {error}"
+                for error in validate_record(root, baseline)
+            )
+            errors.extend(validate_transition(baseline, record))
     except (OSError, ValueError, subprocess.CalledProcessError, json.JSONDecodeError) as exc:
         errors = [f"release record could not be validated: {exc}"]
     for error in errors:
