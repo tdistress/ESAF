@@ -772,9 +772,29 @@ class CyberEssentialsPlusExternalToEsafMappingTests(unittest.TestCase):
             "Design the Cyber Essentials Plus v3.2 external_to_esaf mapping.",
             backlog,
         )
-        self.assertIn(
-            "Complete coordinated qualified review of all three UK mapping snapshots",
+        deferred_assurance = re.search(
+            r"(?ms)^## Deferred assurance follow-up\n(.*?)(?=^## |\Z)",
             backlog,
+        )
+        self.assertIsNotNone(deferred_assurance)
+        deferred_text = deferred_assurance.group(0)
+        self.assertIn(
+            "https://github.com/tdistress/ESAF/issues/55",
+            deferred_text,
+        )
+        self.assertEqual(
+            deferred_text.count(
+                "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0"
+            ),
+            1,
+        )
+        self.assertRegex(
+            deferred_text,
+            r"remains open until\s+qualified review is complete",
+        )
+        self.assertRegex(
+            deferred_text,
+            r"owner-risk disposition defers this work and does not complete\s+qualified review or change a mapping lifecycle state",
         )
         self.assertTrue(TRACEABILITY.is_file())
         final_reviews = (FINAL_SPECIFICATION_REVIEW, FINAL_OVERCLAIMING_REVIEW)

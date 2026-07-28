@@ -488,15 +488,26 @@ class PciDssReadinessPublicationTests(unittest.TestCase):
         self.assertIn("provision inventory is unavailable", text)
         self.assertIn("ESAF Project Maintainer", text)
 
-    def test_backlog_moves_issue_58_to_completed_hold_and_keeps_55_and_59_active(
+    def test_backlog_marks_issue_58_completed_while_59_remains_active_and_55_is_deferred(
         self,
     ) -> None:
         text = BACKLOG.read_text(encoding="utf-8")
-        active = section(text, "Active milestone workstreams")
+        active = section(text, "Active release workstreams")
+        deferred = section(text, "Deferred assurance follow-up")
         completed = section(text, "Completed workstreams")
-        self.assertIn("https://github.com/tdistress/ESAF/issues/55", active)
         self.assertIn("https://github.com/tdistress/ESAF/issues/59", active)
+        self.assertNotIn("https://github.com/tdistress/ESAF/issues/55", active)
         self.assertNotIn("https://github.com/tdistress/ESAF/issues/58", active)
+        self.assertRegex(
+            active,
+            r"validated exact-candidate owner-risk\s+acceptance",
+        )
+        self.assertIn("https://github.com/tdistress/ESAF/issues/55", deferred)
+        self.assertNotIn("https://github.com/tdistress/ESAF/issues/59", deferred)
+        self.assertRegex(
+            deferred,
+            r"remains open until\s+qualified review is complete",
+        )
         self.assertIn("https://github.com/tdistress/ESAF/issues/58", completed)
         self.assertRegex(
             completed,
