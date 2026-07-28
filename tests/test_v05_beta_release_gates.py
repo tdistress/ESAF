@@ -2009,6 +2009,7 @@ class V05ReleaseRecordTests(unittest.TestCase):
 
     def test_published_readiness_body_has_exact_ordered_contract(self) -> None:
         published_record = record_fixture("published")
+        published_record["mapping_decision_basis"] = "owner_risk_acceptance"
         self.assertEqual(
             [],
             validate_readiness_body(
@@ -2036,6 +2037,38 @@ class V05ReleaseRecordTests(unittest.TestCase):
         for body in (CANONICAL_READINESS_BODY, closure_readiness_body()):
             with self.subTest(wrong_phase_body=body[:50]):
                 self.assertTrue(validate_readiness_body(published_record, body))
+
+    def test_published_owner_risk_body_rejects_contradictory_mapping_basis(
+        self,
+    ) -> None:
+        for basis in ("qualified_approval", None, "other"):
+            with self.subTest(mapping_decision_basis=basis):
+                record = record_fixture("published")
+                if basis is None:
+                    record.pop("mapping_decision_basis")
+                else:
+                    record["mapping_decision_basis"] = basis
+                errors = validate_readiness_body(
+                    record,
+                    PUBLISHED_READINESS_BODY,
+                )
+                self.assertIn(
+                    (
+                        "published readiness body requires "
+                        "mapping_decision_basis owner_risk_acceptance"
+                    ),
+                    errors,
+                )
+
+        for phase, body in (
+            ("evidence_candidate", CANONICAL_READINESS_BODY),
+            ("closure_candidate", closure_readiness_body()),
+        ):
+            with self.subTest(phase=phase):
+                self.assertEqual(
+                    [],
+                    validate_readiness_body(record_fixture(phase), body),
+                )
 
     def test_cli_accepts_event_baseline_for_evidence_candidate(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:

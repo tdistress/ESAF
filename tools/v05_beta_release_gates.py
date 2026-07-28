@@ -548,7 +548,17 @@ def validate_readiness_body(
             "readiness body controlled prose block contract does not define "
             f"phase {phase!r}"
         ]
-    blocks, errors = _parse_readiness_blocks(body)
+    errors: list[str] = []
+    if (
+        phase == "published"
+        and record.get("mapping_decision_basis") != "owner_risk_acceptance"
+    ):
+        errors.append(
+            "published readiness body requires "
+            "mapping_decision_basis owner_risk_acceptance"
+        )
+    blocks, parse_errors = _parse_readiness_blocks(body)
+    errors.extend(parse_errors)
     accepted_sequences = (expected,)
     if phase == "evidence_candidate":
         accepted_sequences = (

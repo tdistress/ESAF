@@ -1581,10 +1581,13 @@ the published record.
 - [ ] **Step 2: Update the durable record and planning truth**
 
 Set the readiness record phase to `published`, every gate to `closed`, and add
-the resolved tag object, tagged commit, and issue evidence URL. Update release
-plan, backlog, milestone, roadmap, and changelog to describe the published
-Working Draft without changing any artifact lifecycle state or closing issue
-55.
+the resolved tag object, tagged commit, and issue evidence URL. Set
+`mapping_decision_basis` explicitly to `owner_risk_acceptance`; the published
+body below is valid only for that basis. A future `qualified_approval`
+publication path requires separately reviewed prose and an explicit issue 55
+lifecycle decision rather than reuse of this template. Update release plan,
+backlog, milestone, roadmap, and changelog to describe the published Working
+Draft without changing any artifact lifecycle state or closing issue 55.
 
 Use this complete exact readiness body, allowing only paragraph line wrapping
 and whitespace normalization:
