@@ -77,39 +77,114 @@ def readiness_document(
     return "---\n" + json.dumps(record) + "\n---\n" + body
 
 
+EVIDENCE_READINESS_BODY = """# v0.5-beta publication readiness
+
+## Scope
+
+This evidence candidate covers the complete Git-tracked repository. Its
+derived inventory contains 91 controls in 16 families, 7 architecture
+patterns, 3 mapping sets, and 404 mapping provisions. The mappings contain 81
+relationship legs and 325 negative dispositions.
+
+The scope includes the ESAF-1500 assessment foundation and one Draft UK pilot
+profile under the reusable profile contract. The PCI DSS readiness record has
+the approved `HOLD` disposition. That disposition does not establish a PCI DSS
+mapping, assessment, certification, compliance, equivalence, endorsement, or
+legal conclusion.
+
+## Lifecycle boundary
+
+The current ESAF version remains `0.4-alpha`. The v0.5 gates are open, no
+closure candidate exists, and the `v0.5-beta` tag has not been created. This
+record does not approve publication.
+
+All controls, architecture patterns, the pilot profile, mapping sets, and
+mapping records remain Draft. The three mapping lifecycle records have empty
+event arrays. This release work does not add reviewer metadata, approval
+metadata, or lifecycle events to those artifacts.
+
+## Mapping assurance
+
+The release design permits one uniform mapping basis for all three mapping
+sets. Qualified approval requires a validated six-role Draft campaign bound
+to the exact closure candidate. Owner-risk acceptance requires a separate,
+authenticated repository-owner decision created after that exact candidate
+exists. No such v0.5 decision is recorded here.
+
+Issue 55 remains open for qualified review. Owner-risk acceptance, if later
+given for the exact candidate, would permit only Working Draft publication. It
+would not complete qualified review or approve the mappings. It would not
+establish qualified mapping approval, artifact lifecycle approval,
+certification, compliance, equivalence, endorsement, external scheme approval,
+production readiness, assurance, implementation assessment, legal
+sufficiency, or replacement of qualified professional judgment.
+
+## Conditional publication
+
+Publication remains conditional on the remote annotated `v0.5-beta` tag
+resolving to the exact validated merged commit. A later closure candidate
+requires its own exact-head reviews, rendering evidence, owner and scope
+decision, governance decision, successful checks, and clean merge state. The
+post-merge gate remains open until merged-main validation and remote tag
+verification are complete.
+"""
+
+CLOSURE_READINESS_BODY = """# v0.5-beta publication readiness
+
+## Scope
+
+This closure candidate covers the complete Git-tracked repository. Its derived
+inventory contains 91 controls in 16 families, 7 architecture patterns, 3
+mapping sets, and 404 mapping provisions. The mappings contain 81 relationship
+legs and 325 negative dispositions.
+
+The scope includes the ESAF-1500 assessment foundation and one Draft UK pilot
+profile under the reusable profile contract. The PCI DSS readiness record has
+the approved `HOLD` disposition. That disposition does not establish a PCI DSS
+mapping, assessment, certification, compliance, equivalence, endorsement, or
+legal conclusion.
+
+## Lifecycle boundary
+
+The current ESAF version is `0.5-beta`. The non-post-merge v0.5 gates are ready,
+the post-merge gate is open, and the `v0.5-beta` tag has not been created. The
+`v0.5-beta` release status is Working Draft. This closure candidate does not
+approve publication.
+
+All controls, architecture patterns, the pilot profile, mapping sets, and
+mapping records remain Draft. The three mapping lifecycle records have empty
+event arrays. This release work does not add reviewer metadata, approval
+metadata, or lifecycle events to those artifacts.
+
+## Mapping assurance
+
+The release design permits one uniform mapping basis for all three mapping
+sets. Qualified approval requires a validated six-role Draft campaign bound
+to the exact closure candidate. Owner-risk acceptance requires a separate,
+authenticated repository-owner decision created after that exact candidate
+exists. No such v0.5 decision is recorded here.
+
+Issue 55 remains open for qualified review. Owner-risk acceptance, if later
+given for the exact candidate, would permit only Working Draft publication. It
+would not complete qualified review or approve the mappings. It would not
+establish qualified mapping approval, artifact lifecycle approval,
+certification, compliance, equivalence, endorsement, external scheme approval,
+production readiness, assurance, implementation assessment, legal
+sufficiency, or replacement of qualified professional judgment.
+
+## Conditional publication
+
+Publication remains conditional on the remote annotated `v0.5-beta` tag
+resolving to the exact validated merged commit. This closure candidate requires
+its own exact-head reviews, rendering evidence, owner and scope decision,
+governance decision, successful checks, and clean merge state. The post-merge
+gate remains open until merged-main validation and remote tag verification are
+complete.
+"""
+
+
 def closure_readiness_body() -> str:
-    return (
-        CANONICAL_READINESS_BODY
-        .replace(
-            "This evidence candidate covers",
-            "This closure candidate covers",
-        )
-        .replace(
-            "The current ESAF version remains `0.4-alpha`.",
-            "The current ESAF version is `0.5-beta`.",
-        )
-        .replace(
-            (
-                "The v0.5 gates are open, no\nclosure candidate exists, and "
-                "the `v0.5-beta` tag has not been created."
-            ),
-            (
-                "The non-post-merge v0.5 gates are ready, the post-merge "
-                "gate is open, and the `v0.5-beta` tag has not been created."
-            ),
-        )
-        .replace(
-            "This\nrecord does not approve publication.",
-            (
-                "The `v0.5-beta` release status is Working Draft. "
-                "This closure candidate does not approve publication."
-            ),
-        )
-        .replace(
-            "A later closure candidate\nrequires",
-            "This closure candidate requires",
-        )
-    )
+    return CLOSURE_READINESS_BODY
 
 
 PUBLISHED_READINESS_BODY = """# v0.5-beta publication readiness
@@ -2580,6 +2655,20 @@ class V05ReleaseRecordTests(unittest.TestCase):
         result = self._run_closure_candidate(EXPECTED_CLOSURE_ALLOWLIST)
         self.assertEqual(0, result.returncode, result.stdout)
 
+    def test_closure_transition_fixture_is_phase_stable(self) -> None:
+        original_defaults = readiness_document.__defaults__
+        self.addCleanup(
+            setattr,
+            readiness_document,
+            "__defaults__",
+            original_defaults,
+        )
+        readiness_document.__defaults__ = (closure_readiness_body(),)
+
+        result = self._run_closure_candidate(EXPECTED_CLOSURE_ALLOWLIST)
+
+        self.assertEqual(0, result.returncode, result.stdout)
+
     def test_uk_mapping_sets_and_records_remain_unreviewed_drafts(self) -> None:
         catalog = json.loads(
             (ROOT / "crosswalks/catalog.json").read_text(encoding="utf-8")
@@ -3526,7 +3615,10 @@ class V05ReleaseRecordTests(unittest.TestCase):
         record_path = root / RECORD_RELATIVE
         record_path.parent.mkdir(parents=True)
         record_path.write_text(
-            readiness_document(record_fixture("evidence_candidate")),
+            readiness_document(
+                record_fixture("evidence_candidate"),
+                EVIDENCE_READINESS_BODY,
+            ),
             encoding="utf-8",
         )
         for relative in EXPECTED_CLOSURE_ALLOWLIST - {RECORD_RELATIVE}:
