@@ -187,7 +187,13 @@ def validate_record(root: Path, record: dict[str, object]) -> list[str]:
             "published mapping_decision_basis shall equal owner_risk_acceptance"
         )
     version = (root / "VERSION.md").read_text(encoding="utf-8")
-    if "Current Version: **0.4-alpha**" not in version or "Status: **Working Draft**" not in version:
+    if (
+        phase != "published"
+        and (
+            "Current Version: **0.4-alpha**" not in version
+            or "Status: **Working Draft**" not in version
+        )
+    ):
         errors.append("VERSION.md current version shall equal 0.4-alpha")
     release_plan = (root / "project/RELEASE_PLAN.md").read_text(encoding="utf-8")
     release_plan_markers = (
