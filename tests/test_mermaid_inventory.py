@@ -470,8 +470,11 @@ class MermaidInventoryTests(unittest.TestCase):
     def test_render_inputs_reject_external_non_temp_and_sibling_prefix_destinations(self) -> None:
         blocks = discover(ROOT)[:1]
         temporary_root = Path(tempfile.gettempdir()).resolve()
+        external_non_temp = Path(ROOT.anchor) / "esaf-renderer-output-non-temp"
+        self.assertFalse(external_non_temp.is_relative_to(temporary_root))
+        self.assertFalse(external_non_temp.is_relative_to(ROOT.resolve()))
         destinations = [
-            ROOT.parent / "renderer-output",
+            external_non_temp,
             temporary_root.parent / f"{temporary_root.name}-sibling",
         ]
         for destination in destinations:
