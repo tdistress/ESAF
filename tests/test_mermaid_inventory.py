@@ -1,19 +1,38 @@
 from hashlib import sha256
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
 import tempfile
 import unittest
+from unittest import mock
 
-from tools.mermaid_inventory import check_record, discover, extract_blocks, ledger_rows, write_render_inputs
+from tools.mermaid_inventory import (
+    check_record,
+    discover,
+    extract_blocks,
+    ledger_rows,
+    render_contract_sha256,
+    render_mermaid_blocks,
+    write_render_inputs,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 LEDGER = ROOT / "docs/superpowers/reviews/2026-07-21-v04-alpha-mermaid-rendering.md"
+V05_LEDGER = ROOT / "docs/superpowers/reviews/2026-07-27-v05-beta-mermaid-rendering.md"
 SCRIPT = ROOT / "tools/mermaid_inventory.py"
 APPROVED_STATUS = "Approved on candidate content; pending final exact-head recheck"
+V05_BASELINE_STATUS = (
+    "Baseline renderer capability verified; not closure candidate approval"
+)
 PINNED_RENDERER = "@mermaid-js/mermaid-cli@11.16.0"
 SYNTHETIC_REVIEWER = "Avery Chen (synthetic reviewer)"
+
+
+def successful_test_renderer(blocks, root) -> None:
+    if not blocks or not root.is_dir():
+        raise AssertionError("test renderer requires blocks and repository root")
 
 
 def passing_record(blocks, reviewer: str = SYNTHETIC_REVIEWER) -> str:
@@ -32,6 +51,378 @@ def passing_record(blocks, reviewer: str = SYNTHETIC_REVIEWER) -> str:
 
 
 class MermaidInventoryTests(unittest.TestCase):
+    def test_v05_baseline_record_is_allowed_but_not_candidate_approval(self) -> None:
+        failures = check_record(
+            discover(ROOT),
+            V05_LEDGER,
+            expected_status=V05_BASELINE_STATUS,
+            renderer=successful_test_renderer,
+        )
+        self.assertEqual([], failures)
+        self.assertNotEqual(APPROVED_STATUS, V05_BASELINE_STATUS)
+
+    def test_v05_baseline_identifies_codex_agent_visual_inspection(self) -> None:
+        ledger = V05_LEDGER.read_text(encoding="utf-8")
+        normalized = " ".join(ledger.split())
+        self.assertIn("Codex agent", normalized)
+        self.assertIn("agent visual inspection", normalized)
+        self.assertNotIn("human inspection", normalized)
+        self.assertNotIn("human approval", normalized)
+
+    def test_cli_rejects_unregistered_ledger_path(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            unregistered = Path(directory) / "untracked.md"
+            unregistered.write_text(
+                "# not a release ledger\n",
+                encoding="utf-8",
+            )
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    str(SCRIPT),
+                    "--check-record",
+                    str(unregistered),
+                ],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+            )
+        self.assertEqual(2, result.returncode)
+        self.assertIn("registered release ledger", result.stderr)
+
+    def test_v05_rows_require_structured_render_evidence(self) -> None:
+        blocks = discover(ROOT)
+        record_text = V05_LEDGER.read_text(encoding="utf-8")
+        with tempfile.TemporaryDirectory() as directory:
+            record = Path(directory) / "ledger.md"
+            record.write_text(record_text, encoding="utf-8")
+            self.assertEqual(
+                [],
+                check_record(
+                    blocks,
+                    record,
+                    expected_status=V05_BASELINE_STATUS,
+                    renderer=successful_test_renderer,
+                ),
+            )
+            record.write_text(
+                record_text.replace(
+                    "`esaf-mermaid-review-v1` | Pass |",
+                    "`wrong-profile` | Pending |",
+                    1,
+                ),
+                encoding="utf-8",
+            )
+            self.assertIn(
+                "structured render evidence is incomplete",
+                "\n".join(
+                    check_record(
+                        blocks,
+                        record,
+                        expected_status=V05_BASELINE_STATUS,
+                        renderer=successful_test_renderer,
+                    )
+                ),
+            )
+
+    def test_v05_operational_check_fails_closed_on_render_error(self) -> None:
+        def failing_renderer(blocks, root) -> None:
+            raise ValueError("synthetic renderer failure")
+
+        self.assertIn(
+            "operational Mermaid rendering failed: synthetic renderer failure",
+            check_record(
+                discover(ROOT),
+                V05_LEDGER,
+                expected_status=V05_BASELINE_STATUS,
+                renderer=failing_renderer,
+            ),
+        )
+
+    def test_render_contract_known_answer(self) -> None:
+        block = discover(ROOT)[0]
+        self.assertEqual(
+            "803fd5421c0b3a000f18c453fd1ec59dc0b5da4bce928cca5cae0f47191f28b8",
+            render_contract_sha256(block, ROOT),
+        )
+
+    def test_v05_ledger_rejects_any_unparsed_table_row(self) -> None:
+        blocks = discover(ROOT)
+        record_text = V05_LEDGER.read_text(encoding="utf-8")
+        malformed_row = (
+            "| `architectures/patterns/ARC-P110.md` | 1 | "
+            f"`{blocks[0].digest}` | `{'a' * 64}` | "
+            f"`{PINNED_RENDERER}` | Pass | {SYNTHETIC_REVIEWER} | extra |\n"
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            record = Path(directory) / "ledger.md"
+            record.write_text(
+                record_text + "\n" + malformed_row,
+                encoding="utf-8",
+            )
+            self.assertIn(
+                "unparsed table row",
+                "\n".join(
+                    check_record(
+                        blocks,
+                        record,
+                        expected_status=V05_BASELINE_STATUS,
+                        renderer=successful_test_renderer,
+                    )
+                ),
+            )
+
+    def test_v05_ledger_rejects_all_markdown_table_row_variants(self) -> None:
+        blocks = discover(ROOT)
+        record_text = V05_LEDGER.read_text(encoding="utf-8")
+        first_row = next(
+            line
+            for line in record_text.splitlines()
+            if line.startswith("| `architectures/")
+        )
+        variants = (
+            " " + first_row,
+            "   " + first_row,
+            "\t" + first_row,
+            first_row.removeprefix("| "),
+            first_row.removesuffix(" |"),
+            first_row + " extra |",
+            first_row.replace(" | Pass |", " | extra | Pass |", 1),
+            first_row,
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            record = Path(directory) / "ledger.md"
+            for index, variant in enumerate(variants):
+                with self.subTest(index=index, variant=variant[:40]):
+                    record.write_text(
+                        record_text + "\n" + variant + "\n",
+                        encoding="utf-8",
+                    )
+                    self.assertTrue(
+                        check_record(
+                            blocks,
+                            record,
+                            expected_status=V05_BASELINE_STATUS,
+                            renderer=successful_test_renderer,
+                        )
+                    )
+
+    def test_operational_renderer_rejects_wrong_node_version(self) -> None:
+        blocks = discover(ROOT)[:1]
+        completed = subprocess.CompletedProcess(
+            args=["node", "--version"],
+            returncode=0,
+            stdout="v20.0.0\n",
+            stderr="",
+        )
+        with (
+            mock.patch(
+                "tools.mermaid_inventory.shutil.which",
+                side_effect=lambda name: f"C:/synthetic/{name}.cmd",
+            ),
+            mock.patch(
+                "tools.mermaid_inventory.subprocess.run",
+                return_value=completed,
+            ) as run,
+        ):
+            with self.assertRaisesRegex(
+                ValueError,
+                "Node version shall equal 22.23.1",
+            ):
+                render_mermaid_blocks(blocks, ROOT)
+        run.assert_called_once_with(
+            ["C:/synthetic/node.cmd", "--version"],
+            cwd=ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+        )
+
+    def test_ci_renderer_uses_only_the_tracked_no_sandbox_launch_config(
+        self,
+    ) -> None:
+        config = ROOT / "tools/mermaid-puppeteer-ci.json"
+        self.assertEqual(
+            json.loads(config.read_text(encoding="utf-8")),
+            {"args": ["--no-sandbox"]},
+        )
+        blocks = discover(ROOT)[:1]
+        calls: list[list[str]] = []
+
+        def execute(command: list[str], **kwargs: object) -> subprocess.CompletedProcess:
+            calls.append(command)
+            if command[-1] == "--version" and "node" in command[0]:
+                return subprocess.CompletedProcess(command, 0, "v22.23.1\n", "")
+            if command[-1] == "--version":
+                return subprocess.CompletedProcess(command, 0, "11.16.0\n", "")
+            if command[0] == "git":
+                return subprocess.CompletedProcess(
+                    command,
+                    0,
+                    f"{ROOT}\n",
+                    "",
+                )
+            output = Path(command[command.index("--output") + 1])
+            output.write_bytes(b"synthetic png")
+            return subprocess.CompletedProcess(command, 0, "", "")
+
+        with (
+            mock.patch(
+                "tools.mermaid_inventory.shutil.which",
+                side_effect=lambda name: f"C:/synthetic/{name}.cmd",
+            ),
+            mock.patch(
+                "tools.mermaid_inventory.subprocess.run",
+                side_effect=execute,
+            ),
+            mock.patch.dict(
+                os.environ,
+                {"ESAF_MERMAID_PUPPETEER_CONFIG": config.as_posix()},
+            ),
+        ):
+            render_mermaid_blocks(blocks, ROOT)
+
+        render_command = next(
+            command for command in calls if "--puppeteerConfigFile" in command
+        )
+        self.assertEqual(
+            render_command[
+                render_command.index("--puppeteerConfigFile") + 1
+            ],
+            str(config),
+        )
+
+    def test_ci_renderer_rejects_substituted_or_expanded_launch_config(
+        self,
+    ) -> None:
+        blocks = discover(ROOT)[:1]
+        completed = [
+            subprocess.CompletedProcess(
+                ["node", "--version"],
+                0,
+                "v22.23.1\n",
+                "",
+            ),
+            subprocess.CompletedProcess(
+                ["mmdc", "--version"],
+                0,
+                "11.16.0\n",
+                "",
+            ),
+        ]
+        with (
+            mock.patch(
+                "tools.mermaid_inventory.shutil.which",
+                side_effect=lambda name: f"C:/synthetic/{name}.cmd",
+            ),
+            mock.patch(
+                "tools.mermaid_inventory.subprocess.run",
+                side_effect=completed,
+            ),
+            mock.patch.dict(
+                os.environ,
+                {
+                    "ESAF_MERMAID_PUPPETEER_CONFIG": (
+                        ROOT / "tools/substituted.json"
+                    ).as_posix()
+                },
+            ),
+        ):
+            with self.assertRaisesRegex(
+                ValueError,
+                "shall resolve to the tracked CI launch configuration",
+            ):
+                render_mermaid_blocks(blocks, ROOT)
+
+        with (
+            mock.patch(
+                "tools.mermaid_inventory.shutil.which",
+                side_effect=lambda name: f"C:/synthetic/{name}.cmd",
+            ),
+            mock.patch(
+                "tools.mermaid_inventory.subprocess.run",
+                side_effect=completed,
+            ),
+            mock.patch(
+                "tools.mermaid_inventory.json.loads",
+                return_value={
+                    "args": ["--no-sandbox", "--disable-web-security"],
+                },
+            ),
+            mock.patch.dict(
+                os.environ,
+                {
+                    "ESAF_MERMAID_PUPPETEER_CONFIG": (
+                        ROOT / "tools/mermaid-puppeteer-ci.json"
+                    ).as_posix()
+                },
+            ),
+        ):
+            with self.assertRaisesRegex(
+                ValueError,
+                "shall contain only the no-sandbox argument",
+            ):
+                render_mermaid_blocks(blocks, ROOT)
+
+    def test_v05_ledger_rejects_mutated_render_contract_digest(
+        self,
+    ) -> None:
+        blocks = discover(ROOT)
+        record_text = V05_LEDGER.read_text(encoding="utf-8")
+        first_row = next(
+            line
+            for line in record_text.splitlines()
+            if line.startswith("| `architectures/")
+        )
+        output_digest = first_row.split("`")[5]
+        replacement = (
+            ("0" if output_digest[0] != "0" else "1")
+            + output_digest[1:]
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            record = Path(directory) / "ledger.md"
+            record.write_text(
+                record_text.replace(output_digest, replacement, 1),
+                encoding="utf-8",
+            )
+            self.assertIn(
+                "render contract digest does not match",
+                "\n".join(
+                    check_record(
+                        blocks,
+                        record,
+                        expected_status=V05_BASELINE_STATUS,
+                        renderer=successful_test_renderer,
+                    )
+                ),
+            )
+
+    def test_v05_ledger_rejects_mutated_output_digest_without_matching_render_artifact(
+        self,
+    ) -> None:
+        self.test_v05_ledger_rejects_mutated_render_contract_digest()
+
+    def test_cli_rejects_noncanonical_registered_ledger_alias(self) -> None:
+        alias = (
+            "docs/superpowers/reviews/../reviews/"
+            "2026-07-27-v05-beta-mermaid-rendering.md"
+        )
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(SCRIPT),
+                "--check-record",
+                alias,
+            ],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+        )
+        self.assertEqual(2, result.returncode)
+        self.assertIn("canonical registered release ledger", result.stderr)
+
     def test_extract_blocks_accepts_lf_and_crlf_fences(self) -> None:
         text = "```mermaid\r\ngraph TD\r\nA-->B\r\n```\r\n\n```mermaid\nsequenceDiagram\nA->>B: ok\n```\n"
         self.assertEqual(extract_blocks(text), ["graph TD\nA-->B", "sequenceDiagram\nA->>B: ok"])

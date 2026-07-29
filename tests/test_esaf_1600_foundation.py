@@ -464,6 +464,14 @@ class Esaf1600FoundationTests(unittest.TestCase):
             "tools/seal_qualified_review_campaign.py",
             "tools/crosswalks/qualified_review_evidence.py",
             "tools/release_gates.py",
+            "tools/v05_beta_release_gates.py",
+            "tools/v05_beta_release_evidence.py",
+            "tests/test_v05_beta_release_gates.py",
+            "tests/test_v05_beta_release_evidence.py",
+            "docs/superpowers/reviews/2026-07-27-v05-beta-publication-readiness.md",
+            "docs/superpowers/reviews/2026-07-27-v05-beta-mermaid-rendering.md",
+            "tools/mermaid-render-config.json",
+            "tools/mermaid-puppeteer-ci.json",
             "tools/mermaid_inventory.py",
             "tools/validate_links.py",
             "tools/validate_architectures.py",
@@ -478,7 +486,12 @@ class Esaf1600FoundationTests(unittest.TestCase):
             self.assertEqual(triggers[event]["paths"], expected_paths)
         self.assertEqual(triggers["push"]["branches"], ["main"])
 
-        steps = workflow["jobs"]["validate"]["steps"]
+        validation_job = workflow["jobs"]["validate"]
+        self.assertEqual(
+            validation_job["env"],
+            {"PYTHONDONTWRITEBYTECODE": "1"},
+        )
+        steps = validation_job["steps"]
 
         def unique_step(name: str) -> dict[str, object]:
             matches = [step for step in steps if step.get("name") == name]
@@ -489,6 +502,25 @@ class Esaf1600FoundationTests(unittest.TestCase):
         self.assertEqual(checkout["uses"], "actions/checkout@v5")
         self.assertIn("with", checkout)
         self.assertEqual(checkout["with"]["fetch-depth"], "0")
+
+        node = unique_step("Set up Node for Mermaid rendering")
+        self.assertEqual(node, {
+            "name": "Set up Node for Mermaid rendering",
+            "uses": "actions/setup-node@v6",
+            "with": {
+                "node-version": "22.23.1",
+                "package-manager-cache": "false",
+            },
+        })
+
+        mermaid_install = unique_step("Install pinned Mermaid renderer")
+        self.assertEqual(mermaid_install, {
+            "name": "Install pinned Mermaid renderer",
+            "run": (
+                "npm install --global "
+                "@mermaid-js/mermaid-cli@11.16.0"
+            ),
+        })
 
         current = unique_step("Validate crosswalk catalog")
         self.assertEqual(current, {
@@ -521,10 +553,10 @@ class Esaf1600FoundationTests(unittest.TestCase):
         )
 
         release_gate_on_pull_request = unique_step(
-            "Validate release gate record on pull request"
+            "Validate historical release record on pull request"
         )
         self.assertEqual(release_gate_on_pull_request, {
-            "name": "Validate release gate record on pull request",
+            "name": "Validate historical release record on pull request",
             "if": "github.event_name == 'pull_request'",
             "run": (
                 "python tools/release_gates.py --check --baseline-ref "
@@ -533,10 +565,13 @@ class Esaf1600FoundationTests(unittest.TestCase):
         })
 
         release_gate_on_protected_push = unique_step(
-            "Validate release gate record on protected-branch push"
+            "Validate historical release record on protected-branch push"
         )
         self.assertEqual(release_gate_on_protected_push, {
-            "name": "Validate release gate record on protected-branch push",
+            "name": (
+                "Validate historical release record on "
+                "protected-branch push"
+            ),
             "if": (
                 "github.event_name == 'push' && "
                 "github.event.before != '0000000000000000000000000000000000000000'"
@@ -548,12 +583,53 @@ class Esaf1600FoundationTests(unittest.TestCase):
         })
 
         release_gate_on_workflow_dispatch = unique_step(
-            "Validate release gate record on workflow dispatch"
+            "Validate historical release record on workflow dispatch"
         )
         self.assertEqual(release_gate_on_workflow_dispatch, {
-            "name": "Validate release gate record on workflow dispatch",
+            "name": "Validate historical release record on workflow dispatch",
             "if": "github.event_name == 'workflow_dispatch'",
             "run": 'python tools/release_gates.py --check --baseline-ref "HEAD^"',
+        })
+
+        v05_gate_on_pull_request = unique_step(
+            "Validate v0.5-beta release record on pull request"
+        )
+        self.assertEqual(v05_gate_on_pull_request, {
+            "name": "Validate v0.5-beta release record on pull request",
+            "if": "github.event_name == 'pull_request'",
+            "run": (
+                "python tools/v05_beta_release_gates.py --check "
+                '--baseline-ref "${{ github.event.pull_request.base.sha }}"'
+            ),
+        })
+
+        v05_gate_on_protected_push = unique_step(
+            "Validate v0.5-beta release record on protected-branch push"
+        )
+        self.assertEqual(v05_gate_on_protected_push, {
+            "name": (
+                "Validate v0.5-beta release record on "
+                "protected-branch push"
+            ),
+            "if": "github.event_name == 'push'",
+            "run": (
+                "python tools/v05_beta_release_gates.py --check "
+                '--baseline-ref "${{ github.event.before }}"'
+            ),
+        })
+
+        v05_gate_on_workflow_dispatch = unique_step(
+            "Validate v0.5-beta release record on workflow dispatch"
+        )
+        self.assertEqual(v05_gate_on_workflow_dispatch, {
+            "name": (
+                "Validate v0.5-beta release record on workflow dispatch"
+            ),
+            "if": "github.event_name == 'workflow_dispatch'",
+            "run": (
+                "python tools/v05_beta_release_gates.py --check "
+                '--baseline-ref "HEAD^"'
+            ),
         })
 
         release_gate_runs = [
@@ -579,8 +655,40 @@ class Esaf1600FoundationTests(unittest.TestCase):
                     'python tools/release_gates.py --check --baseline-ref "HEAD^"',
                     "github.event_name == 'workflow_dispatch'",
                 ),
+                (
+                    "python tools/v05_beta_release_gates.py --check "
+                    '--baseline-ref "${{ github.event.pull_request.base.sha }}"',
+                    "github.event_name == 'pull_request'",
+                ),
+                (
+                    "python tools/v05_beta_release_gates.py --check "
+                    '--baseline-ref "${{ github.event.before }}"',
+                    "github.event_name == 'push'",
+                ),
+                (
+                    "python tools/v05_beta_release_gates.py --check "
+                    '--baseline-ref "HEAD^"',
+                    "github.event_name == 'workflow_dispatch'",
+                ),
             ],
         )
+
+        mermaid_render = unique_step(
+            "Render and validate the v0.5-beta Mermaid baseline"
+        )
+        self.assertEqual(mermaid_render, {
+            "name": "Render and validate the v0.5-beta Mermaid baseline",
+            "env": {
+                "ESAF_MERMAID_PUPPETEER_CONFIG": (
+                    "tools/mermaid-puppeteer-ci.json"
+                ),
+            },
+            "run": (
+                "python tools/mermaid_inventory.py --check-record "
+                "docs/superpowers/reviews/"
+                "2026-07-27-v05-beta-mermaid-rendering.md"
+            ),
+        })
 
         links = unique_step("Validate repository-local links")
         self.assertEqual(links, {

@@ -1133,6 +1133,82 @@ def validate_campaign(
         )
 
 
+def validate_retained_campaign(
+    reader: GitReader,
+    candidate: str,
+    evidence_root: Path,
+    seal_record: Path,
+    archive: Path,
+) -> ValidationReport:
+    """Validate a Draft campaign and its exact externally retained seal bytes."""
+    context = {
+        "campaign_id": "",
+        "candidate_commit": candidate,
+        "readiness_name": "transition_ready",
+    }
+    try:
+        details = _validate_campaign_details(
+            reader,
+            candidate,
+            evidence_root,
+            report_context=context,
+        )
+        if details.campaign.phase != "draft_review":
+            _fail("retained campaign is not a Draft review campaign")
+        worktrees = reader.worktree_roots()
+        retained_archive = _read_external_path(archive, worktrees)
+        if retained_archive != details.archive_bytes:
+            _fail(
+                "retained archive differs from deterministic reconstruction"
+            )
+        seal_bytes = _read_external_path(seal_record, worktrees)
+        try:
+            seal = json.loads(seal_bytes)
+        except (UnicodeDecodeError, json.JSONDecodeError) as error:
+            raise _ValidationFailure(
+                "retained seal record is invalid JSON"
+            ) from error
+        if canonical_json_bytes(seal) != seal_bytes or not isinstance(seal, dict):
+            _fail("retained seal record is not canonical JSON")
+        archive_locator = seal.get("archive_locator")
+        if not isinstance(archive_locator, str):
+            _fail("retained seal record archive locator is invalid")
+        try:
+            _expected_record, expected_seal_bytes = build_seal_record(
+                manifest_bytes=details.manifest_bytes,
+                archive_bytes=details.archive_bytes,
+                archive_locator=archive_locator,
+                campaign_id=details.campaign.campaign_id,
+                candidate_commit=details.campaign.candidate_commit,
+                evidence_valid=True,
+                readiness_name="transition_ready",
+                readiness_value=True,
+                validator_version=VALIDATOR_VERSION,
+            )
+        except EvidenceError as error:
+            raise _ValidationFailure(
+                "retained seal record is invalid"
+            ) from error
+        if seal_bytes != expected_seal_bytes:
+            _fail(
+                "retained seal record differs from deterministic reconstruction"
+            )
+        return details.report
+    except EvidenceOperationalError:
+        raise
+    except UnicodeError:
+        raise
+    except (_ValidationFailure, EvidenceError, ValueError) as error:
+        return ValidationReport(
+            evidence_valid=False,
+            readiness_name=context["readiness_name"],
+            readiness_value=False,
+            candidate_commit=context["candidate_commit"],
+            campaign_id=context["campaign_id"],
+            errors=(str(error),),
+        )
+
+
 def main(
     argv: list[str] | None = None,
     *,

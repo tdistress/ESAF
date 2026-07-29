@@ -1,0 +1,6 @@
+{
+  "deterministicIds": true,
+  "deterministicIDSeed": "esaf-mermaid-review-v1",
+  "securityLevel": "strict",
+  "theme": "default"
+}
