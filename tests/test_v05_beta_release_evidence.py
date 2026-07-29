@@ -280,6 +280,31 @@ class LiveTimestampFakeClient(FakeClient):
         )
 
 
+class CountingFakeClient(FakeClient):
+    def __init__(
+        self,
+        login: str,
+        responses: dict[str, ApiResponse],
+        page_sets: dict[str, ApiPageSet],
+    ) -> None:
+        super().__init__(login, responses, page_sets)
+        self.login_calls = 0
+        self.get_calls: list[str] = []
+        self.page_calls: list[str] = []
+
+    def auth_login(self) -> str:
+        self.login_calls += 1
+        return super().auth_login()
+
+    def get(self, resource: str) -> ApiResponse:
+        self.get_calls.append(resource)
+        return super().get(resource)
+
+    def get_pages(self, resource: str) -> ApiPageSet:
+        self.page_calls.append(resource)
+        return super().get_pages(resource)
+
+
 class FakeValidationRunner(ValidationRunner):
     def __init__(self) -> None:
         self.calls: list[tuple[Path, str, str]] = []
@@ -1339,6 +1364,107 @@ class V05LocalValidationRunnerTests(unittest.TestCase):
 
 
 class V05AcquisitionTests(unittest.TestCase):
+    def test_collector_reacquires_after_validation_without_rerunning_gates(
+        self,
+    ) -> None:
+        base = valid_fake_client()
+        client = CountingFakeClient(
+            base.login,
+            base.responses,
+            base.page_sets,
+        )
+        runner = FakeValidationRunner()
+
+        evidence = collect_closure_evidence(
+            client,
+            validation_runner=runner,
+            **{
+                key: value
+                for key, value in valid_collection_args().items()
+                if key != "validation_runner"
+            },
+        )
+
+        self.assertEqual(1, len(runner.calls))
+        self.assertEqual(2, client.login_calls)
+        self.assertEqual(
+            2,
+            client.get_calls.count(COMMIT_RESOURCE),
+        )
+        self.assertEqual(
+            2,
+            client.get_calls.count(PR_RESOURCE),
+        )
+        self.assertEqual(
+            2,
+            client.page_calls.count(CHECKS_RESOURCE),
+        )
+        self.assertEqual(CLOSURE_SHA, evidence["closure_head"])
+
+    def test_collector_returns_post_validation_response_bytes(self) -> None:
+        client = valid_fake_client()
+        replacement_digest: str | None = None
+
+        class MutatingRunner(FakeValidationRunner):
+            def run(
+                self,
+                root: Path,
+                expected_head: str,
+                baseline_head: str,
+            ) -> list[dict[str, object]]:
+                nonlocal replacement_digest
+                response = client.responses[ISSUE_55_RESOURCE]
+                payload = response.json_object()
+                payload["title"] = "post-validation issue snapshot"
+                replacement = api_response(
+                    ISSUE_55_RESOURCE,
+                    payload,
+                )
+                client.responses[ISSUE_55_RESOURCE] = replacement
+                replacement_digest = sha256(
+                    replacement.raw_body
+                ).hexdigest()
+                return super().run(root, expected_head, baseline_head)
+
+        arguments = valid_collection_args()
+        arguments["validation_runner"] = MutatingRunner()
+        evidence = collect_closure_evidence(client, **arguments)
+
+        self.assertIsNotNone(replacement_digest)
+        self.assertEqual(
+            replacement_digest,
+            evidence["issue_55"]["response_sha256"],
+        )
+
+    def test_collector_rejects_pr_base_drift_between_acquisitions(
+        self,
+    ) -> None:
+        client = valid_fake_client()
+
+        class BaseMutatingRunner(FakeValidationRunner):
+            def run(
+                self,
+                root: Path,
+                expected_head: str,
+                baseline_head: str,
+            ) -> list[dict[str, object]]:
+                response = client.responses[PR_RESOURCE]
+                payload = response.json_object()
+                payload["base"]["sha"] = "e" * 40
+                client.responses[PR_RESOURCE] = api_response(
+                    PR_RESOURCE,
+                    payload,
+                )
+                return super().run(root, expected_head, baseline_head)
+
+        arguments = valid_collection_args()
+        arguments["validation_runner"] = BaseMutatingRunner()
+        with self.assertRaisesRegex(
+            ValueError,
+            "fresh acquisition shall preserve the validated head and base",
+        ):
+            collect_closure_evidence(client, **arguments)
+
     def test_operational_cli_removes_caller_dates_and_postmerge_results(
         self,
     ) -> None:
@@ -1582,6 +1708,51 @@ class V05AcquisitionTests(unittest.TestCase):
                 "acquisition_resource_id"
             ],
         )
+
+    def test_taggable_refresh_reacquires_after_postmerge_validation(
+        self,
+    ) -> None:
+        events: list[str] = []
+
+        class EventClient(FakeClient):
+            def auth_login(self) -> str:
+                events.append("acquire")
+                return super().auth_login()
+
+        class EventRunner(FakeValidationRunner):
+            def run(
+                self,
+                root: Path,
+                expected_head: str,
+                baseline_head: str,
+            ) -> list[dict[str, object]]:
+                events.append("postmerge_validation")
+                return super().run(root, expected_head, baseline_head)
+
+        base = valid_fake_client()
+        client = EventClient(
+            base.login,
+            base.responses,
+            base.page_sets,
+        )
+        closure = collect_closure_evidence(
+            client, **valid_collection_args()
+        )
+        mark_pull_request_merged(client)
+        events.clear()
+
+        refresh_taggable_evidence(
+            client,
+            base_evidence=closure,
+            merge_head=MERGE_SHA,
+            post_merge_rendering_comment_id=POST_MERGE_RENDERING_ID,
+            post_merge_validation_runner=EventRunner(),
+            **valid_collection_args(),
+        )
+
+        validation_index = events.index("postmerge_validation")
+        self.assertIn("acquire", events[:validation_index])
+        self.assertIn("acquire", events[validation_index + 1:])
 
     def test_collector_requires_pr_base_sha_to_equal_authenticated_closure_base(
         self,
