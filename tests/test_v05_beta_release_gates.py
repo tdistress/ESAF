@@ -44,10 +44,6 @@ from tools.v05_beta_release_gates import (
 ROOT = Path(__file__).resolve().parents[1]
 V04_RECORD = ROOT / "docs/superpowers/reviews/2026-07-21-v04-alpha-publication-readiness.md"
 V05_RECORD = ROOT / RECORD_RELATIVE
-CANONICAL_READINESS_BODY = V05_RECORD.read_text(encoding="utf-8").split(
-    "\n---\n",
-    1,
-)[1]
 EXPECTED_SCOPE = {
     "controls": 91,
     "control_families": 16,
@@ -72,7 +68,7 @@ EXPECTED_CLOSURE_ALLOWLIST = {
 
 def readiness_document(
     record: dict[str, object],
-    body: str = CANONICAL_READINESS_BODY,
+    body: str,
 ) -> str:
     return "---\n" + json.dumps(record) + "\n---\n" + body
 
@@ -2321,25 +2317,26 @@ class V05ReleaseRecordTests(unittest.TestCase):
         )
 
     def test_readiness_loader_rejects_duplicate_yaml_keys(self) -> None:
-        source = V05_RECORD.read_text(encoding="utf-8")
         mutations = (
-            source.replace(
-                "phase: evidence_candidate",
-                "phase: evidence_candidate\nphase: published",
-                1,
+            (
+                "---\n"
+                "phase: evidence_candidate\n"
+                "phase: published\n"
+                "---\n"
             ),
-            source.replace(
-                "  controls: 91",
-                "  controls: 91\n  controls: 92",
-                1,
+            (
+                "---\n"
+                "scope:\n"
+                "  controls: 91\n"
+                "  controls: 92\n"
+                "---\n"
             ),
-            source.replace(
-                "  scope: {state: open, evidence: []}",
-                (
-                    "  scope: {state: open, evidence: []}\n"
-                    "  scope: {state: closed, evidence: []}"
-                ),
-                1,
+            (
+                "---\n"
+                "gates:\n"
+                "  scope: {state: open, evidence: []}\n"
+                "  scope: {state: closed, evidence: []}\n"
+                "---\n"
             ),
         )
         with tempfile.TemporaryDirectory() as temporary:
@@ -2357,7 +2354,10 @@ class V05ReleaseRecordTests(unittest.TestCase):
             record_path = root / RECORD_RELATIVE
             record_path.parent.mkdir(parents=True)
             record_path.write_text(
-                readiness_document(record_fixture("evidence_candidate")),
+                readiness_document(
+                    record_fixture("evidence_candidate"),
+                    EVIDENCE_READINESS_BODY,
+                ),
                 encoding="utf-8",
             )
             self._initialize_repository(root)
@@ -2374,13 +2374,13 @@ class V05ReleaseRecordTests(unittest.TestCase):
             self.assertEqual(0, canonical.returncode, canonical.stdout)
 
             mutations = (
-                CANONICAL_READINESS_BODY.replace(
+                EVIDENCE_READINESS_BODY.replace(
                     "This\nrecord does not approve publication.",
                     "This record approves publication.",
                     1,
                 ),
                 (
-                    CANONICAL_READINESS_BODY
+                    EVIDENCE_READINESS_BODY
                     + "\nQualified review is complete and the mappings are approved.\n"
                 ),
             )
@@ -2411,7 +2411,7 @@ class V05ReleaseRecordTests(unittest.TestCase):
     ) -> None:
         evidence_record = record_fixture("evidence_candidate")
         harmless_negation = (
-            CANONICAL_READINESS_BODY
+            EVIDENCE_READINESS_BODY
             + "\nThis record does not say the mappings are approved.\n"
         )
         self.assertEqual(
@@ -2446,7 +2446,7 @@ class V05ReleaseRecordTests(unittest.TestCase):
             with self.subTest(contradiction=contradiction):
                 errors = validate_readiness_body(
                     evidence_record,
-                    CANONICAL_READINESS_BODY + "\n" + contradiction + "\n",
+                    EVIDENCE_READINESS_BODY + "\n" + contradiction + "\n",
                 )
                 self.assertTrue(errors)
                 self.assertIn(
@@ -2460,11 +2460,11 @@ class V05ReleaseRecordTests(unittest.TestCase):
         evidence_record = record_fixture("evidence_candidate")
         closure_record = record_fixture("closure_candidate")
         harmless_negation = (
-            CANONICAL_READINESS_BODY
+            EVIDENCE_READINESS_BODY
             + "\nThis record does not say the mappings are approved.\n"
         )
         for record, body in (
-            (evidence_record, CANONICAL_READINESS_BODY),
+            (evidence_record, EVIDENCE_READINESS_BODY),
             (closure_record, closure_readiness_body()),
             (evidence_record, harmless_negation),
         ):
@@ -2505,7 +2505,7 @@ class V05ReleaseRecordTests(unittest.TestCase):
             with self.subTest(addition=addition):
                 errors = validate_readiness_body(
                     evidence_record,
-                    CANONICAL_READINESS_BODY + "\n" + addition + "\n",
+                    EVIDENCE_READINESS_BODY + "\n" + addition + "\n",
                 )
                 self.assertTrue(errors)
                 self.assertIn(
@@ -2513,7 +2513,7 @@ class V05ReleaseRecordTests(unittest.TestCase):
                     "\n".join(errors),
                 )
 
-        blocks = CANONICAL_READINESS_BODY.strip().split("\n\n")
+        blocks = EVIDENCE_READINESS_BODY.strip().split("\n\n")
         malformed_sequences = (
             "\n\n".join(blocks[:-1]) + "\n",
             "\n\n".join(blocks + [blocks[-1]]) + "\n",
@@ -2572,7 +2572,7 @@ class V05ReleaseRecordTests(unittest.TestCase):
             with self.subTest(body=body[-120:]):
                 self.assertTrue(validate_readiness_body(published_record, body))
 
-        for body in (CANONICAL_READINESS_BODY, closure_readiness_body()):
+        for body in (EVIDENCE_READINESS_BODY, closure_readiness_body()):
             with self.subTest(wrong_phase_body=body[:50]):
                 self.assertTrue(validate_readiness_body(published_record, body))
 
@@ -2599,7 +2599,7 @@ class V05ReleaseRecordTests(unittest.TestCase):
                 )
 
         for phase, body in (
-            ("evidence_candidate", CANONICAL_READINESS_BODY),
+            ("evidence_candidate", EVIDENCE_READINESS_BODY),
             ("closure_candidate", closure_readiness_body()),
         ):
             with self.subTest(phase=phase):
@@ -2615,7 +2615,10 @@ class V05ReleaseRecordTests(unittest.TestCase):
             record_path = root / RECORD_RELATIVE
             record_path.parent.mkdir(parents=True)
             record_path.write_text(
-                readiness_document(record_fixture("evidence_candidate")),
+                readiness_document(
+                    record_fixture("evidence_candidate"),
+                    EVIDENCE_READINESS_BODY,
+                ),
                 encoding="utf-8",
             )
             self._initialize_repository(root, commit=True)

@@ -30,10 +30,21 @@ PUBLISHED_EVIDENCE = (
 )
 
 
+def write_v04_version_fixture(root: Path) -> None:
+    (root / "VERSION.md").write_text(
+        (
+            "# ESAF Version\n\n"
+            "Current Version: **0.4-alpha**\n\n"
+            "Status: **Working Draft**\n"
+        ),
+        encoding="utf-8",
+    )
+
+
 def write_release_scope_fixture(root: Path) -> None:
     (root / "crosswalks").mkdir(parents=True)
     (root / "project").mkdir(parents=True)
-    shutil.copy2(ROOT / "VERSION.md", root / "VERSION.md")
+    write_v04_version_fixture(root)
     shutil.copy2(ROOT / "project/RELEASE_PLAN.md", root / "project/RELEASE_PLAN.md")
     shutil.copy2(ROOT / "crosswalks/catalog.json", root / "crosswalks/catalog.json")
     subprocess.run(["git", "init", "-q"], cwd=root, check=True)
@@ -379,6 +390,21 @@ class ReleaseGateTests(unittest.TestCase):
             external_result.stdout,
         )
 
+    def test_published_record_allows_a_later_live_repository_version(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            write_published_scope_fixture(root)
+            (root / "VERSION.md").write_text(
+                (
+                    "# ESAF Version\n\n"
+                    "Current Version: **0.5-beta**\n\n"
+                    "Status: **Working Draft**\n"
+                ),
+                encoding="utf-8",
+            )
+
+            self.assertEqual([], validate_record(root, published_record()))
+
     def test_record_requires_complete_release_scope_inputs(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -403,7 +429,7 @@ class ReleaseGateTests(unittest.TestCase):
             for name, mutate, diagnostic in cases:
                 with self.subTest(name=name):
                     record = valid_record()
-                    shutil.copy2(ROOT / "VERSION.md", root / "VERSION.md")
+                    write_v04_version_fixture(root)
                     shutil.copy2(ROOT / "project/RELEASE_PLAN.md", root / "project/RELEASE_PLAN.md")
                     mutate(record)
                     self.assertIn(diagnostic, validate_record(root, record))
