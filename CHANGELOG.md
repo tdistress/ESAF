@@ -15,14 +15,27 @@ Version 0.4-alpha is a tagged Working Draft.
 - Added an evidence-candidate readiness record and a baseline Mermaid
   rendering ledger. These records do not claim publication or
   closure-candidate approval.
+- Prepared the exact metadata-only `v0.5-beta` closure candidate. This
+  candidate does not approve publication.
+- Carried forward the seven Draft architecture patterns in the current
+  Working Draft: ARC-P100, Enterprise AI platform and gateway; ARC-P110,
+  Enterprise copilot; ARC-P120, Retrieval-augmented generation; ARC-P130,
+  Agentic and multi-agent AI; ARC-P140, Private model deployment; ARC-P150,
+  AI integration services; and ARC-P160, AI observability.
+- Carried forward the Draft Cyber Essentials v3.3 mapping snapshot.
+- Carried forward the Draft Cyber Essentials Plus v3.2 `esaf_to_external`
+  mapping snapshot.
+- Carried forward the Draft Cyber Essentials Plus v3.2 `external_to_esaf`
+  mapping snapshot.
 
 ### Changed
 
 - Selected owner-risk acceptance as the planned uniform basis for the three
   Draft UK mapping sets. Qualified review remains deferred, all mapping sets
   and records remain Draft, and issue 55 remains open.
-- Kept Working Draft publication conditional on a future exact closure
-  candidate and verified remote annotated tag.
+- Kept Working Draft publication conditional on the remote annotated
+  `v0.5-beta` tag resolving to the exact validated merged commit. The tag has
+  not been created, and the post-merge gate remains open.
 - Clarified that this stage does not establish qualified review, mapping
   approval, artifact lifecycle approval, certification, compliance,
   equivalence, endorsement, external scheme approval, assurance, legal

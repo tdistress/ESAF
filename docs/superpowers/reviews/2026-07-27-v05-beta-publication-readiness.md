@@ -1,6 +1,6 @@
 ---
 release: 0.5-beta
-phase: evidence_candidate
+phase: closure_candidate
 tag: v0.5-beta
 issue: 59
 repository_scope: complete_git_tracked_repository
@@ -26,15 +26,15 @@ scope:
   draft_profiles: 1
   pci_dss_disposition: HOLD
 gates:
-  scope: {state: open, evidence: []}
-  technical: {state: open, evidence: []}
-  editorial: {state: open, evidence: []}
-  terminology: {state: open, evidence: []}
-  cross_reference_rendering: {state: open, evidence: []}
-  standards_mapping: {state: open, evidence: []}
-  profile_scope: {state: open, evidence: []}
-  release_metadata: {state: open, evidence: []}
-  governance: {state: open, evidence: []}
+  scope: {state: ready, evidence: [https://github.com/tdistress/ESAF/pull/69]}
+  technical: {state: ready, evidence: [https://github.com/tdistress/ESAF/pull/69]}
+  editorial: {state: ready, evidence: [https://github.com/tdistress/ESAF/pull/69]}
+  terminology: {state: ready, evidence: [https://github.com/tdistress/ESAF/pull/69]}
+  cross_reference_rendering: {state: ready, evidence: [https://github.com/tdistress/ESAF/pull/69]}
+  standards_mapping: {state: ready, evidence: [https://github.com/tdistress/ESAF/pull/69]}
+  profile_scope: {state: ready, evidence: [https://github.com/tdistress/ESAF/pull/69]}
+  release_metadata: {state: ready, evidence: [https://github.com/tdistress/ESAF/pull/69]}
+  governance: {state: ready, evidence: [https://github.com/tdistress/ESAF/pull/69]}
   post_merge: {state: open, evidence: []}
 ---
 
@@ -42,10 +42,10 @@ gates:
 
 ## Scope
 
-This evidence candidate covers the complete Git-tracked repository. Its
-derived inventory contains 91 controls in 16 families, 7 architecture
-patterns, 3 mapping sets, and 404 mapping provisions. The mappings contain 81
-relationship legs and 325 negative dispositions.
+This closure candidate covers the complete Git-tracked repository. Its derived
+inventory contains 91 controls in 16 families, 7 architecture patterns, 3
+mapping sets, and 404 mapping provisions. The mappings contain 81 relationship
+legs and 325 negative dispositions.
 
 The scope includes the ESAF-1500 assessment foundation and one Draft UK pilot
 profile under the reusable profile contract. The PCI DSS readiness record has
@@ -55,9 +55,10 @@ legal conclusion.
 
 ## Lifecycle boundary
 
-The current ESAF version remains `0.4-alpha`. The v0.5 gates are open, no
-closure candidate exists, and the `v0.5-beta` tag has not been created. This
-record does not approve publication.
+The current ESAF version is `0.5-beta`. The non-post-merge v0.5 gates are ready,
+the post-merge gate is open, and the `v0.5-beta` tag has not been created. The
+`v0.5-beta` release status is Working Draft. This closure candidate does not
+approve publication.
 
 All controls, architecture patterns, the pilot profile, mapping sets, and
 mapping records remain Draft. The three mapping lifecycle records have empty
@@ -83,8 +84,8 @@ sufficiency, or replacement of qualified professional judgment.
 ## Conditional publication
 
 Publication remains conditional on the remote annotated `v0.5-beta` tag
-resolving to the exact validated merged commit. A later closure candidate
-requires its own exact-head reviews, rendering evidence, owner and scope
-decision, governance decision, successful checks, and clean merge state. The
-post-merge gate remains open until merged-main validation and remote tag
-verification are complete.
+resolving to the exact validated merged commit. This closure candidate requires
+its own exact-head reviews, rendering evidence, owner and scope decision,
+governance decision, successful checks, and clean merge state. The post-merge
+gate remains open until merged-main validation and remote tag verification are
+complete.

@@ -43,6 +43,17 @@ compliance, certification, equivalence, endorsement, external-scheme approval,
 or production readiness. Historical `v0.4-alpha` evidence cannot approve
 `v0.5-beta`.
 
+## 0.5-beta closure candidate
+
+The exact metadata-only closure candidate sets every non-post-merge gate to
+Ready and leaves the post-merge gate Open. It does not record owner-risk,
+scope, or Steering Committee approval and does not approve publication.
+
+Publication remains conditional on the remote annotated `v0.5-beta` tag
+resolving to the exact validated merged commit. The tag has not been created.
+Exact-head reviews, non-delegable decisions, successful checks, clean merge
+state, merged-main validation, and remote tag verification remain required.
+
 ## 0.4-alpha publication
 
 Publication gates are Closed.
