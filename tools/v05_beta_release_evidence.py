@@ -457,6 +457,36 @@ class DetachedValidationRunner:
         return text
 
 
+class RecordedValidationRunner:
+    """Replay one exact validation result set after fresh acquisition."""
+
+    def __init__(
+        self,
+        results: list[dict[str, object]],
+        expected_head: str,
+        baseline_head: str,
+    ) -> None:
+        _validate_local_results(results, expected_head)
+        self._results = deepcopy(results)
+        self._expected_head = expected_head
+        self._baseline_head = baseline_head
+
+    def run(
+        self,
+        root: Path,
+        expected_head: str,
+        baseline_head: str,
+    ) -> list[dict[str, object]]:
+        if (
+            expected_head != self._expected_head
+            or baseline_head != self._baseline_head
+        ):
+            raise ValueError(
+                "fresh acquisition shall preserve the validated head and base"
+            )
+        return deepcopy(self._results)
+
+
 class GhApiClient:
     """Authenticated GitHub CLI adapter with a fail-closed transport parser."""
 
@@ -817,6 +847,76 @@ def _canonical_pr_side(
 
 
 def collect_closure_evidence(
+    client: ApiClient,
+    *,
+    root: Path,
+    pr_number: int,
+    expected_head: str,
+    owner_comment_id: int,
+    technical_comment_id: int,
+    editorial_comment_id: int,
+    terminology_comment_id: int,
+    rendering_comment_id: int,
+    profile_scope_comment_id: int,
+    governance_comment_id: int,
+    security_overclaiming_comment_id: int,
+    whole_range_comment_id: int,
+    now: datetime | None = None,
+    validation_runner: ValidationRunner | None = None,
+    repository_runner: Callable[..., object] | None = None,
+    merged_head: str | None = None,
+    expected_closure_base: str | None = None,
+) -> dict[str, object]:
+    """Validate once, then reacquire authenticated evidence for freshness."""
+    arguments = {
+        "root": root,
+        "pr_number": pr_number,
+        "expected_head": expected_head,
+        "owner_comment_id": owner_comment_id,
+        "technical_comment_id": technical_comment_id,
+        "editorial_comment_id": editorial_comment_id,
+        "terminology_comment_id": terminology_comment_id,
+        "rendering_comment_id": rendering_comment_id,
+        "profile_scope_comment_id": profile_scope_comment_id,
+        "governance_comment_id": governance_comment_id,
+        "security_overclaiming_comment_id": security_overclaiming_comment_id,
+        "whole_range_comment_id": whole_range_comment_id,
+        "now": now,
+        "repository_runner": repository_runner,
+        "merged_head": merged_head,
+        "expected_closure_base": expected_closure_base,
+    }
+    initial = _collect_closure_evidence_once(
+        client,
+        validation_runner=validation_runner,
+        **arguments,
+    )
+    closure_base = initial.get("closure_base")
+    commands = initial.get("candidate_commands")
+    if (
+        not isinstance(closure_base, str)
+        or not isinstance(commands, list)
+    ):
+        raise ValueError("initial closure evidence is incomplete")
+    recorded = [
+        deepcopy(command)
+        for command in commands
+        if isinstance(command, dict)
+        and command.get("name") != "mermaid_rendering"
+    ]
+    replay = RecordedValidationRunner(
+        recorded,
+        expected_head,
+        closure_base,
+    )
+    return _collect_closure_evidence_once(
+        client,
+        validation_runner=replay,
+        **arguments,
+    )
+
+
+def _collect_closure_evidence_once(
     client: ApiClient,
     *,
     root: Path,
@@ -1375,14 +1475,6 @@ def refresh_taggable_evidence(
         raise ValueError(
             "post-merge rendering comment shall postdate merge commit"
         )
-    post_rendering = parse_fenced_json(str(post_payload["body"]))
-    _validate_post_merge_rendering_verdict(
-        post_rendering,
-        post_source,
-        merge_head,
-        str(merge_tree["sha"]),
-    )
-
     merge_results = (
         post_merge_validation_runner or DetachedValidationRunner()
     ).run(
@@ -1391,6 +1483,79 @@ def refresh_taggable_evidence(
         closure_base,
     )
     _validate_local_results(merge_results, merge_head)
+    candidate_results = [
+        deepcopy(command)
+        for command in fresh_commands
+        if command.get("name") != "mermaid_rendering"
+    ]
+    reacquire_arguments = dict(collection_arguments)
+    reacquire_arguments.pop("validation_runner", None)
+    reacquired = _collect_closure_evidence_once(
+        client,
+        validation_runner=RecordedValidationRunner(
+            candidate_results,
+            expected_head,
+            closure_base,
+        ),
+        merged_head=merge_head,
+        expected_closure_base=closure_base,
+        **reacquire_arguments,
+    )
+    _require_unchanged_sources(fresh, reacquired)
+    fresh = reacquired
+    fresh_commands = _validated_candidate_commands(
+        fresh.get("candidate_commands"), expected_head
+    )
+    merge_response = client.get(merge_resource)
+    merge_commit = _validated_object(
+        merge_response, _reference_now(fixed_now)
+    )
+    merge_details = merge_commit.get("commit")
+    merge_tree = (
+        merge_details.get("tree")
+        if isinstance(merge_details, dict)
+        else None
+    )
+    if (
+        merge_commit.get("sha") != merge_head
+        or merge_commit.get("html_url") != merge_url
+        or not isinstance(merge_tree, dict)
+        or merge_tree.get("sha") != fresh["closure_tree"]
+    ):
+        raise ValueError("merged tree shall equal closure tree")
+    post_response = client.get(post_resource)
+    post_payload = _validated_object(
+        post_response, _reference_now(fixed_now)
+    )
+    post_source = source_record(
+        post_response,
+        post_payload,
+        expected_container_type="issue",
+        expected_container_number=PUBLICATION_ISSUE_NUMBER,
+        verified_at=post_response.retrieved_at,
+    )
+    merge_commit_time = _parse_rfc3339(
+        merge_details["committer"].get("date"),
+        "GitHub merge commit timestamp",
+    )
+    if (
+        _parse_rfc3339(
+            post_source["created_at"],
+            "GitHub comment timestamp",
+        )
+        <= merge_commit_time
+    ):
+        raise ValueError(
+            "post-merge rendering comment shall postdate merge commit"
+        )
+    post_rendering = parse_fenced_json(str(post_payload["body"]))
+    _validate_post_merge_rendering_verdict(
+        post_rendering,
+        post_source,
+        merge_head,
+        str(merge_tree["sha"]),
+    )
+
     merge_by_name = {
         str(item["name"]): deepcopy(item) for item in merge_results
     }
