@@ -43,16 +43,34 @@ compliance, certification, equivalence, endorsement, external-scheme approval,
 or production readiness. Historical `v0.4-alpha` evidence cannot approve
 `v0.5-beta`.
 
-## 0.5-beta closure candidate
+## 0.5-beta publication
 
-The exact metadata-only closure candidate sets every non-post-merge gate to
-Ready and leaves the post-merge gate Open. It does not record owner-risk,
-scope, or Steering Committee approval and does not approve publication.
+Publication gates are Closed. The `v0.5-beta` Working Draft was published
+through annotated tag `v0.5-beta` on 2026-08-01. The tag object is
+`fc2876cf52791edba6e923a25e0cdb8dec981e1c` and its peeled commit is
+`255f8806917aaf8c6a2441152b4638fc9fd2bfda`. Issue
+[#59](https://github.com/tdistress/ESAF/issues/59) records the consolidated
+publication evidence at https://github.com/tdistress/ESAF/issues/59#issuecomment-5153256331.
 
-Publication remains conditional on the remote annotated `v0.5-beta` tag
-resolving to the exact validated merged commit. The tag has not been created.
-Exact-head reviews, non-delegable decisions, successful checks, clean merge
-state, merged-main validation, and remote tag verification remain required.
+Publication is limited to the repository Working Draft. All controls,
+architecture patterns, the pilot profile, mapping sets, and mapping records
+remain Draft; their lifecycle records remain unchanged. The uniform Working
+Draft mapping decision basis is `owner_risk_acceptance`. Issue 55 remains open
+for qualified review. Owner-risk acceptance permits only Working Draft
+publication and does not complete qualified review, approve mappings, or
+establish certification, compliance, equivalence, endorsement, assurance, or
+artifact lifecycle approval.
+
+| Gate | Current state | Final evidence |
+|---|---|---|
+| Scope and milestone approval | Closed | Consolidated publication evidence: https://github.com/tdistress/ESAF/issues/59#issuecomment-5153256331 |
+| Normative and technical review | Closed | Consolidated publication evidence: https://github.com/tdistress/ESAF/issues/59#issuecomment-5153256331 |
+| Editorial and terminology review | Closed | Consolidated publication evidence: https://github.com/tdistress/ESAF/issues/59#issuecomment-5153256331 |
+| Cross-reference and rendering review | Closed | Consolidated publication evidence: https://github.com/tdistress/ESAF/issues/59#issuecomment-5153256331 |
+| Standards mapping review | Closed | Owner-risk Working Draft basis; qualified review remains deferred: https://github.com/tdistress/ESAF/issues/59#issuecomment-5153256331 |
+| Release metadata synchronization | Closed | Published metadata and annotated-tag evidence: https://github.com/tdistress/ESAF/issues/59#issuecomment-5153256331 |
+| Governance approval | Closed | Consolidated publication evidence: https://github.com/tdistress/ESAF/issues/59#issuecomment-5153256331 |
+| Post-merge validation | Closed | Validated merged-main commit and tag resolution: https://github.com/tdistress/ESAF/issues/59#issuecomment-5153256331 |
 
 ## 0.4-alpha publication
 
