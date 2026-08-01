@@ -2,7 +2,7 @@
 
 **Status:** Working Draft
 
-**Version:** 0.4-alpha
+**Version:** 0.5-beta
 
 ## 0.5-beta delivery sequence
 
@@ -13,6 +13,10 @@ and the priority-mapping decision. If owner-risk acceptance is used, deferred
 mapping assurance remains tracked after beta through issue 55 and does not stop
 later engineering work. The Phase 4 and Phase 5 lists remain long-term
 direction, not `v0.5-beta` exit criteria.
+
+Publication remains conditional on the remote annotated `v0.5-beta` tag
+resolving to the exact validated merged commit. The tag has not been created,
+and the post-merge gate remains open.
 
 ## Phase 0 - Foundation
 

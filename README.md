@@ -3,7 +3,7 @@
 > An open enterprise standard for the secure governance, architecture, adoption, and operation of artificial intelligence.
 
 ![Status](https://img.shields.io/badge/status-Working%20Draft-blue)
-![Version](https://img.shields.io/badge/version-0.4--alpha-orange)
+![Version](https://img.shields.io/badge/version-0.5--beta-orange)
 
 ## Vision
 
@@ -75,6 +75,10 @@ project/          Management of the ESAF initiative itself
 ## Project status
 
 ESAF is a **working draft**. Content may change before Version 1.0 and shall not be represented as an approved certification scheme.
+
+Publication of `v0.5-beta` remains conditional on the remote annotated tag
+resolving to the exact validated merged commit. The tag has not been created,
+and this closure candidate does not approve publication.
 
 See [the roadmap](ROADMAP.md), [project charter](PROJECT_CHARTER.md), [governance model](GOVERNANCE.md), [style guide](STYLE_GUIDE.md), and [contribution guide](CONTRIBUTING.md).
 
