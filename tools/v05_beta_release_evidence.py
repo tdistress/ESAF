@@ -15,6 +15,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import time
 from typing import Callable, Protocol, Sequence
 from urllib.parse import parse_qsl, urlencode, urlsplit
 
@@ -40,9 +41,27 @@ REPOSITORY = "tdistress/ESAF"
 API_ROOT = "https://api.github.com/"
 WEB_ROOT = "https://github.com/tdistress/ESAF"
 FRESHNESS_SECONDS = 15 * 60
+FAILURE_TAIL_BYTES = 32768
 CHECK_NAME = "Validate ESAF sources"
 WORKFLOW_NAME = "Repository validation"
 WORKFLOW_PATH = ".github/workflows/catalog-validation.yml"
+
+
+def _output_tail(stdout: bytes, stderr: bytes) -> str:
+    combined = stdout + stderr
+    tail = combined[-FAILURE_TAIL_BYTES:]
+    text = tail.decode("utf-8", errors="replace")
+    low, high = 0, len(text)
+    while low < high:
+        middle = (low + high) // 2
+        if (
+            len(text[middle:].encode("utf-8"))
+            <= FAILURE_TAIL_BYTES
+        ):
+            high = middle
+        else:
+            low = middle + 1
+    return text[low:].strip()
 PUBLICATION_ISSUE_NUMBER = 59
 ISSUE_55_RESOURCE = f"repos/{REPOSITORY}/issues/55"
 TAG_RESOURCE = f"repos/{REPOSITORY}/git/ref/tags/v0.5-beta"
@@ -186,9 +205,15 @@ class LocalValidationRunner:
     """Execute the canonical candidate gates against the verified local HEAD."""
 
     def __init__(
-        self, runner: Callable[..., object] | None = None
+        self,
+        runner: Callable[..., object] | None = None,
+        *,
+        clock: Callable[[], float] | None = None,
+        reporter: Callable[[str], None] | None = None,
     ) -> None:
         self._runner = runner or subprocess.run
+        self._clock = clock or time.monotonic
+        self._reporter = reporter or print
 
     def run(
         self,
@@ -215,10 +240,36 @@ class LocalValidationRunner:
                 "authenticated pull request base shall be an ancestor "
                 "of closure head"
             )
+        caches = self._cache_paths(root)
+        if caches:
+            raise ValueError(
+                "preflight cache_count failed: " + ", ".join(caches)
+            )
+        status = self._git_text(
+            root,
+            ["status", "--porcelain=v1"],
+            allow_empty=True,
+        )
+        if status:
+            paths = sorted(
+                line.split(maxsplit=1)[-1]
+                for line in status.splitlines()
+            )
+            raise ValueError(
+                "preflight clean_status failed: " + ", ".join(paths)
+            )
         python = sys.executable
         commands: dict[str, list[str]] = {
             "full_suite": [
-                python, "-m", "unittest", "discover", "-s", "tests", "-v"
+                python,
+                "-m",
+                "unittest",
+                "discover",
+                "-s",
+                "tests",
+                "-v",
+                "--durations",
+                "50",
             ],
             "assessment": [python, "tools/validate_assessment.py", "--check"],
             "profiles": [python, "tools/validate_profiles.py", "--check"],
@@ -273,46 +324,63 @@ class LocalValidationRunner:
         for name in COMMAND_IDS:
             if name == "mermaid_rendering":
                 continue
-            if name == "cache_count":
-                caches = sorted(
-                    path.relative_to(root).as_posix()
-                    for path in root.rglob("__pycache__")
-                    if path.is_dir()
-                )
-                if caches:
-                    raise ValueError(
-                        "cache_count failed: Python cache directories exist"
+            self._reporter(f"{name}: start")
+            started = self._clock()
+            try:
+                if name == "cache_count":
+                    caches = self._cache_paths(root)
+                    if caches:
+                        raise ValueError(
+                            "cache_count failed: Python cache directories exist"
+                        )
+                    result = "0 __pycache__ directories"
+                elif name == "clean_status":
+                    status = self._git_text(
+                        root,
+                        ["status", "--porcelain=v1"],
+                        allow_empty=True,
                     )
-                result = "0 __pycache__ directories"
-            elif name == "clean_status":
-                status = self._git_text(
-                    root,
-                    ["status", "--porcelain=v1"],
-                    allow_empty=True,
-                )
-                if status:
-                    raise ValueError("clean_status failed: working tree is dirty")
-                result = "clean"
-            else:
-                command = commands[name]
-                completed = self._runner(
-                    command,
-                    cwd=root,
-                    check=False,
-                    capture_output=True,
-                    env=environment,
-                )
-                return_code = getattr(completed, "returncode", None)
-                stdout = getattr(completed, "stdout", None)
-                stderr = getattr(completed, "stderr", None)
-                if not isinstance(stdout, bytes) or not isinstance(stderr, bytes):
-                    raise ValueError(f"{name} did not return exact byte output")
-                output = stdout + stderr
-                if return_code != 0:
-                    raise ValueError(
-                        f"{name} failed with exit code {return_code}"
+                    if status:
+                        raise ValueError(
+                            "clean_status failed: working tree is dirty"
+                        )
+                    result = "clean"
+                else:
+                    command = commands[name]
+                    completed = self._runner(
+                        command,
+                        cwd=root,
+                        check=False,
+                        capture_output=True,
+                        env=environment,
                     )
-                result = "passed"
+                    return_code = getattr(completed, "returncode", None)
+                    stdout = getattr(completed, "stdout", None)
+                    stderr = getattr(completed, "stderr", None)
+                    if not isinstance(stdout, bytes) or not isinstance(
+                        stderr, bytes
+                    ):
+                        raise ValueError(
+                            f"{name} did not return exact byte output"
+                        )
+                    if return_code != 0:
+                        detail = _output_tail(stdout, stderr)
+                        suffix = (
+                            f"\n--- output tail ---\n{detail}"
+                            if detail
+                            else ""
+                        )
+                        raise ValueError(
+                            f"{name} failed with exit code {return_code}"
+                            f"{suffix}"
+                        )
+                    result = "passed"
+            except Exception:
+                elapsed = self._clock() - started
+                self._reporter(f"{name}: failed in {elapsed:.3f}s")
+                raise
+            elapsed = self._clock() - started
+            self._reporter(f"{name}: passed in {elapsed:.3f}s")
             results.append(
                 {
                     "name": name,
@@ -322,6 +390,14 @@ class LocalValidationRunner:
                 }
             )
         return results
+
+    @staticmethod
+    def _cache_paths(root: Path) -> list[str]:
+        return sorted(
+            path.relative_to(root).as_posix()
+            for path in root.rglob("__pycache__")
+            if path.is_dir()
+        )
 
     def _git_text(
         self,
@@ -411,11 +487,16 @@ class DetachedValidationRunner:
                     raise ValueError(
                         "detached closure snapshot is not immutable"
                     )
-                results = self._validation_runner.run(
-                    snapshot, expected_head, baseline_head
-                )
-                _validate_local_results(results, expected_head)
-                return results
+                try:
+                    results = self._validation_runner.run(
+                        snapshot, expected_head, baseline_head
+                    )
+                    _validate_local_results(results, expected_head)
+                    return results
+                except ValueError as error:
+                    raise ValueError(
+                        f"{error}\ndetached worktree: {snapshot}"
+                    ) from error
             finally:
                 if added:
                     self._git_call(
