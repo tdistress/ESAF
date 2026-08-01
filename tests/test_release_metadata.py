@@ -196,6 +196,19 @@ def release_readiness_rows() -> list[tuple[str, str, str]]:
 
 
 class ReleaseMetadataTests(unittest.TestCase):
+    def test_repository_unit_tests_publish_slowest_durations(self) -> None:
+        workflow = read_repository_file(
+            ".github/workflows/catalog-validation.yml"
+        )
+        unit_step = workflow.split(
+            "- name: Run repository unit tests\n", 1
+        )[1].split("      - name:", 1)[0]
+        self.assertIn(
+            "run: python -m unittest discover -s tests -v "
+            "--durations 50",
+            unit_step,
+        )
+
     def test_v05_version_matches_release_record_phase(self) -> None:
         record = load_v05_front_matter(ROOT / V05_RECORD_RELATIVE)
         version = read_repository_file("VERSION.md")

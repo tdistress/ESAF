@@ -93,7 +93,7 @@ sufficiency.
 Validate the ESAF-1200 foundation, pattern registry, pattern metadata and structure, links, control references, placeholders, and text encoding:
 
 ```shell
-python -m unittest discover -s tests -v
+python -m unittest discover -s tests -v --durations 50
 python tools/validate_architectures.py
 ```
 
@@ -113,6 +113,14 @@ python -m tools.v05_beta_release_evidence --help
 Use module invocation for the v0.5 evidence collector. The help command does
 not fetch GitHub evidence. Operational collection requires the authenticated
 resource identifiers and exact values documented by the command.
+
+Release collection performs read-only clean-worktree and Python-cache
+preflight checks before expensive commands, reports command durations and a
+bounded output tail on failure, and retains the final clean-worktree and cache
+results in release evidence. Taggable collection reuses candidate results only
+after valid closure evidence binds the canonical results to the exact candidate
+SHA and closure base; merge-head validation and fresh GitHub acquisition remain
+mandatory.
 
 Exact candidate, approval, merge, and tag SHAs remain in GitHub evidence and
 an external temporary JSON file until durable publication evidence exists.
