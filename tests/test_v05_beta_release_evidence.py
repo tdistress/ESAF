@@ -313,7 +313,13 @@ class FakeValidationRunner(ValidationRunner):
                 "name": name,
                 "sha": CLOSURE_SHA,
                 "exit_code": 0,
-                "result": f"executed:{name}",
+                "result": (
+                    "0 __pycache__ directories"
+                    if name == "cache_count"
+                    else "clean"
+                    if name == "clean_status"
+                    else "passed"
+                ),
             }
             for name in COMMAND_IDS
             if name != "mermaid_rendering"
@@ -1920,17 +1926,25 @@ class V05AcquisitionTests(unittest.TestCase):
         )
         mark_pull_request_merged(client)
         merge_runner = FakeValidationRunner()
+        refresh_arguments = valid_collection_args()
+        candidate_runner = refresh_arguments["validation_runner"]
+        assert isinstance(candidate_runner, FakeValidationRunner)
         taggable = refresh_taggable_evidence(
             client,
             base_evidence=closure,
             merge_head=MERGE_SHA,
             post_merge_rendering_comment_id=POST_MERGE_RENDERING_ID,
             post_merge_validation_runner=merge_runner,
-            **valid_collection_args(),
+            **refresh_arguments,
         )
+        self.assertEqual([], candidate_runner.calls)
         self.assertEqual(
             [(ROOT, MERGE_SHA, CLOSURE_BASE)],
             merge_runner.calls,
+        )
+        self.assertEqual(
+            closure["candidate_commands"],
+            taggable["candidate_commands"],
         )
         self.assertEqual(
             MERGE_SHA, taggable["post_merge"]["sha"]
@@ -2179,15 +2193,11 @@ class V05AcquisitionTests(unittest.TestCase):
         })
         self.assertEqual(
             {
-                f"executed:{name}"
-                for name in COMMAND_IDS
-                if name != "mermaid_rendering"
-            },
-            {
                 item["result"]
                 for item in evidence["candidate_commands"]
                 if item["name"] != "mermaid_rendering"
             },
+            {"passed", "0 __pycache__ directories", "clean"},
         )
 
     def test_collector_executes_every_nonvisual_canonical_gate(self) -> None:
@@ -2540,7 +2550,7 @@ class V05AcquisitionTests(unittest.TestCase):
                 arguments["validation_runner"] = runner
                 with self.assertRaisesRegex(
                     ValueError,
-                    "base candidate commands shall equal fresh execution",
+                    "base candidate commands are invalid",
                 ):
                     refresh_taggable_evidence(
                         client,
@@ -2551,10 +2561,7 @@ class V05AcquisitionTests(unittest.TestCase):
                         ),
                         **arguments,
                     )
-                self.assertEqual(
-                    [(ROOT, CLOSURE_SHA, CLOSURE_BASE)],
-                    runner.calls,
-                )
+                self.assertEqual([], runner.calls)
 
     def test_collector_binds_verdict_date_to_comment_creation_date(
         self,

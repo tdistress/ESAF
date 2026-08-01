@@ -1468,9 +1468,17 @@ def refresh_taggable_evidence(
     base_commands = _validated_candidate_commands(
         base_evidence.get("candidate_commands"), expected_head
     )
+    candidate_results = [
+        deepcopy(command)
+        for command in base_commands
+        if command.get("name") != "mermaid_rendering"
+    ]
     refresh_arguments = dict(collection_arguments)
-    if refresh_arguments.get("validation_runner") is None:
-        refresh_arguments["validation_runner"] = DetachedValidationRunner()
+    refresh_arguments["validation_runner"] = RecordedValidationRunner(
+        candidate_results,
+        expected_head,
+        closure_base,
+    )
     refresh_arguments["merged_head"] = merge_head
     refresh_arguments["expected_closure_base"] = closure_base
     fresh = collect_closure_evidence(client, **refresh_arguments)
@@ -1813,6 +1821,20 @@ def _validate_local_results(
             raise ValueError("local validation command results are invalid")
 
 
+def _expected_nonvisual_result(name: object) -> str | None:
+    if name == "cache_count":
+        return "0 __pycache__ directories"
+    if name == "clean_status":
+        return "clean"
+    if name in set(COMMAND_IDS) - {
+        "mermaid_rendering",
+        "cache_count",
+        "clean_status",
+    }:
+        return "passed"
+    return None
+
+
 def _validated_candidate_commands(
     value: object, expected_head: str
 ) -> list[dict[str, object]]:
@@ -1832,6 +1854,12 @@ def _validated_candidate_commands(
         _validate_local_results(nonvisual, expected_head)
     except ValueError as exc:
         raise ValueError("base candidate commands are invalid") from exc
+    if any(
+        item.get("result")
+        != _expected_nonvisual_result(item.get("name"))
+        for item in nonvisual
+    ):
+        raise ValueError("base candidate commands are invalid")
     rendering = by_name["mermaid_rendering"]
     if (
         set(rendering) != {"name", "sha", "exit_code", "result"}
