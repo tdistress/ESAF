@@ -664,6 +664,25 @@ def completed(
 
 
 class V05GhApiTransportTests(unittest.TestCase):
+    def test_auth_response_cache_is_consumed_before_next_acquisition(self) -> None:
+        runner = QueueRunner(
+            [
+                completed(USER_RESOURCE, {"login": "first-pass"}),
+                completed(USER_RESOURCE, {"login": "second-pass"}),
+            ]
+        )
+        client = GhApiClient(runner=runner, clock=lambda: NOW)
+
+        self.assertEqual("first-pass", client.auth_login())
+        self.assertEqual(
+            "first-pass", client.get(USER_RESOURCE).json_object()["login"]
+        )
+        self.assertEqual("second-pass", client.auth_login())
+        self.assertEqual(
+            "second-pass", client.get(USER_RESOURCE).json_object()["login"]
+        )
+        self.assertEqual(2, len(runner.calls))
+
     def test_gh_client_pins_github_com_and_rejects_host_drift(self) -> None:
         runner = QueueRunner(
             [completed(USER_RESOURCE, {"login": "tdistress"})]
