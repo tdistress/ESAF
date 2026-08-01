@@ -500,7 +500,7 @@ class GhApiClient:
         self._auth_response: ApiResponse | None = None
 
     def auth_login(self) -> str:
-        response = self.get("user")
+        response = self._get_included_response("user")
         self._auth_response = response
         login = response.json_object().get("login")
         if not _nonblank(login):
@@ -509,7 +509,9 @@ class GhApiClient:
 
     def get(self, resource: str) -> ApiResponse:
         if resource == "user" and self._auth_response is not None:
-            return self._auth_response
+            response = self._auth_response
+            self._auth_response = None
+            return response
         return self._get_included_response(resource)
 
     def get_pages(self, resource: str) -> ApiPageSet:
