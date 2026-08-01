@@ -224,6 +224,16 @@ class ReleaseMetadataTests(unittest.TestCase):
                 "tag condition was satisfied",
                 version.casefold(),
             )
+        if record["phase"] == "published":
+            readme = read_repository_file("README.md")
+            for text in (version, readme):
+                normalized = text.casefold()
+                self.assertIn("published on 2026-08-01", normalized)
+                self.assertIn("fc2876cf52791edba6e923a25e0cdb8dec981e1c", normalized)
+                self.assertIn("255f8806917aaf8c6a2441152b4638fc9fd2bfda", normalized)
+                self.assertNotIn("publication remains conditional", normalized)
+                self.assertNotIn("tag has not been created", normalized)
+                self.assertNotIn("this closure candidate", normalized)
 
     def test_v05_operator_commands_use_module_invocation(self) -> None:
         readme = read_repository_file("tools/README.md")
