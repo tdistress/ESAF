@@ -62,6 +62,8 @@ def _output_tail(stdout: bytes, stderr: bytes) -> str:
         else:
             low = middle + 1
     return text[low:].strip()
+
+
 PUBLICATION_ISSUE_NUMBER = 59
 ISSUE_55_RESOURCE = f"repos/{REPOSITORY}/issues/55"
 TAG_RESOURCE = f"repos/{REPOSITORY}/git/ref/tags/v0.5-beta"
