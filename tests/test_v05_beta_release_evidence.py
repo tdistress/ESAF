@@ -551,6 +551,21 @@ def valid_fake_client() -> FakeClient:
     )
 
 
+def absent_local_tag_runner(
+    args: list[str], **kwargs: object
+) -> subprocess.CompletedProcess[bytes]:
+    del kwargs
+    if args != [
+        "git",
+        "show-ref",
+        "--verify",
+        "--quiet",
+        "refs/tags/v0.5-beta",
+    ]:
+        raise AssertionError(args)
+    return subprocess.CompletedProcess(args, 1, b"", b"")
+
+
 def valid_collection_args() -> dict[str, object]:
     return {
         "root": ROOT,
@@ -567,6 +582,7 @@ def valid_collection_args() -> dict[str, object]:
         "whole_range_comment_id": WHOLE_RANGE_ID,
         "now": NOW,
         "validation_runner": FakeValidationRunner(),
+        "repository_runner": absent_local_tag_runner,
     }
 
 
@@ -1383,6 +1399,17 @@ class V05LocalValidationRunnerTests(unittest.TestCase):
 
 
 class V05AcquisitionTests(unittest.TestCase):
+    def test_synthetic_collection_controls_local_tag_absence(self) -> None:
+        arguments = valid_collection_args()
+        self.assertIs(
+            arguments.get("repository_runner"),
+            absent_local_tag_runner,
+        )
+        evidence = collect_closure_evidence(
+            valid_fake_client(), **arguments
+        )
+        self.assertEqual(CLOSURE_SHA, evidence["closure_head"])
+
     def test_collector_reacquires_after_validation_without_rerunning_gates(
         self,
     ) -> None:
