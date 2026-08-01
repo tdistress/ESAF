@@ -76,9 +76,11 @@ project/          Management of the ESAF initiative itself
 
 ESAF is a **working draft**. Content may change before Version 1.0 and shall not be represented as an approved certification scheme.
 
-Publication of `v0.5-beta` remains conditional on the remote annotated tag
-resolving to the exact validated merged commit. The tag has not been created,
-and this closure candidate does not approve publication.
+The `v0.5-beta` Working Draft was published on 2026-08-01 through annotated
+tag object `fc2876cf52791edba6e923a25e0cdb8dec981e1c`, which resolves to validated
+commit `255f8806917aaf8c6a2441152b4638fc9fd2bfda`. Publication does not approve
+certification, compliance, framework equivalence, or Draft mapping lifecycle
+promotion.
 
 See [the roadmap](ROADMAP.md), [project charter](PROJECT_CHARTER.md), [governance model](GOVERNANCE.md), [style guide](STYLE_GUIDE.md), and [contribution guide](CONTRIBUTING.md).
 

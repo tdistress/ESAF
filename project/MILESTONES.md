@@ -18,6 +18,15 @@
 - ESAF-1600, its schemas, lifecycle model, and validators are present.
 - The three UK mapping snapshots remain Draft and await qualified review.
 
+### Publication state
+
+- The `v0.5-beta` Working Draft was published on 2026-08-01 through annotated
+  tag `v0.5-beta` at `255f8806917aaf8c6a2441152b4638fc9fd2bfda`.
+- Publication closes the repository release gates only. Controls,
+  architectures, profiles, mapping sets, and mapping records remain Draft.
+- Issue 55 remains open for qualified review; owner-risk acceptance does not
+  approve mappings or change an artifact lifecycle state.
+
 ### Required workstreams
 
 1. **UK mapping assurance.** ESAF shall record either completed

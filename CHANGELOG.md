@@ -3,20 +3,18 @@
 All notable changes to ESAF are documented in this file.
 
 Versions 0.2-alpha and 0.3-alpha remain unreleased working-draft stages.
-Version 0.4-alpha is a tagged Working Draft.
+Version 0.4-alpha is a tagged Working Draft. Version 0.5-beta is a tagged
+Working Draft.
 
-## 0.5-beta - Unreleased
+## 0.5-beta - 2026-08-01
 
 ### Added
 
 - Added the ESAF-1500 assessment foundation and one Draft UK pilot profile.
 - Recorded the PCI DSS mapping-readiness decision as `HOLD`.
 - Added v0.5 release validation and authenticated evidence-collection tooling.
-- Added an evidence-candidate readiness record and a baseline Mermaid
-  rendering ledger. These records do not claim publication or
-  closure-candidate approval.
-- Prepared the exact metadata-only `v0.5-beta` closure candidate. This
-  candidate does not approve publication.
+- Added the immutable published readiness record, including the annotated tag
+  object, tagged commit, UTC publication date, and issue 59 evidence URL.
 - Carried forward the seven Draft architecture patterns in the current
   Working Draft: ARC-P100, Enterprise AI platform and gateway; ARC-P110,
   Enterprise copilot; ARC-P120, Retrieval-augmented generation; ARC-P130,
@@ -30,13 +28,11 @@ Version 0.4-alpha is a tagged Working Draft.
 
 ### Changed
 
-- Selected owner-risk acceptance as the planned uniform basis for the three
-  Draft UK mapping sets. Qualified review remains deferred, all mapping sets
+- Published the `v0.5-beta` Working Draft through the annotated
+  `v0.5-beta` tag. Owner-risk acceptance is the uniform basis for the three
+  Draft UK mapping sets; qualified review remains deferred, all mapping sets
   and records remain Draft, and issue 55 remains open.
-- Kept Working Draft publication conditional on the remote annotated
-  `v0.5-beta` tag resolving to the exact validated merged commit. The tag has
-  not been created, and the post-merge gate remains open.
-- Clarified that this stage does not establish qualified review, mapping
+- Clarified that publication does not establish qualified review, mapping
   approval, artifact lifecycle approval, certification, compliance,
   equivalence, endorsement, external scheme approval, assurance, legal
   sufficiency, implementation assessment, production readiness, or

@@ -551,6 +551,24 @@ def valid_fake_client() -> FakeClient:
     )
 
 
+def absent_local_tag_runner(
+    args: list[str], **kwargs: object
+) -> subprocess.CompletedProcess[bytes]:
+    assert args == [
+        "git",
+        "show-ref",
+        "--verify",
+        "--quiet",
+        "refs/tags/v0.5-beta",
+    ]
+    assert kwargs == {
+        "cwd": ROOT,
+        "check": False,
+        "capture_output": True,
+    }
+    return subprocess.CompletedProcess(args, 1, b"", b"")
+
+
 def valid_collection_args() -> dict[str, object]:
     return {
         "root": ROOT,
@@ -567,6 +585,7 @@ def valid_collection_args() -> dict[str, object]:
         "whole_range_comment_id": WHOLE_RANGE_ID,
         "now": NOW,
         "validation_runner": FakeValidationRunner(),
+        "repository_runner": absent_local_tag_runner,
     }
 
 
@@ -2089,7 +2108,6 @@ class V05AcquisitionTests(unittest.TestCase):
         def local_tag_runner(
             args: list[str], **kwargs: object
         ) -> subprocess.CompletedProcess[bytes]:
-            del kwargs
             self.assertEqual(
                 [
                     "git",
@@ -2099,6 +2117,14 @@ class V05AcquisitionTests(unittest.TestCase):
                     "refs/tags/v0.5-beta",
                 ],
                 args,
+            )
+            self.assertEqual(
+                {
+                    "cwd": ROOT,
+                    "check": False,
+                    "capture_output": True,
+                },
+                kwargs,
             )
             return subprocess.CompletedProcess(args, 0, b"", b"")
 

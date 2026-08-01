@@ -56,6 +56,12 @@ EXPECTED_SCOPE = {
     "draft_profiles": 1,
     "pci_dss_disposition": "HOLD",
 }
+PUBLISHED_DATE = "2026-08-01"
+PUBLISHED_TAG_OBJECT = "fc2876cf52791edba6e923a25e0cdb8dec981e1c"
+PUBLISHED_COMMIT = "255f8806917aaf8c6a2441152b4638fc9fd2bfda"
+PUBLISHED_EVIDENCE_URL = (
+    "https://github.com/tdistress/ESAF/issues/59#issuecomment-5153256331"
+)
 EXPECTED_CLOSURE_ALLOWLIST = {
     "VERSION.md",
     "README.md",
@@ -2304,6 +2310,25 @@ class V05ReleaseRecordTests(unittest.TestCase):
             },
         )
         self.assertEqual([], validate_record(ROOT, record))
+
+    def test_published_record_requires_fixed_local_publication_identity(self) -> None:
+        record = load_front_matter(V05_RECORD)
+        publication = record["publication"]
+        self.assertEqual("published", record["phase"])
+        self.assertEqual("owner_risk_acceptance", record["mapping_decision_basis"])
+        self.assertEqual(PUBLISHED_DATE, publication["date"])
+        self.assertEqual(PUBLISHED_TAG_OBJECT, publication["tag_object"])
+        self.assertEqual(PUBLISHED_COMMIT, publication["tagged_commit"])
+        self.assertEqual(PUBLISHED_EVIDENCE_URL, publication["issue_evidence_url"])
+        self.assertEqual([PUBLISHED_EVIDENCE_URL], publication["evidence"])
+        self.assertEqual(
+            {gate: "closed" for gate in PHASE_GATE_STATES["published"]},
+            {gate: value["state"] for gate, value in record["gates"].items()},
+        )
+        self.assertEqual(
+            [],
+            v05_beta_release_gates.validate_published_tag_identity(ROOT, record),
+        )
 
     def test_closure_candidate_fixture_uses_exact_gate_matrix(self) -> None:
         record = record_fixture("closure_candidate")

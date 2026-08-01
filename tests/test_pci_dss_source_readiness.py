@@ -513,23 +513,21 @@ class PciDssReadinessPublicationTests(unittest.TestCase):
         self.assertIn("provision inventory is unavailable", text)
         self.assertIn("ESAF Project Maintainer", text)
 
-    def test_backlog_marks_issue_58_completed_while_59_remains_active_and_55_is_deferred(
+    def test_backlog_marks_issues_58_and_59_completed_while_55_is_deferred(
         self,
     ) -> None:
         text = BACKLOG.read_text(encoding="utf-8")
-        active = section(text, "Active release workstreams")
         deferred = section(text, "Deferred assurance follow-up")
         completed = section(text, "Completed workstreams")
         issue_59_url = "https://github.com/tdistress/ESAF/issues/59"
         issue_55_url = "https://github.com/tdistress/ESAF/issues/55"
-        self.assertIn(issue_59_url, active)
-        self.assertNotIn("https://github.com/tdistress/ESAF/issues/55", active)
-        self.assertNotIn("https://github.com/tdistress/ESAF/issues/58", active)
-        issue_59 = top_level_list_item(active, issue_59_url)
+        issue_59 = top_level_list_item(completed, issue_59_url)
         self.assertRegex(
             issue_59,
-            r"validated exact-candidate owner-risk\s+acceptance",
+            r"publication gates, is closed",
         )
+        self.assertRegex(issue_59, r"Working Draft was published\s+on 2026-08-01")
+        self.assertIn("255f8806917aaf8c6a2441152b4638fc9fd2bfda", issue_59)
         self.assertNotIn("https://github.com/tdistress/ESAF/issues/59", deferred)
         issue_55 = top_level_list_item(deferred, issue_55_url)
         self.assertIn(issue_55_url, issue_55)
