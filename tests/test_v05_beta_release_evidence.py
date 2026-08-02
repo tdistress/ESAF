@@ -657,7 +657,7 @@ class FailingSuiteExecutor:
     def __call__(
         self, args: list[str], **kwargs: object
     ) -> subprocess.CompletedProcess[bytes]:
-        if "unittest" in args:
+        if "tools/run_test_shards.py" in args:
             return subprocess.CompletedProcess(
                 args, 1, self.stdout, self.stderr
             )
@@ -1243,12 +1243,8 @@ class V05LocalValidationRunnerTests(unittest.TestCase):
         self.assertIn(
             [
                 os.fsdecode(Path(os.sys.executable)),
-                "-m",
-                "unittest",
-                "discover",
-                "-s",
-                "tests",
-                "-v",
+                "tools/run_test_shards.py",
+                "--all",
                 "--durations",
                 "50",
             ],
@@ -1286,7 +1282,7 @@ class V05LocalValidationRunnerTests(unittest.TestCase):
             )
 
         self.assertFalse(any(
-            args[1:4] == ["-m", "unittest", "discover"]
+            args[1:2] == ["tools/run_test_shards.py"]
             for args, _kwargs in executor.calls
         ))
 
@@ -1305,7 +1301,7 @@ class V05LocalValidationRunnerTests(unittest.TestCase):
                 )
 
             self.assertFalse(any(
-                args[1:4] == ["-m", "unittest", "discover"]
+                args[1:2] == ["tools/run_test_shards.py"]
                 for args, _kwargs in executor.calls
             ))
 
@@ -1552,12 +1548,8 @@ class V05LocalValidationRunnerTests(unittest.TestCase):
         self.assertIn(
             [
                 os.fsdecode(Path(os.sys.executable)),
-                "-m",
-                "unittest",
-                "discover",
-                "-s",
-                "tests",
-                "-v",
+                "tools/run_test_shards.py",
+                "--all",
                 "--durations",
                 "50",
             ],

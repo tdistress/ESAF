@@ -264,12 +264,8 @@ class LocalValidationRunner:
         commands: dict[str, list[str]] = {
             "full_suite": [
                 python,
-                "-m",
-                "unittest",
-                "discover",
-                "-s",
-                "tests",
-                "-v",
+                "tools/run_test_shards.py",
+                "--all",
                 "--durations",
                 "50",
             ],

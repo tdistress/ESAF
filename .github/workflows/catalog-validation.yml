@@ -29,6 +29,10 @@ on:
       - "tools/validate_qualified_review_evidence.py"
       - "tools/seal_qualified_review_campaign.py"
       - "tools/crosswalks/qualified_review_evidence.py"
+      - "tools/test-shards.json"
+      - "tools/test_shards.py"
+      - "tools/validate_test_shards.py"
+      - "tools/run_test_shards.py"
       - "tools/release_gates.py"
       - "tools/v05_beta_release_gates.py"
       - "tools/v05_beta_release_evidence.py"
@@ -76,6 +80,10 @@ on:
       - "tools/validate_qualified_review_evidence.py"
       - "tools/seal_qualified_review_campaign.py"
       - "tools/crosswalks/qualified_review_evidence.py"
+      - "tools/test-shards.json"
+      - "tools/test_shards.py"
+      - "tools/validate_test_shards.py"
+      - "tools/run_test_shards.py"
       - "tools/release_gates.py"
       - "tools/v05_beta_release_gates.py"
       - "tools/v05_beta_release_evidence.py"
@@ -100,8 +108,37 @@ permissions:
   contents: read
 
 jobs:
-  validate:
-    name: Validate ESAF sources
+  unit_tests:
+    name: Unit tests (${{ matrix.shard }})
+    runs-on: ubuntu-latest
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+    strategy:
+      fail-fast: false
+      matrix:
+        shard:
+          - profile_validation
+          - qualified_review_evidence
+          - mapping_review_bundle
+          - remaining
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+      - name: Install validation dependencies
+        run: python -m pip install --requirement requirements-dev.txt
+      - name: Run unit test shard
+        run: python tools/run_test_shards.py --shard "${{ matrix.shard }}" --durations 50
+
+  validation_gates:
+    name: Operational validation gates
     runs-on: ubuntu-latest
     env:
       PYTHONDONTWRITEBYTECODE: "1"
@@ -125,8 +162,8 @@ jobs:
         run: npm install --global @mermaid-js/mermaid-cli@11.16.0
       - name: Install validation dependencies
         run: python -m pip install --requirement requirements-dev.txt
-      - name: Run repository unit tests
-        run: python -m unittest discover -s tests -v --durations 50
+      - name: Validate unit test shard manifest
+        run: python tools/validate_test_shards.py --check
       - name: Validate assessment foundation
         run: python tools/validate_assessment.py --check
       - name: Validate profiles
@@ -169,3 +206,20 @@ jobs:
         run: python tools/mermaid_inventory.py --check-record docs/superpowers/reviews/2026-07-27-v05-beta-mermaid-rendering.md
       - name: Validate repository-local links
         run: python tools/validate_links.py --check
+
+  validate:
+    name: Validate ESAF sources
+    if: ${{ always() }}
+    needs:
+      - unit_tests
+      - validation_gates
+    runs-on: ubuntu-latest
+    env:
+      UNIT_TESTS_RESULT: ${{ needs.unit_tests.result }}
+      VALIDATION_GATES_RESULT: ${{ needs.validation_gates.result }}
+    steps:
+      - name: Require all validation jobs to pass
+        run: |
+          if [ "$UNIT_TESTS_RESULT" != "success" ] || [ "$VALIDATION_GATES_RESULT" != "success" ]; then
+            exit 1
+          fi

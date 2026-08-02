@@ -93,9 +93,13 @@ sufficiency.
 Validate the ESAF-1200 foundation, pattern registry, pattern metadata and structure, links, control references, placeholders, and text encoding:
 
 ```shell
-python -m unittest discover -s tests -v --durations 50
+python tools/validate_test_shards.py --check
+python tools/run_test_shards.py --all --durations 50
 python tools/validate_architectures.py
 ```
+
+CI runs the same four manifest-defined shards in separate jobs and publishes one
+aggregate required check.
 
 Architecture validation requires linked pattern records to match registry status, contain the complete pattern contract, and reference existing ESAF controls. It intentionally checks structural rules only. Technical reviewers remain responsible for the correctness of architecture decisions, diagrams, control allocation, and implementation guidance.
 

@@ -1,0 +1,58 @@
+{
+  "schema": "esaf-test-shards-v1",
+  "shards": [
+    {
+      "id": "profile_validation",
+      "modules": [
+        "tests/test_validate_profiles.py"
+      ]
+    },
+    {
+      "id": "qualified_review_evidence",
+      "modules": [
+        "tests/test_validate_qualified_review_evidence.py"
+      ]
+    },
+    {
+      "id": "mapping_review_bundle",
+      "modules": [
+        "tests/test_build_mapping_review_bundle.py"
+      ]
+    },
+    {
+      "id": "remaining",
+      "modules": [
+        "tests/test_arc_p150_pattern.py",
+        "tests/test_arc_p160_pattern.py",
+        "tests/test_assessment_foundation.py",
+        "tests/test_crosswalk_schemas.py",
+        "tests/test_esaf_1600_foundation.py",
+        "tests/test_license_metadata.py",
+        "tests/test_mapping_review_protocol.py",
+        "tests/test_mermaid_inventory.py",
+        "tests/test_owner_risk_evidence.py",
+        "tests/test_pci_dss_source_readiness.py",
+        "tests/test_profile_foundation.py",
+        "tests/test_qualified_review_evidence_io.py",
+        "tests/test_qualified_review_evidence_schema.py",
+        "tests/test_release_gates.py",
+        "tests/test_release_metadata.py",
+        "tests/test_render_ce_plus_mapping_go_no_go.py",
+        "tests/test_render_pci_dss_mapping_go_no_go.py",
+        "tests/test_uk_cyber_essentials_plus_v32_esaf_to_external_mapping.py",
+        "tests/test_uk_cyber_essentials_plus_v32_external_to_esaf_mapping.py",
+        "tests/test_uk_cyber_essentials_plus_v32_inventory.py",
+        "tests/test_uk_cyber_essentials_plus_v32_mapping_go_no_go.py",
+        "tests/test_uk_cyber_essentials_plus_v32_traceability.py",
+        "tests/test_uk_cyber_essentials_v33_crosswalk.py",
+        "tests/test_v05_beta_release_evidence.py",
+        "tests/test_v05_beta_release_gates.py",
+        "tests/test_validate_architectures.py",
+        "tests/test_validate_assessment.py",
+        "tests/test_validate_crosswalks.py",
+        "tests/test_validate_links.py",
+        "tests/test_validation_shards.py"
+      ]
+    }
+  ]
+}
