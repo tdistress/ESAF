@@ -10,9 +10,11 @@ import time
 import unittest
 from pathlib import Path
 from typing import Any, Callable
+from unittest.mock import patch
 
 import yaml
 
+from tools import validate_test_shards
 from tools.run_test_shards import (
     FAILURE_SUMMARY_BYTES,
     build_command,
@@ -201,6 +203,31 @@ class ValidationShardTests(unittest.TestCase):
             "sorted",
         )
 
+    def test_check_reports_invalid_utf8_manifest_without_a_traceback(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            tools = root / "tools"
+            tools.mkdir()
+            (tools / "test-shards.json").write_bytes(b"\xff")
+            stderr = io.StringIO()
+
+            try:
+                with (
+                    patch.object(validate_test_shards, "ROOT", root),
+                    patch.object(sys, "stderr", stderr),
+                ):
+                    exit_code = validate_test_shards.main(["--check"])
+            except UnicodeDecodeError as error:
+                self.fail(f"invalid UTF-8 escaped the check command: {error}")
+
+        self.assertEqual(1, exit_code)
+        self.assertEqual(
+            "Test shard validation failed: "
+            "test shard manifest could not be read\n",
+            stderr.getvalue(),
+        )
+        self.assertNotIn("Traceback", stderr.getvalue())
+
     def test_manifest_modules_match_discovery_test_population(self) -> None:
         shards = load_manifest(ROOT)
         discovered = flatten_test_ids(
@@ -257,11 +284,20 @@ class ValidationShardWorkflowTests(unittest.TestCase):
                 "--durations 50"
             ),
         )
-        self.assertTrue(
-            any(
-                step.get("uses") == "actions/checkout@v5"
-                for step in unit_tests["steps"]
-            )
+        checkout_steps = [
+            step
+            for step in unit_tests["steps"]
+            if step.get("uses") == "actions/checkout@v5"
+        ]
+        self.assertEqual(
+            [
+                {
+                    "name": "Check out repository",
+                    "uses": "actions/checkout@v5",
+                    "with": {"fetch-depth": "0"},
+                }
+            ],
+            checkout_steps,
         )
         self.assertTrue(
             any(
@@ -431,6 +467,53 @@ class TestShardRunnerTests(unittest.TestCase):
         self.assertEqual([item.identifier for item in shards], calls)
         self.assertEqual([1, 0, 0, 0], [item.exit_code for item in results])
         self.assertEqual([1.0, 1.0, 1.0, 1.0], [item.elapsed_seconds for item in results])
+
+    def test_successful_all_prints_every_module_in_order_with_elapsed_time(
+        self,
+    ) -> None:
+        shards = load_manifest(ROOT)
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+
+        def runner(command: list[str], **kwargs: object) -> object:
+            return subprocess.CompletedProcess(command, 0, b"", b"")
+
+        ticks = iter((0.0, 1.25, 10.0, 12.5, 20.0, 23.75, 30.0, 35.0))
+        exit_code = main(
+            ["--all", "--durations", "50"],
+            root=ROOT,
+            runner=runner,
+            clock=lambda: next(ticks),
+            stdout=stdout,
+            stderr=stderr,
+            manifest_validator=lambda _root: shards,
+        )
+
+        output_lines = stdout.getvalue().splitlines()
+        expected_modules = [
+            module for shard in shards for module in shard.modules
+        ]
+        printed_modules = [
+            line for line in output_lines if line.startswith("tests/test_")
+        ]
+        self.assertEqual(0, exit_code)
+        self.assertEqual(expected_modules, printed_modules)
+        for module in expected_modules:
+            with self.subTest(module=module):
+                self.assertEqual(1, output_lines.count(module))
+        self.assertEqual(
+            [
+                "Elapsed seconds: 1.250",
+                "Elapsed seconds: 2.500",
+                "Elapsed seconds: 3.750",
+                "Elapsed seconds: 5.000",
+            ],
+            [
+                line
+                for line in output_lines
+                if line.startswith("Elapsed seconds:")
+            ],
+        )
 
     def test_all_reports_bounded_final_summary_for_every_noisy_failure(self) -> None:
         shards = load_manifest(ROOT)

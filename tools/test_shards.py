@@ -62,7 +62,7 @@ def load_manifest(root: Path) -> tuple[Shard, ...]:
         )
     except json.JSONDecodeError as error:
         raise ValueError("test shard manifest is not valid JSON") from error
-    except OSError as error:
+    except (OSError, UnicodeDecodeError) as error:
         raise ValueError("test shard manifest could not be read") from error
 
     if not isinstance(value, dict) or set(value) != {"schema", "shards"}:
