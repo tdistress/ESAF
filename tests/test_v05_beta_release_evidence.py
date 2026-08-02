@@ -313,7 +313,13 @@ class FakeValidationRunner(ValidationRunner):
                 "name": name,
                 "sha": CLOSURE_SHA,
                 "exit_code": 0,
-                "result": f"executed:{name}",
+                "result": (
+                    "0 __pycache__ directories"
+                    if name == "cache_count"
+                    else "clean"
+                    if name == "clean_status"
+                    else "passed"
+                ),
             }
             for name in COMMAND_IDS
             if name != "mermaid_rendering"
@@ -621,8 +627,9 @@ class QueueRunner:
 
 
 class RecordingCommandExecutor:
-    def __init__(self) -> None:
+    def __init__(self, *, status: bytes = b"") -> None:
         self.calls: list[tuple[list[str], dict[str, object]]] = []
+        self.status = status
 
     def __call__(
         self, args: list[str], **kwargs: object
@@ -635,10 +642,26 @@ class RecordingCommandExecutor:
         ]:
             stdout = f"{CLOSURE_BASE}\n".encode("ascii")
         elif args == ["git", "status", "--porcelain=v1"]:
-            stdout = b""
+            stdout = self.status
         else:
             stdout = f"executed {' '.join(args)}\n".encode("utf-8")
         return subprocess.CompletedProcess(args, 0, stdout, b"")
+
+
+class FailingSuiteExecutor:
+    def __init__(self, *, stdout: bytes, stderr: bytes) -> None:
+        self.delegate = RecordingCommandExecutor()
+        self.stdout = stdout
+        self.stderr = stderr
+
+    def __call__(
+        self, args: list[str], **kwargs: object
+    ) -> subprocess.CompletedProcess[bytes]:
+        if "unittest" in args:
+            return subprocess.CompletedProcess(
+                args, 1, self.stdout, self.stderr
+            )
+        return self.delegate(args, **kwargs)
 
 
 def debug_trace(
@@ -1118,6 +1141,174 @@ class V05StructuredCommentTests(unittest.TestCase):
 
 
 class V05LocalValidationRunnerTests(unittest.TestCase):
+    def test_detached_runner_reports_snapshot_before_cleanup_on_failure(
+        self,
+    ) -> None:
+        events: list[str] = []
+
+        class FailingValidationRunner:
+            def run(
+                runner_self,
+                root: Path,
+                expected_head: str,
+                baseline_head: str,
+            ) -> list[dict[str, object]]:
+                del runner_self, expected_head, baseline_head
+                self.assertTrue(root.exists())
+                events.append("validation")
+                raise ValueError("synthetic suite failure")
+
+        def git_runner(
+            args: list[str], **kwargs: object
+        ) -> subprocess.CompletedProcess[bytes]:
+            del kwargs
+            if args == [
+                "git", "rev-parse", f"{CLOSURE_SHA}^{{commit}}"
+            ]:
+                stdout = f"{CLOSURE_SHA}\n".encode()
+            elif args == [
+                "git", "rev-parse", f"{CLOSURE_SHA}^{{tree}}"
+            ]:
+                stdout = f"{CLOSURE_TREE}\n".encode()
+            elif args == [
+                "git", "merge-base", CLOSURE_BASE, CLOSURE_SHA
+            ]:
+                stdout = f"{CLOSURE_BASE}\n".encode()
+            elif args[:4] == ["git", "worktree", "add", "--detach"]:
+                Path(args[4]).mkdir()
+                stdout = b""
+            elif args == ["git", "rev-parse", "HEAD"]:
+                stdout = f"{CLOSURE_SHA}\n".encode()
+            elif args == ["git", "rev-parse", "HEAD^{tree}"]:
+                stdout = f"{CLOSURE_TREE}\n".encode()
+            elif args[:4] == ["git", "worktree", "remove", "--force"]:
+                events.append("remove")
+                stdout = b""
+            else:
+                raise AssertionError(args)
+            return subprocess.CompletedProcess(args, 0, stdout, b"")
+
+        with self.assertRaises(ValueError) as raised:
+            DetachedValidationRunner(
+                validation_runner=FailingValidationRunner(),
+                runner=git_runner,
+            ).run(ROOT, CLOSURE_SHA, CLOSURE_BASE)
+
+        message = str(raised.exception)
+        self.assertIn("synthetic suite failure", message)
+        self.assertIn("detached worktree:", message)
+        self.assertEqual(["validation", "remove"], events)
+
+    def test_runner_reports_command_start_result_and_elapsed_time(
+        self,
+    ) -> None:
+        events: list[str] = []
+        ticks = iter(float(value) for value in range(1000))
+
+        LocalValidationRunner(
+            RecordingCommandExecutor(),
+            clock=lambda: next(ticks),
+            reporter=events.append,
+        ).run(ROOT, CLOSURE_SHA, CLOSURE_BASE)
+
+        self.assertIn("full_suite: start", events)
+        self.assertIn("full_suite: passed in 1.000s", events)
+        self.assertIn("clean_status: start", events)
+        self.assertIn("clean_status: passed in 1.000s", events)
+
+    def test_runner_reports_failed_result_and_elapsed_time(self) -> None:
+        events: list[str] = []
+        ticks = iter((10.0, 11.0))
+        executor = FailingSuiteExecutor(stdout=b"", stderr=b"failed\n")
+
+        with self.assertRaises(ValueError):
+            LocalValidationRunner(
+                executor,
+                clock=lambda: next(ticks),
+                reporter=events.append,
+            ).run(ROOT, CLOSURE_SHA, CLOSURE_BASE)
+
+        self.assertEqual(
+            ["full_suite: start", "full_suite: failed in 1.000s"],
+            events,
+        )
+
+    def test_runner_enables_slowest_test_durations(self) -> None:
+        executor = RecordingCommandExecutor()
+
+        LocalValidationRunner(executor).run(
+            ROOT, CLOSURE_SHA, CLOSURE_BASE
+        )
+
+        self.assertIn(
+            [
+                os.fsdecode(Path(os.sys.executable)),
+                "-m",
+                "unittest",
+                "discover",
+                "-s",
+                "tests",
+                "-v",
+                "--durations",
+                "50",
+            ],
+            [args for args, _kwargs in executor.calls],
+        )
+
+    def test_runner_failure_contains_bounded_utf8_safe_output_tail(
+        self,
+    ) -> None:
+        executor = FailingSuiteExecutor(
+            stdout=(b"x" * 40000) + "\u2713 summary\n".encode(),
+            stderr=b"FAILED (failures=1)\n",
+        )
+
+        with self.assertRaises(ValueError) as raised:
+            LocalValidationRunner(executor).run(
+                ROOT, CLOSURE_SHA, CLOSURE_BASE
+            )
+
+        message = str(raised.exception)
+        self.assertIn("full_suite failed with exit code 1", message)
+        self.assertIn("FAILED (failures=1)", message)
+        self.assertIn("\u2713 summary", message)
+        self.assertLessEqual(len(message.encode("utf-8")), 33024)
+
+    def test_runner_rejects_dirty_worktree_before_full_suite(self) -> None:
+        executor = RecordingCommandExecutor(status=b" M README.md\n")
+
+        with self.assertRaisesRegex(
+            ValueError,
+            "preflight clean_status failed: README.md",
+        ):
+            LocalValidationRunner(executor).run(
+                ROOT, CLOSURE_SHA, CLOSURE_BASE
+            )
+
+        self.assertFalse(any(
+            args[1:4] == ["-m", "unittest", "discover"]
+            for args, _kwargs in executor.calls
+        ))
+
+    def test_runner_rejects_cache_before_full_suite(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "tests" / "__pycache__").mkdir(parents=True)
+            executor = RecordingCommandExecutor()
+
+            with self.assertRaisesRegex(
+                ValueError,
+                "preflight cache_count failed: tests/__pycache__",
+            ):
+                LocalValidationRunner(executor).run(
+                    root, CLOSURE_SHA, CLOSURE_BASE
+                )
+
+            self.assertFalse(any(
+                args[1:4] == ["-m", "unittest", "discover"]
+                for args, _kwargs in executor.calls
+            ))
+
     def test_detached_runner_validates_entire_multi_commit_pr_range_from_authenticated_base(
         self,
     ) -> None:
@@ -1367,6 +1558,8 @@ class V05LocalValidationRunnerTests(unittest.TestCase):
                 "-s",
                 "tests",
                 "-v",
+                "--durations",
+                "50",
             ],
             called,
         )
@@ -1402,6 +1595,17 @@ class V05LocalValidationRunnerTests(unittest.TestCase):
 
 
 class V05AcquisitionTests(unittest.TestCase):
+    def test_synthetic_collection_controls_local_tag_absence(self) -> None:
+        arguments = valid_collection_args()
+        self.assertIs(
+            arguments.get("repository_runner"),
+            absent_local_tag_runner,
+        )
+        evidence = collect_closure_evidence(
+            valid_fake_client(), **arguments
+        )
+        self.assertEqual(CLOSURE_SHA, evidence["closure_head"])
+
     def test_collector_reacquires_after_validation_without_rerunning_gates(
         self,
     ) -> None:
@@ -1725,17 +1929,25 @@ class V05AcquisitionTests(unittest.TestCase):
         )
         mark_pull_request_merged(client)
         merge_runner = FakeValidationRunner()
+        refresh_arguments = valid_collection_args()
+        candidate_runner = refresh_arguments["validation_runner"]
+        assert isinstance(candidate_runner, FakeValidationRunner)
         taggable = refresh_taggable_evidence(
             client,
             base_evidence=closure,
             merge_head=MERGE_SHA,
             post_merge_rendering_comment_id=POST_MERGE_RENDERING_ID,
             post_merge_validation_runner=merge_runner,
-            **valid_collection_args(),
+            **refresh_arguments,
         )
+        self.assertEqual([], candidate_runner.calls)
         self.assertEqual(
             [(ROOT, MERGE_SHA, CLOSURE_BASE)],
             merge_runner.calls,
+        )
+        self.assertEqual(
+            closure["candidate_commands"],
+            taggable["candidate_commands"],
         )
         self.assertEqual(
             MERGE_SHA, taggable["post_merge"]["sha"]
@@ -1984,15 +2196,11 @@ class V05AcquisitionTests(unittest.TestCase):
         })
         self.assertEqual(
             {
-                f"executed:{name}"
-                for name in COMMAND_IDS
-                if name != "mermaid_rendering"
-            },
-            {
                 item["result"]
                 for item in evidence["candidate_commands"]
                 if item["name"] != "mermaid_rendering"
             },
+            {"passed", "0 __pycache__ directories", "clean"},
         )
 
     def test_collector_executes_every_nonvisual_canonical_gate(self) -> None:
@@ -2352,7 +2560,7 @@ class V05AcquisitionTests(unittest.TestCase):
                 arguments["validation_runner"] = runner
                 with self.assertRaisesRegex(
                     ValueError,
-                    "base candidate commands shall equal fresh execution",
+                    "base candidate commands are invalid",
                 ):
                     refresh_taggable_evidence(
                         client,
@@ -2363,10 +2571,7 @@ class V05AcquisitionTests(unittest.TestCase):
                         ),
                         **arguments,
                     )
-                self.assertEqual(
-                    [(ROOT, CLOSURE_SHA, CLOSURE_BASE)],
-                    runner.calls,
-                )
+                self.assertEqual([], runner.calls)
 
     def test_collector_binds_verdict_date_to_comment_creation_date(
         self,

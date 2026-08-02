@@ -587,7 +587,9 @@ class PciDssReadinessPublicationTests(unittest.TestCase):
         steps = workflow["jobs"]["validate"]["steps"]
         runs = [step.get("run") for step in steps]
         self.assertEqual(
-            runs.count("python -m unittest discover -s tests -v"),
+            runs.count(
+                "python -m unittest discover -s tests -v --durations 50"
+            ),
             1,
         )
         renderer = "python tools/render_pci_dss_mapping_go_no_go.py --check"
