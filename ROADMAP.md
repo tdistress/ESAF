@@ -6,17 +6,16 @@
 
 ## 0.5-beta delivery sequence
 
-`v0.5-beta` records either completed qualified review or one coordinated
-exact-candidate owner-risk disposition for the three Draft UK mapping sets,
-then completes the minimum shared assessment foundation, one pilot profile,
-and the priority-mapping decision. If owner-risk acceptance is used, deferred
-mapping assurance remains tracked after beta through issue 55 and does not stop
-later engineering work. The Phase 4 and Phase 5 lists remain long-term
-direction, not `v0.5-beta` exit criteria.
-
-Publication remains conditional on the remote annotated `v0.5-beta` tag
-resolving to the exact validated merged commit. The tag has not been created,
-and the post-merge gate remains open.
+The `v0.5-beta` Working Draft was published on 2026-08-01 through the
+annotated `v0.5-beta` tag at
+`255f8806917aaf8c6a2441152b4638fc9fd2bfda`. It records a coordinated
+owner-risk disposition for the three Draft UK mapping sets, the minimum shared
+assessment foundation, one pilot profile, and the priority-mapping decision.
+Deferred mapping assurance remains tracked after beta through issue 55 and does
+not stop later engineering work. Publication does not change any control,
+architecture, profile, mapping-set, or mapping-record lifecycle state. The
+Phase 4 and Phase 5 lists remain long-term direction, not `v0.5-beta` exit
+criteria.
 
 ## Phase 0 - Foundation
 

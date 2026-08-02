@@ -1,14 +1,17 @@
 ---
 release: 0.5-beta
-phase: closure_candidate
+phase: published
 tag: v0.5-beta
 issue: 59
 repository_scope: complete_git_tracked_repository
 publication:
-  date: null
+  date: "2026-08-01"
   condition: remote_annotated_tag_matches_exact_validated_commit
   evidence:
-    - https://github.com/tdistress/ESAF/issues/59
+    - https://github.com/tdistress/ESAF/issues/59#issuecomment-5153256331
+  tag_object: fc2876cf52791edba6e923a25e0cdb8dec981e1c
+  tagged_commit: 255f8806917aaf8c6a2441152b4638fc9fd2bfda
+  issue_evidence_url: https://github.com/tdistress/ESAF/issues/59#issuecomment-5153256331
 mapping_sets:
   - uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0
   - uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0
@@ -26,23 +29,23 @@ scope:
   draft_profiles: 1
   pci_dss_disposition: HOLD
 gates:
-  scope: {state: ready, evidence: [https://github.com/tdistress/ESAF/pull/69]}
-  technical: {state: ready, evidence: [https://github.com/tdistress/ESAF/pull/69]}
-  editorial: {state: ready, evidence: [https://github.com/tdistress/ESAF/pull/69]}
-  terminology: {state: ready, evidence: [https://github.com/tdistress/ESAF/pull/69]}
-  cross_reference_rendering: {state: ready, evidence: [https://github.com/tdistress/ESAF/pull/69]}
-  standards_mapping: {state: ready, evidence: [https://github.com/tdistress/ESAF/pull/69]}
-  profile_scope: {state: ready, evidence: [https://github.com/tdistress/ESAF/pull/69]}
-  release_metadata: {state: ready, evidence: [https://github.com/tdistress/ESAF/pull/69]}
-  governance: {state: ready, evidence: [https://github.com/tdistress/ESAF/pull/69]}
-  post_merge: {state: open, evidence: []}
+  scope: {state: closed, evidence: [https://github.com/tdistress/ESAF/issues/59#issuecomment-5153256331]}
+  technical: {state: closed, evidence: [https://github.com/tdistress/ESAF/issues/59#issuecomment-5153256331]}
+  editorial: {state: closed, evidence: [https://github.com/tdistress/ESAF/issues/59#issuecomment-5153256331]}
+  terminology: {state: closed, evidence: [https://github.com/tdistress/ESAF/issues/59#issuecomment-5153256331]}
+  cross_reference_rendering: {state: closed, evidence: [https://github.com/tdistress/ESAF/issues/59#issuecomment-5153256331]}
+  standards_mapping: {state: closed, evidence: [https://github.com/tdistress/ESAF/issues/59#issuecomment-5153256331]}
+  profile_scope: {state: closed, evidence: [https://github.com/tdistress/ESAF/issues/59#issuecomment-5153256331]}
+  release_metadata: {state: closed, evidence: [https://github.com/tdistress/ESAF/issues/59#issuecomment-5153256331]}
+  governance: {state: closed, evidence: [https://github.com/tdistress/ESAF/issues/59#issuecomment-5153256331]}
+  post_merge: {state: closed, evidence: [https://github.com/tdistress/ESAF/issues/59#issuecomment-5153256331]}
 ---
 
 # v0.5-beta publication readiness
 
 ## Scope
 
-This closure candidate covers the complete Git-tracked repository. Its derived
+This published record covers the complete Git-tracked repository. Its derived
 inventory contains 91 controls in 16 families, 7 architecture patterns, 3
 mapping sets, and 404 mapping provisions. The mappings contain 81 relationship
 legs and 325 negative dispositions.
@@ -55,37 +58,33 @@ legal conclusion.
 
 ## Lifecycle boundary
 
-The current ESAF version is `0.5-beta`. The non-post-merge v0.5 gates are ready,
-the post-merge gate is open, and the `v0.5-beta` tag has not been created. The
-`v0.5-beta` release status is Working Draft. This closure candidate does not
-approve publication.
+The current ESAF version is `0.5-beta`. The `v0.5-beta` Working Draft is
+published. Publication is limited to the repository Working Draft and does not
+change any artifact lifecycle state.
 
 All controls, architecture patterns, the pilot profile, mapping sets, and
 mapping records remain Draft. The three mapping lifecycle records have empty
-event arrays. This release work does not add reviewer metadata, approval
+event arrays. This publication does not add reviewer metadata, approval
 metadata, or lifecycle events to those artifacts.
 
 ## Mapping assurance
 
-The release design permits one uniform mapping basis for all three mapping
-sets. Qualified approval requires a validated six-role Draft campaign bound
-to the exact closure candidate. Owner-risk acceptance requires a separate,
-authenticated repository-owner decision created after that exact candidate
-exists. No such v0.5 decision is recorded here.
+This published Working Draft uses the owner-risk-acceptance mapping basis
+recorded in front matter. Qualified approval remains deferred and requires a
+validated six-role Draft campaign bound to the exact published commit. The
+owner-risk decision permits only Working Draft publication; it does not
+approve mappings or change artifact lifecycle state.
 
-Issue 55 remains open for qualified review. Owner-risk acceptance, if later
-given for the exact candidate, would permit only Working Draft publication. It
-would not complete qualified review or approve the mappings. It would not
-establish qualified mapping approval, artifact lifecycle approval,
+Issue 55 remains open for qualified review. Owner-risk acceptance does not
+complete qualified review or approve the mappings. It does not establish
+qualified mapping approval, artifact lifecycle approval,
 certification, compliance, equivalence, endorsement, external scheme approval,
 production readiness, assurance, implementation assessment, legal
 sufficiency, or replacement of qualified professional judgment.
 
-## Conditional publication
+## Publication evidence
 
-Publication remains conditional on the remote annotated `v0.5-beta` tag
-resolving to the exact validated merged commit. This closure candidate requires
-its own exact-head reviews, rendering evidence, owner and scope decision,
-governance decision, successful checks, and clean merge state. The post-merge
-gate remains open until merged-main validation and remote tag verification are
-complete.
+The exact annotated `v0.5-beta` tag object, tagged commit, publication date,
+and issue 59 evidence URL are recorded in this record's front matter. This
+body does not independently identify or replace that durable publication
+evidence.

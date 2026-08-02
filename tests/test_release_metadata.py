@@ -20,6 +20,12 @@ PUBLISHED_COMMIT = "8abfe5a85db19d11295a0c3debeb2d58109b0ca7"
 PUBLISHED_EVIDENCE = (
     "https://github.com/tdistress/ESAF/issues/39#issuecomment-5064098764"
 )
+V05_PUBLISHED_DATE = "2026-08-01"
+V05_PUBLISHED_TAG_OBJECT = "fc2876cf52791edba6e923a25e0cdb8dec981e1c"
+V05_PUBLISHED_COMMIT = "255f8806917aaf8c6a2441152b4638fc9fd2bfda"
+V05_PUBLISHED_EVIDENCE = (
+    "https://github.com/tdistress/ESAF/issues/59#issuecomment-5153256331"
+)
 
 BACKLOG_PATTERN_ALIASES = {
     "ARC-P140": ("private-model",),
@@ -231,6 +237,16 @@ class ReleaseMetadataTests(unittest.TestCase):
                 "tag condition was satisfied",
                 version.casefold(),
             )
+        if record["phase"] == "published":
+            readme = read_repository_file("README.md")
+            for text in (version, readme):
+                normalized = text.casefold()
+                self.assertIn("published on 2026-08-01", normalized)
+                self.assertIn("fc2876cf52791edba6e923a25e0cdb8dec981e1c", normalized)
+                self.assertIn("255f8806917aaf8c6a2441152b4638fc9fd2bfda", normalized)
+                self.assertNotIn("publication remains conditional", normalized)
+                self.assertNotIn("tag has not been created", normalized)
+                self.assertNotIn("this closure candidate", normalized)
 
     def test_v05_operator_commands_use_module_invocation(self) -> None:
         readme = read_repository_file("tools/README.md")
@@ -243,10 +259,10 @@ class ReleaseMetadataTests(unittest.TestCase):
             readme,
         )
 
-    def test_v05_unreleased_changelog_preserves_working_draft_boundary(self) -> None:
+    def test_v05_published_changelog_preserves_working_draft_boundary(self) -> None:
         changelog = read_repository_file("CHANGELOG.md")
-        self.assertEqual(1, changelog.count("## 0.5-beta - Unreleased"))
-        section = changelog.split("## 0.5-beta - Unreleased", 1)[1].split(
+        self.assertEqual(1, changelog.count("## 0.5-beta - 2026-08-01"))
+        section = changelog.split("## 0.5-beta - 2026-08-01", 1)[1].split(
             "\n## ",
             1,
         )[0].casefold()
@@ -271,8 +287,43 @@ class ReleaseMetadataTests(unittest.TestCase):
         ):
             with self.subTest(phrase=phrase):
                 self.assertIn(phrase, section)
-        self.assertNotIn("v0.5-beta was published", section)
-        self.assertNotIn("v0.5-beta is published", section)
+        self.assertIn("working draft", section)
+        self.assertIn("published", section)
+        self.assertNotIn("mapping approval is complete", section)
+
+    def test_v05_published_record_pins_immutable_publication_truth(self) -> None:
+        record = load_v05_front_matter(ROOT / V05_RECORD_RELATIVE)
+        publication = record["publication"]
+        self.assertEqual("published", record["phase"])
+        self.assertEqual("owner_risk_acceptance", record["mapping_decision_basis"])
+        self.assertEqual(V05_PUBLISHED_DATE, publication["date"])
+        self.assertEqual(V05_PUBLISHED_TAG_OBJECT, publication["tag_object"])
+        self.assertEqual(V05_PUBLISHED_COMMIT, publication["tagged_commit"])
+        self.assertEqual(V05_PUBLISHED_EVIDENCE, publication["issue_evidence_url"])
+        self.assertEqual([V05_PUBLISHED_EVIDENCE], publication["evidence"])
+        self.assertTrue(
+            all(gate["state"] == "closed" for gate in record["gates"].values())
+        )
+        readiness = read_repository_file(V05_RECORD_RELATIVE).casefold()
+        self.assertIn("issue 55 remains open for qualified review", readiness)
+        self.assertNotIn("closure candidate", readiness)
+
+        tag_object = subprocess.run(
+            ["git", "rev-parse", "refs/tags/v0.5-beta^{tag}"],
+            cwd=ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        tagged_commit = subprocess.run(
+            ["git", "rev-parse", "refs/tags/v0.5-beta^{commit}"],
+            cwd=ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+        self.assertEqual(V05_PUBLISHED_TAG_OBJECT, tag_object)
+        self.assertEqual(V05_PUBLISHED_COMMIT, tagged_commit)
 
     def test_v05_workflow_paths_cover_release_capability(self) -> None:
         workflow = read_repository_file(
@@ -764,19 +815,19 @@ class ReleaseMetadataTests(unittest.TestCase):
         ))
 
         backlog = read_repository_file("project/BACKLOG.md")
-        active_workstreams = markdown_section(
+        completed_workstreams = markdown_section(
             backlog,
-            "## Active release workstreams",
+            "## Completed workstreams",
         )
-        self.assertIn("https://github.com/tdistress/ESAF/issues/59", active_workstreams)
+        self.assertIn("https://github.com/tdistress/ESAF/issues/59", completed_workstreams)
         for required in (
-            "completed qualified approval or validated exact-candidate "
-            "owner-risk acceptance",
-            "every other release gate remains required",
+            "v0.5-beta working draft was published",
+            "owner-risk-acceptance basis permits only working draft publication",
+            "complete the qualified review tracked in issue 55",
         ):
             with self.subTest(required=required):
                 self.assertTrue(
-                    contains_normalized_phrase(active_workstreams, required)
+                    contains_normalized_phrase(completed_workstreams, required)
                 )
 
     def test_planned_issue_55_body_preserves_deferred_assurance_boundaries(
@@ -896,18 +947,18 @@ class ReleaseMetadataTests(unittest.TestCase):
         backlog = read_repository_file("project/BACKLOG.md")
         self.assertNotIn("Complete open 0.4-alpha publication gates", backlog)
         self.assertNotIn("Select and publish one Draft pilot", backlog)
-        active_workstreams = markdown_section(
+        completed_workstreams = markdown_section(
             backlog,
-            "## Active release workstreams",
+            "## Completed workstreams",
         )
         deferred_assurance = markdown_section(
             backlog,
             "## Deferred assurance follow-up",
         )
-        self.assertIn("[issue 59]", active_workstreams.casefold())
+        self.assertIn("[issue 59]", completed_workstreams.casefold())
         self.assertNotIn("[issue 59]", deferred_assurance.casefold())
         self.assertIn("[issue 55]", deferred_assurance.casefold())
-        self.assertNotIn("[issue 55]", active_workstreams.casefold())
+        self.assertNotIn("[issue 55]", completed_workstreams.casefold())
         self.assertNotIn("Define the minimum ESAF-1500 assessment foundation", backlog)
         for mapping_set_id in EXPECTED_MAPPING_SET_IDS:
             with self.subTest(mapping_set_id=mapping_set_id):
