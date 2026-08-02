@@ -19,6 +19,7 @@ from tools.run_test_shards import (
     run_shard,
 )
 from tools.test_shards import load_manifest, tracked_test_modules, validate_manifest
+from tools.v05_beta_release_evidence import _output_tail
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -350,9 +351,15 @@ class TestShardRunnerTests(unittest.TestCase):
             FAILURE_SUMMARY_BYTES,
         )
         self.assertLess(output.find("ordinary stderr"), output.rfind("Shard failures:"))
+        collector_tail = _output_tail(
+            stdout.getvalue().encode("utf-8"),
+            stderr.getvalue().encode("utf-8"),
+        )
         for shard in shards:
             self.assertIn(shard.identifier, output)
             self.assertIn(f"{shard.identifier} unittest summary", output)
+            self.assertIn(shard.identifier, collector_tail)
+            self.assertIn(f"{shard.identifier} unittest summary", collector_tail)
 
 
 if __name__ == "__main__":
