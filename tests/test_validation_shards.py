@@ -11,6 +11,8 @@ import unittest
 from pathlib import Path
 from typing import Any, Callable
 
+import yaml
+
 from tools.run_test_shards import (
     FAILURE_SUMMARY_BYTES,
     build_command,
@@ -217,6 +219,124 @@ class ValidationShardTests(unittest.TestCase):
         self.assertEqual(
             {normalized_test_id(item) for item in discovered},
             {normalized_test_id(item) for item in manifest_tests},
+        )
+
+
+class ValidationShardWorkflowTests(unittest.TestCase):
+    def workflow(self) -> dict[str, object]:
+        document = yaml.load(
+            (ROOT / ".github/workflows/catalog-validation.yml").read_text(
+                encoding="utf-8"
+            ),
+            Loader=yaml.BaseLoader,
+        )
+        self.assertIsInstance(document, dict)
+        return document
+
+    def test_ci_runs_each_manifest_shard_in_an_isolated_matrix_job(self) -> None:
+        workflow = self.workflow()
+        jobs = workflow["jobs"]
+        self.assertEqual(
+            {"unit_tests", "validation_gates", "validate"},
+            set(jobs),
+        )
+
+        unit_tests = jobs["unit_tests"]
+        self.assertEqual(
+            {
+                "fail-fast": "false",
+                "matrix": {"shard": list(EXPECTED_SHARD_IDS)},
+            },
+            unit_tests["strategy"],
+        )
+        runs = [step.get("run") for step in unit_tests["steps"]]
+        self.assertEqual(
+            1,
+            runs.count(
+                'python tools/run_test_shards.py --shard "${{ matrix.shard }}" '
+                "--durations 50"
+            ),
+        )
+        self.assertTrue(
+            any(
+                step.get("uses") == "actions/checkout@v5"
+                for step in unit_tests["steps"]
+            )
+        )
+        self.assertTrue(
+            any(
+                step.get("uses") == "actions/setup-python@v6"
+                and step.get("with", {}).get("python-version") == "3.13"
+                for step in unit_tests["steps"]
+            )
+        )
+        self.assertIn(
+            "python -m pip install --requirement requirements-dev.txt",
+            runs,
+        )
+
+    def test_ci_validates_the_manifest_and_tracks_all_shard_tools(self) -> None:
+        workflow = self.workflow()
+        shard_paths = (
+            "tools/test-shards.json",
+            "tools/test_shards.py",
+            "tools/validate_test_shards.py",
+            "tools/run_test_shards.py",
+        )
+        for event in ("pull_request", "push"):
+            paths = workflow["on"][event]["paths"]
+            for path in shard_paths:
+                with self.subTest(event=event, path=path):
+                    self.assertEqual(1, paths.count(path))
+
+        self.assertIn("validation_gates", workflow["jobs"])
+        gate_runs = [
+            step.get("run")
+            for step in workflow["jobs"]["validation_gates"]["steps"]
+        ]
+        self.assertEqual(
+            1,
+            gate_runs.count("python tools/validate_test_shards.py --check"),
+        )
+
+    def test_ci_publishes_one_aggregate_required_check(self) -> None:
+        workflow = self.workflow()
+        jobs = workflow["jobs"]
+        self.assertEqual(
+            1,
+            sum(
+                job.get("name") == "Validate ESAF sources"
+                for job in jobs.values()
+            ),
+        )
+
+        validate = jobs["validate"]
+        self.assertEqual("Validate ESAF sources", validate["name"])
+        self.assertIn("if", validate)
+        self.assertEqual("${{ always() }}", validate["if"])
+        self.assertEqual(["unit_tests", "validation_gates"], validate["needs"])
+        self.assertEqual(
+            {
+                "UNIT_TESTS_RESULT": "${{ needs.unit_tests.result }}",
+                "VALIDATION_GATES_RESULT": (
+                    "${{ needs.validation_gates.result }}"
+                ),
+            },
+            validate["env"],
+        )
+        self.assertEqual(
+            [
+                {
+                    "name": "Require all validation jobs to pass",
+                    "run": (
+                        'if [ "$UNIT_TESTS_RESULT" != "success" ] || '
+                        '[ "$VALIDATION_GATES_RESULT" != "success" ]; then\n'
+                        "  exit 1\n"
+                        "fi\n"
+                    ),
+                }
+            ],
+            validate["steps"],
         )
 
 

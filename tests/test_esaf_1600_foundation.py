@@ -463,6 +463,10 @@ class Esaf1600FoundationTests(unittest.TestCase):
             "tools/validate_qualified_review_evidence.py",
             "tools/seal_qualified_review_campaign.py",
             "tools/crosswalks/qualified_review_evidence.py",
+            "tools/test-shards.json",
+            "tools/test_shards.py",
+            "tools/validate_test_shards.py",
+            "tools/run_test_shards.py",
             "tools/release_gates.py",
             "tools/v05_beta_release_gates.py",
             "tools/v05_beta_release_evidence.py",
@@ -486,7 +490,7 @@ class Esaf1600FoundationTests(unittest.TestCase):
             self.assertEqual(triggers[event]["paths"], expected_paths)
         self.assertEqual(triggers["push"]["branches"], ["main"])
 
-        validation_job = workflow["jobs"]["validate"]
+        validation_job = workflow["jobs"]["validation_gates"]
         self.assertEqual(
             validation_job["env"],
             {"PYTHONDONTWRITEBYTECODE": "1"},
@@ -743,7 +747,8 @@ class Esaf1600FoundationTests(unittest.TestCase):
         self.assertIsInstance(workflow, dict)
 
         mutations = []
-        steps = workflow["jobs"]["validate"]["steps"]
+        self.assertIn("validation_gates", workflow["jobs"])
+        steps = workflow["jobs"]["validation_gates"]["steps"]
         for name in (
             "Validate crosswalk catalog",
             "Validate crosswalk history on pull request",
@@ -753,7 +758,7 @@ class Esaf1600FoundationTests(unittest.TestCase):
             original = next(step for step in steps if step["name"] == name)
             duplicate = deepcopy(original)
             duplicate["name"] = f"Duplicate {name}"
-            mutation["jobs"]["validate"]["steps"].append(duplicate)
+            mutation["jobs"]["validation_gates"]["steps"].append(duplicate)
             mutations.append((f"duplicate step: {name}", mutation))
 
         for event in ("pull_request", "push"):
@@ -766,7 +771,7 @@ class Esaf1600FoundationTests(unittest.TestCase):
             mutations.append((f"extra path: {event}", extra_path))
 
         generic_release_gate = deepcopy(workflow)
-        generic_release_gate["jobs"]["validate"]["steps"].append({
+        generic_release_gate["jobs"]["validation_gates"]["steps"].append({
             "name": "Prohibited generic release gate validation",
             "run": "python tools/release_gates.py --check",
         })

@@ -727,7 +727,8 @@ class ProfileRepositoryIntegrationTests(unittest.TestCase):
         )
         self.assertIn("profiles/**", workflow["on"]["pull_request"]["paths"])
         self.assertIn("profiles/**", workflow["on"]["push"]["paths"])
-        steps = workflow["jobs"]["validate"]["steps"]
+        self.assertIn("validation_gates", workflow["jobs"])
+        steps = workflow["jobs"]["validation_gates"]["steps"]
         self.assertTrue(
             any(
                 step.get("name") == "Validate profiles"

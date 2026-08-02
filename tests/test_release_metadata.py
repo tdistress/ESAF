@@ -6,6 +6,8 @@ import unittest
 from datetime import date, datetime, timezone
 from pathlib import Path
 
+import yaml
+
 from tools.release_gates import load_front_matter
 from tools.v05_beta_release_gates import (
     PHASE_GATE_STATES as V05_PHASE_GATE_STATES,
@@ -203,16 +205,27 @@ def release_readiness_rows() -> list[tuple[str, str, str]]:
 
 class ReleaseMetadataTests(unittest.TestCase):
     def test_repository_unit_tests_publish_slowest_durations(self) -> None:
-        workflow = read_repository_file(
-            ".github/workflows/catalog-validation.yml"
+        workflow = yaml.load(
+            read_repository_file(".github/workflows/catalog-validation.yml"),
+            Loader=yaml.BaseLoader,
         )
-        unit_step = workflow.split(
-            "- name: Run repository unit tests\n", 1
-        )[1].split("      - name:", 1)[0]
-        self.assertIn(
-            "run: python -m unittest discover -s tests -v "
-            "--durations 50",
-            unit_step,
+        self.assertIn("unit_tests", workflow["jobs"])
+        unit_tests = workflow["jobs"]["unit_tests"]
+        self.assertEqual(
+            [
+                "profile_validation",
+                "qualified_review_evidence",
+                "mapping_review_bundle",
+                "remaining",
+            ],
+            unit_tests["strategy"]["matrix"]["shard"],
+        )
+        self.assertEqual(
+            1,
+            [step.get("run") for step in unit_tests["steps"]].count(
+                'python tools/run_test_shards.py --shard "${{ matrix.shard }}" '
+                "--durations 50"
+            ),
         )
 
     def test_v05_version_matches_release_record_phase(self) -> None:

@@ -584,14 +584,19 @@ class PciDssReadinessPublicationTests(unittest.TestCase):
             self.assertIn("tests/**", paths)
             self.assertIn("tools/render_pci_dss_mapping_go_no_go.py", paths)
 
-        steps = workflow["jobs"]["validate"]["steps"]
-        runs = [step.get("run") for step in steps]
+        self.assertIn("unit_tests", workflow["jobs"])
+        unit_steps = workflow["jobs"]["unit_tests"]["steps"]
+        unit_runs = [step.get("run") for step in unit_steps]
         self.assertEqual(
-            runs.count(
-                "python -m unittest discover -s tests -v --durations 50"
+            unit_runs.count(
+                'python tools/run_test_shards.py --shard "${{ matrix.shard }}" '
+                "--durations 50"
             ),
             1,
         )
+        self.assertIn("validation_gates", workflow["jobs"])
+        steps = workflow["jobs"]["validation_gates"]["steps"]
+        runs = [step.get("run") for step in steps]
         renderer = "python tools/render_pci_dss_mapping_go_no_go.py --check"
         self.assertEqual(runs.count(renderer), 1)
         self.assertLess(
