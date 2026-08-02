@@ -86,6 +86,8 @@ See [the roadmap](ROADMAP.md), [project charter](PROJECT_CHARTER.md), [governanc
 
 ## Contributing
 
+We are always seeking partners and qualified assessors to review controls and crosswalks to ensure the accuracy of this framework.
+
 Contributions from enterprise architecture, AI engineering, cybersecurity, governance, risk, compliance, privacy, law, operations, audit, academia, and regulated industries are welcome. Open an issue before proposing significant normative or structural changes.
 
 ## License
