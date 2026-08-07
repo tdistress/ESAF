@@ -814,6 +814,20 @@ def _package_file(
     return PackageFile(path, reader.read_bytes(commit, path), purpose)
 
 
+def _read_package_files(
+    reader: object,
+    commit: str,
+    paths: Sequence[str],
+) -> dict[str, bytes]:
+    path_snapshot = tuple(paths)
+    if type(reader) is GitReader:
+        return reader.read_many(commit, path_snapshot)
+    return {
+        path: reader.read_bytes(commit, path)  # type: ignore[attr-defined]
+        for path in path_snapshot
+    }
+
+
 def _validate_candidate_metadata(
     reader: GitReader,
     commit: str,
@@ -986,10 +1000,7 @@ def collect_package_files(
     candidate_state: CandidateState = "draft",
 ) -> tuple[PackageFile, ...]:
     snapshot_paths = reader.list_files(commit, profile.snapshot_path)
-    snapshot_contents = {
-        path: reader.read_bytes(commit, path)
-        for path in snapshot_paths
-    }
+    snapshot_contents = _read_package_files(reader, commit, snapshot_paths)
     try:
         expected_snapshot_digest = snapshot_digest_from_files(
             profile.snapshot_path,
@@ -1018,6 +1029,44 @@ def collect_package_files(
         "mapping set",
     )
     set_metadata, set_body = parse_front_matter_bytes(readme.content)
+    fixed_paths = {
+        "crosswalks/ESAF-1600.md": "ESAF-1600 method",
+        "crosswalks/schema/esaf-control-manifest.schema.json": "crosswalk schema",
+        "crosswalks/schema/lifecycle-record.schema.json": "crosswalk schema",
+        "crosswalks/schema/mapping-record.schema.json": "crosswalk schema",
+        "crosswalks/schema/mapping-set.schema.json": "crosswalk schema",
+        "crosswalks/schema/provision-inventory.schema.json": "crosswalk schema",
+        "crosswalks/schema/qualified-review-evidence.schema.json": (
+            "qualified-review evidence schema"
+        ),
+        "crosswalks/reviews/QUALIFIED_REVIEW_PROTOCOL.md": "review protocol",
+        "crosswalks/reviews/templates/REVIEWER_ATTESTATION.md": (
+            "blank review template"
+        ),
+        "crosswalks/reviews/templates/SPECIFICATION_INVENTORY_REVIEW.md": (
+            "blank review template"
+        ),
+        "crosswalks/reviews/templates/SECURITY_OVERCLAIMING_REVIEW.md": (
+            "blank review template"
+        ),
+    }
+    registry_path = f"crosswalks/registry/{profile.mapping_set_id}.md"
+    source_evidence_pins = _source_evidence_pins(set_body)
+    candidate_dependency_paths = tuple(
+        dict.fromkeys(
+            (
+                registry_path,
+                "crosswalks/catalog.json",
+                *fixed_paths,
+                *(path for path, _digest in source_evidence_pins),
+            )
+        )
+    )
+    candidate_contents = _read_package_files(
+        reader,
+        commit,
+        candidate_dependency_paths,
+    )
     _validate_candidate_metadata(
         reader,
         commit,
@@ -1124,11 +1173,29 @@ def collect_package_files(
     control_source = reader.resolve_commit(control_source)
     if control_source != release.get("source_commit_sha"):
         raise ValueError("control manifest source commit mismatch")
-    pinned_catalog_digest = release.get("control_catalog_sha256")
-    control_catalog = reader.read_bytes(
+    controls = manifest.get("controls")
+    if not isinstance(controls, list) or not controls:
+        raise ValueError("control manifest has no controls")
+    seen_controls: set[str] = set()
+    control_paths: list[str] = []
+    for control in controls:
+        if not isinstance(control, dict) or not isinstance(
+            control.get("path"),
+            str,
+        ):
+            raise ValueError("control manifest contains an invalid control")
+        control_path = f"controls/{control['path']}"
+        if control_path in seen_controls:
+            raise ValueError("duplicate control manifest path")
+        seen_controls.add(control_path)
+        control_paths.append(control_path)
+    historical_contents = _read_package_files(
+        reader,
         control_source,
-        "controls/catalog.json",
+        ("controls/catalog.json", *control_paths),
     )
+    pinned_catalog_digest = release.get("control_catalog_sha256")
+    control_catalog = historical_contents["controls/catalog.json"]
     actual_catalog_digest = hashlib.sha256(control_catalog).hexdigest()
     if (
         not isinstance(pinned_catalog_digest, str)
@@ -1152,9 +1219,6 @@ def collect_package_files(
         raise ValueError(
             "control manifest differs from deterministic regeneration"
         )
-    controls = manifest.get("controls")
-    if not isinstance(controls, list) or not controls:
-        raise ValueError("control manifest has no controls")
     files.append(manifest_file)
     files.append(
         PackageFile(
@@ -1163,27 +1227,20 @@ def collect_package_files(
             "pinned ESAF control catalog",
         )
     )
-    seen_controls: set[str] = set()
-    for control in controls:
-        if not isinstance(control, dict) or not isinstance(
-            control.get("path"),
-            str,
-        ):
-            raise ValueError("control manifest contains an invalid control")
-        control_path = f"controls/{control['path']}"
-        if control_path in seen_controls:
-            raise ValueError("duplicate control manifest path")
-        seen_controls.add(control_path)
-        control_file = _package_file(
-            reader, control_source, control_path, "referenced ESAF control"
+    for control, control_path in zip(controls, control_paths, strict=True):
+        control_file = PackageFile(
+            control_path,
+            historical_contents[control_path],
+            "referenced ESAF control",
         )
         if hashlib.sha256(control_file.content).hexdigest() != control["record_sha256"]:
             raise ValueError(f"control digest mismatch: {control_path}")
         files.append(control_file)
 
-    registry_path = f"crosswalks/registry/{profile.mapping_set_id}.md"
-    registry = _package_file(
-        reader, commit, registry_path, "lifecycle registry"
+    registry = PackageFile(
+        registry_path,
+        candidate_contents[registry_path],
+        "lifecycle registry",
     )
     registry_metadata, registry_body = parse_front_matter_bytes(registry.content)
     if registry_metadata.get("mapping_set_id") != profile.mapping_set_id:
@@ -1194,7 +1251,7 @@ def collect_package_files(
         raise ValueError("registry snapshot digest mismatch")
     files.append(registry)
 
-    catalog = json.loads(reader.read_bytes(commit, "crosswalks/catalog.json"))
+    catalog = json.loads(candidate_contents["crosswalks/catalog.json"])
     mapping_model: dict[str, object] = {
         "path": readme_path,
         "metadata": set_metadata,
@@ -1257,30 +1314,14 @@ def collect_package_files(
         )
     )
 
-    fixed_paths = {
-        "crosswalks/ESAF-1600.md": "ESAF-1600 method",
-        "crosswalks/schema/esaf-control-manifest.schema.json": "crosswalk schema",
-        "crosswalks/schema/lifecycle-record.schema.json": "crosswalk schema",
-        "crosswalks/schema/mapping-record.schema.json": "crosswalk schema",
-        "crosswalks/schema/mapping-set.schema.json": "crosswalk schema",
-        "crosswalks/schema/provision-inventory.schema.json": "crosswalk schema",
-        "crosswalks/schema/qualified-review-evidence.schema.json": (
-            "qualified-review evidence schema"
-        ),
-        "crosswalks/reviews/QUALIFIED_REVIEW_PROTOCOL.md": "review protocol",
-        "crosswalks/reviews/templates/REVIEWER_ATTESTATION.md": "blank review template",
-        "crosswalks/reviews/templates/SPECIFICATION_INVENTORY_REVIEW.md": "blank review template",
-        "crosswalks/reviews/templates/SECURITY_OVERCLAIMING_REVIEW.md": "blank review template",
-    }
     files.extend(
-        _package_file(reader, commit, path, purpose)
+        PackageFile(path, candidate_contents[path], purpose)
         for path, purpose in fixed_paths.items()
     )
-    for path, pinned_digest in _source_evidence_pins(set_body):
-        source_evidence = _package_file(
-            reader,
-            commit,
+    for path, pinned_digest in source_evidence_pins:
+        source_evidence = PackageFile(
             path,
+            candidate_contents[path],
             "source evidence pin",
         )
         if hashlib.sha256(source_evidence.content).hexdigest() != pinned_digest:

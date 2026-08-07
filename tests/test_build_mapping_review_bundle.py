@@ -19,6 +19,7 @@ import yaml
 import tools.build_mapping_review_bundle as bundle_builder
 import tools.validate_crosswalks as crosswalk_validator
 import tools.crosswalks.catalog as crosswalk_catalog
+import tools.crosswalks.manifest as crosswalk_manifest
 from tools.build_mapping_review_bundle import (
     PROFILES,
     GitReader,
@@ -1725,6 +1726,36 @@ class PackagePopulationTests(unittest.TestCase):
             cwd=ROOT, check=True, capture_output=True, text=True,
         ).stdout.strip()
 
+    def test_package_file_reads_preserve_mutation_reader_behavior(self) -> None:
+        # Catches requiring read_many() on duck-typed mutation readers or
+        # collapsing their observable repeated-read behavior.
+        class MutatingReader:
+            def __init__(self) -> None:
+                self.read_count = 0
+
+            def read_bytes(self, commit: str, path: str) -> bytes:
+                self.read_count += 1
+                return f"{commit}:{path}:{self.read_count}".encode("utf-8")
+
+            def list_files(self, commit: str, path: str) -> tuple[str, ...]:
+                return ()
+
+        reader = MutatingReader()
+        actual = bundle_builder._read_package_files(
+            reader,
+            "a" * 40,
+            ("first.md", "second.md"),
+        )
+
+        self.assertEqual(
+            actual,
+            {
+                "first.md": (f"{'a' * 40}:first.md:1").encode("utf-8"),
+                "second.md": (f"{'a' * 40}:second.md:2").encode("utf-8"),
+            },
+        )
+        self.assertEqual(reader.read_count, 2)
+
     def test_every_profile_collects_exact_population_and_dependencies(self) -> None:
         for profile in PROFILES.values():
             with self.subTest(profile=profile.label):
@@ -2201,6 +2232,149 @@ class PackagePopulationTests(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "candidate schema validation"):
             collect_package_files(MutatingReader(), self.head, profile)
+
+
+class PackageEquivalenceTests(unittest.TestCase):
+    def test_all_profiles_match_the_reviewed_pre_batching_oracle(self) -> None:
+        # Catches any package path, order, purpose, byte-length, or content
+        # drift introduced while changing the Git read strategy.
+        oracle = json.loads(
+            (
+                ROOT
+                / "tests/fixtures/git-batching-package-equivalence.json"
+            ).read_bytes()
+        )
+        baseline_commit = oracle["baseline_commit"]
+        self.assertEqual(set(PROFILES), set(oracle["profiles"]))
+
+        reader = GitReader(ROOT)
+        self.assertEqual(
+            reader.resolve_commit(baseline_commit),
+            baseline_commit,
+        )
+        for mapping_set_id, profile in PROFILES.items():
+            with self.subTest(profile=profile.label):
+                assembly = assemble_package(
+                    reader,
+                    baseline_commit,
+                    profile,
+                )
+                actual = [
+                    {
+                        "path": item.path,
+                        "purpose": item.purpose,
+                        "bytes": len(item.content),
+                        "sha256": hashlib.sha256(item.content).hexdigest(),
+                    }
+                    for item in assembly.payloads
+                ]
+                actual.append(
+                    {
+                        "path": "PACKAGE_MANIFEST.json",
+                        "purpose": "package manifest",
+                        "bytes": len(assembly.manifest_bytes),
+                        "sha256": hashlib.sha256(
+                            assembly.manifest_bytes
+                        ).hexdigest(),
+                    }
+                )
+                self.assertEqual(actual, oracle["profiles"][mapping_set_id])
+
+
+class PackageGitInvocationTests(unittest.TestCase):
+    def test_all_profiles_use_three_finite_object_read_phases(self) -> None:
+        # Catches a return to singleton Git object reads, mixing candidate and
+        # historical objects, or passing revision expressions to cat-file.
+        head = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=ROOT,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+
+        for profile in PROFILES.values():
+            with self.subTest(profile=profile.label):
+                bundle_builder._deterministic_control_manifest_bytes.cache_clear()
+                reader = GitReader(ROOT)
+                with mock.patch.object(
+                    reader,
+                    "_run_finite_git",
+                    wraps=reader._run_finite_git,
+                ) as finite_git, mock.patch.object(
+                    crosswalk_manifest,
+                    "_git",
+                    wraps=crosswalk_manifest._git,
+                ) as manifest_git:
+                    files = collect_package_files(reader, head, profile)
+
+                commands = [call.args[0] for call in finite_git.call_args_list]
+                tree_commands = [
+                    arguments for arguments in commands
+                    if arguments and arguments[0] == "ls-tree"
+                ]
+                check_calls = [
+                    call for call in finite_git.call_args_list
+                    if call.args[0][:2]
+                    == (
+                        "cat-file",
+                        "--batch-check=%(objectname) %(objecttype) %(objectsize)",
+                    )
+                ]
+                content_calls = [
+                    call for call in finite_git.call_args_list
+                    if call.args[0] == ("cat-file", "--batch")
+                ]
+
+                packaged_manifest = json.loads(
+                    next(
+                        item.content
+                        for item in files
+                        if item.path
+                        == f"{profile.snapshot_path}/ESAF_CONTROL_MANIFEST.json"
+                    )
+                )
+                control_count = sum(
+                    item.purpose == "referenced ESAF control"
+                    for item in files
+                )
+                self.assertEqual(finite_git.call_count, 11)
+                self.assertEqual(len(tree_commands), 2)
+                self.assertEqual(
+                    {arguments[-1] for arguments in tree_commands},
+                    {head, packaged_manifest["source_commit_sha"]},
+                )
+                self.assertEqual(len(check_calls), 3)
+                self.assertEqual(len(content_calls), 3)
+                self.assertFalse(
+                    any(
+                        arguments and arguments[0] == "show"
+                        for arguments in commands
+                    )
+                )
+                for check_call, content_call in zip(
+                    check_calls,
+                    content_calls,
+                    strict=True,
+                ):
+                    request = check_call.kwargs["input_bytes"]
+                    self.assertEqual(content_call.kwargs["input_bytes"], request)
+                    object_ids = request.decode("ascii").splitlines()
+                    self.assertTrue(object_ids)
+                    self.assertTrue(
+                        all(
+                            re.fullmatch(r"[0-9a-f]{40}", item)
+                            for item in object_ids
+                        )
+                    )
+                    self.assertNotIn(b":", request)
+
+                manifest_show_count = sum(
+                    call.args[1] == "show"
+                    for call in manifest_git.call_args_list
+                )
+                self.assertEqual(manifest_git.call_count, control_count + 4)
+                self.assertEqual(manifest_show_count, control_count + 2)
 
 
 class ReviewedCandidateAssemblyTests(unittest.TestCase):
