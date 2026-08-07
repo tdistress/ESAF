@@ -532,25 +532,25 @@ class GitReader:
         expected_size: int | None = None,
     ) -> int:
         if not header or len(header) > GIT_BATCH_HEADER_LIMIT:
-            raise ValueError("malformed Git batch header")
+            raise GitObjectReadError("Git object read failed")
         parts = header.split(b" ")
         if len(parts) != 3:
-            raise ValueError("malformed Git batch header")
+            raise GitObjectReadError("Git object read failed")
         raw_object_id, object_type, raw_size = parts
         if (
             raw_object_id != expected_object_id.encode("ascii")
             or object_type != b"blob"
         ):
-            raise ValueError("unexpected Git batch object")
+            raise GitObjectReadError("Git object read failed")
         if not raw_size or not raw_size.isdigit() or (
             len(raw_size) > 1 and raw_size.startswith(b"0")
         ):
-            raise ValueError("malformed Git batch size")
+            raise GitObjectReadError("Git object read failed")
         size = int(raw_size)
+        if expected_size is not None and size != expected_size:
+            raise GitObjectReadError("Git object read failed")
         if size > GIT_BLOB_SIZE_LIMIT:
             raise ValueError("Git blob size limit exceeded")
-        if expected_size is not None and size != expected_size:
-            raise ValueError("Git batch size disagreement")
         return size
 
     def read_many(
@@ -609,11 +609,12 @@ class GitReader:
                 input_bytes=request,
                 stdout_limit=GIT_BATCH_CHECK_STDOUT_LIMIT,
             ).stdout
-            if not checked.endswith(b"\n"):
-                raise ValueError("malformed Git batch-check response")
-            check_lines = checked.splitlines()
+            check_records = checked.split(b"\n")
+            if not check_records or check_records[-1] != b"":
+                raise GitObjectReadError("Git object read failed")
+            check_lines = check_records[:-1]
             if len(check_lines) != len(uncached_object_ids):
-                raise ValueError("malformed Git batch-check response")
+                raise GitObjectReadError("Git object read failed")
             for object_id, header in zip(
                 uncached_object_ids, check_lines, strict=True
             ):
@@ -633,7 +634,7 @@ class GitReader:
             for object_id in uncached_object_ids:
                 newline = acquired.find(b"\n", offset)
                 if newline < 0:
-                    raise ValueError("malformed Git batch content")
+                    raise GitObjectReadError("Git object read failed")
                 header = acquired[offset:newline]
                 size = self._parse_batch_header(
                     header, object_id, sizes[object_id]
@@ -645,17 +646,17 @@ class GitReader:
                     delimiter_end > len(acquired)
                     or acquired[content_end:delimiter_end] != b"\n"
                 ):
-                    raise ValueError("malformed Git batch content")
+                    raise GitObjectReadError("Git object read failed")
                 content = acquired[content_start:content_end]
                 actual_object_id = hashlib.sha1(
                     b"blob " + str(size).encode("ascii") + b"\0" + content
                 ).hexdigest()
                 if actual_object_id != object_id:
-                    raise ValueError("Git blob identity mismatch")
+                    raise GitObjectReadError("Git object read failed")
                 transaction[(commit, object_id)] = content
                 offset = delimiter_end
             if offset != len(acquired):
-                raise ValueError("trailing Git batch content")
+                raise GitObjectReadError("Git object read failed")
 
         for key in cached:
             self._cache_get(key)

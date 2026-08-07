@@ -892,17 +892,18 @@ class GitReadManyInputTests(unittest.TestCase):
             (("one", b"one"),), commit=commit
         )
         cases = (
-            "one",
-            b"one",
-            ("../one",),
-            ("one", "one"),
-            tuple(f"path-{number}" for number in range(4097)),
+            ("one", TypeError),
+            (b"one", TypeError),
+            (("../one",), ValueError),
+            (("one", "one"), ValueError),
+            (tuple(f"path-{number}" for number in range(4097)), ValueError),
         )
-        for paths in cases:
+        for paths, expected_type in cases:
             with self.subTest(paths_type=type(paths), count=len(paths)):
                 with mock.patch.object(reader, "_run_finite_git") as finite_git:
-                    with self.assertRaises((TypeError, ValueError)):
+                    with self.assertRaises(expected_type) as caught:
                         reader.read_many(commit, paths)  # type: ignore[arg-type]
+                self.assertIs(type(caught.exception), expected_type)
                 finite_git.assert_not_called()
 
     def test_rejects_missing_tree_and_nonregular_entries_before_batching(self) -> None:
@@ -927,8 +928,9 @@ class GitReadManyInputTests(unittest.TestCase):
             with self.subTest(path=path), mock.patch.object(
                 reader, "_run_finite_git"
             ) as finite_git:
-                with self.assertRaises(ValueError):
+                with self.assertRaises(ValueError) as caught:
                     reader.read_many(commit, (path,))
+                self.assertIs(type(caught.exception), ValueError)
                 finite_git.assert_not_called()
 
 
@@ -980,6 +982,8 @@ class GitBatchCheckProtocolTests(unittest.TestCase):
         cases = {
             "missing": valid.splitlines(keepends=True)[0],
             "missing terminal newline": valid[:-1],
+            "CRLF separators": valid.replace(b"\n", b"\r\n"),
+            "bare CR separator": valid.replace(b"\n", b"\r", 1),
             "extra": valid + valid.splitlines(keepends=True)[0],
             "reordered": _batch_check_response((second, first), self.contents),
             "wrong oid": valid.replace(first.encode(), b"f" * 40, 1),
@@ -992,9 +996,6 @@ class GitBatchCheckProtocolTests(unittest.TestCase):
                 f" {first_size}\n".encode(), f" 0{first_size}\n".encode(), 1
             ),
             "nondecimal": valid.replace(f" {first_size}\n".encode(), b" x\n", 1),
-            "oversize": valid.replace(
-                f" {first_size}\n".encode(), b" 33554433\n", 1
-            ),
         }
         for label, response in cases.items():
             with self.subTest(label=label):
@@ -1006,9 +1007,31 @@ class GitBatchCheckProtocolTests(unittest.TestCase):
                     "_run_finite_git",
                     return_value=bundle_builder._GitCommandResult(response, b""),
                 ) as finite_git:
-                    with self.assertRaises(ValueError):
+                    with self.assertRaises(
+                        bundle_builder.GitObjectReadError
+                    ) as caught:
                         reader.read_many(self.commit, ("one", "two"))
+                self.assertIs(
+                    type(caught.exception), bundle_builder.GitObjectReadError
+                )
+                self.assertEqual(str(caught.exception), "Git object read failed")
                 self.assertEqual(finite_git.call_count, 1)
+
+    def test_declared_blob_size_limit_remains_a_value_error(self) -> None:
+        first = self.object_ids[0]
+        valid = _batch_check_response(self.object_ids, self.contents)
+        oversized = valid.replace(
+            f" {len(self.contents[first])}\n".encode(), b" 33554433\n", 1
+        )
+        with mock.patch.object(
+            self.reader,
+            "_run_finite_git",
+            return_value=bundle_builder._GitCommandResult(oversized, b""),
+        ) as finite_git:
+            with self.assertRaisesRegex(ValueError, "blob size limit") as caught:
+                self.reader.read_many(self.commit, ("one", "two"))
+        self.assertIs(type(caught.exception), ValueError)
+        self.assertEqual(finite_git.call_count, 1)
 
     def test_logical_limit_counts_aliases_and_cache_hits(self) -> None:
         aliases = tuple((f"alias-{number}", b"x") for number in range(5))
@@ -1017,10 +1040,11 @@ class GitBatchCheckProtocolTests(unittest.TestCase):
         reader._object_cache[(self.commit, oid)] = b"x" * (32 * 1024 * 1024)
         reader._object_cache_size = len(reader._object_cache[(self.commit, oid)])
         with mock.patch.object(reader, "_run_finite_git") as finite_git:
-            with self.assertRaisesRegex(ValueError, "logical content"):
+            with self.assertRaisesRegex(ValueError, "logical content") as caught:
                 reader.read_many(
                     self.commit, tuple(path for path, _content in aliases)
                 )
+        self.assertIs(type(caught.exception), ValueError)
         finite_git.assert_not_called()
 
 
@@ -1075,6 +1099,9 @@ class GitBatchContentProtocolTests(unittest.TestCase):
                 f" {len(self.content) + 1}\n".encode(),
                 1,
             ),
+            "size disagreement above blob limit": valid_content.replace(
+                f" {len(self.content)}\n".encode(), b" 33554433\n", 1
+            ),
             "long header": b"x" * 257 + b"\n" + self.content + b"\n",
             "truncated": valid_content[:-2],
             "missing delimiter": valid_content[:-1] + b"x",
@@ -1096,13 +1123,45 @@ class GitBatchContentProtocolTests(unittest.TestCase):
                 with mock.patch.object(
                     reader, "_run_finite_git", side_effect=responses
                 ) as finite_git:
-                    with self.assertRaises(ValueError):
+                    with self.assertRaises(
+                        bundle_builder.GitObjectReadError
+                    ) as caught:
                         reader.read_many(self.commit, ("binary",))
+                    self.assertIs(
+                        type(caught.exception), bundle_builder.GitObjectReadError
+                    )
+                    self.assertEqual(
+                        str(caught.exception), "Git object read failed"
+                    )
                     self.assertEqual(
                         reader.read_many(self.commit, ("binary",)),
                         {"binary": contents[self.object_id]},
                     )
                 self.assertEqual(finite_git.call_count, 4)
+
+    def test_reordered_content_records_are_sanitized(self) -> None:
+        reader, contents = _reader_with_blob_entries(
+            (("one", b"first"), ("two", b"second")), commit=self.commit
+        )
+        object_ids = tuple(contents)
+        responses = (
+            bundle_builder._GitCommandResult(
+                _batch_check_response(object_ids, contents), b""
+            ),
+            bundle_builder._GitCommandResult(
+                _batch_content_response(tuple(reversed(object_ids)), contents),
+                b"host-secret child detail",
+            ),
+        )
+        with mock.patch.object(
+            reader, "_run_finite_git", side_effect=responses
+        ):
+            with self.assertRaises(
+                bundle_builder.GitObjectReadError
+            ) as caught:
+                reader.read_many(self.commit, ("one", "two"))
+        self.assertIs(type(caught.exception), bundle_builder.GitObjectReadError)
+        self.assertEqual(str(caught.exception), "Git object read failed")
 
 
 class GitObjectCacheTests(unittest.TestCase):
