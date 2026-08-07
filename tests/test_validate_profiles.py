@@ -2131,6 +2131,18 @@ class ProfileLanguageMatrixStructureTests(unittest.TestCase):
                 self.assertEqual(argument.value, method.name)
 
     def test_matrix_uses_only_the_public_text_boundaries(self) -> None:
+        import_nodes = tuple(
+            type(node).__name__
+            for node in ast.walk(self.matrix)
+            if isinstance(node, (ast.Import, ast.ImportFrom))
+        )
+        aliases = tuple(
+            (node.name, node.asname)
+            for node in ast.walk(self.matrix)
+            if isinstance(node, ast.alias)
+        )
+        self.assertEqual(import_nodes, ())
+        self.assertEqual(aliases, ())
         permitted_attributes = {
             "case.case_id",
             "case.diagnostic_families",
@@ -2313,6 +2325,47 @@ class ProfileLanguageMatrixGuardMutationTests(unittest.TestCase):
         module = ast.parse(
             "class ProfileLanguageMatrixTests(unittest.TestCase):\n"
             "    full_validator = validate_profiles.validate\n"
+        )
+        guard = self.guard("test_matrix_uses_only_the_public_text_boundaries")
+        guard.matrix = module.body[0]
+        with self.assertRaises(AssertionError):
+            guard.test_matrix_uses_only_the_public_text_boundaries()
+
+    def test_seam_guard_rejects_lower_helper_import_alias(self) -> None:
+        module = ast.parse(
+            "class ProfileLanguageMatrixTests(unittest.TestCase):\n"
+            "    from tools.validate_profiles import "
+            "asserted_profile_phrases as sorted\n"
+        )
+        guard = self.guard("test_matrix_uses_only_the_public_text_boundaries")
+        guard.matrix = module.body[0]
+        with self.assertRaises(AssertionError):
+            guard.test_matrix_uses_only_the_public_text_boundaries()
+
+    def test_seam_guard_rejects_filesystem_import_alias(self) -> None:
+        module = ast.parse(
+            "class ProfileLanguageMatrixTests(unittest.TestCase):\n"
+            "    from builtins import open as sorted\n"
+        )
+        guard = self.guard("test_matrix_uses_only_the_public_text_boundaries")
+        guard.matrix = module.body[0]
+        with self.assertRaises(AssertionError):
+            guard.test_matrix_uses_only_the_public_text_boundaries()
+
+    def test_seam_guard_rejects_module_import_alias(self) -> None:
+        module = ast.parse(
+            "class ProfileLanguageMatrixTests(unittest.TestCase):\n"
+            "    import builtins as sorted\n"
+        )
+        guard = self.guard("test_matrix_uses_only_the_public_text_boundaries")
+        guard.matrix = module.body[0]
+        with self.assertRaises(AssertionError):
+            guard.test_matrix_uses_only_the_public_text_boundaries()
+
+    def test_seam_guard_rejects_fixture_writer_import_alias(self) -> None:
+        module = ast.parse(
+            "class ProfileLanguageMatrixTests(unittest.TestCase):\n"
+            "    from tests.profile_fixture import write_profile_readme as sorted\n"
         )
         guard = self.guard("test_matrix_uses_only_the_public_text_boundaries")
         guard.matrix = module.body[0]
