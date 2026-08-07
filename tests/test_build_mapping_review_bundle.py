@@ -947,6 +947,7 @@ class GitTreeProtocolTests(unittest.TestCase):
             "abbreviated oid": _tree_record(b"foo", object_id=b"1" * 39) + b"\0",
             "invalid UTF-8": _tree_record(b"\xff") + b"\0",
             "control path": _tree_record(b"bad\nname") + b"\0",
+            "C1 control path": _tree_record(b"bad\xc2\x80name") + b"\0",
             "unsafe path": _tree_record(b"../foo") + b"\0",
             "duplicate path": (
                 _tree_record(b"foo") + b"\0" + _tree_record(b"foo") + b"\0"
@@ -1032,12 +1033,27 @@ class GitTreeIndexLimitTests(unittest.TestCase):
                         reader.list_files(commit, "tracked.txt"),
                         ("tracked.txt",),
                     )
-                with self.assertRaisesRegex(ValueError, "tree index limit"):
-                    reader.list_files(commits[8], "tracked.txt")
+                calls_after_eight_indexes = finite_git.call_count
                 self.assertEqual(
                     reader.list_files(commits[0], "tracked.txt"),
                     ("tracked.txt",),
                 )
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "full lowercase 40-character Git SHA",
+                ):
+                    reader.list_files("HEAD", "tracked.txt")
+                self.assertEqual(finite_git.call_count, calls_after_eight_indexes)
+
+                self.assertNotIn(commits[8], reader._verified_commits)
+                with self.assertRaisesRegex(ValueError, "tree index limit"):
+                    reader.list_files(commits[8], "tracked.txt")
+                self.assertEqual(finite_git.call_count, calls_after_eight_indexes)
+                self.assertNotIn(commits[8], reader._verified_commits)
+                with self.assertRaisesRegex(ValueError, "tree index limit"):
+                    reader.read_bytes(commits[8], "tracked.txt")
+                self.assertEqual(finite_git.call_count, calls_after_eight_indexes)
+                self.assertNotIn(commits[8], reader._verified_commits)
 
             tree_calls = [
                 call

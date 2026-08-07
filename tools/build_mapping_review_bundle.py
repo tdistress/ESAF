@@ -13,6 +13,7 @@ import sys
 import tempfile
 import threading
 import time
+import unicodedata
 from types import MappingProxyType
 from typing import Literal, Mapping, NamedTuple
 
@@ -514,8 +515,8 @@ class GitReader:
 
     def read_bytes(self, commit: str, path: str) -> bytes:
         _canonical_relative_path(path, "repository")
-        commit = self.resolve_commit(commit)
         self._require_regular_blob(commit, path)
+        commit = self.resolve_commit(commit)
         key = (commit, path)
         cached = self._contents.get(key)
         if cached is not None:
@@ -539,13 +540,17 @@ class GitReader:
         self._regular_blobs.add(key)
 
     def _tree_index(self, commit: str) -> Mapping[str, TreeEntry]:
-        commit = self.resolve_commit(commit)
+        if not FULL_SHA.fullmatch(commit):
+            raise ValueError(
+                "candidate must be a full lowercase 40-character Git SHA"
+            )
         with self._tree_index_lock:
             cached = self._tree_indexes.get(commit)
             if cached is not None:
                 return cached
             if len(self._tree_indexes) >= GIT_TREE_INDEX_LIMIT:
                 raise ValueError("Git tree index limit exceeded")
+            commit = self.resolve_commit(commit)
 
             result = self._run_finite_git(
                 (
@@ -591,7 +596,7 @@ class GitReader:
                     (mode, object_type) not in allowed_pairs
                     or not FULL_SHA.fullmatch(object_id)
                     or any(
-                        ord(character) < 32 or ord(character) == 127
+                        unicodedata.category(character) == "Cc"
                         for character in path
                     )
                 ):
@@ -615,7 +620,6 @@ class GitReader:
 
     def list_files(self, commit: str, path: str) -> tuple[str, ...]:
         _canonical_relative_path(path, "repository")
-        commit = self.resolve_commit(commit)
         index = self._tree_index(commit)
         selected = index.get(path)
         if selected is None:
