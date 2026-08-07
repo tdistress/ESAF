@@ -64,8 +64,12 @@ def write_authoritative_source(package: Path) -> None:
     )
 
 
+def profile_readme_content(text: str) -> str:
+    return f"# Synthetic profile\n\n{text}\n"
+
+
 def write_profile_readme(package: Path, text: str) -> str:
-    content = f"# Synthetic profile\n\n{text}\n"
+    content = profile_readme_content(text)
     (package / "README.md").write_text(content, encoding="utf-8")
     return content
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 import contextlib
 import io
 import json
@@ -75,17 +76,24 @@ class ProfileFixtureWriterTests(unittest.TestCase):
         self.temp.cleanup()
 
     def test_write_profile_readme_returns_and_writes_exact_content(self) -> None:
+        expected = (
+            "# Synthetic profile\n\n"
+            "This profile establishes compliance.\n"
+        )
+        self.assertEqual(
+            profile_fixture.profile_readme_content(
+                "This profile establishes compliance."
+            ),
+            expected,
+        )
         content = profile_fixture.write_profile_readme(
             self.package, "This profile establishes compliance."
         )
 
-        self.assertEqual(
-            content,
-            "# Synthetic profile\n\nThis profile establishes compliance.\n",
-        )
+        self.assertEqual(content, expected)
         self.assertEqual(
             (self.package / "README.md").read_text(encoding="utf-8"),
-            "# Synthetic profile\n\nThis profile establishes compliance.\n",
+            expected,
         )
 
     def test_write_component_synchronizes_json_and_authoritative_source(
@@ -1648,6 +1656,575 @@ class ProfileHotPathEquivalenceComparisonTests(unittest.TestCase):
         self.assertNotIn("equivalence=PASS", stderr)
 
 
+class ProfileLanguageMatrixTests(unittest.TestCase):
+    def _assert_profile_language_cases(self, method_name: str) -> None:
+        cases = (
+            profile_language_cases.profile_language_inventory().cases_for_method(
+                method_name
+            )
+        )
+        consumed: list[str] = []
+        with mock.patch.object(
+            validate_profiles,
+            "validate",
+            side_effect=AssertionError(
+                "fast language matrices shall not call validate"
+            ),
+        ):
+            for case in cases:
+                with self.subTest(case_id=case.case_id):
+                    content = profile_fixture.profile_readme_content(case.text)
+                    diagnostics: list[str] = []
+                    if "claim" in case.diagnostic_families:
+                        diagnostics.extend(
+                            validate_profiles.claim_text_diagnostics(
+                                content,
+                                case.location,
+                            )
+                        )
+                    if "source_authority" in case.diagnostic_families:
+                        diagnostics.extend(
+                            validate_profiles.source_authority_text_diagnostics(
+                                content,
+                                case.location,
+                                case.excluded_sources,
+                            )
+                        )
+                    self.assertEqual(
+                        sorted(set(diagnostics)),
+                        list(case.expected_diagnostics),
+                    )
+                    consumed.append(case.case_id)
+        self.assertEqual(consumed, [case.case_id for case in cases])
+
+    def test_additional_assurance_claim_forms_are_rejected(self) -> None:
+        self._assert_profile_language_cases(
+            "test_additional_assurance_claim_forms_are_rejected"
+        )
+
+    def test_additional_assurance_denials_and_discussion_are_allowed(self) -> None:
+        self._assert_profile_language_cases(
+            "test_additional_assurance_denials_and_discussion_are_allowed"
+        )
+
+    def test_additional_control_weakening_forms_are_rejected(self) -> None:
+        self._assert_profile_language_cases(
+            "test_additional_control_weakening_forms_are_rejected"
+        )
+
+    def test_additional_weakening_denials_and_discussion_are_allowed(self) -> None:
+        self._assert_profile_language_cases(
+            "test_additional_weakening_denials_and_discussion_are_allowed"
+        )
+
+    def test_affirmative_claim_after_denied_clause_is_rejected(self) -> None:
+        self._assert_profile_language_cases(
+            "test_affirmative_claim_after_denied_clause_is_rejected"
+        )
+
+    def test_affirmative_weakening_after_denial_is_rejected(self) -> None:
+        self._assert_profile_language_cases(
+            "test_affirmative_weakening_after_denial_is_rejected"
+        )
+
+    def test_approval_subject_voice_and_aspect_cross_product(self) -> None:
+        self._assert_profile_language_cases(
+            "test_approval_subject_voice_and_aspect_cross_product"
+        )
+
+    def test_assurance_voice_tense_and_aspect_grammar_matrix(self) -> None:
+        self._assert_profile_language_cases(
+            "test_assurance_voice_tense_and_aspect_grammar_matrix"
+        )
+
+    def test_bounded_adverb_slots_cross_product(self) -> None:
+        self._assert_profile_language_cases(
+            "test_bounded_adverb_slots_cross_product"
+        )
+
+    def test_common_affirmative_control_weakening_is_rejected(self) -> None:
+        self._assert_profile_language_cases(
+            "test_common_affirmative_control_weakening_is_rejected"
+        )
+
+    def test_common_affirmative_profile_claim_variants_are_rejected(self) -> None:
+        self._assert_profile_language_cases(
+            "test_common_affirmative_profile_claim_variants_are_rejected"
+        )
+
+    def test_contrast_clause_boundaries_do_not_mask_prohibited_language(self) -> None:
+        self._assert_profile_language_cases(
+            "test_contrast_clause_boundaries_do_not_mask_prohibited_language"
+        )
+
+    def test_declared_generic_authority_passive_aspect_cross_product(self) -> None:
+        self._assert_profile_language_cases(
+            "test_declared_generic_authority_passive_aspect_cross_product"
+        )
+
+    def test_direct_weakening_object_and_complement_are_bounded(self) -> None:
+        self._assert_profile_language_cases(
+            "test_direct_weakening_object_and_complement_are_bounded"
+        )
+
+    def test_dynamic_authority_bounded_adverb_cross_product(self) -> None:
+        self._assert_profile_language_cases(
+            "test_dynamic_authority_bounded_adverb_cross_product"
+        )
+
+    def test_establishes_profile_claim_denials_are_allowed(self) -> None:
+        self._assert_profile_language_cases(
+            "test_establishes_profile_claim_denials_are_allowed"
+        )
+
+    def test_establishes_profile_claim_quotations_are_allowed(self) -> None:
+        self._assert_profile_language_cases(
+            "test_establishes_profile_claim_quotations_are_allowed"
+        )
+
+    def test_establishes_profile_claim_variants_are_rejected(self) -> None:
+        self._assert_profile_language_cases(
+            "test_establishes_profile_claim_variants_are_rejected"
+        )
+
+    def test_excluded_source_supply_and_derivation_are_rejected(self) -> None:
+        self._assert_profile_language_cases(
+            "test_excluded_source_supply_and_derivation_are_rejected"
+        )
+
+    def test_excluded_source_supply_and_derivation_polarity_pairs(self) -> None:
+        self._assert_profile_language_cases(
+            "test_excluded_source_supply_and_derivation_polarity_pairs"
+        )
+
+    def test_explicit_control_weakening_denials_are_allowed(self) -> None:
+        self._assert_profile_language_cases(
+            "test_explicit_control_weakening_denials_are_allowed"
+        )
+
+    def test_extended_polarity_and_metalinguistic_matrix(self) -> None:
+        self._assert_profile_language_cases(
+            "test_extended_polarity_and_metalinguistic_matrix"
+        )
+
+    def test_final_review_claim_assertions_are_rejected(self) -> None:
+        self._assert_profile_language_cases(
+            "test_final_review_claim_assertions_are_rejected"
+        )
+
+    def test_final_review_claim_polarity_and_clause_pairs(self) -> None:
+        self._assert_profile_language_cases(
+            "test_final_review_claim_polarity_and_clause_pairs"
+        )
+
+    def test_identified_excluded_source_supply_forms_are_rejected(self) -> None:
+        self._assert_profile_language_cases(
+            "test_identified_excluded_source_supply_forms_are_rejected"
+        )
+
+    def test_identified_excluded_source_supply_polarity_pairs(self) -> None:
+        self._assert_profile_language_cases(
+            "test_identified_excluded_source_supply_polarity_pairs"
+        )
+
+    def test_later_metalinguistic_discussion_does_not_mask_assertions(self) -> None:
+        self._assert_profile_language_cases(
+            "test_later_metalinguistic_discussion_does_not_mask_assertions"
+        )
+
+    def test_mapping_direction_and_authority_grammar_matrix(self) -> None:
+        self._assert_profile_language_cases(
+            "test_mapping_direction_and_authority_grammar_matrix"
+        )
+
+    def test_mapping_direction_form_and_aspect_cross_product(self) -> None:
+        self._assert_profile_language_cases(
+            "test_mapping_direction_form_and_aspect_cross_product"
+        )
+
+    def test_metalinguistic_context_is_bounded_to_the_assertion(self) -> None:
+        self._assert_profile_language_cases(
+            "test_metalinguistic_context_is_bounded_to_the_assertion"
+        )
+
+    def test_natural_perfect_mandatory_denial_and_discussion_pairs(self) -> None:
+        self._assert_profile_language_cases(
+            "test_natural_perfect_mandatory_denial_and_discussion_pairs"
+        )
+
+    def test_natural_perfect_mandatory_placement_cross_product(self) -> None:
+        self._assert_profile_language_cases(
+            "test_natural_perfect_mandatory_placement_cross_product"
+        )
+
+    def test_negated_rejection_head_cross_product(self) -> None:
+        self._assert_profile_language_cases(
+            "test_negated_rejection_head_cross_product"
+        )
+
+    def test_negation_binding_complement_and_insertion_cross_product(self) -> None:
+        self._assert_profile_language_cases(
+            "test_negation_binding_complement_and_insertion_cross_product"
+        )
+
+    def test_negative_modifiers_remain_polarity_cross_product(self) -> None:
+        self._assert_profile_language_cases(
+            "test_negative_modifiers_remain_polarity_cross_product"
+        )
+
+    def test_new_control_weakening_quotations_are_allowed(self) -> None:
+        self._assert_profile_language_cases(
+            "test_new_control_weakening_quotations_are_allowed"
+        )
+
+    def test_new_profile_claim_denials_are_allowed(self) -> None:
+        self._assert_profile_language_cases(
+            "test_new_profile_claim_denials_are_allowed"
+        )
+
+    def test_new_profile_claim_quotations_and_discussion_are_allowed(self) -> None:
+        self._assert_profile_language_cases(
+            "test_new_profile_claim_quotations_and_discussion_are_allowed"
+        )
+
+    def test_omit_skip_and_reduce_control_forms_are_rejected(self) -> None:
+        self._assert_profile_language_cases(
+            "test_omit_skip_and_reduce_control_forms_are_rejected"
+        )
+
+    def test_omit_skip_and_reduce_polarity_pairs(self) -> None:
+        self._assert_profile_language_cases(
+            "test_omit_skip_and_reduce_polarity_pairs"
+        )
+
+    def test_passive_affirmative_control_weakening_is_rejected(self) -> None:
+        self._assert_profile_language_cases(
+            "test_passive_affirmative_control_weakening_is_rejected"
+        )
+
+    def test_passive_control_weakening_denials_are_allowed(self) -> None:
+        self._assert_profile_language_cases(
+            "test_passive_control_weakening_denials_are_allowed"
+        )
+
+    def test_passive_control_weakening_quotations_are_allowed(self) -> None:
+        self._assert_profile_language_cases(
+            "test_passive_control_weakening_quotations_are_allowed"
+        )
+
+    def test_polarity_is_bound_to_the_assertion_head(self) -> None:
+        self._assert_profile_language_cases(
+            "test_polarity_is_bound_to_the_assertion_head"
+        )
+
+    def test_postposed_denial_agent_vs_rhetorical_cross_product(self) -> None:
+        self._assert_profile_language_cases(
+            "test_postposed_denial_agent_vs_rhetorical_cross_product"
+        )
+
+    def test_postposed_denial_and_rejection_polarity_cross_product(self) -> None:
+        self._assert_profile_language_cases(
+            "test_postposed_denial_and_rejection_polarity_cross_product"
+        )
+
+    def test_postposed_denial_complement_boundary_cross_product(self) -> None:
+        self._assert_profile_language_cases(
+            "test_postposed_denial_complement_boundary_cross_product"
+        )
+
+    def test_postposed_possessive_rhetorical_suffix_cross_product(self) -> None:
+        self._assert_profile_language_cases(
+            "test_postposed_possessive_rhetorical_suffix_cross_product"
+        )
+
+    def test_postposed_terminal_and_qualified_denial_cross_product(self) -> None:
+        self._assert_profile_language_cases(
+            "test_postposed_terminal_and_qualified_denial_cross_product"
+        )
+
+    def test_profile_specific_claim_denials_are_allowed(self) -> None:
+        self._assert_profile_language_cases(
+            "test_profile_specific_claim_denials_are_allowed"
+        )
+
+    def test_profile_specific_claim_quotations_are_allowed(self) -> None:
+        self._assert_profile_language_cases(
+            "test_profile_specific_claim_quotations_are_allowed"
+        )
+
+    def test_profile_specific_positive_claims_are_rejected(self) -> None:
+        self._assert_profile_language_cases(
+            "test_profile_specific_positive_claims_are_rejected"
+        )
+
+    def test_readiness_confirmation_requires_positive_establishment(self) -> None:
+        self._assert_profile_language_cases(
+            "test_readiness_confirmation_requires_positive_establishment"
+        )
+
+    def test_reordered_mapping_and_general_authority_are_rejected(self) -> None:
+        self._assert_profile_language_cases(
+            "test_reordered_mapping_and_general_authority_are_rejected"
+        )
+
+    def test_reordered_mapping_and_general_authority_denials_are_allowed(self) -> None:
+        self._assert_profile_language_cases(
+            "test_reordered_mapping_and_general_authority_denials_are_allowed"
+        )
+
+    def test_second_review_claim_word_order_polarity_pairs(self) -> None:
+        self._assert_profile_language_cases(
+            "test_second_review_claim_word_order_polarity_pairs"
+        )
+
+    def test_second_review_claim_word_orders_are_rejected(self) -> None:
+        self._assert_profile_language_cases(
+            "test_second_review_claim_word_orders_are_rejected"
+        )
+
+    def test_second_review_direct_weakening_forms_are_rejected(self) -> None:
+        self._assert_profile_language_cases(
+            "test_second_review_direct_weakening_forms_are_rejected"
+        )
+
+    def test_second_review_direct_weakening_polarity_pairs(self) -> None:
+        self._assert_profile_language_cases(
+            "test_second_review_direct_weakening_polarity_pairs"
+        )
+
+    def test_source_authority_after_denied_clause_is_rejected(self) -> None:
+        self._assert_profile_language_cases(
+            "test_source_authority_after_denied_clause_is_rejected"
+        )
+
+    def test_source_authority_denials_and_discussion_are_allowed(self) -> None:
+        self._assert_profile_language_cases(
+            "test_source_authority_denials_and_discussion_are_allowed"
+        )
+
+    def test_source_boundary_rejects_excluded_authority_claims(self) -> None:
+        self._assert_profile_language_cases(
+            "test_source_boundary_rejects_excluded_authority_claims"
+        )
+
+    def test_third_review_bounded_nonweakening_semantic_variations(self) -> None:
+        self._assert_profile_language_cases(
+            "test_third_review_bounded_nonweakening_semantic_variations"
+        )
+
+    def test_third_review_excluded_source_supply_aspect_and_voice(self) -> None:
+        self._assert_profile_language_cases(
+            "test_third_review_excluded_source_supply_aspect_and_voice"
+        )
+
+    def test_third_review_passive_aspect_claim_families(self) -> None:
+        self._assert_profile_language_cases(
+            "test_third_review_passive_aspect_claim_families"
+        )
+
+    def test_third_review_progressive_direct_weakening_forms(self) -> None:
+        self._assert_profile_language_cases(
+            "test_third_review_progressive_direct_weakening_forms"
+        )
+
+    def test_third_review_readiness_explicit_denial_family(self) -> None:
+        self._assert_profile_language_cases(
+            "test_third_review_readiness_explicit_denial_family"
+        )
+
+    def test_unrelated_denial_does_not_mask_later_control_weakening(self) -> None:
+        self._assert_profile_language_cases(
+            "test_unrelated_denial_does_not_mask_later_control_weakening"
+        )
+
+    def test_weakening_aspect_and_state_cross_product(self) -> None:
+        self._assert_profile_language_cases(
+            "test_weakening_aspect_and_state_cross_product"
+        )
+
+    def test_weakening_aspect_denial_and_metalinguistic_pairs(self) -> None:
+        self._assert_profile_language_cases(
+            "test_weakening_aspect_denial_and_metalinguistic_pairs"
+        )
+
+    def test_weakening_cross_product_denials_and_claim_frames(self) -> None:
+        self._assert_profile_language_cases(
+            "test_weakening_cross_product_denials_and_claim_frames"
+        )
+
+    def test_weakening_state_grammar_matrix(self) -> None:
+        self._assert_profile_language_cases(
+            "test_weakening_state_grammar_matrix"
+        )
+
+    def test_weakening_subject_modal_and_state_cross_product(self) -> None:
+        self._assert_profile_language_cases(
+            "test_weakening_subject_modal_and_state_cross_product"
+        )
+
+
+class ProfileLanguageMatrixStructureTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.inventory = profile_language_cases.profile_language_inventory()
+        self.method_names = tuple(
+            method.method_name for method in self.inventory.methods
+        )
+        module = ast.parse(Path(__file__).read_text(encoding="utf-8"))
+        self.matrix = next(
+            node
+            for node in module.body
+            if isinstance(node, ast.ClassDef)
+            and node.name == "ProfileLanguageMatrixTests"
+        )
+
+    @staticmethod
+    def dotted_name(node: ast.expr) -> str | None:
+        if isinstance(node, ast.Name):
+            return node.id
+        if isinstance(node, ast.Attribute):
+            parent = ProfileLanguageMatrixStructureTests.dotted_name(
+                node.value
+            )
+            return f"{parent}.{node.attr}" if parent else node.attr
+        return None
+
+    def test_inventory_methods_are_exactly_the_matrix_methods(self) -> None:
+        methods = tuple(
+            node
+            for node in self.matrix.body
+            if isinstance(node, ast.FunctionDef)
+            and node.name.startswith("test_")
+        )
+        self.assertEqual(
+            tuple(method.name for method in methods), self.method_names
+        )
+        for method in methods:
+            with self.subTest(method=method.name):
+                self.assertEqual(len(method.body), 1)
+                statement = method.body[0]
+                self.assertIsInstance(statement, ast.Expr)
+                assert isinstance(statement, ast.Expr)
+                self.assertIsInstance(statement.value, ast.Call)
+                call = statement.value
+                assert isinstance(call, ast.Call)
+                self.assertEqual(
+                    self.dotted_name(call.func),
+                    "self._assert_profile_language_cases",
+                )
+                self.assertEqual(len(call.args), 1)
+                self.assertEqual(call.keywords, [])
+                argument = call.args[0]
+                self.assertIsInstance(argument, ast.Constant)
+                assert isinstance(argument, ast.Constant)
+                self.assertEqual(argument.value, method.name)
+
+    def test_matrix_uses_only_the_public_text_boundaries(self) -> None:
+        prohibited_calls = {
+            "self._assert_language_cases_through_full_validate",
+            "validate_profiles.validate",
+            "profile_fixture.write_profile_readme",
+            "profile_fixture.write_component",
+            "profile_fixture.write_json",
+            "profile_fixture.write_valid_profile_fixture",
+            "validate_profiles.asserted_profile_phrases",
+            "validate_profiles.contains_affirmative_source_authority",
+            "validate_profiles.contains_affirmative_weakening",
+            "validate_profiles.source_authority_is_excluded",
+        }
+        prohibited_names = {
+            "Path",
+            "TemporaryDirectory",
+            "load_component",
+            "tempfile",
+            "write_component",
+            "write_readme",
+        }
+        prohibited_fragments = ("README.md", "PROFILE.md", "profile.json")
+        calls = {
+            name
+            for node in ast.walk(self.matrix)
+            if isinstance(node, ast.Call)
+            and (name := self.dotted_name(node.func)) is not None
+        }
+        names = {
+            node.id for node in ast.walk(self.matrix) if isinstance(node, ast.Name)
+        }
+        strings = {
+            node.value
+            for node in ast.walk(self.matrix)
+            if isinstance(node, ast.Constant)
+            and isinstance(node.value, str)
+        }
+        self.assertEqual(calls & prohibited_calls, set())
+        self.assertEqual(names & prohibited_names, set())
+        self.assertFalse(
+            any(
+                fragment in value
+                for value in strings
+                for fragment in prohibited_fragments
+            )
+        )
+
+    def test_matrix_consumes_each_case_once_through_its_boundary(self) -> None:
+        consumed: list[str] = []
+
+        def cases_for_method(
+            method_name: str,
+        ) -> tuple[profile_language_cases.ProfileLanguageCase, ...]:
+            cases = self.inventory.cases_for_method(method_name)
+            consumed.extend(case.case_id for case in cases)
+            return cases
+
+        inventory = mock.Mock()
+        inventory.cases_for_method.side_effect = cases_for_method
+        with (
+            mock.patch.object(
+                profile_language_cases,
+                "profile_language_inventory",
+                return_value=inventory,
+            ),
+            mock.patch.object(
+                validate_profiles,
+                "validate",
+                side_effect=AssertionError(
+                    "fast language matrices shall not call validate"
+                ),
+            ),
+            mock.patch.object(
+                validate_profiles,
+                "claim_text_diagnostics",
+                wraps=validate_profiles.claim_text_diagnostics,
+            ) as claim_boundary,
+            mock.patch.object(
+                validate_profiles,
+                "source_authority_text_diagnostics",
+                wraps=validate_profiles.source_authority_text_diagnostics,
+            ) as source_boundary,
+        ):
+            matrix = ProfileLanguageMatrixTests()
+            for method_name in self.method_names:
+                matrix._assert_profile_language_cases(method_name)
+
+        self.assertEqual(
+            claim_boundary.call_count,
+            sum(
+                "claim" in case.diagnostic_families
+                for case in self.inventory.cases
+            ),
+        )
+        self.assertEqual(
+            source_boundary.call_count,
+            sum(
+                "source_authority" in case.diagnostic_families
+                for case in self.inventory.cases
+            ),
+        )
+        self.assertEqual(
+            consumed,
+            [case.case_id for case in self.inventory.cases],
+        )
+
+
 class ProfileValidationTests(unittest.TestCase):
     def setUp(self) -> None:
         self.temp = tempfile.TemporaryDirectory()
@@ -1667,34 +2244,6 @@ class ProfileValidationTests(unittest.TestCase):
 
     def write_readme(self, text: str) -> None:
         profile_fixture.write_profile_readme(self.package, text)
-
-    def _assert_language_cases_through_full_validate(
-        self, method_name: str
-    ) -> None:
-        inventory = profile_language_cases.profile_language_inventory()
-        cases = inventory.cases_for_method(method_name)
-        self.assertEqual(
-            len(cases),
-            next(
-                item.validate_calls
-                for item in inventory.methods
-                if item.method_name == method_name
-            ),
-        )
-        for case in cases:
-            with self.subTest(case_id=case.case_id):
-                profile_fixture.write_profile_readme(self.package, case.text)
-                profile = self.load_component("profile.json")
-                profile["source_boundary"]["excluded_sources"] = list(
-                    case.excluded_sources
-                )
-                profile_fixture.write_component(
-                    self.package, "profile.json", profile
-                )
-                self.assertEqual(
-                    validate_profiles.validate(self.root),
-                    list(case.expected_diagnostics),
-                )
 
     def assert_has_error(self, expected: str) -> None:
         diagnostics = validate_profiles.validate(self.root)
@@ -1883,6 +2432,111 @@ class ProfileValidationTests(unittest.TestCase):
 
     def test_valid_population_has_no_errors(self) -> None:
         self.assertEqual(validate_profiles.validate(self.root), [])
+
+    def test_text_diagnostics_reach_full_validate_for_readme(self) -> None:
+        cases = (
+            (
+                "This profile establishes compliance.",
+                [],
+                [
+                    "profiles/uk/0.1.0/README.md: prohibited assertion "
+                    "'establishes compliance'"
+                ],
+            ),
+            ("This profile does not establish compliance.", [], []),
+            (
+                'The phrase "This profile establishes compliance" is '
+                "prohibited.",
+                [],
+                [],
+            ),
+            (
+                "UK GDPR is the authority for this profile selection.",
+                ["UK GDPR"],
+                [
+                    "profiles/uk/0.1.0/README.md: prohibited source "
+                    "authority language"
+                ],
+            ),
+            (
+                "UK GDPR is not the authority for this profile selection.",
+                ["UK GDPR"],
+                [],
+            ),
+            (
+                'The phrase "UK GDPR is the authority for this profile '
+                'selection" is prohibited.',
+                ["UK GDPR"],
+                [],
+            ),
+            (
+                "Acme Code is the authority for this profile selection.",
+                ["Acme Code"],
+                [
+                    "profiles/uk/0.1.0/README.md: prohibited source "
+                    "authority language"
+                ],
+            ),
+        )
+        for text, excluded_sources, expected in cases:
+            with self.subTest(text=text, excluded_sources=excluded_sources):
+                profile_fixture.write_profile_readme(self.package, text)
+                profile = self.load_component("profile.json")
+                profile["source_boundary"]["excluded_sources"] = (
+                    excluded_sources
+                )
+                profile_fixture.write_component(
+                    self.package, "profile.json", profile
+                )
+
+                self.assertEqual(
+                    validate_profiles.validate(self.root), expected
+                )
+
+    def test_text_diagnostics_reach_full_validate_for_structured_json(
+        self,
+    ) -> None:
+        cases = (
+            (
+                "This profile establishes compliance.",
+                [],
+                [
+                    "profiles/uk/0.1.0/profile.json: document.scope: "
+                    "prohibited assertion 'establishes compliance'"
+                ],
+            ),
+            ("This profile does not establish compliance.", [], []),
+            (
+                "UK GDPR is the authority for this profile selection.",
+                ["UK GDPR"],
+                [
+                    "profiles/uk/0.1.0/profile.json: document.scope: "
+                    "prohibited source authority language"
+                ],
+            ),
+            (
+                "UK GDPR is not the authority for this profile selection.",
+                ["UK GDPR"],
+                [],
+            ),
+        )
+        for text, excluded_sources, expected in cases:
+            with self.subTest(text=text, excluded_sources=excluded_sources):
+                profile_fixture.write_profile_readme(
+                    self.package, "Synthetic loader validation only."
+                )
+                profile = self.load_component("profile.json")
+                profile["scope"] = text
+                profile["source_boundary"]["excluded_sources"] = (
+                    excluded_sources
+                )
+                profile_fixture.write_component(
+                    self.package, "profile.json", profile
+                )
+
+                self.assertEqual(
+                    validate_profiles.validate(self.root), expected
+                )
 
     def test_derived_json_must_match_authoritative_markdown(self) -> None:
         path = self.package / "control-selections.json"
@@ -2892,46 +3546,6 @@ class ProfileValidationTests(unittest.TestCase):
         )
         self.assert_has_error("prohibited control weakening language")
 
-    def test_unrelated_denial_does_not_mask_later_control_weakening(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_unrelated_denial_does_not_mask_later_control_weakening'
-        )
-
-    def test_common_affirmative_control_weakening_is_rejected(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_common_affirmative_control_weakening_is_rejected'
-        )
-
-    def test_passive_affirmative_control_weakening_is_rejected(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_passive_affirmative_control_weakening_is_rejected'
-        )
-
-    def test_passive_control_weakening_denials_are_allowed(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_passive_control_weakening_denials_are_allowed'
-        )
-
-    def test_passive_control_weakening_quotations_are_allowed(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_passive_control_weakening_quotations_are_allowed'
-        )
-
-    def test_explicit_control_weakening_denials_are_allowed(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_explicit_control_weakening_denials_are_allowed'
-        )
-
-    def test_new_control_weakening_quotations_are_allowed(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_new_control_weakening_quotations_are_allowed'
-        )
-
-    def test_affirmative_weakening_after_denial_is_rejected(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_affirmative_weakening_after_denial_is_rejected'
-        )
-
     def test_non_negating_not_only_does_not_mask_weakening(self) -> None:
         (self.package / "README.md").write_text(
             "# Synthetic profile\n\n"
@@ -2957,41 +3571,6 @@ class ProfileValidationTests(unittest.TestCase):
             encoding="utf-8",
         )
         self.assert_has_error("prohibited assertion 'establishes compliance'")
-
-    def test_profile_specific_positive_claims_are_rejected(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_profile_specific_positive_claims_are_rejected'
-        )
-
-    def test_common_affirmative_profile_claim_variants_are_rejected(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_common_affirmative_profile_claim_variants_are_rejected'
-        )
-
-    def test_final_review_claim_assertions_are_rejected(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_final_review_claim_assertions_are_rejected'
-        )
-
-    def test_final_review_claim_polarity_and_clause_pairs(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_final_review_claim_polarity_and_clause_pairs'
-        )
-
-    def test_second_review_claim_word_orders_are_rejected(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_second_review_claim_word_orders_are_rejected'
-        )
-
-    def test_second_review_claim_word_order_polarity_pairs(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_second_review_claim_word_order_polarity_pairs'
-        )
-
-    def test_third_review_passive_aspect_claim_families(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_third_review_passive_aspect_claim_families'
-        )
 
     def test_fourth_review_claim_and_import_auxiliary_matrix(self) -> None:
         families = (
@@ -3118,21 +3697,6 @@ class ProfileValidationTests(unittest.TestCase):
                             ),
                         )
 
-    def test_establishes_profile_claim_variants_are_rejected(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_establishes_profile_claim_variants_are_rejected'
-        )
-
-    def test_establishes_profile_claim_denials_are_allowed(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_establishes_profile_claim_denials_are_allowed'
-        )
-
-    def test_establishes_profile_claim_quotations_are_allowed(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_establishes_profile_claim_quotations_are_allowed'
-        )
-
     def test_explicit_claim_denial_is_allowed(self) -> None:
         (self.package / "README.md").write_text(
             "# Synthetic profile\n\n"
@@ -3141,11 +3705,6 @@ class ProfileValidationTests(unittest.TestCase):
         )
         self.assertEqual(validate_profiles.validate(self.root), [])
 
-    def test_profile_specific_claim_denials_are_allowed(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_profile_specific_claim_denials_are_allowed'
-        )
-
     def test_metalinguistic_claim_quotation_is_allowed(self) -> None:
         (self.package / "README.md").write_text(
             "# Synthetic profile\n\n"
@@ -3153,26 +3712,6 @@ class ProfileValidationTests(unittest.TestCase):
             encoding="utf-8",
         )
         self.assertEqual(validate_profiles.validate(self.root), [])
-
-    def test_profile_specific_claim_quotations_are_allowed(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_profile_specific_claim_quotations_are_allowed'
-        )
-
-    def test_new_profile_claim_denials_are_allowed(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_new_profile_claim_denials_are_allowed'
-        )
-
-    def test_new_profile_claim_quotations_and_discussion_are_allowed(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_new_profile_claim_quotations_and_discussion_are_allowed'
-        )
-
-    def test_metalinguistic_context_is_bounded_to_the_assertion(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_metalinguistic_context_is_bounded_to_the_assertion'
-        )
 
     def test_repeated_subject_after_or_is_not_inherited_denial(self) -> None:
         (self.package / "README.md").write_text(
@@ -3183,11 +3722,6 @@ class ProfileValidationTests(unittest.TestCase):
         )
         self.assert_has_error(
             "prohibited assertion 'certification eligibility'"
-        )
-
-    def test_affirmative_claim_after_denied_clause_is_rejected(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_affirmative_claim_after_denied_clause_is_rejected'
         )
 
     def test_non_negating_not_only_does_not_mask_claim(self) -> None:
@@ -3220,36 +3754,6 @@ class ProfileValidationTests(unittest.TestCase):
                 for item in diagnostics
             ),
             diagnostics,
-        )
-
-    def test_source_boundary_rejects_excluded_authority_claims(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_source_boundary_rejects_excluded_authority_claims'
-        )
-
-    def test_excluded_source_supply_and_derivation_are_rejected(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_excluded_source_supply_and_derivation_are_rejected'
-        )
-
-    def test_excluded_source_supply_and_derivation_polarity_pairs(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_excluded_source_supply_and_derivation_polarity_pairs'
-        )
-
-    def test_identified_excluded_source_supply_forms_are_rejected(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_identified_excluded_source_supply_forms_are_rejected'
-        )
-
-    def test_identified_excluded_source_supply_polarity_pairs(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_identified_excluded_source_supply_polarity_pairs'
-        )
-
-    def test_third_review_excluded_source_supply_aspect_and_voice(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_third_review_excluded_source_supply_aspect_and_voice'
         )
 
     def test_fourth_review_excluded_source_auxiliary_matrix(self) -> None:
@@ -3409,16 +3913,6 @@ class ProfileValidationTests(unittest.TestCase):
         )
         self.assert_has_error("prohibited source authority language")
 
-    def test_source_authority_denials_and_discussion_are_allowed(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_source_authority_denials_and_discussion_are_allowed'
-        )
-
-    def test_source_authority_after_denied_clause_is_rejected(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_source_authority_after_denied_clause_is_rejected'
-        )
-
     def test_unrelated_claim_denial_does_not_mask_source_authority(self) -> None:
         profile = self.load_component("profile.json")
         profile["source_boundary"]["excluded_sources"] = ["UK GDPR"]
@@ -3452,41 +3946,6 @@ class ProfileValidationTests(unittest.TestCase):
                 document["risks"][0]["source_basis"] = [source_basis]
                 self.write_component("risk-overlays.json", document)
                 self.assertEqual(validate_profiles.validate(self.root), [])
-
-    def test_later_metalinguistic_discussion_does_not_mask_assertions(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_later_metalinguistic_discussion_does_not_mask_assertions'
-        )
-
-    def test_additional_control_weakening_forms_are_rejected(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_additional_control_weakening_forms_are_rejected'
-        )
-
-    def test_omit_skip_and_reduce_control_forms_are_rejected(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_omit_skip_and_reduce_control_forms_are_rejected'
-        )
-
-    def test_omit_skip_and_reduce_polarity_pairs(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_omit_skip_and_reduce_polarity_pairs'
-        )
-
-    def test_second_review_direct_weakening_forms_are_rejected(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_second_review_direct_weakening_forms_are_rejected'
-        )
-
-    def test_second_review_direct_weakening_polarity_pairs(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_second_review_direct_weakening_polarity_pairs'
-        )
-
-    def test_third_review_progressive_direct_weakening_forms(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_third_review_progressive_direct_weakening_forms'
-        )
 
     def test_fourth_review_direct_weakening_auxiliary_matrix(self) -> None:
         for forms in (
@@ -3570,26 +4029,6 @@ class ProfileValidationTests(unittest.TestCase):
                             )
                         )
 
-    def test_direct_weakening_object_and_complement_are_bounded(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_direct_weakening_object_and_complement_are_bounded'
-        )
-
-    def test_readiness_confirmation_requires_positive_establishment(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_readiness_confirmation_requires_positive_establishment'
-        )
-
-    def test_third_review_bounded_nonweakening_semantic_variations(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_third_review_bounded_nonweakening_semantic_variations'
-        )
-
-    def test_third_review_readiness_explicit_denial_family(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_third_review_readiness_explicit_denial_family'
-        )
-
     def test_fourth_review_safe_complement_grammar_variations(self) -> None:
         safe_weakening = (
             "This profile reduces GOV-100-related implementation risk, while preserving every requirement.",
@@ -3623,156 +4062,6 @@ class ProfileValidationTests(unittest.TestCase):
                 "established. However, this profile confirms production "
                 "readiness is established."
             ),
-        )
-
-    def test_additional_weakening_denials_and_discussion_are_allowed(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_additional_weakening_denials_and_discussion_are_allowed'
-        )
-
-    def test_additional_assurance_claim_forms_are_rejected(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_additional_assurance_claim_forms_are_rejected'
-        )
-
-    def test_additional_assurance_denials_and_discussion_are_allowed(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_additional_assurance_denials_and_discussion_are_allowed'
-        )
-
-    def test_reordered_mapping_and_general_authority_are_rejected(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_reordered_mapping_and_general_authority_are_rejected'
-        )
-
-    def test_reordered_mapping_and_general_authority_denials_are_allowed(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_reordered_mapping_and_general_authority_denials_are_allowed'
-        )
-
-    def test_polarity_is_bound_to_the_assertion_head(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_polarity_is_bound_to_the_assertion_head'
-        )
-
-    def test_contrast_clause_boundaries_do_not_mask_prohibited_language(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_contrast_clause_boundaries_do_not_mask_prohibited_language'
-        )
-
-    def test_weakening_state_grammar_matrix(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_weakening_state_grammar_matrix'
-        )
-
-    def test_assurance_voice_tense_and_aspect_grammar_matrix(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_assurance_voice_tense_and_aspect_grammar_matrix'
-        )
-
-    def test_mapping_direction_and_authority_grammar_matrix(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_mapping_direction_and_authority_grammar_matrix'
-        )
-
-    def test_extended_polarity_and_metalinguistic_matrix(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_extended_polarity_and_metalinguistic_matrix'
-        )
-
-    def test_weakening_subject_modal_and_state_cross_product(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_weakening_subject_modal_and_state_cross_product'
-        )
-
-    def test_weakening_cross_product_denials_and_claim_frames(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_weakening_cross_product_denials_and_claim_frames'
-        )
-
-    def test_approval_subject_voice_and_aspect_cross_product(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_approval_subject_voice_and_aspect_cross_product'
-        )
-
-    def test_mapping_direction_form_and_aspect_cross_product(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_mapping_direction_form_and_aspect_cross_product'
-        )
-
-    def test_declared_generic_authority_passive_aspect_cross_product(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_declared_generic_authority_passive_aspect_cross_product'
-        )
-
-    def test_negation_binding_complement_and_insertion_cross_product(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_negation_binding_complement_and_insertion_cross_product'
-        )
-
-    def test_postposed_denial_and_rejection_polarity_cross_product(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_postposed_denial_and_rejection_polarity_cross_product'
-        )
-
-    def test_weakening_aspect_and_state_cross_product(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_weakening_aspect_and_state_cross_product'
-        )
-
-    def test_weakening_aspect_denial_and_metalinguistic_pairs(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_weakening_aspect_denial_and_metalinguistic_pairs'
-        )
-
-    def test_bounded_adverb_slots_cross_product(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_bounded_adverb_slots_cross_product'
-        )
-
-    def test_dynamic_authority_bounded_adverb_cross_product(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_dynamic_authority_bounded_adverb_cross_product'
-        )
-
-    def test_negative_modifiers_remain_polarity_cross_product(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_negative_modifiers_remain_polarity_cross_product'
-        )
-
-    def test_postposed_denial_agent_vs_rhetorical_cross_product(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_postposed_denial_agent_vs_rhetorical_cross_product'
-        )
-
-    def test_negated_rejection_head_cross_product(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_negated_rejection_head_cross_product'
-        )
-
-    def test_natural_perfect_mandatory_placement_cross_product(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_natural_perfect_mandatory_placement_cross_product'
-        )
-
-    def test_natural_perfect_mandatory_denial_and_discussion_pairs(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_natural_perfect_mandatory_denial_and_discussion_pairs'
-        )
-
-    def test_postposed_possessive_rhetorical_suffix_cross_product(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_postposed_possessive_rhetorical_suffix_cross_product'
-        )
-
-    def test_postposed_terminal_and_qualified_denial_cross_product(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_postposed_terminal_and_qualified_denial_cross_product'
-        )
-
-    def test_postposed_denial_complement_boundary_cross_product(self) -> None:
-        self._assert_language_cases_through_full_validate(
-            'test_postposed_denial_complement_boundary_cross_product'
         )
 
     def test_semantic_diagnostic_ordering_is_stable(self) -> None:
