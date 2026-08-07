@@ -12,6 +12,7 @@ import threading
 import time
 import unittest
 from pathlib import Path
+from typing import Sequence
 from unittest import mock
 
 import yaml
@@ -2292,10 +2293,74 @@ class PackageGitInvocationTests(unittest.TestCase):
             capture_output=True,
             text=True,
         ).stdout.strip()
+        fixed_candidate_paths = (
+            "crosswalks/ESAF-1600.md",
+            "crosswalks/schema/esaf-control-manifest.schema.json",
+            "crosswalks/schema/lifecycle-record.schema.json",
+            "crosswalks/schema/mapping-record.schema.json",
+            "crosswalks/schema/mapping-set.schema.json",
+            "crosswalks/schema/provision-inventory.schema.json",
+            "crosswalks/schema/qualified-review-evidence.schema.json",
+            "crosswalks/reviews/QUALIFIED_REVIEW_PROTOCOL.md",
+            "crosswalks/reviews/templates/REVIEWER_ATTESTATION.md",
+            "crosswalks/reviews/templates/SPECIFICATION_INVENTORY_REVIEW.md",
+            "crosswalks/reviews/templates/SECURITY_OVERCLAIMING_REVIEW.md",
+        )
+        real_read_package_files = bundle_builder._read_package_files
 
-        for profile in PROFILES.values():
+        for mapping_set_id, profile in PROFILES.items():
             with self.subTest(profile=profile.label):
                 bundle_builder._deterministic_control_manifest_bytes.cache_clear()
+                expected_reader = GitReader(ROOT)
+                expected_snapshot = expected_reader.list_files(
+                    head,
+                    profile.snapshot_path,
+                )
+                expected_manifest = json.loads(
+                    expected_reader.read_bytes(
+                        head,
+                        f"{profile.snapshot_path}/ESAF_CONTROL_MANIFEST.json",
+                    )
+                )
+                control_source = expected_manifest["source_commit_sha"]
+                candidate_readme = expected_reader.read_bytes(
+                    head,
+                    f"{profile.snapshot_path}/README.md",
+                ).decode("utf-8")
+                source_evidence_paths = tuple(
+                    re.findall(
+                        r"(?m)^- (?:Oracle|Specification): `([^`]+)`\s*$",
+                        candidate_readme,
+                    )
+                )
+                expected_candidate_dependencies = (
+                    f"crosswalks/registry/{mapping_set_id}.md",
+                    "crosswalks/catalog.json",
+                    *fixed_candidate_paths,
+                    *source_evidence_paths,
+                )
+                expected_historical = (
+                    "controls/catalog.json",
+                    *(
+                        f"controls/{control['path']}"
+                        for control in expected_manifest["controls"]
+                    ),
+                )
+                phase_calls: list[tuple[str, tuple[str, ...]]] = []
+
+                def record_package_read(
+                    phase_reader: object,
+                    phase_commit: str,
+                    phase_paths: Sequence[str],
+                ) -> dict[str, bytes]:
+                    path_snapshot = tuple(phase_paths)
+                    phase_calls.append((phase_commit, path_snapshot))
+                    return real_read_package_files(
+                        phase_reader,
+                        phase_commit,
+                        path_snapshot,
+                    )
+
                 reader = GitReader(ROOT)
                 with mock.patch.object(
                     reader,
@@ -2305,7 +2370,11 @@ class PackageGitInvocationTests(unittest.TestCase):
                     crosswalk_manifest,
                     "_git",
                     wraps=crosswalk_manifest._git,
-                ) as manifest_git:
+                ) as manifest_git, mock.patch.object(
+                    bundle_builder,
+                    "_read_package_files",
+                    side_effect=record_package_read,
+                ):
                     files = collect_package_files(reader, head, profile)
 
                 commands = [call.args[0] for call in finite_git.call_args_list]
@@ -2313,17 +2382,9 @@ class PackageGitInvocationTests(unittest.TestCase):
                     arguments for arguments in commands
                     if arguments and arguments[0] == "ls-tree"
                 ]
-                check_calls = [
+                cat_file_calls = [
                     call for call in finite_git.call_args_list
-                    if call.args[0][:2]
-                    == (
-                        "cat-file",
-                        "--batch-check=%(objectname) %(objecttype) %(objectsize)",
-                    )
-                ]
-                content_calls = [
-                    call for call in finite_git.call_args_list
-                    if call.args[0] == ("cat-file", "--batch")
+                    if call.args[0] and call.args[0][0] == "cat-file"
                 ]
 
                 packaged_manifest = json.loads(
@@ -2338,26 +2399,58 @@ class PackageGitInvocationTests(unittest.TestCase):
                     item.purpose == "referenced ESAF control"
                     for item in files
                 )
+                self.assertEqual(
+                    phase_calls,
+                    [
+                        (head, expected_snapshot),
+                        (head, expected_candidate_dependencies),
+                        (control_source, expected_historical),
+                    ],
+                )
                 self.assertEqual(finite_git.call_count, 11)
                 self.assertEqual(len(tree_commands), 2)
                 self.assertEqual(
                     {arguments[-1] for arguments in tree_commands},
                     {head, packaged_manifest["source_commit_sha"]},
                 )
-                self.assertEqual(len(check_calls), 3)
-                self.assertEqual(len(content_calls), 3)
+                self.assertEqual(len(cat_file_calls), 6)
                 self.assertFalse(
                     any(
                         arguments and arguments[0] == "show"
                         for arguments in commands
                     )
                 )
-                for check_call, content_call in zip(
-                    check_calls,
-                    content_calls,
-                    strict=True,
+                cached_objects: set[tuple[str, str]] = set()
+                for phase_index, (phase_commit, phase_paths) in enumerate(
+                    phase_calls
                 ):
+                    check_call = cat_file_calls[phase_index * 2]
+                    content_call = cat_file_calls[phase_index * 2 + 1]
+                    self.assertEqual(
+                        check_call.args[0],
+                        (
+                            "cat-file",
+                            "--batch-check=%(objectname) %(objecttype) "
+                            "%(objectsize)",
+                        ),
+                    )
+                    self.assertEqual(
+                        content_call.args[0],
+                        ("cat-file", "--batch"),
+                    )
+                    expected_object_ids: list[str] = []
+                    for path in phase_paths:
+                        entry = reader._tree_indexes[phase_commit][path]
+                        cache_key = (phase_commit, entry.object_id)
+                        if cache_key not in cached_objects:
+                            cached_objects.add(cache_key)
+                            expected_object_ids.append(entry.object_id)
+                    expected_request = "".join(
+                        f"{object_id}\n"
+                        for object_id in expected_object_ids
+                    ).encode("ascii")
                     request = check_call.kwargs["input_bytes"]
+                    self.assertEqual(request, expected_request)
                     self.assertEqual(content_call.kwargs["input_bytes"], request)
                     object_ids = request.decode("ascii").splitlines()
                     self.assertTrue(object_ids)
