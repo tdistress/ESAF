@@ -12,6 +12,7 @@ import subprocess
 import sys
 import tempfile
 import threading
+import time
 from typing import Literal, NamedTuple
 
 from jsonschema import Draft202012Validator, FormatChecker
@@ -219,23 +220,87 @@ class GitReader:
             str(self.root),
             *arguments,
         ]
-        stdout_spool = tempfile.SpooledTemporaryFile(max_size=1024 * 1024, mode="w+b")
-        stderr_spool = tempfile.SpooledTemporaryFile(max_size=1024 * 1024, mode="w+b")
         process: subprocess.Popen[bytes] | None = None
-        threads: list[threading.Thread] = []
+        deadline: float | None = None
+        spools: list[object] = []
+        stdout_spool: object | None = None
+        stderr_spool: object | None = None
+        drainer_threads: list[threading.Thread] = []
         started_threads: list[threading.Thread] = []
         reaped = False
         failures: list[Exception] = []
         failure_lock = threading.Lock()
 
-        def record_failure(error: Exception) -> None:
+        def add_failure(error: Exception) -> None:
             with failure_lock:
                 failures.append(error)
-            if process is not None:
-                try:
-                    process.terminate()
-                except OSError:
-                    pass
+
+        def terminate_child() -> None:
+            if process is None:
+                return
+            try:
+                process.terminate()
+            except Exception as error:
+                add_failure(error)
+
+        def kill_child() -> None:
+            if process is None:
+                return
+            try:
+                process.kill()
+            except Exception as error:
+                add_failure(error)
+
+        def record_failure(error: Exception) -> None:
+            add_failure(error)
+            terminate_child()
+
+        def close_resource(resource: object | None) -> None:
+            if resource is None:
+                return
+            try:
+                resource.close()  # type: ignore[attr-defined]
+            except Exception as error:
+                add_failure(error)
+
+        def wait_for_child(timeout: float) -> bool:
+            if process is None:
+                return False
+            try:
+                process.wait(timeout=max(0.0, timeout))
+                return True
+            except Exception as error:
+                add_failure(error)
+                return False
+
+        def join_thread(thread: threading.Thread, timeout: float) -> None:
+            try:
+                thread.join(timeout=max(0.0, timeout))
+            except Exception as error:
+                add_failure(error)
+
+        def remaining_deadline() -> float:
+            if deadline is None:
+                return 0.0
+            return max(0.0, deadline - time.monotonic())
+
+        def write_input() -> None:
+            if process is None or process.stdin is None:
+                record_failure(OSError("missing Git stdin pipe"))
+                return
+            try:
+                view = memoryview(input_bytes)
+                offset = 0
+                while offset < len(view):
+                    written = process.stdin.write(view[offset:])
+                    if written is None or written <= 0:
+                        raise OSError("short write to Git command")
+                    offset += written
+                process.stdin.flush()
+            except Exception as error:
+                record_failure(error)
+            finally:
+                close_resource(process.stdin)
 
         def drain(
             stream: object,
@@ -257,27 +322,34 @@ class GitReader:
             except Exception as error:
                 record_failure(error)
             finally:
-                try:
-                    stream.close()  # type: ignore[attr-defined]
-                except OSError:
-                    pass
+                close_resource(stream)
 
+        stdout = b""
+        stderr = b""
         try:
-            try:
-                process = subprocess.Popen(
-                    command,
-                    shell=False,
-                    stdin=subprocess.PIPE,
-                    stdout=subprocess.PIPE,
-                    stderr=subprocess.PIPE,
-                    env=self._git_environment,
-                )
-            except (OSError, subprocess.SubprocessError) as error:
-                raise GitObjectReadError("Git object read failed") from error
+            stdout_spool = tempfile.SpooledTemporaryFile(
+                max_size=1024 * 1024,
+                mode="w+b",
+            )
+            spools.append(stdout_spool)
+            stderr_spool = tempfile.SpooledTemporaryFile(
+                max_size=1024 * 1024,
+                mode="w+b",
+            )
+            spools.append(stderr_spool)
+            process = subprocess.Popen(
+                command,
+                shell=False,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                env=self._git_environment,
+            )
+            deadline = time.monotonic() + GIT_COMMAND_TIMEOUT_SECONDS
             if process.stdin is None or process.stdout is None or process.stderr is None:
-                raise GitObjectReadError("Git object read failed")
+                raise OSError("missing Git command pipe")
 
-            threads = [
+            drainer_threads = [
                 threading.Thread(
                     target=drain,
                     args=(process.stdout, stdout_spool, stdout_limit, "stdout"),
@@ -289,115 +361,94 @@ class GitReader:
                     daemon=True,
                 ),
             ]
-            for thread in threads:
+            writer_thread = threading.Thread(target=write_input, daemon=True)
+            for thread in (*drainer_threads, writer_thread):
                 thread.start()
                 started_threads.append(thread)
 
-            try:
-                view = memoryview(input_bytes)
-                offset = 0
-                while offset < len(view):
-                    written = process.stdin.write(view[offset:])
-                    if written is None or written <= 0:
-                        raise OSError("short write to Git command")
-                    offset += written
-                process.stdin.flush()
-            except (BrokenPipeError, OSError) as error:
-                record_failure(error)
-            finally:
-                try:
-                    process.stdin.close()
-                except OSError as error:
-                    record_failure(error)
-
-            try:
-                process.wait(timeout=GIT_COMMAND_TIMEOUT_SECONDS)
-                reaped = True
-            except subprocess.TimeoutExpired as error:
-                record_failure(error)
-                try:
-                    process.wait(timeout=5)
-                    reaped = True
-                except subprocess.TimeoutExpired:
-                    try:
-                        process.kill()
-                    except OSError:
-                        pass
-                    try:
-                        process.wait(timeout=5)
+            reaped = wait_for_child(remaining_deadline())
+            if not reaped:
+                terminate_child()
+                reaped = wait_for_child(5)
+            if not reaped:
+                kill_child()
+                for _attempt in range(2):
+                    if wait_for_child(5):
                         reaped = True
-                    except (OSError, subprocess.SubprocessError) as reap_error:
-                        record_failure(reap_error)
-            except (OSError, subprocess.SubprocessError) as error:
-                record_failure(error)
+                        break
 
-            for thread in started_threads:
-                thread.join(timeout=5)
-            if any(thread.is_alive() for thread in started_threads):
-                record_failure(TimeoutError("Git output drainer did not finish"))
-                try:
-                    process.kill()
-                except OSError:
-                    pass
-                try:
-                    process.wait(timeout=5)
-                    reaped = True
-                except (OSError, subprocess.SubprocessError) as error:
-                    record_failure(error)
-                for stream in (process.stdout, process.stderr):
-                    try:
-                        stream.close()
-                    except OSError:
-                        pass
+            terminal_failure = bool(failures) or not reaped
+            if terminal_failure:
+                close_resource(process.stdin)
+                close_resource(process.stdout)
+                close_resource(process.stderr)
                 for thread in started_threads:
-                    thread.join(timeout=5)
+                    join_thread(thread, 5)
+            else:
+                for thread in started_threads:
+                    join_thread(thread, remaining_deadline())
+                if any(thread.is_alive() for thread in started_threads):
+                    add_failure(TimeoutError("Git command I/O thread did not finish"))
+                    close_resource(process.stdin)
+                    close_resource(process.stdout)
+                    close_resource(process.stderr)
+                    for thread in started_threads:
+                        join_thread(thread, 5)
 
-            stdout_spool.seek(0)
-            stderr_spool.seek(0)
-            stdout = stdout_spool.read()
-            stderr = stderr_spool.read()
-            if (
-                failures
-                or any(thread.is_alive() for thread in started_threads)
-                or process.returncode != 0
-                or stderr
-            ):
-                raise GitObjectReadError("Git object read failed")
-            return _GitCommandResult(stdout=stdout, stderr=stderr)
-        except GitObjectReadError:
-            raise
+            if any(thread.is_alive() for thread in started_threads):
+                kill_child()
+                close_resource(process.stdin)
+                close_resource(process.stdout)
+                close_resource(process.stderr)
+                for thread in started_threads:
+                    join_thread(thread, 5)
+            if any(thread.is_alive() for thread in started_threads):
+                add_failure(TimeoutError("Git command I/O thread did not stop"))
+
+            close_resource(process.stdin)
+            close_resource(process.stdout)
+            close_resource(process.stderr)
+            if not any(thread.is_alive() for thread in drainer_threads):
+                try:
+                    stdout_spool.seek(0)  # type: ignore[attr-defined]
+                    stderr_spool.seek(0)  # type: ignore[attr-defined]
+                    stdout = stdout_spool.read()  # type: ignore[attr-defined]
+                    stderr = stderr_spool.read()  # type: ignore[attr-defined]
+                except Exception as error:
+                    add_failure(error)
         except Exception as error:
-            raise GitObjectReadError("Git object read failed") from error
+            add_failure(error)
         finally:
             if process is not None:
                 if not reaped:
-                    try:
-                        process.terminate()
-                    except OSError:
-                        pass
-                    try:
-                        process.wait(timeout=5)
-                    except subprocess.TimeoutExpired:
-                        try:
-                            process.kill()
-                        except OSError:
-                            pass
-                        try:
-                            process.wait(timeout=5)
-                        except (OSError, subprocess.SubprocessError):
-                            pass
-                    except (OSError, subprocess.SubprocessError):
-                        pass
+                    terminate_child()
+                    reaped = wait_for_child(5)
+                if not reaped:
+                    kill_child()
+                    for _attempt in range(2):
+                        if wait_for_child(5):
+                            reaped = True
+                            break
                 for stream in (process.stdin, process.stdout, process.stderr):
-                    if stream is not None:
-                        try:
-                            stream.close()
-                        except OSError:
-                            pass
+                    close_resource(stream)
                 for thread in started_threads:
-                    thread.join(timeout=5)
-            stdout_spool.close()
-            stderr_spool.close()
+                    join_thread(thread, 5)
+                if any(thread.is_alive() for thread in started_threads):
+                    add_failure(TimeoutError("Git command I/O thread did not stop"))
+            if not any(thread.is_alive() for thread in drainer_threads):
+                for spool in spools:
+                    close_resource(spool)
+
+        if (
+            failures
+            or not reaped
+            or process is None
+            or process.returncode != 0
+            or stderr
+            or any(thread.is_alive() for thread in started_threads)
+        ):
+            raise GitObjectReadError("Git object read failed")
+        return _GitCommandResult(stdout=stdout, stderr=stderr)
 
     def _require_sha1_repository(self) -> None:
         if self._sha1_verified:

@@ -9,6 +9,7 @@ import re
 import subprocess
 import tempfile
 import threading
+import time
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -100,9 +101,15 @@ def _create_clean_repository(parent: Path) -> tuple[Path, str]:
 
 
 class _FakeReadPipe:
-    def __init__(self, chunks: tuple[bytes | BaseException, ...]) -> None:
+    def __init__(
+        self,
+        chunks: tuple[bytes | BaseException, ...],
+        *,
+        close_failure: OSError | None = None,
+    ) -> None:
         self._chunks = list(chunks)
         self.closed = False
+        self.close_failure = close_failure
 
     def read(self, _size: int) -> bytes:
         if not self._chunks:
@@ -114,6 +121,8 @@ class _FakeReadPipe:
 
     def close(self) -> None:
         self.closed = True
+        if self.close_failure is not None:
+            raise self.close_failure
 
 
 class _FakeWritePipe:
@@ -122,9 +131,11 @@ class _FakeWritePipe:
         *,
         maximum_write: int | None = None,
         failure: BaseException | None = None,
+        close_failure: OSError | None = None,
     ) -> None:
         self.maximum_write = maximum_write
         self.failure = failure
+        self.close_failure = close_failure
         self.content = bytearray()
         self.closed = False
         self.events: list[str] | None = None
@@ -145,6 +156,8 @@ class _FakeWritePipe:
 
     def close(self) -> None:
         self.closed = True
+        if self.close_failure is not None:
+            raise self.close_failure
 
 
 class _FakeProcess:
@@ -179,6 +192,93 @@ class _FakeProcess:
 
     def kill(self) -> None:
         self.killed = True
+
+
+class _BlockingWritePipe(_FakeWritePipe):
+    def __init__(self, released: threading.Event) -> None:
+        super().__init__()
+        self.released = released
+        self.entered = threading.Event()
+        self.exited = threading.Event()
+        self.writer: threading.Thread | None = None
+
+    def write(self, value: bytes | memoryview) -> int:
+        self.writer = threading.current_thread()
+        self.entered.set()
+        self.released.wait(timeout=5)
+        self.exited.set()
+        raise BrokenPipeError("host-secret")
+
+
+class _BlockingReadPipe(_FakeReadPipe):
+    def __init__(self) -> None:
+        super().__init__(())
+        self.entered = threading.Event()
+        self.released = threading.Event()
+        self.returned_chunk = False
+
+    def read(self, _size: int) -> bytes:
+        self.entered.set()
+        self.released.wait(timeout=5)
+        if not self.returned_chunk:
+            self.returned_chunk = True
+            return b"late"
+        return b""
+
+    def close(self) -> None:
+        self.closed = True
+        self.released.set()
+
+
+class _ScriptedProcess(_FakeProcess):
+    def __init__(
+        self,
+        wait_outcomes: list[int | BaseException],
+        *,
+        stdin: _FakeWritePipe | None = None,
+        stdout: _FakeReadPipe | None = None,
+    ) -> None:
+        super().__init__(stdin=stdin)
+        if stdout is not None:
+            self.stdout = stdout
+        self.wait_outcomes = list(wait_outcomes)
+        self.signal = threading.Event()
+
+    def wait(self, timeout: float | None = None) -> int:
+        self.wait_calls += 1
+        self.wait_timeouts.append(timeout)
+        outcome = self.wait_outcomes.pop(0)
+        if isinstance(outcome, BaseException):
+            raise outcome
+        self.returncode = outcome
+        return outcome
+
+    def terminate(self) -> None:
+        super().terminate()
+        self.signal.set()
+
+    def kill(self) -> None:
+        super().kill()
+        self.signal.set()
+
+
+class _ObservedSpool(io.BytesIO):
+    def __init__(self, *, close_failure: OSError | None = None) -> None:
+        super().__init__()
+        self.close_failure = close_failure
+        self.close_calls = 0
+        self.write_after_close = False
+
+    def write(self, value: bytes) -> int:
+        if self.closed:
+            self.write_after_close = True
+        return super().write(value)
+
+    def close(self) -> None:
+        self.close_calls += 1
+        super().close()
+        if self.close_failure is not None:
+            raise self.close_failure
 
 
 def _popen_sequence(
@@ -240,7 +340,7 @@ class FiniteGitCommandTests(unittest.TestCase):
         self.assertEqual(result.stderr, b"")
         self.assertEqual(stdin.content, b"abcdef")
         self.assertEqual(events[:2], ["drainer-start", "drainer-start"])
-        self.assertEqual(events[2], "stdin-write")
+        self.assertGreaterEqual(events.index("stdin-write"), 2)
         self.assertTrue(stdin.closed)
         self.assertTrue(process.stdout.closed)
         self.assertTrue(process.stderr.closed)
@@ -311,7 +411,8 @@ class FiniteGitCommandTests(unittest.TestCase):
                 "LANG": "C",
             },
         )
-        self.assertEqual(process.wait_timeouts[0], 120)
+        self.assertGreater(process.wait_timeouts[0], 0)
+        self.assertLessEqual(process.wait_timeouts[0], 120)
 
     def test_failures_are_sanitized_and_cleanup_is_deterministic(self) -> None:
         cases = (
@@ -407,13 +508,182 @@ class FiniteGitCommandTests(unittest.TestCase):
             with self.assertRaisesRegex(
                 bundle_builder.GitObjectReadError,
                 "^Git object read failed$",
-            ):
+            ) as raised:
                 self.reader._run_finite_git(("status",), stdout_limit=64)
+        self.assertIsNone(raised.exception.__cause__)
+        self.assertIsNone(raised.exception.__context__)
         self.assertTrue(process.terminated or process.killed)
         self.assertGreaterEqual(process.wait_calls, 1)
         self.assertTrue(process.stdin.closed)
         self.assertTrue(process.stdout.closed)
         self.assertTrue(process.stderr.closed)
+
+    def test_deadline_covers_a_blocked_stdin_write_and_joins_writer(self) -> None:
+        released = threading.Event()
+        stdin = _BlockingWritePipe(released)
+        process = _ScriptedProcess(
+            [subprocess.TimeoutExpired(["git"], 120), 0],
+            stdin=stdin,
+        )
+        process.signal = released
+        errors: list[BaseException] = []
+        started: list[threading.Thread] = []
+        original_start = threading.Thread.start
+
+        def record_start(thread: threading.Thread) -> None:
+            started.append(thread)
+            original_start(thread)
+
+        def invoke() -> None:
+            try:
+                self.reader._run_finite_git(
+                    ("hash-object", "--stdin"),
+                    input_bytes=b"request\n",
+                    stdout_limit=64,
+                )
+            except BaseException as error:
+                errors.append(error)
+
+        caller = threading.Thread(target=invoke)
+        calls: list[tuple[tuple[object, ...], dict[str, object]]] = []
+        with mock.patch(
+            "tools.build_mapping_review_bundle.subprocess.Popen",
+            side_effect=_popen_sequence([process], calls),
+        ), mock.patch(
+            "tools.build_mapping_review_bundle.threading.Thread.start",
+            new=record_start,
+        ):
+            caller.start()
+            try:
+                self.assertTrue(stdin.entered.wait(timeout=1))
+                automatically_released = released.wait(timeout=0.5)
+            finally:
+                released.set()
+                caller.join(timeout=2)
+
+        self.assertTrue(automatically_released)
+        self.assertFalse(caller.is_alive())
+        self.assertTrue(stdin.exited.is_set())
+        self.assertIsNot(stdin.writer, caller)
+        self.assertIsInstance(errors[0], bundle_builder.GitObjectReadError)
+        self.assertEqual(str(errors[0]), "Git object read failed")
+        self.assertFalse(stdin.writer.is_alive())
+        self.assertGreaterEqual(len(started), 4)
+        self.assertTrue(all(not thread.is_alive() for thread in started))
+
+    def test_second_spool_allocation_failure_closes_first_spool(self) -> None:
+        first_spool = _ObservedSpool()
+        allocations = [first_spool, OSError("host-secret")]
+
+        def make_spool(*_arguments: object, **_keywords: object) -> _ObservedSpool:
+            outcome = allocations.pop(0)
+            if isinstance(outcome, OSError):
+                raise outcome
+            return outcome
+
+        with mock.patch(
+            "tools.build_mapping_review_bundle.tempfile.SpooledTemporaryFile",
+            side_effect=make_spool,
+        ):
+            with self.assertRaisesRegex(
+                bundle_builder.GitObjectReadError,
+                "^Git object read failed$",
+            ):
+                self.reader._run_finite_git(("status",), stdout_limit=64)
+        self.assertTrue(first_spool.closed)
+        self.assertGreaterEqual(first_spool.close_calls, 1)
+
+    def test_close_failures_are_sanitized_and_close_remaining_resources(self) -> None:
+        for subject in ("stdin", "stdout", "stderr", "stdout-spool", "stderr-spool"):
+            with self.subTest(subject=subject):
+                stdin = _FakeWritePipe(
+                    close_failure=OSError("host-secret") if subject == "stdin" else None
+                )
+                process = _FakeProcess(stdin=stdin)
+                if subject == "stdout":
+                    process.stdout.close_failure = OSError("host-secret")
+                if subject == "stderr":
+                    process.stderr.close_failure = OSError("host-secret")
+                spools = [
+                    _ObservedSpool(
+                        close_failure=(
+                            OSError("host-secret") if subject == "stdout-spool" else None
+                        )
+                    ),
+                    _ObservedSpool(
+                        close_failure=(
+                            OSError("host-secret") if subject == "stderr-spool" else None
+                        )
+                    ),
+                ]
+                calls: list[tuple[tuple[object, ...], dict[str, object]]] = []
+                with mock.patch(
+                    "tools.build_mapping_review_bundle.subprocess.Popen",
+                    side_effect=_popen_sequence([process], calls),
+                ), mock.patch(
+                    "tools.build_mapping_review_bundle.tempfile.SpooledTemporaryFile",
+                    side_effect=spools,
+                ):
+                    with self.assertRaisesRegex(
+                        bundle_builder.GitObjectReadError,
+                        "^Git object read failed$",
+                    ) as raised:
+                        self.reader._run_finite_git(("status",), stdout_limit=64)
+                self.assertIsNone(raised.exception.__cause__)
+                self.assertIsNone(raised.exception.__context__)
+                self.assertTrue(stdin.closed)
+                self.assertTrue(process.stdout.closed)
+                self.assertTrue(process.stderr.closed)
+                self.assertTrue(all(spool.closed for spool in spools))
+                self.assertTrue(all(spool.close_calls >= 1 for spool in spools))
+
+    def test_terminal_cleanup_kills_retries_reap_and_unblocks_drainer(self) -> None:
+        blocked_stdout = _BlockingReadPipe()
+        process = _ScriptedProcess(
+            [
+                subprocess.TimeoutExpired(["git"], 120),
+                subprocess.TimeoutExpired(["git"], 5),
+                subprocess.TimeoutExpired(["git"], 5),
+                0,
+            ],
+            stdout=blocked_stdout,
+        )
+        calls: list[tuple[tuple[object, ...], dict[str, object]]] = []
+        started: list[threading.Thread] = []
+        spools = [_ObservedSpool(), _ObservedSpool()]
+        original_start = threading.Thread.start
+
+        def record_start(thread: threading.Thread) -> None:
+            started.append(thread)
+            original_start(thread)
+
+        started_at = time.monotonic()
+        with mock.patch(
+            "tools.build_mapping_review_bundle.subprocess.Popen",
+            side_effect=_popen_sequence([process], calls),
+        ), mock.patch(
+            "tools.build_mapping_review_bundle.tempfile.SpooledTemporaryFile",
+            side_effect=spools,
+        ), mock.patch(
+            "tools.build_mapping_review_bundle.threading.Thread.start",
+            new=record_start,
+        ):
+            with self.assertRaisesRegex(
+                bundle_builder.GitObjectReadError,
+                "^Git object read failed$",
+            ):
+                self.reader._run_finite_git(("status",), stdout_limit=64)
+        elapsed = time.monotonic() - started_at
+
+        self.assertLess(elapsed, 1)
+        self.assertTrue(process.terminated)
+        self.assertTrue(process.killed)
+        self.assertGreaterEqual(process.wait_calls, 4)
+        self.assertTrue(blocked_stdout.closed)
+        self.assertTrue(blocked_stdout.released.is_set())
+        self.assertTrue(all(not thread.is_alive() for thread in started))
+        self.assertTrue(all(spool.closed for spool in spools))
+        self.assertTrue(all(not spool.write_after_close for spool in spools))
 
 
 class GitRepositoryBindingTests(unittest.TestCase):
@@ -534,7 +804,9 @@ class GitRepositoryBindingTests(unittest.TestCase):
         self.assertEqual(commands[4][-4:], ["worktree", "list", "--porcelain", "-z"])
         self.assertTrue(all("text" not in call[1] for call in calls))
         self.assertTrue(all(call[1]["env"] == reader._git_environment for call in calls))
-        self.assertTrue(all(process.wait_timeouts[0] == 120 for process in processes))
+        self.assertTrue(
+            all(0 < process.wait_timeouts[0] <= 120 for process in processes)
+        )
         self.assertEqual(
             [call.kwargs["stdout_limit"] for call in finite_git.call_args_list],
             [16, 41, 41, 8 * 1024 * 1024, 8 * 1024 * 1024],
