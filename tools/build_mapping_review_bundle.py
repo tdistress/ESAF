@@ -18,6 +18,7 @@ import unicodedata
 from types import MappingProxyType
 from typing import Literal, Mapping, NamedTuple, Sequence
 
+import yaml
 from jsonschema import Draft202012Validator, FormatChecker
 from jsonschema.exceptions import SchemaError
 
@@ -1662,7 +1663,16 @@ def main(argv: list[str] | None = None) -> int:
         }
         print(json.dumps(report, sort_keys=True))
         return 0
-    except Exception as error:
+    except subprocess.SubprocessError:
+        print("Git object read failed", file=sys.stderr)
+        return 2
+    except (
+        OSError,
+        UnicodeError,
+        ValueError,
+        SchemaError,
+        yaml.YAMLError,
+    ) as error:
         print(error, file=sys.stderr)
         return 2
 

@@ -23,6 +23,7 @@ import tools.crosswalks.catalog as crosswalk_catalog
 import tools.crosswalks.manifest as crosswalk_manifest
 from tools.build_mapping_review_bundle import (
     PROFILES,
+    GitObjectReadError,
     GitReader,
     MappingProfile,
     PackageFile,
@@ -2975,6 +2976,63 @@ class PackageWriterTests(unittest.TestCase):
                 (output / "PACKAGE_MANIFEST.json").read_text(encoding="utf-8")
             )
             self.assertEqual(manifest["generator_commit"], self.head)
+
+    def test_cli_sanitizes_git_object_read_failures(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            stdout = io.StringIO()
+            stderr = io.StringIO()
+            with mock.patch.object(
+                GitReader,
+                "_run_finite_git",
+                autospec=True,
+                side_effect=GitObjectReadError("host-secret"),
+            ), redirect_stdout(stdout), redirect_stderr(stderr):
+                result = main(
+                    [
+                        "--commit",
+                        self.head,
+                        "--mapping-set-id",
+                        self.profile.mapping_set_id,
+                        "--output",
+                        str(Path(directory) / "package"),
+                    ]
+                )
+
+        self.assertEqual(result, 2)
+        self.assertEqual(stdout.getvalue(), "")
+        self.assertEqual(stderr.getvalue(), "Git object read failed\n")
+        self.assertNotIn("host-secret", stderr.getvalue())
+        self.assertNotIn("Traceback", stderr.getvalue())
+
+    def test_cli_propagates_programmer_exceptions(self) -> None:
+        for failure in (
+            AssertionError("sentinel assertion"),
+            TypeError("sentinel type error"),
+        ):
+            with self.subTest(failure=type(failure).__name__):
+                with tempfile.TemporaryDirectory() as directory:
+                    stdout = io.StringIO()
+                    stderr = io.StringIO()
+                    with mock.patch.object(
+                        GitReader,
+                        "_run_finite_git",
+                        autospec=True,
+                        side_effect=failure,
+                    ), redirect_stdout(stdout), redirect_stderr(stderr):
+                        with self.assertRaises(type(failure)) as raised:
+                            main(
+                                [
+                                    "--commit",
+                                    self.head,
+                                    "--mapping-set-id",
+                                    self.profile.mapping_set_id,
+                                    "--output",
+                                    str(Path(directory) / "package"),
+                                ]
+                            )
+                self.assertEqual(str(raised.exception), str(failure))
+                self.assertEqual(stdout.getvalue(), "")
+                self.assertEqual(stderr.getvalue(), "")
 
     def test_cli_defaults_to_draft_and_rejects_unknown_candidate_state(
         self,
