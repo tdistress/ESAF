@@ -698,7 +698,7 @@ class GitReader:
             )
             raw_records = result.stdout
             if raw_records and not raw_records.endswith(b"\0"):
-                raise ValueError("malformed Git tree entry")
+                raise GitObjectReadError("Git object read failed")
             records = raw_records.split(b"\0") if raw_records else [b""]
             records = records[:-1]
             if len(records) > GIT_TREE_RECORD_LIMIT:
@@ -714,16 +714,22 @@ class GitReader:
             }
             for record in records:
                 if not record:
-                    raise ValueError("malformed Git tree entry")
+                    raise GitObjectReadError("Git object read failed")
+                parsed_record: tuple[str, str, str, str] | None = None
                 try:
                     header, raw_path = record.split(b"\t", 1)
                     raw_mode, raw_type, raw_object_id = header.split(b" ")
-                    mode = raw_mode.decode("ascii")
-                    object_type = raw_type.decode("ascii")
-                    object_id = raw_object_id.decode("ascii")
-                    path = raw_path.decode("utf-8")
-                except (UnicodeDecodeError, ValueError) as error:
-                    raise ValueError("malformed Git tree entry") from error
+                    parsed_record = (
+                        raw_mode.decode("ascii"),
+                        raw_type.decode("ascii"),
+                        raw_object_id.decode("ascii"),
+                        raw_path.decode("utf-8"),
+                    )
+                except (UnicodeDecodeError, ValueError):
+                    pass
+                if parsed_record is None:
+                    raise GitObjectReadError("Git object read failed")
+                mode, object_type, object_id, path = parsed_record
                 if (
                     (mode, object_type) not in allowed_pairs
                     or not FULL_SHA.fullmatch(object_id)
@@ -732,10 +738,16 @@ class GitReader:
                         for character in path
                     )
                 ):
-                    raise ValueError("malformed Git tree entry")
-                _canonical_relative_path(path, "repository")
+                    raise GitObjectReadError("Git object read failed")
+                canonical_path = True
+                try:
+                    _canonical_relative_path(path, "repository")
+                except ValueError:
+                    canonical_path = False
+                if not canonical_path:
+                    raise GitObjectReadError("Git object read failed")
                 if path in entries:
-                    raise ValueError("duplicate Git tree entry")
+                    raise GitObjectReadError("Git object read failed")
                 entries[path] = TreeEntry(path, mode, object_type, object_id)
 
             for path in entries:
@@ -744,7 +756,7 @@ class GitReader:
                     parent_path = PurePosixPath(*parts[:depth]).as_posix()
                     parent = entries.get(parent_path)
                     if parent is None or parent.object_type != "tree":
-                        raise ValueError("malformed Git tree hierarchy")
+                        raise GitObjectReadError("Git object read failed")
 
             published: Mapping[str, TreeEntry] = MappingProxyType(entries)
             self._tree_indexes[commit] = published

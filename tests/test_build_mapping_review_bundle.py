@@ -1377,10 +1377,6 @@ class GitTreeProtocolTests(unittest.TestCase):
     def test_malformed_tree_transactions_are_not_published(self) -> None:
         commit = "a" * 40
         valid = _tree_record(b"foo") + b"\0"
-        too_many = b"".join(
-            _tree_record(f"f{number:06d}".encode("ascii")) + b"\0"
-            for number in range(100_001)
-        )
         malformed_cases = {
             "missing terminal NUL": _tree_record(b"foo"),
             "empty interior record": (
@@ -1414,7 +1410,6 @@ class GitTreeProtocolTests(unittest.TestCase):
             "invalid mode type": (
                 _tree_record(b"foo", mode=b"100644", object_type=b"tree") + b"\0"
             ),
-            "record limit": too_many,
         }
         for label, malformed in malformed_cases.items():
             with self.subTest(label=label):
@@ -1428,10 +1423,46 @@ class GitTreeProtocolTests(unittest.TestCase):
                     "_run_finite_git",
                     side_effect=responses,
                 ) as finite_git:
-                    with self.assertRaises(ValueError):
+                    with self.assertRaises(
+                        bundle_builder.GitObjectReadError
+                    ) as caught:
                         reader._tree_index(commit)
+                    self.assertIs(
+                        type(caught.exception),
+                        bundle_builder.GitObjectReadError,
+                    )
+                    self.assertEqual(
+                        str(caught.exception),
+                        "Git object read failed",
+                    )
+                    self.assertIsNone(caught.exception.__cause__)
+                    self.assertIsNone(caught.exception.__context__)
+                    self.assertNotIn("../foo", str(caught.exception))
                     self.assertEqual(reader.list_files(commit, "foo"), ("foo",))
                 self.assertEqual(finite_git.call_count, 2)
+
+    def test_declared_tree_record_limit_remains_a_value_error(self) -> None:
+        commit = "a" * 40
+        too_many = b"".join(
+            _tree_record(f"f{number:06d}".encode("ascii")) + b"\0"
+            for number in range(100_001)
+        )
+        valid = _tree_record(b"foo") + b"\0"
+        reader = _reader_with_verified_commit(commit)
+        responses = [
+            bundle_builder._GitCommandResult(too_many, b""),
+            bundle_builder._GitCommandResult(valid, b""),
+        ]
+        with mock.patch.object(
+            reader,
+            "_run_finite_git",
+            side_effect=responses,
+        ) as finite_git:
+            with self.assertRaisesRegex(ValueError, "tree record limit") as caught:
+                reader._tree_index(commit)
+            self.assertIs(type(caught.exception), ValueError)
+            self.assertEqual(reader.list_files(commit, "foo"), ("foo",))
+        self.assertEqual(finite_git.call_count, 2)
 
     def test_tree_output_overflow_is_retryable_and_uses_the_hard_cap(self) -> None:
         commit = "a" * 40
