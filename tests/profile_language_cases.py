@@ -15,7 +15,7 @@ from typing import Literal
 
 DiagnosticFamily = Literal["claim", "source_authority"]
 LOCATION = "profiles/uk/0.1.0/README.md"
-EXPECTED_POPULATION_SHA256 = "e7287c238332b6007bfa114e5c47ff2803fbcbe7b747b4c95499cf5915932fa4"
+EXPECTED_POPULATION_SHA256 = "8caf46a8e85121e53598cf17b9c04577bd9e1df3270cf08b5331bef73bf53735"
 EXPECTED_SOURCE_DISTRIBUTION = {
     (): 772,
     ("UK GDPR",): 87,
@@ -3247,7 +3247,7 @@ _DIAGNOSTIC_FAMILIES = {'test_additional_assurance_claim_forms_are_rejected': ((
                                                                   ('source_authority',),
                                                                   ('source_authority',),
                                                                   ('source_authority',),
-                                                                  ('claim',)),
+                                                                  ('source_authority',)),
  'test_direct_weakening_object_and_complement_are_bounded': (('claim',), ('claim',)),
  'test_dynamic_authority_bounded_adverb_cross_product': (('source_authority',),
                                                          ('source_authority',),
@@ -3726,7 +3726,7 @@ _DIAGNOSTIC_FAMILIES = {'test_additional_assurance_claim_forms_are_rejected': ((
  'test_reordered_mapping_and_general_authority_denials_are_allowed': (('claim',),
                                                                       ('claim',),
                                                                       ('claim',),
-                                                                      ('claim',)),
+                                                                      ('source_authority',)),
  'test_second_review_claim_word_order_polarity_pairs': (('claim',),
                                                         ('claim',),
                                                         ('claim',),

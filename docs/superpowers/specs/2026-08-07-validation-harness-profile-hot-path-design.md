@@ -14,13 +14,13 @@ This is the profile hot-path increment of validation-harness efficiency Phase 2.
 
 ## Baseline and cost
 
-On current `main` at `df124e13a7b4a377524c50e73358234425913e72`, the complete suite ran 205 tests in 416.717 seconds and reported five Windows symlink privilege skips. The slowest profile language-matrix methods took 5.6 to 9.7 seconds each. Each of those methods issued 28 to 46 calls to the complete `validate()` path.
+On current `main` at `df124e13a7b4a377524c50e73358234425913e72`, the profile module ran 205 tests in 416.717 seconds and reported five Windows symlink privilege skips. The slowest profile language-matrix methods took 5.6 to 9.7 seconds each. Each of those methods issued 28 to 46 calls to the complete `validate()` path.
 
-The suite baseline came from a clean Windows worktree at that commit with bytecode generation disabled:
+The profile-module baseline came from a clean Windows worktree at that commit with bytecode generation disabled:
 
 ```powershell
 $env:PYTHONDONTWRITEBYTECODE = "1"
-python -m unittest discover -s tests -v
+python -m unittest -v tests.test_validate_profiles
 ```
 
 The method counts below come from an instrumented run of `python -m unittest -v tests.test_validate_profiles` at the same commit. The measurement counted calls to `validate_profiles.validate()` and successful unittest subtests without changing case inputs or validator behavior. Across the whole module, it recorded 1,010 calls from 165 methods and 1,577 successful subtests. Those suite-wide totals include methods that call `validate()` once and methods outside the language-classifier scope.
@@ -232,7 +232,7 @@ The command shall accept only a full lowercase 40-character SHA. It shall requir
 
 The harness shall load the validated inventory from `tests/profile_language_cases.py`. It may group records by method and create one fresh valid fixture for each of the 73 methods. Before each of the 908 comparisons, it shall reset `profiles/uk/0.1.0/README.md` from that record, load `profile.json`, assign `source_boundary.excluded_sources` from the record's immutable tuple, write the component with the same indentation, newline, and UTF-8 behavior as `ProfileValidationTests.write_component()`, and regenerate the authoritative `PROFILE.md` with `profile_fixture.write_authoritative_source()`. This requirement applies to all 136 nonempty cases and to every empty-state case. No case may inherit README text or excluded-source state from the preceding case.
 
-The harness shall compare three exact lists independently for all 908 records: complete `validate()` output, the sorted union of the applicable production text-diagnostic outputs, and the case record's expected diagnostics. This includes empty results, repository-relative locations, message text, deduplication, and order. It shall not use a separately encoded expected-case table.
+The harness shall compare three exact lists independently for all 908 records: complete `validate()` output, the raw sequence formed by appending claim diagnostics before source-authority diagnostics, and the case record's expected diagnostics. The narrow sequence shall not be sorted or deduplicated because its order and duplicates are comparison evidence. The comparison includes empty results, repository-relative locations, and message text. It shall not use a separately encoded expected-case table.
 
 Successful output shall report these stable fields:
 

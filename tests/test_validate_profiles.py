@@ -1380,6 +1380,8 @@ class ProfileHotPathEquivalenceComparisonTests(unittest.TestCase):
     def assert_comparison_failure(
         self,
         expected_relation: str,
+        *,
+        expected_message: str | None = None,
         **kwargs: object,
     ) -> None:
         with self.assertRaises(
@@ -1391,10 +1393,18 @@ class ProfileHotPathEquivalenceComparisonTests(unittest.TestCase):
             message.startswith("method_one/case-claim-001: "), message
         )
         self.assertIn(expected_relation, message)
+        if expected_message is not None:
+            self.assertEqual(message, expected_message)
         stderr = self.assert_main_rejects(captured.exception)
+        if expected_message is not None:
+            self.assertEqual(
+                stderr,
+                f"profile equivalence failed: {expected_message}\n",
+            )
         for unsafe in (
             str(self.root),
             *(str(root) for root in self.fixture_roots),
+            "injected child stderr",
         ):
             self.assertNotIn(unsafe, message)
             self.assertNotIn(unsafe, stderr)
@@ -1508,7 +1518,15 @@ class ProfileHotPathEquivalenceComparisonTests(unittest.TestCase):
         outputs = dict(self.claim_outputs)
         outputs["Claim text"] = [self.SOURCE_DIAGNOSTIC]
         self.assert_comparison_failure(
-            "complete/narrow", claim_outputs=outputs
+            "complete/narrow",
+            expected_message=(
+                "method_one/case-claim-001: complete/narrow, "
+                "narrow/expected outputs differ; "
+                "full=['profiles/uk/0.1.0/README.md: claim problem']; "
+                "narrow=['profiles/uk/0.1.0/README.md: source problem']; "
+                "expected=['profiles/uk/0.1.0/README.md: claim problem']"
+            ),
+            claim_outputs=outputs,
         )
 
     def test_complete_and_expected_mismatch_is_rejected(self) -> None:
@@ -1520,7 +1538,15 @@ class ProfileHotPathEquivalenceComparisonTests(unittest.TestCase):
             self.inventory, cases=(first, *self.inventory.cases[1:])
         )
         self.assert_comparison_failure(
-            "complete/expected", inventory=inventory
+            "complete/expected",
+            expected_message=(
+                "method_one/case-claim-001: complete/expected, "
+                "narrow/expected outputs differ; "
+                "full=['profiles/uk/0.1.0/README.md: claim problem']; "
+                "narrow=['profiles/uk/0.1.0/README.md: claim problem']; "
+                "expected=['profiles/uk/0.1.0/README.md: source problem']"
+            ),
+            inventory=inventory,
         )
 
     def test_narrow_and_expected_mismatch_is_rejected(self) -> None:
@@ -1534,7 +1560,16 @@ class ProfileHotPathEquivalenceComparisonTests(unittest.TestCase):
         outputs = dict(self.full_outputs)
         outputs["Claim text"] = [self.SOURCE_DIAGNOSTIC]
         self.assert_comparison_failure(
-            "narrow/expected", inventory=inventory, full_outputs=outputs
+            "narrow/expected",
+            expected_message=(
+                "method_one/case-claim-001: complete/narrow, "
+                "narrow/expected outputs differ; "
+                "full=['profiles/uk/0.1.0/README.md: source problem']; "
+                "narrow=['profiles/uk/0.1.0/README.md: claim problem']; "
+                "expected=['profiles/uk/0.1.0/README.md: source problem']"
+            ),
+            inventory=inventory,
+            full_outputs=outputs,
         )
 
     def test_wrong_diagnostic_order_is_rejected(self) -> None:
@@ -2088,6 +2123,85 @@ class ProfileLanguageMatrixStructureTests(unittest.TestCase):
             return f"{parent}.{node.attr}" if parent else node.attr
         return None
 
+    def assert_source_authority_only_case(
+        self,
+        *,
+        method_name: str,
+        case_id: str,
+        text: str,
+        excluded_sources: tuple[str, ...],
+    ) -> None:
+        matching = tuple(
+            case
+            for case in self.inventory.cases_for_method(method_name)
+            if case.case_id == case_id
+        )
+        self.assertEqual(len(matching), 1)
+        case = matching[0]
+        self.assertEqual(case.text, text)
+        self.assertEqual(case.excluded_sources, excluded_sources)
+        self.assertEqual(case.expected_diagnostics, ())
+
+        inventory = mock.Mock()
+        inventory.cases_for_method.return_value = (case,)
+        with (
+            mock.patch.object(
+                profile_language_cases,
+                "profile_language_inventory",
+                return_value=inventory,
+            ),
+            mock.patch.object(
+                validate_profiles,
+                "claim_text_diagnostics",
+                return_value=[],
+            ) as claim_boundary,
+            mock.patch.object(
+                validate_profiles,
+                "source_authority_text_diagnostics",
+                return_value=[],
+            ) as source_boundary,
+        ):
+            ProfileLanguageMatrixTests()._assert_profile_language_cases(
+                method_name
+            )
+
+        inventory.cases_for_method.assert_called_once_with(method_name)
+        claim_boundary.assert_not_called()
+        source_boundary.assert_called_once_with(
+            f"# Synthetic profile\n\n{text}\n",
+            case.location,
+            excluded_sources,
+        )
+        self.assertEqual(case.diagnostic_families, ("source_authority",))
+
+    def test_declared_generic_negative_case_uses_source_authority_boundary(
+        self,
+    ) -> None:
+        self.assert_source_authority_only_case(
+            method_name=(
+                "test_declared_generic_authority_passive_aspect_cross_product"
+            ),
+            case_id=(
+                "declared_generic_authority_passive_aspect_cross_product-009"
+            ),
+            text="This profile is governed by Other Code.",
+            excluded_sources=("Acme Code",),
+        )
+
+    def test_reordered_uk_gdpr_denial_uses_source_authority_boundary(
+        self,
+    ) -> None:
+        self.assert_source_authority_only_case(
+            method_name=(
+                "test_reordered_mapping_and_general_authority_denials_are_allowed"
+            ),
+            case_id=(
+                "reordered_mapping_and_general_authority_denials_are_allowed-004"
+            ),
+            text="UK GDPR does not govern this profile.",
+            excluded_sources=("UK GDPR", "NCSC", "Cyber Essentials"),
+        )
+
     def test_inventory_methods_are_exactly_the_matrix_methods(self) -> None:
         self.assertEqual(
             tuple(self.dotted_name(base) for base in self.matrix.bases),
@@ -2264,6 +2378,7 @@ class ProfileLanguageMatrixStructureTests(unittest.TestCase):
                 if "claim" in case.diagnostic_families
             ],
         )
+        self.assertEqual(claim_boundary.call_count, 799)
         self.assertEqual(
             source_boundary.call_args_list,
             [
@@ -2276,6 +2391,7 @@ class ProfileLanguageMatrixStructureTests(unittest.TestCase):
                 if "source_authority" in case.diagnostic_families
             ],
         )
+        self.assertEqual(source_boundary.call_count, 109)
         full_validator.assert_not_called()
 
 

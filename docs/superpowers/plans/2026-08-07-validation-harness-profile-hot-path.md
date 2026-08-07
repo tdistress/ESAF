@@ -567,7 +567,7 @@ Use a small injected inventory containing one empty exclusion, one `("Acme Code"
 - `write_component()` and authoritative-source regeneration before every full validation;
 - one full validation call per record;
 - one call to each applicable boundary per record and no call to an inapplicable boundary;
-- independent equality of full output, sorted narrow union, and expected tuple; and
+- independent equality of full output, the raw claim-then-source sequence, and the expected tuple, with narrow order and duplicates kept as comparison evidence; and
 - an exact `HEAD` and clean-status preflight before the first fixture plus the same two Git checks after the last comparison and immediately before the result returns; and
 - stable method and case identifiers in a mismatch without the temporary root.
 
@@ -609,9 +609,10 @@ if "source_authority" in case.diagnostic_families:
             readme, case.location, case.excluded_sources
         )
     )
-narrow = sorted(set(narrow))
 expected = list(case.expected_diagnostics)
 ```
+
+Keep `narrow` as the raw claim-then-source sequence. Do not sort or deduplicate it because its order and duplicates are comparison evidence.
 
 Compare `full`, `narrow`, and `expected` independently. Before reporting any list, reject diagnostics containing the resolved temporary root or its slash-normalized form. After every method and all 908 cases have completed, call `require_exact_candidate(root, candidate_sha, runner)` again. Return `EquivalenceResult` immediately after that postflight succeeds; `main()` must print the five PASS lines immediately from the returned result without another operation. A postflight HEAD mismatch, dirty status, Git error, or stderr output fails closed and cannot emit `equivalence=PASS`.
 

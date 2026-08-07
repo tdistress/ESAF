@@ -181,7 +181,8 @@ def _compare_case(
         mismatches.append("narrow/expected")
     if mismatches:
         raise ProfileHotPathEquivalenceError(
-            f"{case_label}: {', '.join(mismatches)} outputs differ"
+            f"{case_label}: {', '.join(mismatches)} outputs differ; "
+            f"full={full!r}; narrow={narrow!r}; expected={expected!r}"
         )
 
 
