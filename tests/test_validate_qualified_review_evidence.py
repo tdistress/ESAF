@@ -22,6 +22,7 @@ import tools.validate_crosswalks as crosswalk_validator
 import tools.seal_qualified_review_campaign as seal_module
 from tools.build_mapping_review_bundle import (
     PROFILES,
+    GitObjectReadError,
     GitReader,
     PackageAssembly,
     assemble_package,
@@ -2440,29 +2441,40 @@ class CampaignValidationTests(unittest.TestCase):
         self.assertEqual(len(stderr.splitlines()), 1)
         self.assertFalse(output.exists())
 
-    def test_validator_cli_keeps_post_blob_git_show_failure_operational(
+    def test_validator_cli_keeps_batch_object_failure_operational(
         self,
     ) -> None:
-        original_run = GitReader._run
+        original_run = GitReader._run_finite_git
+        successful_operations: list[tuple[str, ...]] = []
 
-        def fail_show(
+        def fail_batch(
             reader: GitReader,
-            *arguments: str,
-            text: bool = False,
-        ) -> subprocess.CompletedProcess:
-            if arguments and arguments[0] == "show":
-                raise subprocess.CalledProcessError(
-                    128,
-                    ["git", "show", "host-secret"],
-                    stderr=b"host-secret object failure",
-                )
-            return original_run(reader, *arguments, text=text)
+            arguments: tuple[str, ...],
+            *,
+            input_bytes: bytes = b"",
+            stdout_limit: int,
+            stderr_limit: int = 65_536,
+        ) -> object:
+            if (
+                arguments == ("cat-file", "--batch")
+                and successful_operations
+            ):
+                raise GitObjectReadError("host-secret object failure")
+            result = original_run(
+                reader,
+                arguments,
+                input_bytes=input_bytes,
+                stdout_limit=stdout_limit,
+                stderr_limit=stderr_limit,
+            )
+            successful_operations.append(arguments)
+            return result
 
         with mock.patch.object(
             GitReader,
-            "_run",
+            "_run_finite_git",
             autospec=True,
-            side_effect=fail_show,
+            side_effect=fail_batch,
         ):
             result, stdout, stderr = self._run_validator_cli(
                 [
@@ -2475,8 +2487,10 @@ class CampaignValidationTests(unittest.TestCase):
             )
         self.assertEqual(result, 2)
         self.assertEqual(stdout, "")
-        self.assertEqual(len(stderr.splitlines()), 1)
+        self.assertGreater(len(successful_operations), 0)
+        self.assertEqual(stderr, "qualified-review evidence operation failed\n")
         self.assertNotIn("host-secret", stderr)
+        self.assertNotIn("Traceback", stderr)
 
     def _run_seal_cli(
         self,
