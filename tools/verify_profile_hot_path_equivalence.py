@@ -166,7 +166,6 @@ def _compare_case(
                 readme, case.location, case.excluded_sources
             )
         )
-    narrow = sorted(set(narrow))
     expected = list(case.expected_diagnostics)
 
     case_label = _safe_case_label(case.method_name, case.case_id)

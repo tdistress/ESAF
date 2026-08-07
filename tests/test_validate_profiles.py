@@ -1567,6 +1567,44 @@ class ProfileHotPathEquivalenceComparisonTests(unittest.TestCase):
             "complete/narrow", full_outputs=outputs
         )
 
+    def test_duplicate_narrow_diagnostic_is_rejected(self) -> None:
+        outputs = dict(self.claim_outputs)
+        outputs["Claim text"] = [
+            self.CLAIM_DIAGNOSTIC,
+            self.CLAIM_DIAGNOSTIC,
+        ]
+        self.assert_comparison_failure(
+            "complete/narrow", claim_outputs=outputs
+        )
+
+    def test_reversed_narrow_diagnostic_order_is_rejected(self) -> None:
+        first = replace(
+            self.inventory.cases[0],
+            expected_diagnostics=(
+                self.CLAIM_DIAGNOSTIC,
+                self.SOURCE_DIAGNOSTIC,
+            ),
+        )
+        inventory = replace(
+            self.inventory, cases=(first, *self.inventory.cases[1:])
+        )
+        full_outputs = dict(self.full_outputs)
+        full_outputs["Claim text"] = [
+            self.CLAIM_DIAGNOSTIC,
+            self.SOURCE_DIAGNOSTIC,
+        ]
+        claim_outputs = dict(self.claim_outputs)
+        claim_outputs["Claim text"] = [
+            self.SOURCE_DIAGNOSTIC,
+            self.CLAIM_DIAGNOSTIC,
+        ]
+        self.assert_comparison_failure(
+            "complete/narrow",
+            inventory=inventory,
+            full_outputs=full_outputs,
+            claim_outputs=claim_outputs,
+        )
+
     def test_temporary_path_in_diagnostic_is_rejected_without_leaking(self) -> None:
         def leaked_output(fixture_root: Path, _text: str) -> list[str]:
             return [f"{fixture_root.resolve()}/secret"]
