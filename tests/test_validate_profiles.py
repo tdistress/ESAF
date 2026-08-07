@@ -267,6 +267,254 @@ class ProfileTextDiagnosticBoundaryTests(unittest.TestCase):
             )
 
 
+class ProfileDiagnosticWrapperRoutingTests(unittest.TestCase):
+    PROFILE_MARKER = "Profile JSON marker"
+    RISK_MARKER = "Risk overlay JSON marker"
+    README_MARKER = "README marker"
+    SOURCE_MARKER = "PROFILE prose marker"
+    EXCLUDED_SOURCES = ("Acme Code", "UK GDPR")
+
+    def setUp(self) -> None:
+        self.temp = tempfile.TemporaryDirectory()
+        self.root = Path(self.temp.name)
+        self.package = profile_fixture.write_valid_profile_fixture(self.root)
+
+    def tearDown(self) -> None:
+        self.temp.cleanup()
+
+    def loaded_marked_package(self) -> validate_profiles.ProfilePackage:
+        profile_path = self.package / "profile.json"
+        profile = json.loads(profile_path.read_text(encoding="utf-8"))
+        profile["scope"] = self.PROFILE_MARKER
+        profile["source_boundary"]["excluded_sources"] = list(
+            self.EXCLUDED_SOURCES
+        )
+        profile_fixture.write_component(self.package, "profile.json", profile)
+
+        risk_path = self.package / "risk-overlays.json"
+        risk_overlays = json.loads(risk_path.read_text(encoding="utf-8"))
+        risk_overlays["risks"] = [
+            {
+                "risk_id": "RISK-MARKER",
+                "statement": self.RISK_MARKER,
+                "circumstances": "Synthetic marker circumstances.",
+                "source_basis": ["ESAF"],
+                "affected_controls": ["GOV-100"],
+                "overlay_ids": ["OVERLAY-MARKER"],
+            }
+        ]
+        profile_fixture.write_component(
+            self.package, "risk-overlays.json", risk_overlays
+        )
+        (self.package / "README.md").write_text(
+            self.README_MARKER, encoding="utf-8"
+        )
+        source = self.package / "PROFILE.md"
+        source.write_text(
+            source.read_text(encoding="utf-8")
+            + f"\n{self.SOURCE_MARKER}\n",
+            encoding="utf-8",
+        )
+
+        diagnostics: list[str] = []
+        package = validate_profiles.load_package(
+            self.root, self.package, diagnostics
+        )
+        self.assertEqual(diagnostics, [])
+        self.assertIsNotNone(package)
+        assert package is not None
+        return package
+
+    def expected_text_calls(
+        self,
+        package: validate_profiles.ProfilePackage,
+        excluded_sources: tuple[str, ...] | None = None,
+    ) -> list[mock._Call]:
+        calls: list[mock._Call] = []
+        for component, document in sorted(package.documents.items()):
+            filename = validate_profiles.PACKAGE_FILES[component]
+            relative = f"{package.relative}/{filename}"
+            for location, _, value in validate_profiles.walk_json(document):
+                if not isinstance(value, str):
+                    continue
+                complete_location = f"{relative}: {location}"
+                if excluded_sources is None:
+                    calls.append(mock.call(value, complete_location))
+                else:
+                    calls.append(
+                        mock.call(
+                            value, complete_location, excluded_sources
+                        )
+                    )
+
+        for component in ("readme", "source"):
+            filename = validate_profiles.PACKAGE_FILES[component]
+            relative = f"{package.relative}/{filename}"
+            text = (package.directory / filename).read_text(encoding="utf-8")
+            if component == "source":
+                text = validate_profiles.AUTHORITATIVE_JSON_BLOCK.sub("", text)
+            if excluded_sources is None:
+                calls.append(mock.call(text, relative))
+            else:
+                calls.append(mock.call(text, relative, excluded_sources))
+        return calls
+
+    def test_source_wrapper_routes_text_with_locations_and_exclusions(
+        self,
+    ) -> None:
+        package = self.loaded_marked_package()
+        sentinels = ["source-z", "source-a", "source-z"]
+        with mock.patch.object(
+            validate_profiles,
+            "source_authority_text_diagnostics",
+            return_value=sentinels,
+        ) as boundary:
+            diagnostics = validate_profiles.source_boundary_diagnostics(
+                package, set()
+            )
+
+        self.assertEqual(diagnostics, ["source-a", "source-z"])
+        calls = boundary.call_args_list
+        self.assertEqual(
+            calls,
+            self.expected_text_calls(package, self.EXCLUDED_SOURCES),
+        )
+        self.assertIn(
+            mock.call(
+                self.PROFILE_MARKER,
+                "profiles/uk/0.1.0/profile.json: document.scope",
+                self.EXCLUDED_SOURCES,
+            ),
+            calls,
+        )
+        self.assertIn(
+            mock.call(
+                self.RISK_MARKER,
+                "profiles/uk/0.1.0/risk-overlays.json: "
+                "document.risks[0].statement",
+                self.EXCLUDED_SOURCES,
+            ),
+            calls,
+        )
+        self.assertIn(
+            mock.call(
+                self.README_MARKER,
+                "profiles/uk/0.1.0/README.md",
+                self.EXCLUDED_SOURCES,
+            ),
+            calls,
+        )
+        source_calls = [
+            boundary_call
+            for boundary_call in calls
+            if boundary_call.args[1] == "profiles/uk/0.1.0/PROFILE.md"
+        ]
+        self.assertEqual(len(source_calls), 1)
+        source_text = source_calls[0].args[0]
+        self.assertIn(self.SOURCE_MARKER, source_text)
+        self.assertNotIn(self.PROFILE_MARKER, source_text)
+        self.assertNotIn(self.RISK_MARKER, source_text)
+
+    def test_claim_wrapper_routes_text_with_complete_locations(self) -> None:
+        package = self.loaded_marked_package()
+        sentinels = ["claim-z", "claim-a", "claim-z"]
+        with mock.patch.object(
+            validate_profiles,
+            "claim_text_diagnostics",
+            return_value=sentinels,
+        ) as boundary:
+            diagnostics = validate_profiles.claim_diagnostics(package)
+
+        self.assertEqual(diagnostics, ["claim-a", "claim-z"])
+        calls = boundary.call_args_list
+        self.assertEqual(calls, self.expected_text_calls(package))
+        self.assertIn(
+            mock.call(
+                self.PROFILE_MARKER,
+                "profiles/uk/0.1.0/profile.json: document.scope",
+            ),
+            calls,
+        )
+        self.assertIn(
+            mock.call(
+                self.RISK_MARKER,
+                "profiles/uk/0.1.0/risk-overlays.json: "
+                "document.risks[0].statement",
+            ),
+            calls,
+        )
+        self.assertIn(
+            mock.call(
+                self.README_MARKER,
+                "profiles/uk/0.1.0/README.md",
+            ),
+            calls,
+        )
+        source_calls = [
+            boundary_call
+            for boundary_call in calls
+            if boundary_call.args[1] == "profiles/uk/0.1.0/PROFILE.md"
+        ]
+        self.assertEqual(len(source_calls), 1)
+        source_text = source_calls[0].args[0]
+        self.assertIn(self.SOURCE_MARKER, source_text)
+        self.assertNotIn(self.PROFILE_MARKER, source_text)
+        self.assertNotIn(self.RISK_MARKER, source_text)
+
+    def test_source_wrapper_keeps_unresolved_risk_basis_checks(self) -> None:
+        package = self.loaded_marked_package()
+        package.documents["risk_overlays"]["risks"] = [
+            {"source_basis": ["Outside source"]}
+        ]
+        with mock.patch.object(
+            validate_profiles,
+            "source_authority_text_diagnostics",
+            return_value=[],
+        ):
+            diagnostics = validate_profiles.source_boundary_diagnostics(
+                package, set()
+            )
+
+        self.assertEqual(
+            diagnostics,
+            [
+                "profiles/uk/0.1.0/risk-overlays.json: "
+                "document.risks[0].source_basis[0]: unresolved risk "
+                "source basis 'Outside source'"
+            ],
+        )
+
+    def test_claim_wrapper_keeps_prohibited_structural_field_checks(
+        self,
+    ) -> None:
+        package = self.loaded_marked_package()
+        package.documents["profile"]["nested"] = {
+            "maturity_scale": ["local-one"]
+        }
+        package.documents["external_references"]["nested"] = {
+            "supported-outcome": {"relationships": []}
+        }
+        with mock.patch.object(
+            validate_profiles, "claim_text_diagnostics", return_value=[]
+        ):
+            diagnostics = validate_profiles.claim_diagnostics(package)
+
+        self.assertEqual(
+            diagnostics,
+            [
+                "profiles/uk/0.1.0/external-references.json: "
+                "document.nested.supported-outcome.relationships: prohibited "
+                "external-reference field 'relationships'",
+                "profiles/uk/0.1.0/external-references.json: "
+                "document.nested.supported-outcome: prohibited "
+                "external-reference field 'supported-outcome'",
+                "profiles/uk/0.1.0/profile.json: "
+                "document.nested.maturity_scale: prohibited profile-local "
+                "maturity field 'maturity_scale'",
+            ],
+        )
+
+
 class ProfileLanguageInventoryTests(unittest.TestCase):
     EXPECTED_METHOD_LEDGER = (
         ("test_additional_assurance_claim_forms_are_rejected", 5, 5),

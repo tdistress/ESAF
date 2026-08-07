@@ -3064,10 +3064,10 @@ def source_boundary_diagnostics(
     profile = package.documents["profile"]
     boundary = profile.get("source_boundary")
     permitted_sources: list[str] = []
-    excluded_sources: list[str] = []
+    excluded_sources: tuple[str, ...] = ()
     if isinstance(boundary, dict):
         permitted_sources = strings(boundary.get("permitted_sources"))
-        excluded_sources = strings(boundary.get("excluded_sources"))
+        excluded_sources = tuple(strings(boundary.get("excluded_sources")))
     allowed_source_basis = controls | set(permitted_sources)
     risks = objects(package.documents["risk_overlays"].get("risks"))
     relative = f"{package.relative}/{PACKAGE_FILES['risk_overlays']}"
@@ -3088,13 +3088,13 @@ def source_boundary_diagnostics(
         for location, _, value in walk_json(document):
             if not isinstance(value, str):
                 continue
-            if contains_affirmative_source_authority(
-                value, excluded_sources
-            ):
-                diagnostics.append(
-                    f"{component_relative}: {location}: prohibited source "
-                    "authority language"
+            diagnostics.extend(
+                source_authority_text_diagnostics(
+                    value,
+                    f"{component_relative}: {location}",
+                    excluded_sources,
                 )
+            )
 
     for component in ("readme", "source"):
         filename = PACKAGE_FILES[component]
@@ -3107,12 +3107,11 @@ def source_boundary_diagnostics(
             continue
         if component == "source":
             markdown = AUTHORITATIVE_JSON_BLOCK.sub("", markdown)
-        if contains_affirmative_source_authority(
-            markdown, excluded_sources
-        ):
-            diagnostics.append(
-                f"{markdown_relative}: prohibited source authority language"
+        diagnostics.extend(
+            source_authority_text_diagnostics(
+                markdown, markdown_relative, excluded_sources
             )
+        )
     return sorted(set(diagnostics))
 
 
@@ -3143,16 +3142,11 @@ def claim_diagnostics(package: ProfilePackage) -> list[str]:
                 )
             if not isinstance(value, str):
                 continue
-            if contains_affirmative_weakening(value):
-                diagnostics.append(
-                    f"{relative}: {location}: prohibited control weakening "
-                    "language"
+            diagnostics.extend(
+                claim_text_diagnostics(
+                    value, f"{relative}: {location}"
                 )
-            for phrase in asserted_profile_phrases(value):
-                diagnostics.append(
-                    f"{relative}: {location}: prohibited assertion "
-                    f"{phrase!r}"
-                )
+            )
 
     for component in ("readme", "source"):
         filename = PACKAGE_FILES[component]
@@ -3168,14 +3162,7 @@ def claim_diagnostics(package: ProfilePackage) -> list[str]:
             continue
         if component == "source":
             markdown = AUTHORITATIVE_JSON_BLOCK.sub("", markdown)
-        if contains_affirmative_weakening(markdown):
-            diagnostics.append(
-                f"{markdown_relative}: prohibited control weakening language"
-            )
-        for phrase in asserted_profile_phrases(markdown):
-            diagnostics.append(
-                f"{markdown_relative}: prohibited assertion {phrase!r}"
-            )
+        diagnostics.extend(claim_text_diagnostics(markdown, markdown_relative))
     return sorted(set(diagnostics))
 
 
