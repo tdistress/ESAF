@@ -33,6 +33,8 @@
 - Modify `tools/validate_profiles.py`: two pure text-diagnostic functions and production wrapper adoption without changing `validate()` ordering or error ownership.
 - Create `tools/verify_profile_hot_path_equivalence.py`: opt-in clean-candidate comparison of the full path, narrow path, and authoritative expected diagnostics for every record.
 - Verify without editing `tools/test-shards.json`: `tests/test_validate_profiles.py` remains the only module in `profile_validation`.
+- Review without editing `docs/superpowers/specs/2026-08-07-validation-harness-profile-hot-path-design.md`: approved requirements and the normative population ledger.
+- Review this plan as `docs/superpowers/plans/2026-08-07-validation-harness-profile-hot-path.md`: executable ordering, interfaces, commands, and evidence requirements.
 
 ---
 
@@ -55,9 +57,60 @@
 - Produces: `profile_fixture.write_profile_readme(package: Path, text: str) -> str` and `profile_fixture.write_component(package: Path, filename: str, document: object) -> None`.
 - Preserves: all 73 selected unittest method names. At this stage each method delegates to `_assert_language_cases_through_full_validate(method_name: str) -> None` and still invokes `validate_profiles.validate()` once per record.
 
-- [ ] **Step 1: Add failing inventory contract tests**
+- [ ] **Step 1: Add failing fixture synchronization tests without importing the inventory**
+
+Add `ProfileFixtureWriterTests` to `tests/test_validate_profiles.py` using only the existing `tests.profile_fixture` import. Do not import `tests.profile_language_cases` at module scope or inside this test class yet.
+
+Test `write_profile_readme()` with `"This profile establishes compliance."` and require the exact returned and written content `"# Synthetic profile\n\nThis profile establishes compliance.\n"`. Test `write_component()` with `profile.json` after assigning `source_boundary.excluded_sources = ["Acme Code"]`; require two-space JSON indentation, one terminal newline, UTF-8 round-trip, and a regenerated `PROFILE.md` block containing the same exclusion. Then assign an empty list through the same helper and prove that neither file retains `Acme Code`.
+
+- [ ] **Step 2: Run the fixture tests and verify RED**
+
+```powershell
+$env:PYTHONDONTWRITEBYTECODE='1'
+python -m unittest tests.test_validate_profiles.ProfileFixtureWriterTests -v
+```
+
+Expected: FAIL because the shared README and component writers are absent. Test discovery and import succeed because this step has not introduced the absent inventory module.
+
+- [ ] **Step 3: Implement the deterministic fixture writers**
+
+Add these functions to `tests/profile_fixture.py` and make the existing test-case methods delegate to them:
+
+```python
+def write_profile_readme(package: Path, text: str) -> str:
+    content = f"# Synthetic profile\n\n{text}\n"
+    (package / "README.md").write_text(content, encoding="utf-8")
+    return content
+
+
+def write_component(package: Path, filename: str, document: object) -> None:
+    write_json(package / filename, document)
+    write_authoritative_source(package)
+```
+
+Do not make either helper cache content. `write_component()` must regenerate `PROFILE.md` even when the incoming excluded-source list is empty.
+
+- [ ] **Step 4: Run the fixture tests and verify GREEN**
+
+```powershell
+python -m unittest tests.test_validate_profiles.ProfileFixtureWriterTests -v
+```
+
+Expected: PASS. The shared fixture mutation boundary exists before any test imports the not-yet-created inventory module.
+
+- [ ] **Step 5: Add failing inventory contract tests**
 
 Add `ProfileLanguageInventoryTests` to `tests/test_validate_profiles.py`. Import `dataclasses.replace` and `tests.profile_language_cases`. Require the validating accessor to return exactly 73 method rows, 908 unique records, the exact method order below, and the exact excluded-source distribution from Global Constraints. Require every `location` to equal `profiles/uk/0.1.0/README.md`, every `excluded_sources` and `expected_diagnostics` value to be a tuple, every expected tuple to equal `tuple(sorted(set(expected)))`, and every family tuple to contain only `claim` or `source_authority`.
+
+Require `diagnostic_families` to equal exactly one of these three tuples:
+
+```python
+(
+    ("claim",),
+    ("source_authority",),
+    ("claim", "source_authority"),
+)
+```
 
 The normative method ledger is:
 
@@ -137,7 +190,7 @@ The normative method ledger is:
 | `test_weakening_state_grammar_matrix` | 24 | 24 |
 | `test_weakening_subject_modal_and_state_cross_product` | 46 | 46 |
 
-Add mutation tests that call the inventory validator with one defect at a time: a missing and extra method, wrong per-method count, duplicate ledger method, duplicate case identifier, unknown family, list-valued `excluded_sources`, unsorted expected diagnostics, duplicate expected diagnostics, wrong distribution, and a one-character text change with a stale digest. Assert a distinct, deterministic `ValueError` message for each mutation.
+Add mutation tests that call the inventory validator with one defect at a time: a missing and extra method, wrong per-method count, duplicate ledger method, duplicate case identifier, empty family tuple, duplicate family tuple, reversed `("source_authority", "claim")` tuple, unknown family, list-valued `excluded_sources`, unsorted expected diagnostics, duplicate expected diagnostics, wrong distribution, and a one-character text change with a stale digest. Assert a distinct, deterministic `ValueError` message for each mutation.
 
 Require these five exclusions and totals verbatim:
 
@@ -166,7 +219,7 @@ Require these five exclusions and totals verbatim:
 )
 ```
 
-- [ ] **Step 2: Run the inventory tests and verify RED**
+- [ ] **Step 6: Run the inventory tests and verify RED**
 
 ```powershell
 $env:PYTHONDONTWRITEBYTECODE='1'
@@ -175,37 +228,7 @@ python -m unittest tests.test_validate_profiles.ProfileLanguageInventoryTests -v
 
 Expected: FAIL because `tests.profile_language_cases`, its frozen records, and its validating accessor do not exist.
 
-- [ ] **Step 3: Add failing fixture synchronization tests**
-
-Test `write_profile_readme()` with `"This profile establishes compliance."` and require the exact returned and written content `"# Synthetic profile\n\nThis profile establishes compliance.\n"`. Test `write_component()` with `profile.json` after assigning `source_boundary.excluded_sources = ["Acme Code"]`; require two-space JSON indentation, one terminal newline, UTF-8 round-trip, and a regenerated `PROFILE.md` block containing the same exclusion. Then assign an empty list through the same helper and prove that neither file retains `Acme Code`.
-
-- [ ] **Step 4: Run the fixture tests and verify RED**
-
-```powershell
-python -m unittest tests.test_validate_profiles.ProfileFixtureWriterTests -v
-```
-
-Expected: FAIL because the shared README and component writers are absent.
-
-- [ ] **Step 5: Implement the deterministic fixture writers**
-
-Add these functions to `tests/profile_fixture.py` and make the existing test-case methods delegate to them:
-
-```python
-def write_profile_readme(package: Path, text: str) -> str:
-    content = f"# Synthetic profile\n\n{text}\n"
-    (package / "README.md").write_text(content, encoding="utf-8")
-    return content
-
-
-def write_component(package: Path, filename: str, document: object) -> None:
-    write_json(package / filename, document)
-    write_authoritative_source(package)
-```
-
-Do not make either helper cache content. `write_component()` must regenerate `PROFILE.md` even when the incoming excluded-source list is empty.
-
-- [ ] **Step 6: Move the exact case builders and records into the new inventory**
+- [ ] **Step 7: Move the exact case builders and records into the new inventory**
 
 Move the selected methods' phrase constants, exact tuples, and `itertools.product` dimensions out of `tests/test_validate_profiles.py` and into `tests/profile_language_cases.py` without editing string values or loop order. Build stable IDs as `<method-name-without-test_>-<one-based-index-padded-to-three-digits>` after each method's cases have expanded in the original execution order. Store the exact README body text, not the synthetic Markdown header. Store `diagnostic_families` as `("claim",)`, `("source_authority",)`, or `("claim", "source_authority")` in that order.
 
@@ -237,19 +260,25 @@ ProfileLanguageCase(
 )
 ```
 
-Include the complete 73-row ledger and five-row exclusion ledger in this module. Validate record shape, method membership, per-method counts, selected and repeated-call totals, exclusions, distribution, uniqueness, family vocabulary, tuple immutability, expected-order invariants, and the digest every time `profile_language_inventory()` runs.
+Include the complete 73-row ledger and five-row exclusion ledger in this module. Validate record shape, method membership, per-method counts, selected and repeated-call totals, exclusions, distribution, uniqueness, tuple immutability, expected-order invariants, and the digest every time `profile_language_inventory()` runs. Accept only `("claim",)`, `("source_authority",)`, and `("claim", "source_authority")`; all other family tuples fail validation.
 
-- [ ] **Step 7: Bind the builders to a reviewed digest**
+- [ ] **Step 8: Bind the builders to a reviewed digest**
 
 Start `EXPECTED_POPULATION_SHA256` at `"0" * 64` so the digest test fails. Use this one-off command to print the independently recomputed canonical digest without bypassing any case builder:
 
 ```powershell
+python -m unittest tests.test_validate_profiles.ProfileLanguageInventoryTests -v
+if ($LASTEXITCODE -eq 0) { throw "Inventory digest test unexpectedly passed" }
 python -B -c "from tests.profile_language_cases import PROFILE_LANGUAGE_CASES, profile_language_population_sha256; print(profile_language_population_sha256(PROFILE_LANGUAGE_CASES))"
 ```
 
-Expected: one lowercase 64-character SHA-256. Review the expanded record count, per-method counts, source distribution, representative empty and nonempty expected tuples, first and last stable IDs, and all string diffs against the original 73 method bodies. Copy the printed digest verbatim into `EXPECTED_POPULATION_SHA256`; do not derive the expected constant inside the accessor or test.
+Expected: the focused test fails only with the digest mismatch, then the second command prints one lowercase 64-character SHA-256. Review the expanded record count, per-method counts, source distribution, representative empty and nonempty expected tuples, first and last stable IDs, and all string diffs against the original 73 method bodies. Copy the printed digest verbatim into `EXPECTED_POPULATION_SHA256`; do not derive the expected constant inside the accessor or test. Rerun the focused inventory tests and require PASS before continuing:
 
-- [ ] **Step 8: Route all 73 methods through the shared inventory and complete validator**
+```powershell
+python -m unittest tests.test_validate_profiles.ProfileLanguageInventoryTests -v
+```
+
+- [ ] **Step 9: Route all 73 methods through the shared inventory and complete validator**
 
 Add this test helper to `ProfileValidationTests`:
 
@@ -283,7 +312,7 @@ def _assert_language_cases_through_full_validate(self, method_name: str) -> None
 
 Replace each selected method body with one call that passes its own literal method name. Keep all 73 names and keep them in `ProfileValidationTests` for this stage. Remove each migrated local phrase table only after its final consumer has moved. Do not touch the five excluded methods or any one-call integration, schema, filesystem, CLI, sanitization, or lower-level grammar test.
 
-- [ ] **Step 9: Run the inventory, fixture, and complete full-path population**
+- [ ] **Step 10: Run the inventory, fixture, and complete full-path population**
 
 ```powershell
 python -m unittest tests.test_validate_profiles.ProfileLanguageInventoryTests tests.test_validate_profiles.ProfileFixtureWriterTests -v
@@ -292,7 +321,7 @@ python -m unittest tests.test_validate_profiles.ProfileValidationTests -v --dura
 
 Expected: PASS. The second command reports all original `ProfileValidationTests` methods, and the 73 selected methods account for exactly 908 calls to `validate()` through the shared inventory. No narrow text boundary exists yet.
 
-- [ ] **Step 10: Review and commit the observable full-path inventory stage**
+- [ ] **Step 11: Review and commit the observable full-path inventory stage**
 
 ```powershell
 git diff --check
@@ -494,7 +523,7 @@ Checkpoint: production and matrix paths share the same text functions, but the 7
 - Produces: frozen `EquivalenceResult(candidate_sha: str, method_count: int, population_count: int, population_sha256: str)`.
 - Produces: sanitized `ProfileHotPathEquivalenceError`.
 - Produces: `require_exact_candidate(root: Path, candidate_sha: str, runner: Callable[..., subprocess.CompletedProcess[bytes]] = subprocess.run) -> None`.
-- Produces: `verify_profile_hot_path_equivalence(root: Path, candidate_sha: str) -> EquivalenceResult`.
+- Produces: `verify_profile_hot_path_equivalence(root: Path, candidate_sha: str, *, runner: Callable[..., subprocess.CompletedProcess[bytes]] = subprocess.run) -> EquivalenceResult`.
 - Produces: `main(argv: Sequence[str] | None = None, *, root: Path = ROOT) -> int` and CLI `python -B tools/verify_profile_hot_path_equivalence.py --check --candidate-sha <full-sha>`.
 
 - [ ] **Step 1: Write failing candidate-binding and CLI tests**
@@ -539,9 +568,12 @@ Use a small injected inventory containing one empty exclusion, one `("Acme Code"
 - one full validation call per record;
 - one call to each applicable boundary per record and no call to an inapplicable boundary;
 - independent equality of full output, sorted narrow union, and expected tuple; and
+- an exact `HEAD` and clean-status preflight before the first fixture plus the same two Git checks after the last comparison and immediately before the result returns; and
 - stable method and case identifiers in a mismatch without the temporary root.
 
 Add separate mismatches for full versus narrow, full versus expected, narrow versus expected, wrong order, duplicate diagnostics, and a leaked absolute temporary path. Each mismatch must exit nonzero and print sanitized repository-relative evidence only.
+
+Add two postflight state-drift tests. In the first, the injected Git runner returns the candidate SHA during preflight and a different full SHA after the comparisons. In the second, it returns clean status during preflight and nonempty porcelain output after the comparisons. Prove that every case comparison completed before the failing postflight, `EquivalenceResult` was not returned, `equivalence=PASS` was not printed, and stderr contains neither injected status content nor an absolute host path.
 
 - [ ] **Step 4: Run comparison tests and verify RED**
 
@@ -553,7 +585,7 @@ Expected: FAIL because per-method fresh fixtures, per-case state reset, and thre
 
 - [ ] **Step 5: Implement the opt-in verifier**
 
-Validate the candidate syntax with `re.fullmatch(r"[0-9a-f]{40}", candidate_sha)`. Require exact `HEAD` bytes and an empty porcelain status before creating any fixture. Call the inventory's validating accessor once.
+Validate the candidate syntax with `re.fullmatch(r"[0-9a-f]{40}", candidate_sha)`. Pass the injected runner to `require_exact_candidate()` and require exact `HEAD` bytes plus an empty porcelain status before creating any fixture. Call the inventory's validating accessor once.
 
 For each method ledger row, create a new temporary root and valid package. For every case in that method, execute this order:
 
@@ -581,7 +613,9 @@ narrow = sorted(set(narrow))
 expected = list(case.expected_diagnostics)
 ```
 
-Compare `full`, `narrow`, and `expected` independently. Before reporting any list, reject diagnostics containing the resolved temporary root or its slash-normalized form. Catch inventory, fixture, Git, JSON, operational validator, and unexpected failures at `main()` and print one concise sanitized error with exit 1. Do not print a traceback, child stderr, environment value, or host path.
+Compare `full`, `narrow`, and `expected` independently. Before reporting any list, reject diagnostics containing the resolved temporary root or its slash-normalized form. After every method and all 908 cases have completed, call `require_exact_candidate(root, candidate_sha, runner)` again. Return `EquivalenceResult` immediately after that postflight succeeds; `main()` must print the five PASS lines immediately from the returned result without another operation. A postflight HEAD mismatch, dirty status, Git error, or stderr output fails closed and cannot emit `equivalence=PASS`.
+
+Catch inventory, fixture, Git, JSON, operational validator, state-drift, and unexpected failures at `main()` and print one concise sanitized error with exit 1. Do not print a traceback, porcelain content, child stderr, environment value, or host path.
 
 - [ ] **Step 6: Run tool unit tests, the profile module, and the shard manifest check**
 
@@ -627,7 +661,7 @@ Checkpoint: this clean commit is the required first observable equivalence stage
 **Interfaces:**
 - Consumes: `ProfileLanguageInventory.cases_for_method()`, `claim_text_diagnostics()`, and `source_authority_text_diagnostics()`.
 - Produces: `ProfileLanguageMatrixTests._assert_profile_language_cases(method_name: str) -> None`.
-- Produces: `profile_fixture.profile_readme_content(text: str) -> str`, the shared pure formatter used by the file writer, fast matrices, and equivalence tool.
+- Produces: `profile_fixture.profile_readme_content(text: str) -> str`, the shared pure formatter used by the file writer and fast matrices.
 - Produces: exactly 73 methods on `ProfileLanguageMatrixTests`, each requesting inventory records by its own literal method name.
 - Produces: `ProfileValidationTests.test_text_diagnostics_reach_full_validate_for_readme()` and `ProfileValidationTests.test_text_diagnostics_reach_full_validate_for_structured_json()` outside the inventory.
 - Preserves: `test_authoritative_markdown_prose_is_claim_scanned()` and `test_authoritative_markdown_prose_respects_source_boundary()` on full `validate()`.
@@ -818,6 +852,7 @@ If equivalence or focused testing finds a defect, first add a focused failing re
 
 **Files:**
 - Review: complete branch diff from `git merge-base origin/main HEAD` through the final candidate.
+- Review: `docs/superpowers/specs/2026-08-07-validation-harness-profile-hot-path-design.md` and `docs/superpowers/plans/2026-08-07-validation-harness-profile-hot-path.md` together with the five implementation files.
 - Record externally: exact commands, exit codes, test counts, skips, durations, population digest, equivalence output, reviewer findings, and reviewed head in the pull-request description.
 
 **Interfaces:**
@@ -889,7 +924,22 @@ if ($LASTEXITCODE -ne 0 -or $mergeBase -notmatch '^[0-9a-f]{40}$') {
 git diff --check "$mergeBase..HEAD"
 if ($LASTEXITCODE -ne 0) { throw "Whole-branch whitespace check failed" }
 git diff --stat "$mergeBase..HEAD"
-git diff "$mergeBase..HEAD" -- tests/profile_language_cases.py tests/profile_fixture.py tests/test_validate_profiles.py tools/validate_profiles.py tools/verify_profile_hot_path_equivalence.py
+$expectedChangedPaths = @(
+  'docs/superpowers/plans/2026-08-07-validation-harness-profile-hot-path.md'
+  'docs/superpowers/specs/2026-08-07-validation-harness-profile-hot-path-design.md'
+  'tests/profile_fixture.py'
+  'tests/profile_language_cases.py'
+  'tests/test_validate_profiles.py'
+  'tools/validate_profiles.py'
+  'tools/verify_profile_hot_path_equivalence.py'
+) | Sort-Object
+$actualChangedPaths = git diff --name-only "$mergeBase..HEAD" | Sort-Object
+if ($LASTEXITCODE -ne 0) { throw "Changed-path inspection failed" }
+$changedPathDiff = Compare-Object $expectedChangedPaths $actualChangedPaths
+if ($changedPathDiff) {
+  throw "Unexpected whole-branch path set: $($changedPathDiff -join ', ')"
+}
+git diff "$mergeBase..HEAD" -- $expectedChangedPaths
 $reviewedHead = git rev-parse HEAD
 if ($reviewedHead -notmatch '^[0-9a-f]{40}$') { throw "Invalid reviewed head" }
 $status = git status --porcelain=v1 --untracked-files=all
@@ -899,7 +949,7 @@ if ($caches) { throw "Generated Python caches: $($caches.FullName -join ', ')" }
 $reviewedHead
 ```
 
-Expected: only the five planned implementation files and their tests changed, the branch has no whitespace defects, the worktree is clean, and no generated cache remains.
+Expected: the branch changes exactly seven planned files: the approved design, this plan, and the five implementation files. It has no whitespace defects, the worktree is clean, and no generated cache remains.
 
 - [ ] **Step 5: Obtain two independent reviews of the exact same SHA**
 
