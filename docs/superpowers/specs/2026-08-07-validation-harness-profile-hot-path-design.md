@@ -23,13 +23,13 @@ $env:PYTHONDONTWRITEBYTECODE = "1"
 python -m unittest discover -s tests -v
 ```
 
-The method counts below come from an instrumented run of `python -m unittest -v tests.test_validate_profiles` at the same commit. The measurement counted calls to `validate_profiles.validate()` and successful unittest subtests without changing case inputs or validator behavior. The authoritative measurement inventory has SHA-256 `eea29c38bb90f4837d41674512e4dd001047d76c2de7d1d89445c831a58d0486`.
+The method counts below come from an instrumented run of `python -m unittest -v tests.test_validate_profiles` at the same commit. The measurement counted calls to `validate_profiles.validate()` and successful unittest subtests without changing case inputs or validator behavior. Across the whole module, it recorded 1,010 calls from 165 methods and 1,577 successful subtests. Those suite-wide totals include methods that call `validate()` once and methods outside the language-classifier scope.
 
-Most cases change only README prose. A complete call still rediscovers the profile inventory, reads and validates every package component, loads schemas and control records, compares authoritative Markdown and derived JSON, checks traceability, and repeats filesystem defenses. Those operations remain necessary for integration coverage, but they do not need to run once for every grammatical variation.
+All 908 selected cases change README prose. A complete call still rediscovers the profile inventory, reads and validates every package component, loads schemas and control records, compares authoritative Markdown and derived JSON, checks traceability, and repeats filesystem defenses. Those operations remain necessary for integration coverage, but they do not need to run once for every grammatical variation.
 
 ## Migration population
 
-The selected population is exactly 73 test methods. At the baseline commit, they made 995 complete `validate()` calls and completed 1,564 successful subtests.
+The selected population is exactly 73 test methods. At the baseline commit, they made 908 complete `validate()` calls and completed 880 successful subtests. The exact validation-input records and per-method `validate()` call counts are normative for migration. Successful-subtest counts describe the old unittest grouping only. They are diagnostic and non-normative, and the refactor does not have to preserve that grouping.
 
 | Method | `validate()` calls | Successful subtests |
 |---|---:|---:|
@@ -106,11 +106,11 @@ The selected population is exactly 73 test methods. At the baseline commit, they
 | `test_weakening_cross_product_denials_and_claim_frames` | 17 | 17 |
 | `test_weakening_state_grammar_matrix` | 24 | 24 |
 | `test_weakening_subject_modal_and_state_cross_product` | 46 | 46 |
-| **Selected total** | **995** | **1,564** |
+| **Selected total** | **908** | **880** |
 
 The readiness methods belong in the selected population because they test prohibited-claim polarity. The mapping, approval, and assurance methods test prohibited-claim or source-authority prose. `test_polarity_is_bound_to_the_assertion_head` and `test_source_authority_after_denied_clause_is_rejected` each exercise two independent cases without using `subTest`, which explains their zero successful-subtest counts.
 
-The original measured population contained 78 methods, 1,010 `validate()` calls, and 1,577 successful subtests. These five exclusions account for the remaining 15 calls and 13 successful subtests:
+The complete subset of methods that called `validate()` more than once contained 78 methods, 923 calls, and 893 successful subtests. These five exclusions account for the 15 calls and 13 successful subtests not selected from that subset:
 
 | Excluded method | `validate()` calls | Successful subtests | Rationale |
 |---|---:|---:|---|
@@ -140,7 +140,7 @@ The change shall not add a process-global cache, path cache, fixture cache, mtim
 
 ### Authoritative case inventory
 
-`tests/profile_language_cases.py` shall be the only authoritative definition of the migrated language population. It shall contain frozen case records and the compact phrase tables and product builders needed to expand all 995 baseline validation inputs. Each expanded `ProfileLanguageCase` shall contain:
+`tests/profile_language_cases.py` shall be the only authoritative definition of the migrated language population. It shall contain frozen case records and the compact phrase tables and product builders needed to expand all 908 baseline validation inputs. Every selected input targets `profiles/uk/0.1.0/README.md`. Each expanded `ProfileLanguageCase` shall contain:
 
 - the exact selected test-method name and a unique stable case identifier;
 - the input text and complete repository-relative diagnostic location;
@@ -148,9 +148,20 @@ The change shall not add a process-global cache, path cache, fixture cache, mtim
 - an immutable tuple of excluded sources; and
 - the exact expected sorted diagnostic tuple.
 
-The module shall also contain the 73-method baseline ledger from this design, including each method's `validate()` call count and successful-subtest count, the five exclusions and their counts, and the selected and original totals. It shall expand to exactly 995 unique case records grouped under exactly the 73 selected method names. Per-method expanded case counts shall equal the baseline `validate()` call counts.
+The excluded-source state in the 908 records shall have this exact distribution:
 
-The module shall serialize the expanded semantic case fields as UTF-8 canonical JSON with sorted object keys and separators `(',', ':')`, then compute their SHA-256 digest. A reviewed expected digest constant in the same module shall bind the compact builders to the expanded population. Inventory validation shall fail on a digest mismatch, a missing or extra method, a count mismatch, a duplicate method and case identifier, an unknown diagnostic family, mutable excluded-source data, or unsorted or duplicate expected diagnostics.
+| `excluded_sources` tuple | Records |
+|---|---:|
+| `()` | 772 |
+| `('UK GDPR',)` | 87 |
+| `('Acme Code',)` | 28 |
+| `('UK GDPR', 'Cyber Essentials')` | 13 |
+| `('UK GDPR', 'NCSC', 'Cyber Essentials')` | 8 |
+| **Total** | **908** |
+
+The module shall also contain the 73-method baseline ledger from this design, including each method's normative `validate()` call count, its diagnostic successful-subtest count, the five exclusions and their counts, and the selected and 78-method repeated-call subset totals. It shall expand to exactly 908 unique case records grouped under exactly the 73 selected method names. Per-method expanded case counts shall equal the baseline `validate()` call counts. The 136 records with nonempty excluded-source tuples shall equal the sum of the four nonempty distribution rows. Successful-subtest metadata is provenance only and shall not constrain the refactored unittest grouping.
+
+The module shall serialize the expanded semantic case fields as UTF-8 canonical JSON with sorted object keys and separators `(',', ':')`, then compute their SHA-256 digest. A reviewed expected digest constant in the same module shall bind the compact builders to the expanded population. This is a new digest of committed semantic case data, not a digest of the temporary instrumentation report. Inventory validation shall fail on a digest mismatch, a missing or extra method, a count mismatch, a duplicate method and case identifier, an unknown diagnostic family, mutable excluded-source data, or unsorted or duplicate expected diagnostics.
 
 Both `tests/test_validate_profiles.py` and the retained equivalence harness shall import this module and call its validating accessor. The fast tests shall request cases by their own method name and consume every returned case once. No second case table, generated checked-in copy, or independently maintained digest is permitted. An intentional population change requires a separately reviewed update to the case definitions, baseline ledger, expected digest, and this design's population record.
 
@@ -219,14 +230,16 @@ python -B tools/verify_profile_hot_path_equivalence.py --check --candidate-sha $
 
 The command shall accept only a full lowercase 40-character SHA. It shall require that SHA to equal the verified `HEAD` commit and shall require `git status --porcelain=v1 --untracked-files=all` to be empty. A detached checkout is allowed when it is clean and its `HEAD` equals the supplied SHA. These checks bind the result to committed files at one exact candidate rather than to a mutable working tree.
 
-The harness shall load the validated inventory from `tests/profile_language_cases.py`. For each of its 995 records, it shall create the specified valid fixture state, apply the record's README text and excluded-source tuple, and compare three exact lists: complete `validate()` output, the sorted union of the applicable production text-diagnostic outputs, and the case record's expected diagnostics. This includes empty results, repository-relative locations, message text, deduplication, and order. It shall not use a separately encoded expected-case table.
+The harness shall load the validated inventory from `tests/profile_language_cases.py`. It may group records by method and create one fresh valid fixture for each of the 73 methods. Before each of the 908 comparisons, it shall reset `profiles/uk/0.1.0/README.md` from that record, load `profile.json`, assign `source_boundary.excluded_sources` from the record's immutable tuple, write the component with the same indentation, newline, and UTF-8 behavior as `ProfileValidationTests.write_component()`, and regenerate the authoritative `PROFILE.md` with `profile_fixture.write_authoritative_source()`. This requirement applies to all 136 nonempty cases and to every empty-state case. No case may inherit README text or excluded-source state from the preceding case.
+
+The harness shall compare three exact lists independently for all 908 records: complete `validate()` output, the sorted union of the applicable production text-diagnostic outputs, and the case record's expected diagnostics. This includes empty results, repository-relative locations, message text, deduplication, and order. It shall not use a separately encoded expected-case table.
 
 Successful output shall report these stable fields:
 
 ```text
 candidate_sha=<40-character-lowercase-SHA>
 method_count=73
-population_count=995
+population_count=908
 population_sha256=<64-character-lowercase-SHA-256>
 equivalence=PASS
 ```
@@ -292,7 +305,7 @@ The implementation review shall compare the complete branch diff and verify that
 
 This increment is accepted when:
 
-1. `tests/profile_language_cases.py` validates exactly 73 selected methods, 995 expanded cases, the reviewed population digest, the recorded per-method baseline counts, and the five exclusions.
+1. `tests/profile_language_cases.py` validates exactly 73 selected methods, 908 expanded cases, the reviewed population digest, the normative per-method `validate()` call counts, the excluded-source distribution, and the five exclusions. It records the baseline successful-subtest counts as non-normative provenance.
 2. Production claim and source-authority wrappers use the same two text-diagnostic functions exercised by the migrated matrices.
 3. Every moved case has first produced an exact narrow-path and full-path equivalence result.
 4. The final exhaustive matrices consume the authoritative case inventory once, preserve every existing case, and issue no complete `validate()` calls.
