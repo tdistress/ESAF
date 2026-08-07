@@ -11,6 +11,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import threading
 from typing import Literal, NamedTuple
 
 from jsonschema import Draft202012Validator, FormatChecker
@@ -30,6 +31,9 @@ from tools.crosswalks.validation import ValidationResult
 
 FULL_SHA = re.compile(r"^[0-9a-f]{40}$")
 GENERATOR_VERSION = "1.2.0"
+GIT_COMMAND_TIMEOUT_SECONDS = 120
+GIT_STDERR_LIMIT = 65_536
+GIT_LEGACY_STDOUT_LIMIT = 128 * 1024 * 1024
 _SOURCE_EVIDENCE_PATH = re.compile(
     r"(?m)^- (?:Oracle|Specification): `([^`]+)`\s*$"
 )
@@ -74,6 +78,16 @@ _PROFILE_ROWS = (
     ),
 )
 PROFILES = {row[0]: MappingProfile(*row) for row in _PROFILE_ROWS}
+
+
+class GitObjectReadError(subprocess.SubprocessError):
+    """A sanitized failure from a bounded Git object command."""
+
+
+@dataclass(frozen=True)
+class _GitCommandResult:
+    stdout: bytes
+    stderr: bytes
 
 
 @dataclass(frozen=True)
@@ -168,47 +182,274 @@ def validate_output_directory(
 class GitReader:
     def __init__(self, root: Path) -> None:
         self.root = root.resolve()
+        self._git_environment = {
+            name: value
+            for name, value in os.environ.items()
+            if not name.upper().startswith("GIT_")
+        }
+        self._git_environment.update(
+            {
+                "GIT_NO_REPLACE_OBJECTS": "1",
+                "GIT_NO_LAZY_FETCH": "1",
+                "GIT_OPTIONAL_LOCKS": "0",
+                "GIT_TERMINAL_PROMPT": "0",
+                "LC_ALL": "C",
+                "LANG": "C",
+            }
+        )
+        self._sha1_verified = False
+        self._verified_commits: set[str] = set()
         self._regular_blobs: set[tuple[str, str]] = set()
         self._contents: dict[tuple[str, str], bytes] = {}
+
+    def _run_finite_git(
+        self,
+        arguments: tuple[str, ...],
+        *,
+        input_bytes: bytes = b"",
+        stdout_limit: int,
+        stderr_limit: int = GIT_STDERR_LIMIT,
+    ) -> _GitCommandResult:
+        command = [
+            "git",
+            "--no-replace-objects",
+            "-c",
+            "core.fsmonitor=false",
+            "-C",
+            str(self.root),
+            *arguments,
+        ]
+        stdout_spool = tempfile.SpooledTemporaryFile(max_size=1024 * 1024, mode="w+b")
+        stderr_spool = tempfile.SpooledTemporaryFile(max_size=1024 * 1024, mode="w+b")
+        process: subprocess.Popen[bytes] | None = None
+        threads: list[threading.Thread] = []
+        started_threads: list[threading.Thread] = []
+        reaped = False
+        failures: list[Exception] = []
+        failure_lock = threading.Lock()
+
+        def record_failure(error: Exception) -> None:
+            with failure_lock:
+                failures.append(error)
+            if process is not None:
+                try:
+                    process.terminate()
+                except OSError:
+                    pass
+
+        def drain(
+            stream: object,
+            spool: object,
+            limit: int,
+            subject: str,
+        ) -> None:
+            total = 0
+            try:
+                while True:
+                    chunk = stream.read(65_536)  # type: ignore[attr-defined]
+                    if not chunk:
+                        return
+                    total += len(chunk)
+                    if total > limit:
+                        record_failure(OverflowError(f"{subject} limit exceeded"))
+                        return
+                    spool.write(chunk)  # type: ignore[attr-defined]
+            except Exception as error:
+                record_failure(error)
+            finally:
+                try:
+                    stream.close()  # type: ignore[attr-defined]
+                except OSError:
+                    pass
+
+        try:
+            try:
+                process = subprocess.Popen(
+                    command,
+                    shell=False,
+                    stdin=subprocess.PIPE,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    env=self._git_environment,
+                )
+            except (OSError, subprocess.SubprocessError) as error:
+                raise GitObjectReadError("Git object read failed") from error
+            if process.stdin is None or process.stdout is None or process.stderr is None:
+                raise GitObjectReadError("Git object read failed")
+
+            threads = [
+                threading.Thread(
+                    target=drain,
+                    args=(process.stdout, stdout_spool, stdout_limit, "stdout"),
+                    daemon=True,
+                ),
+                threading.Thread(
+                    target=drain,
+                    args=(process.stderr, stderr_spool, stderr_limit, "stderr"),
+                    daemon=True,
+                ),
+            ]
+            for thread in threads:
+                thread.start()
+                started_threads.append(thread)
+
+            try:
+                view = memoryview(input_bytes)
+                offset = 0
+                while offset < len(view):
+                    written = process.stdin.write(view[offset:])
+                    if written is None or written <= 0:
+                        raise OSError("short write to Git command")
+                    offset += written
+                process.stdin.flush()
+            except (BrokenPipeError, OSError) as error:
+                record_failure(error)
+            finally:
+                try:
+                    process.stdin.close()
+                except OSError as error:
+                    record_failure(error)
+
+            try:
+                process.wait(timeout=GIT_COMMAND_TIMEOUT_SECONDS)
+                reaped = True
+            except subprocess.TimeoutExpired as error:
+                record_failure(error)
+                try:
+                    process.wait(timeout=5)
+                    reaped = True
+                except subprocess.TimeoutExpired:
+                    try:
+                        process.kill()
+                    except OSError:
+                        pass
+                    try:
+                        process.wait(timeout=5)
+                        reaped = True
+                    except (OSError, subprocess.SubprocessError) as reap_error:
+                        record_failure(reap_error)
+            except (OSError, subprocess.SubprocessError) as error:
+                record_failure(error)
+
+            for thread in started_threads:
+                thread.join(timeout=5)
+            if any(thread.is_alive() for thread in started_threads):
+                record_failure(TimeoutError("Git output drainer did not finish"))
+                try:
+                    process.kill()
+                except OSError:
+                    pass
+                try:
+                    process.wait(timeout=5)
+                    reaped = True
+                except (OSError, subprocess.SubprocessError) as error:
+                    record_failure(error)
+                for stream in (process.stdout, process.stderr):
+                    try:
+                        stream.close()
+                    except OSError:
+                        pass
+                for thread in started_threads:
+                    thread.join(timeout=5)
+
+            stdout_spool.seek(0)
+            stderr_spool.seek(0)
+            stdout = stdout_spool.read()
+            stderr = stderr_spool.read()
+            if (
+                failures
+                or any(thread.is_alive() for thread in started_threads)
+                or process.returncode != 0
+                or stderr
+            ):
+                raise GitObjectReadError("Git object read failed")
+            return _GitCommandResult(stdout=stdout, stderr=stderr)
+        except GitObjectReadError:
+            raise
+        except Exception as error:
+            raise GitObjectReadError("Git object read failed") from error
+        finally:
+            if process is not None:
+                if not reaped:
+                    try:
+                        process.terminate()
+                    except OSError:
+                        pass
+                    try:
+                        process.wait(timeout=5)
+                    except subprocess.TimeoutExpired:
+                        try:
+                            process.kill()
+                        except OSError:
+                            pass
+                        try:
+                            process.wait(timeout=5)
+                        except (OSError, subprocess.SubprocessError):
+                            pass
+                    except (OSError, subprocess.SubprocessError):
+                        pass
+                for stream in (process.stdin, process.stdout, process.stderr):
+                    if stream is not None:
+                        try:
+                            stream.close()
+                        except OSError:
+                            pass
+                for thread in started_threads:
+                    thread.join(timeout=5)
+            stdout_spool.close()
+            stderr_spool.close()
+
+    def _require_sha1_repository(self) -> None:
+        if self._sha1_verified:
+            return
+        result = self._run_finite_git(
+            ("rev-parse", "--show-object-format=storage"),
+            stdout_limit=16,
+        )
+        if result.stdout != b"sha1\n":
+            raise GitObjectReadError("Git object read failed")
+        self._sha1_verified = True
 
     def _run(
         self,
         *arguments: str,
         text: bool = False,
     ) -> subprocess.CompletedProcess:
-        return subprocess.run(
-            [
-                "git",
-                "--no-replace-objects",
-                "-C",
-                str(self.root),
-                *arguments,
-            ],
-            check=True,
-            capture_output=True,
-            text=text,
+        self._require_sha1_repository()
+        result = self._run_finite_git(
+            tuple(arguments),
+            stdout_limit=GIT_LEGACY_STDOUT_LIMIT,
         )
+        stdout: bytes | str = result.stdout
+        stderr: bytes | str = result.stderr
+        if text:
+            stdout = result.stdout.decode("utf-8")
+            stderr = result.stderr.decode("utf-8")
+        return subprocess.CompletedProcess(arguments, 0, stdout, stderr)
 
     def resolve_commit(self, revision: str) -> str:
         if not FULL_SHA.fullmatch(revision):
             raise ValueError(
                 "candidate must be a full lowercase 40-character Git SHA"
             )
+        if revision in self._verified_commits:
+            return revision
+        self._require_sha1_repository()
         try:
-            resolved = self._run(
-                "rev-parse",
-                "--verify",
-                f"{revision}^{{commit}}",
-                text=True,
-            ).stdout.strip()
-        except subprocess.CalledProcessError as error:
+            result = self._run_finite_git(
+                ("rev-parse", "--verify", f"{revision}^{{commit}}"),
+                stdout_limit=41,
+            )
+        except GitObjectReadError as error:
             raise ValueError("candidate is not an available commit") from error
-        if resolved != revision:
+        if result.stdout != revision.encode("ascii") + b"\n":
             raise ValueError("candidate does not resolve to the exact commit")
-        return resolved
+        self._verified_commits.add(revision)
+        return revision
 
     def read_bytes(self, commit: str, path: str) -> bytes:
         _canonical_relative_path(path, "repository")
+        commit = self.resolve_commit(commit)
         self._require_regular_blob(commit, path)
         key = (commit, path)
         cached = self._contents.get(key)
@@ -250,6 +491,7 @@ class GitReader:
 
     def list_files(self, commit: str, path: str) -> tuple[str, ...]:
         _canonical_relative_path(path, "repository")
+        commit = self.resolve_commit(commit)
         result = self._run(
             "ls-tree",
             "-r",
@@ -277,14 +519,21 @@ class GitReader:
 
     def require_candidate_execution_state(self, commit: str) -> None:
         """Bind executing working-tree bytes to one clean candidate HEAD."""
-        head = self._run("rev-parse", "HEAD", text=True).stdout.strip()
-        if head != commit:
+        commit = self.resolve_commit(commit)
+        head = self._run_finite_git(
+            ("rev-parse", "HEAD"),
+            stdout_limit=41,
+        ).stdout
+        if head != commit.encode("ascii") + b"\n":
             raise ValueError("current HEAD must equal candidate commit")
-        status = self._run(
-            "status",
-            "--porcelain=v1",
-            "--untracked-files=all",
-            "--ignore-submodules=none",
+        status = self._run_finite_git(
+            (
+                "status",
+                "--porcelain=v1",
+                "--untracked-files=all",
+                "--ignore-submodules=none",
+            ),
+            stdout_limit=8 * 1024 * 1024,
         ).stdout
         if status:
             raise ValueError(
@@ -292,7 +541,10 @@ class GitReader:
             )
 
     def worktree_roots(self) -> tuple[Path, ...]:
-        output = self._run("worktree", "list", "--porcelain", "-z").stdout
+        output = self._run_finite_git(
+            ("worktree", "list", "--porcelain", "-z"),
+            stdout_limit=8 * 1024 * 1024,
+        ).stdout
         roots = []
         for field in output.split(b"\0"):
             if field.startswith(b"worktree "):

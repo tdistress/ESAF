@@ -8,6 +8,7 @@ import os
 import re
 import subprocess
 import tempfile
+import threading
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -98,6 +99,448 @@ def _create_clean_repository(parent: Path) -> tuple[Path, str]:
     return repository, _git(repository, "rev-parse", "HEAD")
 
 
+class _FakeReadPipe:
+    def __init__(self, chunks: tuple[bytes | BaseException, ...]) -> None:
+        self._chunks = list(chunks)
+        self.closed = False
+
+    def read(self, _size: int) -> bytes:
+        if not self._chunks:
+            return b""
+        item = self._chunks.pop(0)
+        if isinstance(item, BaseException):
+            raise item
+        return item
+
+    def close(self) -> None:
+        self.closed = True
+
+
+class _FakeWritePipe:
+    def __init__(
+        self,
+        *,
+        maximum_write: int | None = None,
+        failure: BaseException | None = None,
+    ) -> None:
+        self.maximum_write = maximum_write
+        self.failure = failure
+        self.content = bytearray()
+        self.closed = False
+        self.events: list[str] | None = None
+
+    def write(self, value: bytes | memoryview) -> int:
+        if self.events is not None:
+            self.events.append("stdin-write")
+        if self.failure is not None:
+            raise self.failure
+        count = len(value)
+        if self.maximum_write is not None:
+            count = min(count, self.maximum_write)
+        self.content.extend(bytes(value[:count]))
+        return count
+
+    def flush(self) -> None:
+        return None
+
+    def close(self) -> None:
+        self.closed = True
+
+
+class _FakeProcess:
+    def __init__(
+        self,
+        stdout: tuple[bytes | BaseException, ...] = (),
+        stderr: tuple[bytes | BaseException, ...] = (),
+        *,
+        returncode: int = 0,
+        stdin: _FakeWritePipe | None = None,
+        timeout_once: bool = False,
+    ) -> None:
+        self.stdin = stdin or _FakeWritePipe()
+        self.stdout = _FakeReadPipe(stdout)
+        self.stderr = _FakeReadPipe(stderr)
+        self.returncode = returncode
+        self.timeout_once = timeout_once
+        self.wait_calls = 0
+        self.wait_timeouts: list[float | None] = []
+        self.terminated = False
+        self.killed = False
+
+    def wait(self, timeout: float | None = None) -> int:
+        self.wait_calls += 1
+        self.wait_timeouts.append(timeout)
+        if self.timeout_once and self.wait_calls == 1:
+            raise subprocess.TimeoutExpired(["git"], timeout)
+        return self.returncode
+
+    def terminate(self) -> None:
+        self.terminated = True
+
+    def kill(self) -> None:
+        self.killed = True
+
+
+def _popen_sequence(
+    processes: list[_FakeProcess],
+    calls: list[tuple[tuple[object, ...], dict[str, object]]],
+):
+    def start(*arguments: object, **keywords: object) -> _FakeProcess:
+        calls.append((arguments, keywords))
+        return processes.pop(0)
+
+    return start
+
+
+class FiniteGitCommandTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.reader = GitReader(ROOT)
+        self.started_threads: list[threading.Thread] = []
+
+    def _run_with_process(
+        self,
+        process: _FakeProcess,
+        *,
+        input_bytes: bytes = b"",
+        stdout_limit: int = 1024,
+        stderr_limit: int = 1024,
+    ):
+        calls: list[tuple[tuple[object, ...], dict[str, object]]] = []
+        events: list[str] = []
+        process.stdin.events = events
+        original_start = threading.Thread.start
+
+        def record_start(thread: threading.Thread) -> None:
+            events.append("drainer-start")
+            self.started_threads.append(thread)
+            original_start(thread)
+
+        with mock.patch(
+            "tools.build_mapping_review_bundle.subprocess.Popen",
+            side_effect=_popen_sequence([process], calls),
+        ), mock.patch(
+            "tools.build_mapping_review_bundle.threading.Thread.start",
+            new=record_start,
+        ):
+            result = self.reader._run_finite_git(
+                ("status", "--porcelain=v1"),
+                input_bytes=input_bytes,
+                stdout_limit=stdout_limit,
+                stderr_limit=stderr_limit,
+            )
+        return result, calls, events
+
+    def test_success_drains_before_input_and_closes_every_pipe(self) -> None:
+        stdin = _FakeWritePipe(maximum_write=2)
+        process = _FakeProcess((b"clean",), (), stdin=stdin)
+
+        result, calls, events = self._run_with_process(process, input_bytes=b"abcdef")
+
+        self.assertEqual(result.stdout, b"clean")
+        self.assertEqual(result.stderr, b"")
+        self.assertEqual(stdin.content, b"abcdef")
+        self.assertEqual(events[:2], ["drainer-start", "drainer-start"])
+        self.assertEqual(events[2], "stdin-write")
+        self.assertTrue(stdin.closed)
+        self.assertTrue(process.stdout.closed)
+        self.assertTrue(process.stderr.closed)
+        self.assertTrue(all(not thread.is_alive() for thread in self.started_threads))
+        command = calls[0][0][0]
+        self.assertEqual(
+            command[:5],
+            ["git", "--no-replace-objects", "-c", "core.fsmonitor=false", "-C"],
+        )
+        self.assertEqual(command[5], str(ROOT.resolve()))
+        self.assertFalse(calls[0][1]["shell"])
+        self.assertIs(calls[0][1]["stdin"], subprocess.PIPE)
+        self.assertIs(calls[0][1]["stdout"], subprocess.PIPE)
+        self.assertIs(calls[0][1]["stderr"], subprocess.PIPE)
+
+    def test_child_environment_is_sanitized_and_frozen(self) -> None:
+        # Mutations caught: leaked GIT_*, omitted fixed environment values, and
+        # missing command-prefix options. Other tests below cover non-SHA-1
+        # storage and repeated commit resolution.
+        ambient = {
+            "GIT_DIR": "host-secret-dir",
+            "GIT_GRAFT_FILE": "host-secret-graft",
+            "git_object_directory": "host-secret-objects",
+            "Git_AlternATE_Object_Directories": "host-secret-alternates",
+            "ESAF_SENTINEL": "preserved",
+        }
+        calls: list[tuple[tuple[object, ...], dict[str, object]]] = []
+        process = _FakeProcess()
+        with mock.patch.dict(os.environ, ambient, clear=False):
+            reader = GitReader(ROOT)
+            with mock.patch(
+                "tools.build_mapping_review_bundle.subprocess.Popen",
+                side_effect=_popen_sequence([process], calls),
+            ):
+                reader._run_finite_git(("status",), stdout_limit=64)
+        environment = calls[0][1]["env"]
+        self.assertEqual(environment["ESAF_SENTINEL"], "preserved")
+        self.assertFalse(
+            any(
+                name.upper().startswith("GIT_")
+                and name not in {
+                    "GIT_NO_REPLACE_OBJECTS",
+                    "GIT_NO_LAZY_FETCH",
+                    "GIT_OPTIONAL_LOCKS",
+                    "GIT_TERMINAL_PROMPT",
+                }
+                for name in environment
+            )
+        )
+        self.assertEqual(
+            {
+                name: environment[name]
+                for name in (
+                    "GIT_NO_REPLACE_OBJECTS",
+                    "GIT_NO_LAZY_FETCH",
+                    "GIT_OPTIONAL_LOCKS",
+                    "GIT_TERMINAL_PROMPT",
+                    "LC_ALL",
+                    "LANG",
+                )
+            },
+            {
+                "GIT_NO_REPLACE_OBJECTS": "1",
+                "GIT_NO_LAZY_FETCH": "1",
+                "GIT_OPTIONAL_LOCKS": "0",
+                "GIT_TERMINAL_PROMPT": "0",
+                "LC_ALL": "C",
+                "LANG": "C",
+            },
+        )
+        self.assertEqual(process.wait_timeouts[0], 120)
+
+    def test_failures_are_sanitized_and_cleanup_is_deterministic(self) -> None:
+        cases = (
+            ("nonzero", _FakeProcess(returncode=7), 1024, 1024),
+            ("stderr", _FakeProcess((), (b"host-secret",)), 1024, 1024),
+            ("stdout-overflow", _FakeProcess((b"12345",)), 4, 1024),
+            ("stderr-overflow", _FakeProcess((), (b"12345",)), 1024, 4),
+            ("read-error", _FakeProcess((OSError("host-secret"),)), 1024, 1024),
+            ("timeout", _FakeProcess(timeout_once=True), 1024, 1024),
+        )
+        for label, process, stdout_limit, stderr_limit in cases:
+            with self.subTest(label=label):
+                with self.assertRaises(bundle_builder.GitObjectReadError) as raised:
+                    self._run_with_process(
+                        process,
+                        stdout_limit=stdout_limit,
+                        stderr_limit=stderr_limit,
+                    )
+                self.assertEqual(str(raised.exception), "Git object read failed")
+                self.assertNotIn("host-secret", str(raised.exception))
+                self.assertTrue(process.stdin.closed)
+                self.assertTrue(process.stdout.closed)
+                self.assertTrue(process.stderr.closed)
+                self.assertTrue(all(not thread.is_alive() for thread in self.started_threads))
+                self.assertGreaterEqual(process.wait_calls, 1)
+                if label in {"stdout-overflow", "stderr-overflow", "timeout"}:
+                    self.assertTrue(process.terminated or process.killed)
+
+    def test_input_failures_close_and_reap_the_child(self) -> None:
+        for label, failure in (
+            ("broken-pipe", BrokenPipeError("host-secret")),
+            ("write-error", OSError("host-secret")),
+        ):
+            with self.subTest(label=label):
+                process = _FakeProcess(stdin=_FakeWritePipe(failure=failure))
+                with self.assertRaises(bundle_builder.GitObjectReadError):
+                    self._run_with_process(process, input_bytes=b"request\n")
+                self.assertTrue(process.stdin.closed)
+                self.assertTrue(process.stdout.closed)
+                self.assertTrue(process.stderr.closed)
+                self.assertTrue(all(not thread.is_alive() for thread in self.started_threads))
+                self.assertGreaterEqual(process.wait_calls, 1)
+
+    def test_temporary_spools_close_on_success_and_failure(self) -> None:
+        for label, process in (
+            ("success", _FakeProcess((b"ok",))),
+            ("failure", _FakeProcess((), (b"host-secret",))),
+        ):
+            with self.subTest(label=label):
+                spools: list[io.BytesIO] = []
+
+                def make_spool(*_arguments: object, **_keywords: object) -> io.BytesIO:
+                    spool = io.BytesIO()
+                    spools.append(spool)
+                    return spool
+
+                calls: list[tuple[tuple[object, ...], dict[str, object]]] = []
+                with mock.patch(
+                    "tools.build_mapping_review_bundle.subprocess.Popen",
+                    side_effect=_popen_sequence([process], calls),
+                ), mock.patch(
+                    "tools.build_mapping_review_bundle.tempfile.SpooledTemporaryFile",
+                    side_effect=make_spool,
+                ):
+                    if label == "success":
+                        self.reader._run_finite_git(("status",), stdout_limit=64)
+                    else:
+                        with self.assertRaises(bundle_builder.GitObjectReadError):
+                            self.reader._run_finite_git(("status",), stdout_limit=64)
+                self.assertEqual(len(spools), 2)
+                self.assertTrue(all(spool.closed for spool in spools))
+
+    def test_drainer_start_failure_still_terminates_and_reaps_child(self) -> None:
+        process = _FakeProcess()
+        calls: list[tuple[tuple[object, ...], dict[str, object]]] = []
+        original_start = threading.Thread.start
+        starts = 0
+
+        def fail_second_start(thread: threading.Thread) -> None:
+            nonlocal starts
+            starts += 1
+            if starts == 2:
+                raise OSError("host-secret")
+            original_start(thread)
+
+        with mock.patch(
+            "tools.build_mapping_review_bundle.subprocess.Popen",
+            side_effect=_popen_sequence([process], calls),
+        ), mock.patch(
+            "tools.build_mapping_review_bundle.threading.Thread.start",
+            new=fail_second_start,
+        ):
+            with self.assertRaisesRegex(
+                bundle_builder.GitObjectReadError,
+                "^Git object read failed$",
+            ):
+                self.reader._run_finite_git(("status",), stdout_limit=64)
+        self.assertTrue(process.terminated or process.killed)
+        self.assertGreaterEqual(process.wait_calls, 1)
+        self.assertTrue(process.stdin.closed)
+        self.assertTrue(process.stdout.closed)
+        self.assertTrue(process.stderr.closed)
+
+
+class GitRepositoryBindingTests(unittest.TestCase):
+    def test_temporary_run_adapter_uses_only_the_finite_transport(self) -> None:
+        calls: list[tuple[tuple[object, ...], dict[str, object]]] = []
+        reader = GitReader(ROOT)
+        with mock.patch(
+            "tools.build_mapping_review_bundle.subprocess.run",
+            side_effect=AssertionError("subprocess.run must not be used"),
+        ), mock.patch(
+            "tools.build_mapping_review_bundle.subprocess.Popen",
+            side_effect=_popen_sequence(
+                [_FakeProcess((b"sha1\n",)), _FakeProcess((b"clean",))],
+                calls,
+            ),
+        ):
+            result = reader._run("status")
+        self.assertEqual(result.stdout, b"clean")
+        self.assertEqual(
+            [call[0][0][-1] for call in calls],
+            ["--show-object-format=storage", "status"],
+        )
+
+    def test_exact_commit_resolution_checks_sha1_once_and_caches_success(self) -> None:
+        head = "1" * 40
+        calls: list[tuple[tuple[object, ...], dict[str, object]]] = []
+        processes = [
+            _FakeProcess((b"sha1\n",)),
+            _FakeProcess((head.encode("ascii") + b"\n",)),
+        ]
+        reader = GitReader(ROOT)
+        with mock.patch(
+            "tools.build_mapping_review_bundle.subprocess.Popen",
+            side_effect=_popen_sequence(processes, calls),
+        ):
+            self.assertEqual(reader.resolve_commit(head), head)
+            self.assertEqual(reader.resolve_commit(head), head)
+        commands = [call[0][0] for call in calls]
+        self.assertEqual(commands[0][-2:], ["rev-parse", "--show-object-format=storage"])
+        self.assertEqual(
+            commands[1][-3:],
+            ["rev-parse", "--verify", f"{head}^{{commit}}"],
+        )
+        self.assertEqual(len(commands), 2)
+
+    def test_non_sha1_storage_fails_closed(self) -> None:
+        reader = GitReader(ROOT)
+        calls: list[tuple[tuple[object, ...], dict[str, object]]] = []
+        with mock.patch(
+            "tools.build_mapping_review_bundle.subprocess.Popen",
+            side_effect=_popen_sequence([_FakeProcess((b"sha256\n",))], calls),
+        ):
+            with self.assertRaises(bundle_builder.GitObjectReadError):
+                reader.resolve_commit("1" * 40)
+        self.assertEqual(len(calls), 1)
+
+    def test_replacement_refs_and_ambient_repository_redirects_are_ignored(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository, original = _create_clean_repository(Path(directory))
+            (repository / "tracked.txt").write_text("replacement\n", encoding="utf-8")
+            _git(repository, "commit", "-am", "replacement")
+            replacement = _git(repository, "rev-parse", "HEAD")
+            _git(repository, "replace", original, replacement)
+            with mock.patch.dict(
+                os.environ,
+                {
+                    "GIT_DIR": str(repository / ".git"),
+                    "GIT_WORK_TREE": str(repository),
+                    "GIT_REPLACE_REF_BASE": "refs/replace/",
+                },
+                clear=False,
+            ):
+                content = GitReader(repository).read_bytes(original, "tracked.txt")
+        self.assertEqual(content, b"baseline\n")
+
+    def test_graft_file_cannot_change_ancestry_command(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository, parent = _create_clean_repository(Path(directory))
+            (repository / "tracked.txt").write_text("second\n", encoding="utf-8")
+            _git(repository, "commit", "-am", "second")
+            child = _git(repository, "rev-parse", "HEAD")
+            graft = Path(directory) / "grafts"
+            graft.write_text(f"{child}\n", encoding="ascii")
+            with mock.patch.dict(os.environ, {"GIT_GRAFT_FILE": str(graft)}, clear=False):
+                result = GitReader(repository)._run_finite_git(
+                    ("rev-list", "--parents", "-n", "1", child),
+                    stdout_limit=256,
+                )
+        self.assertEqual(result.stdout, f"{child} {parent}\n".encode("ascii"))
+
+    def test_execution_state_and_worktrees_use_bounded_binary_commands(self) -> None:
+        head = "1" * 40
+        root_bytes = str(ROOT.resolve()).encode("utf-8")
+        calls: list[tuple[tuple[object, ...], dict[str, object]]] = []
+        processes = (
+            _FakeProcess((b"sha1\n",)),
+            _FakeProcess((head.encode("ascii") + b"\n",)),
+            _FakeProcess((head.encode("ascii") + b"\n",)),
+            _FakeProcess(),
+            _FakeProcess((b"worktree " + root_bytes + b"\0",)),
+        )
+        reader = GitReader(ROOT)
+        with mock.patch(
+            "tools.build_mapping_review_bundle.subprocess.Popen",
+            side_effect=_popen_sequence(list(processes), calls),
+        ), mock.patch.object(
+            reader,
+            "_run_finite_git",
+            wraps=reader._run_finite_git,
+        ) as finite_git:
+            reader.require_candidate_execution_state(head)
+            self.assertEqual(reader.worktree_roots(), (ROOT.resolve(),))
+        commands = [call[0][0] for call in calls]
+        self.assertEqual(commands[2][-2:], ["rev-parse", "HEAD"])
+        self.assertEqual(commands[3][-4:], [
+            "status", "--porcelain=v1", "--untracked-files=all", "--ignore-submodules=none",
+        ])
+        self.assertEqual(commands[4][-4:], ["worktree", "list", "--porcelain", "-z"])
+        self.assertTrue(all("text" not in call[1] for call in calls))
+        self.assertTrue(all(call[1]["env"] == reader._git_environment for call in calls))
+        self.assertTrue(all(process.wait_timeouts[0] == 120 for process in processes))
+        self.assertEqual(
+            [call.kwargs["stdout_limit"] for call in finite_git.call_args_list],
+            [16, 41, 41, 8 * 1024 * 1024, 8 * 1024 * 1024],
+        )
+
+
 class GitReaderTests(unittest.TestCase):
     def setUp(self) -> None:
         self.reader = GitReader(ROOT)
@@ -136,7 +579,13 @@ class GitReaderTests(unittest.TestCase):
 
     def test_resolve_commit_requires_full_exact_sha(self) -> None:
         self.assertEqual(self.reader.resolve_commit(self.head), self.head)
-        for invalid in ("HEAD", self.head[:12], "g" * 40, "0" * 40):
+        for invalid in (
+            "HEAD",
+            self.head.upper(),
+            self.head[:12],
+            "g" * 40,
+            "0" * 40,
+        ):
             with self.subTest(invalid=invalid):
                 with self.assertRaises(ValueError):
                     self.reader.resolve_commit(invalid)
