@@ -14,7 +14,7 @@ from pathlib import Path
 from unittest import mock
 
 from tests import profile_fixture, profile_language_cases
-from tools import validate_profiles
+from tools import validate_profiles, verify_profile_hot_path_equivalence
 
 
 ACTIVE_ASPECT_FORMS = (
@@ -854,6 +854,760 @@ class ProfileLanguageInventoryTests(unittest.TestCase):
                 *self.inventory.cases[1:],
             ),
         )
+
+
+class ProfileHotPathEquivalenceCommandTests(unittest.TestCase):
+    CANDIDATE = "1" * 40
+    OTHER_CANDIDATE = "2" * 40
+
+    def setUp(self) -> None:
+        self.root = Path("C:/private/injected-checkout")
+
+    @staticmethod
+    def completed(
+        stdout: bytes = b"",
+        *,
+        returncode: int = 0,
+        stderr: bytes = b"",
+    ) -> subprocess.CompletedProcess[bytes]:
+        return subprocess.CompletedProcess(
+            args=["git"],
+            returncode=returncode,
+            stdout=stdout,
+            stderr=stderr,
+        )
+
+    def runner_for(
+        self, *results: subprocess.CompletedProcess[bytes]
+    ) -> mock.Mock:
+        return mock.Mock(side_effect=results)
+
+    def assert_safe_error(
+        self,
+        runner: mock.Mock,
+        *,
+        candidate: str | None = None,
+    ) -> None:
+        with self.assertRaises(
+            verify_profile_hot_path_equivalence.ProfileHotPathEquivalenceError
+        ) as captured:
+            verify_profile_hot_path_equivalence.require_exact_candidate(
+                self.root,
+                self.CANDIDATE if candidate is None else candidate,
+                runner=runner,
+            )
+        message = str(captured.exception)
+        self.assertNotIn(str(self.root), message)
+        self.assertNotIn("injected child stderr", message)
+        self.assertNotIn("secret-change.txt", message)
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+        with mock.patch.object(
+            verify_profile_hot_path_equivalence,
+            "verify_profile_hot_path_equivalence",
+            side_effect=captured.exception,
+        ), contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+            result = verify_profile_hot_path_equivalence.main(
+                [
+                    "--check",
+                    "--candidate-sha",
+                    self.CANDIDATE if candidate is None else candidate,
+                ],
+                root=self.root,
+            )
+        self.assertEqual(result, 1)
+        self.assertEqual(stdout.getvalue(), "")
+        self.assertEqual(len(stderr.getvalue().splitlines()), 1)
+        self.assertNotIn(str(self.root), stderr.getvalue())
+        self.assertNotIn("injected child stderr", stderr.getvalue())
+        self.assertNotIn("secret-change.txt", stderr.getvalue())
+
+    def test_candidate_must_be_an_available_lowercase_full_sha(self) -> None:
+        for candidate in ("A" * 40, "1" * 12, "0" * 40):
+            with self.subTest(candidate=candidate):
+                runner = mock.Mock()
+                self.assert_safe_error(runner, candidate=candidate)
+                runner.assert_not_called()
+
+    def test_candidate_must_match_a_clean_checkout(self) -> None:
+        failures = (
+            (
+                self.completed((self.OTHER_CANDIDATE + "\n").encode()),
+            ),
+            (
+                self.completed(returncode=1),
+            ),
+            (
+                self.completed(
+                    (self.CANDIDATE + "\n").encode(),
+                    stderr=b"injected child stderr",
+                ),
+            ),
+            (
+                self.completed((self.CANDIDATE + "\n").encode()),
+                self.completed(b" M tracked.txt\n"),
+            ),
+            (
+                self.completed((self.CANDIDATE + "\n").encode()),
+                self.completed(b"?? secret-change.txt\n"),
+            ),
+            (
+                self.completed((self.CANDIDATE + "\n").encode()),
+                self.completed(returncode=1),
+            ),
+            (
+                self.completed((self.CANDIDATE + "\n").encode()),
+                self.completed(stderr=b"injected child stderr"),
+            ),
+        )
+        for results in failures:
+            with self.subTest(results=results):
+                self.assert_safe_error(self.runner_for(*results))
+
+    def test_clean_matching_detached_checkout_is_accepted(self) -> None:
+        runner = self.runner_for(
+            self.completed((self.CANDIDATE + "\n").encode()),
+            self.completed(),
+        )
+
+        verify_profile_hot_path_equivalence.require_exact_candidate(
+            self.root, self.CANDIDATE, runner=runner
+        )
+
+        self.assertEqual(
+            runner.call_args_list,
+            [
+                mock.call(
+                    ["git", "rev-parse", "--verify", "HEAD"],
+                    cwd=self.root,
+                    shell=False,
+                    capture_output=True,
+                ),
+                mock.call(
+                    [
+                        "git",
+                        "status",
+                        "--porcelain=v1",
+                        "--untracked-files=all",
+                    ],
+                    cwd=self.root,
+                    shell=False,
+                    capture_output=True,
+                ),
+            ],
+        )
+
+    def test_main_failure_is_nonzero_and_sanitized(self) -> None:
+        unsafe_path = str(self.root)
+
+        def fail_candidate_check(*_args: object, **_kwargs: object) -> object:
+            runner = self.runner_for(
+                self.completed((self.CANDIDATE + "\n").encode()),
+                self.completed(
+                    b"?? secret-change.txt\n",
+                    stderr=b"injected child stderr",
+                ),
+            )
+            return verify_profile_hot_path_equivalence.require_exact_candidate(
+                self.root, self.CANDIDATE, runner=runner
+            )
+
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+        with mock.patch.object(
+            verify_profile_hot_path_equivalence,
+            "verify_profile_hot_path_equivalence",
+            side_effect=fail_candidate_check,
+        ), contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+            result = verify_profile_hot_path_equivalence.main(
+                ["--check", "--candidate-sha", self.CANDIDATE],
+                root=self.root,
+            )
+
+        self.assertEqual(result, 1)
+        self.assertEqual(stdout.getvalue(), "")
+        self.assertEqual(len(stderr.getvalue().splitlines()), 1)
+        self.assertNotIn(unsafe_path, stderr.getvalue())
+        self.assertNotIn("injected child stderr", stderr.getvalue())
+        self.assertNotIn("secret-change.txt", stderr.getvalue())
+
+    def test_main_prints_the_exact_pass_record(self) -> None:
+        expected = verify_profile_hot_path_equivalence.EquivalenceResult(
+            candidate_sha=self.CANDIDATE,
+            method_count=73,
+            population_count=908,
+            population_sha256="a" * 64,
+        )
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+        with mock.patch.object(
+            verify_profile_hot_path_equivalence,
+            "verify_profile_hot_path_equivalence",
+            return_value=expected,
+        ) as verify, contextlib.redirect_stdout(
+            stdout
+        ), contextlib.redirect_stderr(stderr):
+            result = verify_profile_hot_path_equivalence.main(
+                ["--check", "--candidate-sha", self.CANDIDATE],
+                root=self.root,
+            )
+
+        self.assertEqual(result, 0)
+        self.assertEqual(stderr.getvalue(), "")
+        self.assertEqual(
+            stdout.getvalue(),
+            "candidate_sha=1111111111111111111111111111111111111111\n"
+            "method_count=73\n"
+            "population_count=908\n"
+            "population_sha256="
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n"
+            "equivalence=PASS\n",
+        )
+        verify.assert_called_once_with(self.root, self.CANDIDATE)
+
+
+class ProfileHotPathEquivalenceComparisonTests(unittest.TestCase):
+    CANDIDATE = "1" * 40
+    OTHER_CANDIDATE = "2" * 40
+    LOCATION = "profiles/uk/0.1.0/README.md"
+    CLAIM_DIAGNOSTIC = f"{LOCATION}: claim problem"
+    SOURCE_DIAGNOSTIC = f"{LOCATION}: source problem"
+
+    def setUp(self) -> None:
+        self.root = Path("C:/private/injected-checkout")
+        self.real_temporary_directory = tempfile.TemporaryDirectory
+        self.real_json_loads = json.loads
+        self.events: list[tuple[object, ...]] = []
+        self.fixture_roots: list[Path] = []
+        self.component_exclusions: list[list[str]] = []
+        self.readme_text: dict[str, str] = {}
+        self.inventory = profile_language_cases.ProfileLanguageInventory(
+            cases=(
+                self.case(
+                    "method_one",
+                    "case-claim-001",
+                    "Claim text",
+                    ("claim",),
+                    (),
+                    (self.CLAIM_DIAGNOSTIC,),
+                ),
+                self.case(
+                    "method_one",
+                    "case_source",
+                    "Source text",
+                    ("source_authority",),
+                    ("Acme Code",),
+                    (self.SOURCE_DIAGNOSTIC,),
+                ),
+                self.case(
+                    "method_two",
+                    "case_empty_reset",
+                    "Neutral text",
+                    ("claim", "source_authority"),
+                    (),
+                    (),
+                ),
+            ),
+            methods=(
+                profile_language_cases.MethodBaseline("method_one", 2, 2),
+                profile_language_cases.MethodBaseline("method_two", 1, 1),
+            ),
+            exclusions=(),
+            population_sha256="d" * 64,
+        )
+        self.full_outputs = {
+            "Claim text": [self.CLAIM_DIAGNOSTIC],
+            "Source text": [self.SOURCE_DIAGNOSTIC],
+            "Neutral text": [],
+        }
+        self.claim_outputs = {
+            "Claim text": [self.CLAIM_DIAGNOSTIC],
+            "Neutral text": [],
+        }
+        self.source_outputs = {
+            "Source text": [self.SOURCE_DIAGNOSTIC],
+            "Neutral text": [],
+        }
+
+    @classmethod
+    def case(
+        cls,
+        method_name: str,
+        case_id: str,
+        text: str,
+        families: tuple[profile_language_cases.DiagnosticFamily, ...],
+        excluded_sources: tuple[str, ...],
+        expected: tuple[str, ...],
+    ) -> profile_language_cases.ProfileLanguageCase:
+        return profile_language_cases.ProfileLanguageCase(
+            method_name=method_name,
+            case_id=case_id,
+            text=text,
+            location=cls.LOCATION,
+            diagnostic_families=families,
+            excluded_sources=excluded_sources,
+            expected_diagnostics=expected,
+        )
+
+    @staticmethod
+    def completed(
+        stdout: bytes = b"",
+        *,
+        returncode: int = 0,
+        stderr: bytes = b"",
+    ) -> subprocess.CompletedProcess[bytes]:
+        return subprocess.CompletedProcess(
+            args=["git"],
+            returncode=returncode,
+            stdout=stdout,
+            stderr=stderr,
+        )
+
+    def run_comparison(
+        self,
+        *,
+        inventory: profile_language_cases.ProfileLanguageInventory | None = None,
+        runner_results: tuple[subprocess.CompletedProcess[bytes], ...]
+        | None = None,
+        full_outputs: dict[str, list[str]] | None = None,
+        claim_outputs: dict[str, list[str]] | None = None,
+        source_outputs: dict[str, list[str]] | None = None,
+        full_output_factory: object | None = None,
+    ) -> verify_profile_hot_path_equivalence.EquivalenceResult:
+        selected_inventory = self.inventory if inventory is None else inventory
+        selected_full = self.full_outputs if full_outputs is None else full_outputs
+        selected_claim = (
+            self.claim_outputs if claim_outputs is None else claim_outputs
+        )
+        selected_source = (
+            self.source_outputs if source_outputs is None else source_outputs
+        )
+        results = list(
+            runner_results
+            if runner_results is not None
+            else (
+                self.completed((self.CANDIDATE + "\n").encode()),
+                self.completed(),
+                self.completed((self.CANDIDATE + "\n").encode()),
+                self.completed(),
+            )
+        )
+
+        def run_git(*args: object, **kwargs: object) -> object:
+            self.events.append(("git", tuple(args[0])))
+            if not results:
+                raise AssertionError("the verifier made an extra Git call")
+            return results.pop(0)
+
+        def new_temporary_directory() -> tempfile.TemporaryDirectory[str]:
+            self.events.append(("temporary_directory",))
+            return self.real_temporary_directory()
+
+        def write_fixture(fixture_root: Path) -> Path:
+            self.events.append(("fixture", str(fixture_root)))
+            self.fixture_roots.append(fixture_root)
+            package = fixture_root / "profiles/uk/0.1.0"
+            package.mkdir(parents=True)
+            (package / "profile.json").write_text(
+                json.dumps(
+                    {"source_boundary": {"excluded_sources": ["stale"]}}
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            return package
+
+        def write_readme(package: Path, text: str) -> str:
+            self.events.append(("readme", text))
+            content = f"# Synthetic profile\n\n{text}\n"
+            (package / "README.md").write_text(content, encoding="utf-8")
+            self.readme_text[content] = text
+            return content
+
+        def load_json(value: str) -> object:
+            self.events.append(("json_read",))
+            return self.real_json_loads(value)
+
+        def write_component(
+            package: Path, filename: str, document: object
+        ) -> None:
+            profile = document
+            if not isinstance(profile, dict):
+                raise AssertionError("the profile record must be a dictionary")
+            boundary = profile["source_boundary"]
+            if not isinstance(boundary, dict):
+                raise AssertionError("the source boundary must be a dictionary")
+            excluded_sources = boundary["excluded_sources"]
+            self.assertIsInstance(excluded_sources, list)
+            self.component_exclusions.append(excluded_sources)
+            self.events.append(
+                ("component", filename, tuple(excluded_sources))
+            )
+            (package / filename).write_text(
+                json.dumps(profile) + "\n", encoding="utf-8"
+            )
+            self.events.append(("authoritative_source",))
+            (package / "PROFILE.md").write_text(
+                json.dumps(profile) + "\n", encoding="utf-8"
+            )
+
+        def full_validate(fixture_root: Path) -> list[str]:
+            package = fixture_root / "profiles/uk/0.1.0"
+            readme = (package / "README.md").read_text(encoding="utf-8")
+            text = self.readme_text[readme]
+            profile = self.real_json_loads(
+                (package / "profile.json").read_text(encoding="utf-8")
+            )
+            self.events.append(
+                (
+                    "full",
+                    text,
+                    tuple(profile["source_boundary"]["excluded_sources"]),
+                    (package / "PROFILE.md").exists(),
+                )
+            )
+            if full_output_factory is not None:
+                return full_output_factory(fixture_root, text)
+            return list(selected_full[text])
+
+        def claim_boundary(readme: str, location: str) -> list[str]:
+            text = self.readme_text[readme]
+            self.events.append(("claim", text, location))
+            return list(selected_claim[text])
+
+        def source_boundary(
+            readme: str, location: str, excluded_sources: tuple[str, ...]
+        ) -> list[str]:
+            text = self.readme_text[readme]
+            self.events.append(
+                ("source_authority", text, location, excluded_sources)
+            )
+            return list(selected_source[text])
+
+        runner = mock.Mock(side_effect=run_git)
+        temporary_directory = mock.Mock(side_effect=new_temporary_directory)
+        inventory_accessor = mock.Mock(return_value=selected_inventory)
+        fixture_writer = mock.Mock(side_effect=write_fixture)
+        readme_writer = mock.Mock(side_effect=write_readme)
+        component_writer = mock.Mock(side_effect=write_component)
+        full_validator = mock.Mock(side_effect=full_validate)
+        claim_validator = mock.Mock(side_effect=claim_boundary)
+        source_validator = mock.Mock(side_effect=source_boundary)
+        self.last_runner = runner
+        self.last_temporary_directory = temporary_directory
+        self.last_inventory_accessor = inventory_accessor
+        self.last_fixture_writer = fixture_writer
+        self.last_readme_writer = readme_writer
+        self.last_component_writer = component_writer
+        self.last_full_validator = full_validator
+        self.last_claim_validator = claim_validator
+        self.last_source_validator = source_validator
+
+        with mock.patch.object(
+            verify_profile_hot_path_equivalence.profile_language_cases,
+            "profile_language_inventory",
+            inventory_accessor,
+        ), mock.patch.object(
+            verify_profile_hot_path_equivalence.tempfile,
+            "TemporaryDirectory",
+            temporary_directory,
+        ), mock.patch.object(
+            verify_profile_hot_path_equivalence.profile_fixture,
+            "write_valid_profile_fixture",
+            fixture_writer,
+        ), mock.patch.object(
+            verify_profile_hot_path_equivalence.profile_fixture,
+            "write_profile_readme",
+            readme_writer,
+        ), mock.patch.object(
+            verify_profile_hot_path_equivalence.json,
+            "loads",
+            side_effect=load_json,
+        ), mock.patch.object(
+            verify_profile_hot_path_equivalence.profile_fixture,
+            "write_component",
+            component_writer,
+        ), mock.patch.object(
+            verify_profile_hot_path_equivalence.validate_profiles,
+            "validate",
+            full_validator,
+        ), mock.patch.object(
+            verify_profile_hot_path_equivalence.validate_profiles,
+            "claim_text_diagnostics",
+            claim_validator,
+        ), mock.patch.object(
+            verify_profile_hot_path_equivalence.validate_profiles,
+            "source_authority_text_diagnostics",
+            source_validator,
+        ):
+            result = (
+                verify_profile_hot_path_equivalence.verify_profile_hot_path_equivalence(
+                    self.root, self.CANDIDATE, runner=runner
+                )
+            )
+        self.assertEqual(results, [])
+        return result
+
+    def assert_main_rejects(
+        self,
+        error: verify_profile_hot_path_equivalence.ProfileHotPathEquivalenceError,
+    ) -> str:
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+        with mock.patch.object(
+            verify_profile_hot_path_equivalence,
+            "verify_profile_hot_path_equivalence",
+            side_effect=error,
+        ), contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+            result = verify_profile_hot_path_equivalence.main(
+                ["--check", "--candidate-sha", self.CANDIDATE],
+                root=self.root,
+            )
+        self.assertEqual(result, 1)
+        self.assertEqual(stdout.getvalue(), "")
+        self.assertNotIn("equivalence=PASS", stderr.getvalue())
+        self.assertEqual(len(stderr.getvalue().splitlines()), 1)
+        return stderr.getvalue()
+
+    def assert_comparison_failure(
+        self,
+        expected_relation: str,
+        **kwargs: object,
+    ) -> None:
+        with self.assertRaises(
+            verify_profile_hot_path_equivalence.ProfileHotPathEquivalenceError
+        ) as captured:
+            self.run_comparison(**kwargs)
+        message = str(captured.exception)
+        self.assertTrue(
+            message.startswith("method_one/case-claim-001: "), message
+        )
+        self.assertIn(expected_relation, message)
+        stderr = self.assert_main_rejects(captured.exception)
+        for unsafe in (
+            str(self.root),
+            *(str(root) for root in self.fixture_roots),
+        ):
+            self.assertNotIn(unsafe, message)
+            self.assertNotIn(unsafe, stderr)
+
+    def test_every_case_uses_fresh_and_fully_reset_state(self) -> None:
+        result = self.run_comparison()
+
+        self.assertEqual(
+            result,
+            verify_profile_hot_path_equivalence.EquivalenceResult(
+                candidate_sha=self.CANDIDATE,
+                method_count=2,
+                population_count=3,
+                population_sha256="d" * 64,
+            ),
+        )
+        self.last_inventory_accessor.assert_called_once_with()
+        self.assertEqual(self.last_temporary_directory.call_count, 2)
+        self.assertEqual(self.last_fixture_writer.call_count, 2)
+        self.assertEqual(len({str(root) for root in self.fixture_roots}), 2)
+        self.assertEqual(self.last_readme_writer.call_count, 3)
+        self.assertEqual(self.last_component_writer.call_count, 3)
+        self.assertEqual(self.component_exclusions, [[], ["Acme Code"], []])
+        self.assertEqual(len({id(value) for value in self.component_exclusions}), 3)
+        self.assertEqual(self.last_full_validator.call_count, 3)
+        self.assertEqual(self.last_claim_validator.call_count, 2)
+        self.assertEqual(self.last_source_validator.call_count, 2)
+        self.assertEqual(
+            self.events,
+            [
+                ("git", ("git", "rev-parse", "--verify", "HEAD")),
+                (
+                    "git",
+                    (
+                        "git",
+                        "status",
+                        "--porcelain=v1",
+                        "--untracked-files=all",
+                    ),
+                ),
+                ("temporary_directory",),
+                ("fixture", str(self.fixture_roots[0])),
+                ("readme", "Claim text"),
+                ("json_read",),
+                ("component", "profile.json", ()),
+                ("authoritative_source",),
+                ("full", "Claim text", (), True),
+                ("claim", "Claim text", self.LOCATION),
+                ("readme", "Source text"),
+                ("json_read",),
+                ("component", "profile.json", ("Acme Code",)),
+                ("authoritative_source",),
+                ("full", "Source text", ("Acme Code",), True),
+                (
+                    "source_authority",
+                    "Source text",
+                    self.LOCATION,
+                    ("Acme Code",),
+                ),
+                ("temporary_directory",),
+                ("fixture", str(self.fixture_roots[1])),
+                ("readme", "Neutral text"),
+                ("json_read",),
+                ("component", "profile.json", ()),
+                ("authoritative_source",),
+                ("full", "Neutral text", (), True),
+                ("claim", "Neutral text", self.LOCATION),
+                (
+                    "source_authority",
+                    "Neutral text",
+                    self.LOCATION,
+                    (),
+                ),
+                ("git", ("git", "rev-parse", "--verify", "HEAD")),
+                (
+                    "git",
+                    (
+                        "git",
+                        "status",
+                        "--porcelain=v1",
+                        "--untracked-files=all",
+                    ),
+                ),
+            ],
+        )
+        expected_git_calls = [
+            mock.call(
+                ["git", "rev-parse", "--verify", "HEAD"],
+                cwd=self.root,
+                shell=False,
+                capture_output=True,
+            ),
+            mock.call(
+                [
+                    "git",
+                    "status",
+                    "--porcelain=v1",
+                    "--untracked-files=all",
+                ],
+                cwd=self.root,
+                shell=False,
+                capture_output=True,
+            ),
+        ]
+        self.assertEqual(
+            self.last_runner.call_args_list,
+            [*expected_git_calls, *expected_git_calls],
+        )
+
+    def test_complete_and_narrow_mismatch_is_rejected(self) -> None:
+        outputs = dict(self.claim_outputs)
+        outputs["Claim text"] = [self.SOURCE_DIAGNOSTIC]
+        self.assert_comparison_failure(
+            "complete/narrow", claim_outputs=outputs
+        )
+
+    def test_complete_and_expected_mismatch_is_rejected(self) -> None:
+        first = replace(
+            self.inventory.cases[0],
+            expected_diagnostics=(self.SOURCE_DIAGNOSTIC,),
+        )
+        inventory = replace(
+            self.inventory, cases=(first, *self.inventory.cases[1:])
+        )
+        self.assert_comparison_failure(
+            "complete/expected", inventory=inventory
+        )
+
+    def test_narrow_and_expected_mismatch_is_rejected(self) -> None:
+        first = replace(
+            self.inventory.cases[0],
+            expected_diagnostics=(self.SOURCE_DIAGNOSTIC,),
+        )
+        inventory = replace(
+            self.inventory, cases=(first, *self.inventory.cases[1:])
+        )
+        outputs = dict(self.full_outputs)
+        outputs["Claim text"] = [self.SOURCE_DIAGNOSTIC]
+        self.assert_comparison_failure(
+            "narrow/expected", inventory=inventory, full_outputs=outputs
+        )
+
+    def test_wrong_diagnostic_order_is_rejected(self) -> None:
+        first = replace(
+            self.inventory.cases[0],
+            expected_diagnostics=(
+                self.SOURCE_DIAGNOSTIC,
+                self.CLAIM_DIAGNOSTIC,
+            ),
+        )
+        inventory = replace(
+            self.inventory, cases=(first, *self.inventory.cases[1:])
+        )
+        full_outputs = dict(self.full_outputs)
+        full_outputs["Claim text"] = [
+            self.CLAIM_DIAGNOSTIC,
+            self.SOURCE_DIAGNOSTIC,
+        ]
+        claim_outputs = dict(self.claim_outputs)
+        claim_outputs["Claim text"] = [
+            self.CLAIM_DIAGNOSTIC,
+            self.SOURCE_DIAGNOSTIC,
+        ]
+        self.assert_comparison_failure(
+            "complete/expected",
+            inventory=inventory,
+            full_outputs=full_outputs,
+            claim_outputs=claim_outputs,
+        )
+
+    def test_duplicate_diagnostic_is_rejected(self) -> None:
+        outputs = dict(self.full_outputs)
+        outputs["Claim text"] = [
+            self.CLAIM_DIAGNOSTIC,
+            self.CLAIM_DIAGNOSTIC,
+        ]
+        self.assert_comparison_failure(
+            "complete/narrow", full_outputs=outputs
+        )
+
+    def test_temporary_path_in_diagnostic_is_rejected_without_leaking(self) -> None:
+        def leaked_output(fixture_root: Path, _text: str) -> list[str]:
+            return [f"{fixture_root.resolve()}/secret"]
+
+        self.assert_comparison_failure(
+            "temporary fixture path", full_output_factory=leaked_output
+        )
+
+    def test_postflight_head_drift_fails_after_all_comparisons(self) -> None:
+        results = (
+            self.completed((self.CANDIDATE + "\n").encode()),
+            self.completed(),
+            self.completed((self.OTHER_CANDIDATE + "\n").encode()),
+        )
+        with self.assertRaises(
+            verify_profile_hot_path_equivalence.ProfileHotPathEquivalenceError
+        ) as captured:
+            self.run_comparison(runner_results=results)
+        self.assertEqual(self.last_full_validator.call_count, 3)
+        self.assertNotIn(str(self.root), str(captured.exception))
+        stderr = self.assert_main_rejects(captured.exception)
+        self.assertNotIn("equivalence=PASS", stderr)
+
+    def test_postflight_dirty_state_fails_after_all_comparisons(self) -> None:
+        dirty = b"?? injected-postflight-secret.txt\n"
+        results = (
+            self.completed((self.CANDIDATE + "\n").encode()),
+            self.completed(),
+            self.completed((self.CANDIDATE + "\n").encode()),
+            self.completed(dirty),
+        )
+        with self.assertRaises(
+            verify_profile_hot_path_equivalence.ProfileHotPathEquivalenceError
+        ) as captured:
+            self.run_comparison(runner_results=results)
+        self.assertEqual(self.last_full_validator.call_count, 3)
+        self.assertNotIn(str(self.root), str(captured.exception))
+        self.assertNotIn(dirty.decode().strip(), str(captured.exception))
+        stderr = self.assert_main_rejects(captured.exception)
+        self.assertNotIn(dirty.decode().strip(), stderr)
+        self.assertNotIn("equivalence=PASS", stderr)
 
 
 class ProfileValidationTests(unittest.TestCase):
