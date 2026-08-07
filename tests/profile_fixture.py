@@ -64,6 +64,17 @@ def write_authoritative_source(package: Path) -> None:
     )
 
 
+def write_profile_readme(package: Path, text: str) -> str:
+    content = f"# Synthetic profile\n\n{text}\n"
+    (package / "README.md").write_text(content, encoding="utf-8")
+    return content
+
+
+def write_component(package: Path, filename: str, document: object) -> None:
+    write_json(package / filename, document)
+    write_authoritative_source(package)
+
+
 def write_valid_profile_fixture(root: Path) -> Path:
     """Create a schema-conforming profile package without published content."""
     shutil.copytree(SOURCE_ROOT / "profiles/schema", root / "profiles/schema")
