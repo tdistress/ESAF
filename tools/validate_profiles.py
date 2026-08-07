@@ -2865,8 +2865,19 @@ def asserted_profile_phrases(text: str) -> list[str]:
     return assertions
 
 
+def claim_text_diagnostics(text: str, location: str) -> list[str]:
+    diagnostics: list[str] = []
+    if contains_affirmative_weakening(text):
+        diagnostics.append(
+            f"{location}: prohibited control weakening language"
+        )
+    for phrase in asserted_profile_phrases(text):
+        diagnostics.append(f"{location}: prohibited assertion {phrase!r}")
+    return sorted(set(diagnostics))
+
+
 def source_authority_is_excluded(
-    source: str, excluded_sources: list[str]
+    source: str, excluded_sources: Sequence[str]
 ) -> bool:
     """Resolve a bounded named source to an excluded source declaration."""
     normalized_source = source.casefold()
@@ -2897,7 +2908,7 @@ def source_authority_is_excluded(
 def matched_source_is_excluded(
     text: str,
     match: re.Match[str],
-    excluded_sources: list[str],
+    excluded_sources: Sequence[str],
 ) -> bool:
     """Resolve a named source or bounded pronoun antecedent."""
     source = match.group("source")
@@ -2915,7 +2926,7 @@ def matched_source_is_excluded(
 
 
 def contains_affirmative_source_authority(
-    text: str, excluded_sources: list[str]
+    text: str, excluded_sources: Sequence[str]
 ) -> bool:
     """Reject affirmative authority claims for declared excluded sources."""
     profile_selection = (
@@ -3029,6 +3040,20 @@ def contains_affirmative_source_authority(
                 continue
             return True
     return False
+
+
+def source_authority_text_diagnostics(
+    text: str,
+    location: str,
+    excluded_sources: Sequence[str],
+) -> list[str]:
+    frozen_sources = tuple(excluded_sources)
+    diagnostics: list[str] = []
+    if contains_affirmative_source_authority(text, frozen_sources):
+        diagnostics.append(
+            f"{location}: prohibited source authority language"
+        )
+    return sorted(set(diagnostics))
 
 
 def source_boundary_diagnostics(

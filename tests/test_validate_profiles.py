@@ -116,6 +116,157 @@ class ProfileFixtureWriterTests(unittest.TestCase):
         )
 
 
+class ProfileTextDiagnosticBoundaryTests(unittest.TestCase):
+    LOCATION = "profiles/uk/0.1.0/README.md"
+
+    def test_claim_boundary_returns_exact_diagnostics(self) -> None:
+        cases = (
+            (
+                "This profile makes GOV-100 optional.",
+                [
+                    f"{self.LOCATION}: prohibited control weakening language"
+                ],
+            ),
+            (
+                "This profile establishes compliance. "
+                "This profile establishes certification eligibility.",
+                [
+                    f"{self.LOCATION}: prohibited assertion "
+                    "'establishes certification'",
+                    f"{self.LOCATION}: prohibited assertion "
+                    "'establishes compliance'",
+                ],
+            ),
+            ("This profile does not ensure legal compliance.", []),
+            (
+                'The prohibited assertion "This profile ensures legal '
+                'compliance." is quoted for review.',
+                [],
+            ),
+            (
+                "The prohibited assertion that this profile ensures legal "
+                "compliance is discussed here.",
+                [],
+            ),
+        )
+        for text, expected in cases:
+            with self.subTest(text=text):
+                self.assertEqual(
+                    validate_profiles.claim_text_diagnostics(
+                        text, self.LOCATION
+                    ),
+                    expected,
+                )
+
+    def test_claim_boundary_deduplicates_repeated_diagnostics(self) -> None:
+        text = (
+            "This profile establishes compliance. "
+            "This profile establishes compliance."
+        )
+
+        self.assertEqual(
+            validate_profiles.claim_text_diagnostics(text, self.LOCATION),
+            [
+                f"{self.LOCATION}: prohibited assertion "
+                "'establishes compliance'"
+            ],
+        )
+
+    def test_source_authority_boundary_returns_exact_diagnostics(self) -> None:
+        cases = (
+            (
+                "Acme Code governs this profile selection.",
+                ("Acme Code",),
+                [
+                    f"{self.LOCATION}: prohibited source authority language"
+                ],
+            ),
+            (
+                "Acme Code does not govern this profile selection.",
+                ("Acme Code",),
+                [],
+            ),
+            (
+                "Acme Code governs this profile selection.",
+                (),
+                [],
+            ),
+        )
+        for text, excluded_sources, expected in cases:
+            with self.subTest(
+                text=text, excluded_sources=excluded_sources
+            ):
+                self.assertEqual(
+                    validate_profiles.source_authority_text_diagnostics(
+                        text, self.LOCATION, excluded_sources
+                    ),
+                    expected,
+                )
+
+    def test_source_authority_boundary_snapshots_excluded_sources(self) -> None:
+        excluded_sources = ["Acme Code"]
+        with mock.patch.object(
+            validate_profiles,
+            "contains_affirmative_source_authority",
+            return_value=True,
+        ) as classifier:
+            diagnostics = (
+                validate_profiles.source_authority_text_diagnostics(
+                    "Acme Code governs this profile selection.",
+                    self.LOCATION,
+                    excluded_sources,
+                )
+            )
+            excluded_sources.append("Later mutation")
+        classifier.assert_called_once_with(
+            "Acme Code governs this profile selection.", ("Acme Code",)
+        )
+        self.assertEqual(
+            diagnostics,
+            [f"{self.LOCATION}: prohibited source authority language"],
+        )
+
+    def test_text_boundaries_do_not_access_the_repository(self) -> None:
+        repository_access = AssertionError(
+            "text diagnostic boundaries shall not access the repository"
+        )
+        with (
+            mock.patch.object(Path, "read_text", side_effect=repository_access),
+            mock.patch.object(
+                validate_profiles,
+                "discover_profile_packages",
+                side_effect=repository_access,
+            ),
+            mock.patch.object(
+                validate_profiles, "load_json", side_effect=repository_access
+            ),
+            mock.patch.object(
+                validate_profiles,
+                "load_schema",
+                side_effect=repository_access,
+            ),
+        ):
+            self.assertEqual(
+                validate_profiles.claim_text_diagnostics(
+                    "This profile establishes compliance.", self.LOCATION
+                ),
+                [
+                    f"{self.LOCATION}: prohibited assertion "
+                    "'establishes compliance'"
+                ],
+            )
+            self.assertEqual(
+                validate_profiles.source_authority_text_diagnostics(
+                    "Acme Code governs this profile selection.",
+                    self.LOCATION,
+                    ("Acme Code",),
+                ),
+                [
+                    f"{self.LOCATION}: prohibited source authority language"
+                ],
+            )
+
+
 class ProfileLanguageInventoryTests(unittest.TestCase):
     EXPECTED_METHOD_LEDGER = (
         ("test_additional_assurance_claim_forms_are_rejected", 5, 5),
