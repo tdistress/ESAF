@@ -13,7 +13,8 @@ import sys
 import tempfile
 import threading
 import time
-from typing import Literal, NamedTuple
+from types import MappingProxyType
+from typing import Literal, Mapping, NamedTuple
 
 from jsonschema import Draft202012Validator, FormatChecker
 from jsonschema.exceptions import SchemaError
@@ -35,6 +36,9 @@ GENERATOR_VERSION = "1.2.0"
 GIT_COMMAND_TIMEOUT_SECONDS = 120
 GIT_STDERR_LIMIT = 65_536
 GIT_LEGACY_STDOUT_LIMIT = 128 * 1024 * 1024
+GIT_TREE_STDOUT_LIMIT = 64 * 1024 * 1024
+GIT_TREE_RECORD_LIMIT = 100_000
+GIT_TREE_INDEX_LIMIT = 8
 _SOURCE_EVIDENCE_PATH = re.compile(
     r"(?m)^- (?:Oracle|Specification): `([^`]+)`\s*$"
 )
@@ -89,6 +93,14 @@ class GitObjectReadError(subprocess.SubprocessError):
 class _GitCommandResult:
     stdout: bytes
     stderr: bytes
+
+
+@dataclass(frozen=True)
+class TreeEntry:
+    path: str
+    mode: str
+    object_type: str
+    object_id: str
 
 
 @dataclass(frozen=True)
@@ -202,6 +214,8 @@ class GitReader:
         self._verified_commits: set[str] = set()
         self._regular_blobs: set[tuple[str, str]] = set()
         self._contents: dict[tuple[str, str], bytes] = {}
+        self._tree_indexes: dict[str, Mapping[str, TreeEntry]] = {}
+        self._tree_index_lock = threading.RLock()
 
     def _run_finite_git(
         self,
@@ -514,56 +528,111 @@ class GitReader:
         key = (commit, path)
         if key in self._regular_blobs:
             return
-        result = self._run(
-            "ls-tree",
-            "-z",
-            commit,
-            "--",
-            path,
-        ).stdout
-        entries = [item for item in result.split(b"\0") if item]
-        if not entries:
+        entry = self._tree_index(commit).get(path)
+        if entry is None:
             raise ValueError(f"missing tracked file at candidate: {path}")
-        if len(entries) != 1:
-            raise ValueError(f"unexpected repository entry: {path}")
-        try:
-            header, raw_name = entries[0].split(b"\t", 1)
-            mode, object_type, _object_id = header.split(b" ", 2)
-            name = raw_name.decode("utf-8")
-        except (UnicodeDecodeError, ValueError) as error:
-            raise ValueError("malformed Git tree entry") from error
         if (
-            name != path
-            or object_type != b"blob"
-            or mode not in {b"100644", b"100755"}
+            entry.object_type != "blob"
+            or entry.mode not in {"100644", "100755"}
         ):
-            raise ValueError(f"unexpected repository entry: {name}")
+            raise ValueError(f"unexpected repository entry: {path}")
         self._regular_blobs.add(key)
+
+    def _tree_index(self, commit: str) -> Mapping[str, TreeEntry]:
+        commit = self.resolve_commit(commit)
+        with self._tree_index_lock:
+            cached = self._tree_indexes.get(commit)
+            if cached is not None:
+                return cached
+            if len(self._tree_indexes) >= GIT_TREE_INDEX_LIMIT:
+                raise ValueError("Git tree index limit exceeded")
+
+            result = self._run_finite_git(
+                (
+                    "ls-tree",
+                    "-r",
+                    "-t",
+                    "-z",
+                    "--full-tree",
+                    "--abbrev=40",
+                    commit,
+                ),
+                stdout_limit=GIT_TREE_STDOUT_LIMIT,
+            )
+            raw_records = result.stdout
+            if raw_records and not raw_records.endswith(b"\0"):
+                raise ValueError("malformed Git tree entry")
+            records = raw_records.split(b"\0") if raw_records else [b""]
+            records = records[:-1]
+            if len(records) > GIT_TREE_RECORD_LIMIT:
+                raise ValueError("Git tree record limit exceeded")
+
+            entries: dict[str, TreeEntry] = {}
+            allowed_pairs = {
+                ("040000", "tree"),
+                ("100644", "blob"),
+                ("100755", "blob"),
+                ("120000", "blob"),
+                ("160000", "commit"),
+            }
+            for record in records:
+                if not record:
+                    raise ValueError("malformed Git tree entry")
+                try:
+                    header, raw_path = record.split(b"\t", 1)
+                    raw_mode, raw_type, raw_object_id = header.split(b" ")
+                    mode = raw_mode.decode("ascii")
+                    object_type = raw_type.decode("ascii")
+                    object_id = raw_object_id.decode("ascii")
+                    path = raw_path.decode("utf-8")
+                except (UnicodeDecodeError, ValueError) as error:
+                    raise ValueError("malformed Git tree entry") from error
+                if (
+                    (mode, object_type) not in allowed_pairs
+                    or not FULL_SHA.fullmatch(object_id)
+                    or any(
+                        ord(character) < 32 or ord(character) == 127
+                        for character in path
+                    )
+                ):
+                    raise ValueError("malformed Git tree entry")
+                _canonical_relative_path(path, "repository")
+                if path in entries:
+                    raise ValueError("duplicate Git tree entry")
+                entries[path] = TreeEntry(path, mode, object_type, object_id)
+
+            for path in entries:
+                parts = PurePosixPath(path).parts
+                for depth in range(1, len(parts)):
+                    parent_path = PurePosixPath(*parts[:depth]).as_posix()
+                    parent = entries.get(parent_path)
+                    if parent is None or parent.object_type != "tree":
+                        raise ValueError("malformed Git tree hierarchy")
+
+            published: Mapping[str, TreeEntry] = MappingProxyType(entries)
+            self._tree_indexes[commit] = published
+            return published
 
     def list_files(self, commit: str, path: str) -> tuple[str, ...]:
         _canonical_relative_path(path, "repository")
         commit = self.resolve_commit(commit)
-        result = self._run(
-            "ls-tree",
-            "-r",
-            "-z",
-            commit,
-            "--",
-            path,
-        ).stdout
+        index = self._tree_index(commit)
+        selected = index.get(path)
+        if selected is None:
+            return ()
+        if selected.object_type == "blob" and selected.mode in {"100644", "100755"}:
+            self._regular_blobs.add((commit, path))
+            return (path,)
+        if selected.object_type != "tree":
+            raise ValueError(f"unexpected repository entry: {path}")
+
         names: list[str] = []
-        for item in result.split(b"\0"):
-            if not item:
+        prefix = path + "/"
+        for name, entry in index.items():
+            if not name.startswith(prefix) or entry.object_type == "tree":
                 continue
-            try:
-                header, raw_name = item.split(b"\t", 1)
-                mode, object_type, _object_id = header.split(b" ", 2)
-                name = raw_name.decode("utf-8")
-            except (UnicodeDecodeError, ValueError) as error:
-                raise ValueError("malformed Git tree entry") from error
-            if object_type != b"blob" or mode not in {b"100644", b"100755"}:
+            if entry.object_type != "blob" or entry.mode not in {"100644", "100755"}:
                 raise ValueError(f"unexpected repository entry: {name}")
-            _canonical_relative_path(name, "repository")
             names.append(name)
             self._regular_blobs.add((commit, name))
         return tuple(sorted(names))

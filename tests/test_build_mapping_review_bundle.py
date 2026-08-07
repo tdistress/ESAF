@@ -813,6 +813,240 @@ class GitRepositoryBindingTests(unittest.TestCase):
         )
 
 
+def _tree_record(
+    path: bytes,
+    *,
+    mode: bytes = b"100644",
+    object_type: bytes = b"blob",
+    object_id: bytes = b"1111111111111111111111111111111111111111",
+) -> bytes:
+    return mode + b" " + object_type + b" " + object_id + b"\t" + path
+
+
+def _reader_with_verified_commit(commit: str = "a" * 40) -> GitReader:
+    reader = GitReader(ROOT)
+    reader._sha1_verified = True
+    reader._verified_commits.add(commit)
+    return reader
+
+
+class GitTreeIndexTests(unittest.TestCase):
+    def test_real_tree_selection_is_exact_and_reuses_one_complete_index(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository, _initial = _create_clean_repository(Path(directory))
+            (repository / "tracked.txt").unlink()
+            (repository / "foo").write_text("foo\n", encoding="utf-8")
+            (repository / "foobar").mkdir()
+            (repository / "foobar" / "item.txt").write_text(
+                "item\n", encoding="utf-8"
+            )
+            (repository / "dir").mkdir()
+            (repository / "dir" / "a.txt").write_text("a\n", encoding="utf-8")
+            (repository / "dir" / "run.sh").write_text(
+                "#!/bin/sh\n", encoding="utf-8"
+            )
+            (repository / "mixed").mkdir()
+            (repository / "mixed" / "regular.txt").write_text(
+                "regular\n", encoding="utf-8"
+            )
+            _git(repository, "add", "-A")
+            _git(repository, "update-index", "--chmod=+x", "dir/run.sh")
+            link_blob = _git(repository, "hash-object", "-w", "foo")
+            _git(
+                repository,
+                "update-index",
+                "--add",
+                "--cacheinfo",
+                f"120000,{link_blob},mixed/link",
+            )
+            _git(
+                repository,
+                "update-index",
+                "--add",
+                "--cacheinfo",
+                f"160000,{'2' * 40},vendor",
+            )
+            _git(repository, "commit", "-m", "complete tree fixture")
+            head = _git(repository, "rev-parse", "HEAD")
+            reader = GitReader(repository)
+
+            with mock.patch.object(
+                reader,
+                "_run_finite_git",
+                wraps=reader._run_finite_git,
+            ) as finite_git:
+                self.assertEqual(reader.list_files(head, "foo"), ("foo",))
+                self.assertEqual(
+                    reader.list_files(head, "dir"),
+                    ("dir/a.txt", "dir/run.sh"),
+                )
+                self.assertEqual(reader.list_files(head, "missing"), ())
+                with self.assertRaisesRegex(ValueError, "unexpected repository entry"):
+                    reader.list_files(head, "mixed/link")
+                with self.assertRaisesRegex(ValueError, "unexpected repository entry"):
+                    reader.list_files(head, "vendor")
+                with self.assertRaisesRegex(ValueError, "unexpected repository entry"):
+                    reader.list_files(head, "mixed")
+                self.assertEqual(
+                    reader.list_files(head, "foobar"),
+                    ("foobar/item.txt",),
+                )
+
+            tree_calls = [
+                call
+                for call in finite_git.call_args_list
+                if call.args
+                and call.args[0][:2] == ("ls-tree", "-r")
+            ]
+            self.assertEqual(len(tree_calls), 1)
+            self.assertEqual(
+                tree_calls[0].args[0],
+                (
+                    "ls-tree",
+                    "-r",
+                    "-t",
+                    "-z",
+                    "--full-tree",
+                    "--abbrev=40",
+                    head,
+                ),
+            )
+            self.assertEqual(tree_calls[0].kwargs["stdout_limit"], 64 * 1024 * 1024)
+
+    def test_published_tree_index_is_immutable(self) -> None:
+        commit = "a" * 40
+        reader = _reader_with_verified_commit(commit)
+        result = bundle_builder._GitCommandResult(
+            _tree_record(b"foo") + b"\0",
+            b"",
+        )
+        with mock.patch.object(reader, "_run_finite_git", return_value=result):
+            index = reader._tree_index(commit)
+        with self.assertRaises(TypeError):
+            index["bar"] = index["foo"]  # type: ignore[index]
+
+
+class GitTreeProtocolTests(unittest.TestCase):
+    def test_malformed_tree_transactions_are_not_published(self) -> None:
+        commit = "a" * 40
+        valid = _tree_record(b"foo") + b"\0"
+        too_many = b"".join(
+            _tree_record(f"f{number:06d}".encode("ascii")) + b"\0"
+            for number in range(100_001)
+        )
+        malformed_cases = {
+            "missing terminal NUL": _tree_record(b"foo"),
+            "empty interior record": (
+                _tree_record(b"foo") + b"\0\0" + _tree_record(b"bar") + b"\0"
+            ),
+            "malformed tab": (
+                b"100644 blob " + b"1" * 40 + b" foo\0"
+            ),
+            "malformed header": b"100644  " + b"1" * 40 + b"\tfoo\0",
+            "uppercase oid": _tree_record(b"foo", object_id=b"A" * 40) + b"\0",
+            "abbreviated oid": _tree_record(b"foo", object_id=b"1" * 39) + b"\0",
+            "invalid UTF-8": _tree_record(b"\xff") + b"\0",
+            "control path": _tree_record(b"bad\nname") + b"\0",
+            "unsafe path": _tree_record(b"../foo") + b"\0",
+            "duplicate path": (
+                _tree_record(b"foo") + b"\0" + _tree_record(b"foo") + b"\0"
+            ),
+            "missing parent tree": _tree_record(b"dir/a.txt") + b"\0",
+            "parent is blob": (
+                _tree_record(b"dir") + b"\0" + _tree_record(b"dir/a.txt") + b"\0"
+            ),
+            "descendant below non-tree": (
+                _tree_record(b"a", mode=b"040000", object_type=b"tree")
+                + b"\0"
+                + _tree_record(b"a/b", mode=b"120000")
+                + b"\0"
+                + _tree_record(b"a/b/c")
+                + b"\0"
+            ),
+            "invalid mode type": (
+                _tree_record(b"foo", mode=b"100644", object_type=b"tree") + b"\0"
+            ),
+            "record limit": too_many,
+        }
+        for label, malformed in malformed_cases.items():
+            with self.subTest(label=label):
+                reader = _reader_with_verified_commit(commit)
+                responses = [
+                    bundle_builder._GitCommandResult(malformed, b""),
+                    bundle_builder._GitCommandResult(valid, b""),
+                ]
+                with mock.patch.object(
+                    reader,
+                    "_run_finite_git",
+                    side_effect=responses,
+                ) as finite_git:
+                    with self.assertRaises(ValueError):
+                        reader._tree_index(commit)
+                    self.assertEqual(reader.list_files(commit, "foo"), ("foo",))
+                self.assertEqual(finite_git.call_count, 2)
+
+    def test_tree_output_overflow_is_retryable_and_uses_the_hard_cap(self) -> None:
+        commit = "a" * 40
+        reader = _reader_with_verified_commit(commit)
+        valid = bundle_builder._GitCommandResult(_tree_record(b"foo") + b"\0", b"")
+        with mock.patch.object(
+            reader,
+            "_run_finite_git",
+            side_effect=[
+                bundle_builder.GitObjectReadError("Git object read failed"),
+                valid,
+            ],
+        ) as finite_git:
+            with self.assertRaises(bundle_builder.GitObjectReadError):
+                reader._tree_index(commit)
+            self.assertEqual(reader.list_files(commit, "foo"), ("foo",))
+        self.assertEqual(finite_git.call_count, 2)
+        self.assertTrue(
+            all(
+                call.kwargs["stdout_limit"] == 64 * 1024 * 1024
+                for call in finite_git.call_args_list
+            )
+        )
+
+
+class GitTreeIndexLimitTests(unittest.TestCase):
+    def test_ninth_commit_is_rejected_without_tree_acquisition_or_eviction(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            repository, first = _create_clean_repository(Path(directory))
+            commits = [first]
+            for number in range(1, 9):
+                (repository / "tracked.txt").write_text(
+                    f"revision {number}\n", encoding="utf-8"
+                )
+                _git(repository, "commit", "-am", f"revision {number}")
+                commits.append(_git(repository, "rev-parse", "HEAD"))
+
+            reader = GitReader(repository)
+            with mock.patch.object(
+                reader,
+                "_run_finite_git",
+                wraps=reader._run_finite_git,
+            ) as finite_git:
+                for commit in commits[:8]:
+                    self.assertEqual(
+                        reader.list_files(commit, "tracked.txt"),
+                        ("tracked.txt",),
+                    )
+                with self.assertRaisesRegex(ValueError, "tree index limit"):
+                    reader.list_files(commits[8], "tracked.txt")
+                self.assertEqual(
+                    reader.list_files(commits[0], "tracked.txt"),
+                    ("tracked.txt",),
+                )
+
+            tree_calls = [
+                call
+                for call in finite_git.call_args_list
+                if call.args and call.args[0][:2] == ("ls-tree", "-r")
+            ]
+            self.assertEqual(len(tree_calls), 8)
+
+
 class GitReaderTests(unittest.TestCase):
     def setUp(self) -> None:
         self.reader = GitReader(ROOT)
