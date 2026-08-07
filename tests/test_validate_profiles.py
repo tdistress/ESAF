@@ -2089,6 +2089,10 @@ class ProfileLanguageMatrixStructureTests(unittest.TestCase):
         return None
 
     def test_inventory_methods_are_exactly_the_matrix_methods(self) -> None:
+        self.assertEqual(
+            tuple(self.dotted_name(base) for base in self.matrix.bases),
+            ("unittest.TestCase",),
+        )
         methods = tuple(
             node
             for node in self.matrix.body
@@ -2097,6 +2101,14 @@ class ProfileLanguageMatrixStructureTests(unittest.TestCase):
         )
         self.assertEqual(
             tuple(method.name for method in methods), self.method_names
+        )
+        self.assertEqual(
+            tuple(
+                unittest.TestLoader().getTestCaseNames(
+                    ProfileLanguageMatrixTests
+                )
+            ),
+            self.method_names,
         )
         for method in methods:
             with self.subTest(method=method.name):
@@ -2119,64 +2131,71 @@ class ProfileLanguageMatrixStructureTests(unittest.TestCase):
                 self.assertEqual(argument.value, method.name)
 
     def test_matrix_uses_only_the_public_text_boundaries(self) -> None:
-        prohibited_calls = {
-            "self._assert_language_cases_through_full_validate",
-            "validate_profiles.validate",
-            "profile_fixture.write_profile_readme",
-            "profile_fixture.write_component",
-            "profile_fixture.write_json",
-            "profile_fixture.write_valid_profile_fixture",
-            "validate_profiles.asserted_profile_phrases",
-            "validate_profiles.contains_affirmative_source_authority",
-            "validate_profiles.contains_affirmative_weakening",
-            "validate_profiles.source_authority_is_excluded",
+        permitted_attributes = {
+            "case.case_id",
+            "case.diagnostic_families",
+            "case.excluded_sources",
+            "case.expected_diagnostics",
+            "case.location",
+            "case.text",
+            "cases_for_method",
+            "consumed.append",
+            "diagnostics.extend",
+            "mock.patch",
+            "mock.patch.object",
+            "profile_fixture.profile_readme_content",
+            "profile_language_cases.profile_language_inventory",
+            "self._assert_profile_language_cases",
+            "self.assertEqual",
+            "self.subTest",
+            "unittest.TestCase",
+            "validate_profiles.claim_text_diagnostics",
+            "validate_profiles.source_authority_text_diagnostics",
         }
-        prohibited_names = {
-            "Path",
-            "TemporaryDirectory",
-            "load_component",
-            "tempfile",
-            "write_component",
-            "write_readme",
+        permitted_names = {
+            "AssertionError",
+            "case",
+            "cases",
+            "consumed",
+            "content",
+            "diagnostics",
+            "list",
+            "method_name",
+            "mock",
+            "profile_fixture",
+            "profile_language_cases",
+            "self",
+            "set",
+            "sorted",
+            "str",
+            "unittest",
+            "validate_profiles",
         }
-        prohibited_fragments = ("README.md", "PROFILE.md", "profile.json")
-        calls = {
-            name
+        attributes = {
+            self.dotted_name(node)
             for node in ast.walk(self.matrix)
-            if isinstance(node, ast.Call)
-            and (name := self.dotted_name(node.func)) is not None
+            if isinstance(node, ast.Attribute)
         }
         names = {
             node.id for node in ast.walk(self.matrix) if isinstance(node, ast.Name)
         }
-        strings = {
-            node.value
-            for node in ast.walk(self.matrix)
-            if isinstance(node, ast.Constant)
-            and isinstance(node.value, str)
-        }
-        self.assertEqual(calls & prohibited_calls, set())
-        self.assertEqual(names & prohibited_names, set())
-        self.assertFalse(
-            any(
-                fragment in value
-                for value in strings
-                for fragment in prohibited_fragments
-            )
-        )
+        self.assertEqual(attributes - permitted_attributes, set())
+        self.assertEqual(names - permitted_names, set())
 
     def test_matrix_consumes_each_case_once_through_its_boundary(self) -> None:
-        consumed: list[str] = []
-
-        def cases_for_method(
-            method_name: str,
-        ) -> tuple[profile_language_cases.ProfileLanguageCase, ...]:
-            cases = self.inventory.cases_for_method(method_name)
-            consumed.extend(case.case_id for case in cases)
-            return cases
-
         inventory = mock.Mock()
-        inventory.cases_for_method.side_effect = cases_for_method
+        inventory.cases_for_method.side_effect = (
+            self.inventory.cases_for_method
+        )
+        processed_case_ids: list[str] = []
+
+        class RecordingMatrix(ProfileLanguageMatrixTests):
+            def subTest(self, msg: object = None, **params: object):
+                case_id = params.get("case_id")
+                assert isinstance(case_id, str)
+                processed_case_ids.append(case_id)
+                return super().subTest(msg, **params)
+
         with (
             mock.patch.object(
                 profile_language_cases,
@@ -2189,7 +2208,12 @@ class ProfileLanguageMatrixStructureTests(unittest.TestCase):
                 side_effect=AssertionError(
                     "fast language matrices shall not call validate"
                 ),
-            ),
+            ) as full_validator,
+            mock.patch.object(
+                profile_fixture,
+                "profile_readme_content",
+                wraps=profile_fixture.profile_readme_content,
+            ) as formatter,
             mock.patch.object(
                 validate_profiles,
                 "claim_text_diagnostics",
@@ -2201,28 +2225,119 @@ class ProfileLanguageMatrixStructureTests(unittest.TestCase):
                 wraps=validate_profiles.source_authority_text_diagnostics,
             ) as source_boundary,
         ):
-            matrix = ProfileLanguageMatrixTests()
+            matrix = RecordingMatrix()
             for method_name in self.method_names:
                 matrix._assert_profile_language_cases(method_name)
 
         self.assertEqual(
-            claim_boundary.call_count,
-            sum(
-                "claim" in case.diagnostic_families
-                for case in self.inventory.cases
-            ),
+            inventory.cases_for_method.call_args_list,
+            [mock.call(method_name) for method_name in self.method_names],
         )
         self.assertEqual(
-            source_boundary.call_count,
-            sum(
-                "source_authority" in case.diagnostic_families
-                for case in self.inventory.cases
-            ),
+            formatter.call_args_list,
+            [mock.call(case.text) for case in self.inventory.cases],
         )
         self.assertEqual(
-            consumed,
+            processed_case_ids,
             [case.case_id for case in self.inventory.cases],
         )
+        self.assertEqual(
+            claim_boundary.call_args_list,
+            [
+                mock.call(
+                    f"# Synthetic profile\n\n{case.text}\n",
+                    case.location,
+                )
+                for case in self.inventory.cases
+                if "claim" in case.diagnostic_families
+            ],
+        )
+        self.assertEqual(
+            source_boundary.call_args_list,
+            [
+                mock.call(
+                    f"# Synthetic profile\n\n{case.text}\n",
+                    case.location,
+                    case.excluded_sources,
+                )
+                for case in self.inventory.cases
+                if "source_authority" in case.diagnostic_families
+            ],
+        )
+        full_validator.assert_not_called()
+
+
+class ProfileLanguageMatrixGuardMutationTests(unittest.TestCase):
+    def guard(self, method_name: str) -> ProfileLanguageMatrixStructureTests:
+        guard = ProfileLanguageMatrixStructureTests(method_name)
+        guard.setUp()
+        return guard
+
+    def test_call_guard_rejects_reordered_calls_with_matching_totals(
+        self,
+    ) -> None:
+        class ReorderedMatrix(ProfileLanguageMatrixTests):
+            def _assert_profile_language_cases(
+                self, method_name: str
+            ) -> None:
+                cases = reversed(
+                    profile_language_cases.profile_language_inventory()
+                    .cases_for_method(method_name)
+                )
+                for case in cases:
+                    with self.subTest(case_id=case.case_id):
+                        content = profile_fixture.profile_readme_content(
+                            case.text
+                        )
+                        if "claim" in case.diagnostic_families:
+                            validate_profiles.claim_text_diagnostics(
+                                content, case.location
+                            )
+                        if "source_authority" in case.diagnostic_families:
+                            validate_profiles.source_authority_text_diagnostics(
+                                content,
+                                case.location,
+                                case.excluded_sources,
+                            )
+
+        guard = self.guard(
+            "test_matrix_consumes_each_case_once_through_its_boundary"
+        )
+        with mock.patch(
+            f"{__name__}.ProfileLanguageMatrixTests", ReorderedMatrix
+        ):
+            with self.assertRaises(AssertionError):
+                guard.test_matrix_consumes_each_case_once_through_its_boundary()
+
+    def test_seam_guard_rejects_aliased_prohibited_reference(self) -> None:
+        module = ast.parse(
+            "class ProfileLanguageMatrixTests(unittest.TestCase):\n"
+            "    full_validator = validate_profiles.validate\n"
+        )
+        guard = self.guard("test_matrix_uses_only_the_public_text_boundaries")
+        guard.matrix = module.body[0]
+        with self.assertRaises(AssertionError):
+            guard.test_matrix_uses_only_the_public_text_boundaries()
+
+    def test_loader_guard_rejects_inherited_extra_test(self) -> None:
+        class ExtraTestMixin:
+            def test_inherited_extra(self) -> None:
+                pass
+
+        class MatrixWithInheritedExtra(
+            ExtraTestMixin, ProfileLanguageMatrixTests
+        ):
+            pass
+
+        guard = self.guard(
+            "test_inventory_methods_are_exactly_the_matrix_methods"
+        )
+        with mock.patch(
+            f"{__name__}.ProfileLanguageMatrixTests",
+            MatrixWithInheritedExtra,
+        ):
+            with self.assertRaises(AssertionError):
+                guard.test_inventory_methods_are_exactly_the_matrix_methods()
 
 
 class ProfileValidationTests(unittest.TestCase):
