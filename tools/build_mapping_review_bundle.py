@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+from collections import OrderedDict
 from dataclasses import dataclass
 from functools import lru_cache
 import hashlib
@@ -15,7 +16,7 @@ import threading
 import time
 import unicodedata
 from types import MappingProxyType
-from typing import Literal, Mapping, NamedTuple
+from typing import Literal, Mapping, NamedTuple, Sequence
 
 from jsonschema import Draft202012Validator, FormatChecker
 from jsonschema.exceptions import SchemaError
@@ -36,10 +37,19 @@ FULL_SHA = re.compile(r"^[0-9a-f]{40}$")
 GENERATOR_VERSION = "1.2.0"
 GIT_COMMAND_TIMEOUT_SECONDS = 120
 GIT_STDERR_LIMIT = 65_536
-GIT_LEGACY_STDOUT_LIMIT = 128 * 1024 * 1024
 GIT_TREE_STDOUT_LIMIT = 64 * 1024 * 1024
 GIT_TREE_RECORD_LIMIT = 100_000
 GIT_TREE_INDEX_LIMIT = 8
+GIT_BATCH_PATH_LIMIT = 4_096
+GIT_BLOB_SIZE_LIMIT = 32 * 1024 * 1024
+GIT_LOGICAL_CONTENT_LIMIT = 128 * 1024 * 1024
+GIT_OBJECT_CACHE_LIMIT = 128 * 1024 * 1024
+GIT_BATCH_HEADER_LIMIT = 256
+GIT_BATCH_CHECK_STDOUT_LIMIT = GIT_BATCH_PATH_LIMIT * GIT_BATCH_HEADER_LIMIT
+GIT_BATCH_CONTENT_STDOUT_LIMIT = (
+    GIT_LOGICAL_CONTENT_LIMIT
+    + GIT_BATCH_PATH_LIMIT * (GIT_BATCH_HEADER_LIMIT + 1)
+)
 _SOURCE_EVIDENCE_PATH = re.compile(
     r"(?m)^- (?:Oracle|Specification): `([^`]+)`\s*$"
 )
@@ -213,8 +223,8 @@ class GitReader:
         )
         self._sha1_verified = False
         self._verified_commits: set[str] = set()
-        self._regular_blobs: set[tuple[str, str]] = set()
-        self._contents: dict[tuple[str, str], bytes] = {}
+        self._object_cache: OrderedDict[tuple[str, str], bytes] = OrderedDict()
+        self._object_cache_size = 0
         self._tree_indexes: dict[str, Mapping[str, TreeEntry]] = {}
         self._tree_index_lock = threading.RLock()
 
@@ -476,23 +486,6 @@ class GitReader:
             raise GitObjectReadError("Git object read failed")
         self._sha1_verified = True
 
-    def _run(
-        self,
-        *arguments: str,
-        text: bool = False,
-    ) -> subprocess.CompletedProcess:
-        self._require_sha1_repository()
-        result = self._run_finite_git(
-            tuple(arguments),
-            stdout_limit=GIT_LEGACY_STDOUT_LIMIT,
-        )
-        stdout: bytes | str = result.stdout
-        stderr: bytes | str = result.stderr
-        if text:
-            stdout = result.stdout.decode("utf-8")
-            stderr = result.stderr.decode("utf-8")
-        return subprocess.CompletedProcess(arguments, 0, stdout, stderr)
-
     def resolve_commit(self, revision: str) -> str:
         if not FULL_SHA.fullmatch(revision):
             raise ValueError(
@@ -513,31 +506,168 @@ class GitReader:
         self._verified_commits.add(revision)
         return revision
 
-    def read_bytes(self, commit: str, path: str) -> bytes:
-        _canonical_relative_path(path, "repository")
-        self._require_regular_blob(commit, path)
-        commit = self.resolve_commit(commit)
-        key = (commit, path)
-        cached = self._contents.get(key)
-        if cached is not None:
-            return cached
-        content = self._run("show", f"{commit}:{path}").stdout
-        self._contents[key] = content
+    def _cache_get(self, key: tuple[str, str]) -> bytes | None:
+        content = self._object_cache.get(key)
+        if content is not None:
+            self._object_cache.move_to_end(key)
         return content
 
-    def _require_regular_blob(self, commit: str, path: str) -> None:
-        key = (commit, path)
-        if key in self._regular_blobs:
-            return
-        entry = self._tree_index(commit).get(path)
-        if entry is None:
-            raise ValueError(f"missing tracked file at candidate: {path}")
+    def _cache_publish(
+        self, transaction: Mapping[tuple[str, str], bytes]
+    ) -> None:
+        for key, content in transaction.items():
+            previous = self._object_cache.pop(key, None)
+            if previous is not None:
+                self._object_cache_size -= len(previous)
+            self._object_cache[key] = content
+            self._object_cache_size += len(content)
+        while self._object_cache_size > GIT_OBJECT_CACHE_LIMIT:
+            _key, evicted = self._object_cache.popitem(last=False)
+            self._object_cache_size -= len(evicted)
+
+    @staticmethod
+    def _parse_batch_header(
+        header: bytes,
+        expected_object_id: str,
+        expected_size: int | None = None,
+    ) -> int:
+        if not header or len(header) > GIT_BATCH_HEADER_LIMIT:
+            raise ValueError("malformed Git batch header")
+        parts = header.split(b" ")
+        if len(parts) != 3:
+            raise ValueError("malformed Git batch header")
+        raw_object_id, object_type, raw_size = parts
         if (
-            entry.object_type != "blob"
-            or entry.mode not in {"100644", "100755"}
+            raw_object_id != expected_object_id.encode("ascii")
+            or object_type != b"blob"
         ):
-            raise ValueError(f"unexpected repository entry: {path}")
-        self._regular_blobs.add(key)
+            raise ValueError("unexpected Git batch object")
+        if not raw_size or not raw_size.isdigit() or (
+            len(raw_size) > 1 and raw_size.startswith(b"0")
+        ):
+            raise ValueError("malformed Git batch size")
+        size = int(raw_size)
+        if size > GIT_BLOB_SIZE_LIMIT:
+            raise ValueError("Git blob size limit exceeded")
+        if expected_size is not None and size != expected_size:
+            raise ValueError("Git batch size disagreement")
+        return size
+
+    def read_many(
+        self, commit: str, paths: Sequence[str]
+    ) -> dict[str, bytes]:
+        if isinstance(paths, (str, bytes)):
+            raise TypeError("paths must be a sequence of repository paths")
+        path_snapshot = tuple(paths)
+        if not path_snapshot:
+            return {}
+        if len(path_snapshot) > GIT_BATCH_PATH_LIMIT:
+            raise ValueError("Git batch path limit exceeded")
+        if any(not isinstance(path, str) for path in path_snapshot):
+            raise TypeError("paths must contain strings")
+        for path in path_snapshot:
+            _canonical_relative_path(path, "repository")
+        if len(set(path_snapshot)) != len(path_snapshot):
+            raise ValueError("duplicate repository path")
+
+        index = self._tree_index(commit)
+        entries: list[TreeEntry] = []
+        for path in path_snapshot:
+            entry = index.get(path)
+            if entry is None:
+                raise ValueError(f"missing tracked file at candidate: {path}")
+            if entry.object_type != "blob" or entry.mode not in {"100644", "100755"}:
+                raise ValueError(f"unexpected repository entry: {path}")
+            entries.append(entry)
+
+        cached: dict[tuple[str, str], bytes] = {}
+        uncached_object_ids: list[str] = []
+        seen_uncached: set[str] = set()
+        for entry in entries:
+            key = (commit, entry.object_id)
+            content = self._object_cache.get(key)
+            if content is not None:
+                cached[key] = content
+            elif entry.object_id not in seen_uncached:
+                seen_uncached.add(entry.object_id)
+                uncached_object_ids.append(entry.object_id)
+
+        sizes: dict[str, int] = {
+            object_id: len(content)
+            for (_commit, object_id), content in cached.items()
+        }
+        transaction: dict[tuple[str, str], bytes] = {}
+        if uncached_object_ids:
+            request = "".join(
+                f"{object_id}\n" for object_id in uncached_object_ids
+            ).encode("ascii")
+            checked = self._run_finite_git(
+                (
+                    "cat-file",
+                    "--batch-check=%(objectname) %(objecttype) %(objectsize)",
+                ),
+                input_bytes=request,
+                stdout_limit=GIT_BATCH_CHECK_STDOUT_LIMIT,
+            ).stdout
+            if not checked.endswith(b"\n"):
+                raise ValueError("malformed Git batch-check response")
+            check_lines = checked.splitlines()
+            if len(check_lines) != len(uncached_object_ids):
+                raise ValueError("malformed Git batch-check response")
+            for object_id, header in zip(
+                uncached_object_ids, check_lines, strict=True
+            ):
+                sizes[object_id] = self._parse_batch_header(header, object_id)
+
+        logical_size = sum(sizes[entry.object_id] for entry in entries)
+        if logical_size > GIT_LOGICAL_CONTENT_LIMIT:
+            raise ValueError("Git logical content limit exceeded")
+
+        if uncached_object_ids:
+            acquired = self._run_finite_git(
+                ("cat-file", "--batch"),
+                input_bytes=request,
+                stdout_limit=GIT_BATCH_CONTENT_STDOUT_LIMIT,
+            ).stdout
+            offset = 0
+            for object_id in uncached_object_ids:
+                newline = acquired.find(b"\n", offset)
+                if newline < 0:
+                    raise ValueError("malformed Git batch content")
+                header = acquired[offset:newline]
+                size = self._parse_batch_header(
+                    header, object_id, sizes[object_id]
+                )
+                content_start = newline + 1
+                content_end = content_start + size
+                delimiter_end = content_end + 1
+                if (
+                    delimiter_end > len(acquired)
+                    or acquired[content_end:delimiter_end] != b"\n"
+                ):
+                    raise ValueError("malformed Git batch content")
+                content = acquired[content_start:content_end]
+                actual_object_id = hashlib.sha1(
+                    b"blob " + str(size).encode("ascii") + b"\0" + content
+                ).hexdigest()
+                if actual_object_id != object_id:
+                    raise ValueError("Git blob identity mismatch")
+                transaction[(commit, object_id)] = content
+                offset = delimiter_end
+            if offset != len(acquired):
+                raise ValueError("trailing Git batch content")
+
+        for key in cached:
+            self._cache_get(key)
+        self._cache_publish(transaction)
+        available = {**cached, **transaction}
+        return {
+            path: available[(commit, entry.object_id)]
+            for path, entry in zip(path_snapshot, entries, strict=True)
+        }
+
+    def read_bytes(self, commit: str, path: str) -> bytes:
+        return self.read_many(commit, (path,))[path]
 
     def _tree_index(self, commit: str) -> Mapping[str, TreeEntry]:
         if not FULL_SHA.fullmatch(commit):
@@ -625,7 +755,6 @@ class GitReader:
         if selected is None:
             return ()
         if selected.object_type == "blob" and selected.mode in {"100644", "100755"}:
-            self._regular_blobs.add((commit, path))
             return (path,)
         if selected.object_type != "tree":
             raise ValueError(f"unexpected repository entry: {path}")
@@ -638,7 +767,6 @@ class GitReader:
             if entry.object_type != "blob" or entry.mode not in {"100644", "100755"}:
                 raise ValueError(f"unexpected repository entry: {name}")
             names.append(name)
-            self._regular_blobs.add((commit, name))
         return tuple(sorted(names))
 
     def require_candidate_execution_state(self, commit: str) -> None:

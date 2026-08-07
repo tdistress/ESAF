@@ -687,26 +687,6 @@ class FiniteGitCommandTests(unittest.TestCase):
 
 
 class GitRepositoryBindingTests(unittest.TestCase):
-    def test_temporary_run_adapter_uses_only_the_finite_transport(self) -> None:
-        calls: list[tuple[tuple[object, ...], dict[str, object]]] = []
-        reader = GitReader(ROOT)
-        with mock.patch(
-            "tools.build_mapping_review_bundle.subprocess.run",
-            side_effect=AssertionError("subprocess.run must not be used"),
-        ), mock.patch(
-            "tools.build_mapping_review_bundle.subprocess.Popen",
-            side_effect=_popen_sequence(
-                [_FakeProcess((b"sha1\n",)), _FakeProcess((b"clean",))],
-                calls,
-            ),
-        ):
-            result = reader._run("status")
-        self.assertEqual(result.stdout, b"clean")
-        self.assertEqual(
-            [call[0][0][-1] for call in calls],
-            ["--show-object-format=storage", "status"],
-        )
-
     def test_exact_commit_resolution_checks_sha1_once_and_caches_success(self) -> None:
         head = "1" * 40
         calls: list[tuple[tuple[object, ...], dict[str, object]]] = []
@@ -828,6 +808,411 @@ def _reader_with_verified_commit(commit: str = "a" * 40) -> GitReader:
     reader._sha1_verified = True
     reader._verified_commits.add(commit)
     return reader
+
+
+def _blob_oid(content: bytes) -> str:
+    return hashlib.sha1(
+        b"blob " + str(len(content)).encode("ascii") + b"\0" + content
+    ).hexdigest()
+
+
+def _reader_with_blob_entries(
+    entries: tuple[tuple[str, bytes], ...],
+    *,
+    commit: str = "a" * 40,
+) -> tuple[GitReader, dict[str, bytes]]:
+    reader = _reader_with_verified_commit(commit)
+    contents: dict[str, bytes] = {}
+    tree: dict[str, bundle_builder.TreeEntry] = {}
+    for path, content in entries:
+        object_id = _blob_oid(content)
+        contents[object_id] = content
+        tree[path] = bundle_builder.TreeEntry(path, "100644", "blob", object_id)
+    reader._tree_indexes[commit] = tree
+    return reader, contents
+
+
+def _batch_check_response(
+    object_ids: tuple[str, ...], contents: dict[str, bytes]
+) -> bytes:
+    return b"".join(
+        f"{object_id} blob {len(contents[object_id])}\n".encode("ascii")
+        for object_id in object_ids
+    )
+
+
+def _batch_content_response(
+    object_ids: tuple[str, ...], contents: dict[str, bytes]
+) -> bytes:
+    return b"".join(
+        f"{object_id} blob {len(contents[object_id])}\n".encode("ascii")
+        + contents[object_id]
+        + b"\n"
+        for object_id in object_ids
+    )
+
+
+class GitReadManyInputTests(unittest.TestCase):
+    def test_freezes_mutable_sequence_before_tree_lookup(self) -> None:
+        commit = "a" * 40
+        reader, contents = _reader_with_blob_entries(
+            (("one", b"one"),), commit=commit
+        )
+        paths = ["one"]
+
+        def tree_index(_commit: str):
+            paths.append("injected")
+            return reader._tree_indexes[commit]
+
+        object_id = next(iter(contents))
+        responses = (
+            bundle_builder._GitCommandResult(
+                _batch_check_response((object_id,), contents), b""
+            ),
+            bundle_builder._GitCommandResult(
+                _batch_content_response((object_id,), contents), b""
+            ),
+        )
+        with mock.patch.object(
+            reader, "_tree_index", side_effect=tree_index
+        ), mock.patch.object(
+            reader, "_run_finite_git", side_effect=responses
+        ):
+            self.assertEqual(reader.read_many(commit, paths), {"one": b"one"})
+
+    def test_empty_sequence_returns_without_git(self) -> None:
+        reader = GitReader(ROOT)
+        with mock.patch.object(reader, "_run_finite_git") as finite_git:
+            self.assertEqual(reader.read_many("not-a-commit", ()), {})
+        finite_git.assert_not_called()
+
+    def test_rejects_non_sequence_and_invalid_path_sets_before_batching(self) -> None:
+        commit = "a" * 40
+        reader, _contents = _reader_with_blob_entries(
+            (("one", b"one"),), commit=commit
+        )
+        cases = (
+            "one",
+            b"one",
+            ("../one",),
+            ("one", "one"),
+            tuple(f"path-{number}" for number in range(4097)),
+        )
+        for paths in cases:
+            with self.subTest(paths_type=type(paths), count=len(paths)):
+                with mock.patch.object(reader, "_run_finite_git") as finite_git:
+                    with self.assertRaises((TypeError, ValueError)):
+                        reader.read_many(commit, paths)  # type: ignore[arg-type]
+                finite_git.assert_not_called()
+
+    def test_rejects_missing_tree_and_nonregular_entries_before_batching(self) -> None:
+        commit = "a" * 40
+        reader, _contents = _reader_with_blob_entries(
+            (("regular", b"ok"),), commit=commit
+        )
+        reader._tree_indexes[commit].update(
+            {
+                "directory": bundle_builder.TreeEntry(
+                    "directory", "040000", "tree", "1" * 40
+                ),
+                "link": bundle_builder.TreeEntry(
+                    "link", "120000", "blob", "2" * 40
+                ),
+                "module": bundle_builder.TreeEntry(
+                    "module", "160000", "commit", "3" * 40
+                ),
+            }
+        )
+        for path in ("missing", "directory", "link", "module"):
+            with self.subTest(path=path), mock.patch.object(
+                reader, "_run_finite_git"
+            ) as finite_git:
+                with self.assertRaises(ValueError):
+                    reader.read_many(commit, (path,))
+                finite_git.assert_not_called()
+
+
+class GitBatchCheckProtocolTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.commit = "a" * 40
+        self.reader, self.contents = _reader_with_blob_entries(
+            (("one", b"first"), ("two", b"second")), commit=self.commit
+        )
+        self.object_ids = tuple(self.contents)
+
+    def test_uses_direct_oids_in_order_and_exact_preflight_limit(self) -> None:
+        responses = (
+            bundle_builder._GitCommandResult(
+                _batch_check_response(self.object_ids, self.contents), b""
+            ),
+            bundle_builder._GitCommandResult(
+                _batch_content_response(self.object_ids, self.contents), b""
+            ),
+        )
+        with mock.patch.object(
+            self.reader, "_run_finite_git", side_effect=responses
+        ) as finite_git:
+            self.assertEqual(
+                self.reader.read_many(self.commit, ("one", "two")),
+                {"one": b"first", "two": b"second"},
+            )
+        expected_input = "".join(
+            f"{oid}\n" for oid in self.object_ids
+        ).encode("ascii")
+        self.assertEqual(
+            finite_git.call_args_list[0].args[0],
+            (
+                "cat-file",
+                "--batch-check=%(objectname) %(objecttype) %(objectsize)",
+            ),
+        )
+        self.assertEqual(
+            finite_git.call_args_list[0].kwargs["input_bytes"], expected_input
+        )
+        self.assertEqual(
+            finite_git.call_args_list[0].kwargs["stdout_limit"], 4096 * 256
+        )
+
+    def test_rejects_each_malformed_preflight_without_content_command(self) -> None:
+        first, second = self.object_ids
+        valid = _batch_check_response(self.object_ids, self.contents)
+        first_size = len(self.contents[first])
+        cases = {
+            "missing": valid.splitlines(keepends=True)[0],
+            "missing terminal newline": valid[:-1],
+            "extra": valid + valid.splitlines(keepends=True)[0],
+            "reordered": _batch_check_response((second, first), self.contents),
+            "wrong oid": valid.replace(first.encode(), b"f" * 40, 1),
+            "wrong type": valid.replace(b" blob ", b" tree ", 1),
+            "negative": valid.replace(f" {first_size}\n".encode(), b" -1\n", 1),
+            "signed": valid.replace(
+                f" {first_size}\n".encode(), f" +{first_size}\n".encode(), 1
+            ),
+            "zero padded": valid.replace(
+                f" {first_size}\n".encode(), f" 0{first_size}\n".encode(), 1
+            ),
+            "nondecimal": valid.replace(f" {first_size}\n".encode(), b" x\n", 1),
+            "oversize": valid.replace(
+                f" {first_size}\n".encode(), b" 33554433\n", 1
+            ),
+        }
+        for label, response in cases.items():
+            with self.subTest(label=label):
+                reader, _ = _reader_with_blob_entries(
+                    (("one", b"first"), ("two", b"second")), commit=self.commit
+                )
+                with mock.patch.object(
+                    reader,
+                    "_run_finite_git",
+                    return_value=bundle_builder._GitCommandResult(response, b""),
+                ) as finite_git:
+                    with self.assertRaises(ValueError):
+                        reader.read_many(self.commit, ("one", "two"))
+                self.assertEqual(finite_git.call_count, 1)
+
+    def test_logical_limit_counts_aliases_and_cache_hits(self) -> None:
+        aliases = tuple((f"alias-{number}", b"x") for number in range(5))
+        reader, _ = _reader_with_blob_entries(aliases, commit=self.commit)
+        oid = _blob_oid(b"x")
+        reader._object_cache[(self.commit, oid)] = b"x" * (32 * 1024 * 1024)
+        reader._object_cache_size = len(reader._object_cache[(self.commit, oid)])
+        with mock.patch.object(reader, "_run_finite_git") as finite_git:
+            with self.assertRaisesRegex(ValueError, "logical content"):
+                reader.read_many(
+                    self.commit, tuple(path for path, _content in aliases)
+                )
+        finite_git.assert_not_called()
+
+
+class GitBatchContentProtocolTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self.commit = "a" * 40
+        self.content = b"\x00line\n\xfftail\n"
+        self.reader, self.contents = _reader_with_blob_entries(
+            (("binary", self.content),), commit=self.commit
+        )
+        self.object_id = next(iter(self.contents))
+
+    def test_preserves_binary_payload_and_uses_bounded_content_command(self) -> None:
+        responses = (
+            bundle_builder._GitCommandResult(
+                _batch_check_response((self.object_id,), self.contents), b""
+            ),
+            bundle_builder._GitCommandResult(
+                _batch_content_response((self.object_id,), self.contents), b""
+            ),
+        )
+        with mock.patch.object(
+            self.reader, "_run_finite_git", side_effect=responses
+        ) as finite_git:
+            self.assertEqual(
+                self.reader.read_many(self.commit, ("binary",)),
+                {"binary": self.content},
+            )
+        content_call = finite_git.call_args_list[1]
+        self.assertEqual(content_call.args[0], ("cat-file", "--batch"))
+        self.assertEqual(
+            content_call.kwargs["input_bytes"],
+            (self.object_id + "\n").encode(),
+        )
+        self.assertEqual(
+            content_call.kwargs["stdout_limit"],
+            128 * 1024 * 1024 + 4096 * 257,
+        )
+
+    def test_failed_content_transactions_are_atomic_and_retryable(self) -> None:
+        valid_check = _batch_check_response((self.object_id,), self.contents)
+        valid_content = _batch_content_response((self.object_id,), self.contents)
+        malformed = {
+            "missing": b"",
+            "extra": valid_content + b"extra",
+            "wrong identity": valid_content.replace(
+                self.object_id.encode(), b"f" * 40, 1
+            ),
+            "wrong type": valid_content.replace(b" blob ", b" tree ", 1),
+            "size disagreement": valid_content.replace(
+                f" {len(self.content)}\n".encode(),
+                f" {len(self.content) + 1}\n".encode(),
+                1,
+            ),
+            "long header": b"x" * 257 + b"\n" + self.content + b"\n",
+            "truncated": valid_content[:-2],
+            "missing delimiter": valid_content[:-1] + b"x",
+            "hash mismatch": valid_content.replace(
+                self.content, b"z" * len(self.content), 1
+            ),
+        }
+        for label, bad_content in malformed.items():
+            with self.subTest(label=label):
+                reader, contents = _reader_with_blob_entries(
+                    (("binary", self.content),), commit=self.commit
+                )
+                responses = (
+                    bundle_builder._GitCommandResult(valid_check, b""),
+                    bundle_builder._GitCommandResult(bad_content, b""),
+                    bundle_builder._GitCommandResult(valid_check, b""),
+                    bundle_builder._GitCommandResult(valid_content, b""),
+                )
+                with mock.patch.object(
+                    reader, "_run_finite_git", side_effect=responses
+                ) as finite_git:
+                    with self.assertRaises(ValueError):
+                        reader.read_many(self.commit, ("binary",))
+                    self.assertEqual(
+                        reader.read_many(self.commit, ("binary",)),
+                        {"binary": contents[self.object_id]},
+                    )
+                self.assertEqual(finite_git.call_count, 4)
+
+
+class GitObjectCacheTests(unittest.TestCase):
+    def test_same_commit_deduplicates_aliases_but_other_commit_fetches_again(
+        self,
+    ) -> None:
+        first_commit = "a" * 40
+        second_commit = "b" * 40
+        reader, contents = _reader_with_blob_entries(
+            (("one", b"shared"), ("alias", b"shared")), commit=first_commit
+        )
+        oid = next(iter(contents))
+        reader._verified_commits.add(second_commit)
+        reader._tree_indexes[second_commit] = {
+            "other": bundle_builder.TreeEntry("other", "100644", "blob", oid)
+        }
+        response_pair = (
+            bundle_builder._GitCommandResult(
+                _batch_check_response((oid,), contents), b""
+            ),
+            bundle_builder._GitCommandResult(
+                _batch_content_response((oid,), contents), b""
+            ),
+        )
+        with mock.patch.object(
+            reader, "_run_finite_git", side_effect=response_pair + response_pair
+        ) as finite_git:
+            self.assertEqual(
+                reader.read_many(first_commit, ("one", "alias")),
+                {"one": b"shared", "alias": b"shared"},
+            )
+            self.assertEqual(
+                reader.read_many(second_commit, ("other",)),
+                {"other": b"shared"},
+            )
+        self.assertEqual(finite_git.call_count, 4)
+        self.assertEqual(
+            finite_git.call_args_list[0].kwargs["input_bytes"],
+            (oid + "\n").encode(),
+        )
+
+    def test_lru_touch_controls_eviction_at_128_mib(self) -> None:
+        commit = "a" * 40
+        reader = _reader_with_verified_commit(commit)
+        unit = 32 * 1024 * 1024
+        keys = [(commit, character * 40) for character in "12345"]
+        reader._object_cache = bundle_builder.OrderedDict(
+            (key, bytes([number]) * unit) for number, key in enumerate(keys[:4])
+        )
+        reader._object_cache_size = 128 * 1024 * 1024
+        reader._cache_get(keys[0])
+        reader._cache_publish({keys[4]: b"fifth"})
+        self.assertNotIn(keys[1], reader._object_cache)
+        self.assertIn(keys[0], reader._object_cache)
+        self.assertEqual(reader._object_cache_size, unit * 3 + len(b"fifth"))
+
+    def test_requested_cache_hit_is_retained_when_new_object_causes_eviction(
+        self,
+    ) -> None:
+        commit = "a" * 40
+        cached_content = b"x" * (32 * 1024 * 1024)
+        new_content = b"new"
+        cached_oid = _blob_oid(cached_content)
+        new_oid = _blob_oid(new_content)
+        reader = _reader_with_verified_commit(commit)
+        reader._tree_indexes[commit] = {
+            "cached": bundle_builder.TreeEntry(
+                "cached", "100644", "blob", cached_oid
+            ),
+            "new": bundle_builder.TreeEntry("new", "100644", "blob", new_oid),
+        }
+        filler = b"f" * (32 * 1024 * 1024)
+        reader._object_cache = bundle_builder.OrderedDict(
+            [
+                ((commit, cached_oid), cached_content),
+                ((commit, "1" * 40), filler),
+                ((commit, "2" * 40), filler),
+                ((commit, "3" * 40), filler),
+            ]
+        )
+        reader._object_cache_size = 128 * 1024 * 1024
+        contents = {new_oid: new_content}
+        responses = (
+            bundle_builder._GitCommandResult(
+                _batch_check_response((new_oid,), contents), b""
+            ),
+            bundle_builder._GitCommandResult(
+                _batch_content_response((new_oid,), contents), b""
+            ),
+        )
+        with mock.patch.object(reader, "_run_finite_git", side_effect=responses):
+            self.assertEqual(
+                reader.read_many(commit, ("cached", "new")),
+                {"cached": cached_content, "new": new_content},
+            )
+        self.assertIn((commit, cached_oid), reader._object_cache)
+
+    def test_read_bytes_is_singleton_delegation_and_no_legacy_runner_remains(self) -> None:
+        reader = GitReader(ROOT)
+        with mock.patch.object(
+            reader, "read_many", return_value={"file": b"data"}
+        ) as read_many:
+            self.assertEqual(reader.read_bytes("a" * 40, "file"), b"data")
+        read_many.assert_called_once_with("a" * 40, ("file",))
+        self.assertNotIn("_run", GitReader.__dict__)
+        source = Path(bundle_builder.__file__).read_text(encoding="utf-8")
+        reader_start = source.index("class GitReader:")
+        reader_end = source.index("\ndef _package_file", reader_start)
+        reader_source = source[reader_start:reader_end]
+        self.assertNotIn("subprocess.run(", reader_source)
 
 
 class GitTreeIndexTests(unittest.TestCase):
