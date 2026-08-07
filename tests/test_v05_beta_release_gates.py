@@ -17,6 +17,7 @@ from tools.release_gates import (
 )
 from tools.build_mapping_review_bundle import (
     PROFILES,
+    GitObjectReadError,
     GitReader,
     assemble_package,
     parse_front_matter_bytes,
@@ -2080,6 +2081,28 @@ class V05ExternalEvidenceTests(unittest.TestCase):
                 FIXED_NOW,
             ),
         )
+
+    def test_git_object_read_failure_is_sanitized(self) -> None:
+        evidence = self.official_qualified_evidence()
+
+        with patch(
+            "tools.validate_qualified_review_evidence.validate_retained_campaign",
+            side_effect=GitObjectReadError("host-secret"),
+        ):
+            errors = validate_external_evidence(
+                ROOT,
+                record_fixture("closure_candidate"),
+                evidence,
+                self.qualified_candidate,
+                "closure",
+                FIXED_NOW,
+            )
+
+        self.assertIn(
+            "qualified campaign shall pass the tracked official validator",
+            errors,
+        )
+        self.assertNotIn("host-secret", "\n".join(errors))
 
     def test_qualified_seal_requires_retained_archive_and_exact_bytes(
         self,

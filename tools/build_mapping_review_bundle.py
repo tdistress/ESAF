@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+from collections import OrderedDict
 from dataclasses import dataclass
 from functools import lru_cache
 import hashlib
@@ -11,8 +12,13 @@ import re
 import subprocess
 import sys
 import tempfile
-from typing import Literal, NamedTuple
+import threading
+import time
+import unicodedata
+from types import MappingProxyType
+from typing import Literal, Mapping, NamedTuple, Sequence
 
+import yaml
 from jsonschema import Draft202012Validator, FormatChecker
 from jsonschema.exceptions import SchemaError
 
@@ -30,6 +36,21 @@ from tools.crosswalks.validation import ValidationResult
 
 FULL_SHA = re.compile(r"^[0-9a-f]{40}$")
 GENERATOR_VERSION = "1.2.0"
+GIT_COMMAND_TIMEOUT_SECONDS = 120
+GIT_STDERR_LIMIT = 65_536
+GIT_TREE_STDOUT_LIMIT = 64 * 1024 * 1024
+GIT_TREE_RECORD_LIMIT = 100_000
+GIT_TREE_INDEX_LIMIT = 8
+GIT_BATCH_PATH_LIMIT = 4_096
+GIT_BLOB_SIZE_LIMIT = 32 * 1024 * 1024
+GIT_LOGICAL_CONTENT_LIMIT = 128 * 1024 * 1024
+GIT_OBJECT_CACHE_LIMIT = 128 * 1024 * 1024
+GIT_BATCH_HEADER_LIMIT = 256
+GIT_BATCH_CHECK_STDOUT_LIMIT = GIT_BATCH_PATH_LIMIT * GIT_BATCH_HEADER_LIMIT
+GIT_BATCH_CONTENT_STDOUT_LIMIT = (
+    GIT_LOGICAL_CONTENT_LIMIT
+    + GIT_BATCH_PATH_LIMIT * (GIT_BATCH_HEADER_LIMIT + 1)
+)
 _SOURCE_EVIDENCE_PATH = re.compile(
     r"(?m)^- (?:Oracle|Specification): `([^`]+)`\s*$"
 )
@@ -74,6 +95,24 @@ _PROFILE_ROWS = (
     ),
 )
 PROFILES = {row[0]: MappingProfile(*row) for row in _PROFILE_ROWS}
+
+
+class GitObjectReadError(subprocess.SubprocessError):
+    """A sanitized failure from a bounded Git object command."""
+
+
+@dataclass(frozen=True)
+class _GitCommandResult:
+    stdout: bytes
+    stderr: bytes
+
+
+@dataclass(frozen=True)
+class TreeEntry:
+    path: str
+    mode: str
+    object_type: str
+    object_id: str
 
 
 @dataclass(frozen=True)
@@ -168,123 +207,599 @@ def validate_output_directory(
 class GitReader:
     def __init__(self, root: Path) -> None:
         self.root = root.resolve()
-        self._regular_blobs: set[tuple[str, str]] = set()
-        self._contents: dict[tuple[str, str], bytes] = {}
-
-    def _run(
-        self,
-        *arguments: str,
-        text: bool = False,
-    ) -> subprocess.CompletedProcess:
-        return subprocess.run(
-            [
-                "git",
-                "--no-replace-objects",
-                "-C",
-                str(self.root),
-                *arguments,
-            ],
-            check=True,
-            capture_output=True,
-            text=text,
+        self._git_environment = {
+            name: value
+            for name, value in os.environ.items()
+            if not name.upper().startswith("GIT_")
+        }
+        self._git_environment.update(
+            {
+                "GIT_NO_REPLACE_OBJECTS": "1",
+                "GIT_NO_LAZY_FETCH": "1",
+                "GIT_OPTIONAL_LOCKS": "0",
+                "GIT_TERMINAL_PROMPT": "0",
+                "LC_ALL": "C",
+                "LANG": "C",
+            }
         )
+        self._sha1_verified = False
+        self._verified_commits: set[str] = set()
+        self._object_cache: OrderedDict[tuple[str, str], bytes] = OrderedDict()
+        self._object_cache_size = 0
+        self._tree_indexes: dict[str, Mapping[str, TreeEntry]] = {}
+        self._tree_index_lock = threading.RLock()
+
+    def _run_finite_git(
+        self,
+        arguments: tuple[str, ...],
+        *,
+        input_bytes: bytes = b"",
+        stdout_limit: int,
+        stderr_limit: int = GIT_STDERR_LIMIT,
+    ) -> _GitCommandResult:
+        command = [
+            "git",
+            "--no-replace-objects",
+            "-c",
+            "core.fsmonitor=false",
+            "-C",
+            str(self.root),
+            *arguments,
+        ]
+        process: subprocess.Popen[bytes] | None = None
+        deadline: float | None = None
+        spools: list[object] = []
+        stdout_spool: object | None = None
+        stderr_spool: object | None = None
+        drainer_threads: list[threading.Thread] = []
+        started_threads: list[threading.Thread] = []
+        reaped = False
+        failures: list[Exception] = []
+        failure_lock = threading.Lock()
+
+        def add_failure(error: Exception) -> None:
+            with failure_lock:
+                failures.append(error)
+
+        def terminate_child() -> None:
+            if process is None:
+                return
+            try:
+                process.terminate()
+            except Exception as error:
+                add_failure(error)
+
+        def kill_child() -> None:
+            if process is None:
+                return
+            try:
+                process.kill()
+            except Exception as error:
+                add_failure(error)
+
+        def record_failure(error: Exception) -> None:
+            add_failure(error)
+            terminate_child()
+
+        def close_resource(resource: object | None) -> None:
+            if resource is None:
+                return
+            try:
+                resource.close()  # type: ignore[attr-defined]
+            except Exception as error:
+                add_failure(error)
+
+        def wait_for_child(timeout: float) -> bool:
+            if process is None:
+                return False
+            try:
+                process.wait(timeout=max(0.0, timeout))
+                return True
+            except Exception as error:
+                add_failure(error)
+                return False
+
+        def join_thread(thread: threading.Thread, timeout: float) -> None:
+            try:
+                thread.join(timeout=max(0.0, timeout))
+            except Exception as error:
+                add_failure(error)
+
+        def remaining_deadline() -> float:
+            if deadline is None:
+                return 0.0
+            return max(0.0, deadline - time.monotonic())
+
+        def write_input() -> None:
+            if process is None or process.stdin is None:
+                record_failure(OSError("missing Git stdin pipe"))
+                return
+            try:
+                view = memoryview(input_bytes)
+                offset = 0
+                while offset < len(view):
+                    written = process.stdin.write(view[offset:])
+                    if written is None or written <= 0:
+                        raise OSError("short write to Git command")
+                    offset += written
+                process.stdin.flush()
+            except Exception as error:
+                record_failure(error)
+            finally:
+                close_resource(process.stdin)
+
+        def drain(
+            stream: object,
+            spool: object,
+            limit: int,
+            subject: str,
+        ) -> None:
+            total = 0
+            try:
+                while True:
+                    chunk = stream.read(65_536)  # type: ignore[attr-defined]
+                    if not chunk:
+                        return
+                    total += len(chunk)
+                    if total > limit:
+                        record_failure(OverflowError(f"{subject} limit exceeded"))
+                        return
+                    spool.write(chunk)  # type: ignore[attr-defined]
+            except Exception as error:
+                record_failure(error)
+            finally:
+                close_resource(stream)
+
+        stdout = b""
+        stderr = b""
+        try:
+            stdout_spool = tempfile.SpooledTemporaryFile(
+                max_size=1024 * 1024,
+                mode="w+b",
+            )
+            spools.append(stdout_spool)
+            stderr_spool = tempfile.SpooledTemporaryFile(
+                max_size=1024 * 1024,
+                mode="w+b",
+            )
+            spools.append(stderr_spool)
+            process = subprocess.Popen(
+                command,
+                shell=False,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                env=self._git_environment,
+            )
+            deadline = time.monotonic() + GIT_COMMAND_TIMEOUT_SECONDS
+            if process.stdin is None or process.stdout is None or process.stderr is None:
+                raise OSError("missing Git command pipe")
+
+            drainer_threads = [
+                threading.Thread(
+                    target=drain,
+                    args=(process.stdout, stdout_spool, stdout_limit, "stdout"),
+                    daemon=True,
+                ),
+                threading.Thread(
+                    target=drain,
+                    args=(process.stderr, stderr_spool, stderr_limit, "stderr"),
+                    daemon=True,
+                ),
+            ]
+            writer_thread = threading.Thread(target=write_input, daemon=True)
+            for thread in (*drainer_threads, writer_thread):
+                thread.start()
+                started_threads.append(thread)
+
+            reaped = wait_for_child(remaining_deadline())
+            if not reaped:
+                terminate_child()
+                reaped = wait_for_child(5)
+            if not reaped:
+                kill_child()
+                for _attempt in range(2):
+                    if wait_for_child(5):
+                        reaped = True
+                        break
+
+            terminal_failure = bool(failures) or not reaped
+            if terminal_failure:
+                close_resource(process.stdin)
+                close_resource(process.stdout)
+                close_resource(process.stderr)
+                for thread in started_threads:
+                    join_thread(thread, 5)
+            else:
+                for thread in started_threads:
+                    join_thread(thread, remaining_deadline())
+                if any(thread.is_alive() for thread in started_threads):
+                    add_failure(TimeoutError("Git command I/O thread did not finish"))
+                    close_resource(process.stdin)
+                    close_resource(process.stdout)
+                    close_resource(process.stderr)
+                    for thread in started_threads:
+                        join_thread(thread, 5)
+
+            if any(thread.is_alive() for thread in started_threads):
+                kill_child()
+                close_resource(process.stdin)
+                close_resource(process.stdout)
+                close_resource(process.stderr)
+                for thread in started_threads:
+                    join_thread(thread, 5)
+            if any(thread.is_alive() for thread in started_threads):
+                add_failure(TimeoutError("Git command I/O thread did not stop"))
+
+            close_resource(process.stdin)
+            close_resource(process.stdout)
+            close_resource(process.stderr)
+            if not any(thread.is_alive() for thread in drainer_threads):
+                try:
+                    stdout_spool.seek(0)  # type: ignore[attr-defined]
+                    stderr_spool.seek(0)  # type: ignore[attr-defined]
+                    stdout = stdout_spool.read()  # type: ignore[attr-defined]
+                    stderr = stderr_spool.read()  # type: ignore[attr-defined]
+                except Exception as error:
+                    add_failure(error)
+        except Exception as error:
+            add_failure(error)
+        finally:
+            if process is not None:
+                if not reaped:
+                    terminate_child()
+                    reaped = wait_for_child(5)
+                if not reaped:
+                    kill_child()
+                    for _attempt in range(2):
+                        if wait_for_child(5):
+                            reaped = True
+                            break
+                for stream in (process.stdin, process.stdout, process.stderr):
+                    close_resource(stream)
+                for thread in started_threads:
+                    join_thread(thread, 5)
+                if any(thread.is_alive() for thread in started_threads):
+                    add_failure(TimeoutError("Git command I/O thread did not stop"))
+            if not any(thread.is_alive() for thread in drainer_threads):
+                for spool in spools:
+                    close_resource(spool)
+
+        if (
+            failures
+            or not reaped
+            or process is None
+            or process.returncode != 0
+            or stderr
+            or any(thread.is_alive() for thread in started_threads)
+        ):
+            raise GitObjectReadError("Git object read failed")
+        return _GitCommandResult(stdout=stdout, stderr=stderr)
+
+    def _require_sha1_repository(self) -> None:
+        if self._sha1_verified:
+            return
+        result = self._run_finite_git(
+            ("rev-parse", "--show-object-format=storage"),
+            stdout_limit=16,
+        )
+        if result.stdout != b"sha1\n":
+            raise GitObjectReadError("Git object read failed")
+        self._sha1_verified = True
 
     def resolve_commit(self, revision: str) -> str:
         if not FULL_SHA.fullmatch(revision):
             raise ValueError(
                 "candidate must be a full lowercase 40-character Git SHA"
             )
+        if revision in self._verified_commits:
+            return revision
+        self._require_sha1_repository()
         try:
-            resolved = self._run(
-                "rev-parse",
-                "--verify",
-                f"{revision}^{{commit}}",
-                text=True,
-            ).stdout.strip()
-        except subprocess.CalledProcessError as error:
+            result = self._run_finite_git(
+                ("rev-parse", "--verify", f"{revision}^{{commit}}"),
+                stdout_limit=41,
+            )
+        except GitObjectReadError as error:
             raise ValueError("candidate is not an available commit") from error
-        if resolved != revision:
+        if result.stdout != revision.encode("ascii") + b"\n":
             raise ValueError("candidate does not resolve to the exact commit")
-        return resolved
+        self._verified_commits.add(revision)
+        return revision
 
-    def read_bytes(self, commit: str, path: str) -> bytes:
-        _canonical_relative_path(path, "repository")
-        self._require_regular_blob(commit, path)
-        key = (commit, path)
-        cached = self._contents.get(key)
-        if cached is not None:
-            return cached
-        content = self._run("show", f"{commit}:{path}").stdout
-        self._contents[key] = content
+    def _cache_get(self, key: tuple[str, str]) -> bytes | None:
+        content = self._object_cache.get(key)
+        if content is not None:
+            self._object_cache.move_to_end(key)
         return content
 
-    def _require_regular_blob(self, commit: str, path: str) -> None:
-        key = (commit, path)
-        if key in self._regular_blobs:
-            return
-        result = self._run(
-            "ls-tree",
-            "-z",
-            commit,
-            "--",
-            path,
-        ).stdout
-        entries = [item for item in result.split(b"\0") if item]
-        if not entries:
-            raise ValueError(f"missing tracked file at candidate: {path}")
-        if len(entries) != 1:
-            raise ValueError(f"unexpected repository entry: {path}")
-        try:
-            header, raw_name = entries[0].split(b"\t", 1)
-            mode, object_type, _object_id = header.split(b" ", 2)
-            name = raw_name.decode("utf-8")
-        except (UnicodeDecodeError, ValueError) as error:
-            raise ValueError("malformed Git tree entry") from error
+    def _cache_publish(
+        self, transaction: Mapping[tuple[str, str], bytes]
+    ) -> None:
+        for key, content in transaction.items():
+            previous = self._object_cache.pop(key, None)
+            if previous is not None:
+                self._object_cache_size -= len(previous)
+            self._object_cache[key] = content
+            self._object_cache_size += len(content)
+        while self._object_cache_size > GIT_OBJECT_CACHE_LIMIT:
+            _key, evicted = self._object_cache.popitem(last=False)
+            self._object_cache_size -= len(evicted)
+
+    @staticmethod
+    def _parse_batch_header(
+        header: bytes,
+        expected_object_id: str,
+        expected_size: int | None = None,
+    ) -> int:
+        if not header or len(header) > GIT_BATCH_HEADER_LIMIT:
+            raise GitObjectReadError("Git object read failed")
+        parts = header.split(b" ")
+        if len(parts) != 3:
+            raise GitObjectReadError("Git object read failed")
+        raw_object_id, object_type, raw_size = parts
         if (
-            name != path
+            raw_object_id != expected_object_id.encode("ascii")
             or object_type != b"blob"
-            or mode not in {b"100644", b"100755"}
         ):
-            raise ValueError(f"unexpected repository entry: {name}")
-        self._regular_blobs.add(key)
+            raise GitObjectReadError("Git object read failed")
+        if not raw_size or not raw_size.isdigit() or (
+            len(raw_size) > 1 and raw_size.startswith(b"0")
+        ):
+            raise GitObjectReadError("Git object read failed")
+        size = int(raw_size)
+        if expected_size is not None and size != expected_size:
+            raise GitObjectReadError("Git object read failed")
+        if size > GIT_BLOB_SIZE_LIMIT:
+            raise ValueError("Git blob size limit exceeded")
+        return size
+
+    def read_many(
+        self, commit: str, paths: Sequence[str]
+    ) -> dict[str, bytes]:
+        if isinstance(paths, (str, bytes)):
+            raise TypeError("paths must be a sequence of repository paths")
+        path_snapshot = tuple(paths)
+        if not path_snapshot:
+            return {}
+        if len(path_snapshot) > GIT_BATCH_PATH_LIMIT:
+            raise ValueError("Git batch path limit exceeded")
+        if any(not isinstance(path, str) for path in path_snapshot):
+            raise TypeError("paths must contain strings")
+        for path in path_snapshot:
+            _canonical_relative_path(path, "repository")
+        if len(set(path_snapshot)) != len(path_snapshot):
+            raise ValueError("duplicate repository path")
+
+        index = self._tree_index(commit)
+        entries: list[TreeEntry] = []
+        for path in path_snapshot:
+            entry = index.get(path)
+            if entry is None:
+                raise ValueError(f"missing tracked file at candidate: {path}")
+            if entry.object_type != "blob" or entry.mode not in {"100644", "100755"}:
+                raise ValueError(f"unexpected repository entry: {path}")
+            entries.append(entry)
+
+        cached: dict[tuple[str, str], bytes] = {}
+        uncached_object_ids: list[str] = []
+        seen_uncached: set[str] = set()
+        for entry in entries:
+            key = (commit, entry.object_id)
+            content = self._object_cache.get(key)
+            if content is not None:
+                cached[key] = content
+            elif entry.object_id not in seen_uncached:
+                seen_uncached.add(entry.object_id)
+                uncached_object_ids.append(entry.object_id)
+
+        sizes: dict[str, int] = {
+            object_id: len(content)
+            for (_commit, object_id), content in cached.items()
+        }
+        transaction: dict[tuple[str, str], bytes] = {}
+        if uncached_object_ids:
+            request = "".join(
+                f"{object_id}\n" for object_id in uncached_object_ids
+            ).encode("ascii")
+            checked = self._run_finite_git(
+                (
+                    "cat-file",
+                    "--batch-check=%(objectname) %(objecttype) %(objectsize)",
+                ),
+                input_bytes=request,
+                stdout_limit=GIT_BATCH_CHECK_STDOUT_LIMIT,
+            ).stdout
+            check_records = checked.split(b"\n")
+            if not check_records or check_records[-1] != b"":
+                raise GitObjectReadError("Git object read failed")
+            check_lines = check_records[:-1]
+            if len(check_lines) != len(uncached_object_ids):
+                raise GitObjectReadError("Git object read failed")
+            for object_id, header in zip(
+                uncached_object_ids, check_lines, strict=True
+            ):
+                sizes[object_id] = self._parse_batch_header(header, object_id)
+
+        logical_size = sum(sizes[entry.object_id] for entry in entries)
+        if logical_size > GIT_LOGICAL_CONTENT_LIMIT:
+            raise ValueError("Git logical content limit exceeded")
+
+        if uncached_object_ids:
+            acquired = self._run_finite_git(
+                ("cat-file", "--batch"),
+                input_bytes=request,
+                stdout_limit=GIT_BATCH_CONTENT_STDOUT_LIMIT,
+            ).stdout
+            offset = 0
+            for object_id in uncached_object_ids:
+                newline = acquired.find(b"\n", offset)
+                if newline < 0:
+                    raise GitObjectReadError("Git object read failed")
+                header = acquired[offset:newline]
+                size = self._parse_batch_header(
+                    header, object_id, sizes[object_id]
+                )
+                content_start = newline + 1
+                content_end = content_start + size
+                delimiter_end = content_end + 1
+                if (
+                    delimiter_end > len(acquired)
+                    or acquired[content_end:delimiter_end] != b"\n"
+                ):
+                    raise GitObjectReadError("Git object read failed")
+                content = acquired[content_start:content_end]
+                actual_object_id = hashlib.sha1(
+                    b"blob " + str(size).encode("ascii") + b"\0" + content
+                ).hexdigest()
+                if actual_object_id != object_id:
+                    raise GitObjectReadError("Git object read failed")
+                transaction[(commit, object_id)] = content
+                offset = delimiter_end
+            if offset != len(acquired):
+                raise GitObjectReadError("Git object read failed")
+
+        for key in cached:
+            self._cache_get(key)
+        self._cache_publish(transaction)
+        available = {**cached, **transaction}
+        return {
+            path: available[(commit, entry.object_id)]
+            for path, entry in zip(path_snapshot, entries, strict=True)
+        }
+
+    def read_bytes(self, commit: str, path: str) -> bytes:
+        return self.read_many(commit, (path,))[path]
+
+    def _tree_index(self, commit: str) -> Mapping[str, TreeEntry]:
+        if not FULL_SHA.fullmatch(commit):
+            raise ValueError(
+                "candidate must be a full lowercase 40-character Git SHA"
+            )
+        with self._tree_index_lock:
+            cached = self._tree_indexes.get(commit)
+            if cached is not None:
+                return cached
+            if len(self._tree_indexes) >= GIT_TREE_INDEX_LIMIT:
+                raise ValueError("Git tree index limit exceeded")
+            commit = self.resolve_commit(commit)
+
+            result = self._run_finite_git(
+                (
+                    "ls-tree",
+                    "-r",
+                    "-t",
+                    "-z",
+                    "--full-tree",
+                    "--abbrev=40",
+                    commit,
+                ),
+                stdout_limit=GIT_TREE_STDOUT_LIMIT,
+            )
+            raw_records = result.stdout
+            if raw_records and not raw_records.endswith(b"\0"):
+                raise GitObjectReadError("Git object read failed")
+            records = raw_records.split(b"\0") if raw_records else [b""]
+            records = records[:-1]
+            if len(records) > GIT_TREE_RECORD_LIMIT:
+                raise ValueError("Git tree record limit exceeded")
+
+            entries: dict[str, TreeEntry] = {}
+            allowed_pairs = {
+                ("040000", "tree"),
+                ("100644", "blob"),
+                ("100755", "blob"),
+                ("120000", "blob"),
+                ("160000", "commit"),
+            }
+            for record in records:
+                if not record:
+                    raise GitObjectReadError("Git object read failed")
+                parsed_record: tuple[str, str, str, str] | None = None
+                try:
+                    header, raw_path = record.split(b"\t", 1)
+                    raw_mode, raw_type, raw_object_id = header.split(b" ")
+                    parsed_record = (
+                        raw_mode.decode("ascii"),
+                        raw_type.decode("ascii"),
+                        raw_object_id.decode("ascii"),
+                        raw_path.decode("utf-8"),
+                    )
+                except (UnicodeDecodeError, ValueError):
+                    pass
+                if parsed_record is None:
+                    raise GitObjectReadError("Git object read failed")
+                mode, object_type, object_id, path = parsed_record
+                if (
+                    (mode, object_type) not in allowed_pairs
+                    or not FULL_SHA.fullmatch(object_id)
+                    or any(
+                        unicodedata.category(character) == "Cc"
+                        for character in path
+                    )
+                ):
+                    raise GitObjectReadError("Git object read failed")
+                canonical_path = True
+                try:
+                    _canonical_relative_path(path, "repository")
+                except ValueError:
+                    canonical_path = False
+                if not canonical_path:
+                    raise GitObjectReadError("Git object read failed")
+                if path in entries:
+                    raise GitObjectReadError("Git object read failed")
+                entries[path] = TreeEntry(path, mode, object_type, object_id)
+
+            for path in entries:
+                parts = PurePosixPath(path).parts
+                for depth in range(1, len(parts)):
+                    parent_path = PurePosixPath(*parts[:depth]).as_posix()
+                    parent = entries.get(parent_path)
+                    if parent is None or parent.object_type != "tree":
+                        raise GitObjectReadError("Git object read failed")
+
+            published: Mapping[str, TreeEntry] = MappingProxyType(entries)
+            self._tree_indexes[commit] = published
+            return published
 
     def list_files(self, commit: str, path: str) -> tuple[str, ...]:
         _canonical_relative_path(path, "repository")
-        result = self._run(
-            "ls-tree",
-            "-r",
-            "-z",
-            commit,
-            "--",
-            path,
-        ).stdout
+        index = self._tree_index(commit)
+        selected = index.get(path)
+        if selected is None:
+            return ()
+        if selected.object_type == "blob" and selected.mode in {"100644", "100755"}:
+            return (path,)
+        if selected.object_type != "tree":
+            raise ValueError(f"unexpected repository entry: {path}")
+
         names: list[str] = []
-        for item in result.split(b"\0"):
-            if not item:
+        prefix = path + "/"
+        for name, entry in index.items():
+            if not name.startswith(prefix) or entry.object_type == "tree":
                 continue
-            try:
-                header, raw_name = item.split(b"\t", 1)
-                mode, object_type, _object_id = header.split(b" ", 2)
-                name = raw_name.decode("utf-8")
-            except (UnicodeDecodeError, ValueError) as error:
-                raise ValueError("malformed Git tree entry") from error
-            if object_type != b"blob" or mode not in {b"100644", b"100755"}:
+            if entry.object_type != "blob" or entry.mode not in {"100644", "100755"}:
                 raise ValueError(f"unexpected repository entry: {name}")
-            _canonical_relative_path(name, "repository")
             names.append(name)
-            self._regular_blobs.add((commit, name))
         return tuple(sorted(names))
 
     def require_candidate_execution_state(self, commit: str) -> None:
         """Bind executing working-tree bytes to one clean candidate HEAD."""
-        head = self._run("rev-parse", "HEAD", text=True).stdout.strip()
-        if head != commit:
+        commit = self.resolve_commit(commit)
+        head = self._run_finite_git(
+            ("rev-parse", "HEAD"),
+            stdout_limit=41,
+        ).stdout
+        if head != commit.encode("ascii") + b"\n":
             raise ValueError("current HEAD must equal candidate commit")
-        status = self._run(
-            "status",
-            "--porcelain=v1",
-            "--untracked-files=all",
-            "--ignore-submodules=none",
+        status = self._run_finite_git(
+            (
+                "status",
+                "--porcelain=v1",
+                "--untracked-files=all",
+                "--ignore-submodules=none",
+            ),
+            stdout_limit=8 * 1024 * 1024,
         ).stdout
         if status:
             raise ValueError(
@@ -292,7 +807,10 @@ class GitReader:
             )
 
     def worktree_roots(self) -> tuple[Path, ...]:
-        output = self._run("worktree", "list", "--porcelain", "-z").stdout
+        output = self._run_finite_git(
+            ("worktree", "list", "--porcelain", "-z"),
+            stdout_limit=8 * 1024 * 1024,
+        ).stdout
         roots = []
         for field in output.split(b"\0"):
             if field.startswith(b"worktree "):
@@ -307,6 +825,20 @@ def _package_file(
     purpose: str,
 ) -> PackageFile:
     return PackageFile(path, reader.read_bytes(commit, path), purpose)
+
+
+def _read_package_files(
+    reader: object,
+    commit: str,
+    paths: Sequence[str],
+) -> dict[str, bytes]:
+    path_snapshot = tuple(paths)
+    if type(reader) is GitReader:
+        return reader.read_many(commit, path_snapshot)
+    return {
+        path: reader.read_bytes(commit, path)  # type: ignore[attr-defined]
+        for path in path_snapshot
+    }
 
 
 def _validate_candidate_metadata(
@@ -481,10 +1013,7 @@ def collect_package_files(
     candidate_state: CandidateState = "draft",
 ) -> tuple[PackageFile, ...]:
     snapshot_paths = reader.list_files(commit, profile.snapshot_path)
-    snapshot_contents = {
-        path: reader.read_bytes(commit, path)
-        for path in snapshot_paths
-    }
+    snapshot_contents = _read_package_files(reader, commit, snapshot_paths)
     try:
         expected_snapshot_digest = snapshot_digest_from_files(
             profile.snapshot_path,
@@ -513,6 +1042,44 @@ def collect_package_files(
         "mapping set",
     )
     set_metadata, set_body = parse_front_matter_bytes(readme.content)
+    fixed_paths = {
+        "crosswalks/ESAF-1600.md": "ESAF-1600 method",
+        "crosswalks/schema/esaf-control-manifest.schema.json": "crosswalk schema",
+        "crosswalks/schema/lifecycle-record.schema.json": "crosswalk schema",
+        "crosswalks/schema/mapping-record.schema.json": "crosswalk schema",
+        "crosswalks/schema/mapping-set.schema.json": "crosswalk schema",
+        "crosswalks/schema/provision-inventory.schema.json": "crosswalk schema",
+        "crosswalks/schema/qualified-review-evidence.schema.json": (
+            "qualified-review evidence schema"
+        ),
+        "crosswalks/reviews/QUALIFIED_REVIEW_PROTOCOL.md": "review protocol",
+        "crosswalks/reviews/templates/REVIEWER_ATTESTATION.md": (
+            "blank review template"
+        ),
+        "crosswalks/reviews/templates/SPECIFICATION_INVENTORY_REVIEW.md": (
+            "blank review template"
+        ),
+        "crosswalks/reviews/templates/SECURITY_OVERCLAIMING_REVIEW.md": (
+            "blank review template"
+        ),
+    }
+    registry_path = f"crosswalks/registry/{profile.mapping_set_id}.md"
+    source_evidence_pins = _source_evidence_pins(set_body)
+    candidate_dependency_paths = tuple(
+        dict.fromkeys(
+            (
+                registry_path,
+                "crosswalks/catalog.json",
+                *fixed_paths,
+                *(path for path, _digest in source_evidence_pins),
+            )
+        )
+    )
+    candidate_contents = _read_package_files(
+        reader,
+        commit,
+        candidate_dependency_paths,
+    )
     _validate_candidate_metadata(
         reader,
         commit,
@@ -619,11 +1186,29 @@ def collect_package_files(
     control_source = reader.resolve_commit(control_source)
     if control_source != release.get("source_commit_sha"):
         raise ValueError("control manifest source commit mismatch")
-    pinned_catalog_digest = release.get("control_catalog_sha256")
-    control_catalog = reader.read_bytes(
+    controls = manifest.get("controls")
+    if not isinstance(controls, list) or not controls:
+        raise ValueError("control manifest has no controls")
+    seen_controls: set[str] = set()
+    control_paths: list[str] = []
+    for control in controls:
+        if not isinstance(control, dict) or not isinstance(
+            control.get("path"),
+            str,
+        ):
+            raise ValueError("control manifest contains an invalid control")
+        control_path = f"controls/{control['path']}"
+        if control_path in seen_controls:
+            raise ValueError("duplicate control manifest path")
+        seen_controls.add(control_path)
+        control_paths.append(control_path)
+    historical_contents = _read_package_files(
+        reader,
         control_source,
-        "controls/catalog.json",
+        ("controls/catalog.json", *control_paths),
     )
+    pinned_catalog_digest = release.get("control_catalog_sha256")
+    control_catalog = historical_contents["controls/catalog.json"]
     actual_catalog_digest = hashlib.sha256(control_catalog).hexdigest()
     if (
         not isinstance(pinned_catalog_digest, str)
@@ -647,9 +1232,6 @@ def collect_package_files(
         raise ValueError(
             "control manifest differs from deterministic regeneration"
         )
-    controls = manifest.get("controls")
-    if not isinstance(controls, list) or not controls:
-        raise ValueError("control manifest has no controls")
     files.append(manifest_file)
     files.append(
         PackageFile(
@@ -658,27 +1240,20 @@ def collect_package_files(
             "pinned ESAF control catalog",
         )
     )
-    seen_controls: set[str] = set()
-    for control in controls:
-        if not isinstance(control, dict) or not isinstance(
-            control.get("path"),
-            str,
-        ):
-            raise ValueError("control manifest contains an invalid control")
-        control_path = f"controls/{control['path']}"
-        if control_path in seen_controls:
-            raise ValueError("duplicate control manifest path")
-        seen_controls.add(control_path)
-        control_file = _package_file(
-            reader, control_source, control_path, "referenced ESAF control"
+    for control, control_path in zip(controls, control_paths, strict=True):
+        control_file = PackageFile(
+            control_path,
+            historical_contents[control_path],
+            "referenced ESAF control",
         )
         if hashlib.sha256(control_file.content).hexdigest() != control["record_sha256"]:
             raise ValueError(f"control digest mismatch: {control_path}")
         files.append(control_file)
 
-    registry_path = f"crosswalks/registry/{profile.mapping_set_id}.md"
-    registry = _package_file(
-        reader, commit, registry_path, "lifecycle registry"
+    registry = PackageFile(
+        registry_path,
+        candidate_contents[registry_path],
+        "lifecycle registry",
     )
     registry_metadata, registry_body = parse_front_matter_bytes(registry.content)
     if registry_metadata.get("mapping_set_id") != profile.mapping_set_id:
@@ -689,7 +1264,7 @@ def collect_package_files(
         raise ValueError("registry snapshot digest mismatch")
     files.append(registry)
 
-    catalog = json.loads(reader.read_bytes(commit, "crosswalks/catalog.json"))
+    catalog = json.loads(candidate_contents["crosswalks/catalog.json"])
     mapping_model: dict[str, object] = {
         "path": readme_path,
         "metadata": set_metadata,
@@ -752,30 +1327,14 @@ def collect_package_files(
         )
     )
 
-    fixed_paths = {
-        "crosswalks/ESAF-1600.md": "ESAF-1600 method",
-        "crosswalks/schema/esaf-control-manifest.schema.json": "crosswalk schema",
-        "crosswalks/schema/lifecycle-record.schema.json": "crosswalk schema",
-        "crosswalks/schema/mapping-record.schema.json": "crosswalk schema",
-        "crosswalks/schema/mapping-set.schema.json": "crosswalk schema",
-        "crosswalks/schema/provision-inventory.schema.json": "crosswalk schema",
-        "crosswalks/schema/qualified-review-evidence.schema.json": (
-            "qualified-review evidence schema"
-        ),
-        "crosswalks/reviews/QUALIFIED_REVIEW_PROTOCOL.md": "review protocol",
-        "crosswalks/reviews/templates/REVIEWER_ATTESTATION.md": "blank review template",
-        "crosswalks/reviews/templates/SPECIFICATION_INVENTORY_REVIEW.md": "blank review template",
-        "crosswalks/reviews/templates/SECURITY_OVERCLAIMING_REVIEW.md": "blank review template",
-    }
     files.extend(
-        _package_file(reader, commit, path, purpose)
+        PackageFile(path, candidate_contents[path], purpose)
         for path, purpose in fixed_paths.items()
     )
-    for path, pinned_digest in _source_evidence_pins(set_body):
-        source_evidence = _package_file(
-            reader,
-            commit,
+    for path, pinned_digest in source_evidence_pins:
+        source_evidence = PackageFile(
             path,
+            candidate_contents[path],
             "source evidence pin",
         )
         if hashlib.sha256(source_evidence.content).hexdigest() != pinned_digest:
@@ -1116,7 +1675,16 @@ def main(argv: list[str] | None = None) -> int:
         }
         print(json.dumps(report, sort_keys=True))
         return 0
-    except Exception as error:
+    except subprocess.SubprocessError:
+        print("Git object read failed", file=sys.stderr)
+        return 2
+    except (
+        OSError,
+        UnicodeError,
+        ValueError,
+        SchemaError,
+        yaml.YAMLError,
+    ) as error:
         print(error, file=sys.stderr)
         return 2
 

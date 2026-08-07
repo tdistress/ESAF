@@ -1804,7 +1804,13 @@ def _validate_qualified_campaign(
             seal_path,
             archive_path,
         )
-    except (OSError, RuntimeError, UnicodeError, ValueError):
+    except (
+        OSError,
+        RuntimeError,
+        UnicodeError,
+        ValueError,
+        subprocess.SubprocessError,
+    ):
         errors.append(
             "qualified campaign shall pass the tracked official validator"
         )
