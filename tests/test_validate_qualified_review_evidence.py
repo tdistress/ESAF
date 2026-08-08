@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import ast
-from contextlib import redirect_stderr, redirect_stdout
+from contextlib import ExitStack, redirect_stderr, redirect_stdout
 from copy import deepcopy
 from dataclasses import replace
 import hashlib
@@ -41,6 +41,8 @@ from tests.qualified_review_hot_path_support import (
 
 import tools.validate_crosswalks as crosswalk_validator
 import tools.seal_qualified_review_campaign as seal_module
+import tests.qualified_review_hot_path_support as hot_path_support
+import tools.validate_qualified_review_evidence as validator_module
 from tools.build_mapping_review_bundle import (
     PROFILES,
     GitObjectReadError,
@@ -354,7 +356,7 @@ class QualifiedReviewPolicyInventoryTests(unittest.TestCase):
             )
         self.assertEqual(
             qualified_review_population_sha256(inventory.cases),
-            "463de4a7d9d65b2ad9a726455f95ff818c109417466748bab6275c84c47f5b7a",
+            "d55df00837cd8be7b93cc24177e85cc158aec0f8faae7a7d8dde41710d97ab0a",
         )
         self.assertEqual(
             inventory.population_sha256,
@@ -2128,22 +2130,192 @@ class QualifiedReviewHotPathSupportTests(unittest.TestCase):
                     )
         self.assertEqual(case.operations, source_operations)
 
-    def test_narrow_route_uses_case_operations_without_expected_projection(self) -> None:
-        cases = (
-            next(case for case in qualified_review_policy_inventory().cases if case.case_id == "ineligible:unauthorized-source-access"),
-            next(case for case in qualified_review_policy_inventory().cases if case.case_id == "draft-reference:manifest-digest"),
-            next(case for case in qualified_review_policy_inventory().cases if case.fixture_kind == "description_candidate"),
-            next(case for case in qualified_review_policy_inventory().cases if case.fixture_kind == "duplicate_candidate"),
+    def test_narrow_route_preserves_inventory_order_and_exact_reports(self) -> None:
+        cases = qualified_review_policy_inventory().cases
+        shared_locator = next(
+            case for case in cases
+            if case.case_id == "actor-alias:shared-locator"
         )
-        with mock.patch(
-            "tests.qualified_review_hot_path_support.expected_projection",
-            side_effect=AssertionError("narrow route copied expected projection"),
-        ):
-            for case in cases:
-                with self.subTest(case=case.case_id):
-                    report = run_narrow_case(self.fixture, case)
-                    self.assertFalse(report.evidence_valid, report)
-                    self.assertEqual(report.errors, case.expected.errors)
+        self.assertEqual(
+            shared_locator.expected.errors,
+            (
+                "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure"
+                "--3.3--esaf-0.4-alpha--0.1.0 duplicate reviewer lacks "
+                "complete dual-role acceptance and qualifications",
+            ),
+        )
+        for case in cases:
+            with self.subTest(case=case.case_id):
+                self.assertEqual(
+                    run_narrow_case(self.fixture, case),
+                    expected_projection(self.fixture, case),
+                )
+
+    def test_narrow_route_uses_case_operations_without_expected_projection(self) -> None:
+        inventory = qualified_review_policy_inventory()
+        by_id = {case.case_id: case for case in inventory.cases}
+        invalid_role = by_id["ineligible:unauthorized-source-access"]
+        invalid_reference = by_id["draft-reference:manifest-digest"]
+        description = by_id["finding-description:authoritative"]
+        duplicate = by_id["duplicate-finding-id:authoritative"]
+        valid_role = replace(invalid_role, operations=())
+        valid_reference = replace(invalid_reference, operations=())
+        routes = (
+            (
+                invalid_role,
+                ReportProjection(
+                    False,
+                    "transition_ready",
+                    False,
+                    self.fixture.candidate,
+                    "issue-55-draft-review",
+                    invalid_role.expected.errors,
+                ),
+            ),
+            (
+                invalid_reference,
+                ReportProjection(
+                    False,
+                    "merge_ready",
+                    False,
+                    self.fixture.reviewed_candidate,
+                    "issue-55-final-confirmation",
+                    invalid_reference.expected.errors,
+                ),
+            ),
+            (
+                description,
+                ReportProjection(
+                    False,
+                    "transition_ready",
+                    False,
+                    self.fixture.description_candidate,
+                    "issue-55-draft-review",
+                    description.expected.errors,
+                ),
+            ),
+            (
+                duplicate,
+                ReportProjection(
+                    False,
+                    "transition_ready",
+                    False,
+                    self.fixture.duplicate_candidate,
+                    "issue-55-draft-review",
+                    duplicate.expected.errors,
+                ),
+            ),
+            (
+                valid_role,
+                ReportProjection(
+                    True,
+                    "transition_ready",
+                    True,
+                    self.fixture.candidate,
+                    "issue-55-draft-review",
+                    (),
+                ),
+            ),
+            (
+                valid_reference,
+                ReportProjection(
+                    True,
+                    "merge_ready",
+                    True,
+                    self.fixture.reviewed_candidate,
+                    "issue-55-final-confirmation",
+                    (),
+                ),
+            ),
+        )
+        forbidden = AssertionError("narrow route used a forbidden dependency")
+        original_cache = dict(validator_module._CANDIDATE_CACHE)
+        try:
+            with ExitStack() as stack:
+                for owner, name in (
+                    (Path, "open"),
+                    (Path, "read_bytes"),
+                    (Path, "read_text"),
+                    (hot_path_support.subprocess, "run"),
+                    (hot_path_support.shutil, "copytree"),
+                    (GitReader, "read_bytes"),
+                    (hot_path_support, "assemble_package"),
+                    (hot_path_support, "_mapping_entries"),
+                    (hot_path_support, "_candidate_mapping"),
+                    (validator_module, "_mapping_entries"),
+                    (validator_module, "_candidate_mapping"),
+                    (validator_module, "_validate_campaign_details"),
+                    (hot_path_support, "validate_campaign"),
+                    (hot_path_support, "build_campaign_archive"),
+                    (hot_path_support, "build_seal_record"),
+                    (hot_path_support, "canonical_json_bytes"),
+                    (hot_path_support.hashlib, "sha256"),
+                    (hot_path_support, "expected_projection"),
+                ):
+                    stack.enter_context(
+                        mock.patch.object(
+                            owner,
+                            name,
+                            side_effect=forbidden,
+                            create=True,
+                        )
+                    )
+                mapping_adapter = stack.enter_context(
+                    mock.patch.object(
+                        hot_path_support,
+                        "evaluate_mapping_set_policy",
+                        wraps=evaluate_mapping_set_policy,
+                    )
+                )
+                reference_adapter = stack.enter_context(
+                    mock.patch.object(
+                        hot_path_support,
+                        "evaluate_draft_reference_policy",
+                        wraps=evaluate_draft_reference_policy,
+                    )
+                )
+
+                validator_module._CANDIDATE_CACHE.clear()
+                first = tuple(run_narrow_case(self.fixture, case) for case, _ in routes)
+                cache_routes = (
+                    (self.fixture.reader, self.fixture.candidate, "draft"),
+                    (
+                        self.fixture.reviewed_reader,
+                        self.fixture.reviewed_candidate,
+                        "reviewed",
+                    ),
+                    (
+                        self.fixture.description_reader,
+                        self.fixture.description_candidate,
+                        "draft",
+                    ),
+                    (
+                        self.fixture.duplicate_reader,
+                        self.fixture.duplicate_candidate,
+                        "draft",
+                    ),
+                )
+                validator_module._CANDIDATE_CACHE.update(
+                    {
+                        (
+                            str(reader.root),
+                            candidate,
+                            candidate_state,
+                            mapping_set_id,
+                        ): object()
+                        for reader, candidate, candidate_state in cache_routes
+                        for mapping_set_id in self.fixture.assemblies
+                    }
+                )
+                second = tuple(run_narrow_case(self.fixture, case) for case, _ in routes)
+
+            self.assertEqual(mapping_adapter.call_count, 12)
+            self.assertEqual(reference_adapter.call_count, 4)
+            self.assertEqual(first, tuple(expected for _, expected in routes))
+            self.assertEqual(second, first)
+        finally:
+            validator_module._CANDIDATE_CACHE.clear()
+            validator_module._CANDIDATE_CACHE.update(original_cache)
 
 
 class CampaignValidationTests(unittest.TestCase):
