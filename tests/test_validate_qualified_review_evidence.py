@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import ast
 from contextlib import ExitStack, redirect_stderr, redirect_stdout
-from dataclasses import replace
+from dataclasses import FrozenInstanceError, replace
 import hashlib
 import io
 import json
@@ -42,6 +42,7 @@ import tools.seal_qualified_review_campaign as seal_module
 import tests.qualified_review_hot_path_support as hot_path_support
 import tools.validate_crosswalks as crosswalk_validator
 import tools.validate_qualified_review_evidence as validator_module
+from tools import verify_qualified_review_hot_path_equivalence
 from tools.build_mapping_review_bundle import (
     PROFILES,
     GitObjectReadError,
@@ -2236,6 +2237,502 @@ class QualifiedReviewPolicyRoutingTests(unittest.TestCase):
         self.assertLess(events.index("distinct_candidate"), events.index("recursive-details"))
         self.assertLess(events.index("manifest_sha256"), events.index("retained-archive"))
         self.assertLess(events.index("seal_record_sha256"), events.index("seal-json"))
+
+
+class QualifiedReviewHotPathEquivalenceCommandTests(unittest.TestCase):
+    CANDIDATE = "1" * 40
+    OTHER_CANDIDATE = "2" * 40
+
+    def setUp(self) -> None:
+        self.root = Path("C:/private/injected-checkout")
+        source = qualified_review_policy_inventory()
+        self.cases = (source.cases[0], source.cases[5])
+        self.inventory = SimpleNamespace(
+            cases=self.cases,
+            methods=(
+                SimpleNamespace(method_name=self.cases[0].method_name),
+                SimpleNamespace(method_name=self.cases[1].method_name),
+            ),
+            population_sha256="d" * 64,
+        )
+        self.projection = ReportProjection(
+            True,
+            "transition_ready",
+            True,
+            self.CANDIDATE,
+            "synthetic-campaign",
+            (),
+        )
+        self.events: list[tuple[str, str]] = []
+        self.destinations: list[Path] = []
+        self.fixture_roots: list[Path] = []
+
+    @staticmethod
+    def completed(
+        stdout: bytes = b"",
+        *,
+        returncode: int = 0,
+        stderr: bytes = b"",
+    ) -> subprocess.CompletedProcess[bytes]:
+        return subprocess.CompletedProcess(
+            args=["git"],
+            returncode=returncode,
+            stdout=stdout,
+            stderr=stderr,
+        )
+
+    def clean_git_results(
+        self,
+    ) -> tuple[subprocess.CompletedProcess[bytes], ...]:
+        head = self.completed((self.CANDIDATE + "\n").encode("ascii"))
+        clean = self.completed()
+        return head, clean, head, clean
+
+    def run_verification(
+        self,
+        *,
+        full: dict[str, ReportProjection] | None = None,
+        narrow: dict[str, ReportProjection] | None = None,
+        expected: dict[str, ReportProjection] | None = None,
+        runner_results: tuple[subprocess.CompletedProcess[bytes], ...] | None = None,
+        full_factory: object | None = None,
+    ) -> verify_qualified_review_hot_path_equivalence.EquivalenceResult:
+        full_outputs = {
+            case.case_id: self.projection for case in self.cases
+        } if full is None else full
+        narrow_outputs = {
+            case.case_id: self.projection for case in self.cases
+        } if narrow is None else narrow
+        expected_outputs = {
+            case.case_id: self.projection for case in self.cases
+        } if expected is None else expected
+        results = list(
+            self.clean_git_results()
+            if runner_results is None
+            else runner_results
+        )
+
+        def runner(*_args: object, **_kwargs: object) -> object:
+            if not results:
+                raise AssertionError("the verifier made an extra Git call")
+            return results.pop(0)
+
+        def create_fixture(root: Path, repository_root: Path) -> object:
+            self.assertEqual(repository_root, self.root)
+            self.fixture_roots.append(root)
+            return SimpleNamespace(root=root)
+
+        def full_case(
+            _fixture: object, case: object, destination: Path
+        ) -> ReportProjection:
+            case_id = str(getattr(case, "case_id"))
+            self.events.append(("full", case_id))
+            self.destinations.append(destination)
+            if full_factory is not None:
+                return full_factory(case, destination)
+            return full_outputs[case_id]
+
+        def narrow_case(_fixture: object, case: object) -> ReportProjection:
+            case_id = str(getattr(case, "case_id"))
+            self.events.append(("narrow", case_id))
+            return narrow_outputs[case_id]
+
+        def expected_case(_fixture: object, case: object) -> ReportProjection:
+            case_id = str(getattr(case, "case_id"))
+            self.events.append(("expected", case_id))
+            return expected_outputs[case_id]
+
+        runner_mock = mock.Mock(side_effect=runner)
+        inventory_accessor = mock.Mock(return_value=self.inventory)
+        fixture_creator = mock.Mock(side_effect=create_fixture)
+        with (
+            mock.patch.object(
+                verify_qualified_review_hot_path_equivalence,
+                "qualified_review_policy_inventory",
+                inventory_accessor,
+            ),
+            mock.patch.object(
+                verify_qualified_review_hot_path_equivalence.QualifiedReviewHotPathFixture,
+                "create",
+                fixture_creator,
+            ),
+            mock.patch.object(
+                verify_qualified_review_hot_path_equivalence,
+                "run_full_case",
+                side_effect=full_case,
+            ),
+            mock.patch.object(
+                verify_qualified_review_hot_path_equivalence,
+                "run_narrow_case",
+                side_effect=narrow_case,
+            ),
+            mock.patch.object(
+                verify_qualified_review_hot_path_equivalence,
+                "expected_projection",
+                side_effect=expected_case,
+            ),
+        ):
+            result = verify_qualified_review_hot_path_equivalence.verify_qualified_review_hot_path_equivalence(
+                self.root,
+                self.CANDIDATE,
+                runner=runner_mock,
+            )
+        self.assertEqual(results, [])
+        self.last_runner = runner_mock
+        self.last_inventory_accessor = inventory_accessor
+        self.last_fixture_creator = fixture_creator
+        return result
+
+    def assert_main_rejects(
+        self,
+        error: Exception,
+    ) -> tuple[str, str]:
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+        with (
+            mock.patch.object(
+                verify_qualified_review_hot_path_equivalence,
+                "verify_qualified_review_hot_path_equivalence",
+                side_effect=error,
+            ),
+            redirect_stdout(stdout),
+            redirect_stderr(stderr),
+        ):
+            result = verify_qualified_review_hot_path_equivalence.main(
+                ["--check", "--candidate-sha", self.CANDIDATE],
+                root=self.root,
+            )
+        self.assertEqual(result, 1)
+        self.assertEqual(stdout.getvalue(), "")
+        self.assertEqual(len(stderr.getvalue().splitlines()), 1)
+        self.assertNotIn("equivalence=PASS", stderr.getvalue())
+        return stdout.getvalue(), stderr.getvalue()
+
+    def test_command_arguments_are_required_and_rejected_safely(self) -> None:
+        for arguments in (
+            [],
+            ["--check"],
+            ["--candidate-sha", self.CANDIDATE],
+            ["--check", "--candidate-sha", self.CANDIDATE, "extra"],
+        ):
+            with self.subTest(arguments=arguments):
+                stdout = io.StringIO()
+                stderr = io.StringIO()
+                with redirect_stdout(stdout), redirect_stderr(stderr):
+                    result = verify_qualified_review_hot_path_equivalence.main(
+                        arguments,
+                        root=self.root,
+                    )
+                self.assertEqual(result, 1)
+                self.assertEqual(stdout.getvalue(), "")
+                self.assertEqual(len(stderr.getvalue().splitlines()), 1)
+
+    def test_candidate_requires_a_full_lowercase_sha(self) -> None:
+        for candidate in ("A" * 40, "1" * 12):
+            with self.subTest(candidate=candidate):
+                runner = mock.Mock()
+                with self.assertRaisesRegex(
+                    verify_qualified_review_hot_path_equivalence.QualifiedReviewHotPathEquivalenceError,
+                    "40 lowercase hexadecimal",
+                ):
+                    verify_qualified_review_hot_path_equivalence.require_exact_candidate(
+                        self.root,
+                        candidate,
+                        runner=runner,
+                    )
+                runner.assert_not_called()
+
+    def test_candidate_requires_exact_head_and_clean_status(self) -> None:
+        failures = (
+            (
+                self.completed(
+                    (self.OTHER_CANDIDATE + "\n").encode("ascii")
+                ),
+            ),
+            (
+                self.completed((self.CANDIDATE + "\n").encode("ascii")),
+                self.completed(b" M private-tracked.txt\n"),
+            ),
+            (
+                self.completed((self.CANDIDATE + "\n").encode("ascii")),
+                self.completed(b"?? private-untracked.txt\n"),
+            ),
+        )
+        for results in failures:
+            with self.subTest(results=results):
+                runner = mock.Mock(side_effect=results)
+                with self.assertRaises(
+                    verify_qualified_review_hot_path_equivalence.QualifiedReviewHotPathEquivalenceError
+                ) as captured:
+                    verify_qualified_review_hot_path_equivalence.require_exact_candidate(
+                        self.root,
+                        self.CANDIDATE,
+                        runner=runner,
+                    )
+                message = str(captured.exception)
+                self.assertNotIn(str(self.root), message)
+                self.assertNotIn("private", message)
+
+    def test_git_failures_are_sanitized(self) -> None:
+        failures: tuple[object, ...] = (
+            (self.completed(returncode=1, stderr=b"injected child stderr"),),
+            (
+                self.completed((self.CANDIDATE + "\n").encode("ascii")),
+                self.completed(returncode=1, stderr=b"injected child stderr"),
+            ),
+            PermissionError(f"denied {self.root}"),
+        )
+        for failure in failures:
+            with self.subTest(failure=failure):
+                runner = (
+                    mock.Mock(side_effect=failure)
+                    if isinstance(failure, tuple)
+                    else mock.Mock(side_effect=failure)
+                )
+                with self.assertRaises(
+                    verify_qualified_review_hot_path_equivalence.QualifiedReviewHotPathEquivalenceError
+                ) as captured:
+                    verify_qualified_review_hot_path_equivalence.require_exact_candidate(
+                        self.root,
+                        self.CANDIDATE,
+                        runner=runner,
+                    )
+                message = str(captured.exception)
+                self.assertNotIn(str(self.root), message)
+                self.assertNotIn("injected child stderr", message)
+                _, stderr = self.assert_main_rejects(captured.exception)
+                self.assertNotIn(str(self.root), stderr)
+                self.assertNotIn("injected child stderr", stderr)
+
+    def test_matching_clean_checkout_uses_exact_git_commands(self) -> None:
+        runner = mock.Mock(
+            side_effect=(
+                self.completed((self.CANDIDATE + "\n").encode("ascii")),
+                self.completed(),
+            )
+        )
+        verify_qualified_review_hot_path_equivalence.require_exact_candidate(
+            self.root,
+            self.CANDIDATE,
+            runner=runner,
+        )
+        self.assertEqual(
+            runner.call_args_list,
+            [
+                mock.call(
+                    ["git", "rev-parse", "HEAD"],
+                    cwd=self.root,
+                    shell=False,
+                    capture_output=True,
+                ),
+                mock.call(
+                    [
+                        "git",
+                        "status",
+                        "--porcelain=v1",
+                        "--untracked-files=all",
+                    ],
+                    cwd=self.root,
+                    shell=False,
+                    capture_output=True,
+                ),
+            ],
+        )
+
+    def test_every_case_uses_independent_comparisons_and_fresh_paths(self) -> None:
+        result = self.run_verification()
+        self.assertEqual(
+            result,
+            verify_qualified_review_hot_path_equivalence.EquivalenceResult(
+                candidate_sha=self.CANDIDATE,
+                method_count=2,
+                population_count=2,
+                population_sha256="d" * 64,
+                full_comparison_count=2,
+                narrow_comparison_count=2,
+            ),
+        )
+        with self.assertRaises(FrozenInstanceError):
+            result.population_count = 0  # type: ignore[misc]
+        self.last_inventory_accessor.assert_called_once_with()
+        self.last_fixture_creator.assert_called_once()
+        self.assertEqual(
+            self.events,
+            [
+                (route, case.case_id)
+                for case in self.cases
+                for route in ("full", "narrow", "expected")
+            ],
+        )
+        self.assertEqual(len(self.destinations), 2)
+        self.assertEqual(len(set(self.destinations)), 2)
+        self.assertTrue(all(not path.exists() for path in self.destinations))
+        git_calls = [
+            mock.call(
+                ["git", "rev-parse", "HEAD"],
+                cwd=self.root,
+                shell=False,
+                capture_output=True,
+            ),
+            mock.call(
+                [
+                    "git",
+                    "status",
+                    "--porcelain=v1",
+                    "--untracked-files=all",
+                ],
+                cwd=self.root,
+                shell=False,
+                capture_output=True,
+            ),
+        ]
+        self.assertEqual(
+            self.last_runner.call_args_list,
+            [*git_calls, *git_calls],
+        )
+
+    def assert_projection_mismatch(
+        self,
+        relation: str,
+        *,
+        full: ReportProjection,
+        narrow: ReportProjection,
+        expected: ReportProjection,
+    ) -> str:
+        with self.assertRaises(
+            verify_qualified_review_hot_path_equivalence.QualifiedReviewHotPathEquivalenceError
+        ) as captured:
+            self.run_verification(
+                full={case.case_id: full for case in self.cases},
+                narrow={case.case_id: narrow for case in self.cases},
+                expected={case.case_id: expected for case in self.cases},
+            )
+        message = str(captured.exception)
+        self.assertIn(self.cases[0].case_id, message)
+        self.assertIn(relation, message)
+        self.assertIn("full=", message)
+        self.assertIn("narrow=", message)
+        self.assertIn("expected=", message)
+        return message
+
+    def test_full_and_narrow_mismatch_is_rejected(self) -> None:
+        changed = replace(self.projection, errors=("narrow differs",))
+        self.assert_projection_mismatch(
+            "full/narrow",
+            full=self.projection,
+            narrow=changed,
+            expected=self.projection,
+        )
+
+    def test_full_and_expected_mismatch_is_rejected(self) -> None:
+        changed = replace(self.projection, errors=("expected differs",))
+        self.assert_projection_mismatch(
+            "full/expected",
+            full=self.projection,
+            narrow=self.projection,
+            expected=changed,
+        )
+
+    def test_narrow_and_expected_mismatch_is_rejected(self) -> None:
+        changed = replace(self.projection, errors=("narrow differs",))
+        self.assert_projection_mismatch(
+            "narrow/expected",
+            full=self.projection,
+            narrow=changed,
+            expected=self.projection,
+        )
+
+    def test_temporary_paths_are_rejected_without_leaking(self) -> None:
+        def leaked(
+            _case: object, destination: Path
+        ) -> ReportProjection:
+            slash_path = destination.parent.resolve().as_posix()
+            return replace(
+                self.projection,
+                errors=(f"{slash_path}/private-evidence",),
+            )
+
+        with self.assertRaises(
+            verify_qualified_review_hot_path_equivalence.QualifiedReviewHotPathEquivalenceError
+        ) as captured:
+            self.run_verification(full_factory=leaked)
+        message = str(captured.exception)
+        self.assertIn("temporary path", message)
+        for path in (*self.fixture_roots, *self.destinations):
+            self.assertNotIn(str(path), message)
+            self.assertNotIn(path.as_posix(), message)
+        _, stderr = self.assert_main_rejects(captured.exception)
+        self.assertNotIn("private-evidence", stderr)
+
+    def test_postflight_head_drift_is_rejected_after_comparisons(self) -> None:
+        results = (
+            self.completed((self.CANDIDATE + "\n").encode("ascii")),
+            self.completed(),
+            self.completed((self.OTHER_CANDIDATE + "\n").encode("ascii")),
+        )
+        with self.assertRaises(
+            verify_qualified_review_hot_path_equivalence.QualifiedReviewHotPathEquivalenceError
+        ) as captured:
+            self.run_verification(runner_results=results)
+        self.assertEqual(len(self.events), len(self.cases) * 3)
+        self.assertNotIn(str(self.root), str(captured.exception))
+        self.assert_main_rejects(captured.exception)
+
+    def test_postflight_dirty_state_is_rejected_after_comparisons(self) -> None:
+        dirty = b"?? injected-postflight-secret.txt\n"
+        results = (
+            self.completed((self.CANDIDATE + "\n").encode("ascii")),
+            self.completed(),
+            self.completed((self.CANDIDATE + "\n").encode("ascii")),
+            self.completed(dirty),
+        )
+        with self.assertRaises(
+            verify_qualified_review_hot_path_equivalence.QualifiedReviewHotPathEquivalenceError
+        ) as captured:
+            self.run_verification(runner_results=results)
+        self.assertEqual(len(self.events), len(self.cases) * 3)
+        self.assertNotIn(dirty.decode("ascii").strip(), str(captured.exception))
+        _, stderr = self.assert_main_rejects(captured.exception)
+        self.assertNotIn(dirty.decode("ascii").strip(), stderr)
+
+    def test_main_prints_exactly_the_seven_pass_lines(self) -> None:
+        expected = verify_qualified_review_hot_path_equivalence.EquivalenceResult(
+            candidate_sha=self.CANDIDATE,
+            method_count=16,
+            population_count=31,
+            population_sha256="a" * 64,
+            full_comparison_count=31,
+            narrow_comparison_count=31,
+        )
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+        with (
+            mock.patch.object(
+                verify_qualified_review_hot_path_equivalence,
+                "verify_qualified_review_hot_path_equivalence",
+                return_value=expected,
+            ) as verify,
+            redirect_stdout(stdout),
+            redirect_stderr(stderr),
+        ):
+            result = verify_qualified_review_hot_path_equivalence.main(
+                ["--check", "--candidate-sha", self.CANDIDATE],
+                root=self.root,
+            )
+        self.assertEqual(result, 0)
+        self.assertEqual(stderr.getvalue(), "")
+        self.assertEqual(
+            stdout.getvalue(),
+            "candidate_sha=1111111111111111111111111111111111111111\n"
+            "method_count=16\n"
+            "population_count=31\n"
+            "population_sha256="
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n"
+            "full_comparison_count=31\n"
+            "narrow_comparison_count=31\n"
+            "equivalence=PASS\n",
+        )
+        verify.assert_called_once_with(self.root, self.CANDIDATE)
 
 
 class QualifiedReviewHotPathSupportTests(unittest.TestCase):
