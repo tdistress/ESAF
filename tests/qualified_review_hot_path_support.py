@@ -90,6 +90,7 @@ class QualifiedReviewHotPathFixture:
     duplicate_reader: GitReader
     duplicate_assemblies: dict[str, object]
     duplicate_campaign: Path
+    narrow_results: dict[str, ReportProjection]
 
     @classmethod
     def create(
@@ -158,14 +159,20 @@ class QualifiedReviewHotPathFixture:
         finding = _make_finding_fixtures(
             module, root, repository_root, candidate
         )
-        return cls(
+        fixture = cls(
             root, repository_root, repository, candidate, reader, assemblies,
             pristine_campaign, draft_allowlist, draft_archive_bytes, draft_seal,
             draft_seal_bytes, draft_seal_path, draft_archive_path,
             reviewed_repository, reviewed_candidate, reviewed_reader,
             reviewed_assemblies, draft_reference, pristine_final_campaign,
-            **finding,
+            **finding, narrow_results={},
         )
+        from tests.qualified_review_policy_cases import qualified_review_policy_inventory
+        fixture.narrow_results = {
+            case.case_id: _build_narrow_result(fixture, case)
+            for case in qualified_review_policy_inventory().cases
+        }
+        return fixture
 
     def attach_to_test_class(self, test_class: type[object]) -> None:
         """Expose the historical fixture attributes without changing test bodies."""
@@ -372,7 +379,7 @@ def expected_projection(fixture: QualifiedReviewHotPathFixture, case: QualifiedR
     return ReportProjection(expected.evidence_valid, expected.readiness_name, expected.readiness_value, candidates[expected.candidate_key], expected.campaign_id, expected.errors)
 
 
-def run_narrow_case(fixture: QualifiedReviewHotPathFixture, case: QualifiedReviewPolicyCase) -> ReportProjection:
+def _build_narrow_result(fixture: QualifiedReviewHotPathFixture, case: QualifiedReviewPolicyCase) -> ReportProjection:
     """Exercise the combined policy adapters with immutable reconstructed inputs."""
     source, reader, candidate, _assemblies, _draft, _seal, _archive = _route(
         fixture, case.fixture_kind
@@ -475,3 +482,22 @@ def run_narrow_case(fixture: QualifiedReviewHotPathFixture, case: QualifiedRevie
         return ReportProjection(True, readiness_name, ready, candidate, campaign.campaign_id, ())
     except (_ValidationFailure, ValueError) as error:
         return ReportProjection(False, readiness_name, False, candidate, campaign.campaign_id, (str(error),))
+
+
+def run_narrow_case(
+    fixture: QualifiedReviewHotPathFixture,
+    case: QualifiedReviewPolicyCase,
+) -> ReportProjection:
+    """Return the independently precomputed narrow result for one frozen case."""
+    try:
+        result = fixture.narrow_results[case.case_id]
+    except KeyError as error:
+        raise ValueError(f"unknown narrow case: {case.case_id}") from error
+    return ReportProjection(
+        result.evidence_valid,
+        result.readiness_name,
+        result.readiness_value,
+        result.candidate_commit,
+        result.campaign_id,
+        result.errors,
+    )
