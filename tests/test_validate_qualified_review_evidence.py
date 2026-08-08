@@ -11,6 +11,7 @@ from pathlib import Path
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 from types import SimpleNamespace
 import unittest
@@ -880,11 +881,14 @@ class QualifiedReviewHotPathMigrationStructureTests(unittest.TestCase):
             return case.case_id
 
         result = unittest.TestResult()
-        with mock.patch(
-            "tests.test_validate_qualified_review_evidence.run_narrow_case",
+        module = sys.modules[__name__]
+        with mock.patch.object(
+            module,
+            "run_narrow_case",
             side_effect=record_case,
-        ), mock.patch(
-            "tests.test_validate_qualified_review_evidence.expected_projection",
+        ), mock.patch.object(
+            module,
+            "expected_projection",
             side_effect=lambda _fixture, case: case.case_id,
         ):
             for method_name in selected:
@@ -903,6 +907,31 @@ class QualifiedReviewHotPathMigrationStructureTests(unittest.TestCase):
         self.assertEqual({case_id: seen.count(case_id) for case_id in seen}, {
             case_id: 1 for case_id in expected
         })
+        if __name__ == "tests.test_validate_qualified_review_evidence":
+            discovery = subprocess.run(
+                (
+                    sys.executable,
+                    "-B",
+                    "-m",
+                    "unittest",
+                    "discover",
+                    "-s",
+                    "tests",
+                    "-p",
+                    "test_validate_qualified_review_evidence.py",
+                    "-k",
+                    "test_selected_methods_consume_each_inventory_case_once",
+                ),
+                cwd=ROOT,
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(
+                discovery.returncode,
+                0,
+                discovery.stdout + discovery.stderr,
+            )
 
 
 def _git(root: Path, *arguments: str) -> str:
