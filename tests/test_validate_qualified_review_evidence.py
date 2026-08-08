@@ -1982,12 +1982,13 @@ class QualifiedReviewPolicyRoutingTests(unittest.TestCase):
             completion = events.index(
                 f"{mapping_set_id}:mapping_set_completion:completion"
             )
-            self.assertGreater(
-                completion,
-                events.index(
-                    f"{mapping_set_id}:role_findings:{ROLES[-1]}"
-                ),
-            )
+            for role in ROLES:
+                self.assertGreater(
+                    completion,
+                    events.index(
+                        f"{mapping_set_id}:role_findings:{role}"
+                    ),
+                )
 
     def test_final_reference_routes_through_ordered_policy_operations(self) -> None:
         events: list[str] = []
