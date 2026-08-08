@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from contextlib import redirect_stderr, redirect_stdout
 from copy import deepcopy
+from dataclasses import replace
 import hashlib
 import io
 import json
@@ -17,6 +18,17 @@ from unittest import mock
 import zipfile
 
 import yaml
+
+from tests.qualified_review_policy_cases import (
+    ALLOWED_PATH_TOKENS,
+    BASELINE_COMMIT,
+    REVIEWED_POPULATION_SHA256,
+    RETAINED_AST_SHA256,
+    qualified_review_policy_inventory,
+    qualified_review_population_sha256,
+    retained_method_ast_sha256_from_baseline,
+    validate_qualified_review_policy_inventory,
+)
 
 import tools.validate_crosswalks as crosswalk_validator
 import tools.seal_qualified_review_campaign as seal_module
@@ -61,6 +73,227 @@ PROFILE_NAMES = {
 }
 LOCATOR = f"urn:sha256:{'b' * 64}"
 REVIEW_DATE = "2026-07-25"
+
+
+class QualifiedReviewPolicyInventoryTests(unittest.TestCase):
+    def test_inventory_freezes_the_complete_baseline_ledger(self) -> None:
+        inventory = qualified_review_policy_inventory()
+        expected_methods = (
+            "test_linux_acquisition_rejects_swap_restored_before_revalidation",
+            "test_valid_draft_campaign_is_transition_ready",
+            "test_rejects_missing_duplicate_and_mismatched_role_keys",
+            "test_rejects_ineligible_reviewer_evidence",
+            "test_actor_aliases_and_shared_locator_cannot_bypass_role_rules",
+            "test_actor_alias_cannot_bypass_mapper_independence",
+            "test_sha_locators_bind_package_attestation_and_worksheet_bytes",
+            "test_attestation_source_sets_are_exactly_candidate_bound",
+            "test_explicitly_resolved_conflict_is_eligible",
+            "test_duplicate_human_requires_dual_acceptance_and_both_qualifications",
+            "test_stop_with_open_high_severity_is_valid_but_not_ready",
+            "test_accepted_critical_or_important_is_evidence_invalid",
+            "test_accepted_minor_requires_named_acceptance_evidence",
+            "test_pass_rejects_open_findings",
+            "test_pass_after_correction_binds_exact_campaign_candidate",
+            "test_orphan_affected_record_identifier_is_invalid_even_for_stop",
+            "test_ready_findings_must_equal_authoritative_candidate_findings",
+            "test_ready_findings_bind_authoritative_description",
+            "test_duplicate_authoritative_finding_identifiers_are_invalid",
+            "test_campaign_tree_and_package_bytes_are_exact",
+            "test_candidate_schema_cannot_retrieve_external_references",
+            "test_valid_final_campaign_is_recursively_merge_ready",
+            "test_invalid_report_preserves_parsed_final_campaign_context",
+            "test_final_campaign_requires_all_preserved_draft_inputs",
+            "test_final_campaign_binds_every_draft_reference_field",
+            "test_final_campaign_rejects_archive_seal_or_draft_byte_mutation",
+            "test_retained_draft_revalidation_rejects_mismatched_archive_urn",
+            "test_reviewed_candidate_requires_exact_nested_reviewer_objects",
+            "test_final_pass_after_correction_binds_reviewed_candidate",
+            "test_validator_cli_emits_canonical_reports_and_exit_codes",
+            "test_validator_cli_requires_check_and_all_or_none_draft_inputs",
+            "test_validator_cli_sanitizes_missing_and_permission_failures",
+            "test_validator_cli_classifies_preopen_permissions_as_operational",
+            "test_clis_sanitize_git_operational_failures",
+            "test_validator_cli_keeps_batch_object_failure_operational",
+            "test_seal_cli_atomically_publishes_exact_archive_and_seal",
+            "test_seal_cli_accepts_only_the_real_archive_digest_urn",
+            "test_seal_cli_refuses_invalid_or_nonready_campaign",
+            "test_seal_cli_refuses_existing_worktree_and_unsafe_destinations",
+            "test_seal_cli_publishes_nothing_after_execution_state_drift",
+            "test_seal_cli_preserves_competing_output_and_cleans_partial_staging",
+            "test_seal_fails_closed_when_parent_or_ancestor_is_swapped",
+            "test_seal_archives_the_exact_validated_byte_snapshot",
+        )
+        self.assertEqual(
+            tuple(method.method_name for method in inventory.methods),
+            expected_methods,
+        )
+        self.assertEqual(
+            tuple(
+                sum(getattr(method, field) for method in inventory.methods)
+                for field in (
+                    "detail_entries",
+                    "selected_entries",
+                )
+            )
+            + (
+                sum(
+                    method.detail_entries - method.selected_entries
+                    for method in inventory.methods
+                ),
+                sum(method.copytree_operations for method in inventory.methods),
+            ),
+            (92, 34, 58, 108),
+        )
+        self.assertEqual(
+            sum(method.detail_entries - method.selected_entries for method in inventory.methods),
+            58,
+        )
+        self.assertEqual(len(inventory.methods), 43)
+        self.assertTrue(inventory.retained_cases)
+
+    def test_inventory_freezes_selected_population_and_operations(self) -> None:
+        inventory = qualified_review_policy_inventory()
+        self.assertEqual(len(inventory.cases), 31)
+        self.assertEqual(
+            (
+                sum(case.boundary == "role_readiness" for case in inventory.cases),
+                sum(case.boundary == "draft_reference" for case in inventory.cases),
+            ),
+            (27, 4),
+        )
+        self.assertEqual(len({case.case_id for case in inventory.cases}), 31)
+        self.assertEqual(len({case.method_name for case in inventory.cases}), 16)
+        self.assertEqual(
+            tuple(
+                len(inventory.cases_for_method(method_name))
+                for method_name in (
+                    "test_rejects_ineligible_reviewer_evidence",
+                    "test_actor_aliases_and_shared_locator_cannot_bypass_role_rules",
+                    "test_actor_alias_cannot_bypass_mapper_independence",
+                    "test_explicitly_resolved_conflict_is_eligible",
+                    "test_duplicate_human_requires_dual_acceptance_and_both_qualifications",
+                    "test_stop_with_open_high_severity_is_valid_but_not_ready",
+                    "test_accepted_critical_or_important_is_evidence_invalid",
+                    "test_pass_rejects_open_findings",
+                    "test_pass_after_correction_binds_exact_campaign_candidate",
+                    "test_orphan_affected_record_identifier_is_invalid_even_for_stop",
+                    "test_ready_findings_must_equal_authoritative_candidate_findings",
+                    "test_ready_findings_bind_authoritative_description",
+                    "test_duplicate_authoritative_finding_identifiers_are_invalid",
+                    "test_reviewed_candidate_requires_exact_nested_reviewer_objects",
+                    "test_final_pass_after_correction_binds_reviewed_candidate",
+                )
+            ),
+            (5, 4, 1, 1, 2, 2, 2, 1, 2, 1, 1, 1, 1, 2, 1),
+        )
+        reference_cases = inventory.cases_for_method(
+            "test_final_campaign_binds_every_draft_reference_field"
+        )
+        self.assertEqual(
+            tuple(case.case_id for case in reference_cases),
+            (
+                "draft-reference:campaign-id",
+                "draft-reference:candidate-commit",
+                "draft-reference:manifest-digest",
+                "draft-reference:seal-record-digest",
+            ),
+        )
+        self.assertEqual(
+            tuple(
+                1
+                if case.expected.errors
+                == ("reviewed and Draft candidate commits must differ",)
+                else 2
+                for case in reference_cases
+            ),
+            (2, 1, 2, 2),
+        )
+        self.assertTrue(
+            all(
+                isinstance(case.operations, tuple)
+                and isinstance(case.expected.errors, tuple)
+                and all(
+                    isinstance(token, (str, int))
+                    and token in ALLOWED_PATH_TOKENS
+                    for operation in case.operations
+                    for token in operation.path
+                )
+                for case in inventory.cases
+            )
+        )
+
+    def test_inventory_freezes_retained_routes_and_ast_oracle(self) -> None:
+        inventory = qualified_review_policy_inventory()
+        self.assertEqual(BASELINE_COMMIT, "f99e403583877f803576dcad919025e558e5a5f6")
+        self.assertEqual(len(RETAINED_AST_SHA256), 27)
+        self.assertEqual(
+            {
+                method.method_name: method.retained_source_ast_sha256
+                for method in inventory.methods
+                if method.retained_source_ast_sha256
+            },
+            RETAINED_AST_SHA256,
+        )
+        self.assertTrue(
+            all(
+                len(value) == 64 and re.fullmatch(r"[0-9a-f]{64}", value)
+                for value in RETAINED_AST_SHA256.values()
+            )
+        )
+        self.assertEqual(
+            retained_method_ast_sha256_from_baseline(),
+            RETAINED_AST_SHA256,
+        )
+        self.assertEqual(
+            sum(len(case.routes) for case in inventory.retained_cases),
+            58,
+        )
+        self.assertEqual(
+            len({case.case_id for case in inventory.retained_cases}),
+            len(inventory.retained_cases),
+        )
+        self.assertTrue(
+            all(
+                case.case_id == f"{case.method_name}:retained:{case.case_label}"
+                and case.case_label
+                and case.rationale
+                and all(
+                    route in {
+                        "draft",
+                        "final",
+                        "recursive_draft",
+                        "validator_cli",
+                        "seal_cli",
+                    }
+                    for route in case.routes
+                )
+                for case in inventory.retained_cases
+            )
+        )
+
+    def test_inventory_rejects_count_digest_and_mutability_drift(self) -> None:
+        inventory = qualified_review_policy_inventory()
+        changed = replace(inventory.cases[0], case_id="changed")
+        with self.assertRaisesRegex(ValueError, "population digest"):
+            validate_qualified_review_policy_inventory(
+                (changed, *inventory.cases[1:]),
+                inventory.methods,
+                inventory.population_sha256,
+            )
+        with self.assertRaisesRegex(ValueError, "method count"):
+            validate_qualified_review_policy_inventory(
+                inventory.cases,
+                inventory.methods[:-1],
+                inventory.population_sha256,
+            )
+        self.assertEqual(
+            qualified_review_population_sha256(inventory.cases),
+            "463de4a7d9d65b2ad9a726455f95ff818c109417466748bab6275c84c47f5b7a",
+        )
+        self.assertEqual(
+            inventory.population_sha256,
+            REVIEWED_POPULATION_SHA256,
+        )
 
 
 def _git(root: Path, *arguments: str) -> str:
