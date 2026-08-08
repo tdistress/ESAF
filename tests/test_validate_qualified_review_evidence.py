@@ -271,7 +271,7 @@ def anchor():
                 for label in labels:
                     self.assertIn(label, literals)
 
-    def test_corrected_stage_one_routes_are_structurally_bound(self) -> None:
+    def test_stage_two_selection_preserves_retained_schema_routes(self) -> None:
         inventory = qualified_review_policy_inventory()
         selected_methods = {case.method_name for case in inventory.cases}
         self.assertEqual(len(inventory.cases), 28)
@@ -293,29 +293,6 @@ def anchor():
             for node in campaign_class.body
             if isinstance(node, ast.FunctionDef)
         }
-        complete_calls = {
-            "_report",
-            "_final_report",
-            "validate_campaign",
-        }
-        for method_name in selected_methods:
-            with self.subTest(selected_method=method_name):
-                outer_nodes = tuple(
-                    _walk_outer_method_scope(methods[method_name].body)
-                )
-                self.assertTrue(
-                    any(
-                        isinstance(node, ast.Call)
-                        and (
-                            isinstance(node.func, ast.Name)
-                            and node.func.id in complete_calls
-                            or isinstance(node.func, ast.Attribute)
-                            and node.func.attr in complete_calls
-                        )
-                        for node in outer_nodes
-                    )
-                )
-
         schema_tests = {
             "test_incomplete_duplicate_reviewer_qualification_fails_schema_before_policy",
             "test_accepted_high_severity_findings_fail_schema_before_policy",
@@ -640,6 +617,180 @@ def anchor():
             inventory.population_sha256,
             REVIEWED_POPULATION_SHA256,
         )
+
+
+class QualifiedReviewHotPathMigrationStructureTests(unittest.TestCase):
+    _COMPLETE_PATH_CALLS = frozenset(
+        {
+            "_report",
+            "_final_report",
+            "_final_inputs",
+            "validate_campaign",
+            "_validate_campaign_details",
+            "copytree",
+        }
+    )
+    _TEST_OWNED_POLICY_PREDICATES = frozenset(
+        {
+            "_mapping_policy",
+            "_valid_policy",
+            "_assert_policy_failure",
+            "evaluate_mapping_set_policy",
+            "evaluate_draft_reference_policy",
+            "validate_role_readiness_policy",
+            "validate_draft_reference_binding",
+        }
+    )
+
+    @staticmethod
+    def _campaign_methods() -> dict[str, ast.FunctionDef]:
+        tree = ast.parse(Path(__file__).read_text(encoding="utf-8"))
+        campaign_class = next(
+            node
+            for node in tree.body
+            if isinstance(node, ast.ClassDef)
+            and node.name == "CampaignValidationTests"
+        )
+        return {
+            node.name: node
+            for node in campaign_class.body
+            if isinstance(node, ast.FunctionDef)
+        }
+
+    @classmethod
+    def _selected_methods_with_complete_calls(cls) -> set[str]:
+        selected = {
+            case.method_name
+            for case in qualified_review_policy_inventory().cases
+        }
+        methods = cls._campaign_methods()
+        prohibited = (
+            cls._COMPLETE_PATH_CALLS | cls._TEST_OWNED_POLICY_PREDICATES
+        )
+        return {
+            method_name
+            for method_name in selected
+            if any(
+                isinstance(node, ast.Call)
+                and (
+                    isinstance(node.func, ast.Name)
+                    and node.func.id in prohibited
+                    or isinstance(node.func, ast.Attribute)
+                    and node.func.attr in prohibited
+                )
+                for node in _walk_outer_method_scope(methods[method_name].body)
+            )
+        }
+
+    def test_selected_methods_use_only_the_narrow_helper(self) -> None:
+        inventory = qualified_review_policy_inventory()
+        selected = {
+            case.method_name for case in inventory.cases
+        }
+        self.assertEqual(len(selected), 15)
+        methods = self._campaign_methods()
+        prohibited = (
+            self._COMPLETE_PATH_CALLS | self._TEST_OWNED_POLICY_PREDICATES
+        )
+        failures: list[str] = []
+        for method_name in sorted(selected):
+            with self.subTest(method_name=method_name):
+                outer_nodes = tuple(
+                    _walk_outer_method_scope(methods[method_name].body)
+                )
+                calls = tuple(
+                    node
+                    for node in outer_nodes
+                    if isinstance(node, ast.Call)
+                )
+                bad_calls = tuple(
+                    node
+                    for node in calls
+                    if (
+                        isinstance(node.func, ast.Name)
+                        and node.func.id in prohibited
+                        or isinstance(node.func, ast.Attribute)
+                        and node.func.attr in prohibited
+                    )
+                )
+                if bad_calls:
+                    failures.append(method_name)
+                    continue
+                helper_calls = tuple(
+                    node
+                    for node in calls
+                    if isinstance(node.func, ast.Attribute)
+                    and node.func.attr == "_assert_policy_cases_narrow"
+                )
+                self.assertEqual(
+                    len(helper_calls),
+                    1,
+                    f"{method_name} shall call the narrow helper exactly once",
+                )
+                helper_call = helper_calls[0]
+                self.assertEqual(
+                    len(helper_call.args),
+                    1,
+                    f"{method_name} shall supply its own method name",
+                )
+                self.assertIsInstance(helper_call.args[0], ast.Constant)
+                self.assertEqual(helper_call.args[0].value, method_name)
+                self.assertEqual(
+                    len(calls),
+                    1,
+                    f"{method_name} shall contain only its narrow helper call",
+                )
+        self.assertFalse(
+            failures,
+            "selected methods still call complete validation: "
+            + ", ".join(failures),
+        )
+
+    def test_selected_methods_consume_each_inventory_case_once(self) -> None:
+        selected = tuple(
+            sorted(
+                {
+                    case.method_name
+                    for case in qualified_review_policy_inventory().cases
+                }
+            )
+        )
+        if self._selected_methods_with_complete_calls():
+            self.skipTest("selected methods still call complete validation")
+
+        seen: list[str] = []
+        def record_case(
+            _fixture: QualifiedReviewHotPathFixture,
+            case: object,
+        ) -> str:
+            assert hasattr(case, "case_id")
+            seen.append(case.case_id)
+            return case.case_id
+
+        result = unittest.TestResult()
+        with mock.patch(
+            "tests.test_validate_qualified_review_evidence.run_narrow_case",
+            side_effect=record_case,
+        ), mock.patch(
+            "tests.test_validate_qualified_review_evidence.expected_projection",
+            side_effect=lambda _fixture, case: case.case_id,
+        ):
+            for method_name in selected:
+                test = CampaignValidationTests(method_name)
+                test.hot_path_fixture = QualifiedReviewHotPathFixture
+                test.setUp = lambda: None
+                test.run(result)
+
+        self.assertTrue(result.wasSuccessful(), result.errors + result.failures)
+        expected = [
+            case.case_id for case in qualified_review_policy_inventory().cases
+        ]
+        self.assertEqual(len(expected), 28)
+        self.assertEqual(len(seen), 28)
+        self.assertEqual(set(seen), set(expected))
+        self.assertEqual({case_id: seen.count(case_id) for case_id in seen}, {
+            case_id: 1 for case_id in expected
+        })
 
 
 def _git(root: Path, *arguments: str) -> str:
@@ -3148,6 +3299,17 @@ class CampaignValidationTests(unittest.TestCase):
     def tearDownClass(cls) -> None:
         cls.shared_temporary.cleanup()
 
+    def _assert_policy_cases_narrow(self, method_name: str) -> None:
+        inventory = qualified_review_policy_inventory()
+        cases = inventory.cases_for_method(method_name)
+        self.assertGreater(len(cases), 0)
+        for case in cases:
+            with self.subTest(case_id=case.case_id):
+                self.assertEqual(
+                    run_narrow_case(self.hot_path_fixture, case),
+                    expected_projection(self.hot_path_fixture, case),
+                )
+
     def setUp(self) -> None:
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
@@ -3430,148 +3592,15 @@ class CampaignValidationTests(unittest.TestCase):
                 self.assertFalse(report.evidence_valid, report)
 
     def test_rejects_ineligible_reviewer_evidence(self) -> None:
-        cases = (
-            (
-                "unauthorized source access",
-                lambda role: role["reviewer"].__setitem__(
-                    "authorized_source_access",
-                    False,
-                ),
-            ),
-            (
-                "mapper self-review",
-                lambda role: role["reviewer"].__setitem__(
-                    "identity",
-                    self._candidate_mapper_id(0),
-                ),
-            ),
-            (
-                "unresolved conflict",
-                lambda role: (
-                    role["reviewer"].__setitem__("conflicts", True),
-                    role["reviewer"].__setitem__(
-                        "conflict_disposition",
-                        "Unresolved",
-                    ),
-                ),
-            ),
-            (
-                "pending conflict variant",
-                lambda role: (
-                    role["reviewer"].__setitem__("conflicts", True),
-                    role["reviewer"].__setitem__(
-                        "conflict_disposition",
-                        "Resolution pending",
-                    ),
-                ),
-            ),
-            (
-                "rejected owner eligibility",
-                lambda role: role.__setitem__(
-                    "owner_eligibility_accepted",
-                    False,
-                ),
-            ),
-        )
-        for label, mutate in cases:
-            with self.subTest(label=label):
-                isolated = Path(self.temporary.name) / label.replace(" ", "-")
-                shutil.copytree(self.pristine_campaign, isolated)
-                original = self.campaign_root
-                self.campaign_root = isolated
-                try:
-                    manifest = self._manifest()
-                    mapping_sets = manifest["mapping_sets"]
-                    assert isinstance(mapping_sets, list)
-                    mapping_set = mapping_sets[0]
-                    assert isinstance(mapping_set, dict)
-                    roles = mapping_set["roles"]
-                    assert isinstance(roles, list)
-                    role = roles[0]
-                    assert isinstance(role, dict)
-                    mutate(role)
-                    self._rewrite_role(manifest, 0, 0)
-                    report = self._report()
-                finally:
-                    self.campaign_root = original
-                self.assertFalse(report.evidence_valid, report)
+        self._assert_policy_cases_narrow("test_rejects_ineligible_reviewer_evidence")
 
     def test_actor_aliases_and_shared_locator_cannot_bypass_role_rules(
         self,
     ) -> None:
-        aliases = (
-            ("case", None, lambda value: value.swapcase(), False),
-            (
-                "punctuation",
-                None,
-                lambda value: value.replace(" ", "-"),
-                False,
-            ),
-            (
-                "unicode",
-                "Jos\u00e9 Reviewer",
-                lambda _value: "Jose\u0301 Reviewer",
-                False,
-            ),
-            (
-                "shared-locator",
-                None,
-                lambda _value: "Different Display Name",
-                True,
-            ),
-        )
-        for label, first_name, alias, share_locator in aliases:
-            with self.subTest(alias=label):
-                isolated = Path(self.temporary.name) / f"actor-alias-{label}"
-                shutil.copytree(self.pristine_campaign, isolated)
-                original = self.campaign_root
-                self.campaign_root = isolated
-                try:
-                    manifest = self._manifest()
-                    mapping_sets = manifest["mapping_sets"]
-                    assert isinstance(mapping_sets, list)
-                    mapping_set = mapping_sets[0]
-                    assert isinstance(mapping_set, dict)
-                    roles = mapping_set["roles"]
-                    assert isinstance(roles, list)
-                    first, second = roles
-                    assert isinstance(first, dict)
-                    assert isinstance(second, dict)
-                    first_reviewer = first["reviewer"]
-                    second_reviewer = second["reviewer"]
-                    assert isinstance(first_reviewer, dict)
-                    assert isinstance(second_reviewer, dict)
-                    if first_name is not None:
-                        first_reviewer["identity"] = first_name
-                    second_reviewer["identity"] = alias(
-                        str(first_reviewer["identity"])
-                    )
-                    if share_locator:
-                        second_reviewer["verification_locator"] = (
-                            first_reviewer["verification_locator"]
-                        )
-                    self._rewrite_role(manifest, 0, 0)
-                    self._rewrite_role(manifest, 0, 1)
-                    report = self._report()
-                finally:
-                    self.campaign_root = original
-                self.assertFalse(report.evidence_valid, report)
+        self._assert_policy_cases_narrow("test_actor_aliases_and_shared_locator_cannot_bypass_role_rules")
 
     def test_actor_alias_cannot_bypass_mapper_independence(self) -> None:
-        manifest = self._manifest()
-        mapping_sets = manifest["mapping_sets"]
-        assert isinstance(mapping_sets, list)
-        mapping_set = mapping_sets[0]
-        assert isinstance(mapping_set, dict)
-        roles = mapping_set["roles"]
-        assert isinstance(roles, list)
-        role = roles[0]
-        assert isinstance(role, dict)
-        reviewer = role["reviewer"]
-        assert isinstance(reviewer, dict)
-        reviewer["identity"] = self._candidate_mapper_id(0).swapcase()
-        self._rewrite_role(manifest, 0, 0)
-        self.assertFalse(self._report().evidence_valid)
+        self._assert_policy_cases_narrow("test_actor_alias_cannot_bypass_mapper_independence")
 
     def test_sha_locators_bind_package_attestation_and_worksheet_bytes(
         self,
@@ -3665,58 +3694,12 @@ class CampaignValidationTests(unittest.TestCase):
                 self.assertFalse(report.evidence_valid, report)
 
     def test_explicitly_resolved_conflict_is_eligible(self) -> None:
-        manifest = self._manifest()
-        mapping_sets = manifest["mapping_sets"]
-        assert isinstance(mapping_sets, list)
-        mapping_set = mapping_sets[0]
-        assert isinstance(mapping_set, dict)
-        roles = mapping_set["roles"]
-        assert isinstance(roles, list)
-        role = roles[0]
-        assert isinstance(role, dict)
-        reviewer = role["reviewer"]
-        assert isinstance(reviewer, dict)
-        reviewer["conflicts"] = True
-        reviewer["conflict_disposition"] = (
-            "Resolved: reviewer recused from all mapping decisions"
-        )
-        self._rewrite_role(manifest, 0, 0)
-
-        report = self._report()
-
-        self.assertTrue(report.evidence_valid, report.errors)
-        self.assertTrue(report.readiness_value)
+        self._assert_policy_cases_narrow("test_explicitly_resolved_conflict_is_eligible")
 
     def test_duplicate_human_requires_dual_acceptance_and_both_qualifications(
         self,
     ) -> None:
-        isolated = Path(self.temporary.name) / "without-acceptance"
-        shutil.copytree(self.pristine_campaign, isolated)
-        original = self.campaign_root
-        self.campaign_root = isolated
-        try:
-            manifest = self._manifest()
-            mapping_sets = manifest["mapping_sets"]
-            assert isinstance(mapping_sets, list)
-            mapping_set = mapping_sets[0]
-            assert isinstance(mapping_set, dict)
-            roles = mapping_set["roles"]
-            assert isinstance(roles, list)
-            first = roles[0]
-            second = roles[1]
-            assert isinstance(first, dict)
-            assert isinstance(second, dict)
-            first_reviewer = first["reviewer"]
-            second_reviewer = second["reviewer"]
-            assert isinstance(first_reviewer, dict)
-            assert isinstance(second_reviewer, dict)
-            second_reviewer["identity"] = first_reviewer["identity"]
-            self._rewrite_role(manifest, 0, 0)
-            self._rewrite_role(manifest, 0, 1)
-            report = self._report()
-        finally:
-            self.campaign_root = original
-        self.assertFalse(report.evidence_valid, report)
+        self._assert_policy_cases_narrow("test_duplicate_human_requires_dual_acceptance_and_both_qualifications")
 
     def test_incomplete_duplicate_reviewer_qualification_fails_schema_before_policy(
         self,
@@ -3767,33 +3750,7 @@ class CampaignValidationTests(unittest.TestCase):
         )
 
     def test_stop_with_open_high_severity_is_valid_but_not_ready(self) -> None:
-        for severity in ("Critical", "Important"):
-            with self.subTest(severity=severity):
-                isolated = Path(self.temporary.name) / severity.casefold()
-                shutil.copytree(self.pristine_campaign, isolated)
-                original = self.campaign_root
-                self.campaign_root = isolated
-                try:
-                    finding = self._finding(
-                        severity=severity,
-                        status="open",
-                    )
-                    self._mutate_worksheet(
-                        lambda worksheet: (
-                            worksheet.__setitem__("conclusion", "stop"),
-                            worksheet.__setitem__("findings", [finding]),
-                            worksheet.__setitem__(
-                                "findings_disposition",
-                                f"Open {severity} finding stops transition",
-                            ),
-                        )
-                    )
-                    report = self._report()
-                finally:
-                    self.campaign_root = original
-                self.assertTrue(report.evidence_valid, report.errors)
-                self.assertEqual(report.readiness_name, "transition_ready")
-                self.assertFalse(report.readiness_value)
+        self._assert_policy_cases_narrow("test_stop_with_open_high_severity_is_valid_but_not_ready")
 
     def test_accepted_critical_or_important_is_evidence_invalid(self) -> None:
         for severity in ("Critical", "Important"):
@@ -3887,85 +3844,28 @@ class CampaignValidationTests(unittest.TestCase):
                 self.assertFalse(report.evidence_valid, report)
 
     def test_pass_rejects_open_findings(self) -> None:
-        finding = self._finding(status="open")
-        self._mutate_worksheet(
-            lambda worksheet: worksheet.__setitem__("findings", [finding])
-        )
-
-        report = self._report()
-
-        self.assertFalse(report.evidence_valid, report)
+        self._assert_policy_cases_narrow("test_pass_rejects_open_findings")
 
     def test_pass_after_correction_binds_exact_campaign_candidate(self) -> None:
-        def mutate(worksheet: dict[str, object]) -> None:
-            worksheet["conclusion"] = "pass_after_correction"
-            worksheet["post_correction_candidate_sha"] = "a" * 40
-
-        self._mutate_worksheet(mutate)
-        report = self._report()
-        self.assertFalse(report.evidence_valid, report)
-
-        shutil.rmtree(self.campaign_root)
-        shutil.copytree(self.pristine_campaign, self.campaign_root)
-
-        def bind_exact(worksheet: dict[str, object]) -> None:
-            worksheet["conclusion"] = "pass_after_correction"
-            worksheet["post_correction_candidate_sha"] = self.candidate
-
-        self._mutate_worksheet(bind_exact)
-        exact = self._report()
-        self.assertTrue(exact.evidence_valid, exact.errors)
-        self.assertTrue(exact.readiness_value)
+        self._assert_policy_cases_narrow("test_pass_after_correction_binds_exact_campaign_candidate")
 
     def test_orphan_affected_record_identifier_is_invalid_even_for_stop(
         self,
     ) -> None:
-        finding = self._finding(
-            status="open",
-            record_id="orphan-record",
-        )
-        self._mutate_worksheet(
-            lambda worksheet: (
-                worksheet.__setitem__("conclusion", "stop"),
-                worksheet.__setitem__("findings", [finding]),
-            )
-        )
-
-        report = self._report()
-
-        self.assertFalse(report.evidence_valid, report)
+        self._assert_policy_cases_narrow("test_orphan_affected_record_identifier_is_invalid_even_for_stop")
 
     def test_ready_findings_must_equal_authoritative_candidate_findings(
         self,
     ) -> None:
-        finding = self._finding(status="resolved")
-        self._mutate_worksheet(
-            lambda worksheet: worksheet.__setitem__("findings", [finding])
-        )
-
-        report = self._report()
-
-        self.assertFalse(report.evidence_valid, report)
+        self._assert_policy_cases_narrow("test_ready_findings_must_equal_authoritative_candidate_findings")
 
     def test_ready_findings_bind_authoritative_description(self) -> None:
-        report = validate_campaign(
-            self.description_reader,
-            self.description_candidate,
-            self.description_campaign,
-        )
-
-        self.assertFalse(report.evidence_valid, report)
+        self._assert_policy_cases_narrow("test_ready_findings_bind_authoritative_description")
 
     def test_duplicate_authoritative_finding_identifiers_are_invalid(
         self,
     ) -> None:
-        report = validate_campaign(
-            self.duplicate_reader,
-            self.duplicate_candidate,
-            self.duplicate_campaign,
-        )
-
-        self.assertFalse(report.evidence_valid, report)
+        self._assert_policy_cases_narrow("test_duplicate_authoritative_finding_identifiers_are_invalid")
 
     def test_campaign_tree_and_package_bytes_are_exact(self) -> None:
         for mutation in ("extra source", "manifest byte", "payload byte"):
@@ -4176,36 +4076,7 @@ class CampaignValidationTests(unittest.TestCase):
                 self.assertFalse(report.evidence_valid, report)
 
     def test_final_campaign_binds_every_draft_reference_field(self) -> None:
-        changes = (
-            ("campaign_id", "another-draft-campaign"),
-            ("candidate_commit", self.reviewed_candidate),
-            ("manifest_sha256", "a" * 64),
-            ("seal_record_sha256", "a" * 64),
-        )
-        for field, value in changes:
-            with self.subTest(field=field):
-                (
-                    final_root,
-                    draft_root,
-                    seal_path,
-                    archive_path,
-                ) = self._final_inputs(f"reference-{field}")
-                manifest = json.loads(
-                    (final_root / MANIFEST_PATH).read_bytes()
-                )
-                reference = manifest["draft_campaign_reference"]
-                assert isinstance(reference, dict)
-                reference[field] = value
-                (final_root / MANIFEST_PATH).write_bytes(
-                    canonical_json_bytes(manifest)
-                )
-                report = self._final_report(
-                    final_root,
-                    draft_root,
-                    seal_path,
-                    archive_path,
-                )
-                self.assertFalse(report.evidence_valid, report)
+        self._assert_policy_cases_narrow("test_final_campaign_binds_every_draft_reference_field")
 
     def test_final_campaign_rejects_archive_seal_or_draft_byte_mutation(
         self,
@@ -4293,70 +4164,10 @@ class CampaignValidationTests(unittest.TestCase):
     def test_reviewed_candidate_requires_exact_nested_reviewer_objects(
         self,
     ) -> None:
-        for role_index in (0, 1):
-            with self.subTest(role=ROLES[role_index]):
-                (
-                    final_root,
-                    draft_root,
-                    seal_path,
-                    archive_path,
-                ) = self._final_inputs(f"reviewer-{role_index}")
-                original = self.campaign_root
-                self.campaign_root = final_root
-                try:
-                    manifest = self._manifest()
-                    mapping_sets = manifest["mapping_sets"]
-                    assert isinstance(mapping_sets, list)
-                    mapping_set = mapping_sets[0]
-                    assert isinstance(mapping_set, dict)
-                    roles = mapping_set["roles"]
-                    assert isinstance(roles, list)
-                    role = roles[role_index]
-                    assert isinstance(role, dict)
-                    reviewer = role["reviewer"]
-                    assert isinstance(reviewer, dict)
-                    reviewer["qualification"] = (
-                        "Different signed qualification"
-                    )
-                    self._rewrite_role(manifest, 0, role_index)
-                    report = self._final_report(
-                        final_root,
-                        draft_root,
-                        seal_path,
-                        archive_path,
-                    )
-                finally:
-                    self.campaign_root = original
-                self.assertFalse(report.evidence_valid, report)
+        self._assert_policy_cases_narrow("test_reviewed_candidate_requires_exact_nested_reviewer_objects")
 
     def test_final_pass_after_correction_binds_reviewed_candidate(self) -> None:
-        final_root, draft_root, seal_path, archive_path = self._final_inputs(
-            "final-correction"
-        )
-        original = self.campaign_root
-        self.campaign_root = final_root
-        try:
-            self._mutate_worksheet(
-                lambda worksheet: (
-                    worksheet.__setitem__(
-                        "conclusion",
-                        "pass_after_correction",
-                    ),
-                    worksheet.__setitem__(
-                        "post_correction_candidate_sha",
-                        self.candidate,
-                    ),
-                )
-            )
-            report = self._final_report(
-                final_root,
-                draft_root,
-                seal_path,
-                archive_path,
-            )
-        finally:
-            self.campaign_root = original
-        self.assertFalse(report.evidence_valid, report)
+        self._assert_policy_cases_narrow("test_final_pass_after_correction_binds_reviewed_candidate")
 
     def _run_validator_cli(
         self,
