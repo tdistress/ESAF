@@ -3,14 +3,14 @@
 from __future__ import annotations
 
 import argparse
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import hashlib
 import json
 from pathlib import Path, PurePosixPath
 import re
 import subprocess
 import sys
-from typing import Mapping
+from typing import Literal, Mapping
 import unicodedata
 
 from jsonschema import Draft202012Validator, FormatChecker
@@ -98,6 +98,79 @@ class ValidationReport:
             "readiness_name": self.readiness_name,
             "readiness_value": self.readiness_value,
         }
+
+
+RolePolicyStage = Literal[
+    "reviewer_eligibility",
+    "role_findings",
+    "mapping_set_completion",
+]
+ObservedFindings = tuple[tuple[str, tuple[object, ...]], ...]
+ReviewerMetadata = tuple[tuple[str, object], ...]
+
+
+@dataclass(frozen=True)
+class ReviewerEligibilityPolicyInput:
+    mapping_set_id: str
+    role: str
+    reviewer_identity: str
+    reviewer_verification_locator: str
+    other_reviewer_identity: str
+    other_reviewer_verification_locator: str
+    authorized_source_access: bool
+    independent: bool
+    conflicts: bool
+    conflict_disposition: str
+    owner_eligibility_accepted: bool
+    dual_role_accepted: bool
+    qualification: str
+    mapper_identities: frozenset[str]
+
+
+@dataclass(frozen=True)
+class RoleFindingsPolicyInput:
+    mapping_set_id: str
+    role: str
+    conclusion: str
+    post_correction_candidate_sha: str | None
+    candidate_commit: str
+    record_ids: frozenset[str]
+    findings: tuple[ReviewFinding, ...]
+    mapping_ready: bool
+    observed_findings: ObservedFindings
+
+
+@dataclass(frozen=True)
+class MappingSetCompletionPolicyInput:
+    mapping_set_id: str
+    mapping_ready: bool
+    observed_findings: ObservedFindings
+    authoritative_findings: tuple[tuple[object, ...], ...] | None
+    candidate_state: str
+    specification_reviewer_metadata: ReviewerMetadata
+    mapping_set_reviewer_metadata: ReviewerMetadata | None
+    security_reviewer_metadata: ReviewerMetadata
+    record_reviewer_metadata: tuple[ReviewerMetadata | None, ...]
+
+
+RolePolicyInput = (
+    ReviewerEligibilityPolicyInput
+    | RoleFindingsPolicyInput
+    | MappingSetCompletionPolicyInput
+)
+
+
+@dataclass(frozen=True)
+class RolePolicyResult:
+    mapping_ready: bool
+    observed_findings: ObservedFindings
+
+
+@dataclass(frozen=True)
+class MappingSetPolicyInput:
+    reviewer_eligibility: tuple[ReviewerEligibilityPolicyInput, ...]
+    role_findings: tuple[RoleFindingsPolicyInput, ...]
+    mapping_set_completion: MappingSetCompletionPolicyInput
 
 
 @dataclass(frozen=True)
@@ -714,13 +787,252 @@ def _canonical_actor_identity(value: object) -> str:
     )
 
 
-def _same_actor(first: RoleEvidence, second: RoleEvidence) -> bool:
+def _same_actor(
+    first_identity: object,
+    first_verification_locator: str,
+    second_identity: object,
+    second_verification_locator: str,
+) -> bool:
     return (
-        _canonical_actor_identity(first.reviewer.identity)
-        == _canonical_actor_identity(second.reviewer.identity)
-        or first.reviewer.verification_locator
-        == second.reviewer.verification_locator
+        _canonical_actor_identity(first_identity)
+        == _canonical_actor_identity(second_identity)
+        or first_verification_locator == second_verification_locator
     )
+
+
+def _policy_result(
+    mapping_ready: bool,
+    observed_findings: Mapping[str, tuple[object, ...]],
+) -> RolePolicyResult:
+    return RolePolicyResult(
+        mapping_ready=mapping_ready,
+        observed_findings=tuple(sorted(observed_findings.items())),
+    )
+
+
+def _validate_reviewer_eligibility_policy(
+    policy_input: ReviewerEligibilityPolicyInput,
+) -> RolePolicyResult:
+    if (
+        not policy_input.authorized_source_access
+        or not policy_input.independent
+    ):
+        _fail(
+            f"{policy_input.mapping_set_id} {policy_input.role} reviewer "
+            "is not eligible"
+        )
+    mapper_ids = frozenset(
+        _canonical_actor_identity(identity)
+        for identity in policy_input.mapper_identities
+    )
+    if _canonical_actor_identity(policy_input.reviewer_identity) in mapper_ids:
+        _fail(
+            f"{policy_input.mapping_set_id} {policy_input.role} reviewer "
+            "is also a mapper"
+        )
+    if (
+        policy_input.conflicts
+        and _RESOLVED_CONFLICT.fullmatch(
+            policy_input.conflict_disposition
+        )
+        is None
+    ):
+        _fail(
+            f"{policy_input.mapping_set_id} {policy_input.role} reviewer "
+            "has an unresolved conflict"
+        )
+    if not policy_input.owner_eligibility_accepted:
+        _fail(
+            f"{policy_input.mapping_set_id} {policy_input.role} reviewer "
+            "eligibility was rejected"
+        )
+    duplicate_identity = _same_actor(
+        policy_input.reviewer_identity,
+        policy_input.reviewer_verification_locator,
+        policy_input.other_reviewer_identity,
+        policy_input.other_reviewer_verification_locator,
+    )
+    if duplicate_identity:
+        if (
+            not policy_input.dual_role_accepted
+            or not policy_input.qualification.strip()
+        ):
+            _fail(
+                f"{policy_input.mapping_set_id} duplicate reviewer lacks "
+                "complete dual-role acceptance and qualifications"
+            )
+    elif policy_input.dual_role_accepted:
+        _fail(
+            f"{policy_input.mapping_set_id} unique reviewer cannot claim a "
+            "dual role"
+        )
+    return _policy_result(True, {})
+
+
+def _validate_role_findings_policy(
+    policy_input: RoleFindingsPolicyInput,
+) -> RolePolicyResult:
+    mapping_ready = policy_input.mapping_ready
+    if policy_input.conclusion == "stop":
+        mapping_ready = False
+    elif (
+        policy_input.conclusion == "pass_after_correction"
+        and policy_input.post_correction_candidate_sha
+        != policy_input.candidate_commit
+    ):
+        _fail(
+            f"{policy_input.mapping_set_id} {policy_input.role} "
+            "post-correction candidate is not the campaign candidate"
+        )
+
+    observed_findings = dict(policy_input.observed_findings)
+    for finding in policy_input.findings:
+        if not set(finding.affected_record_ids) <= policy_input.record_ids:
+            _fail(
+                f"{policy_input.mapping_set_id} finding {finding.finding_id} "
+                "references an unknown record"
+            )
+        if (
+            finding.status == "accepted"
+            and finding.severity in {"Critical", "Important"}
+        ):
+            _fail(
+                f"{policy_input.mapping_set_id} {finding.severity} finding "
+                "cannot be accepted"
+            )
+        if policy_input.conclusion != "stop" and finding.status == "open":
+            _fail(
+                f"{policy_input.mapping_set_id} pass conclusion has an open "
+                "finding"
+            )
+        normalized = _authoritative_finding(finding)
+        prior = observed_findings.get(finding.finding_id)
+        if prior is not None and prior != normalized:
+            _fail(
+                f"{policy_input.mapping_set_id} finding {finding.finding_id} "
+                "has conflicting role evidence"
+            )
+        observed_findings[finding.finding_id] = normalized
+    return _policy_result(mapping_ready, observed_findings)
+
+
+def _validate_mapping_set_completion_policy(
+    policy_input: MappingSetCompletionPolicyInput,
+) -> RolePolicyResult:
+    observed_findings = dict(policy_input.observed_findings)
+    if policy_input.mapping_ready:
+        if policy_input.authoritative_findings is None:
+            _fail(
+                f"{policy_input.mapping_set_id} candidate findings are invalid"
+            )
+        candidate_ids = tuple(
+            str(item[0]) for item in policy_input.authoritative_findings
+        )
+        if len(candidate_ids) != len(set(candidate_ids)):
+            _fail(
+                f"{policy_input.mapping_set_id} candidate finding "
+                "identifiers are duplicated"
+            )
+        authoritative = dict(
+            zip(
+                candidate_ids,
+                policy_input.authoritative_findings,
+                strict=True,
+            )
+        )
+        if observed_findings != authoritative:
+            _fail(
+                f"{policy_input.mapping_set_id} findings do not equal "
+                "authoritative candidate findings"
+            )
+    if policy_input.candidate_state == "reviewed":
+        if not _same_reviewer_metadata(
+            policy_input.mapping_set_reviewer_metadata,
+            policy_input.specification_reviewer_metadata,
+        ):
+            _fail(
+                f"{policy_input.mapping_set_id} mapping-set reviewer does not "
+                "equal the specification review evidence"
+            )
+        if any(
+            not _same_reviewer_metadata(
+                metadata,
+                policy_input.security_reviewer_metadata,
+            )
+            for metadata in policy_input.record_reviewer_metadata
+        ):
+            _fail(
+                f"{policy_input.mapping_set_id} record reviewer does not equal "
+                "the security review evidence"
+            )
+    return _policy_result(policy_input.mapping_ready, observed_findings)
+
+
+def _same_reviewer_metadata(
+    actual: ReviewerMetadata | None,
+    expected: ReviewerMetadata,
+) -> bool:
+    if actual is None:
+        return False
+    return tuple(sorted(actual, key=lambda item: item[0])) == tuple(
+        sorted(expected, key=lambda item: item[0])
+    )
+
+
+def validate_role_readiness_policy(
+    stage: RolePolicyStage,
+    policy_input: RolePolicyInput,
+) -> RolePolicyResult:
+    if stage == "reviewer_eligibility" and isinstance(
+        policy_input,
+        ReviewerEligibilityPolicyInput,
+    ):
+        return _validate_reviewer_eligibility_policy(policy_input)
+    if stage == "role_findings" and isinstance(
+        policy_input,
+        RoleFindingsPolicyInput,
+    ):
+        return _validate_role_findings_policy(policy_input)
+    if stage == "mapping_set_completion" and isinstance(
+        policy_input,
+        MappingSetCompletionPolicyInput,
+    ):
+        return _validate_mapping_set_completion_policy(policy_input)
+    raise TypeError("role policy stage and input do not match")
+
+
+def evaluate_mapping_set_policy(
+    policy_input: MappingSetPolicyInput,
+) -> bool:
+    for eligibility_input in policy_input.reviewer_eligibility:
+        validate_role_readiness_policy(
+            "reviewer_eligibility",
+            eligibility_input,
+        )
+
+    mapping_ready = True
+    observed_findings: ObservedFindings = ()
+    for findings_input in policy_input.role_findings:
+        result = validate_role_readiness_policy(
+            "role_findings",
+            replace(
+                findings_input,
+                mapping_ready=mapping_ready,
+                observed_findings=observed_findings,
+            ),
+        )
+        mapping_ready = result.mapping_ready
+        observed_findings = result.observed_findings
+
+    result = validate_role_readiness_policy(
+        "mapping_set_completion",
+        replace(
+            policy_input.mapping_set_completion,
+            mapping_ready=mapping_ready,
+            observed_findings=observed_findings,
+        ),
+    )
+    return result.mapping_ready
 
 
 def _validate_roles_and_readiness(
@@ -738,8 +1050,10 @@ def _validate_roles_and_readiness(
         candidate_mapping = candidate_mappings[mapping_set_id]
         mapping_ready = True
         duplicate_identity = _same_actor(
-            mapping_set.roles[0],
-            mapping_set.roles[1],
+            mapping_set.roles[0].reviewer.identity,
+            mapping_set.roles[0].reviewer.verification_locator,
+            mapping_set.roles[1].reviewer.identity,
+            mapping_set.roles[1].reviewer.verification_locator,
         )
         mapper_ids: set[str] = set()
         mapper = candidate_mapping.mapping_metadata.get("mapper")

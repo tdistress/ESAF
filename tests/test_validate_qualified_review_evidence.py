@@ -43,6 +43,7 @@ from tools.build_mapping_review_bundle import (
 )
 from tools.crosswalks.digests import snapshot_digest_from_files
 from tools.crosswalks.qualified_review_evidence import (
+    ReviewFinding,
     build_campaign_archive,
     build_seal_record,
     canonical_json_bytes,
@@ -50,10 +51,16 @@ from tools.crosswalks.qualified_review_evidence import (
 )
 from tools.seal_qualified_review_campaign import main as seal_main
 from tools.validate_qualified_review_evidence import (
+    MappingSetCompletionPolicyInput,
+    MappingSetPolicyInput,
+    ReviewerEligibilityPolicyInput,
+    RoleFindingsPolicyInput,
     VALIDATOR_VERSION,
     ValidationReport,
+    evaluate_mapping_set_policy,
     main,
     validate_campaign,
+    validate_role_readiness_policy,
 )
 
 
@@ -909,6 +916,679 @@ class SealDestinationAnchorTests(unittest.TestCase):
                 ):
                     with seal_module._anchored_destination(output, ()):
                         pass
+
+
+class QualifiedReviewRolePolicyBoundaryTests(unittest.TestCase):
+    mapping_set_id = "core"
+    candidate_commit = "a" * 40
+    record_id = "rec-001"
+    specification_identity = "Specification Reviewer"
+    security_identity = "Security Reviewer"
+
+    def setUp(self) -> None:
+        self.specification_eligibility = ReviewerEligibilityPolicyInput(
+            mapping_set_id=self.mapping_set_id,
+            role="specification_and_inventory",
+            reviewer_identity=self.specification_identity,
+            reviewer_verification_locator="urn:reviewer:specification",
+            other_reviewer_identity=self.security_identity,
+            other_reviewer_verification_locator="urn:reviewer:security",
+            authorized_source_access=True,
+            independent=True,
+            conflicts=False,
+            conflict_disposition="None",
+            owner_eligibility_accepted=True,
+            dual_role_accepted=False,
+            qualification="Specification review qualification",
+            mapper_identities=frozenset({"Mapping Author"}),
+        )
+        self.security_eligibility = ReviewerEligibilityPolicyInput(
+            mapping_set_id=self.mapping_set_id,
+            role="security_and_overclaiming",
+            reviewer_identity=self.security_identity,
+            reviewer_verification_locator="urn:reviewer:security",
+            other_reviewer_identity=self.specification_identity,
+            other_reviewer_verification_locator="urn:reviewer:specification",
+            authorized_source_access=True,
+            independent=True,
+            conflicts=False,
+            conflict_disposition="None",
+            owner_eligibility_accepted=True,
+            dual_role_accepted=False,
+            qualification="Security review qualification",
+            mapper_identities=frozenset({"Mapping Author"}),
+        )
+        self.specification_findings = RoleFindingsPolicyInput(
+            mapping_set_id=self.mapping_set_id,
+            role="specification_and_inventory",
+            conclusion="pass",
+            post_correction_candidate_sha=None,
+            candidate_commit=self.candidate_commit,
+            record_ids=frozenset({self.record_id}),
+            findings=(),
+            mapping_ready=True,
+            observed_findings=(),
+        )
+        self.security_findings = RoleFindingsPolicyInput(
+            mapping_set_id=self.mapping_set_id,
+            role="security_and_overclaiming",
+            conclusion="pass",
+            post_correction_candidate_sha=None,
+            candidate_commit=self.candidate_commit,
+            record_ids=frozenset({self.record_id}),
+            findings=(),
+            mapping_ready=True,
+            observed_findings=(),
+        )
+        self.specification_metadata = (
+            ("authorized_source_access", True),
+            ("date", REVIEW_DATE),
+            ("findings_disposition", "No findings"),
+            ("id", self.specification_identity),
+            ("qualification", "Specification review qualification"),
+        )
+        self.security_metadata = (
+            ("authorized_source_access", True),
+            ("date", REVIEW_DATE),
+            ("findings_disposition", "No findings"),
+            ("id", self.security_identity),
+            ("qualification", "Security review qualification"),
+        )
+        self.completion = MappingSetCompletionPolicyInput(
+            mapping_set_id=self.mapping_set_id,
+            mapping_ready=True,
+            observed_findings=(),
+            authoritative_findings=(),
+            candidate_state="draft",
+            specification_reviewer_metadata=self.specification_metadata,
+            mapping_set_reviewer_metadata=None,
+            security_reviewer_metadata=self.security_metadata,
+            record_reviewer_metadata=(),
+        )
+
+    def _mapping_policy(self) -> MappingSetPolicyInput:
+        return MappingSetPolicyInput(
+            reviewer_eligibility=(
+                self.specification_eligibility,
+                self.security_eligibility,
+            ),
+            role_findings=(
+                self.specification_findings,
+                self.security_findings,
+            ),
+            mapping_set_completion=self.completion,
+        )
+
+    def _finding(
+        self,
+        *,
+        finding_id: str = "finding-001",
+        affected_record_ids: tuple[str, ...] | None = None,
+        severity: str = "Minor",
+        description: str = "Reviewed finding",
+        status: str = "resolved",
+    ) -> ReviewFinding:
+        return ReviewFinding(
+            finding_id=finding_id,
+            affected_record_ids=(
+                (self.record_id,)
+                if affected_record_ids is None
+                else affected_record_ids
+            ),
+            severity=severity,
+            description=description,
+            evidence="Evidence reference",
+            required_action="Correct the record",
+            status=status,
+            disposition=(
+                "Accepted residual effect"
+                if status == "accepted"
+                else "Resolved by candidate correction"
+            ),
+            resolver_or_acceptor="ESAF Project Owner",
+            disposition_date=REVIEW_DATE,
+            acceptance_rationale=(
+                "Accepted limited residual effect"
+                if status == "accepted"
+                else "Not applicable"
+            ),
+        )
+
+    def _normalized_finding(
+        self,
+        *,
+        finding_id: str = "finding-001",
+        description: str = "Reviewed finding",
+        severity: str = "Minor",
+        status: str = "resolved",
+    ) -> tuple[object, ...]:
+        return (
+            finding_id,
+            (self.record_id,),
+            severity,
+            description,
+            status,
+            (
+                "Accepted residual effect"
+                if status == "accepted"
+                else "Resolved by candidate correction"
+            ),
+            "ESAF Project Owner",
+            REVIEW_DATE,
+            (
+                "Accepted limited residual effect"
+                if status == "accepted"
+                else "Not applicable"
+            ),
+        )
+
+    def _assert_policy_failure(
+        self,
+        stage: str,
+        policy_input: object,
+        message: str,
+    ) -> None:
+        with self.assertRaises(ValueError) as caught:
+            validate_role_readiness_policy(stage, policy_input)
+        self.assertEqual(str(caught.exception), message)
+
+    def test_valid_policy_is_immutable_and_uses_no_external_dependencies(
+        self,
+    ) -> None:
+        with (
+            mock.patch.object(
+                Path,
+                "open",
+                side_effect=AssertionError("I/O"),
+            ),
+            mock.patch.object(
+                Path,
+                "read_bytes",
+                side_effect=AssertionError("I/O"),
+            ),
+            mock.patch.object(
+                subprocess,
+                "run",
+                side_effect=AssertionError("process"),
+            ),
+            mock.patch.object(
+                GitReader,
+                "read_bytes",
+                side_effect=AssertionError("Git"),
+            ),
+            mock.patch(
+                "tools.validate_qualified_review_evidence."
+                "build_campaign_archive",
+                side_effect=AssertionError("archive"),
+            ),
+        ):
+            result = evaluate_mapping_set_policy(self._mapping_policy())
+
+        self.assertTrue(result)
+        with self.assertRaises(AttributeError):
+            self.specification_eligibility.role = "changed"
+
+    def test_reviewer_eligibility_accepts_resolved_conflict(self) -> None:
+        policy_input = replace(
+            self.specification_eligibility,
+            conflicts=True,
+            conflict_disposition=(
+                "Resolved: reviewer recused from all mapping decisions"
+            ),
+        )
+
+        result = validate_role_readiness_policy(
+            "reviewer_eligibility",
+            policy_input,
+        )
+
+        self.assertTrue(result.mapping_ready)
+        self.assertEqual(result.observed_findings, ())
+
+    def test_reviewer_eligibility_rejects_each_ineligible_state(self) -> None:
+        cases = (
+            (
+                "source access",
+                replace(
+                    self.specification_eligibility,
+                    authorized_source_access=False,
+                ),
+                "core specification_and_inventory reviewer is not eligible",
+            ),
+            (
+                "independence",
+                replace(
+                    self.specification_eligibility,
+                    independent=False,
+                ),
+                "core specification_and_inventory reviewer is not eligible",
+            ),
+            (
+                "unresolved conflict",
+                replace(
+                    self.specification_eligibility,
+                    conflicts=True,
+                    conflict_disposition="Resolution pending",
+                ),
+                (
+                    "core specification_and_inventory reviewer has an "
+                    "unresolved conflict"
+                ),
+            ),
+            (
+                "owner rejection",
+                replace(
+                    self.specification_eligibility,
+                    owner_eligibility_accepted=False,
+                ),
+                (
+                    "core specification_and_inventory reviewer eligibility "
+                    "was rejected"
+                ),
+            ),
+        )
+        for label, policy_input, message in cases:
+            with self.subTest(label=label):
+                self._assert_policy_failure(
+                    "reviewer_eligibility",
+                    policy_input,
+                    message,
+                )
+
+    def test_actor_aliases_and_shared_locator_require_dual_role_acceptance(
+        self,
+    ) -> None:
+        cases = (
+            (
+                "unicode and punctuation",
+                "Jos\u00e9.Reviewer",
+                "JOSE\u0301 REVIEWER",
+                "urn:reviewer:first",
+                "urn:reviewer:second",
+            ),
+            (
+                "punctuation",
+                "Review.Person",
+                "review-person",
+                "urn:reviewer:first",
+                "urn:reviewer:second",
+            ),
+            (
+                "shared locator",
+                "First Reviewer",
+                "Different Reviewer",
+                "urn:reviewer:shared",
+                "urn:reviewer:shared",
+            ),
+        )
+        for label, identity, other, locator, other_locator in cases:
+            with self.subTest(label=label):
+                policy_input = replace(
+                    self.specification_eligibility,
+                    reviewer_identity=identity,
+                    other_reviewer_identity=other,
+                    reviewer_verification_locator=locator,
+                    other_reviewer_verification_locator=other_locator,
+                )
+                self._assert_policy_failure(
+                    "reviewer_eligibility",
+                    policy_input,
+                    (
+                        "core duplicate reviewer lacks complete dual-role "
+                        "acceptance and qualifications"
+                    ),
+                )
+
+    def test_mapper_aliases_cannot_bypass_independence(self) -> None:
+        policy_input = replace(
+            self.specification_eligibility,
+            reviewer_identity="Jos\u00e9.Mapper",
+            mapper_identities=frozenset({"JOSE\u0301 MAPPER"}),
+        )
+        self._assert_policy_failure(
+            "reviewer_eligibility",
+            policy_input,
+            "core specification_and_inventory reviewer is also a mapper",
+        )
+
+    def test_dual_role_policy_requires_acceptance_and_qualifications(self) -> None:
+        duplicate = replace(
+            self.specification_eligibility,
+            other_reviewer_identity=self.specification_identity.swapcase(),
+        )
+        cases = (
+            ("missing acceptance", duplicate),
+            (
+                "missing qualification",
+                replace(
+                    duplicate,
+                    dual_role_accepted=True,
+                    qualification=" ",
+                ),
+            ),
+        )
+        for label, policy_input in cases:
+            with self.subTest(label=label):
+                self._assert_policy_failure(
+                    "reviewer_eligibility",
+                    policy_input,
+                    (
+                        "core duplicate reviewer lacks complete dual-role "
+                        "acceptance and qualifications"
+                    ),
+                )
+
+        accepted = replace(duplicate, dual_role_accepted=True)
+        self.assertTrue(
+            validate_role_readiness_policy(
+                "reviewer_eligibility",
+                accepted,
+            ).mapping_ready
+        )
+        self._assert_policy_failure(
+            "reviewer_eligibility",
+            replace(self.specification_eligibility, dual_role_accepted=True),
+            "core unique reviewer cannot claim a dual role",
+        )
+
+    def test_stop_allows_open_high_severity_and_is_not_ready(self) -> None:
+        for severity in ("Critical", "Important"):
+            with self.subTest(severity=severity):
+                result = validate_role_readiness_policy(
+                    "role_findings",
+                    replace(
+                        self.specification_findings,
+                        conclusion="stop",
+                        findings=(
+                            self._finding(
+                                severity=severity,
+                                status="open",
+                            ),
+                        ),
+                    ),
+                )
+                self.assertFalse(result.mapping_ready)
+
+    def test_finding_status_and_severity_rules_match_existing_policy(self) -> None:
+        for severity in ("Critical", "Important"):
+            with self.subTest(severity=severity):
+                self._assert_policy_failure(
+                    "role_findings",
+                    replace(
+                        self.specification_findings,
+                        findings=(
+                            self._finding(
+                                severity=severity,
+                                status="accepted",
+                            ),
+                        ),
+                    ),
+                    f"core {severity} finding cannot be accepted",
+                )
+
+        accepted_minor = self._finding(status="accepted")
+        accepted_result = validate_role_readiness_policy(
+            "role_findings",
+            replace(
+                self.specification_findings,
+                findings=(accepted_minor,),
+            ),
+        )
+        self.assertTrue(accepted_result.mapping_ready)
+        self._assert_policy_failure(
+            "role_findings",
+            replace(
+                self.specification_findings,
+                findings=(self._finding(status="open"),),
+            ),
+            "core pass conclusion has an open finding",
+        )
+
+    def test_post_correction_and_record_binding_rules(self) -> None:
+        valid = replace(
+            self.specification_findings,
+            conclusion="pass_after_correction",
+            post_correction_candidate_sha=self.candidate_commit,
+        )
+        self.assertTrue(
+            validate_role_readiness_policy(
+                "role_findings",
+                valid,
+            ).mapping_ready
+        )
+        self._assert_policy_failure(
+            "role_findings",
+            replace(valid, post_correction_candidate_sha="b" * 40),
+            (
+                "core specification_and_inventory post-correction "
+                "candidate is not the campaign candidate"
+            ),
+        )
+        self._assert_policy_failure(
+            "role_findings",
+            replace(
+                self.specification_findings,
+                conclusion="stop",
+                findings=(
+                    self._finding(affected_record_ids=("unknown-record",)),
+                ),
+            ),
+            "core finding finding-001 references an unknown record",
+        )
+
+    def test_findings_merge_in_sorted_order_and_reject_cross_role_conflicts(
+        self,
+    ) -> None:
+        first = self._finding(finding_id="finding-z")
+        initial = validate_role_readiness_policy(
+            "role_findings",
+            replace(self.specification_findings, findings=(first,)),
+        )
+        second = self._finding(finding_id="finding-a")
+        merged = validate_role_readiness_policy(
+            "role_findings",
+            replace(
+                self.security_findings,
+                findings=(second,),
+                observed_findings=initial.observed_findings,
+            ),
+        )
+        self.assertEqual(
+            tuple(item[0] for item in merged.observed_findings),
+            ("finding-a", "finding-z"),
+        )
+
+        self._assert_policy_failure(
+            "role_findings",
+            replace(
+                self.security_findings,
+                findings=(
+                    self._finding(
+                        finding_id="finding-z",
+                        description="Conflicting description",
+                    ),
+                ),
+                observed_findings=initial.observed_findings,
+            ),
+            "core finding finding-z has conflicting role evidence",
+        )
+
+    def test_completion_requires_exact_authoritative_findings(self) -> None:
+        finding = self._finding()
+        role_result = validate_role_readiness_policy(
+            "role_findings",
+            replace(self.specification_findings, findings=(finding,)),
+        )
+        exact = replace(
+            self.completion,
+            observed_findings=role_result.observed_findings,
+            authoritative_findings=(self._normalized_finding(),),
+        )
+        self.assertTrue(
+            validate_role_readiness_policy(
+                "mapping_set_completion",
+                exact,
+            ).mapping_ready
+        )
+        self._assert_policy_failure(
+            "mapping_set_completion",
+            replace(
+                exact,
+                authoritative_findings=(
+                    self._normalized_finding(
+                        description="Different authoritative description"
+                    ),
+                ),
+            ),
+            "core findings do not equal authoritative candidate findings",
+        )
+
+    def test_completion_rejects_duplicate_authoritative_identifiers(self) -> None:
+        duplicate = self._normalized_finding()
+        self._assert_policy_failure(
+            "mapping_set_completion",
+            replace(
+                self.completion,
+                authoritative_findings=(duplicate, duplicate),
+            ),
+            "core candidate finding identifiers are duplicated",
+        )
+
+    def test_reviewed_state_requires_exact_reviewer_metadata(self) -> None:
+        reviewed = replace(
+            self.completion,
+            candidate_state="reviewed",
+            mapping_set_reviewer_metadata=tuple(
+                reversed(self.specification_metadata)
+            ),
+            record_reviewer_metadata=(
+                tuple(reversed(self.security_metadata)),
+            ),
+        )
+        self.assertTrue(
+            validate_role_readiness_policy(
+                "mapping_set_completion",
+                reviewed,
+            ).mapping_ready
+        )
+        self._assert_policy_failure(
+            "mapping_set_completion",
+            replace(
+                reviewed,
+                mapping_set_reviewer_metadata=(
+                    *self.specification_metadata[:-1],
+                    ("qualification", "Different qualification"),
+                ),
+            ),
+            (
+                "core mapping-set reviewer does not equal the "
+                "specification review evidence"
+            ),
+        )
+        self._assert_policy_failure(
+            "mapping_set_completion",
+            replace(reviewed, record_reviewer_metadata=(None,)),
+            (
+                "core record reviewer does not equal the security review "
+                "evidence"
+            ),
+        )
+
+    def test_stage_dispatch_rejects_mismatched_input(self) -> None:
+        with self.assertRaises(TypeError) as caught:
+            validate_role_readiness_policy(
+                "role_findings",
+                self.specification_eligibility,
+            )
+        self.assertEqual(
+            str(caught.exception),
+            "role policy stage and input do not match",
+        )
+
+    def test_each_stage_preserves_first_failure_order(self) -> None:
+        self._assert_policy_failure(
+            "reviewer_eligibility",
+            replace(
+                self.specification_eligibility,
+                authorized_source_access=False,
+                reviewer_identity="Mapping Author",
+                conflicts=True,
+                conflict_disposition="Unresolved",
+            ),
+            "core specification_and_inventory reviewer is not eligible",
+        )
+        self._assert_policy_failure(
+            "role_findings",
+            replace(
+                self.specification_findings,
+                conclusion="pass_after_correction",
+                post_correction_candidate_sha="b" * 40,
+                findings=(
+                    self._finding(affected_record_ids=("unknown-record",)),
+                ),
+            ),
+            (
+                "core specification_and_inventory post-correction "
+                "candidate is not the campaign candidate"
+            ),
+        )
+        duplicate = self._normalized_finding()
+        self._assert_policy_failure(
+            "mapping_set_completion",
+            replace(
+                self.completion,
+                authoritative_findings=(duplicate, duplicate),
+                candidate_state="reviewed",
+                mapping_set_reviewer_metadata=None,
+            ),
+            "core candidate finding identifiers are duplicated",
+        )
+
+    def test_combined_policy_orders_eligibility_findings_and_completion(
+        self,
+    ) -> None:
+        bad_finding = replace(
+            self.specification_findings,
+            findings=(self._finding(status="open"),),
+        )
+        bad_completion = replace(
+            self.completion,
+            authoritative_findings=(
+                self._normalized_finding(description="Unexpected"),
+            ),
+        )
+        first = replace(
+            self._mapping_policy(),
+            reviewer_eligibility=(
+                replace(
+                    self.specification_eligibility,
+                    authorized_source_access=False,
+                ),
+                self.security_eligibility,
+            ),
+            role_findings=(bad_finding, self.security_findings),
+            mapping_set_completion=bad_completion,
+        )
+        with self.assertRaises(ValueError) as eligibility_error:
+            evaluate_mapping_set_policy(first)
+        self.assertEqual(
+            str(eligibility_error.exception),
+            "core specification_and_inventory reviewer is not eligible",
+        )
+
+        second = replace(
+            first,
+            reviewer_eligibility=(
+                self.specification_eligibility,
+                self.security_eligibility,
+            ),
+        )
+        with self.assertRaises(ValueError) as finding_error:
+            evaluate_mapping_set_policy(second)
+        self.assertEqual(
+            str(finding_error.exception),
+            "core pass conclusion has an open finding",
+        )
 
 
 class CampaignValidationTests(unittest.TestCase):
