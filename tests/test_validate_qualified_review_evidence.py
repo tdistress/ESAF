@@ -61,6 +61,7 @@ from tools.validate_qualified_review_evidence import (
     ScalarReferenceCheck,
     VALIDATOR_VERSION,
     ValidationReport,
+    _ValidationFailure,
     evaluate_draft_reference_policy,
     evaluate_mapping_set_policy,
     main,
@@ -1627,9 +1628,11 @@ class QualifiedReviewDraftReferenceBoundaryTests(unittest.TestCase):
         policy_input: DraftReferencePolicyInput,
         message: str,
     ) -> None:
-        with self.assertRaises(ValueError) as caught:
+        with self.assertRaisesRegex(
+            _ValidationFailure,
+            rf"^{re.escape(message)}$",
+        ):
             evaluate_draft_reference_policy(policy_input)
-        self.assertEqual(str(caught.exception), message)
 
     def test_valid_policy_is_immutable_and_uses_no_external_dependencies(
         self,
@@ -1715,9 +1718,11 @@ class QualifiedReviewDraftReferenceBoundaryTests(unittest.TestCase):
         )
         for check, message in checks:
             with self.subTest(check=check):
-                with self.assertRaises(ValueError) as caught:
+                with self.assertRaisesRegex(
+                    _ValidationFailure,
+                    rf"^{re.escape(message)}$",
+                ):
                     validate_draft_reference_binding(check)
-                self.assertEqual(str(caught.exception), message)
 
     def test_binding_accepts_valid_checks(self) -> None:
         checks = (
