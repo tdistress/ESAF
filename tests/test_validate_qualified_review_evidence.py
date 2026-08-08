@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-from contextlib import redirect_stderr, redirect_stdout
-from copy import deepcopy
+import ast
+from contextlib import ExitStack, redirect_stderr, redirect_stdout
+from dataclasses import FrozenInstanceError, replace
 import hashlib
 import io
 import json
@@ -10,6 +11,7 @@ from pathlib import Path
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 from types import SimpleNamespace
 import unittest
@@ -18,8 +20,30 @@ import zipfile
 
 import yaml
 
-import tools.validate_crosswalks as crosswalk_validator
+from tests.qualified_review_policy_cases import (
+    ALLOWED_PATH_TOKENS,
+    BASELINE_COMMIT,
+    REVIEWED_POPULATION_SHA256,
+    RETAINED_AST_SHA256,
+    qualified_review_policy_inventory,
+    qualified_review_population_sha256,
+    retained_method_ast_sha256_from_baseline,
+    retained_method_ast_sha256_from_current_source,
+    validate_qualified_review_policy_inventory,
+)
+from tests.qualified_review_hot_path_support import (
+    QualifiedReviewHotPathFixture,
+    ReportProjection,
+    expected_projection,
+    run_full_case,
+    run_narrow_case,
+)
+
 import tools.seal_qualified_review_campaign as seal_module
+import tests.qualified_review_hot_path_support as hot_path_support
+import tools.validate_crosswalks as crosswalk_validator
+import tools.validate_qualified_review_evidence as validator_module
+from tools import verify_qualified_review_hot_path_equivalence
 from tools.build_mapping_review_bundle import (
     PROFILES,
     GitObjectReadError,
@@ -30,6 +54,7 @@ from tools.build_mapping_review_bundle import (
 )
 from tools.crosswalks.digests import snapshot_digest_from_files
 from tools.crosswalks.qualified_review_evidence import (
+    ReviewFinding,
     build_campaign_archive,
     build_seal_record,
     canonical_json_bytes,
@@ -37,10 +62,23 @@ from tools.crosswalks.qualified_review_evidence import (
 )
 from tools.seal_qualified_review_campaign import main as seal_main
 from tools.validate_qualified_review_evidence import (
+    DistinctCandidateCheck,
+    DraftReferencePolicyInput,
+    DraftStatusCheck,
+    MappingSetCompletionPolicyInput,
+    MappingSetPolicyInput,
+    ReviewerEligibilityPolicyInput,
+    RoleFindingsPolicyInput,
+    ScalarReferenceCheck,
     VALIDATOR_VERSION,
     ValidationReport,
+    _ValidationFailure,
+    evaluate_draft_reference_policy,
+    evaluate_mapping_set_policy,
     main,
     validate_campaign,
+    validate_draft_reference_binding,
+    validate_role_readiness_policy,
 )
 
 
@@ -61,6 +99,839 @@ PROFILE_NAMES = {
 }
 LOCATOR = f"urn:sha256:{'b' * 64}"
 REVIEW_DATE = "2026-07-25"
+
+
+def _walk_outer_method_scope(statements: list[ast.stmt]):
+    nested_scopes = (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda, ast.ClassDef)
+    pending: list[ast.AST] = list(reversed(statements))
+    while pending:
+        node = pending.pop()
+        if isinstance(node, nested_scopes):
+            continue
+        yield node
+        pending.extend(reversed(list(ast.iter_child_nodes(node))))
+
+
+class QualifiedReviewPolicyInventoryTests(unittest.TestCase):
+    def test_campaign_setup_has_no_legacy_fixture_implementation(self) -> None:
+        def lifecycle_methods(
+            campaign_class: ast.ClassDef,
+        ) -> tuple[ast.FunctionDef, ast.FunctionDef]:
+            methods = {
+                node.name: node for node in campaign_class.body
+                if isinstance(node, ast.FunctionDef)
+            }
+            return methods["setUpClass"], methods["tearDownClass"]
+
+        def assert_lifecycle_shape(campaign_class: ast.ClassDef) -> None:
+            setup, teardown = lifecycle_methods(campaign_class)
+            self.assertEqual(len(setup.body), 3)
+            temporary, fixture, attach = setup.body
+            self.assertIsInstance(temporary, ast.Assign)
+            self.assertEqual(ast.unparse(temporary), "cls.shared_temporary = tempfile.TemporaryDirectory()")
+            self.assertIsInstance(fixture, ast.Assign)
+            self.assertEqual(
+                ast.unparse(fixture),
+                "cls.hot_path_fixture = QualifiedReviewHotPathFixture.create(Path(cls.shared_temporary.name), ROOT)",
+            )
+            self.assertIsInstance(attach, ast.Expr)
+            self.assertEqual(
+                ast.unparse(attach.value),
+                "cls.hot_path_fixture.attach_to_test_class(cls)",
+            )
+            self.assertFalse(
+                any(isinstance(node, ast.Return) for node in ast.walk(setup))
+            )
+            self.assertEqual(len(teardown.body), 1)
+            self.assertIsInstance(teardown.body[0], ast.Expr)
+            self.assertEqual(
+                ast.unparse(teardown.body[0].value),
+                "cls.shared_temporary.cleanup()",
+            )
+
+        tree = ast.parse(Path(__file__).read_text(encoding="utf-8"))
+        campaign_class = next(
+            node for node in tree.body
+            if isinstance(node, ast.ClassDef) and node.name == "CampaignValidationTests"
+        )
+        assert_lifecycle_shape(campaign_class)
+        decoy = ast.parse(
+            """
+class CampaignValidationTests:
+    @classmethod
+    def setUpClass(cls):
+        cls.shared_temporary = tempfile.TemporaryDirectory()
+        cls.hot_path_fixture = unrelated_fixture
+        cls.hot_path_fixture.attach_to_test_class(cls)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.shared_temporary.close()
+"""
+        ).body[0]
+        assert isinstance(decoy, ast.ClassDef)
+        with self.assertRaises(AssertionError):
+            assert_lifecycle_shape(decoy)
+
+        cleanup = mock.Mock()
+        probe = SimpleNamespace(
+            shared_temporary=SimpleNamespace(cleanup=cleanup),
+        )
+        CampaignValidationTests.tearDownClass.__func__(probe)
+        cleanup.assert_called_once_with()
+
+        legacy_builders = {
+            "_write_front_matter",
+            "_make_reviewed_candidate",
+            "_set_candidate_findings",
+            "_make_finding_campaign",
+            "_make_finding_candidates",
+        }
+        definitions = {
+            node.name for node in campaign_class.body
+            if isinstance(node, ast.FunctionDef)
+        }
+        references = {
+            node.attr for node in ast.walk(campaign_class)
+            if isinstance(node, ast.Attribute)
+        }
+        self.assertFalse(definitions & legacy_builders)
+        self.assertFalse(references & legacy_builders)
+
+    def test_scope_pruning_walker_excludes_all_nested_scope_decoys(self) -> None:
+        tree = ast.parse(
+            """
+def anchor():
+    if ready:
+        label = "outer-label"
+        validate_campaign()
+    def nested_function():
+        hidden = "function-decoy"
+        validate_campaign()
+    async def nested_async_function():
+        hidden = "async-decoy"
+        validate_campaign()
+    nested_lambda = lambda: ("lambda-decoy", validate_campaign())
+    class NestedClass:
+        hidden = "class-decoy"
+        validate_campaign()
+"""
+        )
+        method = tree.body[0]
+        assert isinstance(method, ast.FunctionDef)
+        nodes = tuple(_walk_outer_method_scope(method.body))
+        literals = {
+            node.value for node in nodes
+            if isinstance(node, ast.Constant) and isinstance(node.value, str)
+        }
+        calls = [
+            node for node in nodes
+            if isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Name)
+            and node.func.id == "validate_campaign"
+        ]
+        self.assertEqual(literals, {"outer-label"})
+        self.assertEqual(len(calls), 1)
+
+    def test_full_path_integration_anchors_are_structurally_frozen(self) -> None:
+        tree = ast.parse(Path(__file__).read_text(encoding="utf-8"))
+        campaign_class = next(
+            node for node in tree.body
+            if isinstance(node, ast.ClassDef) and node.name == "CampaignValidationTests"
+        )
+        required = {
+            "test_policy_boundaries_reach_full_campaign_validation": (
+                "mapper alias",
+                "reviewer ineligibility",
+                "stop conclusion",
+                "authoritative-finding mismatch",
+                "reviewed-state reviewer mismatch",
+            ),
+            "test_draft_reference_boundary_reaches_full_final_validation": (
+                "manifest-digest-reference-mismatch",
+            ),
+        }
+        for method, labels in required.items():
+            with self.subTest(method=method):
+                body = next(
+                    node for node in campaign_class.body
+                    if isinstance(node, ast.FunctionDef) and node.name == method
+                )
+                outer_nodes = tuple(_walk_outer_method_scope(body.body))
+                literals = {
+                    node.value for node in outer_nodes
+                    if isinstance(node, ast.Constant) and isinstance(node.value, str)
+                }
+                direct_calls = [
+                    node for node in outer_nodes
+                    if isinstance(node, ast.Call)
+                    and isinstance(node.func, ast.Name)
+                    and node.func.id == "validate_campaign"
+                ]
+                self.assertTrue(direct_calls)
+                for label in labels:
+                    self.assertIn(label, literals)
+
+    def test_stage_two_selection_preserves_retained_schema_routes(self) -> None:
+        inventory = qualified_review_policy_inventory()
+        selected_methods = {case.method_name for case in inventory.cases}
+        self.assertEqual(len(inventory.cases), 28)
+        self.assertEqual(len(selected_methods), 15)
+        self.assertNotIn(
+            "test_accepted_critical_or_important_is_evidence_invalid",
+            selected_methods,
+        )
+
+        tree = ast.parse(Path(__file__).read_text(encoding="utf-8"))
+        campaign_class = next(
+            node
+            for node in tree.body
+            if isinstance(node, ast.ClassDef)
+            and node.name == "CampaignValidationTests"
+        )
+        methods = {
+            node.name: node
+            for node in campaign_class.body
+            if isinstance(node, ast.FunctionDef)
+        }
+        schema_tests = {
+            "test_incomplete_duplicate_reviewer_qualification_fails_schema_before_policy",
+            "test_accepted_high_severity_findings_fail_schema_before_policy",
+        }
+        self.assertTrue(schema_tests <= set(methods))
+        for method_name in schema_tests:
+            with self.subTest(retained_schema_method=method_name):
+                outer_nodes = tuple(
+                    _walk_outer_method_scope(methods[method_name].body)
+                )
+                self.assertTrue(
+                    any(
+                        isinstance(node, ast.Call)
+                        and isinstance(node.func, ast.Attribute)
+                        and node.func.attr == "_report"
+                        for node in outer_nodes
+                    )
+                )
+
+    def test_inventory_freezes_the_complete_baseline_ledger(self) -> None:
+        inventory = qualified_review_policy_inventory()
+        expected_methods = (
+            "test_linux_acquisition_rejects_swap_restored_before_revalidation",
+            "test_valid_draft_campaign_is_transition_ready",
+            "test_rejects_missing_duplicate_and_mismatched_role_keys",
+            "test_rejects_ineligible_reviewer_evidence",
+            "test_actor_aliases_and_shared_locator_cannot_bypass_role_rules",
+            "test_actor_alias_cannot_bypass_mapper_independence",
+            "test_sha_locators_bind_package_attestation_and_worksheet_bytes",
+            "test_attestation_source_sets_are_exactly_candidate_bound",
+            "test_explicitly_resolved_conflict_is_eligible",
+            "test_duplicate_human_requires_dual_acceptance_and_both_qualifications",
+            "test_stop_with_open_high_severity_is_valid_but_not_ready",
+            "test_accepted_critical_or_important_is_evidence_invalid",
+            "test_accepted_minor_requires_named_acceptance_evidence",
+            "test_pass_rejects_open_findings",
+            "test_pass_after_correction_binds_exact_campaign_candidate",
+            "test_orphan_affected_record_identifier_is_invalid_even_for_stop",
+            "test_ready_findings_must_equal_authoritative_candidate_findings",
+            "test_ready_findings_bind_authoritative_description",
+            "test_duplicate_authoritative_finding_identifiers_are_invalid",
+            "test_campaign_tree_and_package_bytes_are_exact",
+            "test_candidate_schema_cannot_retrieve_external_references",
+            "test_valid_final_campaign_is_recursively_merge_ready",
+            "test_invalid_report_preserves_parsed_final_campaign_context",
+            "test_final_campaign_requires_all_preserved_draft_inputs",
+            "test_final_campaign_binds_every_draft_reference_field",
+            "test_final_campaign_rejects_archive_seal_or_draft_byte_mutation",
+            "test_retained_draft_revalidation_rejects_mismatched_archive_urn",
+            "test_reviewed_candidate_requires_exact_nested_reviewer_objects",
+            "test_final_pass_after_correction_binds_reviewed_candidate",
+            "test_validator_cli_emits_canonical_reports_and_exit_codes",
+            "test_validator_cli_requires_check_and_all_or_none_draft_inputs",
+            "test_validator_cli_sanitizes_missing_and_permission_failures",
+            "test_validator_cli_classifies_preopen_permissions_as_operational",
+            "test_clis_sanitize_git_operational_failures",
+            "test_validator_cli_keeps_batch_object_failure_operational",
+            "test_seal_cli_atomically_publishes_exact_archive_and_seal",
+            "test_seal_cli_accepts_only_the_real_archive_digest_urn",
+            "test_seal_cli_refuses_invalid_or_nonready_campaign",
+            "test_seal_cli_refuses_existing_worktree_and_unsafe_destinations",
+            "test_seal_cli_publishes_nothing_after_execution_state_drift",
+            "test_seal_cli_preserves_competing_output_and_cleans_partial_staging",
+            "test_seal_fails_closed_when_parent_or_ancestor_is_swapped",
+            "test_seal_archives_the_exact_validated_byte_snapshot",
+        )
+        self.assertEqual(
+            tuple(method.method_name for method in inventory.methods),
+            expected_methods,
+        )
+        self.assertEqual(
+            tuple(
+                sum(getattr(method, field) for method in inventory.methods)
+                for field in (
+                    "detail_entries",
+                    "selected_entries",
+                )
+            )
+            + (
+                sum(
+                    method.detail_entries - method.selected_entries
+                    for method in inventory.methods
+                ),
+                sum(method.copytree_operations for method in inventory.methods),
+            ),
+            (92, 31, 61, 108),
+        )
+        self.assertEqual(
+            sum(method.detail_entries - method.selected_entries for method in inventory.methods),
+            61,
+        )
+        self.assertEqual(len(inventory.methods), 43)
+        self.assertTrue(inventory.retained_cases)
+
+    def test_inventory_freezes_selected_population_and_operations(self) -> None:
+        inventory = qualified_review_policy_inventory()
+        self.assertEqual(len(inventory.cases), 28)
+        self.assertEqual(
+            (
+                sum(case.boundary == "role_readiness" for case in inventory.cases),
+                sum(case.boundary == "draft_reference" for case in inventory.cases),
+            ),
+            (24, 4),
+        )
+        self.assertEqual(len({case.case_id for case in inventory.cases}), 28)
+        self.assertEqual(len({case.method_name for case in inventory.cases}), 15)
+        self.assertEqual(
+            tuple(
+                len(inventory.cases_for_method(method_name))
+                for method_name in (
+                    "test_rejects_ineligible_reviewer_evidence",
+                    "test_actor_aliases_and_shared_locator_cannot_bypass_role_rules",
+                    "test_actor_alias_cannot_bypass_mapper_independence",
+                    "test_explicitly_resolved_conflict_is_eligible",
+                    "test_duplicate_human_requires_dual_acceptance_and_both_qualifications",
+                    "test_stop_with_open_high_severity_is_valid_but_not_ready",
+                    "test_pass_rejects_open_findings",
+                    "test_pass_after_correction_binds_exact_campaign_candidate",
+                    "test_orphan_affected_record_identifier_is_invalid_even_for_stop",
+                    "test_ready_findings_must_equal_authoritative_candidate_findings",
+                    "test_ready_findings_bind_authoritative_description",
+                    "test_duplicate_authoritative_finding_identifiers_are_invalid",
+                    "test_reviewed_candidate_requires_exact_nested_reviewer_objects",
+                    "test_final_pass_after_correction_binds_reviewed_candidate",
+                )
+            ),
+            (5, 4, 1, 1, 1, 2, 1, 2, 1, 1, 1, 1, 2, 1),
+        )
+        reference_cases = inventory.cases_for_method(
+            "test_final_campaign_binds_every_draft_reference_field"
+        )
+        self.assertEqual(
+            tuple(case.case_id for case in reference_cases),
+            (
+                "draft-reference:campaign-id",
+                "draft-reference:candidate-commit",
+                "draft-reference:manifest-digest",
+                "draft-reference:seal-record-digest",
+            ),
+        )
+        self.assertEqual(
+            tuple(
+                1
+                if case.expected.errors
+                == ("reviewed and Draft candidate commits must differ",)
+                else 2
+                for case in reference_cases
+            ),
+            (2, 1, 2, 2),
+        )
+        self.assertTrue(
+            all(
+                isinstance(case.operations, tuple)
+                and isinstance(case.expected.errors, tuple)
+                and all(
+                    isinstance(token, (str, int))
+                    and token in ALLOWED_PATH_TOKENS
+                    for operation in case.operations
+                    for token in operation.path
+                )
+                for case in inventory.cases
+            )
+        )
+
+    def test_schema_owned_cases_are_retained_outside_equivalence(self) -> None:
+        inventory = qualified_review_policy_inventory()
+        schema_owned = {
+            "duplicate-human:incomplete-qualifications",
+            "accepted-severity:critical",
+            "accepted-severity:important",
+        }
+        self.assertTrue(
+            schema_owned.isdisjoint(case.case_id for case in inventory.cases)
+        )
+        retained = {case.case_id: case for case in inventory.retained_cases}
+        expected = {
+            "test_duplicate_human_requires_dual_acceptance_and_both_qualifications:retained:incomplete-qualifications": (
+                "incomplete-qualifications",
+                ("draft",),
+            ),
+            "test_accepted_critical_or_important_is_evidence_invalid:retained:Critical": (
+                "Critical",
+                ("draft",),
+            ),
+            "test_accepted_critical_or_important_is_evidence_invalid:retained:Important": (
+                "Important",
+                ("draft",),
+            ),
+        }
+        for case_id, (label, routes) in expected.items():
+            with self.subTest(case_id=case_id):
+                self.assertIn(case_id, retained)
+                self.assertEqual(retained[case_id].case_label, label)
+                self.assertEqual(retained[case_id].routes, routes)
+                self.assertIn("schema", retained[case_id].rationale.casefold())
+
+        methods = {method.method_name: method for method in inventory.methods}
+        self.assertEqual(
+            methods[
+                "test_duplicate_human_requires_dual_acceptance_and_both_qualifications"
+            ].selected_entries,
+            1,
+        )
+        accepted = methods[
+            "test_accepted_critical_or_important_is_evidence_invalid"
+        ]
+        self.assertEqual(accepted.selected_entries, 0)
+        self.assertEqual(
+            accepted.retained_source_ast_sha256,
+            "8bbbac1520f72932847f347658414654092f2deacbfcc93e37be0de833c6e587",
+        )
+
+    def test_identity_related_operations_match_exact_baseline_values(self) -> None:
+        inventory = qualified_review_policy_inventory()
+        by_id = {case.case_id: case for case in inventory.cases}
+        expected = {
+            "ineligible:mapper-self-review": (
+                (("mapping_sets", 0, "roles", 0, "reviewer", "identity"), "esaf-crosswalk-editorial-team"),
+            ),
+            "actor-alias:case": (
+                (("mapping_sets", 0, "roles", 1, "reviewer", "identity"), "CORE INVENTORY REVIEWER"),
+            ),
+            "actor-alias:punctuation": (
+                (("mapping_sets", 0, "roles", 1, "reviewer", "identity"), "core-inventory-reviewer"),
+            ),
+            "actor-alias:unicode": (
+                (("mapping_sets", 0, "roles", 0, "reviewer", "identity"), "Jos\u00e9 Reviewer"),
+                (("mapping_sets", 0, "roles", 1, "reviewer", "identity"), "Jose\u0301 Reviewer"),
+            ),
+            "actor-alias:shared-locator": (
+                (("mapping_sets", 0, "roles", 1, "reviewer", "identity"), "Different Display Name"),
+                (("mapping_sets", 0, "roles", 1, "reviewer", "verification_locator"), "https://identity.example.invalid/reviewer?version=core-inventory"),
+            ),
+            "mapper-alias:case": (
+                (("mapping_sets", 0, "roles", 0, "reviewer", "identity"), "ESAF-CROSSWALK-EDITORIAL-TEAM"),
+            ),
+            "duplicate-human:without-acceptance": (
+                (("mapping_sets", 0, "roles", 1, "reviewer", "identity"), "core inventory reviewer"),
+            ),
+        }
+        self.assertEqual(set(expected), set(by_id) & set(expected))
+        for case_id, operations in expected.items():
+            with self.subTest(case=case_id):
+                self.assertEqual(
+                    tuple((operation.path, operation.value) for operation in by_id[case_id].operations),
+                    operations,
+                )
+
+    def test_inventory_freezes_retained_routes_and_ast_oracle(self) -> None:
+        inventory = qualified_review_policy_inventory()
+        self.assertEqual(BASELINE_COMMIT, "f99e403583877f803576dcad919025e558e5a5f6")
+        self.assertEqual(len(RETAINED_AST_SHA256), 28)
+        self.assertEqual(
+            {
+                method.method_name: method.retained_source_ast_sha256
+                for method in inventory.methods
+                if method.retained_source_ast_sha256
+            },
+            RETAINED_AST_SHA256,
+        )
+        self.assertTrue(
+            all(
+                len(value) == 64 and re.fullmatch(r"[0-9a-f]{64}", value)
+                for value in RETAINED_AST_SHA256.values()
+            )
+        )
+        self.assertEqual(
+            retained_method_ast_sha256_from_baseline(),
+            RETAINED_AST_SHA256,
+        )
+        self.assertEqual(
+            retained_method_ast_sha256_from_current_source(),
+            RETAINED_AST_SHA256,
+        )
+        self.assertEqual(
+            sum(len(case.routes) for case in inventory.retained_cases),
+            61,
+        )
+        self.assertEqual(
+            len({case.case_id for case in inventory.retained_cases}),
+            len(inventory.retained_cases),
+        )
+        self.assertTrue(
+            all(
+                case.case_id == f"{case.method_name}:retained:{case.case_label}"
+                and case.case_label
+                and case.rationale
+                and all(
+                    route in {
+                        "draft",
+                        "final",
+                        "recursive_draft",
+                        "validator_cli",
+                        "seal_cli",
+                    }
+                    for route in case.routes
+                )
+                for case in inventory.retained_cases
+            )
+        )
+
+    def test_inventory_rejects_count_digest_and_mutability_drift(self) -> None:
+        inventory = qualified_review_policy_inventory()
+        changed = replace(inventory.cases[0], case_id="changed")
+        with self.assertRaisesRegex(ValueError, "population digest"):
+            validate_qualified_review_policy_inventory(
+                (changed, *inventory.cases[1:]),
+                inventory.methods,
+                inventory.population_sha256,
+            )
+        with self.assertRaisesRegex(ValueError, "method count"):
+            validate_qualified_review_policy_inventory(
+                inventory.cases,
+                inventory.methods[:-1],
+                inventory.population_sha256,
+            )
+        self.assertEqual(
+            qualified_review_population_sha256(inventory.cases),
+            "f89f118c4d5fe3dfc1a906cebb3f13a7cf5da7b6349c3e3913470c6cd179f50a",
+        )
+        self.assertEqual(
+            inventory.population_sha256,
+            REVIEWED_POPULATION_SHA256,
+        )
+
+
+class QualifiedReviewHotPathMigrationStructureTests(unittest.TestCase):
+    _COMPLETE_PATH_CALLS = frozenset(
+        {
+            "_report",
+            "_final_report",
+            "_final_inputs",
+            "validate_campaign",
+            "_validate_campaign_details",
+            "copytree",
+        }
+    )
+    _TEST_OWNED_POLICY_PREDICATES = frozenset(
+        {
+            "_mapping_policy",
+            "_valid_policy",
+            "_assert_policy_failure",
+            "evaluate_mapping_set_policy",
+            "evaluate_draft_reference_policy",
+            "validate_role_readiness_policy",
+            "validate_draft_reference_binding",
+        }
+    )
+
+    @staticmethod
+    def _campaign_methods() -> dict[str, ast.FunctionDef]:
+        tree = ast.parse(Path(__file__).read_text(encoding="utf-8"))
+        campaign_class = next(
+            node
+            for node in tree.body
+            if isinstance(node, ast.ClassDef)
+            and node.name == "CampaignValidationTests"
+        )
+        return {
+            node.name: node
+            for node in campaign_class.body
+            if isinstance(node, ast.FunctionDef)
+        }
+
+    def _synthetic_campaign_source(
+        self,
+        method_name: str,
+        replacement: str,
+    ) -> str:
+        selected = sorted(
+            {
+                case.method_name
+                for case in qualified_review_policy_inventory().cases
+            }
+        )
+        methods = []
+        for name in selected:
+            if name == method_name:
+                methods.append(replacement)
+            else:
+                methods.append(
+                    "    def " + name + "(self):\n"
+                    "        self._assert_policy_cases_narrow(" + repr(name) + ")"
+                )
+        return "class CampaignValidationTests:\n" + "\n\n".join(methods)
+
+    def _run_selected_method_guard(self, source: str) -> unittest.TestResult:
+        guard = type(self)("test_selected_methods_use_only_the_narrow_helper")
+        result = unittest.TestResult()
+        with mock.patch.object(Path, "read_text", return_value=source):
+            guard.run(result)
+        return result
+
+    def test_guard_rejects_proxy_narrow_helper_receiver(self) -> None:
+        method_name = "test_rejects_ineligible_reviewer_evidence"
+        source = self._synthetic_campaign_source(
+            method_name,
+            "    def " + method_name + "(self):\n"
+            "        proxy._assert_policy_cases_narrow(" + repr(method_name) + ")",
+        )
+        self.assertFalse(self._run_selected_method_guard(source).wasSuccessful())
+
+    def test_guard_rejects_extra_selected_method_statement(self) -> None:
+        method_name = "test_rejects_ineligible_reviewer_evidence"
+        source = self._synthetic_campaign_source(
+            method_name,
+            "    def " + method_name + "(self):\n"
+            "        self._assert_policy_cases_narrow(" + repr(method_name) + ")\n"
+            "        marker = 'extra'",
+        )
+        self.assertFalse(self._run_selected_method_guard(source).wasSuccessful())
+
+    def test_guard_rejects_nested_default_complete_path_call(self) -> None:
+        method_name = "test_rejects_ineligible_reviewer_evidence"
+        source = self._synthetic_campaign_source(
+            method_name,
+            "    def " + method_name + "(self):\n"
+            "        def nested(value=_report()):\n"
+            "            return value\n"
+            "        self._assert_policy_cases_narrow(" + repr(method_name) + ")",
+        )
+        self.assertFalse(self._run_selected_method_guard(source).wasSuccessful())
+
+    def test_guard_rejects_nested_decorator_complete_path_call(self) -> None:
+        method_name = "test_rejects_ineligible_reviewer_evidence"
+        source = self._synthetic_campaign_source(
+            method_name,
+            "    def " + method_name + "(self):\n"
+            "        @decorator(_report())\n"
+            "        def nested():\n"
+            "            return None\n"
+            "        self._assert_policy_cases_narrow(" + repr(method_name) + ")",
+        )
+        self.assertFalse(self._run_selected_method_guard(source).wasSuccessful())
+
+    @staticmethod
+    def _has_exact_narrow_helper_body(
+        method: ast.FunctionDef,
+        method_name: str,
+    ) -> bool:
+        arguments = method.args
+        if (
+            method.decorator_list
+            or arguments.posonlyargs
+            or len(arguments.args) != 1
+            or arguments.args[0].arg != "self"
+            or arguments.vararg is not None
+            or arguments.kwonlyargs
+            or arguments.kwarg is not None
+            or arguments.defaults
+            or arguments.kw_defaults
+            or len(method.body) != 1
+        ):
+            return False
+        statement = method.body[0]
+        if not isinstance(statement, ast.Expr):
+            return False
+        call = statement.value
+        if not isinstance(call, ast.Call) or call.keywords or len(call.args) != 1:
+            return False
+        if not (
+            isinstance(call.func, ast.Attribute)
+            and isinstance(call.func.value, ast.Name)
+            and call.func.value.id == "self"
+            and call.func.attr == "_assert_policy_cases_narrow"
+        ):
+            return False
+        return (
+            isinstance(call.args[0], ast.Constant)
+            and isinstance(call.args[0].value, str)
+            and call.args[0].value == method_name
+        )
+
+    @classmethod
+    def _selected_methods_without_exact_narrow_helper(
+        cls,
+    ) -> set[str]:
+        selected = {
+            case.method_name
+            for case in qualified_review_policy_inventory().cases
+        }
+        methods = cls._campaign_methods()
+        return {
+            method_name
+            for method_name in selected
+            if not cls._has_exact_narrow_helper_body(
+                methods[method_name],
+                method_name,
+            )
+        }
+
+    def test_selected_methods_use_only_the_narrow_helper(self) -> None:
+        inventory = qualified_review_policy_inventory()
+        selected = {
+            case.method_name for case in inventory.cases
+        }
+        self.assertEqual(len(selected), 15)
+        methods = self._campaign_methods()
+        for method_name in sorted(selected):
+            with self.subTest(method_name=method_name):
+                self.assertTrue(
+                    self._has_exact_narrow_helper_body(
+                        methods[method_name],
+                        method_name,
+                    ),
+                    f"{method_name} shall contain exactly its direct narrow helper call",
+                )
+
+    def test_narrow_helper_has_direct_inventory_and_policy_ownership(self) -> None:
+        helper = self._campaign_methods()["_assert_policy_cases_narrow"]
+        self.assertFalse(helper.decorator_list)
+        self.assertEqual(
+            tuple(argument.arg for argument in helper.args.args),
+            ("self", "method_name"),
+        )
+        self.assertFalse(helper.args.defaults)
+        self.assertFalse(helper.args.kw_defaults)
+        self.assertEqual(len(helper.body), 4)
+        self.assertEqual(
+            tuple(ast.unparse(statement) for statement in helper.body),
+            (
+                "inventory = qualified_review_policy_inventory()",
+                "cases = inventory.cases_for_method(method_name)",
+                "self.assertGreater(len(cases), 0)",
+                "for case in cases:\n"
+                "    with self.subTest(case_id=case.case_id):\n"
+                "        self.assertEqual(run_narrow_case(self.hot_path_fixture, case), expected_projection(self.hot_path_fixture, case))",
+            ),
+        )
+        calls = tuple(
+            node for node in ast.walk(helper) if isinstance(node, ast.Call)
+        )
+        call_names = {
+            node.func.id
+            if isinstance(node.func, ast.Name)
+            else node.func.attr
+            if isinstance(node.func, ast.Attribute)
+            else ""
+            for node in calls
+        }
+        self.assertFalse(
+            call_names
+            & (self._COMPLETE_PATH_CALLS | self._TEST_OWNED_POLICY_PREDICATES),
+        )
+        run_call = next(
+            node
+            for node in calls
+            if isinstance(node.func, ast.Name)
+            and node.func.id == "run_narrow_case"
+        )
+        expected_call = next(
+            node
+            for node in calls
+            if isinstance(node.func, ast.Name)
+            and node.func.id == "expected_projection"
+        )
+        for call in (run_call, expected_call):
+            self.assertEqual(len(call.args), 2)
+            self.assertIsInstance(call.args[0], ast.Attribute)
+            self.assertIsInstance(call.args[0].value, ast.Name)
+            self.assertEqual(call.args[0].value.id, "self")
+            self.assertEqual(call.args[0].attr, "hot_path_fixture")
+            self.assertIsInstance(call.args[1], ast.Name)
+            self.assertEqual(call.args[1].id, "case")
+
+    def test_selected_methods_consume_each_inventory_case_once(self) -> None:
+        selected = tuple(
+            sorted(
+                {
+                    case.method_name
+                    for case in qualified_review_policy_inventory().cases
+                }
+            )
+        )
+        if self._selected_methods_without_exact_narrow_helper():
+            self.skipTest("selected methods still call complete validation")
+
+        seen: list[str] = []
+        def record_case(
+            _fixture: QualifiedReviewHotPathFixture,
+            case: object,
+        ) -> str:
+            assert hasattr(case, "case_id")
+            seen.append(case.case_id)
+            return case.case_id
+
+        result = unittest.TestResult()
+        module = sys.modules[__name__]
+        with mock.patch.object(
+            module,
+            "run_narrow_case",
+            side_effect=record_case,
+        ), mock.patch.object(
+            module,
+            "expected_projection",
+            side_effect=lambda _fixture, case: case.case_id,
+        ):
+            for method_name in selected:
+                test = CampaignValidationTests(method_name)
+                test.hot_path_fixture = QualifiedReviewHotPathFixture
+                test.setUp = lambda: None
+                test.run(result)
+
+        self.assertTrue(result.wasSuccessful(), result.errors + result.failures)
+        expected = [
+            case.case_id for case in qualified_review_policy_inventory().cases
+        ]
+        self.assertEqual(len(expected), 28)
+        self.assertEqual(len(seen), 28)
+        self.assertEqual(set(seen), set(expected))
+        self.assertEqual({case_id: seen.count(case_id) for case_id in seen}, {
+            case_id: 1 for case_id in expected
+        })
+        if __name__ == "tests.test_validate_qualified_review_evidence":
+            discovery = subprocess.run(
+                (
+                    sys.executable,
+                    "-B",
+                    "-m",
+                    "unittest",
+                    "discover",
+                    "-s",
+                    "tests",
+                    "-p",
+                    "test_validate_qualified_review_evidence.py",
+                    "-k",
+                    "test_selected_methods_consume_each_inventory_case_once",
+                ),
+                cwd=ROOT,
+                check=False,
+                capture_output=True,
+                text=True,
+            )
+            self.assertEqual(
+                discovery.returncode,
+                0,
+                discovery.stdout + discovery.stderr,
+            )
 
 
 def _git(root: Path, *arguments: str) -> str:
@@ -673,445 +1544,1912 @@ class SealDestinationAnchorTests(unittest.TestCase):
                         pass
 
 
+class QualifiedReviewRolePolicyBoundaryTests(unittest.TestCase):
+    mapping_set_id = "core"
+    candidate_commit = "a" * 40
+    record_id = "rec-001"
+    specification_identity = "Specification Reviewer"
+    security_identity = "Security Reviewer"
+
+    def setUp(self) -> None:
+        self.specification_eligibility = ReviewerEligibilityPolicyInput(
+            mapping_set_id=self.mapping_set_id,
+            role="specification_and_inventory",
+            reviewer_identity=self.specification_identity,
+            reviewer_verification_locator="urn:reviewer:specification",
+            other_reviewer_identity=self.security_identity,
+            other_reviewer_verification_locator="urn:reviewer:security",
+            authorized_source_access=True,
+            independent=True,
+            conflicts=False,
+            conflict_disposition="None",
+            owner_eligibility_accepted=True,
+            dual_role_accepted=False,
+            qualification="Specification review qualification",
+            mapper_identities=frozenset({"Mapping Author"}),
+        )
+        self.security_eligibility = ReviewerEligibilityPolicyInput(
+            mapping_set_id=self.mapping_set_id,
+            role="security_and_overclaiming",
+            reviewer_identity=self.security_identity,
+            reviewer_verification_locator="urn:reviewer:security",
+            other_reviewer_identity=self.specification_identity,
+            other_reviewer_verification_locator="urn:reviewer:specification",
+            authorized_source_access=True,
+            independent=True,
+            conflicts=False,
+            conflict_disposition="None",
+            owner_eligibility_accepted=True,
+            dual_role_accepted=False,
+            qualification="Security review qualification",
+            mapper_identities=frozenset({"Mapping Author"}),
+        )
+        self.specification_findings = RoleFindingsPolicyInput(
+            mapping_set_id=self.mapping_set_id,
+            role="specification_and_inventory",
+            conclusion="pass",
+            post_correction_candidate_sha=None,
+            candidate_commit=self.candidate_commit,
+            record_ids=frozenset({self.record_id}),
+            findings=(),
+            mapping_ready=True,
+            observed_findings=(),
+        )
+        self.security_findings = RoleFindingsPolicyInput(
+            mapping_set_id=self.mapping_set_id,
+            role="security_and_overclaiming",
+            conclusion="pass",
+            post_correction_candidate_sha=None,
+            candidate_commit=self.candidate_commit,
+            record_ids=frozenset({self.record_id}),
+            findings=(),
+            mapping_ready=True,
+            observed_findings=(),
+        )
+        self.specification_metadata = (
+            ("authorized_source_access", True),
+            ("date", REVIEW_DATE),
+            ("findings_disposition", "No findings"),
+            ("id", self.specification_identity),
+            ("qualification", "Specification review qualification"),
+        )
+        self.security_metadata = (
+            ("authorized_source_access", True),
+            ("date", REVIEW_DATE),
+            ("findings_disposition", "No findings"),
+            ("id", self.security_identity),
+            ("qualification", "Security review qualification"),
+        )
+        self.completion = MappingSetCompletionPolicyInput(
+            mapping_set_id=self.mapping_set_id,
+            mapping_ready=True,
+            observed_findings=(),
+            authoritative_findings=(),
+            candidate_state="draft",
+            specification_reviewer_metadata=self.specification_metadata,
+            mapping_set_reviewer_metadata=None,
+            security_reviewer_metadata=self.security_metadata,
+            record_reviewer_metadata=(),
+        )
+
+    def _mapping_policy(self) -> MappingSetPolicyInput:
+        return MappingSetPolicyInput(
+            reviewer_eligibility=(
+                self.specification_eligibility,
+                self.security_eligibility,
+            ),
+            role_findings=(
+                self.specification_findings,
+                self.security_findings,
+            ),
+            mapping_set_completion=self.completion,
+        )
+
+    def _finding(
+        self,
+        *,
+        finding_id: str = "finding-001",
+        affected_record_ids: tuple[str, ...] | None = None,
+        severity: str = "Minor",
+        description: str = "Reviewed finding",
+        status: str = "resolved",
+    ) -> ReviewFinding:
+        return ReviewFinding(
+            finding_id=finding_id,
+            affected_record_ids=(
+                (self.record_id,)
+                if affected_record_ids is None
+                else affected_record_ids
+            ),
+            severity=severity,
+            description=description,
+            evidence="Evidence reference",
+            required_action="Correct the record",
+            status=status,
+            disposition=(
+                "Accepted residual effect"
+                if status == "accepted"
+                else "Resolved by candidate correction"
+            ),
+            resolver_or_acceptor="ESAF Project Owner",
+            disposition_date=REVIEW_DATE,
+            acceptance_rationale=(
+                "Accepted limited residual effect"
+                if status == "accepted"
+                else "Not applicable"
+            ),
+        )
+
+    def _normalized_finding(
+        self,
+        *,
+        finding_id: str = "finding-001",
+        description: str = "Reviewed finding",
+        severity: str = "Minor",
+        status: str = "resolved",
+    ) -> tuple[object, ...]:
+        return (
+            finding_id,
+            (self.record_id,),
+            severity,
+            description,
+            status,
+            (
+                "Accepted residual effect"
+                if status == "accepted"
+                else "Resolved by candidate correction"
+            ),
+            "ESAF Project Owner",
+            REVIEW_DATE,
+            (
+                "Accepted limited residual effect"
+                if status == "accepted"
+                else "Not applicable"
+            ),
+        )
+
+    def _assert_policy_failure(
+        self,
+        stage: str,
+        policy_input: object,
+        message: str,
+    ) -> None:
+        with self.assertRaises(ValueError) as caught:
+            validate_role_readiness_policy(stage, policy_input)
+        self.assertEqual(str(caught.exception), message)
+
+    def test_valid_policy_is_immutable_and_uses_no_external_dependencies(
+        self,
+    ) -> None:
+        with (
+            mock.patch.object(
+                Path,
+                "open",
+                side_effect=AssertionError("I/O"),
+            ),
+            mock.patch.object(
+                Path,
+                "read_bytes",
+                side_effect=AssertionError("I/O"),
+            ),
+            mock.patch.object(
+                subprocess,
+                "run",
+                side_effect=AssertionError("process"),
+            ),
+            mock.patch.object(
+                GitReader,
+                "read_bytes",
+                side_effect=AssertionError("Git"),
+            ),
+            mock.patch(
+                "tools.validate_qualified_review_evidence."
+                "build_campaign_archive",
+                side_effect=AssertionError("archive"),
+            ),
+        ):
+            result = evaluate_mapping_set_policy(self._mapping_policy())
+
+        self.assertTrue(result)
+        with self.assertRaises(AttributeError):
+            self.specification_eligibility.role = "changed"
+
+    def test_reviewer_eligibility_accepts_resolved_conflict(self) -> None:
+        policy_input = replace(
+            self.specification_eligibility,
+            conflicts=True,
+            conflict_disposition=(
+                "Resolved: reviewer recused from all mapping decisions"
+            ),
+        )
+
+        result = validate_role_readiness_policy(
+            "reviewer_eligibility",
+            policy_input,
+        )
+
+        self.assertTrue(result.mapping_ready)
+        self.assertEqual(result.observed_findings, ())
+
+    def test_reviewer_eligibility_rejects_each_ineligible_state(self) -> None:
+        cases = (
+            (
+                "source access",
+                replace(
+                    self.specification_eligibility,
+                    authorized_source_access=False,
+                ),
+                "core specification_and_inventory reviewer is not eligible",
+            ),
+            (
+                "independence",
+                replace(
+                    self.specification_eligibility,
+                    independent=False,
+                ),
+                "core specification_and_inventory reviewer is not eligible",
+            ),
+            (
+                "unresolved conflict",
+                replace(
+                    self.specification_eligibility,
+                    conflicts=True,
+                    conflict_disposition="Resolution pending",
+                ),
+                (
+                    "core specification_and_inventory reviewer has an "
+                    "unresolved conflict"
+                ),
+            ),
+            (
+                "owner rejection",
+                replace(
+                    self.specification_eligibility,
+                    owner_eligibility_accepted=False,
+                ),
+                (
+                    "core specification_and_inventory reviewer eligibility "
+                    "was rejected"
+                ),
+            ),
+        )
+        for label, policy_input, message in cases:
+            with self.subTest(label=label):
+                self._assert_policy_failure(
+                    "reviewer_eligibility",
+                    policy_input,
+                    message,
+                )
+
+    def test_actor_aliases_and_shared_locator_require_dual_role_acceptance(
+        self,
+    ) -> None:
+        cases = (
+            (
+                "unicode and punctuation",
+                "Jos\u00e9.Reviewer",
+                "JOSE\u0301 REVIEWER",
+                "urn:reviewer:first",
+                "urn:reviewer:second",
+            ),
+            (
+                "punctuation",
+                "Review.Person",
+                "review-person",
+                "urn:reviewer:first",
+                "urn:reviewer:second",
+            ),
+            (
+                "shared locator",
+                "First Reviewer",
+                "Different Reviewer",
+                "urn:reviewer:shared",
+                "urn:reviewer:shared",
+            ),
+        )
+        for label, identity, other, locator, other_locator in cases:
+            with self.subTest(label=label):
+                policy_input = replace(
+                    self.specification_eligibility,
+                    reviewer_identity=identity,
+                    other_reviewer_identity=other,
+                    reviewer_verification_locator=locator,
+                    other_reviewer_verification_locator=other_locator,
+                )
+                self._assert_policy_failure(
+                    "reviewer_eligibility",
+                    policy_input,
+                    (
+                        "core duplicate reviewer lacks complete dual-role "
+                        "acceptance and qualifications"
+                    ),
+                )
+
+    def test_mapper_aliases_cannot_bypass_independence(self) -> None:
+        policy_input = replace(
+            self.specification_eligibility,
+            reviewer_identity="Jos\u00e9.Mapper",
+            mapper_identities=frozenset({"JOSE\u0301 MAPPER"}),
+        )
+        self._assert_policy_failure(
+            "reviewer_eligibility",
+            policy_input,
+            "core specification_and_inventory reviewer is also a mapper",
+        )
+
+    def test_dual_role_policy_requires_acceptance_and_qualifications(self) -> None:
+        duplicate = replace(
+            self.specification_eligibility,
+            other_reviewer_identity=self.specification_identity.swapcase(),
+        )
+        cases = (
+            ("missing acceptance", duplicate),
+            (
+                "intentionally non-schema-valid missing qualification",
+                replace(
+                    duplicate,
+                    dual_role_accepted=True,
+                    qualification=" ",
+                ),
+            ),
+        )
+        for label, policy_input in cases:
+            with self.subTest(label=label):
+                self._assert_policy_failure(
+                    "reviewer_eligibility",
+                    policy_input,
+                    (
+                        "core duplicate reviewer lacks complete dual-role "
+                        "acceptance and qualifications"
+                    ),
+                )
+
+        accepted = replace(duplicate, dual_role_accepted=True)
+        self.assertTrue(
+            validate_role_readiness_policy(
+                "reviewer_eligibility",
+                accepted,
+            ).mapping_ready
+        )
+        self._assert_policy_failure(
+            "reviewer_eligibility",
+            replace(self.specification_eligibility, dual_role_accepted=True),
+            "core unique reviewer cannot claim a dual role",
+        )
+
+    def test_stop_allows_open_high_severity_and_is_not_ready(self) -> None:
+        for severity in ("Critical", "Important"):
+            with self.subTest(severity=severity):
+                result = validate_role_readiness_policy(
+                    "role_findings",
+                    replace(
+                        self.specification_findings,
+                        conclusion="stop",
+                        findings=(
+                            self._finding(
+                                severity=severity,
+                                status="open",
+                            ),
+                        ),
+                    ),
+                )
+                self.assertFalse(result.mapping_ready)
+
+    def test_finding_status_and_severity_rules_match_existing_policy(self) -> None:
+        for severity in ("Critical", "Important"):
+            with self.subTest(
+                severity=severity,
+                boundary="intentionally non-schema-valid defense in depth",
+            ):
+                self._assert_policy_failure(
+                    "role_findings",
+                    replace(
+                        self.specification_findings,
+                        findings=(
+                            self._finding(
+                                severity=severity,
+                                status="accepted",
+                            ),
+                        ),
+                    ),
+                    f"core {severity} finding cannot be accepted",
+                )
+
+        accepted_minor = self._finding(status="accepted")
+        accepted_result = validate_role_readiness_policy(
+            "role_findings",
+            replace(
+                self.specification_findings,
+                findings=(accepted_minor,),
+            ),
+        )
+        self.assertTrue(accepted_result.mapping_ready)
+        self._assert_policy_failure(
+            "role_findings",
+            replace(
+                self.specification_findings,
+                findings=(self._finding(status="open"),),
+            ),
+            "core pass conclusion has an open finding",
+        )
+
+    def test_post_correction_and_record_binding_rules(self) -> None:
+        valid = replace(
+            self.specification_findings,
+            conclusion="pass_after_correction",
+            post_correction_candidate_sha=self.candidate_commit,
+        )
+        self.assertTrue(
+            validate_role_readiness_policy(
+                "role_findings",
+                valid,
+            ).mapping_ready
+        )
+        self._assert_policy_failure(
+            "role_findings",
+            replace(valid, post_correction_candidate_sha="b" * 40),
+            (
+                "core specification_and_inventory post-correction "
+                "candidate is not the campaign candidate"
+            ),
+        )
+        self._assert_policy_failure(
+            "role_findings",
+            replace(
+                self.specification_findings,
+                conclusion="stop",
+                findings=(
+                    self._finding(affected_record_ids=("unknown-record",)),
+                ),
+            ),
+            "core finding finding-001 references an unknown record",
+        )
+
+    def test_findings_merge_in_sorted_order_and_reject_cross_role_conflicts(
+        self,
+    ) -> None:
+        first = self._finding(finding_id="finding-z")
+        initial = validate_role_readiness_policy(
+            "role_findings",
+            replace(self.specification_findings, findings=(first,)),
+        )
+        second = self._finding(finding_id="finding-a")
+        merged = validate_role_readiness_policy(
+            "role_findings",
+            replace(
+                self.security_findings,
+                findings=(second,),
+                observed_findings=initial.observed_findings,
+            ),
+        )
+        self.assertEqual(
+            tuple(item[0] for item in merged.observed_findings),
+            ("finding-a", "finding-z"),
+        )
+
+        self._assert_policy_failure(
+            "role_findings",
+            replace(
+                self.security_findings,
+                findings=(
+                    self._finding(
+                        finding_id="finding-z",
+                        description="Conflicting description",
+                    ),
+                ),
+                observed_findings=initial.observed_findings,
+            ),
+            "core finding finding-z has conflicting role evidence",
+        )
+
+    def test_completion_requires_exact_authoritative_findings(self) -> None:
+        finding = self._finding()
+        role_result = validate_role_readiness_policy(
+            "role_findings",
+            replace(self.specification_findings, findings=(finding,)),
+        )
+        exact = replace(
+            self.completion,
+            observed_findings=role_result.observed_findings,
+            authoritative_findings=(self._normalized_finding(),),
+        )
+        self.assertTrue(
+            validate_role_readiness_policy(
+                "mapping_set_completion",
+                exact,
+            ).mapping_ready
+        )
+        self._assert_policy_failure(
+            "mapping_set_completion",
+            replace(
+                exact,
+                authoritative_findings=(
+                    self._normalized_finding(
+                        description="Different authoritative description"
+                    ),
+                ),
+            ),
+            "core findings do not equal authoritative candidate findings",
+        )
+
+    def test_completion_rejects_duplicate_authoritative_identifiers(self) -> None:
+        duplicate = self._normalized_finding()
+        self._assert_policy_failure(
+            "mapping_set_completion",
+            replace(
+                self.completion,
+                authoritative_findings=(duplicate, duplicate),
+            ),
+            "core candidate finding identifiers are duplicated",
+        )
+
+    def test_reviewed_state_requires_exact_reviewer_metadata(self) -> None:
+        reviewed = replace(
+            self.completion,
+            candidate_state="reviewed",
+            mapping_set_reviewer_metadata=tuple(
+                reversed(self.specification_metadata)
+            ),
+            record_reviewer_metadata=(
+                tuple(reversed(self.security_metadata)),
+            ),
+        )
+        self.assertTrue(
+            validate_role_readiness_policy(
+                "mapping_set_completion",
+                reviewed,
+            ).mapping_ready
+        )
+        self._assert_policy_failure(
+            "mapping_set_completion",
+            replace(
+                reviewed,
+                mapping_set_reviewer_metadata=(
+                    *self.specification_metadata[:-1],
+                    ("qualification", "Different qualification"),
+                ),
+            ),
+            (
+                "core mapping-set reviewer does not equal the "
+                "specification review evidence"
+            ),
+        )
+        self._assert_policy_failure(
+            "mapping_set_completion",
+            replace(reviewed, record_reviewer_metadata=(None,)),
+            (
+                "core record reviewer does not equal the security review "
+                "evidence"
+            ),
+        )
+
+    def test_stage_dispatch_rejects_mismatched_input(self) -> None:
+        with self.assertRaises(TypeError) as caught:
+            validate_role_readiness_policy(
+                "role_findings",
+                self.specification_eligibility,
+            )
+        self.assertEqual(
+            str(caught.exception),
+            "role policy stage and input do not match",
+        )
+
+    def test_each_stage_preserves_first_failure_order(self) -> None:
+        self._assert_policy_failure(
+            "reviewer_eligibility",
+            replace(
+                self.specification_eligibility,
+                authorized_source_access=False,
+                reviewer_identity="Mapping Author",
+                conflicts=True,
+                conflict_disposition="Unresolved",
+            ),
+            "core specification_and_inventory reviewer is not eligible",
+        )
+        self._assert_policy_failure(
+            "role_findings",
+            replace(
+                self.specification_findings,
+                conclusion="pass_after_correction",
+                post_correction_candidate_sha="b" * 40,
+                findings=(
+                    self._finding(affected_record_ids=("unknown-record",)),
+                ),
+            ),
+            (
+                "core specification_and_inventory post-correction "
+                "candidate is not the campaign candidate"
+            ),
+        )
+        duplicate = self._normalized_finding()
+        self._assert_policy_failure(
+            "mapping_set_completion",
+            replace(
+                self.completion,
+                authoritative_findings=(duplicate, duplicate),
+                candidate_state="reviewed",
+                mapping_set_reviewer_metadata=None,
+            ),
+            "core candidate finding identifiers are duplicated",
+        )
+
+    def test_combined_policy_orders_eligibility_findings_and_completion(
+        self,
+    ) -> None:
+        bad_finding = replace(
+            self.specification_findings,
+            findings=(self._finding(status="open"),),
+        )
+        bad_completion = replace(
+            self.completion,
+            authoritative_findings=(
+                self._normalized_finding(description="Unexpected"),
+            ),
+        )
+        first = replace(
+            self._mapping_policy(),
+            reviewer_eligibility=(
+                replace(
+                    self.specification_eligibility,
+                    authorized_source_access=False,
+                ),
+                self.security_eligibility,
+            ),
+            role_findings=(bad_finding, self.security_findings),
+            mapping_set_completion=bad_completion,
+        )
+        with self.assertRaises(ValueError) as eligibility_error:
+            evaluate_mapping_set_policy(first)
+        self.assertEqual(
+            str(eligibility_error.exception),
+            "core specification_and_inventory reviewer is not eligible",
+        )
+
+        second = replace(
+            first,
+            reviewer_eligibility=(
+                self.specification_eligibility,
+                self.security_eligibility,
+            ),
+        )
+        with self.assertRaises(ValueError) as finding_error:
+            evaluate_mapping_set_policy(second)
+        self.assertEqual(
+            str(finding_error.exception),
+            "core pass conclusion has an open finding",
+        )
+
+
+class QualifiedReviewDraftReferenceBoundaryTests(unittest.TestCase):
+    reviewed_candidate = "a" * 40
+    referenced_candidate = "b" * 40
+    campaign_id = "issue-55-draft-review"
+    manifest_sha256 = "c" * 64
+    seal_record_sha256 = "d" * 64
+
+    def _valid_policy(self) -> DraftReferencePolicyInput:
+        return DraftReferencePolicyInput(
+            reviewed_candidate=self.reviewed_candidate,
+            referenced_candidate=self.referenced_candidate,
+            draft_phase="draft_review",
+            draft_evidence_valid=True,
+            draft_readiness_name="transition_ready",
+            draft_readiness_value=True,
+            reference_campaign_id=self.campaign_id,
+            draft_campaign_id=self.campaign_id,
+            reference_candidate_commit=self.referenced_candidate,
+            draft_candidate_commit=self.referenced_candidate,
+            reference_manifest_sha256=self.manifest_sha256,
+            draft_manifest_sha256=self.manifest_sha256,
+            reference_seal_record_sha256=self.seal_record_sha256,
+            draft_seal_record_sha256=self.seal_record_sha256,
+        )
+
+    def _assert_policy_failure(
+        self,
+        policy_input: DraftReferencePolicyInput,
+        message: str,
+    ) -> None:
+        with self.assertRaisesRegex(
+            _ValidationFailure,
+            rf"^{re.escape(message)}$",
+        ):
+            evaluate_draft_reference_policy(policy_input)
+
+    def test_valid_policy_is_immutable_and_uses_no_external_dependencies(
+        self,
+    ) -> None:
+        with (
+            mock.patch.object(
+                Path,
+                "open",
+                side_effect=AssertionError("I/O"),
+            ),
+            mock.patch.object(
+                Path,
+                "read_bytes",
+                side_effect=AssertionError("I/O"),
+            ),
+            mock.patch.object(
+                subprocess,
+                "run",
+                side_effect=AssertionError("process"),
+            ),
+            mock.patch.object(
+                GitReader,
+                "read_bytes",
+                side_effect=AssertionError("Git"),
+            ),
+            mock.patch(
+                "tools.validate_qualified_review_evidence.json.loads",
+                side_effect=AssertionError("JSON"),
+            ),
+            mock.patch(
+                "tools.validate_qualified_review_evidence.hashlib.sha256",
+                side_effect=AssertionError("hashing"),
+            ),
+            mock.patch(
+                "tools.validate_qualified_review_evidence."
+                "build_campaign_archive",
+                side_effect=AssertionError("archive"),
+            ),
+            mock.patch(
+                "tools.validate_qualified_review_evidence.build_seal_record",
+                side_effect=AssertionError("seal"),
+            ),
+        ):
+            evaluate_draft_reference_policy(self._valid_policy())
+
+        with self.assertRaises(AttributeError):
+            self._valid_policy().draft_phase = "changed"
+
+    def test_binding_rejects_the_selected_invalid_checks(self) -> None:
+        checks = (
+            (
+                DistinctCandidateCheck(
+                    reviewed_candidate=self.reviewed_candidate,
+                    referenced_candidate=self.reviewed_candidate,
+                ),
+                "reviewed and Draft candidate commits must differ",
+            ),
+            (
+                DraftStatusCheck(
+                    phase="final_reviewed_confirmation",
+                    evidence_valid=False,
+                    readiness_name="wrong",
+                    readiness_value=False,
+                ),
+                "referenced campaign is not a Draft review campaign",
+            ),
+            (
+                ScalarReferenceCheck(
+                    stage="campaign_id",
+                    expected=self.campaign_id,
+                    actual="other-campaign",
+                ),
+                "Draft campaign identifier does not match the reference",
+            ),
+            (
+                ScalarReferenceCheck(
+                    stage="seal_record_sha256",
+                    expected=self.seal_record_sha256,
+                    actual="e" * 64,
+                ),
+                "Draft seal-record digest does not match the reference",
+            ),
+        )
+        for check, message in checks:
+            with self.subTest(check=check):
+                with self.assertRaisesRegex(
+                    _ValidationFailure,
+                    rf"^{re.escape(message)}$",
+                ):
+                    validate_draft_reference_binding(check)
+
+    def test_binding_accepts_valid_checks(self) -> None:
+        checks = (
+            DistinctCandidateCheck(
+                reviewed_candidate=self.reviewed_candidate,
+                referenced_candidate=self.referenced_candidate,
+            ),
+            DraftStatusCheck(
+                phase="draft_review",
+                evidence_valid=True,
+                readiness_name="transition_ready",
+                readiness_value=True,
+            ),
+            ScalarReferenceCheck(
+                stage="campaign_id",
+                expected=self.campaign_id,
+                actual=self.campaign_id,
+            ),
+            ScalarReferenceCheck(
+                stage="candidate_commit",
+                expected=self.referenced_candidate,
+                actual=self.referenced_candidate,
+            ),
+            ScalarReferenceCheck(
+                stage="manifest_sha256",
+                expected=self.manifest_sha256,
+                actual=self.manifest_sha256,
+            ),
+            ScalarReferenceCheck(
+                stage="seal_record_sha256",
+                expected=self.seal_record_sha256,
+                actual=self.seal_record_sha256,
+            ),
+        )
+        for check in checks:
+            with self.subTest(check=check):
+                validate_draft_reference_binding(check)
+
+    def test_combined_policy_preserves_each_first_failure(self) -> None:
+        invalid = replace(
+            self._valid_policy(),
+            reviewed_candidate=self.referenced_candidate,
+            draft_phase="final_reviewed_confirmation",
+            draft_evidence_valid=False,
+            draft_readiness_name="wrong",
+            draft_readiness_value=False,
+            draft_campaign_id="other-campaign",
+            draft_candidate_commit="e" * 40,
+            draft_manifest_sha256="e" * 64,
+            draft_seal_record_sha256="e" * 64,
+        )
+        self._assert_policy_failure(
+            invalid,
+            "reviewed and Draft candidate commits must differ",
+        )
+        self._assert_policy_failure(
+            replace(invalid, reviewed_candidate=self.reviewed_candidate),
+            "referenced campaign is not a Draft review campaign",
+        )
+        self._assert_policy_failure(
+            replace(
+                invalid,
+                reviewed_candidate=self.reviewed_candidate,
+                draft_phase="draft_review",
+            ),
+            "referenced Draft campaign is not transition-ready",
+        )
+        self._assert_policy_failure(
+            replace(
+                invalid,
+                reviewed_candidate=self.reviewed_candidate,
+                draft_phase="draft_review",
+                draft_evidence_valid=True,
+                draft_readiness_name="transition_ready",
+                draft_readiness_value=True,
+            ),
+            "Draft campaign identifier does not match the reference",
+        )
+        self._assert_policy_failure(
+            replace(
+                invalid,
+                reviewed_candidate=self.reviewed_candidate,
+                draft_phase="draft_review",
+                draft_evidence_valid=True,
+                draft_readiness_name="transition_ready",
+                draft_readiness_value=True,
+                draft_campaign_id=self.campaign_id,
+            ),
+            "Draft candidate commit does not match the reference",
+        )
+        self._assert_policy_failure(
+            replace(
+                invalid,
+                reviewed_candidate=self.reviewed_candidate,
+                draft_phase="draft_review",
+                draft_evidence_valid=True,
+                draft_readiness_name="transition_ready",
+                draft_readiness_value=True,
+                draft_campaign_id=self.campaign_id,
+                draft_candidate_commit=self.referenced_candidate,
+            ),
+            "Draft manifest digest does not match the reference",
+        )
+        self._assert_policy_failure(
+            replace(
+                invalid,
+                reviewed_candidate=self.reviewed_candidate,
+                draft_phase="draft_review",
+                draft_evidence_valid=True,
+                draft_readiness_name="transition_ready",
+                draft_readiness_value=True,
+                draft_campaign_id=self.campaign_id,
+                draft_candidate_commit=self.referenced_candidate,
+                draft_manifest_sha256=self.manifest_sha256,
+            ),
+            "Draft seal-record digest does not match the reference",
+        )
+
+    def test_binding_rejects_unknown_check_and_scalar_stage(self) -> None:
+        with self.assertRaises(TypeError) as check_error:
+            validate_draft_reference_binding(
+                ValidationReport(
+                    evidence_valid=True,
+                    readiness_name="transition_ready",
+                    readiness_value=True,
+                    candidate_commit=self.referenced_candidate,
+                    campaign_id=self.campaign_id,
+                    errors=(),
+                )
+            )
+        self.assertEqual(
+            str(check_error.exception),
+            "unknown Draft reference check",
+        )
+        with self.assertRaises(TypeError) as stage_error:
+            validate_draft_reference_binding(
+                ScalarReferenceCheck(
+                    stage="unknown",
+                    expected="expected",
+                    actual="actual",
+                )
+            )
+        self.assertEqual(
+            str(stage_error.exception),
+            "unknown Draft reference stage",
+        )
+
+
+class QualifiedReviewPolicyRoutingTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.temporary = tempfile.TemporaryDirectory()
+        cls.fixture = QualifiedReviewHotPathFixture.create(
+            Path(cls.temporary.name), ROOT
+        )
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls.temporary.cleanup()
+
+    def test_draft_roles_route_through_ordered_policy_operations(self) -> None:
+        events: list[str] = []
+        validator = __import__(
+            "tools.validate_qualified_review_evidence",
+            fromlist=["validate_campaign"],
+        )
+        original_policy = validator.validate_role_readiness_policy
+        original_files = validator._validate_role_files
+
+        def policy(stage: str, value: object) -> object:
+            role = getattr(value, "role", "completion")
+            mapping_set = getattr(value, "mapping_set_id", "")
+            events.append(f"{mapping_set}:{stage}:{role}")
+            return original_policy(stage, value)
+
+        def role_files(*args: object, **kwargs: object) -> object:
+            role = kwargs["role"]
+            mapping_set = kwargs["mapping_set"]
+            events.append(f"{mapping_set.mapping_set_id}:files:{role.role}")
+            return original_files(*args, **kwargs)
+
+        destination = Path(self.temporary.name) / "draft-routing"
+        case = qualified_review_policy_inventory().cases[0]
+        valid_case = replace(case, operations=(), expected=case.expected)
+        with (
+            mock.patch.object(
+                validator,
+                "validate_role_readiness_policy",
+                side_effect=policy,
+            ),
+            mock.patch.object(
+                validator,
+                "_validate_role_files",
+                side_effect=role_files,
+            ),
+        ):
+            report = run_full_case(self.fixture, valid_case, destination)
+
+        self.assertTrue(report.evidence_valid, report.errors)
+        for mapping_set_id in self.fixture.assemblies:
+            for role in ROLES:
+                self.assertLess(
+                    events.index(f"{mapping_set_id}:reviewer_eligibility:{role}"),
+                    events.index(f"{mapping_set_id}:files:{role}"),
+                )
+                self.assertLess(
+                    events.index(f"{mapping_set_id}:files:{role}"),
+                    events.index(f"{mapping_set_id}:role_findings:{role}"),
+                )
+            completion = events.index(
+                f"{mapping_set_id}:mapping_set_completion:completion"
+            )
+            for role in ROLES:
+                self.assertGreater(
+                    completion,
+                    events.index(
+                        f"{mapping_set_id}:role_findings:{role}"
+                    ),
+                )
+
+    def test_final_reference_routes_through_ordered_policy_operations(self) -> None:
+        events: list[str] = []
+        validator = __import__(
+            "tools.validate_qualified_review_evidence",
+            fromlist=["validate_campaign"],
+        )
+        original_binding = validator.validate_draft_reference_binding
+        original_details = validator._validate_campaign_details
+        original_read = validator._read_external_path
+        original_loads = validator.json.loads
+        details_calls = 0
+        seal_digest_checked = False
+
+        def binding(check: object) -> None:
+            nonlocal seal_digest_checked
+            stage = (
+                "distinct_candidate"
+                if isinstance(check, DistinctCandidateCheck)
+                else getattr(check, "stage", "draft_status")
+            )
+            events.append(str(stage))
+            original_binding(check)
+            if stage == "seal_record_sha256":
+                seal_digest_checked = True
+
+        def details(*args: object, **kwargs: object) -> object:
+            nonlocal details_calls
+            details_calls += 1
+            if details_calls > 1:
+                events.append("recursive-details")
+            return original_details(*args, **kwargs)
+
+        def read(path: Path, worktrees: tuple[Path, ...]) -> bytes:
+            events.append("retained-archive")
+            return original_read(path, worktrees)
+
+        def loads(value: object, *args: object, **kwargs: object) -> object:
+            if seal_digest_checked:
+                events.append("seal-json")
+            return original_loads(value, *args, **kwargs)
+
+        destination = Path(self.temporary.name) / "final-routing"
+        case = next(
+            item
+            for item in qualified_review_policy_inventory().cases
+            if item.fixture_kind == "reviewed_final"
+        )
+        valid_case = replace(case, operations=(), expected=case.expected)
+        with (
+            mock.patch.object(
+                validator,
+                "validate_draft_reference_binding",
+                side_effect=binding,
+            ),
+            mock.patch.object(
+                validator,
+                "_validate_campaign_details",
+                side_effect=details,
+            ),
+            mock.patch.object(
+                validator,
+                "_read_external_path",
+                side_effect=read,
+            ),
+            mock.patch.object(validator.json, "loads", side_effect=loads),
+        ):
+            report = run_full_case(self.fixture, valid_case, destination)
+
+        self.assertTrue(report.evidence_valid, report.errors)
+        self.assertLess(events.index("distinct_candidate"), events.index("recursive-details"))
+        self.assertLess(events.index("manifest_sha256"), events.index("retained-archive"))
+        self.assertLess(events.index("seal_record_sha256"), events.index("seal-json"))
+
+
+class QualifiedReviewHotPathEquivalenceCommandTests(unittest.TestCase):
+    CANDIDATE = "1" * 40
+    OTHER_CANDIDATE = "2" * 40
+
+    def setUp(self) -> None:
+        self.root = Path("C:/private/injected-checkout")
+        source = qualified_review_policy_inventory()
+        self.cases = (source.cases[0], source.cases[5])
+        self.inventory = SimpleNamespace(
+            cases=self.cases,
+            methods=(
+                SimpleNamespace(method_name=self.cases[0].method_name),
+                SimpleNamespace(method_name=self.cases[1].method_name),
+            ),
+            population_sha256="d" * 64,
+        )
+        self.projection = ReportProjection(
+            True,
+            "transition_ready",
+            True,
+            self.CANDIDATE,
+            "synthetic-campaign",
+            (),
+        )
+        self.events: list[tuple[str, str]] = []
+        self.destinations: list[Path] = []
+        self.fixture_roots: list[Path] = []
+
+    @staticmethod
+    def completed(
+        stdout: bytes = b"",
+        *,
+        returncode: int = 0,
+        stderr: bytes = b"",
+    ) -> subprocess.CompletedProcess[bytes]:
+        return subprocess.CompletedProcess(
+            args=["git"],
+            returncode=returncode,
+            stdout=stdout,
+            stderr=stderr,
+        )
+
+    def clean_git_results(
+        self,
+    ) -> tuple[subprocess.CompletedProcess[bytes], ...]:
+        head = self.completed((self.CANDIDATE + "\n").encode("ascii"))
+        clean = self.completed()
+        return head, clean, head, clean
+
+    def run_verification(
+        self,
+        *,
+        full: dict[str, ReportProjection] | None = None,
+        narrow: dict[str, ReportProjection] | None = None,
+        expected: dict[str, ReportProjection] | None = None,
+        runner_results: tuple[subprocess.CompletedProcess[bytes], ...] | None = None,
+        full_factory: object | None = None,
+    ) -> verify_qualified_review_hot_path_equivalence.EquivalenceResult:
+        full_outputs = {
+            case.case_id: self.projection for case in self.cases
+        } if full is None else full
+        narrow_outputs = {
+            case.case_id: self.projection for case in self.cases
+        } if narrow is None else narrow
+        expected_outputs = {
+            case.case_id: self.projection for case in self.cases
+        } if expected is None else expected
+        results = list(
+            self.clean_git_results()
+            if runner_results is None
+            else runner_results
+        )
+
+        def runner(*_args: object, **_kwargs: object) -> object:
+            if not results:
+                raise AssertionError("the verifier made an extra Git call")
+            return results.pop(0)
+
+        def create_fixture(root: Path, repository_root: Path) -> object:
+            self.assertEqual(repository_root, self.root)
+            self.fixture_roots.append(root)
+            return SimpleNamespace(root=root)
+
+        def full_case(
+            _fixture: object, case: object, destination: Path
+        ) -> ReportProjection:
+            case_id = str(getattr(case, "case_id"))
+            self.events.append(("full", case_id))
+            self.destinations.append(destination)
+            if full_factory is not None:
+                return full_factory(case, destination)
+            return full_outputs[case_id]
+
+        def narrow_case(_fixture: object, case: object) -> ReportProjection:
+            case_id = str(getattr(case, "case_id"))
+            self.events.append(("narrow", case_id))
+            return narrow_outputs[case_id]
+
+        def expected_case(_fixture: object, case: object) -> ReportProjection:
+            case_id = str(getattr(case, "case_id"))
+            self.events.append(("expected", case_id))
+            return expected_outputs[case_id]
+
+        runner_mock = mock.Mock(side_effect=runner)
+        inventory_accessor = mock.Mock(return_value=self.inventory)
+        fixture_creator = mock.Mock(side_effect=create_fixture)
+        with (
+            mock.patch.object(
+                verify_qualified_review_hot_path_equivalence,
+                "qualified_review_policy_inventory",
+                inventory_accessor,
+            ),
+            mock.patch.object(
+                verify_qualified_review_hot_path_equivalence.QualifiedReviewHotPathFixture,
+                "create",
+                fixture_creator,
+            ),
+            mock.patch.object(
+                verify_qualified_review_hot_path_equivalence,
+                "run_full_case",
+                side_effect=full_case,
+            ),
+            mock.patch.object(
+                verify_qualified_review_hot_path_equivalence,
+                "run_narrow_case",
+                side_effect=narrow_case,
+            ),
+            mock.patch.object(
+                verify_qualified_review_hot_path_equivalence,
+                "expected_projection",
+                side_effect=expected_case,
+            ),
+        ):
+            result = verify_qualified_review_hot_path_equivalence.verify_qualified_review_hot_path_equivalence(
+                self.root,
+                self.CANDIDATE,
+                runner=runner_mock,
+            )
+        self.assertEqual(results, [])
+        self.last_runner = runner_mock
+        self.last_inventory_accessor = inventory_accessor
+        self.last_fixture_creator = fixture_creator
+        return result
+
+    def assert_main_rejects(
+        self,
+        error: Exception,
+    ) -> tuple[str, str]:
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+        with (
+            mock.patch.object(
+                verify_qualified_review_hot_path_equivalence,
+                "verify_qualified_review_hot_path_equivalence",
+                side_effect=error,
+            ),
+            redirect_stdout(stdout),
+            redirect_stderr(stderr),
+        ):
+            result = verify_qualified_review_hot_path_equivalence.main(
+                ["--check", "--candidate-sha", self.CANDIDATE],
+                root=self.root,
+            )
+        self.assertEqual(result, 1)
+        self.assertEqual(stdout.getvalue(), "")
+        self.assertEqual(len(stderr.getvalue().splitlines()), 1)
+        self.assertNotIn("equivalence=PASS", stderr.getvalue())
+        return stdout.getvalue(), stderr.getvalue()
+
+    def test_command_arguments_are_required_and_rejected_safely(self) -> None:
+        for arguments in (
+            [],
+            ["--check"],
+            ["--candidate-sha", self.CANDIDATE],
+            ["--check", "--candidate-sha", self.CANDIDATE, "extra"],
+        ):
+            with self.subTest(arguments=arguments):
+                stdout = io.StringIO()
+                stderr = io.StringIO()
+                with redirect_stdout(stdout), redirect_stderr(stderr):
+                    result = verify_qualified_review_hot_path_equivalence.main(
+                        arguments,
+                        root=self.root,
+                    )
+                self.assertEqual(result, 1)
+                self.assertEqual(stdout.getvalue(), "")
+                self.assertEqual(len(stderr.getvalue().splitlines()), 1)
+
+    def test_candidate_requires_a_full_lowercase_sha(self) -> None:
+        for candidate in ("A" * 40, "1" * 12):
+            with self.subTest(candidate=candidate):
+                runner = mock.Mock()
+                with self.assertRaisesRegex(
+                    verify_qualified_review_hot_path_equivalence.QualifiedReviewHotPathEquivalenceError,
+                    "40 lowercase hexadecimal",
+                ):
+                    verify_qualified_review_hot_path_equivalence.require_exact_candidate(
+                        self.root,
+                        candidate,
+                        runner=runner,
+                    )
+                runner.assert_not_called()
+
+    def test_candidate_requires_exact_head_and_clean_status(self) -> None:
+        failures = (
+            (
+                self.completed(
+                    (self.OTHER_CANDIDATE + "\n").encode("ascii")
+                ),
+            ),
+            (
+                self.completed((self.CANDIDATE + "\n").encode("ascii")),
+                self.completed(b" M private-tracked.txt\n"),
+            ),
+            (
+                self.completed((self.CANDIDATE + "\n").encode("ascii")),
+                self.completed(b"?? private-untracked.txt\n"),
+            ),
+        )
+        for results in failures:
+            with self.subTest(results=results):
+                runner = mock.Mock(side_effect=results)
+                with self.assertRaises(
+                    verify_qualified_review_hot_path_equivalence.QualifiedReviewHotPathEquivalenceError
+                ) as captured:
+                    verify_qualified_review_hot_path_equivalence.require_exact_candidate(
+                        self.root,
+                        self.CANDIDATE,
+                        runner=runner,
+                    )
+                message = str(captured.exception)
+                self.assertNotIn(str(self.root), message)
+                self.assertNotIn("private", message)
+
+    def test_git_failures_are_sanitized(self) -> None:
+        failures: tuple[object, ...] = (
+            (self.completed(returncode=1, stderr=b"injected child stderr"),),
+            (
+                self.completed((self.CANDIDATE + "\n").encode("ascii")),
+                self.completed(returncode=1, stderr=b"injected child stderr"),
+            ),
+            PermissionError(f"denied {self.root}"),
+        )
+        for failure in failures:
+            with self.subTest(failure=failure):
+                runner = (
+                    mock.Mock(side_effect=failure)
+                    if isinstance(failure, tuple)
+                    else mock.Mock(side_effect=failure)
+                )
+                with self.assertRaises(
+                    verify_qualified_review_hot_path_equivalence.QualifiedReviewHotPathEquivalenceError
+                ) as captured:
+                    verify_qualified_review_hot_path_equivalence.require_exact_candidate(
+                        self.root,
+                        self.CANDIDATE,
+                        runner=runner,
+                    )
+                message = str(captured.exception)
+                self.assertNotIn(str(self.root), message)
+                self.assertNotIn("injected child stderr", message)
+                _, stderr = self.assert_main_rejects(captured.exception)
+                self.assertNotIn(str(self.root), stderr)
+                self.assertNotIn("injected child stderr", stderr)
+
+    def test_matching_clean_checkout_uses_exact_git_commands(self) -> None:
+        runner = mock.Mock(
+            side_effect=(
+                self.completed((self.CANDIDATE + "\n").encode("ascii")),
+                self.completed(),
+            )
+        )
+        verify_qualified_review_hot_path_equivalence.require_exact_candidate(
+            self.root,
+            self.CANDIDATE,
+            runner=runner,
+        )
+        self.assertEqual(
+            runner.call_args_list,
+            [
+                mock.call(
+                    ["git", "rev-parse", "HEAD"],
+                    cwd=self.root,
+                    shell=False,
+                    capture_output=True,
+                ),
+                mock.call(
+                    [
+                        "git",
+                        "status",
+                        "--porcelain=v1",
+                        "--untracked-files=all",
+                    ],
+                    cwd=self.root,
+                    shell=False,
+                    capture_output=True,
+                ),
+            ],
+        )
+
+    def test_every_case_uses_independent_comparisons_and_fresh_paths(self) -> None:
+        result = self.run_verification()
+        self.assertEqual(
+            result,
+            verify_qualified_review_hot_path_equivalence.EquivalenceResult(
+                candidate_sha=self.CANDIDATE,
+                method_count=2,
+                population_count=2,
+                population_sha256="d" * 64,
+                full_comparison_count=2,
+                narrow_comparison_count=2,
+            ),
+        )
+        with self.assertRaises(FrozenInstanceError):
+            result.population_count = 0  # type: ignore[misc]
+        self.last_inventory_accessor.assert_called_once_with()
+        self.last_fixture_creator.assert_called_once()
+        self.assertEqual(
+            self.events,
+            [
+                (route, case.case_id)
+                for case in self.cases
+                for route in ("full", "narrow", "expected")
+            ],
+        )
+        self.assertEqual(len(self.destinations), 2)
+        self.assertEqual(len(set(self.destinations)), 2)
+        self.assertTrue(all(not path.exists() for path in self.destinations))
+        git_calls = [
+            mock.call(
+                ["git", "rev-parse", "HEAD"],
+                cwd=self.root,
+                shell=False,
+                capture_output=True,
+            ),
+            mock.call(
+                [
+                    "git",
+                    "status",
+                    "--porcelain=v1",
+                    "--untracked-files=all",
+                ],
+                cwd=self.root,
+                shell=False,
+                capture_output=True,
+            ),
+        ]
+        self.assertEqual(
+            self.last_runner.call_args_list,
+            [*git_calls, *git_calls],
+        )
+
+    def test_case_destinations_are_filesystem_safe(self) -> None:
+        self.run_verification()
+        self.assertEqual(
+            [event[1] for event in self.events if event[0] == "full"],
+            [case.case_id for case in self.cases],
+        )
+        self.assertEqual(
+            len({destination.name for destination in self.destinations}),
+            len(self.destinations),
+        )
+        for destination in self.destinations:
+            with self.subTest(destination=destination.name):
+                self.assertNotRegex(destination.name, r'[<>:"/\\|?*]')
+
+    def assert_projection_mismatch(
+        self,
+        relation: str,
+        *,
+        full: ReportProjection,
+        narrow: ReportProjection,
+        expected: ReportProjection,
+    ) -> str:
+        with self.assertRaises(
+            verify_qualified_review_hot_path_equivalence.QualifiedReviewHotPathEquivalenceError
+        ) as captured:
+            self.run_verification(
+                full={case.case_id: full for case in self.cases},
+                narrow={case.case_id: narrow for case in self.cases},
+                expected={case.case_id: expected for case in self.cases},
+            )
+        message = str(captured.exception)
+        self.assertIn(self.cases[0].case_id, message)
+        self.assertIn(relation, message)
+        self.assertIn("full=", message)
+        self.assertIn("narrow=", message)
+        self.assertIn("expected=", message)
+        return message
+
+    def test_full_and_narrow_mismatch_is_rejected(self) -> None:
+        changed = replace(self.projection, errors=("narrow differs",))
+        self.assert_projection_mismatch(
+            "full/narrow",
+            full=self.projection,
+            narrow=changed,
+            expected=self.projection,
+        )
+
+    def test_full_and_expected_mismatch_is_rejected(self) -> None:
+        changed = replace(self.projection, errors=("expected differs",))
+        self.assert_projection_mismatch(
+            "full/expected",
+            full=self.projection,
+            narrow=self.projection,
+            expected=changed,
+        )
+
+    def test_narrow_and_expected_mismatch_is_rejected(self) -> None:
+        changed = replace(self.projection, errors=("narrow differs",))
+        self.assert_projection_mismatch(
+            "narrow/expected",
+            full=self.projection,
+            narrow=changed,
+            expected=self.projection,
+        )
+
+    def test_temporary_paths_are_rejected_without_leaking(self) -> None:
+        def leaked(
+            _case: object, destination: Path
+        ) -> ReportProjection:
+            slash_path = destination.parent.resolve().as_posix()
+            return replace(
+                self.projection,
+                errors=(f"{slash_path}/private-evidence",),
+            )
+
+        with self.assertRaises(
+            verify_qualified_review_hot_path_equivalence.QualifiedReviewHotPathEquivalenceError
+        ) as captured:
+            self.run_verification(full_factory=leaked)
+        message = str(captured.exception)
+        self.assertIn("temporary path", message)
+        for path in (*self.fixture_roots, *self.destinations):
+            self.assertNotIn(str(path), message)
+            self.assertNotIn(path.as_posix(), message)
+        _, stderr = self.assert_main_rejects(captured.exception)
+        self.assertNotIn("private-evidence", stderr)
+
+    def test_postflight_head_drift_is_rejected_after_comparisons(self) -> None:
+        results = (
+            self.completed((self.CANDIDATE + "\n").encode("ascii")),
+            self.completed(),
+            self.completed((self.OTHER_CANDIDATE + "\n").encode("ascii")),
+        )
+        with self.assertRaises(
+            verify_qualified_review_hot_path_equivalence.QualifiedReviewHotPathEquivalenceError
+        ) as captured:
+            self.run_verification(runner_results=results)
+        self.assertEqual(len(self.events), len(self.cases) * 3)
+        self.assertNotIn(str(self.root), str(captured.exception))
+        self.assert_main_rejects(captured.exception)
+
+    def test_postflight_dirty_state_is_rejected_after_comparisons(self) -> None:
+        dirty = b"?? injected-postflight-secret.txt\n"
+        results = (
+            self.completed((self.CANDIDATE + "\n").encode("ascii")),
+            self.completed(),
+            self.completed((self.CANDIDATE + "\n").encode("ascii")),
+            self.completed(dirty),
+        )
+        with self.assertRaises(
+            verify_qualified_review_hot_path_equivalence.QualifiedReviewHotPathEquivalenceError
+        ) as captured:
+            self.run_verification(runner_results=results)
+        self.assertEqual(len(self.events), len(self.cases) * 3)
+        self.assertNotIn(dirty.decode("ascii").strip(), str(captured.exception))
+        _, stderr = self.assert_main_rejects(captured.exception)
+        self.assertNotIn(dirty.decode("ascii").strip(), stderr)
+
+    def test_main_prints_exactly_the_seven_pass_lines(self) -> None:
+        expected = verify_qualified_review_hot_path_equivalence.EquivalenceResult(
+            candidate_sha=self.CANDIDATE,
+            method_count=15,
+            population_count=28,
+            population_sha256="a" * 64,
+            full_comparison_count=28,
+            narrow_comparison_count=28,
+        )
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+        with (
+            mock.patch.object(
+                verify_qualified_review_hot_path_equivalence,
+                "verify_qualified_review_hot_path_equivalence",
+                return_value=expected,
+            ) as verify,
+            redirect_stdout(stdout),
+            redirect_stderr(stderr),
+        ):
+            result = verify_qualified_review_hot_path_equivalence.main(
+                ["--check", "--candidate-sha", self.CANDIDATE],
+                root=self.root,
+            )
+        self.assertEqual(result, 0)
+        self.assertEqual(stderr.getvalue(), "")
+        self.assertEqual(
+            stdout.getvalue(),
+            "candidate_sha=1111111111111111111111111111111111111111\n"
+            "method_count=15\n"
+            "population_count=28\n"
+            "population_sha256="
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n"
+            "full_comparison_count=28\n"
+            "narrow_comparison_count=28\n"
+            "equivalence=PASS\n",
+        )
+        verify.assert_called_once_with(self.root, self.CANDIDATE)
+
+
+class QualifiedReviewHotPathSupportTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.temporary = tempfile.TemporaryDirectory()
+        cls.fixture = QualifiedReviewHotPathFixture.create(
+            Path(cls.temporary.name), ROOT
+        )
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls.temporary.cleanup()
+
+    def test_valid_draft_and_final_projections_match_direct_validation(self) -> None:
+        inventory = qualified_review_policy_inventory()
+        draft = inventory.cases[0]
+        final = next(
+            case for case in inventory.cases if case.fixture_kind == "reviewed_final"
+        )
+        for name, case in (("draft", draft), ("final", final)):
+            with self.subTest(name=name):
+                case = replace(
+                    case,
+                    operations=(),
+                    expected=replace(
+                        case.expected,
+                        evidence_valid=True,
+                        readiness_value=True,
+                        candidate_key=(
+                            "reviewed" if name == "final" else "draft"
+                        ),
+                        campaign_id=(
+                            "issue-55-final-confirmation"
+                            if name == "final"
+                            else "issue-55-draft-review"
+                        ),
+                        errors=(),
+                    ),
+                )
+                full = run_full_case(
+                    self.fixture,
+                    case,
+                    Path(self.temporary.name) / f"{name}-full",
+                )
+                self.assertEqual(full, expected_projection(self.fixture, case))
+                self.assertEqual(run_narrow_case(self.fixture, case), full)
+
+    def test_operations_reject_invalid_paths_types_growth_and_source_mutation(self) -> None:
+        case = qualified_review_policy_inventory().cases[0]
+        source_operations = case.operations
+        invalid = (
+            replace(case, operations=(replace(source_operations[0], path=("unknown",)),)),
+            replace(case, operations=(replace(source_operations[0], path=("mapping_sets", 9)),)),
+            replace(case, operations=(replace(source_operations[0], value="not-a-boolean"),)),
+        )
+        for index, malformed in enumerate(invalid):
+            with self.subTest(index=index):
+                with self.assertRaises((TypeError, ValueError)):
+                    run_full_case(
+                        self.fixture,
+                        malformed,
+                        Path(self.temporary.name) / f"invalid-{index}",
+                    )
+        self.assertEqual(case.operations, source_operations)
+
+    def test_narrow_route_preserves_inventory_order_and_exact_reports(self) -> None:
+        cases = qualified_review_policy_inventory().cases
+        shared_locator = next(
+            case for case in cases
+            if case.case_id == "actor-alias:shared-locator"
+        )
+        self.assertEqual(
+            shared_locator.expected.errors,
+            (
+                "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure"
+                "--3.3--esaf-0.4-alpha--0.1.0 duplicate reviewer lacks "
+                "complete dual-role acceptance and qualifications",
+            ),
+        )
+        for case in cases:
+            with self.subTest(case=case.case_id):
+                self.assertEqual(
+                    run_narrow_case(self.fixture, case),
+                    expected_projection(self.fixture, case),
+                )
+
+    def test_frozen_draft_reviewer_facts_match_manifest_exactly(self) -> None:
+        facts = next(
+            item for item in self.fixture.narrow_facts
+            if item.fixture_kind == "draft"
+        )
+        frozen = json.loads(facts.campaign_json)
+        manifest = json.loads(
+            (self.fixture.pristine_campaign / "REVIEW_EVIDENCE.json").read_bytes()
+        )
+        for frozen_mapping_set, manifest_mapping_set in zip(
+            frozen["mapping_sets"], manifest["mapping_sets"], strict=True
+        ):
+            for frozen_role, manifest_role in zip(
+                frozen_mapping_set["roles"],
+                manifest_mapping_set["roles"],
+                strict=True,
+            ):
+                self.assertEqual(
+                    frozen_role["reviewer"]["identity"],
+                    manifest_role["reviewer"]["identity"],
+                )
+                self.assertEqual(
+                    frozen_role["reviewer"]["verification_locator"],
+                    manifest_role["reviewer"]["verification_locator"],
+                )
+
+    def test_narrow_route_uses_case_operations_without_expected_projection(self) -> None:
+        inventory = qualified_review_policy_inventory()
+        by_id = {case.case_id: case for case in inventory.cases}
+        invalid_role = by_id["ineligible:unauthorized-source-access"]
+        invalid_reference = by_id["draft-reference:manifest-digest"]
+        description = by_id["finding-description:authoritative"]
+        duplicate = by_id["duplicate-finding-id:authoritative"]
+        valid_role = replace(invalid_role, operations=())
+        valid_reference = replace(invalid_reference, operations=())
+        routes = (
+            (
+                invalid_role,
+                ReportProjection(
+                    False,
+                    "transition_ready",
+                    False,
+                    self.fixture.candidate,
+                    "issue-55-draft-review",
+                    invalid_role.expected.errors,
+                ),
+            ),
+            (
+                invalid_reference,
+                ReportProjection(
+                    False,
+                    "merge_ready",
+                    False,
+                    self.fixture.reviewed_candidate,
+                    "issue-55-final-confirmation",
+                    invalid_reference.expected.errors,
+                ),
+            ),
+            (
+                description,
+                ReportProjection(
+                    False,
+                    "transition_ready",
+                    False,
+                    self.fixture.description_candidate,
+                    "issue-55-draft-review",
+                    description.expected.errors,
+                ),
+            ),
+            (
+                duplicate,
+                ReportProjection(
+                    False,
+                    "transition_ready",
+                    False,
+                    self.fixture.duplicate_candidate,
+                    "issue-55-draft-review",
+                    duplicate.expected.errors,
+                ),
+            ),
+            (
+                valid_role,
+                ReportProjection(
+                    True,
+                    "transition_ready",
+                    True,
+                    self.fixture.candidate,
+                    "issue-55-draft-review",
+                    (),
+                ),
+            ),
+            (
+                valid_reference,
+                ReportProjection(
+                    True,
+                    "merge_ready",
+                    True,
+                    self.fixture.reviewed_candidate,
+                    "issue-55-final-confirmation",
+                    (),
+                ),
+            ),
+        )
+        forbidden = AssertionError("narrow route used a forbidden dependency")
+        original_cache = dict(validator_module._CANDIDATE_CACHE)
+        try:
+            with ExitStack() as stack:
+                for owner, name in (
+                    (Path, "open"),
+                    (Path, "read_bytes"),
+                    (Path, "read_text"),
+                    (hot_path_support.subprocess, "run"),
+                    (hot_path_support.shutil, "copytree"),
+                    (GitReader, "read_bytes"),
+                    (hot_path_support, "assemble_package"),
+                    (hot_path_support, "_mapping_entries"),
+                    (hot_path_support, "_candidate_mapping"),
+                    (validator_module, "_mapping_entries"),
+                    (validator_module, "_candidate_mapping"),
+                    (validator_module, "_validate_campaign_details"),
+                    (hot_path_support, "validate_campaign"),
+                    (hot_path_support, "build_campaign_archive"),
+                    (hot_path_support, "build_seal_record"),
+                    (hot_path_support, "canonical_json_bytes"),
+                    (hot_path_support.hashlib, "sha256"),
+                    (hot_path_support, "expected_projection"),
+                ):
+                    stack.enter_context(
+                        mock.patch.object(
+                            owner,
+                            name,
+                            side_effect=forbidden,
+                            create=True,
+                        )
+                    )
+                mapping_adapter = stack.enter_context(
+                    mock.patch.object(
+                        hot_path_support,
+                        "evaluate_mapping_set_policy",
+                        wraps=evaluate_mapping_set_policy,
+                    )
+                )
+                reference_adapter = stack.enter_context(
+                    mock.patch.object(
+                        hot_path_support,
+                        "evaluate_draft_reference_policy",
+                        wraps=evaluate_draft_reference_policy,
+                    )
+                )
+
+                validator_module._CANDIDATE_CACHE.clear()
+                first = tuple(run_narrow_case(self.fixture, case) for case, _ in routes)
+                cache_routes = (
+                    (self.fixture.reader, self.fixture.candidate, "draft"),
+                    (
+                        self.fixture.reviewed_reader,
+                        self.fixture.reviewed_candidate,
+                        "reviewed",
+                    ),
+                    (
+                        self.fixture.description_reader,
+                        self.fixture.description_candidate,
+                        "draft",
+                    ),
+                    (
+                        self.fixture.duplicate_reader,
+                        self.fixture.duplicate_candidate,
+                        "draft",
+                    ),
+                )
+                validator_module._CANDIDATE_CACHE.update(
+                    {
+                        (
+                            str(reader.root),
+                            candidate,
+                            candidate_state,
+                            mapping_set_id,
+                        ): object()
+                        for reader, candidate, candidate_state in cache_routes
+                        for mapping_set_id in self.fixture.assemblies
+                    }
+                )
+                second = tuple(run_narrow_case(self.fixture, case) for case, _ in routes)
+
+            self.assertEqual(mapping_adapter.call_count, 12)
+            self.assertEqual(reference_adapter.call_count, 4)
+            self.assertEqual(first, tuple(expected for _, expected in routes))
+            self.assertEqual(second, first)
+        finally:
+            validator_module._CANDIDATE_CACHE.clear()
+            validator_module._CANDIDATE_CACHE.update(original_cache)
+
+
 class CampaignValidationTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.shared_temporary = tempfile.TemporaryDirectory()
-        cls.shared_root = Path(cls.shared_temporary.name)
-        cls.repository = cls.shared_root / "candidate"
-        subprocess.run(
-            [
-                "git",
-                "clone",
-                "--shared",
-                "--no-checkout",
-                str(ROOT),
-                str(cls.repository),
-            ],
-            check=True,
-            capture_output=True,
-            text=True,
+        cls.hot_path_fixture = QualifiedReviewHotPathFixture.create(
+            Path(cls.shared_temporary.name), ROOT
         )
-        cls.candidate = _git(ROOT, "rev-parse", "HEAD")
-        _git(cls.repository, "checkout", "--detach", cls.candidate)
-        cls.reader = GitReader(cls.repository)
-        cls.assemblies = {
-            profile.mapping_set_id: assemble_package(
-                cls.reader,
-                cls.candidate,
-                profile,
-            )
-            for profile in PROFILES.values()
-        }
-        cls.pristine_campaign = cls.shared_root / "pristine-draft"
-        cls.pristine_campaign.mkdir()
-        CampaignFixture(
-            cls.pristine_campaign,
-            cls.candidate,
-            cls.assemblies,
-        )
-        cls.draft_allowlist = tuple(
-            sorted(
-                path.relative_to(cls.pristine_campaign).as_posix()
-                for path in cls.pristine_campaign.rglob("*")
-                if path.is_file()
-            )
-        )
-        cls.draft_archive_bytes = build_campaign_archive(
-            cls.pristine_campaign,
-            cls.draft_allowlist,
-        )
-        draft_manifest_bytes = (
-            cls.pristine_campaign / MANIFEST_PATH
-        ).read_bytes()
-        (
-            cls.draft_seal,
-            cls.draft_seal_bytes,
-        ) = build_seal_record(
-            manifest_bytes=draft_manifest_bytes,
-            archive_bytes=cls.draft_archive_bytes,
-            archive_locator=(
-                "https://evidence.example.invalid/draft.zip?version=1"
-            ),
-            campaign_id="issue-55-draft-review",
-            candidate_commit=cls.candidate,
-            evidence_valid=True,
-            readiness_name="transition_ready",
-            readiness_value=True,
-            validator_version=VALIDATOR_VERSION,
-        )
-        cls.draft_seal_path = cls.shared_root / "CAMPAIGN_SEAL.json"
-        cls.draft_archive_path = cls.shared_root / "CAMPAIGN_ARCHIVE.zip"
-        cls.draft_seal_path.write_bytes(cls.draft_seal_bytes)
-        cls.draft_archive_path.write_bytes(cls.draft_archive_bytes)
-
-        cls.reviewed_repository = cls.shared_root / "reviewed-candidate"
-        subprocess.run(
-            [
-                "git",
-                "clone",
-                "--shared",
-                "--no-checkout",
-                str(ROOT),
-                str(cls.reviewed_repository),
-            ],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-        _git(
-            cls.reviewed_repository,
-            "checkout",
-            "-b",
-            "reviewed-fixture",
-            cls.candidate,
-        )
-        _git(cls.reviewed_repository, "config", "user.name", "ESAF Test")
-        _git(
-            cls.reviewed_repository,
-            "config",
-            "user.email",
-            "esaf-test@example.invalid",
-        )
-        cls._make_reviewed_candidate()
-        _git(cls.reviewed_repository, "add", "--all")
-        _git(
-            cls.reviewed_repository,
-            "commit",
-            "-m",
-            "reviewed fixture",
-        )
-        cls.reviewed_candidate = _git(
-            cls.reviewed_repository,
-            "rev-parse",
-            "HEAD",
-        )
-        cls.reviewed_reader = GitReader(cls.reviewed_repository)
-        cls.reviewed_assemblies = {
-            profile.mapping_set_id: assemble_package(
-                cls.reviewed_reader,
-                cls.reviewed_candidate,
-                profile,
-                "reviewed",
-            )
-            for profile in PROFILES.values()
-        }
-        cls.draft_reference = {
-            "campaign_id": "issue-55-draft-review",
-            "candidate_commit": cls.candidate,
-            "manifest_sha256": hashlib.sha256(
-                draft_manifest_bytes
-            ).hexdigest(),
-            "seal_record_sha256": hashlib.sha256(
-                cls.draft_seal_bytes
-            ).hexdigest(),
-        }
-        cls.pristine_final_campaign = cls.shared_root / "pristine-final"
-        cls.pristine_final_campaign.mkdir()
-        CampaignFixture(
-            cls.pristine_final_campaign,
-            cls.reviewed_candidate,
-            cls.reviewed_assemblies,
-            phase="final_reviewed_confirmation",
-            campaign_id="issue-55-final-confirmation",
-            draft_campaign_reference=cls.draft_reference,
-        )
-        cls._make_finding_candidates()
+        cls.hot_path_fixture.attach_to_test_class(cls)
 
     @classmethod
     def tearDownClass(cls) -> None:
         cls.shared_temporary.cleanup()
 
-    @classmethod
-    def _write_front_matter(
-        cls,
-        path: Path,
-        metadata: dict[str, object],
-        body: str,
-    ) -> None:
-        rendered = yaml.safe_dump(
-            metadata,
-            allow_unicode=True,
-            sort_keys=False,
-        )
-        path.write_text(
-            f"---\n{rendered}---\n{body}",
-            encoding="utf-8",
-            newline="\n",
-        )
-
-    @classmethod
-    def _make_reviewed_candidate(cls) -> None:
-        for profile in PROFILES.values():
-            snapshot = cls.reviewed_repository / profile.snapshot_path
-            for path in sorted(snapshot.iterdir()):
-                if path.name in {
-                    "PROVISION_INVENTORY.md",
-                    "ESAF_CONTROL_MANIFEST.json",
-                }:
-                    continue
-                metadata, body = parse_front_matter_bytes(path.read_bytes())
-                metadata["status"] = "reviewed"
-                role = (
-                    "specification_and_inventory"
-                    if path.name == "README.md"
-                    else "security_and_overclaiming"
+    def _assert_policy_cases_narrow(self, method_name: str) -> None:
+        inventory = qualified_review_policy_inventory()
+        cases = inventory.cases_for_method(method_name)
+        self.assertGreater(len(cases), 0)
+        for case in cases:
+            with self.subTest(case_id=case.case_id):
+                self.assertEqual(
+                    run_narrow_case(self.hot_path_fixture, case),
+                    expected_projection(self.hot_path_fixture, case),
                 )
-                metadata["reviewer"] = _reviewer_object(
-                    PROFILE_NAMES[profile.label],
-                    role,
-                )
-                cls._write_front_matter(path, metadata, body)
-            snapshot_contents = {
-                path.relative_to(cls.reviewed_repository).as_posix(): (
-                    path.read_bytes()
-                )
-                for path in sorted(snapshot.iterdir())
-            }
-            digest = snapshot_digest_from_files(
-                profile.snapshot_path,
-                snapshot_contents,
-            )
-            registry = (
-                cls.reviewed_repository
-                / "crosswalks"
-                / "registry"
-                / f"{profile.mapping_set_id}.md"
-            )
-            metadata, body = parse_front_matter_bytes(registry.read_bytes())
-            metadata["snapshot_digest"] = digest
-            cls._write_front_matter(registry, metadata, body)
-        stdout = io.StringIO()
-        stderr = io.StringIO()
-        with redirect_stdout(stdout), redirect_stderr(stderr):
-            result = crosswalk_validator.main(
-                ["--write"],
-                root=cls.reviewed_repository,
-            )
-        if result != 0:
-            raise AssertionError(
-                f"reviewed fixture regeneration failed: {stderr.getvalue()}"
-            )
-
-    @classmethod
-    def _set_candidate_findings(
-        cls,
-        repository: Path,
-        profile: object,
-        findings: list[dict[str, object]],
-        message: str,
-        *,
-        validate_repository: bool = True,
-    ) -> str:
-        snapshot = repository / profile.snapshot_path
-        readme = snapshot / "README.md"
-        metadata, body = parse_front_matter_bytes(readme.read_bytes())
-        metadata["findings"] = findings
-        cls._write_front_matter(readme, metadata, body)
-        snapshot_contents = {
-            path.relative_to(repository).as_posix(): path.read_bytes()
-            for path in sorted(snapshot.iterdir())
-        }
-        digest = snapshot_digest_from_files(
-            profile.snapshot_path,
-            snapshot_contents,
-        )
-        registry = (
-            repository
-            / "crosswalks"
-            / "registry"
-            / f"{profile.mapping_set_id}.md"
-        )
-        registry_metadata, registry_body = parse_front_matter_bytes(
-            registry.read_bytes()
-        )
-        registry_metadata["snapshot_digest"] = digest
-        cls._write_front_matter(
-            registry,
-            registry_metadata,
-            registry_body,
-        )
-        if validate_repository:
-            stdout = io.StringIO()
-            stderr = io.StringIO()
-            with redirect_stdout(stdout), redirect_stderr(stderr):
-                result = crosswalk_validator.main(
-                    ["--write"],
-                    root=repository,
-                )
-            if result != 0:
-                raise AssertionError(
-                    "finding fixture regeneration failed: "
-                    f"{stdout.getvalue()} {stderr.getvalue()}"
-                )
-        else:
-            catalog_path = repository / "crosswalks" / "catalog.json"
-            catalog = json.loads(catalog_path.read_bytes())
-            catalog_sets = catalog["mapping_sets"]
-            assert isinstance(catalog_sets, list)
-            catalog_entry = next(
-                item
-                for item in catalog_sets
-                if item["metadata"]["mapping_set_id"]
-                == profile.mapping_set_id
-            )
-            catalog_entry["metadata"]["findings"] = deepcopy(findings)
-            catalog_entry["lifecycle"]["snapshot_digest"] = digest
-            catalog_path.write_text(
-                json.dumps(
-                    catalog,
-                    indent=2,
-                    ensure_ascii=False,
-                    sort_keys=True,
-                )
-                + "\n",
-                encoding="utf-8",
-                newline="\n",
-            )
-        _git(repository, "add", "--all")
-        _git(repository, "commit", "-m", message)
-        return _git(repository, "rev-parse", "HEAD")
-
-    @classmethod
-    def _make_finding_campaign(
-        cls,
-        root: Path,
-        candidate: str,
-        assemblies: dict[str, PackageAssembly],
-        profile: object,
-        worksheet_findings: list[dict[str, object]],
-    ) -> None:
-        root.mkdir()
-        fixture = CampaignFixture(root, candidate, assemblies)
-        mapping_sets = fixture.manifest["mapping_sets"]
-        assert isinstance(mapping_sets, list)
-        mapping_set = next(
-            item
-            for item in mapping_sets
-            if item["mapping_set_id"] == profile.mapping_set_id
-        )
-        roles = mapping_set["roles"]
-        assert isinstance(roles, list)
-        for role in roles:
-            worksheet = role["worksheet"]
-            assert isinstance(worksheet, dict)
-            worksheet["findings"] = deepcopy(worksheet_findings)
-            worksheet["findings_disposition"] = "All findings resolved"
-            fixture.write_role(profile, mapping_set, role)
-        fixture.write_manifest()
-
-    @classmethod
-    def _make_finding_candidates(cls) -> None:
-        cls.finding_repository = cls.shared_root / "finding-candidates"
-        subprocess.run(
-            [
-                "git",
-                "clone",
-                "--shared",
-                "--no-checkout",
-                str(ROOT),
-                str(cls.finding_repository),
-            ],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-        _git(
-            cls.finding_repository,
-            "checkout",
-            "-b",
-            "finding-fixtures",
-            cls.candidate,
-        )
-        _git(cls.finding_repository, "config", "user.name", "ESAF Test")
-        _git(
-            cls.finding_repository,
-            "config",
-            "user.email",
-            "esaf-test@example.invalid",
-        )
-        profile = next(
-            item for item in PROFILES.values() if item.label == "Core"
-        )
-        record = next(
-            path
-            for path in sorted(
-                (cls.finding_repository / profile.snapshot_path).glob("*.md")
-            )
-            if path.name not in {"README.md", "PROVISION_INVENTORY.md"}
-        )
-        record_metadata, _body = parse_front_matter_bytes(record.read_bytes())
-        affected = [str(record_metadata["record_id"])]
-        evidence_finding = {
-            "finding_id": "review-finding",
-            "affected_record_ids": affected,
-            "severity": "Minor",
-            "status": "resolved",
-            "disposition": "Resolved by candidate correction",
-            "resolver_or_acceptor": "ESAF Project Owner",
-            "disposition_date": REVIEW_DATE,
-            "acceptance_rationale": "Not applicable",
-        }
-        authoritative = {
-            **evidence_finding,
-            "description": "Authoritative exact description",
-        }
-        cls.description_candidate = cls._set_candidate_findings(
-            cls.finding_repository,
-            profile,
-            [authoritative],
-            "description finding fixture",
-        )
-        cls.description_reader = GitReader(cls.finding_repository)
-        cls.description_assemblies = {
-            item.mapping_set_id: assemble_package(
-                cls.description_reader,
-                cls.description_candidate,
-                item,
-            )
-            for item in PROFILES.values()
-        }
-        cls.description_campaign = cls.shared_root / "description-campaign"
-        cls._make_finding_campaign(
-            cls.description_campaign,
-            cls.description_candidate,
-            cls.description_assemblies,
-            profile,
-            [evidence_finding],
-        )
-
-        duplicate_last = {
-            **authoritative,
-            "description": "Reviewed finding",
-        }
-        duplicate_first = {
-            **authoritative,
-            "description": "Earlier conflicting description",
-        }
-        cls.duplicate_candidate = cls._set_candidate_findings(
-            cls.finding_repository,
-            profile,
-            [duplicate_first, duplicate_last],
-            "duplicate finding fixture",
-            validate_repository=False,
-        )
-        cls.duplicate_reader = GitReader(cls.finding_repository)
-        cls.duplicate_assemblies = {
-            item.mapping_set_id: assemble_package(
-                cls.duplicate_reader,
-                cls.duplicate_candidate,
-                item,
-            )
-            for item in PROFILES.values()
-        }
-        cls.duplicate_campaign = cls.shared_root / "duplicate-campaign"
-        cls._make_finding_campaign(
-            cls.duplicate_campaign,
-            cls.duplicate_candidate,
-            cls.duplicate_assemblies,
-            profile,
-            [evidence_finding],
-        )
 
     def setUp(self) -> None:
         self.temporary = tempfile.TemporaryDirectory()
@@ -1395,148 +3733,15 @@ class CampaignValidationTests(unittest.TestCase):
                 self.assertFalse(report.evidence_valid, report)
 
     def test_rejects_ineligible_reviewer_evidence(self) -> None:
-        cases = (
-            (
-                "unauthorized source access",
-                lambda role: role["reviewer"].__setitem__(
-                    "authorized_source_access",
-                    False,
-                ),
-            ),
-            (
-                "mapper self-review",
-                lambda role: role["reviewer"].__setitem__(
-                    "identity",
-                    self._candidate_mapper_id(0),
-                ),
-            ),
-            (
-                "unresolved conflict",
-                lambda role: (
-                    role["reviewer"].__setitem__("conflicts", True),
-                    role["reviewer"].__setitem__(
-                        "conflict_disposition",
-                        "Unresolved",
-                    ),
-                ),
-            ),
-            (
-                "pending conflict variant",
-                lambda role: (
-                    role["reviewer"].__setitem__("conflicts", True),
-                    role["reviewer"].__setitem__(
-                        "conflict_disposition",
-                        "Resolution pending",
-                    ),
-                ),
-            ),
-            (
-                "rejected owner eligibility",
-                lambda role: role.__setitem__(
-                    "owner_eligibility_accepted",
-                    False,
-                ),
-            ),
-        )
-        for label, mutate in cases:
-            with self.subTest(label=label):
-                isolated = Path(self.temporary.name) / label.replace(" ", "-")
-                shutil.copytree(self.pristine_campaign, isolated)
-                original = self.campaign_root
-                self.campaign_root = isolated
-                try:
-                    manifest = self._manifest()
-                    mapping_sets = manifest["mapping_sets"]
-                    assert isinstance(mapping_sets, list)
-                    mapping_set = mapping_sets[0]
-                    assert isinstance(mapping_set, dict)
-                    roles = mapping_set["roles"]
-                    assert isinstance(roles, list)
-                    role = roles[0]
-                    assert isinstance(role, dict)
-                    mutate(role)
-                    self._rewrite_role(manifest, 0, 0)
-                    report = self._report()
-                finally:
-                    self.campaign_root = original
-                self.assertFalse(report.evidence_valid, report)
+        self._assert_policy_cases_narrow("test_rejects_ineligible_reviewer_evidence")
 
     def test_actor_aliases_and_shared_locator_cannot_bypass_role_rules(
         self,
     ) -> None:
-        aliases = (
-            ("case", None, lambda value: value.swapcase(), False),
-            (
-                "punctuation",
-                None,
-                lambda value: value.replace(" ", "-"),
-                False,
-            ),
-            (
-                "unicode",
-                "Jos\u00e9 Reviewer",
-                lambda _value: "Jose\u0301 Reviewer",
-                False,
-            ),
-            (
-                "shared-locator",
-                None,
-                lambda _value: "Different Display Name",
-                True,
-            ),
-        )
-        for label, first_name, alias, share_locator in aliases:
-            with self.subTest(alias=label):
-                isolated = Path(self.temporary.name) / f"actor-alias-{label}"
-                shutil.copytree(self.pristine_campaign, isolated)
-                original = self.campaign_root
-                self.campaign_root = isolated
-                try:
-                    manifest = self._manifest()
-                    mapping_sets = manifest["mapping_sets"]
-                    assert isinstance(mapping_sets, list)
-                    mapping_set = mapping_sets[0]
-                    assert isinstance(mapping_set, dict)
-                    roles = mapping_set["roles"]
-                    assert isinstance(roles, list)
-                    first, second = roles
-                    assert isinstance(first, dict)
-                    assert isinstance(second, dict)
-                    first_reviewer = first["reviewer"]
-                    second_reviewer = second["reviewer"]
-                    assert isinstance(first_reviewer, dict)
-                    assert isinstance(second_reviewer, dict)
-                    if first_name is not None:
-                        first_reviewer["identity"] = first_name
-                    second_reviewer["identity"] = alias(
-                        str(first_reviewer["identity"])
-                    )
-                    if share_locator:
-                        second_reviewer["verification_locator"] = (
-                            first_reviewer["verification_locator"]
-                        )
-                    self._rewrite_role(manifest, 0, 0)
-                    self._rewrite_role(manifest, 0, 1)
-                    report = self._report()
-                finally:
-                    self.campaign_root = original
-                self.assertFalse(report.evidence_valid, report)
+        self._assert_policy_cases_narrow("test_actor_aliases_and_shared_locator_cannot_bypass_role_rules")
 
     def test_actor_alias_cannot_bypass_mapper_independence(self) -> None:
-        manifest = self._manifest()
-        mapping_sets = manifest["mapping_sets"]
-        assert isinstance(mapping_sets, list)
-        mapping_set = mapping_sets[0]
-        assert isinstance(mapping_set, dict)
-        roles = mapping_set["roles"]
-        assert isinstance(roles, list)
-        role = roles[0]
-        assert isinstance(role, dict)
-        reviewer = role["reviewer"]
-        assert isinstance(reviewer, dict)
-        reviewer["identity"] = self._candidate_mapper_id(0).swapcase()
-        self._rewrite_role(manifest, 0, 0)
-        self.assertFalse(self._report().evidence_valid)
+        self._assert_policy_cases_narrow("test_actor_alias_cannot_bypass_mapper_independence")
 
     def test_sha_locators_bind_package_attestation_and_worksheet_bytes(
         self,
@@ -1630,6 +3835,16 @@ class CampaignValidationTests(unittest.TestCase):
                 self.assertFalse(report.evidence_valid, report)
 
     def test_explicitly_resolved_conflict_is_eligible(self) -> None:
+        self._assert_policy_cases_narrow("test_explicitly_resolved_conflict_is_eligible")
+
+    def test_duplicate_human_requires_dual_acceptance_and_both_qualifications(
+        self,
+    ) -> None:
+        self._assert_policy_cases_narrow("test_duplicate_human_requires_dual_acceptance_and_both_qualifications")
+
+    def test_incomplete_duplicate_reviewer_qualification_fails_schema_before_policy(
+        self,
+    ) -> None:
         manifest = self._manifest()
         mapping_sets = manifest["mapping_sets"]
         assert isinstance(mapping_sets, list)
@@ -1637,87 +3852,46 @@ class CampaignValidationTests(unittest.TestCase):
         assert isinstance(mapping_set, dict)
         roles = mapping_set["roles"]
         assert isinstance(roles, list)
-        role = roles[0]
-        assert isinstance(role, dict)
-        reviewer = role["reviewer"]
-        assert isinstance(reviewer, dict)
-        reviewer["conflicts"] = True
-        reviewer["conflict_disposition"] = (
-            "Resolved: reviewer recused from all mapping decisions"
-        )
+        first = roles[0]
+        second = roles[1]
+        assert isinstance(first, dict)
+        assert isinstance(second, dict)
+        first_reviewer = first["reviewer"]
+        second_reviewer = second["reviewer"]
+        assert isinstance(first_reviewer, dict)
+        assert isinstance(second_reviewer, dict)
+        second_reviewer["identity"] = first_reviewer["identity"]
+        first["dual_role_accepted"] = True
+        second["dual_role_accepted"] = True
+        second_reviewer["qualification"] = " "
         self._rewrite_role(manifest, 0, 0)
+        self._rewrite_role(manifest, 0, 1)
 
-        report = self._report()
+        with mock.patch.object(
+            validator_module,
+            "validate_role_readiness_policy",
+            side_effect=AssertionError("schema failure shall precede policy"),
+        ) as policy:
+            report = self._report()
 
-        self.assertTrue(report.evidence_valid, report.errors)
-        self.assertTrue(report.readiness_value)
-
-    def test_duplicate_human_requires_dual_acceptance_and_both_qualifications(
-        self,
-    ) -> None:
-        cases = ("without acceptance", "incomplete qualifications")
-        for label in cases:
-            with self.subTest(label=label):
-                isolated = Path(self.temporary.name) / label.replace(" ", "-")
-                shutil.copytree(self.pristine_campaign, isolated)
-                original = self.campaign_root
-                self.campaign_root = isolated
-                try:
-                    manifest = self._manifest()
-                    mapping_sets = manifest["mapping_sets"]
-                    assert isinstance(mapping_sets, list)
-                    mapping_set = mapping_sets[0]
-                    assert isinstance(mapping_set, dict)
-                    roles = mapping_set["roles"]
-                    assert isinstance(roles, list)
-                    first = roles[0]
-                    second = roles[1]
-                    assert isinstance(first, dict)
-                    assert isinstance(second, dict)
-                    first_reviewer = first["reviewer"]
-                    second_reviewer = second["reviewer"]
-                    assert isinstance(first_reviewer, dict)
-                    assert isinstance(second_reviewer, dict)
-                    second_reviewer["identity"] = first_reviewer["identity"]
-                    if label == "incomplete qualifications":
-                        first["dual_role_accepted"] = True
-                        second["dual_role_accepted"] = True
-                        second_reviewer["qualification"] = " "
-                    self._rewrite_role(manifest, 0, 0)
-                    self._rewrite_role(manifest, 0, 1)
-                    report = self._report()
-                finally:
-                    self.campaign_root = original
-                self.assertFalse(report.evidence_valid, report)
+        policy.assert_not_called()
+        self.assertEqual(
+            report,
+            ValidationReport(
+                evidence_valid=False,
+                readiness_name="transition_ready",
+                readiness_value=False,
+                candidate_commit=self.candidate,
+                campaign_id="",
+                errors=(
+                    "mapping_sets.0.roles.1.reviewer.qualification does not "
+                    "satisfy the campaign schema",
+                ),
+            ),
+        )
 
     def test_stop_with_open_high_severity_is_valid_but_not_ready(self) -> None:
-        for severity in ("Critical", "Important"):
-            with self.subTest(severity=severity):
-                isolated = Path(self.temporary.name) / severity.casefold()
-                shutil.copytree(self.pristine_campaign, isolated)
-                original = self.campaign_root
-                self.campaign_root = isolated
-                try:
-                    finding = self._finding(
-                        severity=severity,
-                        status="open",
-                    )
-                    self._mutate_worksheet(
-                        lambda worksheet: (
-                            worksheet.__setitem__("conclusion", "stop"),
-                            worksheet.__setitem__("findings", [finding]),
-                            worksheet.__setitem__(
-                                "findings_disposition",
-                                f"Open {severity} finding stops transition",
-                            ),
-                        )
-                    )
-                    report = self._report()
-                finally:
-                    self.campaign_root = original
-                self.assertTrue(report.evidence_valid, report.errors)
-                self.assertEqual(report.readiness_name, "transition_ready")
-                self.assertFalse(report.readiness_value)
+        self._assert_policy_cases_narrow("test_stop_with_open_high_severity_is_valid_but_not_ready")
 
     def test_accepted_critical_or_important_is_evidence_invalid(self) -> None:
         for severity in ("Critical", "Important"):
@@ -1745,6 +3919,46 @@ class CampaignValidationTests(unittest.TestCase):
                     self.campaign_root = original
                 self.assertFalse(report.evidence_valid, report)
 
+    def test_accepted_high_severity_findings_fail_schema_before_policy(
+        self,
+    ) -> None:
+        for severity in ("Critical", "Important"):
+            with self.subTest(severity=severity):
+                finding = self._finding(
+                    severity=severity,
+                    status="accepted",
+                )
+                self._mutate_worksheet(
+                    lambda worksheet: worksheet.__setitem__(
+                        "findings",
+                        [finding],
+                    )
+                )
+                with mock.patch.object(
+                    validator_module,
+                    "validate_role_readiness_policy",
+                    side_effect=AssertionError(
+                        "schema failure shall precede policy"
+                    ),
+                ) as policy:
+                    report = self._report()
+
+                policy.assert_not_called()
+                self.assertEqual(
+                    report,
+                    ValidationReport(
+                        evidence_valid=False,
+                        readiness_name="transition_ready",
+                        readiness_value=False,
+                        candidate_commit=self.candidate,
+                        campaign_id="",
+                        errors=(
+                            "mapping_sets.0.roles.0.worksheet.findings.0."
+                            "severity does not satisfy the campaign schema",
+                        ),
+                    ),
+                )
+
     def test_accepted_minor_requires_named_acceptance_evidence(self) -> None:
         for field in (
             "resolver_or_acceptor",
@@ -1771,85 +3985,28 @@ class CampaignValidationTests(unittest.TestCase):
                 self.assertFalse(report.evidence_valid, report)
 
     def test_pass_rejects_open_findings(self) -> None:
-        finding = self._finding(status="open")
-        self._mutate_worksheet(
-            lambda worksheet: worksheet.__setitem__("findings", [finding])
-        )
-
-        report = self._report()
-
-        self.assertFalse(report.evidence_valid, report)
+        self._assert_policy_cases_narrow("test_pass_rejects_open_findings")
 
     def test_pass_after_correction_binds_exact_campaign_candidate(self) -> None:
-        def mutate(worksheet: dict[str, object]) -> None:
-            worksheet["conclusion"] = "pass_after_correction"
-            worksheet["post_correction_candidate_sha"] = "a" * 40
-
-        self._mutate_worksheet(mutate)
-        report = self._report()
-        self.assertFalse(report.evidence_valid, report)
-
-        shutil.rmtree(self.campaign_root)
-        shutil.copytree(self.pristine_campaign, self.campaign_root)
-
-        def bind_exact(worksheet: dict[str, object]) -> None:
-            worksheet["conclusion"] = "pass_after_correction"
-            worksheet["post_correction_candidate_sha"] = self.candidate
-
-        self._mutate_worksheet(bind_exact)
-        exact = self._report()
-        self.assertTrue(exact.evidence_valid, exact.errors)
-        self.assertTrue(exact.readiness_value)
+        self._assert_policy_cases_narrow("test_pass_after_correction_binds_exact_campaign_candidate")
 
     def test_orphan_affected_record_identifier_is_invalid_even_for_stop(
         self,
     ) -> None:
-        finding = self._finding(
-            status="open",
-            record_id="orphan-record",
-        )
-        self._mutate_worksheet(
-            lambda worksheet: (
-                worksheet.__setitem__("conclusion", "stop"),
-                worksheet.__setitem__("findings", [finding]),
-            )
-        )
-
-        report = self._report()
-
-        self.assertFalse(report.evidence_valid, report)
+        self._assert_policy_cases_narrow("test_orphan_affected_record_identifier_is_invalid_even_for_stop")
 
     def test_ready_findings_must_equal_authoritative_candidate_findings(
         self,
     ) -> None:
-        finding = self._finding(status="resolved")
-        self._mutate_worksheet(
-            lambda worksheet: worksheet.__setitem__("findings", [finding])
-        )
-
-        report = self._report()
-
-        self.assertFalse(report.evidence_valid, report)
+        self._assert_policy_cases_narrow("test_ready_findings_must_equal_authoritative_candidate_findings")
 
     def test_ready_findings_bind_authoritative_description(self) -> None:
-        report = validate_campaign(
-            self.description_reader,
-            self.description_candidate,
-            self.description_campaign,
-        )
-
-        self.assertFalse(report.evidence_valid, report)
+        self._assert_policy_cases_narrow("test_ready_findings_bind_authoritative_description")
 
     def test_duplicate_authoritative_finding_identifiers_are_invalid(
         self,
     ) -> None:
-        report = validate_campaign(
-            self.duplicate_reader,
-            self.duplicate_candidate,
-            self.duplicate_campaign,
-        )
-
-        self.assertFalse(report.evidence_valid, report)
+        self._assert_policy_cases_narrow("test_duplicate_authoritative_finding_identifiers_are_invalid")
 
     def test_campaign_tree_and_package_bytes_are_exact(self) -> None:
         for mutation in ("extra source", "manifest byte", "payload byte"):
@@ -1933,6 +4090,66 @@ class CampaignValidationTests(unittest.TestCase):
         self.assertFalse(report.evidence_valid, report)
         urlopen.assert_not_called()
 
+    def test_policy_boundaries_reach_full_campaign_validation(self) -> None:
+        for label, field, value in (
+            ("mapper alias", "identity", "esaf-crosswalk-editorial-team"),
+            ("reviewer ineligibility", "authorized_source_access", False),
+        ):
+            with self.subTest(label=label):
+                isolated = Path(self.temporary.name) / label.replace(" ", "-")
+                shutil.copytree(self.pristine_campaign, isolated)
+                original = self.campaign_root
+                self.campaign_root = isolated
+                try:
+                    manifest = self._manifest()
+                    reviewer = manifest["mapping_sets"][0]["roles"][0]["reviewer"]
+                    reviewer[field] = value
+                    self._rewrite_role(manifest, 0, 0)
+                    report = validate_campaign(self.reader, self.candidate, isolated)
+                finally:
+                    self.campaign_root = original
+                self.assertFalse(report.evidence_valid, report)
+        for label, mutate in (
+            ("stop conclusion", lambda worksheet: worksheet.__setitem__("conclusion", "stop")),
+            ("authoritative-finding mismatch", lambda worksheet: worksheet.__setitem__("findings", [self._finding(status="resolved")])),
+        ):
+            with self.subTest(label=label):
+                isolated = Path(self.temporary.name) / label.replace(" ", "-")
+                shutil.copytree(self.pristine_campaign, isolated)
+                original = self.campaign_root
+                self.campaign_root = isolated
+                try:
+                    self._mutate_worksheet(mutate)
+                    report = validate_campaign(self.reader, self.candidate, isolated)
+                finally:
+                    self.campaign_root = original
+                if label == "stop conclusion":
+                    self.assertTrue(report.evidence_valid, report.errors)
+                    self.assertFalse(report.readiness_value)
+                else:
+                    self.assertFalse(report.evidence_valid, report)
+        with self.subTest(label="reviewed-state reviewer mismatch"):
+            final_root, draft_root, seal_path, archive_path = self._final_inputs("reviewed-state-reviewer-mismatch")
+            original = self.campaign_root
+            self.campaign_root = final_root
+            try:
+                manifest = self._manifest()
+                manifest["mapping_sets"][0]["roles"][0]["reviewer"]["qualification"] = "Different signed qualification"
+                self._rewrite_role(manifest, 0, 0)
+                report = validate_campaign(self.reviewed_reader, self.reviewed_candidate, final_root, draft_root, seal_path, archive_path)
+            finally:
+                self.campaign_root = original
+            self.assertFalse(report.evidence_valid, report)
+
+    def test_draft_reference_boundary_reaches_full_final_validation(self) -> None:
+        final_root, draft_root, seal_path, archive_path = self._final_inputs("manifest-digest-reference-mismatch")
+        manifest = json.loads((final_root / MANIFEST_PATH).read_bytes())
+        manifest["draft_campaign_reference"]["manifest_sha256"] = "a" * 64
+        (final_root / MANIFEST_PATH).write_bytes(canonical_json_bytes(manifest))
+        report = validate_campaign(self.reviewed_reader, self.reviewed_candidate, final_root, draft_root, seal_path, archive_path)
+        self.assertFalse(report.evidence_valid, report)
+        self.assertEqual(report.errors, ("Draft manifest digest does not match the reference",))
+
     def test_valid_final_campaign_is_recursively_merge_ready(self) -> None:
         final_root, draft_root, seal_path, archive_path = self._final_inputs(
             "valid-final"
@@ -2000,36 +4217,7 @@ class CampaignValidationTests(unittest.TestCase):
                 self.assertFalse(report.evidence_valid, report)
 
     def test_final_campaign_binds_every_draft_reference_field(self) -> None:
-        changes = (
-            ("campaign_id", "another-draft-campaign"),
-            ("candidate_commit", self.reviewed_candidate),
-            ("manifest_sha256", "a" * 64),
-            ("seal_record_sha256", "a" * 64),
-        )
-        for field, value in changes:
-            with self.subTest(field=field):
-                (
-                    final_root,
-                    draft_root,
-                    seal_path,
-                    archive_path,
-                ) = self._final_inputs(f"reference-{field}")
-                manifest = json.loads(
-                    (final_root / MANIFEST_PATH).read_bytes()
-                )
-                reference = manifest["draft_campaign_reference"]
-                assert isinstance(reference, dict)
-                reference[field] = value
-                (final_root / MANIFEST_PATH).write_bytes(
-                    canonical_json_bytes(manifest)
-                )
-                report = self._final_report(
-                    final_root,
-                    draft_root,
-                    seal_path,
-                    archive_path,
-                )
-                self.assertFalse(report.evidence_valid, report)
+        self._assert_policy_cases_narrow("test_final_campaign_binds_every_draft_reference_field")
 
     def test_final_campaign_rejects_archive_seal_or_draft_byte_mutation(
         self,
@@ -2117,70 +4305,10 @@ class CampaignValidationTests(unittest.TestCase):
     def test_reviewed_candidate_requires_exact_nested_reviewer_objects(
         self,
     ) -> None:
-        for role_index in (0, 1):
-            with self.subTest(role=ROLES[role_index]):
-                (
-                    final_root,
-                    draft_root,
-                    seal_path,
-                    archive_path,
-                ) = self._final_inputs(f"reviewer-{role_index}")
-                original = self.campaign_root
-                self.campaign_root = final_root
-                try:
-                    manifest = self._manifest()
-                    mapping_sets = manifest["mapping_sets"]
-                    assert isinstance(mapping_sets, list)
-                    mapping_set = mapping_sets[0]
-                    assert isinstance(mapping_set, dict)
-                    roles = mapping_set["roles"]
-                    assert isinstance(roles, list)
-                    role = roles[role_index]
-                    assert isinstance(role, dict)
-                    reviewer = role["reviewer"]
-                    assert isinstance(reviewer, dict)
-                    reviewer["qualification"] = (
-                        "Different signed qualification"
-                    )
-                    self._rewrite_role(manifest, 0, role_index)
-                    report = self._final_report(
-                        final_root,
-                        draft_root,
-                        seal_path,
-                        archive_path,
-                    )
-                finally:
-                    self.campaign_root = original
-                self.assertFalse(report.evidence_valid, report)
+        self._assert_policy_cases_narrow("test_reviewed_candidate_requires_exact_nested_reviewer_objects")
 
     def test_final_pass_after_correction_binds_reviewed_candidate(self) -> None:
-        final_root, draft_root, seal_path, archive_path = self._final_inputs(
-            "final-correction"
-        )
-        original = self.campaign_root
-        self.campaign_root = final_root
-        try:
-            self._mutate_worksheet(
-                lambda worksheet: (
-                    worksheet.__setitem__(
-                        "conclusion",
-                        "pass_after_correction",
-                    ),
-                    worksheet.__setitem__(
-                        "post_correction_candidate_sha",
-                        self.candidate,
-                    ),
-                )
-            )
-            report = self._final_report(
-                final_root,
-                draft_root,
-                seal_path,
-                archive_path,
-            )
-        finally:
-            self.campaign_root = original
-        self.assertFalse(report.evidence_valid, report)
+        self._assert_policy_cases_narrow("test_final_pass_after_correction_binds_reviewed_candidate")
 
     def _run_validator_cli(
         self,

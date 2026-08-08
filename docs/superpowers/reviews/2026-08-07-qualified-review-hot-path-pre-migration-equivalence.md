@@ -1,0 +1,19 @@
+# Qualified-review hot-path pre-migration equivalence
+
+The Stage 1 comparison used the clean commit recorded below. At that SHA, the selected methods still used the complete path.
+
+stage1_sha=b5f69b81aeb8f7286fbb82eb59b3c1038c7cc7d3
+proof_timestamp_utc=2026-08-08T08:44:15Z
+candidate_sha=b5f69b81aeb8f7286fbb82eb59b3c1038c7cc7d3
+method_count=15
+population_count=28
+population_sha256=f89f118c4d5fe3dfc1a906cebb3f13a7cf5da7b6349c3e3913470c6cd179f50a
+full_comparison_count=28
+narrow_comparison_count=28
+equivalence=PASS
+critical_sha256[tests/qualified_review_policy_cases.py]=42175ef80ed3ba9bb753be8517190bb71a67cf93d365613d8895bdbe15e416ce
+critical_sha256[tests/qualified_review_hot_path_support.py]=f3c816e5708ac51aa238749e8423682b40f6aa9278f336067a3b85c4f0154308
+critical_sha256[tools/validate_qualified_review_evidence.py]=439cd5707de717335776336ec270a0cf3cda9bb0f8a02960d17712229c7b248e
+critical_sha256[tools/verify_qualified_review_hot_path_equivalence.py]=421086e8626f57af5ae065dec2fcd1c5ccb4e3c61a50073dc5ac025d30087bdd
+
+Stage 2 changes only selected call sites, grouping, guards, and this receipt.

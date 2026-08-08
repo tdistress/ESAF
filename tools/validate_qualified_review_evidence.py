@@ -3,14 +3,14 @@
 from __future__ import annotations
 
 import argparse
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import hashlib
 import json
 from pathlib import Path, PurePosixPath
 import re
 import subprocess
 import sys
-from typing import Mapping
+from typing import Literal, Mapping
 import unicodedata
 
 from jsonschema import Draft202012Validator, FormatChecker
@@ -98,6 +98,133 @@ class ValidationReport:
             "readiness_name": self.readiness_name,
             "readiness_value": self.readiness_value,
         }
+
+
+RolePolicyStage = Literal[
+    "reviewer_eligibility",
+    "role_findings",
+    "mapping_set_completion",
+]
+ObservedFindings = tuple[tuple[str, tuple[object, ...]], ...]
+ReviewerMetadata = tuple[tuple[str, object], ...]
+
+
+@dataclass(frozen=True)
+class ReviewerEligibilityPolicyInput:
+    mapping_set_id: str
+    role: str
+    reviewer_identity: str
+    reviewer_verification_locator: str
+    other_reviewer_identity: str
+    other_reviewer_verification_locator: str
+    authorized_source_access: bool
+    independent: bool
+    conflicts: bool
+    conflict_disposition: str
+    owner_eligibility_accepted: bool
+    dual_role_accepted: bool
+    qualification: str
+    mapper_identities: frozenset[str]
+
+
+@dataclass(frozen=True)
+class RoleFindingsPolicyInput:
+    mapping_set_id: str
+    role: str
+    conclusion: str
+    post_correction_candidate_sha: str | None
+    candidate_commit: str
+    record_ids: frozenset[str]
+    findings: tuple[ReviewFinding, ...]
+    mapping_ready: bool
+    observed_findings: ObservedFindings
+
+
+@dataclass(frozen=True)
+class MappingSetCompletionPolicyInput:
+    mapping_set_id: str
+    mapping_ready: bool
+    observed_findings: ObservedFindings
+    authoritative_findings: tuple[tuple[object, ...], ...] | None
+    candidate_state: str
+    specification_reviewer_metadata: ReviewerMetadata
+    mapping_set_reviewer_metadata: ReviewerMetadata | None
+    security_reviewer_metadata: ReviewerMetadata
+    record_reviewer_metadata: tuple[ReviewerMetadata | None, ...]
+
+
+RolePolicyInput = (
+    ReviewerEligibilityPolicyInput
+    | RoleFindingsPolicyInput
+    | MappingSetCompletionPolicyInput
+)
+
+
+DraftReferenceStage = Literal[
+    "distinct_candidate",
+    "draft_status",
+    "campaign_id",
+    "candidate_commit",
+    "manifest_sha256",
+    "seal_record_sha256",
+]
+
+
+@dataclass(frozen=True)
+class DistinctCandidateCheck:
+    reviewed_candidate: str
+    referenced_candidate: str
+
+
+@dataclass(frozen=True)
+class DraftStatusCheck:
+    phase: str
+    evidence_valid: bool
+    readiness_name: str
+    readiness_value: bool
+
+
+@dataclass(frozen=True)
+class ScalarReferenceCheck:
+    stage: DraftReferenceStage
+    expected: str
+    actual: str
+
+
+DraftReferenceCheck = (
+    DistinctCandidateCheck | DraftStatusCheck | ScalarReferenceCheck
+)
+
+
+@dataclass(frozen=True)
+class DraftReferencePolicyInput:
+    reviewed_candidate: str
+    referenced_candidate: str
+    draft_phase: str
+    draft_evidence_valid: bool
+    draft_readiness_name: str
+    draft_readiness_value: bool
+    reference_campaign_id: str
+    draft_campaign_id: str
+    reference_candidate_commit: str
+    draft_candidate_commit: str
+    reference_manifest_sha256: str
+    draft_manifest_sha256: str
+    reference_seal_record_sha256: str
+    draft_seal_record_sha256: str
+
+
+@dataclass(frozen=True)
+class RolePolicyResult:
+    mapping_ready: bool
+    observed_findings: ObservedFindings
+
+
+@dataclass(frozen=True)
+class MappingSetPolicyInput:
+    reviewer_eligibility: tuple[ReviewerEligibilityPolicyInput, ...]
+    role_findings: tuple[RoleFindingsPolicyInput, ...]
+    mapping_set_completion: MappingSetCompletionPolicyInput
 
 
 @dataclass(frozen=True)
@@ -714,13 +841,252 @@ def _canonical_actor_identity(value: object) -> str:
     )
 
 
-def _same_actor(first: RoleEvidence, second: RoleEvidence) -> bool:
+def _same_actor(
+    first_identity: object,
+    first_verification_locator: str,
+    second_identity: object,
+    second_verification_locator: str,
+) -> bool:
     return (
-        _canonical_actor_identity(first.reviewer.identity)
-        == _canonical_actor_identity(second.reviewer.identity)
-        or first.reviewer.verification_locator
-        == second.reviewer.verification_locator
+        _canonical_actor_identity(first_identity)
+        == _canonical_actor_identity(second_identity)
+        or first_verification_locator == second_verification_locator
     )
+
+
+def _policy_result(
+    mapping_ready: bool,
+    observed_findings: Mapping[str, tuple[object, ...]],
+) -> RolePolicyResult:
+    return RolePolicyResult(
+        mapping_ready=mapping_ready,
+        observed_findings=tuple(sorted(observed_findings.items())),
+    )
+
+
+def _validate_reviewer_eligibility_policy(
+    policy_input: ReviewerEligibilityPolicyInput,
+) -> RolePolicyResult:
+    if (
+        not policy_input.authorized_source_access
+        or not policy_input.independent
+    ):
+        _fail(
+            f"{policy_input.mapping_set_id} {policy_input.role} reviewer "
+            "is not eligible"
+        )
+    mapper_ids = frozenset(
+        _canonical_actor_identity(identity)
+        for identity in policy_input.mapper_identities
+    )
+    if _canonical_actor_identity(policy_input.reviewer_identity) in mapper_ids:
+        _fail(
+            f"{policy_input.mapping_set_id} {policy_input.role} reviewer "
+            "is also a mapper"
+        )
+    if (
+        policy_input.conflicts
+        and _RESOLVED_CONFLICT.fullmatch(
+            policy_input.conflict_disposition
+        )
+        is None
+    ):
+        _fail(
+            f"{policy_input.mapping_set_id} {policy_input.role} reviewer "
+            "has an unresolved conflict"
+        )
+    if not policy_input.owner_eligibility_accepted:
+        _fail(
+            f"{policy_input.mapping_set_id} {policy_input.role} reviewer "
+            "eligibility was rejected"
+        )
+    duplicate_identity = _same_actor(
+        policy_input.reviewer_identity,
+        policy_input.reviewer_verification_locator,
+        policy_input.other_reviewer_identity,
+        policy_input.other_reviewer_verification_locator,
+    )
+    if duplicate_identity:
+        if (
+            not policy_input.dual_role_accepted
+            or not policy_input.qualification.strip()
+        ):
+            _fail(
+                f"{policy_input.mapping_set_id} duplicate reviewer lacks "
+                "complete dual-role acceptance and qualifications"
+            )
+    elif policy_input.dual_role_accepted:
+        _fail(
+            f"{policy_input.mapping_set_id} unique reviewer cannot claim a "
+            "dual role"
+        )
+    return _policy_result(True, {})
+
+
+def _validate_role_findings_policy(
+    policy_input: RoleFindingsPolicyInput,
+) -> RolePolicyResult:
+    mapping_ready = policy_input.mapping_ready
+    if policy_input.conclusion == "stop":
+        mapping_ready = False
+    elif (
+        policy_input.conclusion == "pass_after_correction"
+        and policy_input.post_correction_candidate_sha
+        != policy_input.candidate_commit
+    ):
+        _fail(
+            f"{policy_input.mapping_set_id} {policy_input.role} "
+            "post-correction candidate is not the campaign candidate"
+        )
+
+    observed_findings = dict(policy_input.observed_findings)
+    for finding in policy_input.findings:
+        if not set(finding.affected_record_ids) <= policy_input.record_ids:
+            _fail(
+                f"{policy_input.mapping_set_id} finding {finding.finding_id} "
+                "references an unknown record"
+            )
+        if (
+            finding.status == "accepted"
+            and finding.severity in {"Critical", "Important"}
+        ):
+            _fail(
+                f"{policy_input.mapping_set_id} {finding.severity} finding "
+                "cannot be accepted"
+            )
+        if policy_input.conclusion != "stop" and finding.status == "open":
+            _fail(
+                f"{policy_input.mapping_set_id} pass conclusion has an open "
+                "finding"
+            )
+        normalized = _authoritative_finding(finding)
+        prior = observed_findings.get(finding.finding_id)
+        if prior is not None and prior != normalized:
+            _fail(
+                f"{policy_input.mapping_set_id} finding {finding.finding_id} "
+                "has conflicting role evidence"
+            )
+        observed_findings[finding.finding_id] = normalized
+    return _policy_result(mapping_ready, observed_findings)
+
+
+def _validate_mapping_set_completion_policy(
+    policy_input: MappingSetCompletionPolicyInput,
+) -> RolePolicyResult:
+    observed_findings = dict(policy_input.observed_findings)
+    if policy_input.mapping_ready:
+        if policy_input.authoritative_findings is None:
+            _fail(
+                f"{policy_input.mapping_set_id} candidate findings are invalid"
+            )
+        candidate_ids = tuple(
+            str(item[0]) for item in policy_input.authoritative_findings
+        )
+        if len(candidate_ids) != len(set(candidate_ids)):
+            _fail(
+                f"{policy_input.mapping_set_id} candidate finding "
+                "identifiers are duplicated"
+            )
+        authoritative = dict(
+            zip(
+                candidate_ids,
+                policy_input.authoritative_findings,
+                strict=True,
+            )
+        )
+        if observed_findings != authoritative:
+            _fail(
+                f"{policy_input.mapping_set_id} findings do not equal "
+                "authoritative candidate findings"
+            )
+    if policy_input.candidate_state == "reviewed":
+        if not _same_reviewer_metadata(
+            policy_input.mapping_set_reviewer_metadata,
+            policy_input.specification_reviewer_metadata,
+        ):
+            _fail(
+                f"{policy_input.mapping_set_id} mapping-set reviewer does not "
+                "equal the specification review evidence"
+            )
+        if any(
+            not _same_reviewer_metadata(
+                metadata,
+                policy_input.security_reviewer_metadata,
+            )
+            for metadata in policy_input.record_reviewer_metadata
+        ):
+            _fail(
+                f"{policy_input.mapping_set_id} record reviewer does not equal "
+                "the security review evidence"
+            )
+    return _policy_result(policy_input.mapping_ready, observed_findings)
+
+
+def _same_reviewer_metadata(
+    actual: ReviewerMetadata | None,
+    expected: ReviewerMetadata,
+) -> bool:
+    if actual is None:
+        return False
+    return tuple(sorted(actual, key=lambda item: item[0])) == tuple(
+        sorted(expected, key=lambda item: item[0])
+    )
+
+
+def validate_role_readiness_policy(
+    stage: RolePolicyStage,
+    policy_input: RolePolicyInput,
+) -> RolePolicyResult:
+    if stage == "reviewer_eligibility" and isinstance(
+        policy_input,
+        ReviewerEligibilityPolicyInput,
+    ):
+        return _validate_reviewer_eligibility_policy(policy_input)
+    if stage == "role_findings" and isinstance(
+        policy_input,
+        RoleFindingsPolicyInput,
+    ):
+        return _validate_role_findings_policy(policy_input)
+    if stage == "mapping_set_completion" and isinstance(
+        policy_input,
+        MappingSetCompletionPolicyInput,
+    ):
+        return _validate_mapping_set_completion_policy(policy_input)
+    raise TypeError("role policy stage and input do not match")
+
+
+def evaluate_mapping_set_policy(
+    policy_input: MappingSetPolicyInput,
+) -> bool:
+    for eligibility_input in policy_input.reviewer_eligibility:
+        validate_role_readiness_policy(
+            "reviewer_eligibility",
+            eligibility_input,
+        )
+
+    mapping_ready = True
+    observed_findings: ObservedFindings = ()
+    for findings_input in policy_input.role_findings:
+        result = validate_role_readiness_policy(
+            "role_findings",
+            replace(
+                findings_input,
+                mapping_ready=mapping_ready,
+                observed_findings=observed_findings,
+            ),
+        )
+        mapping_ready = result.mapping_ready
+        observed_findings = result.observed_findings
+
+    result = validate_role_readiness_policy(
+        "mapping_set_completion",
+        replace(
+            policy_input.mapping_set_completion,
+            mapping_ready=mapping_ready,
+            observed_findings=observed_findings,
+        ),
+    )
+    return result.mapping_ready
 
 
 def _validate_roles_and_readiness(
@@ -737,10 +1103,6 @@ def _validate_roles_and_readiness(
     for mapping_set_id, mapping_set in mapping_entries.items():
         candidate_mapping = candidate_mappings[mapping_set_id]
         mapping_ready = True
-        duplicate_identity = _same_actor(
-            mapping_set.roles[0],
-            mapping_set.roles[1],
-        )
         mapper_ids: set[str] = set()
         mapper = candidate_mapping.mapping_metadata.get("mapper")
         if isinstance(mapper, dict):
@@ -755,44 +1117,36 @@ def _validate_roles_and_readiness(
             metadata.get("record_id")
             for metadata in candidate_mapping.record_metadata
         }
-        observed_findings: dict[str, tuple[object, ...]] = {}
-        for role in mapping_set.roles:
-            if (
-                not role.reviewer.authorized_source_access
-                or not role.reviewer.independent
-            ):
-                _fail(
-                    f"{mapping_set_id} {role.role} reviewer is not eligible"
-                )
-            if _canonical_actor_identity(role.reviewer.identity) in mapper_ids:
-                _fail(
-                    f"{mapping_set_id} {role.role} reviewer is also a mapper"
-                )
-            if role.reviewer.conflicts and _RESOLVED_CONFLICT.fullmatch(
-                role.reviewer.conflict_disposition
-            ) is None:
-                _fail(
-                    f"{mapping_set_id} {role.role} reviewer has an "
-                    "unresolved conflict"
-                )
-            if not role.owner_eligibility_accepted:
-                _fail(
-                    f"{mapping_set_id} {role.role} reviewer eligibility "
-                    "was rejected"
-                )
-            if duplicate_identity:
-                if (
-                    not role.dual_role_accepted
-                    or not role.reviewer.qualification.strip()
-                ):
-                    _fail(
-                        f"{mapping_set_id} duplicate reviewer lacks complete "
-                        "dual-role acceptance and qualifications"
-                    )
-            elif role.dual_role_accepted:
-                _fail(
-                    f"{mapping_set_id} unique reviewer cannot claim a dual role"
-                )
+        observed_findings: ObservedFindings = ()
+        for index, role in enumerate(mapping_set.roles):
+            other_role = mapping_set.roles[1 - index]
+            validate_role_readiness_policy(
+                "reviewer_eligibility",
+                ReviewerEligibilityPolicyInput(
+                    mapping_set_id=mapping_set_id,
+                    role=role.role,
+                    reviewer_identity=role.reviewer.identity,
+                    reviewer_verification_locator=(
+                        role.reviewer.verification_locator
+                    ),
+                    other_reviewer_identity=other_role.reviewer.identity,
+                    other_reviewer_verification_locator=(
+                        other_role.reviewer.verification_locator
+                    ),
+                    authorized_source_access=(
+                        role.reviewer.authorized_source_access
+                    ),
+                    independent=role.reviewer.independent,
+                    conflicts=role.reviewer.conflicts,
+                    conflict_disposition=role.reviewer.conflict_disposition,
+                    owner_eligibility_accepted=(
+                        role.owner_eligibility_accepted
+                    ),
+                    dual_role_accepted=role.dual_role_accepted,
+                    qualification=role.reviewer.qualification,
+                    mapper_identities=frozenset(mapper_ids),
+                ),
+            )
             findings = _validate_role_files(
                 campaign=campaign,
                 mapping_set=mapping_set,
@@ -803,94 +1157,74 @@ def _validate_roles_and_readiness(
                 allowlist=allowlist,
                 snapshot=snapshot,
             )
-            conclusion = role.worksheet.conclusion
-            if conclusion == "stop":
-                mapping_ready = False
-            elif (
-                conclusion == "pass_after_correction"
-                and role.worksheet.post_correction_candidate_sha
-                != campaign.candidate_commit
-            ):
-                _fail(
-                    f"{mapping_set_id} {role.role} post-correction "
-                    "candidate is not the campaign candidate"
-                )
-            for finding in findings:
-                if not set(finding.affected_record_ids) <= record_ids:
-                    _fail(
-                        f"{mapping_set_id} finding {finding.finding_id} "
-                        "references an unknown record"
-                    )
-                if (
-                    finding.status == "accepted"
-                    and finding.severity in {"Critical", "Important"}
-                ):
-                    _fail(
-                        f"{mapping_set_id} {finding.severity} finding "
-                        "cannot be accepted"
-                    )
-                if conclusion != "stop" and finding.status == "open":
-                    _fail(
-                        f"{mapping_set_id} pass conclusion has an open finding"
-                    )
-                normalized = _authoritative_finding(finding)
-                prior = observed_findings.get(finding.finding_id)
-                if prior is not None and prior != normalized:
-                    _fail(
-                        f"{mapping_set_id} finding {finding.finding_id} "
-                        "has conflicting role evidence"
-                    )
-                observed_findings[finding.finding_id] = normalized
+            result = validate_role_readiness_policy(
+                "role_findings",
+                RoleFindingsPolicyInput(
+                    mapping_set_id=mapping_set_id,
+                    role=role.role,
+                    conclusion=role.worksheet.conclusion,
+                    post_correction_candidate_sha=(
+                        role.worksheet.post_correction_candidate_sha
+                    ),
+                    candidate_commit=campaign.candidate_commit,
+                    record_ids=frozenset(record_ids),
+                    findings=findings,
+                    mapping_ready=mapping_ready,
+                    observed_findings=observed_findings,
+                ),
+            )
+            mapping_ready = result.mapping_ready
+            observed_findings = result.observed_findings
+        authoritative_findings = None
         if mapping_ready:
             candidate_findings = candidate_mapping.mapping_metadata.get(
                 "findings"
             )
-            if not isinstance(candidate_findings, list):
-                _fail(f"{mapping_set_id} candidate findings are invalid")
-            candidate_finding_rows = tuple(
-                _candidate_finding(finding)
-                for finding in candidate_findings
+            authoritative_findings = (
+                tuple(
+                    _candidate_finding(finding)
+                    for finding in candidate_findings
+                )
+                if isinstance(candidate_findings, list)
+                else None
             )
-            candidate_ids = tuple(str(item[0]) for item in candidate_finding_rows)
-            if len(candidate_ids) != len(set(candidate_ids)):
-                _fail(
-                    f"{mapping_set_id} candidate finding identifiers "
-                    "are duplicated"
-                )
-            authoritative = dict(zip(
-                candidate_ids,
-                candidate_finding_rows,
-                strict=True,
-            ))
-            if observed_findings != authoritative:
-                _fail(
-                    f"{mapping_set_id} findings do not equal authoritative "
-                    "candidate findings"
-                )
-        if campaign.candidate_state == "reviewed":
-            role_map = {role.role: role for role in mapping_set.roles}
-            expected_snapshot_reviewer = _derived_reviewer(
-                role_map["specification_and_inventory"]
-            )
-            if (
-                candidate_mapping.mapping_metadata.get("reviewer")
-                != expected_snapshot_reviewer
-            ):
-                _fail(
-                    f"{mapping_set_id} mapping-set reviewer does not equal "
-                    "the specification review evidence"
-                )
-            expected_record_reviewer = _derived_reviewer(
-                role_map["security_and_overclaiming"]
-            )
-            if any(
-                metadata.get("reviewer") != expected_record_reviewer
-                for metadata in candidate_mapping.record_metadata
-            ):
-                _fail(
-                    f"{mapping_set_id} record reviewer does not equal the "
-                    "security review evidence"
-                )
+        role_map = {role.role: role for role in mapping_set.roles}
+        mapping_reviewer = candidate_mapping.mapping_metadata.get("reviewer")
+        record_reviewers = tuple(
+            metadata.get("reviewer") for metadata in candidate_mapping.record_metadata
+        )
+        result = validate_role_readiness_policy(
+            "mapping_set_completion",
+            MappingSetCompletionPolicyInput(
+                mapping_set_id=mapping_set_id,
+                mapping_ready=mapping_ready,
+                observed_findings=observed_findings,
+                authoritative_findings=authoritative_findings,
+                candidate_state=campaign.candidate_state,
+                specification_reviewer_metadata=tuple(
+                    _derived_reviewer(
+                        role_map["specification_and_inventory"]
+                    ).items()
+                ),
+                mapping_set_reviewer_metadata=(
+                    tuple(mapping_reviewer.items())
+                    if isinstance(mapping_reviewer, dict)
+                    else None
+                ),
+                security_reviewer_metadata=tuple(
+                    _derived_reviewer(
+                        role_map["security_and_overclaiming"]
+                    ).items()
+                ),
+                record_reviewer_metadata=tuple(
+                    tuple(reviewer.items())
+                    if isinstance(reviewer, dict)
+                    else None
+                    for reviewer in record_reviewers
+                ),
+            ),
+        )
+        mapping_ready = result.mapping_ready
         ready = ready and mapping_ready
     return ready
 
@@ -909,6 +1243,98 @@ def _exact_allowlist(allowlist: list[str]) -> tuple[str, ...]:
     return tuple(sorted(allowlist))
 
 
+def _validate_distinct_candidate(check: DistinctCandidateCheck) -> None:
+    if check.reviewed_candidate == check.referenced_candidate:
+        _fail("reviewed and Draft candidate commits must differ")
+
+
+def _validate_draft_status(check: DraftStatusCheck) -> None:
+    if check.phase != "draft_review":
+        _fail("referenced campaign is not a Draft review campaign")
+    if (
+        not check.evidence_valid
+        or not check.readiness_value
+        or check.readiness_name != "transition_ready"
+    ):
+        _fail("referenced Draft campaign is not transition-ready")
+
+
+def _validate_scalar_reference(check: ScalarReferenceCheck) -> None:
+    messages = {
+        "campaign_id": "Draft campaign identifier does not match the reference",
+        "candidate_commit": "Draft candidate commit does not match the reference",
+        "manifest_sha256": "Draft manifest digest does not match the reference",
+        "seal_record_sha256": "Draft seal-record digest does not match the reference",
+    }
+    try:
+        message = messages[check.stage]
+    except KeyError as error:
+        raise TypeError("unknown Draft reference stage") from error
+    if check.expected != check.actual:
+        _fail(message)
+
+
+def validate_draft_reference_binding(check: DraftReferenceCheck) -> None:
+    if isinstance(check, DistinctCandidateCheck):
+        _validate_distinct_candidate(check)
+        return
+    if isinstance(check, DraftStatusCheck):
+        _validate_draft_status(check)
+        return
+    if isinstance(check, ScalarReferenceCheck):
+        _validate_scalar_reference(check)
+        return
+    raise TypeError("unknown Draft reference check")
+
+
+def evaluate_draft_reference_policy(
+    policy_input: DraftReferencePolicyInput,
+) -> None:
+    validate_draft_reference_binding(
+        DistinctCandidateCheck(
+            reviewed_candidate=policy_input.reviewed_candidate,
+            referenced_candidate=policy_input.referenced_candidate,
+        )
+    )
+    validate_draft_reference_binding(
+        DraftStatusCheck(
+            phase=policy_input.draft_phase,
+            evidence_valid=policy_input.draft_evidence_valid,
+            readiness_name=policy_input.draft_readiness_name,
+            readiness_value=policy_input.draft_readiness_value,
+        )
+    )
+    for stage, expected, actual in (
+        (
+            "campaign_id",
+            policy_input.reference_campaign_id,
+            policy_input.draft_campaign_id,
+        ),
+        (
+            "candidate_commit",
+            policy_input.reference_candidate_commit,
+            policy_input.draft_candidate_commit,
+        ),
+        (
+            "manifest_sha256",
+            policy_input.reference_manifest_sha256,
+            policy_input.draft_manifest_sha256,
+        ),
+        (
+            "seal_record_sha256",
+            policy_input.reference_seal_record_sha256,
+            policy_input.draft_seal_record_sha256,
+        ),
+    ):
+        validate_draft_reference_binding(
+            ScalarReferenceCheck(
+                stage=stage,
+                expected=expected,
+                actual=actual,
+            )
+        )
+
+
 def _validate_draft_reference(
     *,
     reader: GitReader,
@@ -921,37 +1347,45 @@ def _validate_draft_reference(
     reference = reviewed_campaign.draft_campaign_reference
     if reference is None:
         _fail("final campaign has no Draft campaign reference")
-    if reference.candidate_commit == reviewed_campaign.candidate_commit:
-        _fail("reviewed and Draft candidate commits must differ")
+    validate_draft_reference_binding(
+        DistinctCandidateCheck(
+            reviewed_candidate=reviewed_campaign.candidate_commit,
+            referenced_candidate=reference.candidate_commit,
+        )
+    )
     draft_details = _validate_campaign_details(
         reader,
         reference.candidate_commit,
         draft_evidence_root,
     )
-    if draft_details.campaign.phase != "draft_review":
-        _fail("referenced campaign is not a Draft review campaign")
-    if (
-        not draft_details.report.evidence_valid
-        or not draft_details.report.readiness_value
-        or draft_details.report.readiness_name != "transition_ready"
+    validate_draft_reference_binding(
+        DraftStatusCheck(
+            phase=draft_details.campaign.phase,
+            evidence_valid=draft_details.report.evidence_valid,
+            readiness_name=draft_details.report.readiness_name,
+            readiness_value=draft_details.report.readiness_value,
+        )
+    )
+    for stage, expected, actual in (
+        ("campaign_id", reference.campaign_id, draft_details.campaign.campaign_id),
+        ("candidate_commit", reference.candidate_commit, draft_details.campaign.candidate_commit),
+        ("manifest_sha256", reference.manifest_sha256, hashlib.sha256(draft_details.manifest_bytes).hexdigest()),
     ):
-        _fail("referenced Draft campaign is not transition-ready")
-    if reference.campaign_id != draft_details.campaign.campaign_id:
-        _fail("Draft campaign identifier does not match the reference")
-    if reference.candidate_commit != draft_details.campaign.candidate_commit:
-        _fail("Draft candidate commit does not match the reference")
-    if (
-        hashlib.sha256(draft_details.manifest_bytes).hexdigest()
-        != reference.manifest_sha256
-    ):
-        _fail("Draft manifest digest does not match the reference")
+        validate_draft_reference_binding(
+            ScalarReferenceCheck(stage=stage, expected=expected, actual=actual)
+        )
 
     retained_archive = _read_external_path(draft_archive, worktrees)
     if retained_archive != draft_details.archive_bytes:
         _fail("retained Draft archive differs from deterministic reconstruction")
     seal_bytes = _read_external_path(draft_seal_record, worktrees)
-    if hashlib.sha256(seal_bytes).hexdigest() != reference.seal_record_sha256:
-        _fail("Draft seal-record digest does not match the reference")
+    validate_draft_reference_binding(
+        ScalarReferenceCheck(
+            stage="seal_record_sha256",
+            expected=reference.seal_record_sha256,
+            actual=hashlib.sha256(seal_bytes).hexdigest(),
+        )
+    )
     try:
         seal = json.loads(seal_bytes)
     except (UnicodeDecodeError, json.JSONDecodeError) as error:
