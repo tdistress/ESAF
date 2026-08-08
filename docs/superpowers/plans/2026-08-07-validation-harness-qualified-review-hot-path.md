@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Move 31 qualified-review policy cases onto ordered pure production boundaries while retaining exact full-validator equivalence, current failure order, complete acquisition coverage, and an auditable proof before migration.
+**Goal:** Move 28 qualified-review policy cases onto ordered pure production boundaries while retaining exact full-validator equivalence, current failure order, complete acquisition coverage, and an auditable proof before migration.
 
-**Architecture:** A frozen inventory will own the 31 selected cases, the 43-method baseline ledger, and a reviewed digest. Ordered policy functions will replace decisions inside the existing role and Draft-reference wrappers without moving I/O. A clean Stage 1 commit will prove full, narrow, and expected equivalence before a later Stage 2 commit changes only selected test call sites and a proof receipt.
+**Architecture:** A frozen inventory will own the 28 selected cases, the 43-method baseline ledger, and a reviewed digest. Ordered policy functions will replace decisions inside the existing role and Draft-reference wrappers without moving I/O. A clean Stage 1 commit will prove full, narrow, and expected equivalence before a later Stage 2 commit changes only selected test call sites and a proof receipt.
 
 **Tech Stack:** Python 3.13, `unittest`, frozen `dataclasses`, `hashlib`, canonical UTF-8 JSON, `argparse`, `unittest.mock`, Git CLI, GitHub CLI, and PowerShell.
 
@@ -12,8 +12,9 @@
 
 - Implement tasks sequentially. Do not assign overlapping inventory, validator, proof-support, verifier, or migration edits to parallel implementers.
 - The approved design commit is `56afd512465a3670c378406d53812487919f6c87`. Bind proof and review evidence to the actual full lowercase 40-character candidate `HEAD`, not to this design SHA or an abbreviated SHA.
-- Preserve exactly 31 selected cases across 16 methods: 27 role/readiness cases across 15 methods and four Draft-reference cases in one method.
-- Preserve the baseline accounting: 43 tests, 92 detailed-validation entries, 34 selected entries, 58 retained entries, and 108 expanded `copytree` operations. Copy counts are diagnostic. Detail-entry counts and selected case counts are normative.
+- Preserve exactly 28 selected cases across 15 methods: 24 role/readiness cases across 14 methods and four Draft-reference cases in one method.
+- Preserve the baseline accounting: 43 tests, 92 detailed-validation entries, 31 selected entries, 61 retained entries, and 108 expanded `copytree` operations. Copy counts are diagnostic. Detail-entry counts and selected case counts are normative.
+- Keep the whitespace-only qualification case and both accepted high-severity cases on the complete path. Campaign schema validation owns their first failure. Direct pure-policy tests retain those inputs as intentional defense-in-depth checks outside equivalence.
 - Keep accepted-Minor missing-field cases on the full path because they fail schema validation. Keep missing roles in schema validation and duplicate roles or mapping-set identifiers in `_mapping_entries()`.
 - Keep candidate acquisition, role-file parsing and binding, source sets, immutable locators, digests, allowlists, archives, seals, CLI behavior, operational errors, and path defenses on the complete path.
 - Preserve current first-failure order. Reviewer eligibility stays before each reviewer's role-file binding. Role findings and conclusions stay after that binding. The distinct-candidate reference check stays before Draft recursion. Archive equality stays between manifest-reference and seal-reference checks.
@@ -33,7 +34,7 @@
 - Create `tests/qualified_review_hot_path_support.py`: deterministic full-fixture reconstruction, immutable narrow-input reconstruction, declarative mutation application, and report projection shared by the test module and verifier.
 - Modify `tests/test_validate_qualified_review_evidence.py`: inventory tests, boundary tests, routing tests, verifier tests, retained full-path integrations, final fast matrices, and structural migration guards.
 - Modify `tools/validate_qualified_review_evidence.py`: immutable policy types, ordered role/readiness operations, ordered Draft-reference operations, combined narrow adapters, and production wrapper routing.
-- Create `tools/verify_qualified_review_hot_path_equivalence.py`: opt-in clean-candidate comparison of full, narrow, and expected results for all 31 cases.
+- Create `tools/verify_qualified_review_hot_path_equivalence.py`: opt-in clean-candidate comparison of full, narrow, and expected results for all 28 cases.
 - Create during Stage 2 `docs/superpowers/reviews/2026-08-07-qualified-review-hot-path-pre-migration-equivalence.md`: the clean Stage 1 SHA, inventory digest, exact output, and proof-critical file hashes.
 - Review without editing `docs/superpowers/specs/2026-08-07-validation-harness-qualified-review-hot-path-design.md`.
 - Verify without editing `tools/test-shards.json`, `.github/workflows/catalog-validation.yml`, and the real qualified-review evidence trees.
@@ -53,9 +54,9 @@ The ledger below is derived from static control flow at baseline commit `f99e403
 | `test_sha_locators_bind_package_attestation_and_worksheet_bytes` | 3 | 0 | 3 | 4 |
 | `test_attestation_source_sets_are_exactly_candidate_bound` | 6 | 0 | 6 | 7 |
 | `test_explicitly_resolved_conflict_is_eligible` | 1 | 1 | 0 | 1 |
-| `test_duplicate_human_requires_dual_acceptance_and_both_qualifications` | 2 | 2 | 0 | 3 |
+| `test_duplicate_human_requires_dual_acceptance_and_both_qualifications` | 2 | 1 | 1 | 3 |
 | `test_stop_with_open_high_severity_is_valid_but_not_ready` | 2 | 2 | 0 | 3 |
-| `test_accepted_critical_or_important_is_evidence_invalid` | 2 | 2 | 0 | 3 |
+| `test_accepted_critical_or_important_is_evidence_invalid` | 2 | 0 | 2 | 3 |
 | `test_accepted_minor_requires_named_acceptance_evidence` | 3 | 0 | 3 | 4 |
 | `test_pass_rejects_open_findings` | 1 | 1 | 0 | 1 |
 | `test_pass_after_correction_binds_exact_campaign_candidate` | 2 | 2 | 0 | 2 |
@@ -87,12 +88,13 @@ The ledger below is derived from static control flow at baseline commit `f99e403
 | `test_seal_cli_preserves_competing_output_and_cleans_partial_staging` | 2 | 0 | 2 | 1 |
 | `test_seal_fails_closed_when_parent_or_ancestor_is_swapped` | 2 | 0 | 2 | 1 |
 | `test_seal_archives_the_exact_validated_byte_snapshot` | 1 | 0 | 1 | 1 |
-| **Total** | **92** | **34** | **58** | **108** |
+| **Total** | **92** | **31** | **61** | **108** |
 
-The retained-method AST oracle uses `ast.dump(method_node, annotate_fields=True, include_attributes=False)` encoded as UTF-8 and hashed with SHA-256. These values bind all 27 baseline methods outside the selected migration, including the three zero-entry security and argument guards:
+The retained-method AST oracle uses `ast.dump(method_node, annotate_fields=True, include_attributes=False)` encoded as UTF-8 and hashed with SHA-256. These values bind all 28 baseline methods outside the selected migration, including the three zero-entry security and argument guards:
 
 | Retained method | AST SHA-256 |
 |---|---|
+| `test_accepted_critical_or_important_is_evidence_invalid` | `8bbbac1520f72932847f347658414654092f2deacbfcc93e37be0de833c6e587` |
 | `test_accepted_minor_requires_named_acceptance_evidence` | `23319dd12547114b869fd0815418669c3869e7824e0da17b95b64f76509370b3` |
 | `test_attestation_source_sets_are_exactly_candidate_bound` | `7ca3e58598557954724bc325eba4eefe154875151a9d3cf23246b6f24912be24` |
 | `test_campaign_tree_and_package_bytes_are_exact` | `c750637c9db1cc6caa16c702b52eec3cae96cfd7cae471977e19a1895f8eecd4` |
@@ -145,11 +147,11 @@ The retained-method AST oracle uses `ast.dump(method_node, annotate_fields=True,
 
 - [ ] **Step 1: Add failing inventory contract tests**
 
-Add `QualifiedReviewPolicyInventoryTests`. Require 43 ledger rows in the exact source order shown above, totals `(92, 34, 58, 108)`, 31 unique cases, 16 selected methods, a 27/4 boundary split, immutable tuples, valid path tokens, unique case IDs, and a recomputed digest equal to the reviewed constant.
+Add `QualifiedReviewPolicyInventoryTests`. Require 43 ledger rows in the exact source order shown above, totals `(92, 31, 61, 108)`, 28 unique cases, 15 selected methods, a 24/4 boundary split, immutable tuples, valid path tokens, unique case IDs, and a recomputed digest equal to the reviewed constant `f89f118c4d5fe3dfc1a906cebb3f13a7cf5da7b6349c3e3913470c6cd179f50a`.
 
-Freeze every retained baseline case as an explicit record. Use the current subtest label when one exists and `default` for an unlabelled single case. Give each record the identifier `<method-name>:retained:<case-label>`. Its `routes` tuple shall list every detailed-validation entry in order, such as `("final", "recursive_draft")` for a Final case that reaches retained Draft validation. Do not generate records or routes from a count at runtime. Require unique identifiers, nonempty labels and invariant-based rationales, allowed routes, and exactly 58 route elements across all records.
+Freeze every retained baseline case as an explicit record. Use the current subtest label when one exists and `default` for an unlabelled single case. Give each record the identifier `<method-name>:retained:<case-label>`. Its `routes` tuple shall list every detailed-validation entry in order, such as `("final", "recursive_draft")` for a Final case that reaches retained Draft validation. Do not generate records or routes from a count at runtime. Require unique identifiers, nonempty labels and invariant-based rationales, allowed routes, and exactly 61 route elements across all records.
 
-For all 27 methods outside the selected migration, including the three methods with zero detailed-validation entries, store and verify the SHA-256 of the location-free AST dump from baseline commit `f99e403583877f803576dcad919025e558e5a5f6`. This makes a count-preserving loop, label, mutation, route, or zero-entry security-test change fail the ledger contract. Only the 16 methods changed by the approved Stage 2 migration are excluded from this AST binding.
+For all 28 methods outside the selected migration, including the three methods with zero detailed-validation entries, store and verify the SHA-256 of the location-free AST dump from baseline commit `f99e403583877f803576dcad919025e558e5a5f6`. This makes a count-preserving loop, label, mutation, route, or zero-entry security-test change fail the ledger contract. Only the 15 methods changed by the approved Stage 2 migration are excluded from this AST binding. The retained accepted-severity method has the exact reviewed AST digest `8bbbac1520f72932847f347658414654092f2deacbfcc93e37be0de833c6e587`.
 
 Use mutation tests that call the lower-level validator with one defect at a time:
 
@@ -165,7 +167,7 @@ def test_inventory_rejects_count_digest_and_mutability_drift(self) -> None:
         )
 ```
 
-Assert the exact selected per-method distribution: `5, 4, 1, 1, 2, 2, 2, 1, 2, 1, 1, 1, 1, 2, 1` for the 15 role methods in design order, plus four reference cases. Assert the reference detail-entry distribution `2, 1, 2, 2` for campaign ID, candidate commit, manifest digest, and seal-record digest.
+Assert the exact selected per-method distribution: `5, 4, 1, 1, 1, 2, 1, 2, 1, 1, 1, 1, 2, 1` for the 14 role methods in design order, plus four reference cases. Assert the reference detail-entry distribution `2, 1, 2, 2` for campaign ID, candidate commit, manifest digest, and seal-record digest.
 
 - [ ] **Step 2: Run the focused inventory tests and verify RED**
 
@@ -181,7 +183,7 @@ if ($redExit -eq 0 -or ($redOutput -join "`n") -notmatch 'ModuleNotFoundError.*q
 
 Expected: FAIL with `ModuleNotFoundError` for `tests.qualified_review_policy_cases`.
 
-- [ ] **Step 3: Implement the frozen records, exact ledger, and 31 cases**
+- [ ] **Step 3: Implement the frozen records, exact ledger, and 28 cases**
 
 Use a recursive immutable value type and canonical serialization:
 
@@ -219,7 +221,9 @@ class QualifiedReviewPolicyCase:
     expected: ExpectedReport
 ```
 
-Give every mutation a stable identifier. Use these prefixes and counts: `ineligible` 5, `actor-alias` 4, `mapper-alias` 1, `resolved-conflict` 1, `duplicate-human` 2, `stop-open` 2, `accepted-severity` 2, `pass-open` 1, `post-correction` 2, `orphan-record` 1, `finding-set` 1, `finding-description` 1, `duplicate-finding-id` 1, `reviewed-reviewer` 2, `final-post-correction` 1, and `draft-reference` 4.
+Give every mutation a stable identifier. Use these prefixes and counts: `ineligible` 5, `actor-alias` 4, `mapper-alias` 1, `resolved-conflict` 1, `duplicate-human` 1, `stop-open` 2, `pass-open` 1, `post-correction` 2, `orphan-record` 1, `finding-set` 1, `finding-description` 1, `duplicate-finding-id` 1, `reviewed-reviewer` 2, `final-post-correction` 1, and `draft-reference` 4.
+
+The whitespace-only duplicate qualification and the accepted Critical and Important severity mutations are schema-owned. Retain those three complete-path entries outside the equivalence population. Keep direct pure-policy tests for the same inputs as explicit defense-in-depth coverage and label them intentionally non-schema-valid. The exact proof must not claim full/narrow equivalence for inputs rejected before the policy layer.
 
 Store final field values or `CandidateReference` records, not lambdas. Canonical serialization shall encode a candidate reference as `{"candidate_reference": "<key>"}` so it cannot collide with an ordinary tuple or string value. Use `fixture_kind="description_candidate"` and `fixture_kind="duplicate_candidate"` for the two alternate-commit cases. Use candidate references and expected `candidate_key` values rather than embedding temporary SHAs in the digest. The shared support module shall resolve every reference from its fixture before applying a mutation or constructing an expected projection, and shall reject an unknown key.
 
@@ -492,7 +496,7 @@ def setUpClass(cls) -> None:
 
 In `_validate_roles_and_readiness()`, replace each policy block with its staged function at the same source position. Keep `_validate_role_files()` between eligibility and findings. In `_validate_draft_reference()`, call `DistinctCandidateCheck` before recursion, call status and scalar checks after Draft validation, keep archive comparison in place, then call the seal scalar check before JSON parsing and deterministic seal reconstruction.
 
-Add `test_policy_boundaries_reach_full_campaign_validation` with five labelled full-path subcases: mapper alias, reviewer ineligibility, stop conclusion, authoritative-finding mismatch, and reviewed-state reviewer mismatch. Add `test_draft_reference_boundary_reaches_full_final_validation` with a manifest-digest reference mismatch that enters the Final and recursive Draft paths. These new integration anchors are outside the baseline ledger and the 31-case inventory. Structural tests shall require their exact names and labels, require complete-validator calls, and keep them unchanged in Stage 2.
+Add `test_policy_boundaries_reach_full_campaign_validation` with five labelled full-path subcases: mapper alias, reviewer ineligibility, stop conclusion, authoritative-finding mismatch, and reviewed-state reviewer mismatch. Add `test_draft_reference_boundary_reaches_full_final_validation` with a manifest-digest reference mismatch that enters the Final and recursive Draft paths. These new integration anchors are outside the baseline ledger and the 28-case inventory. Structural tests shall require their exact names and labels, require complete-validator calls, and keep them unchanged in Stage 2.
 
 ```python
 validate_role_readiness_policy("reviewer_eligibility", eligibility_input)
@@ -561,11 +565,11 @@ Successful output comes directly from these print statements:
 
 ```python
 print(f"candidate_sha={result.candidate_sha}")
-print("method_count=16")
-print("population_count=31")
+print("method_count=15")
+print("population_count=28")
 print(f"population_sha256={result.population_sha256}")
-print("full_comparison_count=31")
-print("narrow_comparison_count=31")
+print("full_comparison_count=28")
+print("narrow_comparison_count=28")
 print("equivalence=PASS")
 ```
 
@@ -586,7 +590,7 @@ Expected: FAIL because the verifier module does not exist.
 
 Require regex `[0-9a-f]{40}`, exact `git rev-parse HEAD`, and empty `git status --porcelain=v1 --untracked-files=all`. Load the validated inventory once. For every case, allocate a fresh temporary destination, then compute full, narrow, and expected projections independently and compare each pair.
 
-Reject any diagnostic containing the temporary root in native or slash-normalized form. Run the exact-candidate check again after all 31 comparisons. Return `EquivalenceResult` only after postflight. `main()` prints PASS fields only from the returned result.
+Reject any diagnostic containing the temporary root in native or slash-normalized form. Run the exact-candidate check again after all 28 comparisons. Return `EquivalenceResult` only after postflight. `main()` prints PASS fields only from the returned result.
 
 ```python
 for case in inventory.cases:
@@ -653,7 +657,7 @@ $stage1ProofUtc = [DateTimeOffset]::UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")
 Write-Output "proof_timestamp_utc=$stage1ProofUtc"
 ```
 
-Expected: the seven PASS lines above with `method_count=16`, `population_count=31`, and both comparison counts equal to 31, followed by one RFC 3339 UTC timestamp line. Preserve the complete output, timestamp, Stage 1 SHA, and inventory digest for Task 6. Do not start Task 6 if this command fails.
+Expected: the seven PASS lines above with `method_count=15`, `population_count=28`, and both comparison counts equal to 28, followed by one RFC 3339 UTC timestamp line. Preserve the complete output, timestamp, Stage 1 SHA, and inventory digest for Task 6. Do not start Task 6 if this command fails.
 
 - [ ] **Step 7: Record proof-critical hashes outside the worktree change set**
 
@@ -683,13 +687,13 @@ Expected: four path-bound lowercase SHA-256 records in the receipt format. Keep 
 **Interfaces:**
 - Consumes: `qualified_review_policy_inventory()`, `run_narrow_case()`, and the exact Stage 1 proof output.
 - Produces: `_assert_policy_cases_narrow(method_name: str) -> None` in the test class.
-- Produces: structural guards that bind the 16 selected methods to the inventory and reject complete-path calls.
+- Produces: structural guards that bind the 15 selected methods to the inventory and reject complete-path calls.
 
 - [ ] **Step 1: Add failing migration guards before changing selected calls**
 
-Parse `tests/test_validate_qualified_review_evidence.py` with `ast`. For the 16 exact method names, reject calls named `_report`, `_final_report`, `_final_inputs`, `validate_campaign`, `_validate_campaign_details`, `copytree`, or a test-owned policy predicate. Require each selected method to call `_assert_policy_cases_narrow()` once with its own method name.
+Parse `tests/test_validate_qualified_review_evidence.py` with `ast`. For the 15 exact method names, reject calls named `_report`, `_final_report`, `_final_inputs`, `validate_campaign`, `_validate_campaign_details`, `copytree`, or a test-owned policy predicate. Require each selected method to call `_assert_policy_cases_narrow()` once with its own method name.
 
-Add a consumption test that patches `run_narrow_case` and proves all 31 case IDs are seen exactly once across the 16 methods.
+Add a consumption test that patches `run_narrow_case` and proves all 28 case IDs are seen exactly once across the 15 methods.
 
 - [ ] **Step 2: Run structural tests and verify RED**
 
@@ -763,7 +767,7 @@ git diff --check
 if ($LASTEXITCODE -ne 0) { throw "diff check exited $LASTEXITCODE" }
 ```
 
-Expected: PASS, 31 unique case IDs consumed, and all four hashes exactly equal the Stage 1 values.
+Expected: PASS, 28 unique case IDs consumed, and all four hashes exactly equal the Stage 1 values.
 
 - [ ] **Step 6: Review the Stage 2 path boundary and commit**
 
@@ -884,11 +888,11 @@ python -B tools/verify_qualified_review_hot_path_equivalence.py --check --candid
 if ($LASTEXITCODE -ne 0) { throw "final equivalence exited $LASTEXITCODE" }
 ```
 
-Expected: clean status and exact PASS output for 16 methods and 31 cases. Confirm the final inventory digest equals the Stage 1 receipt.
+Expected: clean status and exact PASS output for 15 methods and 28 cases. Confirm the final inventory digest equals the Stage 1 receipt.
 
 - [ ] **Step 4: Dispatch two independent reviews on the exact final SHA**
 
-Use separate subagents. Give each the full SHA and merge base. The specification reviewer checks the 31-case inventory, 43-method ledger, digest, Stage 1 chronology, Stage 2 path boundary, and full/narrow/expected equality. The security reviewer checks first-failure order, acquisition ownership, alternate-commit facts, path and seal defenses, sanitization, structural guards, and absence of new caches or trusted snapshots.
+Use separate subagents. Give each the full SHA and merge base. The specification reviewer checks the 28-case inventory, 43-method ledger, digest, Stage 1 chronology, Stage 2 path boundary, and full/narrow/expected equality. The security reviewer checks first-failure order, acquisition ownership, alternate-commit facts, path and seal defenses, sanitization, structural guards, and absence of new caches or trusted snapshots.
 
 Expected: both reviews name the same final SHA and report no unresolved Critical or Important finding. If a fix changes `HEAD`, commit it, rerun every affected gate and exact-SHA equivalence, then redispatch both reviews.
 
@@ -917,7 +921,7 @@ If a repair changes a proof-critical artifact, this ordinary repair step is not 
 
 - [ ] **Step 1: Push the branch and open a reviewable pull request**
 
-Use the humanizer skill in embedded mode for the title and body. Include scope, the 31/34/58/92 ledger, Stage 1 SHA and digest, final reviewed SHA, exact verifier outputs, retained full-path coverage, validation commands, review results, and the statement that Issue 55 remains open.
+Use the humanizer skill in embedded mode for the title and body. Include scope, the 28-case and 31/61/92 detail-entry ledger, Stage 1 SHA and digest, final reviewed SHA, exact verifier outputs, retained full-path coverage, validation commands, review results, and the statement that Issue 55 remains open.
 
 ```powershell
 $ErrorActionPreference='Stop'
@@ -933,8 +937,8 @@ if ($LASTEXITCODE -ne 0 -or $candidate -notmatch '^[0-9a-f]{40}$') { throw 'cand
 $prText = @"
 ## Summary
 
-- Moves all 31 selected qualified-review cases onto ordered production policy operations.
-- Retains 58 baseline detail entries for schema, acquisition, role files, archives, seals, CLI behavior, and security defenses.
+- Moves all 28 selected qualified-review cases onto ordered production policy operations.
+- Retains 61 baseline detail entries for schema, acquisition, role files, archives, seals, CLI behavior, and security defenses.
 - Preserves Issue 55 and the real Draft campaign state.
 
 ## Proof
@@ -943,7 +947,7 @@ Stage 1 proof SHA: $stage1Sha
 
 Final reviewed SHA: $candidate
 
-The clean Stage 1 verifier compared the full, narrow, and expected projections for 31 cases before migration. The final verifier repeated those comparisons on the reviewed head with the same inventory digest. Focused, shard, discovery, standalone, Mermaid, and link gates passed on the final head. Independent specification and security reviews reported no unresolved Critical or Important finding.
+The clean Stage 1 verifier compared the full, narrow, and expected projections for 28 cases before migration. The final verifier repeated those comparisons on the reviewed head with the same inventory digest. Focused, shard, discovery, standalone, Mermaid, and link gates passed on the final head. Independent specification and security reviews reported no unresolved Critical or Important finding.
 "@
 [System.IO.File]::WriteAllText(
   $prBody,

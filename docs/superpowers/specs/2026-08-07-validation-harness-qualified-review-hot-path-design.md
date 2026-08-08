@@ -48,7 +48,7 @@ The implementation shall preserve all of the following:
 
 The expected report projection shall include evidence validity and readiness. It shall include candidate commit and campaign identifier whenever the complete report exposes parsed campaign context. Expected errors shall retain their current text and order.
 
-The selected population is 31 cases across 16 test methods. Those cases currently cause 34 detailed-validation entries. The role and readiness boundary contains 27 cases and 27 entries across these 15 methods:
+The selected population is 28 cases across 15 test methods. Those cases currently cause 31 detailed-validation entries. The role and readiness boundary contains 24 cases and 24 entries across these 14 methods:
 
 - `test_rejects_ineligible_reviewer_evidence`
 - `test_actor_aliases_and_shared_locator_cannot_bypass_role_rules`
@@ -56,7 +56,6 @@ The selected population is 31 cases across 16 test methods. Those cases currentl
 - `test_explicitly_resolved_conflict_is_eligible`
 - `test_duplicate_human_requires_dual_acceptance_and_both_qualifications`
 - `test_stop_with_open_high_severity_is_valid_but_not_ready`
-- `test_accepted_critical_or_important_is_evidence_invalid`
 - `test_pass_rejects_open_findings`
 - `test_pass_after_correction_binds_exact_campaign_candidate`
 - `test_orphan_affected_record_identifier_is_invalid_even_for_stop`
@@ -66,17 +65,17 @@ The selected population is 31 cases across 16 test methods. Those cases currentl
 - `test_reviewed_candidate_requires_exact_nested_reviewer_objects`
 - `test_final_pass_after_correction_binds_reviewed_candidate`
 
-The Draft-reference inventory shall cover every field case in `test_final_campaign_binds_every_draft_reference_field`: campaign identifier, candidate commit, manifest digest, and seal-record digest. Valid Draft and Final campaigns remain representative full-path controls outside the 31-case inventory. The role and readiness inventory already contains valid narrow controls for resolved conflict and exact post-correction binding.
+The Draft-reference inventory shall cover every field case in `test_final_campaign_binds_every_draft_reference_field`: campaign identifier, candidate commit, manifest digest, and seal-record digest. Valid Draft and Final campaigns remain representative full-path controls outside the 28-case inventory. The role and readiness inventory already contains valid narrow controls for resolved conflict and exact post-correction binding.
 
 | Boundary | Selected cases | Current detailed-validation entries |
 |---|---:|---:|
-| Role and readiness policy | 27 | 27 |
+| Role and readiness policy | 24 | 24 |
 | Final-to-Draft reference binding | 4 | 7 |
-| **Selected total** | **31** | **34** |
+| **Selected total** | **28** | **31** |
 
 The four reference cases have different recursive costs. Campaign identifier, manifest digest, and seal-record digest mutations each enter both the Final and retained Draft detail paths, for two entries per case. The candidate-commit mutation fails on the distinct-candidate rule before recursive Draft validation, for one entry. This gives seven detailed-validation entries across the four cases.
 
-The 27 role and readiness records have this reviewed baseline distribution:
+The 24 role and readiness records have this reviewed baseline distribution:
 
 | Existing method | Cases |
 |---|---:|
@@ -84,9 +83,8 @@ The 27 role and readiness records have this reviewed baseline distribution:
 | `test_actor_aliases_and_shared_locator_cannot_bypass_role_rules` | 4 |
 | `test_actor_alias_cannot_bypass_mapper_independence` | 1 |
 | `test_explicitly_resolved_conflict_is_eligible` | 1 |
-| `test_duplicate_human_requires_dual_acceptance_and_both_qualifications` | 2 |
+| `test_duplicate_human_requires_dual_acceptance_and_both_qualifications` | 1 |
 | `test_stop_with_open_high_severity_is_valid_but_not_ready` | 2 |
-| `test_accepted_critical_or_important_is_evidence_invalid` | 2 |
 | `test_pass_rejects_open_findings` | 1 |
 | `test_pass_after_correction_binds_exact_campaign_candidate` | 2 |
 | `test_orphan_affected_record_identifier_is_invalid_even_for_stop` | 1 |
@@ -95,13 +93,17 @@ The 27 role and readiness records have this reviewed baseline distribution:
 | `test_duplicate_authoritative_finding_identifiers_are_invalid` | 1 |
 | `test_reviewed_candidate_requires_exact_nested_reviewer_objects` | 2 |
 | `test_final_pass_after_correction_binds_reviewed_candidate` | 1 |
-| **Role and readiness total** | **27** |
+| **Role and readiness total** | **24** |
 
-The accepted-Minor mutations remain full stack because their missing named-acceptance fields fail the campaign schema before semantic policy runs. The missing-role mutation also remains a schema case. Duplicate role and duplicate mapping-set identifiers remain in the `_mapping_entries` topology path. The authoritative-description and duplicate-finding-identifier cases may use the narrow boundary only if their inventory records retain the alternate-commit authoritative candidate facts used by the complete baseline.
+Three cases originally assigned to equivalence remain on the complete path after the Stage 1 verifier exposed their actual first failure. A whitespace-only reviewer qualification fails `nonemptyText`. An accepted Critical or Important finding fails the schema rule that only Minor findings may be accepted. In all three cases, schema validation returns before role policy runs. Their baseline tests asserted only that the evidence was invalid, so those tests did not establish the policy error recorded in the first inventory.
 
-Before implementation replaces any complete validation call, a baseline ledger shall freeze this exact method set, its 31 expanded cases, per-method case counts, and 34 detailed-validation entries. That ledger shall account for all 92 measured detailed-validation entries as 34 selected and 58 retained. Each retained entry shall have a short reason tied to an invariant in this design. The selected population shall not silently absorb schema, topology, role-file parsing, source-set, locator, archive, seal, or CLI cases merely because they are expensive.
+The corrected ledger retains these three schema-first cases and binds their full-path diagnostics. Direct pure-policy tests still exercise whitespace qualification and accepted high-severity inputs as intentional defense-in-depth checks. Those unit tests operate on already parsed policy inputs and are not members of the full/narrow equivalence population.
 
-The inventory shall serialize its semantic fields as UTF-8 canonical JSON with sorted keys and separators `(',', ':')`, then check a reviewed SHA-256 digest stored beside the records. Validation shall fail for a missing or extra method, count drift, a duplicate identifier, an unknown boundary family, mutable case data, an unsupported mutation target, or a digest mismatch. Both the fast tests and the equivalence tool shall consume the same validating accessor. No generated copy or second expected-case table is permitted.
+The accepted-Minor mutations also remain full stack because their missing named-acceptance fields fail the campaign schema before semantic policy runs. The missing-role mutation remains a schema case. Duplicate role and duplicate mapping-set identifiers remain in the `_mapping_entries` topology path. The authoritative-description and duplicate-finding-identifier cases may use the narrow boundary only if their inventory records retain the alternate-commit authoritative candidate facts used by the complete baseline.
+
+Before implementation replaces any complete validation call, a baseline ledger shall freeze this exact method set, its 28 expanded cases, per-method case counts, and 31 detailed-validation entries. That ledger shall account for all 92 measured detailed-validation entries as 31 selected and 61 retained. Each retained entry shall have a short reason tied to an invariant in this design. The selected population shall not silently absorb schema, topology, role-file parsing, source-set, locator, archive, seal, or CLI cases merely because they are expensive.
+
+The inventory shall serialize its semantic fields as UTF-8 canonical JSON with sorted keys and separators `(',', ':')`, then check the reviewed SHA-256 digest `f89f118c4d5fe3dfc1a906cebb3f13a7cf5da7b6349c3e3913470c6cd179f50a` stored beside the records. Validation shall fail for a missing or extra method, count drift, a duplicate identifier, an unknown boundary family, mutable case data, an unsupported mutation target, or a digest mismatch. Both the fast tests and the equivalence tool shall consume the same validating accessor. No generated copy or second expected-case table is permitted.
 
 ### Pure role and readiness policy boundary
 

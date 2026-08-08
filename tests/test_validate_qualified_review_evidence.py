@@ -271,6 +271,70 @@ def anchor():
                 for label in labels:
                     self.assertIn(label, literals)
 
+    def test_corrected_stage_one_routes_are_structurally_bound(self) -> None:
+        inventory = qualified_review_policy_inventory()
+        selected_methods = {case.method_name for case in inventory.cases}
+        self.assertEqual(len(inventory.cases), 28)
+        self.assertEqual(len(selected_methods), 15)
+        self.assertNotIn(
+            "test_accepted_critical_or_important_is_evidence_invalid",
+            selected_methods,
+        )
+
+        tree = ast.parse(Path(__file__).read_text(encoding="utf-8"))
+        campaign_class = next(
+            node
+            for node in tree.body
+            if isinstance(node, ast.ClassDef)
+            and node.name == "CampaignValidationTests"
+        )
+        methods = {
+            node.name: node
+            for node in campaign_class.body
+            if isinstance(node, ast.FunctionDef)
+        }
+        complete_calls = {
+            "_report",
+            "_final_report",
+            "validate_campaign",
+        }
+        for method_name in selected_methods:
+            with self.subTest(selected_method=method_name):
+                outer_nodes = tuple(
+                    _walk_outer_method_scope(methods[method_name].body)
+                )
+                self.assertTrue(
+                    any(
+                        isinstance(node, ast.Call)
+                        and (
+                            isinstance(node.func, ast.Name)
+                            and node.func.id in complete_calls
+                            or isinstance(node.func, ast.Attribute)
+                            and node.func.attr in complete_calls
+                        )
+                        for node in outer_nodes
+                    )
+                )
+
+        schema_tests = {
+            "test_incomplete_duplicate_reviewer_qualification_fails_schema_before_policy",
+            "test_accepted_high_severity_findings_fail_schema_before_policy",
+        }
+        self.assertTrue(schema_tests <= set(methods))
+        for method_name in schema_tests:
+            with self.subTest(retained_schema_method=method_name):
+                outer_nodes = tuple(
+                    _walk_outer_method_scope(methods[method_name].body)
+                )
+                self.assertTrue(
+                    any(
+                        isinstance(node, ast.Call)
+                        and isinstance(node.func, ast.Attribute)
+                        and node.func.attr == "_report"
+                        for node in outer_nodes
+                    )
+                )
+
     def test_inventory_freezes_the_complete_baseline_ledger(self) -> None:
         inventory = qualified_review_policy_inventory()
         expected_methods = (
@@ -337,27 +401,27 @@ def anchor():
                 ),
                 sum(method.copytree_operations for method in inventory.methods),
             ),
-            (92, 34, 58, 108),
+            (92, 31, 61, 108),
         )
         self.assertEqual(
             sum(method.detail_entries - method.selected_entries for method in inventory.methods),
-            58,
+            61,
         )
         self.assertEqual(len(inventory.methods), 43)
         self.assertTrue(inventory.retained_cases)
 
     def test_inventory_freezes_selected_population_and_operations(self) -> None:
         inventory = qualified_review_policy_inventory()
-        self.assertEqual(len(inventory.cases), 31)
+        self.assertEqual(len(inventory.cases), 28)
         self.assertEqual(
             (
                 sum(case.boundary == "role_readiness" for case in inventory.cases),
                 sum(case.boundary == "draft_reference" for case in inventory.cases),
             ),
-            (27, 4),
+            (24, 4),
         )
-        self.assertEqual(len({case.case_id for case in inventory.cases}), 31)
-        self.assertEqual(len({case.method_name for case in inventory.cases}), 16)
+        self.assertEqual(len({case.case_id for case in inventory.cases}), 28)
+        self.assertEqual(len({case.method_name for case in inventory.cases}), 15)
         self.assertEqual(
             tuple(
                 len(inventory.cases_for_method(method_name))
@@ -368,7 +432,6 @@ def anchor():
                     "test_explicitly_resolved_conflict_is_eligible",
                     "test_duplicate_human_requires_dual_acceptance_and_both_qualifications",
                     "test_stop_with_open_high_severity_is_valid_but_not_ready",
-                    "test_accepted_critical_or_important_is_evidence_invalid",
                     "test_pass_rejects_open_findings",
                     "test_pass_after_correction_binds_exact_campaign_candidate",
                     "test_orphan_affected_record_identifier_is_invalid_even_for_stop",
@@ -379,7 +442,7 @@ def anchor():
                     "test_final_pass_after_correction_binds_reviewed_candidate",
                 )
             ),
-            (5, 4, 1, 1, 2, 2, 2, 1, 2, 1, 1, 1, 1, 2, 1),
+            (5, 4, 1, 1, 1, 2, 1, 2, 1, 1, 1, 1, 2, 1),
         )
         reference_cases = inventory.cases_for_method(
             "test_final_campaign_binds_every_draft_reference_field"
@@ -417,6 +480,54 @@ def anchor():
             )
         )
 
+    def test_schema_owned_cases_are_retained_outside_equivalence(self) -> None:
+        inventory = qualified_review_policy_inventory()
+        schema_owned = {
+            "duplicate-human:incomplete-qualifications",
+            "accepted-severity:critical",
+            "accepted-severity:important",
+        }
+        self.assertTrue(
+            schema_owned.isdisjoint(case.case_id for case in inventory.cases)
+        )
+        retained = {case.case_id: case for case in inventory.retained_cases}
+        expected = {
+            "test_duplicate_human_requires_dual_acceptance_and_both_qualifications:retained:incomplete-qualifications": (
+                "incomplete-qualifications",
+                ("draft",),
+            ),
+            "test_accepted_critical_or_important_is_evidence_invalid:retained:Critical": (
+                "Critical",
+                ("draft",),
+            ),
+            "test_accepted_critical_or_important_is_evidence_invalid:retained:Important": (
+                "Important",
+                ("draft",),
+            ),
+        }
+        for case_id, (label, routes) in expected.items():
+            with self.subTest(case_id=case_id):
+                self.assertIn(case_id, retained)
+                self.assertEqual(retained[case_id].case_label, label)
+                self.assertEqual(retained[case_id].routes, routes)
+                self.assertIn("schema", retained[case_id].rationale.casefold())
+
+        methods = {method.method_name: method for method in inventory.methods}
+        self.assertEqual(
+            methods[
+                "test_duplicate_human_requires_dual_acceptance_and_both_qualifications"
+            ].selected_entries,
+            1,
+        )
+        accepted = methods[
+            "test_accepted_critical_or_important_is_evidence_invalid"
+        ]
+        self.assertEqual(accepted.selected_entries, 0)
+        self.assertEqual(
+            accepted.retained_source_ast_sha256,
+            "8bbbac1520f72932847f347658414654092f2deacbfcc93e37be0de833c6e587",
+        )
+
     def test_identity_related_operations_match_exact_baseline_values(self) -> None:
         inventory = qualified_review_policy_inventory()
         by_id = {case.case_id: case for case in inventory.cases}
@@ -444,12 +555,6 @@ def anchor():
             "duplicate-human:without-acceptance": (
                 (("mapping_sets", 0, "roles", 1, "reviewer", "identity"), "core inventory reviewer"),
             ),
-            "duplicate-human:incomplete-qualifications": (
-                (("mapping_sets", 0, "roles", 1, "reviewer", "identity"), "core inventory reviewer"),
-                (("mapping_sets", 0, "roles", 0, "dual_role_accepted"), True),
-                (("mapping_sets", 0, "roles", 1, "dual_role_accepted"), True),
-                (("mapping_sets", 0, "roles", 1, "reviewer", "qualification"), " "),
-            ),
         }
         self.assertEqual(set(expected), set(by_id) & set(expected))
         for case_id, operations in expected.items():
@@ -462,7 +567,7 @@ def anchor():
     def test_inventory_freezes_retained_routes_and_ast_oracle(self) -> None:
         inventory = qualified_review_policy_inventory()
         self.assertEqual(BASELINE_COMMIT, "f99e403583877f803576dcad919025e558e5a5f6")
-        self.assertEqual(len(RETAINED_AST_SHA256), 27)
+        self.assertEqual(len(RETAINED_AST_SHA256), 28)
         self.assertEqual(
             {
                 method.method_name: method.retained_source_ast_sha256
@@ -487,7 +592,7 @@ def anchor():
         )
         self.assertEqual(
             sum(len(case.routes) for case in inventory.retained_cases),
-            58,
+            61,
         )
         self.assertEqual(
             len({case.case_id for case in inventory.retained_cases}),
@@ -529,7 +634,7 @@ def anchor():
             )
         self.assertEqual(
             qualified_review_population_sha256(inventory.cases),
-            "d0f8c8009e2442c589c937e53ff8f5f0fe9732ef65eda4e0f7356a5ceb686ae6",
+            "f89f118c4d5fe3dfc1a906cebb3f13a7cf5da7b6349c3e3913470c6cd179f50a",
         )
         self.assertEqual(
             inventory.population_sha256,
@@ -1488,7 +1593,7 @@ class QualifiedReviewRolePolicyBoundaryTests(unittest.TestCase):
         cases = (
             ("missing acceptance", duplicate),
             (
-                "missing qualification",
+                "intentionally non-schema-valid missing qualification",
                 replace(
                     duplicate,
                     dual_role_accepted=True,
@@ -1540,7 +1645,10 @@ class QualifiedReviewRolePolicyBoundaryTests(unittest.TestCase):
 
     def test_finding_status_and_severity_rules_match_existing_policy(self) -> None:
         for severity in ("Critical", "Important"):
-            with self.subTest(severity=severity):
+            with self.subTest(
+                severity=severity,
+                boundary="intentionally non-schema-valid defense in depth",
+            ):
                 self._assert_policy_failure(
                     "role_findings",
                     replace(
@@ -2712,11 +2820,11 @@ class QualifiedReviewHotPathEquivalenceCommandTests(unittest.TestCase):
     def test_main_prints_exactly_the_seven_pass_lines(self) -> None:
         expected = verify_qualified_review_hot_path_equivalence.EquivalenceResult(
             candidate_sha=self.CANDIDATE,
-            method_count=16,
-            population_count=31,
+            method_count=15,
+            population_count=28,
             population_sha256="a" * 64,
-            full_comparison_count=31,
-            narrow_comparison_count=31,
+            full_comparison_count=28,
+            narrow_comparison_count=28,
         )
         stdout = io.StringIO()
         stderr = io.StringIO()
@@ -2738,12 +2846,12 @@ class QualifiedReviewHotPathEquivalenceCommandTests(unittest.TestCase):
         self.assertEqual(
             stdout.getvalue(),
             "candidate_sha=1111111111111111111111111111111111111111\n"
-            "method_count=16\n"
-            "population_count=31\n"
+            "method_count=15\n"
+            "population_count=28\n"
             "population_sha256="
             "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n"
-            "full_comparison_count=31\n"
-            "narrow_comparison_count=31\n"
+            "full_comparison_count=28\n"
+            "narrow_comparison_count=28\n"
             "equivalence=PASS\n",
         )
         verify.assert_called_once_with(self.root, self.CANDIDATE)
@@ -3582,40 +3690,81 @@ class CampaignValidationTests(unittest.TestCase):
     def test_duplicate_human_requires_dual_acceptance_and_both_qualifications(
         self,
     ) -> None:
-        cases = ("without acceptance", "incomplete qualifications")
-        for label in cases:
-            with self.subTest(label=label):
-                isolated = Path(self.temporary.name) / label.replace(" ", "-")
-                shutil.copytree(self.pristine_campaign, isolated)
-                original = self.campaign_root
-                self.campaign_root = isolated
-                try:
-                    manifest = self._manifest()
-                    mapping_sets = manifest["mapping_sets"]
-                    assert isinstance(mapping_sets, list)
-                    mapping_set = mapping_sets[0]
-                    assert isinstance(mapping_set, dict)
-                    roles = mapping_set["roles"]
-                    assert isinstance(roles, list)
-                    first = roles[0]
-                    second = roles[1]
-                    assert isinstance(first, dict)
-                    assert isinstance(second, dict)
-                    first_reviewer = first["reviewer"]
-                    second_reviewer = second["reviewer"]
-                    assert isinstance(first_reviewer, dict)
-                    assert isinstance(second_reviewer, dict)
-                    second_reviewer["identity"] = first_reviewer["identity"]
-                    if label == "incomplete qualifications":
-                        first["dual_role_accepted"] = True
-                        second["dual_role_accepted"] = True
-                        second_reviewer["qualification"] = " "
-                    self._rewrite_role(manifest, 0, 0)
-                    self._rewrite_role(manifest, 0, 1)
-                    report = self._report()
-                finally:
-                    self.campaign_root = original
-                self.assertFalse(report.evidence_valid, report)
+        isolated = Path(self.temporary.name) / "without-acceptance"
+        shutil.copytree(self.pristine_campaign, isolated)
+        original = self.campaign_root
+        self.campaign_root = isolated
+        try:
+            manifest = self._manifest()
+            mapping_sets = manifest["mapping_sets"]
+            assert isinstance(mapping_sets, list)
+            mapping_set = mapping_sets[0]
+            assert isinstance(mapping_set, dict)
+            roles = mapping_set["roles"]
+            assert isinstance(roles, list)
+            first = roles[0]
+            second = roles[1]
+            assert isinstance(first, dict)
+            assert isinstance(second, dict)
+            first_reviewer = first["reviewer"]
+            second_reviewer = second["reviewer"]
+            assert isinstance(first_reviewer, dict)
+            assert isinstance(second_reviewer, dict)
+            second_reviewer["identity"] = first_reviewer["identity"]
+            self._rewrite_role(manifest, 0, 0)
+            self._rewrite_role(manifest, 0, 1)
+            report = self._report()
+        finally:
+            self.campaign_root = original
+        self.assertFalse(report.evidence_valid, report)
+
+    def test_incomplete_duplicate_reviewer_qualification_fails_schema_before_policy(
+        self,
+    ) -> None:
+        manifest = self._manifest()
+        mapping_sets = manifest["mapping_sets"]
+        assert isinstance(mapping_sets, list)
+        mapping_set = mapping_sets[0]
+        assert isinstance(mapping_set, dict)
+        roles = mapping_set["roles"]
+        assert isinstance(roles, list)
+        first = roles[0]
+        second = roles[1]
+        assert isinstance(first, dict)
+        assert isinstance(second, dict)
+        first_reviewer = first["reviewer"]
+        second_reviewer = second["reviewer"]
+        assert isinstance(first_reviewer, dict)
+        assert isinstance(second_reviewer, dict)
+        second_reviewer["identity"] = first_reviewer["identity"]
+        first["dual_role_accepted"] = True
+        second["dual_role_accepted"] = True
+        second_reviewer["qualification"] = " "
+        self._rewrite_role(manifest, 0, 0)
+        self._rewrite_role(manifest, 0, 1)
+
+        with mock.patch.object(
+            validator_module,
+            "validate_role_readiness_policy",
+            side_effect=AssertionError("schema failure shall precede policy"),
+        ) as policy:
+            report = self._report()
+
+        policy.assert_not_called()
+        self.assertEqual(
+            report,
+            ValidationReport(
+                evidence_valid=False,
+                readiness_name="transition_ready",
+                readiness_value=False,
+                candidate_commit=self.candidate,
+                campaign_id="",
+                errors=(
+                    "mapping_sets.0.roles.1.reviewer.qualification does not "
+                    "satisfy the campaign schema",
+                ),
+            ),
+        )
 
     def test_stop_with_open_high_severity_is_valid_but_not_ready(self) -> None:
         for severity in ("Critical", "Important"):
@@ -3671,6 +3820,46 @@ class CampaignValidationTests(unittest.TestCase):
                 finally:
                     self.campaign_root = original
                 self.assertFalse(report.evidence_valid, report)
+
+    def test_accepted_high_severity_findings_fail_schema_before_policy(
+        self,
+    ) -> None:
+        for severity in ("Critical", "Important"):
+            with self.subTest(severity=severity):
+                finding = self._finding(
+                    severity=severity,
+                    status="accepted",
+                )
+                self._mutate_worksheet(
+                    lambda worksheet: worksheet.__setitem__(
+                        "findings",
+                        [finding],
+                    )
+                )
+                with mock.patch.object(
+                    validator_module,
+                    "validate_role_readiness_policy",
+                    side_effect=AssertionError(
+                        "schema failure shall precede policy"
+                    ),
+                ) as policy:
+                    report = self._report()
+
+                policy.assert_not_called()
+                self.assertEqual(
+                    report,
+                    ValidationReport(
+                        evidence_valid=False,
+                        readiness_name="transition_ready",
+                        readiness_value=False,
+                        candidate_commit=self.candidate,
+                        campaign_id="",
+                        errors=(
+                            "mapping_sets.0.roles.0.worksheet.findings.0."
+                            "severity does not satisfy the campaign schema",
+                        ),
+                    ),
+                )
 
     def test_accepted_minor_requires_named_acceptance_evidence(self) -> None:
         for field in (

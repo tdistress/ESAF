@@ -277,10 +277,10 @@ def main(
             arguments.candidate_sha,
         )
         if (
-            result.method_count != 16
-            or result.population_count != 31
-            or result.full_comparison_count != 31
-            or result.narrow_comparison_count != 31
+            result.method_count != 15
+            or result.population_count != 28
+            or result.full_comparison_count != 28
+            or result.narrow_comparison_count != 28
             or re.fullmatch(r"[0-9a-f]{64}", result.population_sha256) is None
         ):
             raise QualifiedReviewHotPathEquivalenceError(
@@ -297,11 +297,11 @@ def main(
         return 1
 
     print(f"candidate_sha={result.candidate_sha}")
-    print("method_count=16")
-    print("population_count=31")
+    print("method_count=15")
+    print("population_count=28")
     print(f"population_sha256={result.population_sha256}")
-    print("full_comparison_count=31")
-    print("narrow_comparison_count=31")
+    print("full_comparison_count=28")
+    print("narrow_comparison_count=28")
     print("equivalence=PASS")
     return 0
 

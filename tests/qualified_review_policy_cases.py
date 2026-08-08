@@ -162,20 +162,6 @@ _OPEN_MINOR = _obj(
     ("status", "open"),
     *_FINDING_COMMON[2:],
 )
-_ACCEPTED_CRITICAL = _obj(
-    *_FINDING_COMMON[:2],
-    ("severity", "Critical"),
-    ("status", "accepted"),
-    ("disposition", "Accepted for this release"),
-    *_FINDING_COMMON[3:],
-)
-_ACCEPTED_IMPORTANT = _obj(
-    *_FINDING_COMMON[:2],
-    ("severity", "Important"),
-    ("status", "accepted"),
-    ("disposition", "Accepted for this release"),
-    *_FINDING_COMMON[3:],
-)
 _RESOLVED_MINOR = _obj(
     *_FINDING_COMMON[:2],
     ("severity", "Minor"),
@@ -206,11 +192,8 @@ _ROLE_CASES: tuple[QualifiedReviewPolicyCase, ...] = (
     QualifiedReviewPolicyCase("test_actor_alias_cannot_bypass_mapper_independence", "mapper-alias:case", "role_readiness", "draft", (_operation(("mapping_sets", 0, "roles", 0, "reviewer", "identity"), "ESAF-CROSSWALK-EDITORIAL-TEAM"),), _report(False, False, errors=_error("specification_and_inventory reviewer is also a mapper"))),
     QualifiedReviewPolicyCase("test_explicitly_resolved_conflict_is_eligible", "resolved-conflict:recused", "role_readiness", "draft", (_operation(("mapping_sets", 0, "roles", 0, "reviewer", "conflicts"), True), _operation(("mapping_sets", 0, "roles", 0, "reviewer", "conflict_disposition"), "Resolved: reviewer recused from all mapping decisions")), _report(True, True)),
     QualifiedReviewPolicyCase("test_duplicate_human_requires_dual_acceptance_and_both_qualifications", "duplicate-human:without-acceptance", "role_readiness", "draft", (_operation(("mapping_sets", 0, "roles", 1, "reviewer", "identity"), "core inventory reviewer"),), _report(False, False, errors=_error("duplicate reviewer lacks complete dual-role acceptance and qualifications"))),
-    QualifiedReviewPolicyCase("test_duplicate_human_requires_dual_acceptance_and_both_qualifications", "duplicate-human:incomplete-qualifications", "role_readiness", "draft", (_operation(("mapping_sets", 0, "roles", 1, "reviewer", "identity"), "core inventory reviewer"), _operation(("mapping_sets", 0, "roles", 0, "dual_role_accepted"), True), _operation(("mapping_sets", 0, "roles", 1, "dual_role_accepted"), True), _operation(("mapping_sets", 0, "roles", 1, "reviewer", "qualification"), " ")), _report(False, False, errors=_error("duplicate reviewer lacks complete dual-role acceptance and qualifications"))),
     QualifiedReviewPolicyCase("test_stop_with_open_high_severity_is_valid_but_not_ready", "stop-open:critical", "role_readiness", "draft", (_operation(("mapping_sets", 0, "roles", 0, "conclusion"), "stop"), _operation(("mapping_sets", 0, "roles", 0, "findings"), (_OPEN_CRITICAL,))), _report(True, False)),
     QualifiedReviewPolicyCase("test_stop_with_open_high_severity_is_valid_but_not_ready", "stop-open:important", "role_readiness", "draft", (_operation(("mapping_sets", 0, "roles", 0, "conclusion"), "stop"), _operation(("mapping_sets", 0, "roles", 0, "findings"), (_OPEN_IMPORTANT,))), _report(True, False)),
-    QualifiedReviewPolicyCase("test_accepted_critical_or_important_is_evidence_invalid", "accepted-severity:critical", "role_readiness", "draft", (_operation(("mapping_sets", 0, "roles", 0, "findings"), (_ACCEPTED_CRITICAL,)),), _report(False, False, errors=_error("Critical finding cannot be accepted"))),
-    QualifiedReviewPolicyCase("test_accepted_critical_or_important_is_evidence_invalid", "accepted-severity:important", "role_readiness", "draft", (_operation(("mapping_sets", 0, "roles", 0, "findings"), (_ACCEPTED_IMPORTANT,)),), _report(False, False, errors=_error("Important finding cannot be accepted"))),
     QualifiedReviewPolicyCase("test_pass_rejects_open_findings", "pass-open:minor", "role_readiness", "draft", (_operation(("mapping_sets", 0, "roles", 0, "findings"), (_OPEN_MINOR,)),), _report(False, False, errors=_error("pass conclusion has an open finding"))),
     QualifiedReviewPolicyCase("test_pass_after_correction_binds_exact_campaign_candidate", "post-correction:mismatched", "role_readiness", "draft", (_operation(("mapping_sets", 0, "roles", 0, "conclusion"), "pass_after_correction"), _operation(("mapping_sets", 0, "roles", 0, "post_correction_candidate_sha"), "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")), _report(False, False, errors=_error("specification_and_inventory post-correction candidate is not the campaign candidate"))),
     QualifiedReviewPolicyCase("test_pass_after_correction_binds_exact_campaign_candidate", "post-correction:exact", "role_readiness", "draft", (_operation(("mapping_sets", 0, "roles", 0, "conclusion"), "pass_after_correction"), _operation(("mapping_sets", 0, "roles", 0, "post_correction_candidate_sha"), CandidateReference("draft"))), _report(True, True)),
@@ -234,6 +217,7 @@ CASES = _ROLE_CASES + _REFERENCE_CASES
 
 
 RETAINED_AST_SHA256 = {
+    "test_accepted_critical_or_important_is_evidence_invalid": "8bbbac1520f72932847f347658414654092f2deacbfcc93e37be0de833c6e587",
     "test_accepted_minor_requires_named_acceptance_evidence": "23319dd12547114b869fd0815418669c3869e7824e0da17b95b64f76509370b3",
     "test_attestation_source_sets_are_exactly_candidate_bound": "7ca3e58598557954724bc325eba4eefe154875151a9d3cf23246b6f24912be24",
     "test_campaign_tree_and_package_bytes_are_exact": "c750637c9db1cc6caa16c702b52eec3cae96cfd7cae471977e19a1895f8eecd4",
@@ -278,6 +262,9 @@ RETAINED_CASES: tuple[RetainedCaseBaseline, ...] = (
     RetainedCaseBaseline("test_attestation_source_sets_are_exactly_candidate_bound:retained:3", "test_attestation_source_sets_are_exactly_candidate_bound", "3", ("draft",), "Source locators must match the candidate package."),
     RetainedCaseBaseline("test_attestation_source_sets_are_exactly_candidate_bound:retained:4", "test_attestation_source_sets_are_exactly_candidate_bound", "4", ("draft",), "Source locator completeness must match the candidate package."),
     RetainedCaseBaseline("test_attestation_source_sets_are_exactly_candidate_bound:retained:5", "test_attestation_source_sets_are_exactly_candidate_bound", "5", ("draft",), "The source version must match the candidate package."),
+    RetainedCaseBaseline("test_duplicate_human_requires_dual_acceptance_and_both_qualifications:retained:incomplete-qualifications", "test_duplicate_human_requires_dual_acceptance_and_both_qualifications", "incomplete-qualifications", ("draft",), "Campaign schema validation rejects a whitespace-only reviewer qualification before policy."),
+    RetainedCaseBaseline("test_accepted_critical_or_important_is_evidence_invalid:retained:Critical", "test_accepted_critical_or_important_is_evidence_invalid", "Critical", ("draft",), "Campaign schema validation rejects an accepted Critical finding before policy."),
+    RetainedCaseBaseline("test_accepted_critical_or_important_is_evidence_invalid:retained:Important", "test_accepted_critical_or_important_is_evidence_invalid", "Important", ("draft",), "Campaign schema validation rejects an accepted Important finding before policy."),
     RetainedCaseBaseline("test_accepted_minor_requires_named_acceptance_evidence:retained:resolver_or_acceptor", "test_accepted_minor_requires_named_acceptance_evidence", "resolver_or_acceptor", ("draft",), "Schema validation requires a named acceptance actor."),
     RetainedCaseBaseline("test_accepted_minor_requires_named_acceptance_evidence:retained:acceptance_rationale", "test_accepted_minor_requires_named_acceptance_evidence", "acceptance_rationale", ("draft",), "Schema validation requires an acceptance rationale."),
     RetainedCaseBaseline("test_accepted_minor_requires_named_acceptance_evidence:retained:disposition_date", "test_accepted_minor_requires_named_acceptance_evidence", "disposition_date", ("draft",), "Schema validation requires an acceptance date."),
@@ -330,9 +317,9 @@ _METHOD_ROWS: tuple[tuple[str, int, int, int], ...] = (
     ("test_sha_locators_bind_package_attestation_and_worksheet_bytes", 3, 0, 4),
     ("test_attestation_source_sets_are_exactly_candidate_bound", 6, 0, 7),
     ("test_explicitly_resolved_conflict_is_eligible", 1, 1, 1),
-    ("test_duplicate_human_requires_dual_acceptance_and_both_qualifications", 2, 2, 3),
+    ("test_duplicate_human_requires_dual_acceptance_and_both_qualifications", 2, 1, 3),
     ("test_stop_with_open_high_severity_is_valid_but_not_ready", 2, 2, 3),
-    ("test_accepted_critical_or_important_is_evidence_invalid", 2, 2, 3),
+    ("test_accepted_critical_or_important_is_evidence_invalid", 2, 0, 3),
     ("test_accepted_minor_requires_named_acceptance_evidence", 3, 0, 4),
     ("test_pass_rejects_open_findings", 1, 1, 1),
     ("test_pass_after_correction_binds_exact_campaign_candidate", 2, 2, 2),
@@ -480,7 +467,7 @@ def retained_method_ast_sha256_from_current_source() -> dict[str, str]:
     return _retained_method_ast_sha256(source_path.read_text(encoding="utf-8"))
 
 
-REVIEWED_POPULATION_SHA256 = "d0f8c8009e2442c589c937e53ff8f5f0fe9732ef65eda4e0f7356a5ceb686ae6"
+REVIEWED_POPULATION_SHA256 = "f89f118c4d5fe3dfc1a906cebb3f13a7cf5da7b6349c3e3913470c6cd179f50a"
 
 
 def _is_frozen_value(value: object) -> bool:
@@ -507,20 +494,20 @@ def validate_qualified_review_policy_inventory(
         raise ValueError("inventory collections must be immutable tuples")
     if len(methods) != 43:
         raise ValueError("method count must remain 43")
-    if len(cases) != 31:
-        raise ValueError("case count must remain 31")
+    if len(cases) != 28:
+        raise ValueError("case count must remain 28")
     if len({case.case_id for case in cases}) != len(cases):
         raise ValueError("case identifiers must be unique")
     if len({method.method_name for method in methods}) != len(methods):
         raise ValueError("method names must be unique")
     if sum(method.detail_entries for method in methods) != 92:
         raise ValueError("detail-entry total must remain 92")
-    if sum(method.selected_entries for method in methods) != 34:
-        raise ValueError("selected-entry total must remain 34")
+    if sum(method.selected_entries for method in methods) != 31:
+        raise ValueError("selected-entry total must remain 31")
     if sum(method.copytree_operations for method in methods) != 108:
         raise ValueError("copytree total must remain 108")
-    if sum(case.boundary == "role_readiness" for case in cases) != 27:
-        raise ValueError("role-readiness case count must remain 27")
+    if sum(case.boundary == "role_readiness" for case in cases) != 24:
+        raise ValueError("role-readiness case count must remain 24")
     if sum(case.boundary == "draft_reference" for case in cases) != 4:
         raise ValueError("Draft-reference case count must remain 4")
     for case in cases:
@@ -558,10 +545,10 @@ def validate_qualified_review_policy_inventory(
     )
     if len({case.case_id for case in retained_cases}) != len(retained_cases):
         raise ValueError("retained case identifiers must be unique")
-    if sum(len(case.routes) for case in retained_cases) != 58:
-        raise ValueError("retained route total must remain 58")
-    if sum(method.detail_entries - method.selected_entries for method in methods) != 58:
-        raise ValueError("retained entry total must remain 58")
+    if sum(len(case.routes) for case in retained_cases) != 61:
+        raise ValueError("retained route total must remain 61")
+    if sum(method.detail_entries - method.selected_entries for method in methods) != 61:
+        raise ValueError("retained entry total must remain 61")
     for method in methods:
         if method.retained_cases != tuple(
             retained_case
