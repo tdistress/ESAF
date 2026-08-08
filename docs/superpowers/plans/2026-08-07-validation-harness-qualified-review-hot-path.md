@@ -171,7 +171,12 @@ Assert the exact selected per-method distribution: `5, 4, 1, 1, 2, 2, 2, 1, 2, 1
 
 ```powershell
 $env:PYTHONDONTWRITEBYTECODE='1'
-python -m unittest tests.test_validate_qualified_review_evidence.QualifiedReviewPolicyInventoryTests -v
+$redOutput = & python -m unittest tests.test_validate_qualified_review_evidence.QualifiedReviewPolicyInventoryTests -v 2>&1
+$redExit = $LASTEXITCODE
+$redOutput
+if ($redExit -eq 0 -or ($redOutput -join "`n") -notmatch 'ModuleNotFoundError.*qualified_review_policy_cases') {
+  throw 'inventory RED run did not fail for the missing inventory module'
+}
 ```
 
 Expected: FAIL with `ModuleNotFoundError` for `tests.qualified_review_policy_cases`.
@@ -243,7 +248,9 @@ The four Draft-reference errors are exactly `Draft campaign identifier does not 
 
 ```powershell
 python -m unittest tests.test_validate_qualified_review_evidence.QualifiedReviewPolicyInventoryTests -v
+if ($LASTEXITCODE -ne 0) { throw "inventory tests exited $LASTEXITCODE" }
 git diff --check
+if ($LASTEXITCODE -ne 0) { throw "diff check exited $LASTEXITCODE" }
 ```
 
 Expected: PASS, exact totals match the ledger, and the reviewed digest is a 64-character lowercase SHA-256.
@@ -252,7 +259,9 @@ Expected: PASS, exact totals match the ledger, and the reviewed digest is a 64-c
 
 ```powershell
 git add tests/qualified_review_policy_cases.py tests/test_validate_qualified_review_evidence.py
+if ($LASTEXITCODE -ne 0) { throw "inventory staging exited $LASTEXITCODE" }
 git commit -m "test: freeze qualified-review policy inventory"
+if ($LASTEXITCODE -ne 0) { throw "inventory commit exited $LASTEXITCODE" }
 ```
 
 ### Task 2: Add the ordered role and readiness policy boundary
@@ -284,7 +293,12 @@ Add a multi-defect ordering test for each stage. Require eligibility before find
 - [ ] **Step 2: Run boundary tests and verify RED**
 
 ```powershell
-python -m unittest tests.test_validate_qualified_review_evidence.QualifiedReviewRolePolicyBoundaryTests -v
+$redOutput = & python -m unittest tests.test_validate_qualified_review_evidence.QualifiedReviewRolePolicyBoundaryTests -v 2>&1
+$redExit = $LASTEXITCODE
+$redOutput
+if ($redExit -eq 0 -or ($redOutput -join "`n") -notmatch 'validate_role_readiness_policy|ReviewerEligibilityPolicyInput') {
+  throw 'role-policy RED run did not fail for the absent production boundary'
+}
 ```
 
 Expected: FAIL because the policy dataclasses and functions do not exist.
@@ -321,7 +335,9 @@ def validate_role_readiness_policy(
 
 ```powershell
 python -m unittest tests.test_validate_qualified_review_evidence.QualifiedReviewRolePolicyBoundaryTests -v
+if ($LASTEXITCODE -ne 0) { throw "role boundary tests exited $LASTEXITCODE" }
 git diff --check
+if ($LASTEXITCODE -ne 0) { throw "diff check exited $LASTEXITCODE" }
 ```
 
 Expected: PASS with no filesystem, Git, schema, archive, seal, or fixture dependency in the pure route.
@@ -330,7 +346,9 @@ Expected: PASS with no filesystem, Git, schema, archive, seal, or fixture depend
 
 ```powershell
 git add tools/validate_qualified_review_evidence.py tests/test_validate_qualified_review_evidence.py
+if ($LASTEXITCODE -ne 0) { throw "role boundary staging exited $LASTEXITCODE" }
 git commit -m "refactor: extract qualified-review role policy"
+if ($LASTEXITCODE -ne 0) { throw "role boundary commit exited $LASTEXITCODE" }
 ```
 
 ### Task 3: Add the ordered Draft-reference boundary
@@ -363,7 +381,12 @@ with self.assertRaisesRegex(
 - [ ] **Step 2: Run reference tests and verify RED**
 
 ```powershell
-python -m unittest tests.test_validate_qualified_review_evidence.QualifiedReviewDraftReferenceBoundaryTests -v
+$redOutput = & python -m unittest tests.test_validate_qualified_review_evidence.QualifiedReviewDraftReferenceBoundaryTests -v 2>&1
+$redExit = $LASTEXITCODE
+$redOutput
+if ($redExit -eq 0 -or ($redOutput -join "`n") -notmatch 'validate_draft_reference_binding|DistinctCandidateCheck') {
+  throw 'Draft-reference RED run did not fail for the absent production boundary'
+}
 ```
 
 Expected: FAIL because the reference check types and functions do not exist.
@@ -392,7 +415,9 @@ def validate_draft_reference_binding(check: DraftReferenceCheck) -> None:
 
 ```powershell
 python -m unittest tests.test_validate_qualified_review_evidence.QualifiedReviewDraftReferenceBoundaryTests -v
+if ($LASTEXITCODE -ne 0) { throw "Draft reference tests exited $LASTEXITCODE" }
 git diff --check
+if ($LASTEXITCODE -ne 0) { throw "diff check exited $LASTEXITCODE" }
 ```
 
 Expected: PASS with exact sanitized messages and no I/O calls.
@@ -401,7 +426,9 @@ Expected: PASS with exact sanitized messages and no I/O calls.
 
 ```powershell
 git add tools/validate_qualified_review_evidence.py tests/test_validate_qualified_review_evidence.py
+if ($LASTEXITCODE -ne 0) { throw "Draft reference staging exited $LASTEXITCODE" }
 git commit -m "refactor: extract Draft reference policy"
+if ($LASTEXITCODE -ne 0) { throw "Draft reference commit exited $LASTEXITCODE" }
 ```
 
 ### Task 4: Route production and extract proof-critical support
@@ -434,8 +461,12 @@ $tests = @(
   'tests.test_validate_qualified_review_evidence.QualifiedReviewPolicyRoutingTests'
   'tests.test_validate_qualified_review_evidence.QualifiedReviewHotPathSupportTests'
 )
-python -m unittest @tests -v
-if ($LASTEXITCODE -eq 0) { throw 'routing and support RED run unexpectedly passed' }
+$redOutput = & python -m unittest @tests -v 2>&1
+$redExit = $LASTEXITCODE
+$redOutput
+if ($redExit -eq 0 -or ($redOutput -join "`n") -notmatch 'qualified_review_hot_path_support|production routing') {
+  throw 'routing RED run did not fail for the absent support or routing contract'
+}
 ```
 
 Expected: FAIL because wrappers still own the policy and the support module is absent.
@@ -504,7 +535,9 @@ Expected: PASS. Inspect the selected method bodies and confirm they still call t
 
 ```powershell
 git add tests/qualified_review_hot_path_support.py tests/test_validate_qualified_review_evidence.py tools/validate_qualified_review_evidence.py
+if ($LASTEXITCODE -ne 0) { throw "routing staging exited $LASTEXITCODE" }
 git commit -m "refactor: route qualified-review policy boundaries"
+if ($LASTEXITCODE -ne 0) { throw "routing commit exited $LASTEXITCODE" }
 ```
 
 ### Task 5: Build the verifier and create the observable Stage 1 proof
@@ -539,7 +572,12 @@ print("equivalence=PASS")
 - [ ] **Step 2: Run verifier tests and verify RED**
 
 ```powershell
-python -m unittest tests.test_validate_qualified_review_evidence.QualifiedReviewHotPathEquivalenceCommandTests -v
+$redOutput = & python -m unittest tests.test_validate_qualified_review_evidence.QualifiedReviewHotPathEquivalenceCommandTests -v 2>&1
+$redExit = $LASTEXITCODE
+$redOutput
+if ($redExit -eq 0 -or ($redOutput -join "`n") -notmatch 'verify_qualified_review_hot_path_equivalence') {
+  throw 'verifier RED run did not fail for the missing verifier module'
+}
 ```
 
 Expected: FAIL because the verifier module does not exist.
@@ -587,7 +625,9 @@ Expected: PASS. The shard manifest remains unchanged.
 
 ```powershell
 git add tools/verify_qualified_review_hot_path_equivalence.py tests/test_validate_qualified_review_evidence.py
+if ($LASTEXITCODE -ne 0) { throw "verifier staging exited $LASTEXITCODE" }
 git commit -m "test: prove qualified-review hot-path equivalence"
+if ($LASTEXITCODE -ne 0) { throw "Stage 1 commit exited $LASTEXITCODE" }
 ```
 
 This commit is the mandatory observable Stage 1 candidate. Do not change a selected test call before this commit exists.
@@ -624,10 +664,13 @@ $critical = @(
   'tools/validate_qualified_review_evidence.py',
   'tools/verify_qualified_review_hot_path_equivalence.py'
 )
-$critical | ForEach-Object { Get-FileHash -Algorithm SHA256 $_ }
+foreach ($path in $critical) {
+  $hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $path).Hash.ToLowerInvariant()
+  Write-Output "critical_sha256[$path]=$hash"
+}
 ```
 
-Expected: four lowercase-path records with stable SHA-256 values. Keep these values with the Stage 1 output. Task 6 will place them in the receipt and prove they did not change.
+Expected: four path-bound lowercase SHA-256 records in the receipt format. Keep these values with the Stage 1 output. Task 6 will place them in the receipt and prove they did not change.
 
 ### Task 6: Migrate only proven calls in Stage 2
 
@@ -651,7 +694,12 @@ Add a consumption test that patches `run_narrow_case` and proves all 31 case IDs
 - [ ] **Step 2: Run structural tests and verify RED**
 
 ```powershell
-python -m unittest tests.test_validate_qualified_review_evidence.QualifiedReviewHotPathMigrationStructureTests -v
+$redOutput = & python -m unittest tests.test_validate_qualified_review_evidence.QualifiedReviewHotPathMigrationStructureTests -v 2>&1
+$redExit = $LASTEXITCODE
+$redOutput
+if ($redExit -eq 0 -or ($redOutput -join "`n") -notmatch 'selected methods still call complete validation') {
+  throw 'migration RED run did not fail for selected complete-path calls'
+}
 ```
 
 Expected: FAIL because selected methods still contain complete-path calls.
@@ -677,11 +725,12 @@ Each selected method becomes one call to this helper. Do not change retained met
 
 - [ ] **Step 4: Write the humanized Stage 1 receipt**
 
-Use the humanizer skill in embedded mode. Record the full Stage 1 SHA on exactly one line formatted `stage1_sha=<40 lowercase hexadecimal characters>`. Record the proof time on exactly one `proof_timestamp_utc=<RFC 3339 UTC value>` line. Include the exact inventory digest, all seven verifier output lines, the four proof-critical file hashes, and the statement that selected methods still used the complete path at that SHA. State that Stage 2 changed only selected call sites, grouping, guards, and this receipt.
+Use the humanizer skill in embedded mode. Record the full Stage 1 SHA on exactly one line formatted `stage1_sha=<40 lowercase hexadecimal characters>`. Record the proof time on exactly one `proof_timestamp_utc=<RFC 3339 UTC value>` line. Include the exact inventory digest and all seven verifier output lines. Record each proof-critical hash on exactly one line formatted `critical_sha256[<repository-relative-path>]=<64 lowercase hexadecimal characters>`. Include the statement that selected methods still used the complete path at that SHA. State that Stage 2 changed only selected call sites, grouping, guards, and this receipt.
 
 - [ ] **Step 5: Verify guards, inventory consumption, and proof-critical hashes**
 
 ```powershell
+$ErrorActionPreference='Stop'
 $tests = @(
   'tests.test_validate_qualified_review_evidence.QualifiedReviewHotPathMigrationStructureTests'
   'tests.test_validate_qualified_review_evidence.QualifiedReviewPolicyInventoryTests'
@@ -696,7 +745,20 @@ $critical = @(
   'tools/validate_qualified_review_evidence.py',
   'tools/verify_qualified_review_hot_path_equivalence.py'
 )
-$critical | ForEach-Object { Get-FileHash -Algorithm SHA256 $_ }
+$receipt = 'docs/superpowers/reviews/2026-08-07-qualified-review-hot-path-pre-migration-equivalence.md'
+$stage1Matches = @(Select-String -Path $receipt -Pattern '^stage1_sha=([0-9a-f]{40})$')
+if ($stage1Matches.Count -ne 1) { throw 'receipt shall contain exactly one stage1_sha field' }
+$stage1Sha = $stage1Matches[0].Matches[0].Groups[1].Value
+foreach ($path in $critical) {
+  $escapedPath = [regex]::Escape($path)
+  $recorded = @(Select-String -Path $receipt -Pattern "^critical_sha256\[$escapedPath\]=([0-9a-f]{64})$")
+  if ($recorded.Count -ne 1) { throw "receipt hash field missing or duplicated for $path" }
+  $expectedHash = $recorded[0].Matches[0].Groups[1].Value
+  $currentHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $path).Hash.ToLowerInvariant()
+  if ($currentHash -ne $expectedHash) { throw "proof-critical hash changed for $path" }
+}
+git diff --quiet HEAD -- @critical
+if ($LASTEXITCODE -ne 0) { throw 'proof-critical working-tree content differs from Stage 1 HEAD' }
 git diff --check
 if ($LASTEXITCODE -ne 0) { throw "diff check exited $LASTEXITCODE" }
 ```
@@ -706,10 +768,39 @@ Expected: PASS, 31 unique case IDs consumed, and all four hashes exactly equal t
 - [ ] **Step 6: Review the Stage 2 path boundary and commit**
 
 ```powershell
-git diff --name-only HEAD
+$receipt = 'docs/superpowers/reviews/2026-08-07-qualified-review-hot-path-pre-migration-equivalence.md'
+$stage1Matches = @(Select-String -Path $receipt -Pattern '^stage1_sha=([0-9a-f]{40})$')
+if ($stage1Matches.Count -ne 1) { throw 'receipt shall contain exactly one stage1_sha field' }
+$stage1Sha = $stage1Matches[0].Matches[0].Groups[1].Value
+$critical = @(
+  'tests/qualified_review_policy_cases.py'
+  'tests/qualified_review_hot_path_support.py'
+  'tools/validate_qualified_review_evidence.py'
+  'tools/verify_qualified_review_hot_path_equivalence.py'
+)
+$expectedPaths = @(
+  'docs/superpowers/reviews/2026-08-07-qualified-review-hot-path-pre-migration-equivalence.md'
+  'tests/test_validate_qualified_review_evidence.py'
+)
+$trackedChanged = @(git diff --name-only HEAD)
+if ($LASTEXITCODE -ne 0) { throw 'tracked changed-path acquisition failed' }
+$untrackedChanged = @(git ls-files --others --exclude-standard)
+if ($LASTEXITCODE -ne 0) { throw 'untracked changed-path acquisition failed' }
+$changedPaths = @($trackedChanged + $untrackedChanged) | Sort-Object -Unique
+$pathDiff = @(Compare-Object ($expectedPaths | Sort-Object) $changedPaths)
+if ($pathDiff) { throw "Stage 2 changed-path set is invalid: $($pathDiff | Out-String)" }
 git diff -- tests/test_validate_qualified_review_evidence.py docs/superpowers/reviews/2026-08-07-qualified-review-hot-path-pre-migration-equivalence.md
+if ($LASTEXITCODE -ne 0) { throw "Stage 2 diff display exited $LASTEXITCODE" }
 git add tests/test_validate_qualified_review_evidence.py docs/superpowers/reviews/2026-08-07-qualified-review-hot-path-pre-migration-equivalence.md
+if ($LASTEXITCODE -ne 0) { throw "Stage 2 staging exited $LASTEXITCODE" }
 git commit -m "test: migrate proven qualified-review matrices"
+if ($LASTEXITCODE -ne 0) { throw "Stage 2 commit exited $LASTEXITCODE" }
+git diff --quiet "${stage1Sha}..HEAD" -- @critical
+if ($LASTEXITCODE -ne 0) { throw 'proof-critical files changed between Stage 1 and Stage 2' }
+$committedPaths = @(git diff --name-only "${stage1Sha}..HEAD") | Sort-Object -Unique
+if ($LASTEXITCODE -ne 0) { throw "Stage 2 committed-path acquisition exited $LASTEXITCODE" }
+$committedPathDiff = @(Compare-Object ($expectedPaths | Sort-Object) $committedPaths)
+if ($committedPathDiff) { throw "Stage 2 committed-path set is invalid: $($committedPathDiff | Out-String)" }
 ```
 
 Expected: before commit, only the test module and receipt appear. If a proof-critical file appears, stop, restore selected full calls in a new commit, and repeat Stage 1 on the corrected surface.
@@ -805,7 +896,9 @@ Expected: both reviews name the same final SHA and report no unresolved Critical
 
 ```powershell
 git add tests/qualified_review_policy_cases.py tests/qualified_review_hot_path_support.py tests/test_validate_qualified_review_evidence.py tools/validate_qualified_review_evidence.py tools/verify_qualified_review_hot_path_equivalence.py docs/superpowers/reviews/2026-08-07-qualified-review-hot-path-pre-migration-equivalence.md
+if ($LASTEXITCODE -ne 0) { throw "review repair staging exited $LASTEXITCODE" }
 git commit -m "fix: address qualified-review hot-path review"
+if ($LASTEXITCODE -ne 0) { throw "review repair commit exited $LASTEXITCODE" }
 ```
 
 Expected: each repair is isolated and followed by fresh evidence. Do not amend the Stage 1 proof commit or the Stage 2 migration commit.
@@ -891,6 +984,15 @@ Expected: `headRefOid` equals the reviewed candidate, required checks pass, and 
 - [ ] **Step 3: Merge only the passing reviewed head**
 
 ```powershell
+$candidate = git rev-parse HEAD
+if ($LASTEXITCODE -ne 0) { throw "pre-merge candidate resolution exited $LASTEXITCODE" }
+gh pr checks
+if ($LASTEXITCODE -ne 0) { throw "pre-merge PR checks exited $LASTEXITCODE" }
+$preMergeJson = gh pr view --json headRefOid,mergeable,statusCheckRollup
+if ($LASTEXITCODE -ne 0) { throw "pre-merge PR inspection exited $LASTEXITCODE" }
+$preMerge = $preMergeJson | ConvertFrom-Json
+if ($preMerge.headRefOid -ne $candidate) { throw "pre-merge PR head $($preMerge.headRefOid) differs from reviewed $candidate" }
+if ($preMerge.mergeable -ne 'MERGEABLE') { throw "pre-merge state is $($preMerge.mergeable)" }
 gh pr merge --merge --delete-branch
 $mergeExit = $LASTEXITCODE
 $mergedJson = gh pr view --json state,mergedAt,mergeCommit
