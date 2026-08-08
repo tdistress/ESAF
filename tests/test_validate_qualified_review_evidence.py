@@ -100,7 +100,53 @@ LOCATOR = f"urn:sha256:{'b' * 64}"
 REVIEW_DATE = "2026-07-25"
 
 
+def _walk_outer_method_scope(statements: list[ast.stmt]):
+    nested_scopes = (ast.FunctionDef, ast.AsyncFunctionDef, ast.Lambda, ast.ClassDef)
+    pending: list[ast.AST] = list(reversed(statements))
+    while pending:
+        node = pending.pop()
+        if isinstance(node, nested_scopes):
+            continue
+        yield node
+        pending.extend(reversed(list(ast.iter_child_nodes(node))))
+
+
 class QualifiedReviewPolicyInventoryTests(unittest.TestCase):
+    def test_scope_pruning_walker_excludes_all_nested_scope_decoys(self) -> None:
+        tree = ast.parse(
+            """
+def anchor():
+    if ready:
+        label = "outer-label"
+        validate_campaign()
+    def nested_function():
+        hidden = "function-decoy"
+        validate_campaign()
+    async def nested_async_function():
+        hidden = "async-decoy"
+        validate_campaign()
+    nested_lambda = lambda: ("lambda-decoy", validate_campaign())
+    class NestedClass:
+        hidden = "class-decoy"
+        validate_campaign()
+"""
+        )
+        method = tree.body[0]
+        assert isinstance(method, ast.FunctionDef)
+        nodes = tuple(_walk_outer_method_scope(method.body))
+        literals = {
+            node.value for node in nodes
+            if isinstance(node, ast.Constant) and isinstance(node.value, str)
+        }
+        calls = [
+            node for node in nodes
+            if isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Name)
+            and node.func.id == "validate_campaign"
+        ]
+        self.assertEqual(literals, {"outer-label"})
+        self.assertEqual(len(calls), 1)
+
     def test_full_path_integration_anchors_are_structurally_frozen(self) -> None:
         tree = ast.parse(Path(__file__).read_text(encoding="utf-8"))
         campaign_class = next(
@@ -125,13 +171,13 @@ class QualifiedReviewPolicyInventoryTests(unittest.TestCase):
                     node for node in campaign_class.body
                     if isinstance(node, ast.FunctionDef) and node.name == method
                 )
+                outer_nodes = tuple(_walk_outer_method_scope(body.body))
                 literals = {
-                    node.value for node in ast.walk(body)
+                    node.value for node in outer_nodes
                     if isinstance(node, ast.Constant) and isinstance(node.value, str)
                 }
                 direct_calls = [
-                    node for node in body.body
-                    for node in ast.walk(node)
+                    node for node in outer_nodes
                     if isinstance(node, ast.Call)
                     and isinstance(node.func, ast.Name)
                     and node.func.id == "validate_campaign"
@@ -286,6 +332,48 @@ class QualifiedReviewPolicyInventoryTests(unittest.TestCase):
             )
         )
 
+    def test_identity_related_operations_match_exact_baseline_values(self) -> None:
+        inventory = qualified_review_policy_inventory()
+        by_id = {case.case_id: case for case in inventory.cases}
+        expected = {
+            "ineligible:mapper-self-review": (
+                (("mapping_sets", 0, "roles", 0, "reviewer", "identity"), "esaf-crosswalk-editorial-team"),
+            ),
+            "actor-alias:case": (
+                (("mapping_sets", 0, "roles", 1, "reviewer", "identity"), "CORE INVENTORY REVIEWER"),
+            ),
+            "actor-alias:punctuation": (
+                (("mapping_sets", 0, "roles", 1, "reviewer", "identity"), "core-inventory-reviewer"),
+            ),
+            "actor-alias:unicode": (
+                (("mapping_sets", 0, "roles", 0, "reviewer", "identity"), "Jos\u00e9 Reviewer"),
+                (("mapping_sets", 0, "roles", 1, "reviewer", "identity"), "Jose\u0301 Reviewer"),
+            ),
+            "actor-alias:shared-locator": (
+                (("mapping_sets", 0, "roles", 1, "reviewer", "identity"), "Different Display Name"),
+                (("mapping_sets", 0, "roles", 1, "reviewer", "verification_locator"), "https://identity.example.invalid/reviewer?version=core-inventory"),
+            ),
+            "mapper-alias:case": (
+                (("mapping_sets", 0, "roles", 0, "reviewer", "identity"), "ESAF-CROSSWALK-EDITORIAL-TEAM"),
+            ),
+            "duplicate-human:without-acceptance": (
+                (("mapping_sets", 0, "roles", 1, "reviewer", "identity"), "core inventory reviewer"),
+            ),
+            "duplicate-human:incomplete-qualifications": (
+                (("mapping_sets", 0, "roles", 1, "reviewer", "identity"), "core inventory reviewer"),
+                (("mapping_sets", 0, "roles", 0, "dual_role_accepted"), True),
+                (("mapping_sets", 0, "roles", 1, "dual_role_accepted"), True),
+                (("mapping_sets", 0, "roles", 1, "reviewer", "qualification"), " "),
+            ),
+        }
+        self.assertEqual(set(expected), set(by_id) & set(expected))
+        for case_id, operations in expected.items():
+            with self.subTest(case=case_id):
+                self.assertEqual(
+                    tuple((operation.path, operation.value) for operation in by_id[case_id].operations),
+                    operations,
+                )
+
     def test_inventory_freezes_retained_routes_and_ast_oracle(self) -> None:
         inventory = qualified_review_policy_inventory()
         self.assertEqual(BASELINE_COMMIT, "f99e403583877f803576dcad919025e558e5a5f6")
@@ -356,7 +444,7 @@ class QualifiedReviewPolicyInventoryTests(unittest.TestCase):
             )
         self.assertEqual(
             qualified_review_population_sha256(inventory.cases),
-            "d55df00837cd8be7b93cc24177e85cc158aec0f8faae7a7d8dde41710d97ab0a",
+            "d0f8c8009e2442c589c937e53ff8f5f0fe9732ef65eda4e0f7356a5ceb686ae6",
         )
         self.assertEqual(
             inventory.population_sha256,
@@ -2149,6 +2237,32 @@ class QualifiedReviewHotPathSupportTests(unittest.TestCase):
                 self.assertEqual(
                     run_narrow_case(self.fixture, case),
                     expected_projection(self.fixture, case),
+                )
+
+    def test_frozen_draft_reviewer_facts_match_manifest_exactly(self) -> None:
+        facts = next(
+            item for item in self.fixture.narrow_facts
+            if item.fixture_kind == "draft"
+        )
+        frozen = json.loads(facts.campaign_json)
+        manifest = json.loads(
+            (self.fixture.pristine_campaign / "REVIEW_EVIDENCE.json").read_bytes()
+        )
+        for frozen_mapping_set, manifest_mapping_set in zip(
+            frozen["mapping_sets"], manifest["mapping_sets"], strict=True
+        ):
+            for frozen_role, manifest_role in zip(
+                frozen_mapping_set["roles"],
+                manifest_mapping_set["roles"],
+                strict=True,
+            ):
+                self.assertEqual(
+                    frozen_role["reviewer"]["identity"],
+                    manifest_role["reviewer"]["identity"],
+                )
+                self.assertEqual(
+                    frozen_role["reviewer"]["verification_locator"],
+                    manifest_role["reviewer"]["verification_locator"],
                 )
 
     def test_narrow_route_uses_case_operations_without_expected_projection(self) -> None:

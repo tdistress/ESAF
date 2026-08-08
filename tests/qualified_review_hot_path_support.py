@@ -389,28 +389,13 @@ def _campaign_policy_mapping(campaign: CampaignEvidence) -> dict[str, object]:
         for role in mapping_set.roles:
             reviewer = role.reviewer
             worksheet = role.worksheet
-            discipline = (
-                "inventory"
-                if role.role == "specification_and_inventory"
-                else "security"
-            )
-            reviewer_identity = reviewer.identity
-            reviewer_locator = reviewer.verification_locator
-            if campaign.candidate_state == "draft":
-                reviewer_identity = (
-                    f"{mapping_set.mapping_set_id} {discipline} reviewer"
-                )
-                reviewer_locator = (
-                    "https://identity.example.invalid/reviewer"
-                    f"?version={mapping_set.mapping_set_id}-{discipline}"
-                )
             roles.append(
                 {
                     "role": role.role,
                     "reviewer": {
-                        "identity": reviewer_identity,
+                        "identity": reviewer.identity,
                         "organization": reviewer.organization,
-                        "verification_locator": reviewer_locator,
+                        "verification_locator": reviewer.verification_locator,
                         "qualification": reviewer.qualification,
                         "authorized_source_access": reviewer.authorized_source_access,
                         "independent": reviewer.independent,
