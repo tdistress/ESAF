@@ -657,28 +657,130 @@ class QualifiedReviewHotPathMigrationStructureTests(unittest.TestCase):
             if isinstance(node, ast.FunctionDef)
         }
 
+    def _synthetic_campaign_source(
+        self,
+        method_name: str,
+        replacement: str,
+    ) -> str:
+        selected = sorted(
+            {
+                case.method_name
+                for case in qualified_review_policy_inventory().cases
+            }
+        )
+        methods = []
+        for name in selected:
+            if name == method_name:
+                methods.append(replacement)
+            else:
+                methods.append(
+                    "    def " + name + "(self):\n"
+                    "        self._assert_policy_cases_narrow(" + repr(name) + ")"
+                )
+        return "class CampaignValidationTests:\n" + "\n\n".join(methods)
+
+    def _run_selected_method_guard(self, source: str) -> unittest.TestResult:
+        guard = type(self)("test_selected_methods_use_only_the_narrow_helper")
+        result = unittest.TestResult()
+        with mock.patch.object(Path, "read_text", return_value=source):
+            guard.run(result)
+        return result
+
+    def test_guard_rejects_proxy_narrow_helper_receiver(self) -> None:
+        method_name = "test_rejects_ineligible_reviewer_evidence"
+        source = self._synthetic_campaign_source(
+            method_name,
+            "    def " + method_name + "(self):\n"
+            "        proxy._assert_policy_cases_narrow(" + repr(method_name) + ")",
+        )
+        self.assertFalse(self._run_selected_method_guard(source).wasSuccessful())
+
+    def test_guard_rejects_extra_selected_method_statement(self) -> None:
+        method_name = "test_rejects_ineligible_reviewer_evidence"
+        source = self._synthetic_campaign_source(
+            method_name,
+            "    def " + method_name + "(self):\n"
+            "        self._assert_policy_cases_narrow(" + repr(method_name) + ")\n"
+            "        marker = 'extra'",
+        )
+        self.assertFalse(self._run_selected_method_guard(source).wasSuccessful())
+
+    def test_guard_rejects_nested_default_complete_path_call(self) -> None:
+        method_name = "test_rejects_ineligible_reviewer_evidence"
+        source = self._synthetic_campaign_source(
+            method_name,
+            "    def " + method_name + "(self):\n"
+            "        def nested(value=_report()):\n"
+            "            return value\n"
+            "        self._assert_policy_cases_narrow(" + repr(method_name) + ")",
+        )
+        self.assertFalse(self._run_selected_method_guard(source).wasSuccessful())
+
+    def test_guard_rejects_nested_decorator_complete_path_call(self) -> None:
+        method_name = "test_rejects_ineligible_reviewer_evidence"
+        source = self._synthetic_campaign_source(
+            method_name,
+            "    def " + method_name + "(self):\n"
+            "        @decorator(_report())\n"
+            "        def nested():\n"
+            "            return None\n"
+            "        self._assert_policy_cases_narrow(" + repr(method_name) + ")",
+        )
+        self.assertFalse(self._run_selected_method_guard(source).wasSuccessful())
+
+    @staticmethod
+    def _has_exact_narrow_helper_body(
+        method: ast.FunctionDef,
+        method_name: str,
+    ) -> bool:
+        arguments = method.args
+        if (
+            method.decorator_list
+            or arguments.posonlyargs
+            or len(arguments.args) != 1
+            or arguments.args[0].arg != "self"
+            or arguments.vararg is not None
+            or arguments.kwonlyargs
+            or arguments.kwarg is not None
+            or arguments.defaults
+            or arguments.kw_defaults
+            or len(method.body) != 1
+        ):
+            return False
+        statement = method.body[0]
+        if not isinstance(statement, ast.Expr):
+            return False
+        call = statement.value
+        if not isinstance(call, ast.Call) or call.keywords or len(call.args) != 1:
+            return False
+        if not (
+            isinstance(call.func, ast.Attribute)
+            and isinstance(call.func.value, ast.Name)
+            and call.func.value.id == "self"
+            and call.func.attr == "_assert_policy_cases_narrow"
+        ):
+            return False
+        return (
+            isinstance(call.args[0], ast.Constant)
+            and isinstance(call.args[0].value, str)
+            and call.args[0].value == method_name
+        )
+
     @classmethod
-    def _selected_methods_with_complete_calls(cls) -> set[str]:
+    def _selected_methods_without_exact_narrow_helper(
+        cls,
+    ) -> set[str]:
         selected = {
             case.method_name
             for case in qualified_review_policy_inventory().cases
         }
         methods = cls._campaign_methods()
-        prohibited = (
-            cls._COMPLETE_PATH_CALLS | cls._TEST_OWNED_POLICY_PREDICATES
-        )
         return {
             method_name
             for method_name in selected
-            if any(
-                isinstance(node, ast.Call)
-                and (
-                    isinstance(node.func, ast.Name)
-                    and node.func.id in prohibited
-                    or isinstance(node.func, ast.Attribute)
-                    and node.func.attr in prohibited
-                )
-                for node in _walk_outer_method_scope(methods[method_name].body)
+            if not cls._has_exact_narrow_helper_body(
+                methods[method_name],
+                method_name,
             )
         }
 
@@ -689,62 +791,72 @@ class QualifiedReviewHotPathMigrationStructureTests(unittest.TestCase):
         }
         self.assertEqual(len(selected), 15)
         methods = self._campaign_methods()
-        prohibited = (
-            self._COMPLETE_PATH_CALLS | self._TEST_OWNED_POLICY_PREDICATES
-        )
-        failures: list[str] = []
         for method_name in sorted(selected):
             with self.subTest(method_name=method_name):
-                outer_nodes = tuple(
-                    _walk_outer_method_scope(methods[method_name].body)
+                self.assertTrue(
+                    self._has_exact_narrow_helper_body(
+                        methods[method_name],
+                        method_name,
+                    ),
+                    f"{method_name} shall contain exactly its direct narrow helper call",
                 )
-                calls = tuple(
-                    node
-                    for node in outer_nodes
-                    if isinstance(node, ast.Call)
-                )
-                bad_calls = tuple(
-                    node
-                    for node in calls
-                    if (
-                        isinstance(node.func, ast.Name)
-                        and node.func.id in prohibited
-                        or isinstance(node.func, ast.Attribute)
-                        and node.func.attr in prohibited
-                    )
-                )
-                if bad_calls:
-                    failures.append(method_name)
-                    continue
-                helper_calls = tuple(
-                    node
-                    for node in calls
-                    if isinstance(node.func, ast.Attribute)
-                    and node.func.attr == "_assert_policy_cases_narrow"
-                )
-                self.assertEqual(
-                    len(helper_calls),
-                    1,
-                    f"{method_name} shall call the narrow helper exactly once",
-                )
-                helper_call = helper_calls[0]
-                self.assertEqual(
-                    len(helper_call.args),
-                    1,
-                    f"{method_name} shall supply its own method name",
-                )
-                self.assertIsInstance(helper_call.args[0], ast.Constant)
-                self.assertEqual(helper_call.args[0].value, method_name)
-                self.assertEqual(
-                    len(calls),
-                    1,
-                    f"{method_name} shall contain only its narrow helper call",
-                )
-        self.assertFalse(
-            failures,
-            "selected methods still call complete validation: "
-            + ", ".join(failures),
+
+    def test_narrow_helper_has_direct_inventory_and_policy_ownership(self) -> None:
+        helper = self._campaign_methods()["_assert_policy_cases_narrow"]
+        self.assertFalse(helper.decorator_list)
+        self.assertEqual(
+            tuple(argument.arg for argument in helper.args.args),
+            ("self", "method_name"),
         )
+        self.assertFalse(helper.args.defaults)
+        self.assertFalse(helper.args.kw_defaults)
+        self.assertEqual(len(helper.body), 4)
+        self.assertEqual(
+            tuple(ast.unparse(statement) for statement in helper.body),
+            (
+                "inventory = qualified_review_policy_inventory()",
+                "cases = inventory.cases_for_method(method_name)",
+                "self.assertGreater(len(cases), 0)",
+                "for case in cases:\n"
+                "    with self.subTest(case_id=case.case_id):\n"
+                "        self.assertEqual(run_narrow_case(self.hot_path_fixture, case), expected_projection(self.hot_path_fixture, case))",
+            ),
+        )
+        calls = tuple(
+            node for node in ast.walk(helper) if isinstance(node, ast.Call)
+        )
+        call_names = {
+            node.func.id
+            if isinstance(node.func, ast.Name)
+            else node.func.attr
+            if isinstance(node.func, ast.Attribute)
+            else ""
+            for node in calls
+        }
+        self.assertFalse(
+            call_names
+            & (self._COMPLETE_PATH_CALLS | self._TEST_OWNED_POLICY_PREDICATES),
+        )
+        run_call = next(
+            node
+            for node in calls
+            if isinstance(node.func, ast.Name)
+            and node.func.id == "run_narrow_case"
+        )
+        expected_call = next(
+            node
+            for node in calls
+            if isinstance(node.func, ast.Name)
+            and node.func.id == "expected_projection"
+        )
+        for call in (run_call, expected_call):
+            self.assertEqual(len(call.args), 2)
+            self.assertIsInstance(call.args[0], ast.Attribute)
+            self.assertIsInstance(call.args[0].value, ast.Name)
+            self.assertEqual(call.args[0].value.id, "self")
+            self.assertEqual(call.args[0].attr, "hot_path_fixture")
+            self.assertIsInstance(call.args[1], ast.Name)
+            self.assertEqual(call.args[1].id, "case")
 
     def test_selected_methods_consume_each_inventory_case_once(self) -> None:
         selected = tuple(
@@ -755,7 +867,7 @@ class QualifiedReviewHotPathMigrationStructureTests(unittest.TestCase):
                 }
             )
         )
-        if self._selected_methods_with_complete_calls():
+        if self._selected_methods_without_exact_narrow_helper():
             self.skipTest("selected methods still call complete validation")
 
         seen: list[str] = []
