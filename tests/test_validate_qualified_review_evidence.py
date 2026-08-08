@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 from contextlib import redirect_stderr, redirect_stdout
 from copy import deepcopy
 from dataclasses import replace
@@ -99,7 +100,11 @@ REVIEW_DATE = "2026-07-25"
 
 class QualifiedReviewPolicyInventoryTests(unittest.TestCase):
     def test_full_path_integration_anchors_are_structurally_frozen(self) -> None:
-        source = Path(__file__).read_text(encoding="utf-8")
+        tree = ast.parse(Path(__file__).read_text(encoding="utf-8"))
+        campaign_class = next(
+            node for node in tree.body
+            if isinstance(node, ast.ClassDef) and node.name == "CampaignValidationTests"
+        )
         required = {
             "test_policy_boundaries_reach_full_campaign_validation": (
                 "mapper alias",
@@ -114,12 +119,24 @@ class QualifiedReviewPolicyInventoryTests(unittest.TestCase):
         }
         for method, labels in required.items():
             with self.subTest(method=method):
-                start = source.index(f"def {method}")
-                end = source.find("\n    def ", start + 1)
-                body = source[start:] if end == -1 else source[start:end]
-                self.assertIn("validate_campaign(", body)
+                body = next(
+                    node for node in campaign_class.body
+                    if isinstance(node, ast.FunctionDef) and node.name == method
+                )
+                literals = {
+                    node.value for node in ast.walk(body)
+                    if isinstance(node, ast.Constant) and isinstance(node.value, str)
+                }
+                direct_calls = [
+                    node for node in body.body
+                    for node in ast.walk(node)
+                    if isinstance(node, ast.Call)
+                    and isinstance(node.func, ast.Name)
+                    and node.func.id == "validate_campaign"
+                ]
+                self.assertTrue(direct_calls)
                 for label in labels:
-                    self.assertIn(label, body)
+                    self.assertIn(label, literals)
 
     def test_inventory_freezes_the_complete_baseline_ledger(self) -> None:
         inventory = qualified_review_policy_inventory()
