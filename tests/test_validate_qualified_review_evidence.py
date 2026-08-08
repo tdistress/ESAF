@@ -2591,6 +2591,20 @@ class QualifiedReviewHotPathEquivalenceCommandTests(unittest.TestCase):
             [*git_calls, *git_calls],
         )
 
+    def test_case_destinations_are_filesystem_safe(self) -> None:
+        self.run_verification()
+        self.assertEqual(
+            [event[1] for event in self.events if event[0] == "full"],
+            [case.case_id for case in self.cases],
+        )
+        self.assertEqual(
+            len({destination.name for destination in self.destinations}),
+            len(self.destinations),
+        )
+        for destination in self.destinations:
+            with self.subTest(destination=destination.name):
+                self.assertNotRegex(destination.name, r'[<>:"/\\|?*]')
+
     def assert_projection_mismatch(
         self,
         relation: str,

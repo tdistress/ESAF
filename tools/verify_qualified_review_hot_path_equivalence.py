@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
+import hashlib
 from pathlib import Path
 import re
 import subprocess
@@ -129,6 +130,11 @@ def _safe_case_id(case_id: str) -> str:
     return case_id
 
 
+def _destination_component(case_id: str) -> str:
+    digest = hashlib.sha256(case_id.encode("utf-8")).hexdigest()
+    return f"case-{digest[:16]}"
+
+
 def _reject_temporary_paths(
     projection: ReportProjection,
     temporary_roots: Sequence[Path],
@@ -208,7 +214,9 @@ def verify_qualified_review_hot_path_equivalence(
                 case_id = _safe_case_id(case.case_id)
                 with tempfile.TemporaryDirectory() as case_directory:
                     case_root = Path(case_directory)
-                    destination = case_root / case_id
+                    destination = case_root / _destination_component(
+                        case.case_id
+                    )
                     full = run_full_case(fixture, case, destination)
                     full_comparison_count += 1
                     narrow = run_narrow_case(fixture, case)
