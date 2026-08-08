@@ -467,6 +467,8 @@ class Esaf1600FoundationTests(unittest.TestCase):
             "tools/test_shards.py",
             "tools/validate_test_shards.py",
             "tools/run_test_shards.py",
+            "tools/validation-plans.json",
+            "tools/plan_validation.py",
             "tools/release_gates.py",
             "tools/v05_beta_release_gates.py",
             "tools/v05_beta_release_evidence.py",

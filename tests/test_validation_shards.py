@@ -320,6 +320,8 @@ class ValidationShardWorkflowTests(unittest.TestCase):
             "tools/test_shards.py",
             "tools/validate_test_shards.py",
             "tools/run_test_shards.py",
+            "tools/validation-plans.json",
+            "tools/plan_validation.py",
         )
         for event in ("pull_request", "push"):
             paths = workflow["on"][event]["paths"]
@@ -335,6 +337,19 @@ class ValidationShardWorkflowTests(unittest.TestCase):
         self.assertEqual(
             1,
             gate_runs.count("python tools/validate_test_shards.py --check"),
+        )
+
+    def test_ci_cancels_only_superseded_runs_for_the_same_pull_request_or_ref(self) -> None:
+        workflow = self.workflow()
+        self.assertEqual(
+            {
+                "group": (
+                    "${{ github.workflow }}-"
+                    "${{ github.event.pull_request.number || github.ref }}"
+                ),
+                "cancel-in-progress": "true",
+            },
+            workflow["concurrency"],
         )
 
     def test_ci_publishes_one_aggregate_required_check(self) -> None:
