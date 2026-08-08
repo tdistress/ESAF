@@ -1,0 +1,35 @@
+{
+  "schema": "esaf-validation-plans-v1",
+  "commands": [
+    {"id": "preflight", "argv": ["git", "diff", "--check"], "tier": "quick", "duration": "under a minute"},
+    {"id": "test-shard-manifest", "argv": ["python", "tools/validate_test_shards.py", "--check"], "tier": "quick", "duration": "under a minute"},
+    {"id": "profile-shard", "argv": ["python", "tools/run_test_shards.py", "--shard", "profile_validation"], "tier": "standard", "duration": "under a minute"},
+    {"id": "qualified-review-shard", "argv": ["python", "tools/run_test_shards.py", "--shard", "qualified_review_evidence"], "tier": "standard", "duration": "about 5 to 10 minutes"},
+    {"id": "mapping-review-shard", "argv": ["python", "tools/run_test_shards.py", "--shard", "mapping_review_bundle"], "tier": "standard", "duration": "about 3 minutes"},
+    {"id": "remaining-shard", "argv": ["python", "tools/run_test_shards.py", "--shard", "remaining"], "tier": "standard", "duration": "about 3 minutes"},
+    {"id": "architectures", "argv": ["python", "tools/validate_architectures.py"], "tier": "standard", "duration": "about a minute"},
+    {"id": "assessment", "argv": ["python", "tools/validate_assessment.py", "--check"], "tier": "standard", "duration": "about a minute"},
+    {"id": "controls", "argv": ["python", "tools/validate_controls.py", "--check"], "tier": "standard", "duration": "about a minute"},
+    {"id": "crosswalks", "argv": ["python", "tools/validate_crosswalks.py", "--check"], "tier": "standard", "duration": "about a minute"},
+    {"id": "profiles", "argv": ["python", "tools/validate_profiles.py", "--check"], "tier": "standard", "duration": "about a minute"},
+    {"id": "qualified-review", "argv": ["python", "tools/validate_qualified_review_evidence.py", "--check"], "tier": "standard", "duration": "about 5 to 10 minutes"},
+    {"id": "mapping-review", "argv": ["python", "tools/build_mapping_review_bundle.py", "--check"], "tier": "standard", "duration": "about 3 minutes"},
+    {"id": "full-discovery", "argv": ["python", "-B", "-m", "unittest", "discover", "-s", "tests", "-v"], "tier": "publication", "duration": "candidate freeze"},
+    {"id": "mermaid", "argv": ["python", "tools/mermaid_inventory.py", "--render"], "tier": "publication", "duration": "candidate freeze"},
+    {"id": "links", "argv": ["python", "tools/validate_links.py"], "tier": "publication", "duration": "candidate freeze"},
+    {"id": "qualified-review-equivalence", "argv": ["python", "tools/verify_qualified_review_hot_path_equivalence.py"], "tier": "publication", "duration": "publication proof"},
+    {"id": "release-evidence", "argv": ["python", "tools/v05_beta_release_gates.py", "--check"], "tier": "publication", "duration": "candidate freeze"}
+  ],
+  "rules": [
+    {"id": "documentation", "selectors": [{"prefix": "docs/"}, {"exact": "README.md"}, {"exact": "VERSION.md"}], "quick": ["preflight", "test-shard-manifest"], "standard": ["remaining-shard"], "reason": "documentation change", "cross_cutting": false},
+    {"id": "architectures", "selectors": [{"prefix": "architectures/"}], "quick": ["preflight", "test-shard-manifest"], "standard": ["architectures", "remaining-shard"], "reason": "architecture change", "cross_cutting": false},
+    {"id": "assessment", "selectors": [{"prefix": "assessment/"}], "quick": ["preflight", "test-shard-manifest"], "standard": ["assessment", "remaining-shard"], "reason": "assessment change", "cross_cutting": false},
+    {"id": "controls", "selectors": [{"prefix": "controls/"}], "quick": ["preflight", "test-shard-manifest"], "standard": ["controls", "remaining-shard"], "reason": "controls change", "cross_cutting": false},
+    {"id": "crosswalks", "selectors": [{"prefix": "crosswalks/"}], "quick": ["preflight", "test-shard-manifest"], "standard": ["crosswalks", "mapping-review-shard"], "reason": "crosswalk change", "cross_cutting": false},
+    {"id": "profiles", "selectors": [{"prefix": "profiles/"}], "quick": ["preflight", "test-shard-manifest"], "standard": ["profiles", "profile-shard"], "reason": "profile change", "cross_cutting": false},
+    {"id": "qualified-review", "selectors": [{"prefix": "crosswalks/qualified-review/"}], "quick": ["preflight", "test-shard-manifest"], "standard": ["qualified-review", "qualified-review-shard"], "reason": "qualified-review change", "cross_cutting": false},
+    {"id": "mapping-review", "selectors": [{"prefix": "crosswalks/mapping-review/"}], "quick": ["preflight", "test-shard-manifest"], "standard": ["mapping-review", "mapping-review-shard"], "reason": "mapping-review change", "cross_cutting": false},
+    {"id": "workflow", "selectors": [{"prefix": ".github/workflows/"}, {"exact": "AGENTS.md"}], "quick": ["preflight"], "standard": [], "reason": "workflow change", "cross_cutting": true},
+    {"id": "validation-tools", "selectors": [{"prefix": "tools/"}, {"prefix": "tests/"}], "quick": ["preflight"], "standard": [], "reason": "validation-tool change", "cross_cutting": true}
+  ]
+}
