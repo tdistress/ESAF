@@ -14,7 +14,7 @@ This is the qualified-review hot-path increment of validation-harness efficiency
 
 ## Baseline and cost
 
-The qualified-review shard contains 43 tests: one seal-destination acquisition test and 42 campaign-validation tests. Read-only control-flow analysis at the baseline commit counted 92 entries into the detailed campaign-validation path and 112 `copytree` operations. A copied campaign contains 749 files, so the test code requests about 83,888 file copies before filesystem metadata overhead.
+The qualified-review shard contains 43 tests: one seal-destination acquisition test and 42 campaign-validation tests. Read-only control-flow analysis at the baseline commit counted 92 entries into the detailed campaign-validation path and 108 `copytree` operations. A copied campaign contains 749 files, so the test code requests about 80,892 file copies before filesystem metadata overhead.
 
 A local validation of one complete valid Draft campaign took 27.234 seconds after fixture setup. The hosted `main` shard at the merged profile candidate completed in 175.741 seconds. These timings identify repeated work, but machine load, antivirus activity, filesystem location, and fixture state can change them. No elapsed-time value is a pass or fail condition.
 
@@ -41,7 +41,7 @@ The implementation shall preserve all of the following:
 
 - a stable case identifier and its baseline test-method name;
 - the boundary family, either `role_readiness` or `draft_reference`;
-- a declarative mutation over a named field in the valid baseline input;
+- an ordered immutable tuple of declarative field operations, or an explicit frozen whole-input replacement, against the valid baseline input;
 - the exact expected report projection;
 - the expected sanitized error tuple; and
 - enough provenance to reconstruct the same mutation in a complete campaign fixture.
@@ -160,11 +160,13 @@ The full, narrow, and expected projections shall be exactly equal. Equality incl
 
 The verifier shall accept only a full lowercase 40-character candidate SHA. It shall require the supplied SHA to equal `HEAD` and require `git status --porcelain=v1 --untracked-files=all` to be empty. Successful output shall report the candidate SHA, method count, population count, population digest, full comparison count, narrow comparison count, and `equivalence=PASS`.
 
-The pull-request record shall identify this pre-migration commit, preserve the successful verifier output, and show that the inventory digest at that commit equals the digest used by the later fast tests. A later edit to the inventory or either boundary invalidates the proof and requires a new pre-migration proof commit before migration continues.
+The pull-request record shall identify this pre-migration commit, preserve the successful verifier output, and show that the inventory digest at that commit equals the digest used by the later fast tests. The proof-critical surface includes the inventory, production boundary types and functions, production routing wrappers, complete-fixture reconstruction, narrow-input reconstruction, report projection and comparison logic, and the verifier. Any later edit to that surface invalidates the proof.
 
 ### Stage 2: matrix migration commit
 
-Only after Stage 1 passes may a later commit replace the selected complete validation calls with narrow policy evaluation. The fast tests shall consume every inventory record exactly once. Each record shall run each applicable ordered operation once through a shared production adapter. The tests shall fail if they call `validate_campaign()`, `_validate_campaign_details()`, the recursive Final wrapper, or a test-owned policy implementation.
+Only after Stage 1 passes may a later commit replace the selected complete validation calls with narrow policy evaluation. Stage 2 may change only those selected test-call sites, their grouping, structural guards, and evidence that records the already completed proof. It shall not change any proof-critical artifact. If such a change becomes necessary, the branch shall first restore every selected complete call, commit the corrected Stage 1 surface, run the clean exact-SHA proof again, and migrate in a later commit.
+
+The fast tests shall consume every inventory record exactly once. Each record shall run each applicable ordered operation once through a shared production adapter. The tests shall fail if they call `validate_campaign()`, `_validate_campaign_details()`, the recursive Final wrapper, or a test-owned policy implementation.
 
 The opt-in verifier shall remain after migration and shall run again on the clean final candidate. The final run checks that the inventory, production routing, fixture adapter, and narrow tests still describe the same behavior after test replacement. The branch diff and commit order shall prove that equivalence preceded migration rather than being reconstructed after the old path was removed.
 
