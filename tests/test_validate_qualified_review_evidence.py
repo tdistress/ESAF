@@ -30,6 +30,13 @@ from tests.qualified_review_policy_cases import (
     retained_method_ast_sha256_from_current_source,
     validate_qualified_review_policy_inventory,
 )
+from tests.qualified_review_hot_path_support import (
+    QualifiedReviewHotPathFixture,
+    ReportProjection,
+    expected_projection,
+    run_full_case,
+    run_narrow_case,
+)
 
 import tools.validate_crosswalks as crosswalk_validator
 import tools.seal_qualified_review_campaign as seal_module
@@ -1871,10 +1878,218 @@ class QualifiedReviewDraftReferenceBoundaryTests(unittest.TestCase):
         )
 
 
+class QualifiedReviewPolicyRoutingTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.temporary = tempfile.TemporaryDirectory()
+        cls.fixture = QualifiedReviewHotPathFixture.create(
+            Path(cls.temporary.name), ROOT
+        )
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls.temporary.cleanup()
+
+    def test_draft_roles_route_through_ordered_policy_operations(self) -> None:
+        events: list[str] = []
+        validator = __import__(
+            "tools.validate_qualified_review_evidence",
+            fromlist=["validate_campaign"],
+        )
+        original_policy = validator.validate_role_readiness_policy
+        original_files = validator._validate_role_files
+
+        def policy(stage: str, value: object) -> object:
+            role = getattr(value, "role", "completion")
+            events.append(f"{stage}:{role}")
+            return original_policy(stage, value)
+
+        def role_files(*args: object, **kwargs: object) -> object:
+            role = kwargs["role"]
+            events.append(f"files:{role.role}")
+            return original_files(*args, **kwargs)
+
+        destination = Path(self.temporary.name) / "draft-routing"
+        case = qualified_review_policy_inventory().cases[0]
+        valid_case = replace(case, operations=(), expected=case.expected)
+        with (
+            mock.patch.object(
+                validator,
+                "validate_role_readiness_policy",
+                side_effect=policy,
+            ),
+            mock.patch.object(
+                validator,
+                "_validate_role_files",
+                side_effect=role_files,
+            ),
+        ):
+            report = run_full_case(self.fixture, valid_case, destination)
+
+        self.assertTrue(report.evidence_valid, report.errors)
+        for role in ROLES:
+            self.assertLess(
+                events.index(f"reviewer_eligibility:{role}"),
+                events.index(f"files:{role}"),
+            )
+            self.assertLess(
+                events.index(f"files:{role}"),
+                events.index(f"role_findings:{role}"),
+            )
+        completion = events.index("mapping_set_completion:completion")
+        self.assertGreater(
+            completion,
+            events.index(f"role_findings:{ROLES[-1]}"),
+        )
+
+    def test_final_reference_routes_through_ordered_policy_operations(self) -> None:
+        events: list[str] = []
+        validator = __import__(
+            "tools.validate_qualified_review_evidence",
+            fromlist=["validate_campaign"],
+        )
+        original_binding = validator.validate_draft_reference_binding
+        original_details = validator._validate_campaign_details
+        original_read = validator._read_external_path
+        original_loads = validator.json.loads
+        details_calls = 0
+        seal_digest_checked = False
+
+        def binding(check: object) -> None:
+            nonlocal seal_digest_checked
+            stage = (
+                "distinct_candidate"
+                if isinstance(check, DistinctCandidateCheck)
+                else getattr(check, "stage", "draft_status")
+            )
+            events.append(str(stage))
+            original_binding(check)
+            if stage == "seal_record_sha256":
+                seal_digest_checked = True
+
+        def details(*args: object, **kwargs: object) -> object:
+            nonlocal details_calls
+            details_calls += 1
+            if details_calls > 1:
+                events.append("recursive-details")
+            return original_details(*args, **kwargs)
+
+        def read(path: Path, worktrees: tuple[Path, ...]) -> bytes:
+            events.append("retained-archive")
+            return original_read(path, worktrees)
+
+        def loads(value: object, *args: object, **kwargs: object) -> object:
+            if seal_digest_checked:
+                events.append("seal-json")
+            return original_loads(value, *args, **kwargs)
+
+        destination = Path(self.temporary.name) / "final-routing"
+        case = next(
+            item
+            for item in qualified_review_policy_inventory().cases
+            if item.fixture_kind == "reviewed_final"
+        )
+        valid_case = replace(case, operations=(), expected=case.expected)
+        with (
+            mock.patch.object(
+                validator,
+                "validate_draft_reference_binding",
+                side_effect=binding,
+            ),
+            mock.patch.object(
+                validator,
+                "_validate_campaign_details",
+                side_effect=details,
+            ),
+            mock.patch.object(
+                validator,
+                "_read_external_path",
+                side_effect=read,
+            ),
+            mock.patch.object(validator.json, "loads", side_effect=loads),
+        ):
+            report = run_full_case(self.fixture, valid_case, destination)
+
+        self.assertTrue(report.evidence_valid, report.errors)
+        self.assertLess(events.index("distinct_candidate"), events.index("recursive-details"))
+        self.assertLess(events.index("manifest_sha256"), events.index("retained-archive"))
+        self.assertLess(events.index("seal_record_sha256"), events.index("seal-json"))
+
+
+class QualifiedReviewHotPathSupportTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.temporary = tempfile.TemporaryDirectory()
+        cls.fixture = QualifiedReviewHotPathFixture.create(
+            Path(cls.temporary.name), ROOT
+        )
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls.temporary.cleanup()
+
+    def test_valid_draft_and_final_projections_match_direct_validation(self) -> None:
+        inventory = qualified_review_policy_inventory()
+        draft = inventory.cases[0]
+        final = next(
+            case for case in inventory.cases if case.fixture_kind == "reviewed_final"
+        )
+        for name, case in (("draft", draft), ("final", final)):
+            with self.subTest(name=name):
+                case = replace(
+                    case,
+                    operations=(),
+                    expected=replace(
+                        case.expected,
+                        evidence_valid=True,
+                        readiness_value=True,
+                        candidate_key=(
+                            "reviewed" if name == "final" else "draft"
+                        ),
+                        campaign_id=(
+                            "issue-55-final-confirmation"
+                            if name == "final"
+                            else "issue-55-draft-review"
+                        ),
+                        errors=(),
+                    ),
+                )
+                full = run_full_case(
+                    self.fixture,
+                    case,
+                    Path(self.temporary.name) / f"{name}-full",
+                )
+                self.assertEqual(full, expected_projection(self.fixture, case))
+                self.assertEqual(run_narrow_case(self.fixture, case), full)
+
+    def test_operations_reject_invalid_paths_types_growth_and_source_mutation(self) -> None:
+        case = qualified_review_policy_inventory().cases[0]
+        source_operations = case.operations
+        invalid = (
+            replace(case, operations=(replace(source_operations[0], path=("unknown",)),)),
+            replace(case, operations=(replace(source_operations[0], path=("mapping_sets", 9)),)),
+            replace(case, operations=(replace(source_operations[0], value="not-a-boolean"),)),
+        )
+        for index, malformed in enumerate(invalid):
+            with self.subTest(index=index):
+                with self.assertRaises((TypeError, ValueError)):
+                    run_full_case(
+                        self.fixture,
+                        malformed,
+                        Path(self.temporary.name) / f"invalid-{index}",
+                    )
+        self.assertEqual(case.operations, source_operations)
+
+
 class CampaignValidationTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.shared_temporary = tempfile.TemporaryDirectory()
+        cls.hot_path_fixture = QualifiedReviewHotPathFixture.create(
+            Path(cls.shared_temporary.name), ROOT
+        )
+        cls.hot_path_fixture.attach_to_test_class(cls)
+        return
         cls.shared_root = Path(cls.shared_temporary.name)
         cls.repository = cls.shared_root / "candidate"
         subprocess.run(
@@ -3130,6 +3345,66 @@ class CampaignValidationTests(unittest.TestCase):
 
         self.assertFalse(report.evidence_valid, report)
         urlopen.assert_not_called()
+
+    def test_policy_boundaries_reach_full_campaign_validation(self) -> None:
+        for label, field, value in (
+            ("mapper alias", "identity", "esaf-crosswalk-editorial-team"),
+            ("reviewer ineligibility", "authorized_source_access", False),
+        ):
+            with self.subTest(label=label):
+                isolated = Path(self.temporary.name) / label.replace(" ", "-")
+                shutil.copytree(self.pristine_campaign, isolated)
+                original = self.campaign_root
+                self.campaign_root = isolated
+                try:
+                    manifest = self._manifest()
+                    reviewer = manifest["mapping_sets"][0]["roles"][0]["reviewer"]
+                    reviewer[field] = value
+                    self._rewrite_role(manifest, 0, 0)
+                    report = validate_campaign(self.reader, self.candidate, isolated)
+                finally:
+                    self.campaign_root = original
+                self.assertFalse(report.evidence_valid, report)
+        for label, mutate in (
+            ("stop conclusion", lambda worksheet: worksheet.__setitem__("conclusion", "stop")),
+            ("authoritative-finding mismatch", lambda worksheet: worksheet.__setitem__("findings", [self._finding(status="resolved")])),
+        ):
+            with self.subTest(label=label):
+                isolated = Path(self.temporary.name) / label.replace(" ", "-")
+                shutil.copytree(self.pristine_campaign, isolated)
+                original = self.campaign_root
+                self.campaign_root = isolated
+                try:
+                    self._mutate_worksheet(mutate)
+                    report = validate_campaign(self.reader, self.candidate, isolated)
+                finally:
+                    self.campaign_root = original
+                if label == "stop conclusion":
+                    self.assertTrue(report.evidence_valid, report.errors)
+                    self.assertFalse(report.readiness_value)
+                else:
+                    self.assertFalse(report.evidence_valid, report)
+        with self.subTest(label="reviewed-state reviewer mismatch"):
+            final_root, draft_root, seal_path, archive_path = self._final_inputs("reviewed-state-reviewer-mismatch")
+            original = self.campaign_root
+            self.campaign_root = final_root
+            try:
+                manifest = self._manifest()
+                manifest["mapping_sets"][0]["roles"][0]["reviewer"]["qualification"] = "Different signed qualification"
+                self._rewrite_role(manifest, 0, 0)
+                report = validate_campaign(self.reviewed_reader, self.reviewed_candidate, final_root, draft_root, seal_path, archive_path)
+            finally:
+                self.campaign_root = original
+            self.assertFalse(report.evidence_valid, report)
+
+    def test_draft_reference_boundary_reaches_full_final_validation(self) -> None:
+        final_root, draft_root, seal_path, archive_path = self._final_inputs("manifest-digest-reference-mismatch")
+        manifest = json.loads((final_root / MANIFEST_PATH).read_bytes())
+        manifest["draft_campaign_reference"]["manifest_sha256"] = "a" * 64
+        (final_root / MANIFEST_PATH).write_bytes(canonical_json_bytes(manifest))
+        report = validate_campaign(self.reviewed_reader, self.reviewed_candidate, final_root, draft_root, seal_path, archive_path)
+        self.assertFalse(report.evidence_valid, report)
+        self.assertEqual(report.errors, ("Draft manifest digest does not match the reference",))
 
     def test_valid_final_campaign_is_recursively_merge_ready(self) -> None:
         final_root, draft_root, seal_path, archive_path = self._final_inputs(
