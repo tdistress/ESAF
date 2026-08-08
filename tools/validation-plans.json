@@ -10,15 +10,18 @@
     {"id": "architectures", "argv": ["python", "tools/validate_architectures.py"], "tier": "standard", "duration": "about a minute"},
     {"id": "assessment", "argv": ["python", "tools/validate_assessment.py", "--check"], "tier": "standard", "duration": "about a minute"},
     {"id": "controls", "argv": ["python", "tools/validate_controls.py", "--check"], "tier": "standard", "duration": "about a minute"},
-    {"id": "crosswalks", "argv": ["python", "tools/validate_crosswalks.py", "--check"], "tier": "standard", "duration": "about a minute"},
+    {"id": "crosswalks", "argv": ["python", "tools/validate_crosswalks.py", "--check", "--baseline-ref", "{base}"], "tier": "standard", "duration": "about a minute"},
     {"id": "profiles", "argv": ["python", "tools/validate_profiles.py", "--check"], "tier": "standard", "duration": "about a minute"},
     {"id": "qualified-review", "argv": ["python", "tools/validate_qualified_review_evidence.py", "--check"], "tier": "standard", "duration": "about 5 to 10 minutes"},
     {"id": "mapping-review", "argv": ["python", "tools/build_mapping_review_bundle.py", "--check"], "tier": "standard", "duration": "about 3 minutes"},
     {"id": "full-discovery", "argv": ["python", "-B", "-m", "unittest", "discover", "-s", "tests", "-v"], "tier": "publication", "duration": "candidate freeze"},
     {"id": "mermaid", "argv": ["python", "tools/mermaid_inventory.py", "--render"], "tier": "publication", "duration": "candidate freeze"},
+    {"id": "mermaid-record", "argv": ["python", "tools/mermaid_inventory.py", "--check-record", "docs/superpowers/reviews/2026-07-27-v05-beta-mermaid-rendering.md"], "tier": "publication", "duration": "candidate freeze"},
     {"id": "links", "argv": ["python", "tools/validate_links.py"], "tier": "publication", "duration": "candidate freeze"},
     {"id": "qualified-review-equivalence", "argv": ["python", "tools/verify_qualified_review_hot_path_equivalence.py"], "tier": "publication", "duration": "publication proof"},
-    {"id": "release-evidence", "argv": ["python", "tools/v05_beta_release_gates.py", "--check"], "tier": "publication", "duration": "candidate freeze"}
+    {"id": "release-gates", "argv": ["python", "tools/release_gates.py", "--check", "--baseline-ref", "{base}"], "tier": "publication", "duration": "candidate freeze"},
+    {"id": "release-evidence", "argv": ["python", "tools/v05_beta_release_gates.py", "--check", "--baseline-ref", "{base}"], "tier": "publication", "duration": "candidate freeze"},
+    {"id": "pci-dss-mapping-go-no-go", "argv": ["python", "tools/render_pci_dss_mapping_go_no_go.py", "--check"], "tier": "publication", "duration": "candidate freeze"}
   ],
   "rules": [
     {"id": "documentation", "selectors": [{"prefix": "docs/"}, {"exact": "README.md"}, {"exact": "VERSION.md"}], "quick": ["preflight", "test-shard-manifest"], "standard": ["remaining-shard"], "reason": "documentation change", "cross_cutting": false},

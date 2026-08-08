@@ -16,6 +16,7 @@ MANIFEST_PATH = Path("tools/validation-plans.json")
 SCHEMA = "esaf-validation-plans-v1"
 TIERS = ("quick", "standard", "publication")
 COMMIT_ID = re.compile(r"^[0-9a-f]{40,64}$")
+COMMAND_PLACEHOLDERS = {"{base}", "{candidate}"}
 
 
 @dataclass(frozen=True)
@@ -114,8 +115,12 @@ def load_manifest(root: Path) -> ValidationManifest:
             raise ValueError("manifest command id must be a non-empty string")
         if identifier in identifiers:
             raise ValueError(f"manifest has duplicate command id {identifier!r}")
-        if not isinstance(argv, list) or not argv or any(not isinstance(item, str) or not item for item in argv):
+        if not isinstance(argv, list) or not argv or any(
+            not isinstance(item, str) or not item for item in argv
+        ):
             raise ValueError(f"manifest command {identifier!r} argv must contain non-empty strings")
+        if any(item.startswith("{") or item.endswith("}") for item in argv if item not in COMMAND_PLACEHOLDERS):
+            raise ValueError(f"manifest command {identifier!r} has an invalid argv placeholder")
         if tier not in TIERS or not isinstance(duration, str) or not duration:
             raise ValueError(f"manifest command {identifier!r} has invalid tier or duration")
         identifiers.add(identifier)
@@ -212,6 +217,22 @@ def _matches(rule: ValidationRule, path: str) -> bool:
     return any((kind == "exact" and path == selector) or (kind == "prefix" and path.startswith(selector)) for kind, selector in rule.selectors)
 
 
+def _bind_commands(
+    commands: tuple[ValidationCommand, ...], *, base: str, candidate: str
+) -> tuple[ValidationCommand, ...]:
+    """Bind the only supported comparison placeholders in fixed catalog argv."""
+    bindings = {"{base}": base, "{candidate}": candidate}
+    return tuple(
+        ValidationCommand(
+            command.identifier,
+            tuple(bindings.get(argument, argument) for argument in command.argv),
+            command.tier,
+            command.duration,
+        )
+        for command in commands
+    )
+
+
 def plan_validation(root: Path, *, base: str, candidate: str, git_runner: Callable[..., object] | None = None) -> ValidationPlan:
     """Return the conservative validation plan for the resolved Git comparison."""
     manifest = load_manifest(root)
@@ -241,12 +262,17 @@ def plan_validation(root: Path, *, base: str, candidate: str, git_runner: Callab
             reasons.append(rule.reason)
             command_ids.extend(rule.quick)
             command_ids.extend(rule.standard)
-    catalog = {command.identifier: command for command in manifest.commands}
     if escalation:
-        commands = tuple(command for command in manifest.commands if command.tier == "publication")
+        commands = _bind_commands(
+            manifest.commands, base=resolved_base, candidate=resolved_candidate
+        )
         return ValidationPlan(resolved_base, resolved_candidate, changed_paths, ("publication",), commands, tuple(dict.fromkeys(escalation)))
     selected = set(command_ids)
-    commands = tuple(command for command in manifest.commands if command.identifier in selected)
+    commands = _bind_commands(
+        tuple(command for command in manifest.commands if command.identifier in selected),
+        base=resolved_base,
+        candidate=resolved_candidate,
+    )
     tiers = tuple(tier for tier in TIERS if any(command.tier == tier for command in commands))
     if not commands:
         raise ValueError("manifest rules selected no validation commands")
@@ -278,8 +304,21 @@ def main(argv: Sequence[str] | None = None, *, root: Path | None = None, git_run
     try:
         plan = plan_validation(root or Path.cwd(), base=arguments.base, candidate=arguments.candidate, git_runner=git_runner)
         if arguments.tier:
-            commands = tuple(command for command in plan.commands if command.tier == arguments.tier)
-            plan = ValidationPlan(plan.base, plan.candidate, plan.changed_paths, (arguments.tier,) if commands else (), commands, plan.reasons)
+            if arguments.tier == "publication":
+                manifest = load_manifest(root or Path.cwd())
+                commands = _bind_commands(
+                    manifest.commands, base=plan.base, candidate=plan.candidate
+                )
+            else:
+                commands = tuple(command for command in plan.commands if command.tier == arguments.tier)
+            plan = ValidationPlan(
+                plan.base,
+                plan.candidate,
+                plan.changed_paths,
+                (arguments.tier,) if commands else (),
+                commands,
+                plan.reasons,
+            )
     except ValueError as error:
         print(f"error: {error}", file=sys.stderr)
         return 2

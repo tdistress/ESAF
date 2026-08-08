@@ -114,6 +114,59 @@ class PlanValidationTests(unittest.TestCase):
         self.assertEqual(["quick"], selected["selected_tiers"])
         self.assertEqual("a" * 40, selected["base"])
 
+    def test_publication_request_selects_complete_route(self) -> None:
+        stream = io.StringIO()
+        with contextlib.redirect_stdout(stream):
+            result = main(
+                ["--base", "HEAD~1", "--tier", "publication", "--format", "json"],
+                root=self.root,
+                git_runner=self.git_diff_for(b"M\0docs/a.md\0"),
+            )
+        self.assertEqual(0, result)
+        selected = json.loads(stream.getvalue())
+        self.assertEqual(
+            ["preflight", "docs", "qualified", "publication"],
+            [command["id"] for command in selected["commands"]],
+        )
+        self.assertEqual(["publication"], selected["selected_tiers"])
+
+    def test_committed_catalog_publication_route_includes_all_gates_and_base(self) -> None:
+        plan = plan_validation(
+            ROOT,
+            base="base",
+            candidate="candidate",
+            git_runner=self.git_diff_for(b"M\0.github/workflows/check.yml\0"),
+        )
+        catalog = load_manifest(ROOT)
+        self.assertEqual(
+            tuple(command.identifier for command in catalog.commands),
+            tuple(command.identifier for command in plan.commands),
+        )
+        commands = {command.identifier: command.argv for command in plan.commands}
+        self.assertEqual(
+            ("python", "tools/release_gates.py", "--check", "--baseline-ref", "a" * 40),
+            commands["release-gates"],
+        )
+        self.assertEqual(
+            ("python", "tools/render_pci_dss_mapping_go_no_go.py", "--check"),
+            commands["pci-dss-mapping-go-no-go"],
+        )
+        self.assertEqual(
+            ("python", "tools/mermaid_inventory.py", "--check-record", "docs/superpowers/reviews/2026-07-27-v05-beta-mermaid-rendering.md"),
+            commands["mermaid-record"],
+        )
+        stream = io.StringIO()
+        with contextlib.redirect_stdout(stream):
+            result = main(
+                ["--base", "base", "--candidate", "candidate", "--tier", "publication", "--format", "json"],
+                root=ROOT,
+                git_runner=self.git_diff_for(b"M\0docs/guide.md\0"),
+            )
+        self.assertEqual(0, result)
+        cli_commands = {command["id"]: tuple(command["argv"]) for command in json.loads(stream.getvalue())["commands"]}
+        self.assertEqual(set(commands), set(cli_commands))
+        self.assertEqual(commands["release-gates"], cli_commands["release-gates"])
+
 
 if __name__ == "__main__":
     unittest.main()
