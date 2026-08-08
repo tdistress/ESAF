@@ -388,6 +388,7 @@ class TestShardRunnerTests(unittest.TestCase):
             cwd=ROOT,
             check=False,
             capture_output=True,
+            env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
         )
 
         self.assertEqual(0, completed.returncode)

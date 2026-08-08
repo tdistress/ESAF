@@ -32,6 +32,7 @@
         "tests/test_mermaid_inventory.py",
         "tests/test_owner_risk_evidence.py",
         "tests/test_pci_dss_source_readiness.py",
+        "tests/test_plan_validation.py",
         "tests/test_profile_foundation.py",
         "tests/test_qualified_review_evidence_io.py",
         "tests/test_qualified_review_evidence_schema.py",
