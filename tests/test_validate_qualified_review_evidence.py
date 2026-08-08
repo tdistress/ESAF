@@ -27,6 +27,7 @@ from tests.qualified_review_policy_cases import (
     qualified_review_policy_inventory,
     qualified_review_population_sha256,
     retained_method_ast_sha256_from_baseline,
+    retained_method_ast_sha256_from_current_source,
     validate_qualified_review_policy_inventory,
 )
 
@@ -242,6 +243,10 @@ class QualifiedReviewPolicyInventoryTests(unittest.TestCase):
         )
         self.assertEqual(
             retained_method_ast_sha256_from_baseline(),
+            RETAINED_AST_SHA256,
+        )
+        self.assertEqual(
+            retained_method_ast_sha256_from_current_source(),
             RETAINED_AST_SHA256,
         )
         self.assertEqual(

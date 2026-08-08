@@ -435,21 +435,8 @@ def qualified_review_population_sha256(
     return hashlib.sha256(payload).hexdigest()
 
 
-def retained_method_ast_sha256_from_baseline() -> dict[str, str]:
-    """Return location-free AST hashes for retained methods at the pinned commit."""
-    result = subprocess.run(
-        [
-            "git",
-            "show",
-            f"{BASELINE_COMMIT}:tests/test_validate_qualified_review_evidence.py",
-        ],
-        cwd=Path(__file__).resolve().parents[1],
-        check=True,
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-    )
-    tree = ast.parse(result.stdout)
+def _retained_method_ast_sha256(source: str) -> dict[str, str]:
+    tree = ast.parse(source)
     methods = {
         node.name: hashlib.sha256(
             ast.dump(
@@ -464,8 +451,33 @@ def retained_method_ast_sha256_from_baseline() -> dict[str, str]:
         if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)) and node.name in RETAINED_AST_SHA256
     }
     if set(methods) != set(RETAINED_AST_SHA256):
-        raise ValueError("baseline AST source does not contain every retained method")
+        raise ValueError("AST source does not contain every retained method")
     return methods
+
+
+def retained_method_ast_sha256_from_baseline() -> dict[str, str]:
+    """Return location-free AST hashes for retained methods at the pinned commit."""
+    result = subprocess.run(
+        [
+            "git",
+            "show",
+            f"{BASELINE_COMMIT}:tests/test_validate_qualified_review_evidence.py",
+        ],
+        cwd=Path(__file__).resolve().parents[1],
+        check=True,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+    )
+    return _retained_method_ast_sha256(result.stdout)
+
+
+def retained_method_ast_sha256_from_current_source() -> dict[str, str]:
+    """Return location-free AST hashes for retained methods in this candidate."""
+    source_path = Path(__file__).with_name(
+        "test_validate_qualified_review_evidence.py"
+    )
+    return _retained_method_ast_sha256(source_path.read_text(encoding="utf-8"))
 
 
 REVIEWED_POPULATION_SHA256 = "463de4a7d9d65b2ad9a726455f95ff818c109417466748bab6275c84c47f5b7a"
