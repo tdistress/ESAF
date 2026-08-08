@@ -19,7 +19,7 @@ from tests.qualified_review_policy_cases import (
     QualifiedReviewPolicyCase,
 )
 from tools.build_mapping_review_bundle import GitReader, assemble_package
-from tools.crosswalks.qualified_review_evidence import ReviewFinding, build_campaign_archive, build_seal_record, canonical_json_bytes
+from tools.crosswalks.qualified_review_evidence import CampaignEvidence, ReviewFinding, build_campaign_archive, build_seal_record, canonical_json_bytes
 from tools.validate_qualified_review_evidence import (
     MappingSetCompletionPolicyInput,
     MappingSetPolicyInput,
@@ -28,7 +28,11 @@ from tools.validate_qualified_review_evidence import (
     RoleFindingsPolicyInput,
     VALIDATOR_VERSION,
     ValidationReport,
+    _ValidationFailure,
+    _candidate_finding,
     _candidate_mapping,
+    _derived_reviewer,
+    _mapping_entries,
     evaluate_draft_reference_policy,
     evaluate_mapping_set_policy,
     validate_campaign,
@@ -370,31 +374,104 @@ def expected_projection(fixture: QualifiedReviewHotPathFixture, case: QualifiedR
 
 def run_narrow_case(fixture: QualifiedReviewHotPathFixture, case: QualifiedReviewPolicyCase) -> ReportProjection:
     """Exercise the combined policy adapters with immutable reconstructed inputs."""
-    if case.boundary == "draft_reference":
-        digest = hashlib.sha256((fixture.pristine_campaign / "REVIEW_EVIDENCE.json").read_bytes()).hexdigest()
-        seal_digest = hashlib.sha256(fixture.draft_seal_bytes).hexdigest()
-        evaluate_draft_reference_policy(DraftReferencePolicyInput(
-            reviewed_candidate=fixture.reviewed_candidate,
-            referenced_candidate=fixture.candidate,
-            draft_phase="draft_review", draft_evidence_valid=True,
-            draft_readiness_name="transition_ready", draft_readiness_value=True,
-            reference_campaign_id="issue-55-draft-review",
-            draft_campaign_id="issue-55-draft-review",
-            reference_candidate_commit=fixture.candidate,
-            draft_candidate_commit=fixture.candidate,
-            reference_manifest_sha256=digest, draft_manifest_sha256=digest,
-            reference_seal_record_sha256=seal_digest,
-            draft_seal_record_sha256=seal_digest,
-        ))
-    else:
-        evaluate_mapping_set_policy(MappingSetPolicyInput(
-            reviewer_eligibility=(), role_findings=(),
-            mapping_set_completion=MappingSetCompletionPolicyInput(
-                mapping_set_id="support", mapping_ready=True,
-                observed_findings=(), authoritative_findings=(),
-                candidate_state="draft", specification_reviewer_metadata=(),
-                mapping_set_reviewer_metadata=None,
-                security_reviewer_metadata=(), record_reviewer_metadata=(),
-            ),
-        ))
-    return expected_projection(fixture, case)
+    source, reader, candidate, _assemblies, _draft, _seal, _archive = _route(
+        fixture, case.fixture_kind
+    )
+    manifest = json.loads((source / "REVIEW_EVIDENCE.json").read_bytes())
+    if not isinstance(manifest, dict):
+        raise ValueError("fixture manifest is not an object")
+    _apply_operations(fixture, manifest, case)
+    campaign = CampaignEvidence.from_mapping(manifest)
+    readiness_name = (
+        "merge_ready"
+        if campaign.phase == "final_reviewed_confirmation"
+        else "transition_ready"
+    )
+    try:
+        if case.boundary == "draft_reference":
+            reference = campaign.draft_campaign_reference
+            if reference is None:
+                raise ValueError("final fixture has no Draft reference")
+            draft_manifest = (fixture.pristine_campaign / "REVIEW_EVIDENCE.json").read_bytes()
+            evaluate_draft_reference_policy(DraftReferencePolicyInput(
+                reviewed_candidate=candidate,
+                referenced_candidate=reference.candidate_commit,
+                draft_phase="draft_review", draft_evidence_valid=True,
+                draft_readiness_name="transition_ready", draft_readiness_value=True,
+                reference_campaign_id=reference.campaign_id,
+                draft_campaign_id="issue-55-draft-review",
+                reference_candidate_commit=reference.candidate_commit,
+                draft_candidate_commit=fixture.candidate,
+                reference_manifest_sha256=reference.manifest_sha256,
+                draft_manifest_sha256=hashlib.sha256(draft_manifest).hexdigest(),
+                reference_seal_record_sha256=reference.seal_record_sha256,
+                draft_seal_record_sha256=hashlib.sha256(fixture.draft_seal_bytes).hexdigest(),
+            ))
+            ready = True
+        else:
+            ready = True
+            for mapping_set_id, mapping_set in _mapping_entries(campaign).items():
+                candidate_mapping = _candidate_mapping(
+                    reader=reader, candidate=candidate,
+                    candidate_state=campaign.candidate_state,
+                    mapping_set=mapping_set,
+                )
+                mapper_ids: set[str] = set()
+                mapper = candidate_mapping.mapping_metadata.get("mapper")
+                if isinstance(mapper, dict):
+                    mapper_ids.add(str(mapper.get("id", "")))
+                for metadata in candidate_mapping.record_metadata:
+                    record_mapper = metadata.get("mapper")
+                    if isinstance(record_mapper, dict):
+                        mapper_ids.add(str(record_mapper.get("id", "")))
+                roles = mapping_set.roles
+                eligibility = tuple(
+                    ReviewerEligibilityPolicyInput(
+                        mapping_set_id, role.role, role.reviewer.identity,
+                        role.reviewer.verification_locator,
+                        roles[1 - index].reviewer.identity,
+                        roles[1 - index].reviewer.verification_locator,
+                        role.reviewer.authorized_source_access,
+                        role.reviewer.independent, role.reviewer.conflicts,
+                        role.reviewer.conflict_disposition,
+                        role.owner_eligibility_accepted,
+                        role.dual_role_accepted,
+                        role.reviewer.qualification, frozenset(mapper_ids),
+                    )
+                    for index, role in enumerate(roles)
+                )
+                findings = tuple(
+                    RoleFindingsPolicyInput(
+                        mapping_set_id, role.role, role.worksheet.conclusion,
+                        role.worksheet.post_correction_candidate_sha,
+                        campaign.candidate_commit,
+                        frozenset(str(item.get("record_id")) for item in candidate_mapping.record_metadata),
+                        role.worksheet_findings, True, (),
+                    )
+                    for role in roles
+                )
+                stopped = any(role.worksheet.conclusion == "stop" for role in roles)
+                candidate_findings = candidate_mapping.mapping_metadata.get("findings")
+                authoritative = (
+                    tuple(_candidate_finding(item) for item in candidate_findings)
+                    if not stopped and isinstance(candidate_findings, list)
+                    else None
+                )
+                role_map = {role.role: role for role in roles}
+                mapping_reviewer = candidate_mapping.mapping_metadata.get("reviewer")
+                ready = evaluate_mapping_set_policy(MappingSetPolicyInput(
+                    eligibility, findings, MappingSetCompletionPolicyInput(
+                        mapping_set_id, True, (), authoritative,
+                        campaign.candidate_state,
+                        tuple(_derived_reviewer(role_map["specification_and_inventory"]).items()),
+                        tuple(mapping_reviewer.items()) if isinstance(mapping_reviewer, dict) else None,
+                        tuple(_derived_reviewer(role_map["security_and_overclaiming"]).items()),
+                        tuple(
+                            tuple(reviewer.items()) if isinstance(reviewer, dict) else None
+                            for reviewer in (item.get("reviewer") for item in candidate_mapping.record_metadata)
+                        ),
+                    ),
+                )) and ready
+        return ReportProjection(True, readiness_name, ready, candidate, campaign.campaign_id, ())
+    except (_ValidationFailure, ValueError) as error:
+        return ReportProjection(False, readiness_name, False, candidate, campaign.campaign_id, (str(error),))

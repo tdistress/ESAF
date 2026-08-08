@@ -1175,12 +1175,19 @@ def _validate_roles_and_readiness(
             )
             mapping_ready = result.mapping_ready
             observed_findings = result.observed_findings
-        candidate_findings = candidate_mapping.mapping_metadata.get("findings")
-        authoritative_findings = (
-            tuple(_candidate_finding(finding) for finding in candidate_findings)
-            if isinstance(candidate_findings, list)
-            else None
-        )
+        authoritative_findings = None
+        if mapping_ready:
+            candidate_findings = candidate_mapping.mapping_metadata.get(
+                "findings"
+            )
+            authoritative_findings = (
+                tuple(
+                    _candidate_finding(finding)
+                    for finding in candidate_findings
+                )
+                if isinstance(candidate_findings, list)
+                else None
+            )
         role_map = {role.role: role for role in mapping_set.roles}
         mapping_reviewer = candidate_mapping.mapping_metadata.get("reviewer")
         record_reviewers = tuple(

@@ -98,6 +98,29 @@ REVIEW_DATE = "2026-07-25"
 
 
 class QualifiedReviewPolicyInventoryTests(unittest.TestCase):
+    def test_full_path_integration_anchors_are_structurally_frozen(self) -> None:
+        source = Path(__file__).read_text(encoding="utf-8")
+        required = {
+            "test_policy_boundaries_reach_full_campaign_validation": (
+                "mapper alias",
+                "reviewer ineligibility",
+                "stop conclusion",
+                "authoritative-finding mismatch",
+                "reviewed-state reviewer mismatch",
+            ),
+            "test_draft_reference_boundary_reaches_full_final_validation": (
+                "manifest-digest-reference-mismatch",
+            ),
+        }
+        for method, labels in required.items():
+            with self.subTest(method=method):
+                start = source.index(f"def {method}")
+                end = source.find("\n    def ", start + 1)
+                body = source[start:] if end == -1 else source[start:end]
+                self.assertIn("validate_campaign(", body)
+                for label in labels:
+                    self.assertIn(label, body)
+
     def test_inventory_freezes_the_complete_baseline_ledger(self) -> None:
         inventory = qualified_review_policy_inventory()
         expected_methods = (
@@ -1901,12 +1924,14 @@ class QualifiedReviewPolicyRoutingTests(unittest.TestCase):
 
         def policy(stage: str, value: object) -> object:
             role = getattr(value, "role", "completion")
-            events.append(f"{stage}:{role}")
+            mapping_set = getattr(value, "mapping_set_id", "")
+            events.append(f"{mapping_set}:{stage}:{role}")
             return original_policy(stage, value)
 
         def role_files(*args: object, **kwargs: object) -> object:
             role = kwargs["role"]
-            events.append(f"files:{role.role}")
+            mapping_set = kwargs["mapping_set"]
+            events.append(f"{mapping_set.mapping_set_id}:files:{role.role}")
             return original_files(*args, **kwargs)
 
         destination = Path(self.temporary.name) / "draft-routing"
@@ -1927,20 +1952,25 @@ class QualifiedReviewPolicyRoutingTests(unittest.TestCase):
             report = run_full_case(self.fixture, valid_case, destination)
 
         self.assertTrue(report.evidence_valid, report.errors)
-        for role in ROLES:
-            self.assertLess(
-                events.index(f"reviewer_eligibility:{role}"),
-                events.index(f"files:{role}"),
+        for mapping_set_id in self.fixture.assemblies:
+            for role in ROLES:
+                self.assertLess(
+                    events.index(f"{mapping_set_id}:reviewer_eligibility:{role}"),
+                    events.index(f"{mapping_set_id}:files:{role}"),
+                )
+                self.assertLess(
+                    events.index(f"{mapping_set_id}:files:{role}"),
+                    events.index(f"{mapping_set_id}:role_findings:{role}"),
+                )
+            completion = events.index(
+                f"{mapping_set_id}:mapping_set_completion:completion"
             )
-            self.assertLess(
-                events.index(f"files:{role}"),
-                events.index(f"role_findings:{role}"),
+            self.assertGreater(
+                completion,
+                events.index(
+                    f"{mapping_set_id}:role_findings:{ROLES[-1]}"
+                ),
             )
-        completion = events.index("mapping_set_completion:completion")
-        self.assertGreater(
-            completion,
-            events.index(f"role_findings:{ROLES[-1]}"),
-        )
 
     def test_final_reference_routes_through_ordered_policy_operations(self) -> None:
         events: list[str] = []
@@ -2079,6 +2109,23 @@ class QualifiedReviewHotPathSupportTests(unittest.TestCase):
                         Path(self.temporary.name) / f"invalid-{index}",
                     )
         self.assertEqual(case.operations, source_operations)
+
+    def test_narrow_route_uses_case_operations_without_expected_projection(self) -> None:
+        cases = (
+            next(case for case in qualified_review_policy_inventory().cases if case.case_id == "ineligible:unauthorized-source-access"),
+            next(case for case in qualified_review_policy_inventory().cases if case.case_id == "draft-reference:manifest-digest"),
+            next(case for case in qualified_review_policy_inventory().cases if case.fixture_kind == "description_candidate"),
+            next(case for case in qualified_review_policy_inventory().cases if case.fixture_kind == "duplicate_candidate"),
+        )
+        with mock.patch(
+            "tests.qualified_review_hot_path_support.expected_projection",
+            side_effect=AssertionError("narrow route copied expected projection"),
+        ):
+            for case in cases:
+                with self.subTest(case=case.case_id):
+                    report = run_narrow_case(self.fixture, case)
+                    self.assertFalse(report.evidence_valid, report)
+                    self.assertEqual(report.errors, case.expected.errors)
 
 
 class CampaignValidationTests(unittest.TestCase):
