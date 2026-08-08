@@ -160,6 +160,60 @@ RolePolicyInput = (
 )
 
 
+DraftReferenceStage = Literal[
+    "distinct_candidate",
+    "draft_status",
+    "campaign_id",
+    "candidate_commit",
+    "manifest_sha256",
+    "seal_record_sha256",
+]
+
+
+@dataclass(frozen=True)
+class DistinctCandidateCheck:
+    reviewed_candidate: str
+    referenced_candidate: str
+
+
+@dataclass(frozen=True)
+class DraftStatusCheck:
+    phase: str
+    evidence_valid: bool
+    readiness_name: str
+    readiness_value: bool
+
+
+@dataclass(frozen=True)
+class ScalarReferenceCheck:
+    stage: DraftReferenceStage
+    expected: str
+    actual: str
+
+
+DraftReferenceCheck = (
+    DistinctCandidateCheck | DraftStatusCheck | ScalarReferenceCheck
+)
+
+
+@dataclass(frozen=True)
+class DraftReferencePolicyInput:
+    reviewed_candidate: str
+    referenced_candidate: str
+    draft_phase: str
+    draft_evidence_valid: bool
+    draft_readiness_name: str
+    draft_readiness_value: bool
+    reference_campaign_id: str
+    draft_campaign_id: str
+    reference_candidate_commit: str
+    draft_candidate_commit: str
+    reference_manifest_sha256: str
+    draft_manifest_sha256: str
+    reference_seal_record_sha256: str
+    draft_seal_record_sha256: str
+
+
 @dataclass(frozen=True)
 class RolePolicyResult:
     mapping_ready: bool
@@ -1221,6 +1275,98 @@ def _exact_allowlist(allowlist: list[str]) -> tuple[str, ...]:
         if PurePosixPath(relative).suffix not in {".md", ".json"}:
             _fail(f"{relative} uses a forbidden campaign file extension")
     return tuple(sorted(allowlist))
+
+
+def _validate_distinct_candidate(check: DistinctCandidateCheck) -> None:
+    if check.reviewed_candidate == check.referenced_candidate:
+        _fail("reviewed and Draft candidate commits must differ")
+
+
+def _validate_draft_status(check: DraftStatusCheck) -> None:
+    if check.phase != "draft_review":
+        _fail("referenced campaign is not a Draft review campaign")
+    if (
+        not check.evidence_valid
+        or not check.readiness_value
+        or check.readiness_name != "transition_ready"
+    ):
+        _fail("referenced Draft campaign is not transition-ready")
+
+
+def _validate_scalar_reference(check: ScalarReferenceCheck) -> None:
+    messages = {
+        "campaign_id": "Draft campaign identifier does not match the reference",
+        "candidate_commit": "Draft candidate commit does not match the reference",
+        "manifest_sha256": "Draft manifest digest does not match the reference",
+        "seal_record_sha256": "Draft seal-record digest does not match the reference",
+    }
+    try:
+        message = messages[check.stage]
+    except KeyError as error:
+        raise TypeError("unknown Draft reference stage") from error
+    if check.expected != check.actual:
+        _fail(message)
+
+
+def validate_draft_reference_binding(check: DraftReferenceCheck) -> None:
+    if isinstance(check, DistinctCandidateCheck):
+        _validate_distinct_candidate(check)
+        return
+    if isinstance(check, DraftStatusCheck):
+        _validate_draft_status(check)
+        return
+    if isinstance(check, ScalarReferenceCheck):
+        _validate_scalar_reference(check)
+        return
+    raise TypeError("unknown Draft reference check")
+
+
+def evaluate_draft_reference_policy(
+    policy_input: DraftReferencePolicyInput,
+) -> None:
+    validate_draft_reference_binding(
+        DistinctCandidateCheck(
+            reviewed_candidate=policy_input.reviewed_candidate,
+            referenced_candidate=policy_input.referenced_candidate,
+        )
+    )
+    validate_draft_reference_binding(
+        DraftStatusCheck(
+            phase=policy_input.draft_phase,
+            evidence_valid=policy_input.draft_evidence_valid,
+            readiness_name=policy_input.draft_readiness_name,
+            readiness_value=policy_input.draft_readiness_value,
+        )
+    )
+    for stage, expected, actual in (
+        (
+            "campaign_id",
+            policy_input.reference_campaign_id,
+            policy_input.draft_campaign_id,
+        ),
+        (
+            "candidate_commit",
+            policy_input.reference_candidate_commit,
+            policy_input.draft_candidate_commit,
+        ),
+        (
+            "manifest_sha256",
+            policy_input.reference_manifest_sha256,
+            policy_input.draft_manifest_sha256,
+        ),
+        (
+            "seal_record_sha256",
+            policy_input.reference_seal_record_sha256,
+            policy_input.draft_seal_record_sha256,
+        ),
+    ):
+        validate_draft_reference_binding(
+            ScalarReferenceCheck(
+                stage=stage,
+                expected=expected,
+                actual=actual,
+            )
+        )
 
 
 def _validate_draft_reference(

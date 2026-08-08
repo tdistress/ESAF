@@ -51,15 +51,21 @@ from tools.crosswalks.qualified_review_evidence import (
 )
 from tools.seal_qualified_review_campaign import main as seal_main
 from tools.validate_qualified_review_evidence import (
+    DistinctCandidateCheck,
+    DraftReferencePolicyInput,
+    DraftStatusCheck,
     MappingSetCompletionPolicyInput,
     MappingSetPolicyInput,
     ReviewerEligibilityPolicyInput,
     RoleFindingsPolicyInput,
+    ScalarReferenceCheck,
     VALIDATOR_VERSION,
     ValidationReport,
+    evaluate_draft_reference_policy,
     evaluate_mapping_set_policy,
     main,
     validate_campaign,
+    validate_draft_reference_binding,
     validate_role_readiness_policy,
 )
 
@@ -1588,6 +1594,275 @@ class QualifiedReviewRolePolicyBoundaryTests(unittest.TestCase):
         self.assertEqual(
             str(finding_error.exception),
             "core pass conclusion has an open finding",
+        )
+
+
+class QualifiedReviewDraftReferenceBoundaryTests(unittest.TestCase):
+    reviewed_candidate = "a" * 40
+    referenced_candidate = "b" * 40
+    campaign_id = "issue-55-draft-review"
+    manifest_sha256 = "c" * 64
+    seal_record_sha256 = "d" * 64
+
+    def _valid_policy(self) -> DraftReferencePolicyInput:
+        return DraftReferencePolicyInput(
+            reviewed_candidate=self.reviewed_candidate,
+            referenced_candidate=self.referenced_candidate,
+            draft_phase="draft_review",
+            draft_evidence_valid=True,
+            draft_readiness_name="transition_ready",
+            draft_readiness_value=True,
+            reference_campaign_id=self.campaign_id,
+            draft_campaign_id=self.campaign_id,
+            reference_candidate_commit=self.referenced_candidate,
+            draft_candidate_commit=self.referenced_candidate,
+            reference_manifest_sha256=self.manifest_sha256,
+            draft_manifest_sha256=self.manifest_sha256,
+            reference_seal_record_sha256=self.seal_record_sha256,
+            draft_seal_record_sha256=self.seal_record_sha256,
+        )
+
+    def _assert_policy_failure(
+        self,
+        policy_input: DraftReferencePolicyInput,
+        message: str,
+    ) -> None:
+        with self.assertRaises(ValueError) as caught:
+            evaluate_draft_reference_policy(policy_input)
+        self.assertEqual(str(caught.exception), message)
+
+    def test_valid_policy_is_immutable_and_uses_no_external_dependencies(
+        self,
+    ) -> None:
+        with (
+            mock.patch.object(
+                Path,
+                "open",
+                side_effect=AssertionError("I/O"),
+            ),
+            mock.patch.object(
+                Path,
+                "read_bytes",
+                side_effect=AssertionError("I/O"),
+            ),
+            mock.patch.object(
+                subprocess,
+                "run",
+                side_effect=AssertionError("process"),
+            ),
+            mock.patch.object(
+                GitReader,
+                "read_bytes",
+                side_effect=AssertionError("Git"),
+            ),
+            mock.patch(
+                "tools.validate_qualified_review_evidence.json.loads",
+                side_effect=AssertionError("JSON"),
+            ),
+            mock.patch(
+                "tools.validate_qualified_review_evidence.hashlib.sha256",
+                side_effect=AssertionError("hashing"),
+            ),
+            mock.patch(
+                "tools.validate_qualified_review_evidence."
+                "build_campaign_archive",
+                side_effect=AssertionError("archive"),
+            ),
+            mock.patch(
+                "tools.validate_qualified_review_evidence.build_seal_record",
+                side_effect=AssertionError("seal"),
+            ),
+        ):
+            evaluate_draft_reference_policy(self._valid_policy())
+
+        with self.assertRaises(AttributeError):
+            self._valid_policy().draft_phase = "changed"
+
+    def test_binding_rejects_the_selected_invalid_checks(self) -> None:
+        checks = (
+            (
+                DistinctCandidateCheck(
+                    reviewed_candidate=self.reviewed_candidate,
+                    referenced_candidate=self.reviewed_candidate,
+                ),
+                "reviewed and Draft candidate commits must differ",
+            ),
+            (
+                DraftStatusCheck(
+                    phase="final_reviewed_confirmation",
+                    evidence_valid=False,
+                    readiness_name="wrong",
+                    readiness_value=False,
+                ),
+                "referenced campaign is not a Draft review campaign",
+            ),
+            (
+                ScalarReferenceCheck(
+                    stage="campaign_id",
+                    expected=self.campaign_id,
+                    actual="other-campaign",
+                ),
+                "Draft campaign identifier does not match the reference",
+            ),
+            (
+                ScalarReferenceCheck(
+                    stage="seal_record_sha256",
+                    expected=self.seal_record_sha256,
+                    actual="e" * 64,
+                ),
+                "Draft seal-record digest does not match the reference",
+            ),
+        )
+        for check, message in checks:
+            with self.subTest(check=check):
+                with self.assertRaises(ValueError) as caught:
+                    validate_draft_reference_binding(check)
+                self.assertEqual(str(caught.exception), message)
+
+    def test_binding_accepts_valid_checks(self) -> None:
+        checks = (
+            DistinctCandidateCheck(
+                reviewed_candidate=self.reviewed_candidate,
+                referenced_candidate=self.referenced_candidate,
+            ),
+            DraftStatusCheck(
+                phase="draft_review",
+                evidence_valid=True,
+                readiness_name="transition_ready",
+                readiness_value=True,
+            ),
+            ScalarReferenceCheck(
+                stage="campaign_id",
+                expected=self.campaign_id,
+                actual=self.campaign_id,
+            ),
+            ScalarReferenceCheck(
+                stage="candidate_commit",
+                expected=self.referenced_candidate,
+                actual=self.referenced_candidate,
+            ),
+            ScalarReferenceCheck(
+                stage="manifest_sha256",
+                expected=self.manifest_sha256,
+                actual=self.manifest_sha256,
+            ),
+            ScalarReferenceCheck(
+                stage="seal_record_sha256",
+                expected=self.seal_record_sha256,
+                actual=self.seal_record_sha256,
+            ),
+        )
+        for check in checks:
+            with self.subTest(check=check):
+                validate_draft_reference_binding(check)
+
+    def test_combined_policy_preserves_each_first_failure(self) -> None:
+        invalid = replace(
+            self._valid_policy(),
+            reviewed_candidate=self.referenced_candidate,
+            draft_phase="final_reviewed_confirmation",
+            draft_evidence_valid=False,
+            draft_readiness_name="wrong",
+            draft_readiness_value=False,
+            draft_campaign_id="other-campaign",
+            draft_candidate_commit="e" * 40,
+            draft_manifest_sha256="e" * 64,
+            draft_seal_record_sha256="e" * 64,
+        )
+        self._assert_policy_failure(
+            invalid,
+            "reviewed and Draft candidate commits must differ",
+        )
+        self._assert_policy_failure(
+            replace(invalid, reviewed_candidate=self.reviewed_candidate),
+            "referenced campaign is not a Draft review campaign",
+        )
+        self._assert_policy_failure(
+            replace(
+                invalid,
+                reviewed_candidate=self.reviewed_candidate,
+                draft_phase="draft_review",
+            ),
+            "referenced Draft campaign is not transition-ready",
+        )
+        self._assert_policy_failure(
+            replace(
+                invalid,
+                reviewed_candidate=self.reviewed_candidate,
+                draft_phase="draft_review",
+                draft_evidence_valid=True,
+                draft_readiness_name="transition_ready",
+                draft_readiness_value=True,
+            ),
+            "Draft campaign identifier does not match the reference",
+        )
+        self._assert_policy_failure(
+            replace(
+                invalid,
+                reviewed_candidate=self.reviewed_candidate,
+                draft_phase="draft_review",
+                draft_evidence_valid=True,
+                draft_readiness_name="transition_ready",
+                draft_readiness_value=True,
+                draft_campaign_id=self.campaign_id,
+            ),
+            "Draft candidate commit does not match the reference",
+        )
+        self._assert_policy_failure(
+            replace(
+                invalid,
+                reviewed_candidate=self.reviewed_candidate,
+                draft_phase="draft_review",
+                draft_evidence_valid=True,
+                draft_readiness_name="transition_ready",
+                draft_readiness_value=True,
+                draft_campaign_id=self.campaign_id,
+                draft_candidate_commit=self.referenced_candidate,
+            ),
+            "Draft manifest digest does not match the reference",
+        )
+        self._assert_policy_failure(
+            replace(
+                invalid,
+                reviewed_candidate=self.reviewed_candidate,
+                draft_phase="draft_review",
+                draft_evidence_valid=True,
+                draft_readiness_name="transition_ready",
+                draft_readiness_value=True,
+                draft_campaign_id=self.campaign_id,
+                draft_candidate_commit=self.referenced_candidate,
+                draft_manifest_sha256=self.manifest_sha256,
+            ),
+            "Draft seal-record digest does not match the reference",
+        )
+
+    def test_binding_rejects_unknown_check_and_scalar_stage(self) -> None:
+        with self.assertRaises(TypeError) as check_error:
+            validate_draft_reference_binding(
+                ValidationReport(
+                    evidence_valid=True,
+                    readiness_name="transition_ready",
+                    readiness_value=True,
+                    candidate_commit=self.referenced_candidate,
+                    campaign_id=self.campaign_id,
+                    errors=(),
+                )
+            )
+        self.assertEqual(
+            str(check_error.exception),
+            "unknown Draft reference check",
+        )
+        with self.assertRaises(TypeError) as stage_error:
+            validate_draft_reference_binding(
+                ScalarReferenceCheck(
+                    stage="unknown",
+                    expected="expected",
+                    actual="actual",
+                )
+            )
+        self.assertEqual(
+            str(stage_error.exception),
+            "unknown Draft reference stage",
         )
 
 
