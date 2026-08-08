@@ -112,20 +112,72 @@ def _walk_outer_method_scope(statements: list[ast.stmt]):
 
 class QualifiedReviewPolicyInventoryTests(unittest.TestCase):
     def test_campaign_setup_has_no_legacy_fixture_implementation(self) -> None:
+        def lifecycle_methods(
+            campaign_class: ast.ClassDef,
+        ) -> tuple[ast.FunctionDef, ast.FunctionDef]:
+            methods = {
+                node.name: node for node in campaign_class.body
+                if isinstance(node, ast.FunctionDef)
+            }
+            return methods["setUpClass"], methods["tearDownClass"]
+
+        def assert_lifecycle_shape(campaign_class: ast.ClassDef) -> None:
+            setup, teardown = lifecycle_methods(campaign_class)
+            self.assertEqual(len(setup.body), 3)
+            temporary, fixture, attach = setup.body
+            self.assertIsInstance(temporary, ast.Assign)
+            self.assertEqual(ast.unparse(temporary), "cls.shared_temporary = tempfile.TemporaryDirectory()")
+            self.assertIsInstance(fixture, ast.Assign)
+            self.assertEqual(
+                ast.unparse(fixture),
+                "cls.hot_path_fixture = QualifiedReviewHotPathFixture.create(Path(cls.shared_temporary.name), ROOT)",
+            )
+            self.assertIsInstance(attach, ast.Expr)
+            self.assertEqual(
+                ast.unparse(attach.value),
+                "cls.hot_path_fixture.attach_to_test_class(cls)",
+            )
+            self.assertFalse(
+                any(isinstance(node, ast.Return) for node in ast.walk(setup))
+            )
+            self.assertEqual(len(teardown.body), 1)
+            self.assertIsInstance(teardown.body[0], ast.Expr)
+            self.assertEqual(
+                ast.unparse(teardown.body[0].value),
+                "cls.shared_temporary.cleanup()",
+            )
+
         tree = ast.parse(Path(__file__).read_text(encoding="utf-8"))
         campaign_class = next(
             node for node in tree.body
             if isinstance(node, ast.ClassDef) and node.name == "CampaignValidationTests"
         )
-        setup = next(
-            node for node in campaign_class.body
-            if isinstance(node, ast.FunctionDef) and node.name == "setUpClass"
+        assert_lifecycle_shape(campaign_class)
+        decoy = ast.parse(
+            """
+class CampaignValidationTests:
+    @classmethod
+    def setUpClass(cls):
+        cls.shared_temporary = tempfile.TemporaryDirectory()
+        cls.hot_path_fixture = unrelated_fixture
+        cls.hot_path_fixture.attach_to_test_class(cls)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.shared_temporary.close()
+"""
+        ).body[0]
+        assert isinstance(decoy, ast.ClassDef)
+        with self.assertRaises(AssertionError):
+            assert_lifecycle_shape(decoy)
+
+        cleanup = mock.Mock()
+        probe = SimpleNamespace(
+            shared_temporary=SimpleNamespace(cleanup=cleanup),
         )
-        self.assertEqual(
-            tuple(type(statement) for statement in setup.body),
-            (ast.Assign, ast.Assign, ast.Expr),
-        )
-        self.assertFalse(any(isinstance(node, ast.Return) for node in ast.walk(setup)))
+        CampaignValidationTests.tearDownClass.__func__(probe)
+        cleanup.assert_called_once_with()
+
         legacy_builders = {
             "_write_front_matter",
             "_make_reviewed_candidate",
@@ -2472,6 +2524,11 @@ class CampaignValidationTests(unittest.TestCase):
             Path(cls.shared_temporary.name), ROOT
         )
         cls.hot_path_fixture.attach_to_test_class(cls)
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls.shared_temporary.cleanup()
+
     def setUp(self) -> None:
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
