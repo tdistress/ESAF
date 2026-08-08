@@ -18,6 +18,29 @@ from tools.plan_validation import (
 
 
 ROOT = Path(__file__).resolve().parents[1]
+EXPECTED_PUBLICATION_CATALOG = (
+    "preflight",
+    "test-shard-manifest",
+    "profile-shard",
+    "qualified-review-shard",
+    "mapping-review-shard",
+    "remaining-shard",
+    "architectures",
+    "assessment",
+    "controls",
+    "crosswalks",
+    "profiles",
+    "qualified-review",
+    "mapping-review",
+    "full-discovery",
+    "mermaid",
+    "mermaid-record",
+    "links",
+    "qualified-review-equivalence",
+    "release-gates",
+    "release-evidence",
+    "pci-dss-mapping-go-no-go",
+)
 
 
 class PlanValidationTests(unittest.TestCase):
@@ -137,9 +160,8 @@ class PlanValidationTests(unittest.TestCase):
             candidate="candidate",
             git_runner=self.git_diff_for(b"M\0.github/workflows/check.yml\0"),
         )
-        catalog = load_manifest(ROOT)
         self.assertEqual(
-            tuple(command.identifier for command in catalog.commands),
+            EXPECTED_PUBLICATION_CATALOG,
             tuple(command.identifier for command in plan.commands),
         )
         commands = {command.identifier: command.argv for command in plan.commands}
