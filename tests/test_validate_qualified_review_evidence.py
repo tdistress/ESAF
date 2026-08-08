@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import ast
 from contextlib import ExitStack, redirect_stderr, redirect_stdout
-from copy import deepcopy
 from dataclasses import replace
 import hashlib
 import io
@@ -39,9 +38,9 @@ from tests.qualified_review_hot_path_support import (
     run_narrow_case,
 )
 
-import tools.validate_crosswalks as crosswalk_validator
 import tools.seal_qualified_review_campaign as seal_module
 import tests.qualified_review_hot_path_support as hot_path_support
+import tools.validate_crosswalks as crosswalk_validator
 import tools.validate_qualified_review_evidence as validator_module
 from tools.build_mapping_review_bundle import (
     PROFILES,
@@ -112,6 +111,39 @@ def _walk_outer_method_scope(statements: list[ast.stmt]):
 
 
 class QualifiedReviewPolicyInventoryTests(unittest.TestCase):
+    def test_campaign_setup_has_no_legacy_fixture_implementation(self) -> None:
+        tree = ast.parse(Path(__file__).read_text(encoding="utf-8"))
+        campaign_class = next(
+            node for node in tree.body
+            if isinstance(node, ast.ClassDef) and node.name == "CampaignValidationTests"
+        )
+        setup = next(
+            node for node in campaign_class.body
+            if isinstance(node, ast.FunctionDef) and node.name == "setUpClass"
+        )
+        self.assertEqual(
+            tuple(type(statement) for statement in setup.body),
+            (ast.Assign, ast.Assign, ast.Expr),
+        )
+        self.assertFalse(any(isinstance(node, ast.Return) for node in ast.walk(setup)))
+        legacy_builders = {
+            "_write_front_matter",
+            "_make_reviewed_candidate",
+            "_set_candidate_findings",
+            "_make_finding_campaign",
+            "_make_finding_candidates",
+        }
+        definitions = {
+            node.name for node in campaign_class.body
+            if isinstance(node, ast.FunctionDef)
+        }
+        references = {
+            node.attr for node in ast.walk(campaign_class)
+            if isinstance(node, ast.Attribute)
+        }
+        self.assertFalse(definitions & legacy_builders)
+        self.assertFalse(references & legacy_builders)
+
     def test_scope_pruning_walker_excludes_all_nested_scope_decoys(self) -> None:
         tree = ast.parse(
             """
@@ -2440,443 +2472,6 @@ class CampaignValidationTests(unittest.TestCase):
             Path(cls.shared_temporary.name), ROOT
         )
         cls.hot_path_fixture.attach_to_test_class(cls)
-        return
-        cls.shared_root = Path(cls.shared_temporary.name)
-        cls.repository = cls.shared_root / "candidate"
-        subprocess.run(
-            [
-                "git",
-                "clone",
-                "--shared",
-                "--no-checkout",
-                str(ROOT),
-                str(cls.repository),
-            ],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-        cls.candidate = _git(ROOT, "rev-parse", "HEAD")
-        _git(cls.repository, "checkout", "--detach", cls.candidate)
-        cls.reader = GitReader(cls.repository)
-        cls.assemblies = {
-            profile.mapping_set_id: assemble_package(
-                cls.reader,
-                cls.candidate,
-                profile,
-            )
-            for profile in PROFILES.values()
-        }
-        cls.pristine_campaign = cls.shared_root / "pristine-draft"
-        cls.pristine_campaign.mkdir()
-        CampaignFixture(
-            cls.pristine_campaign,
-            cls.candidate,
-            cls.assemblies,
-        )
-        cls.draft_allowlist = tuple(
-            sorted(
-                path.relative_to(cls.pristine_campaign).as_posix()
-                for path in cls.pristine_campaign.rglob("*")
-                if path.is_file()
-            )
-        )
-        cls.draft_archive_bytes = build_campaign_archive(
-            cls.pristine_campaign,
-            cls.draft_allowlist,
-        )
-        draft_manifest_bytes = (
-            cls.pristine_campaign / MANIFEST_PATH
-        ).read_bytes()
-        (
-            cls.draft_seal,
-            cls.draft_seal_bytes,
-        ) = build_seal_record(
-            manifest_bytes=draft_manifest_bytes,
-            archive_bytes=cls.draft_archive_bytes,
-            archive_locator=(
-                "https://evidence.example.invalid/draft.zip?version=1"
-            ),
-            campaign_id="issue-55-draft-review",
-            candidate_commit=cls.candidate,
-            evidence_valid=True,
-            readiness_name="transition_ready",
-            readiness_value=True,
-            validator_version=VALIDATOR_VERSION,
-        )
-        cls.draft_seal_path = cls.shared_root / "CAMPAIGN_SEAL.json"
-        cls.draft_archive_path = cls.shared_root / "CAMPAIGN_ARCHIVE.zip"
-        cls.draft_seal_path.write_bytes(cls.draft_seal_bytes)
-        cls.draft_archive_path.write_bytes(cls.draft_archive_bytes)
-
-        cls.reviewed_repository = cls.shared_root / "reviewed-candidate"
-        subprocess.run(
-            [
-                "git",
-                "clone",
-                "--shared",
-                "--no-checkout",
-                str(ROOT),
-                str(cls.reviewed_repository),
-            ],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-        _git(
-            cls.reviewed_repository,
-            "checkout",
-            "-b",
-            "reviewed-fixture",
-            cls.candidate,
-        )
-        _git(cls.reviewed_repository, "config", "user.name", "ESAF Test")
-        _git(
-            cls.reviewed_repository,
-            "config",
-            "user.email",
-            "esaf-test@example.invalid",
-        )
-        cls._make_reviewed_candidate()
-        _git(cls.reviewed_repository, "add", "--all")
-        _git(
-            cls.reviewed_repository,
-            "commit",
-            "-m",
-            "reviewed fixture",
-        )
-        cls.reviewed_candidate = _git(
-            cls.reviewed_repository,
-            "rev-parse",
-            "HEAD",
-        )
-        cls.reviewed_reader = GitReader(cls.reviewed_repository)
-        cls.reviewed_assemblies = {
-            profile.mapping_set_id: assemble_package(
-                cls.reviewed_reader,
-                cls.reviewed_candidate,
-                profile,
-                "reviewed",
-            )
-            for profile in PROFILES.values()
-        }
-        cls.draft_reference = {
-            "campaign_id": "issue-55-draft-review",
-            "candidate_commit": cls.candidate,
-            "manifest_sha256": hashlib.sha256(
-                draft_manifest_bytes
-            ).hexdigest(),
-            "seal_record_sha256": hashlib.sha256(
-                cls.draft_seal_bytes
-            ).hexdigest(),
-        }
-        cls.pristine_final_campaign = cls.shared_root / "pristine-final"
-        cls.pristine_final_campaign.mkdir()
-        CampaignFixture(
-            cls.pristine_final_campaign,
-            cls.reviewed_candidate,
-            cls.reviewed_assemblies,
-            phase="final_reviewed_confirmation",
-            campaign_id="issue-55-final-confirmation",
-            draft_campaign_reference=cls.draft_reference,
-        )
-        cls._make_finding_candidates()
-
-    @classmethod
-    def tearDownClass(cls) -> None:
-        cls.shared_temporary.cleanup()
-
-    @classmethod
-    def _write_front_matter(
-        cls,
-        path: Path,
-        metadata: dict[str, object],
-        body: str,
-    ) -> None:
-        rendered = yaml.safe_dump(
-            metadata,
-            allow_unicode=True,
-            sort_keys=False,
-        )
-        path.write_text(
-            f"---\n{rendered}---\n{body}",
-            encoding="utf-8",
-            newline="\n",
-        )
-
-    @classmethod
-    def _make_reviewed_candidate(cls) -> None:
-        for profile in PROFILES.values():
-            snapshot = cls.reviewed_repository / profile.snapshot_path
-            for path in sorted(snapshot.iterdir()):
-                if path.name in {
-                    "PROVISION_INVENTORY.md",
-                    "ESAF_CONTROL_MANIFEST.json",
-                }:
-                    continue
-                metadata, body = parse_front_matter_bytes(path.read_bytes())
-                metadata["status"] = "reviewed"
-                role = (
-                    "specification_and_inventory"
-                    if path.name == "README.md"
-                    else "security_and_overclaiming"
-                )
-                metadata["reviewer"] = _reviewer_object(
-                    PROFILE_NAMES[profile.label],
-                    role,
-                )
-                cls._write_front_matter(path, metadata, body)
-            snapshot_contents = {
-                path.relative_to(cls.reviewed_repository).as_posix(): (
-                    path.read_bytes()
-                )
-                for path in sorted(snapshot.iterdir())
-            }
-            digest = snapshot_digest_from_files(
-                profile.snapshot_path,
-                snapshot_contents,
-            )
-            registry = (
-                cls.reviewed_repository
-                / "crosswalks"
-                / "registry"
-                / f"{profile.mapping_set_id}.md"
-            )
-            metadata, body = parse_front_matter_bytes(registry.read_bytes())
-            metadata["snapshot_digest"] = digest
-            cls._write_front_matter(registry, metadata, body)
-        stdout = io.StringIO()
-        stderr = io.StringIO()
-        with redirect_stdout(stdout), redirect_stderr(stderr):
-            result = crosswalk_validator.main(
-                ["--write"],
-                root=cls.reviewed_repository,
-            )
-        if result != 0:
-            raise AssertionError(
-                f"reviewed fixture regeneration failed: {stderr.getvalue()}"
-            )
-
-    @classmethod
-    def _set_candidate_findings(
-        cls,
-        repository: Path,
-        profile: object,
-        findings: list[dict[str, object]],
-        message: str,
-        *,
-        validate_repository: bool = True,
-    ) -> str:
-        snapshot = repository / profile.snapshot_path
-        readme = snapshot / "README.md"
-        metadata, body = parse_front_matter_bytes(readme.read_bytes())
-        metadata["findings"] = findings
-        cls._write_front_matter(readme, metadata, body)
-        snapshot_contents = {
-            path.relative_to(repository).as_posix(): path.read_bytes()
-            for path in sorted(snapshot.iterdir())
-        }
-        digest = snapshot_digest_from_files(
-            profile.snapshot_path,
-            snapshot_contents,
-        )
-        registry = (
-            repository
-            / "crosswalks"
-            / "registry"
-            / f"{profile.mapping_set_id}.md"
-        )
-        registry_metadata, registry_body = parse_front_matter_bytes(
-            registry.read_bytes()
-        )
-        registry_metadata["snapshot_digest"] = digest
-        cls._write_front_matter(
-            registry,
-            registry_metadata,
-            registry_body,
-        )
-        if validate_repository:
-            stdout = io.StringIO()
-            stderr = io.StringIO()
-            with redirect_stdout(stdout), redirect_stderr(stderr):
-                result = crosswalk_validator.main(
-                    ["--write"],
-                    root=repository,
-                )
-            if result != 0:
-                raise AssertionError(
-                    "finding fixture regeneration failed: "
-                    f"{stdout.getvalue()} {stderr.getvalue()}"
-                )
-        else:
-            catalog_path = repository / "crosswalks" / "catalog.json"
-            catalog = json.loads(catalog_path.read_bytes())
-            catalog_sets = catalog["mapping_sets"]
-            assert isinstance(catalog_sets, list)
-            catalog_entry = next(
-                item
-                for item in catalog_sets
-                if item["metadata"]["mapping_set_id"]
-                == profile.mapping_set_id
-            )
-            catalog_entry["metadata"]["findings"] = deepcopy(findings)
-            catalog_entry["lifecycle"]["snapshot_digest"] = digest
-            catalog_path.write_text(
-                json.dumps(
-                    catalog,
-                    indent=2,
-                    ensure_ascii=False,
-                    sort_keys=True,
-                )
-                + "\n",
-                encoding="utf-8",
-                newline="\n",
-            )
-        _git(repository, "add", "--all")
-        _git(repository, "commit", "-m", message)
-        return _git(repository, "rev-parse", "HEAD")
-
-    @classmethod
-    def _make_finding_campaign(
-        cls,
-        root: Path,
-        candidate: str,
-        assemblies: dict[str, PackageAssembly],
-        profile: object,
-        worksheet_findings: list[dict[str, object]],
-    ) -> None:
-        root.mkdir()
-        fixture = CampaignFixture(root, candidate, assemblies)
-        mapping_sets = fixture.manifest["mapping_sets"]
-        assert isinstance(mapping_sets, list)
-        mapping_set = next(
-            item
-            for item in mapping_sets
-            if item["mapping_set_id"] == profile.mapping_set_id
-        )
-        roles = mapping_set["roles"]
-        assert isinstance(roles, list)
-        for role in roles:
-            worksheet = role["worksheet"]
-            assert isinstance(worksheet, dict)
-            worksheet["findings"] = deepcopy(worksheet_findings)
-            worksheet["findings_disposition"] = "All findings resolved"
-            fixture.write_role(profile, mapping_set, role)
-        fixture.write_manifest()
-
-    @classmethod
-    def _make_finding_candidates(cls) -> None:
-        cls.finding_repository = cls.shared_root / "finding-candidates"
-        subprocess.run(
-            [
-                "git",
-                "clone",
-                "--shared",
-                "--no-checkout",
-                str(ROOT),
-                str(cls.finding_repository),
-            ],
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-        _git(
-            cls.finding_repository,
-            "checkout",
-            "-b",
-            "finding-fixtures",
-            cls.candidate,
-        )
-        _git(cls.finding_repository, "config", "user.name", "ESAF Test")
-        _git(
-            cls.finding_repository,
-            "config",
-            "user.email",
-            "esaf-test@example.invalid",
-        )
-        profile = next(
-            item for item in PROFILES.values() if item.label == "Core"
-        )
-        record = next(
-            path
-            for path in sorted(
-                (cls.finding_repository / profile.snapshot_path).glob("*.md")
-            )
-            if path.name not in {"README.md", "PROVISION_INVENTORY.md"}
-        )
-        record_metadata, _body = parse_front_matter_bytes(record.read_bytes())
-        affected = [str(record_metadata["record_id"])]
-        evidence_finding = {
-            "finding_id": "review-finding",
-            "affected_record_ids": affected,
-            "severity": "Minor",
-            "status": "resolved",
-            "disposition": "Resolved by candidate correction",
-            "resolver_or_acceptor": "ESAF Project Owner",
-            "disposition_date": REVIEW_DATE,
-            "acceptance_rationale": "Not applicable",
-        }
-        authoritative = {
-            **evidence_finding,
-            "description": "Authoritative exact description",
-        }
-        cls.description_candidate = cls._set_candidate_findings(
-            cls.finding_repository,
-            profile,
-            [authoritative],
-            "description finding fixture",
-        )
-        cls.description_reader = GitReader(cls.finding_repository)
-        cls.description_assemblies = {
-            item.mapping_set_id: assemble_package(
-                cls.description_reader,
-                cls.description_candidate,
-                item,
-            )
-            for item in PROFILES.values()
-        }
-        cls.description_campaign = cls.shared_root / "description-campaign"
-        cls._make_finding_campaign(
-            cls.description_campaign,
-            cls.description_candidate,
-            cls.description_assemblies,
-            profile,
-            [evidence_finding],
-        )
-
-        duplicate_last = {
-            **authoritative,
-            "description": "Reviewed finding",
-        }
-        duplicate_first = {
-            **authoritative,
-            "description": "Earlier conflicting description",
-        }
-        cls.duplicate_candidate = cls._set_candidate_findings(
-            cls.finding_repository,
-            profile,
-            [duplicate_first, duplicate_last],
-            "duplicate finding fixture",
-            validate_repository=False,
-        )
-        cls.duplicate_reader = GitReader(cls.finding_repository)
-        cls.duplicate_assemblies = {
-            item.mapping_set_id: assemble_package(
-                cls.duplicate_reader,
-                cls.duplicate_candidate,
-                item,
-            )
-            for item in PROFILES.values()
-        }
-        cls.duplicate_campaign = cls.shared_root / "duplicate-campaign"
-        cls._make_finding_campaign(
-            cls.duplicate_campaign,
-            cls.duplicate_candidate,
-            cls.duplicate_assemblies,
-            profile,
-            [evidence_finding],
-        )
-
     def setUp(self) -> None:
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
