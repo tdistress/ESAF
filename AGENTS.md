@@ -29,6 +29,8 @@ These instructions preserve durable project conventions for future Codex develop
 6. Record the reviewed head SHA in the pull-request description and ensure it still matches the PR head before merge.
 7. Require passing GitHub checks and a clean merge state before merging.
 8. After merge, update local `main`, rerun proportional validation, verify a clean worktree, then remove the temporary branch and worktree.
+9. For short work sessions, start with `python tools/plan_validation.py --base origin/main --candidate HEAD` and use its quick or standard commands for the current candidate. Treat the planner's duration labels as estimates, not deadlines. Unknown, renamed, deleted, workflow, and validation-tool paths shall use the publication tier. Required CI and publication gates remain authoritative, and every earlier validation result expires when the candidate SHA changes.
+10. Use `python tools/run_test_shards.py --all --parallel --durations 50` when concurrent local shard feedback is useful. Retain sequential `--all` mode when ordered diagnostics are needed; parallel execution shall collect every selected shard result.
 
 ## Required validation habits
 

@@ -2,6 +2,44 @@
 
 Validation, publication, assessment, and repository-maintenance tools will be maintained here. Generated artifacts should not replace authoritative Markdown sources.
 
+## Time-budgeted validation
+
+Use the planner to choose useful local work for the current change. It compares
+the specified base and candidate commits, reports the resolved SHAs, and lists
+the commands selected for each tier:
+
+```powershell
+python tools/plan_validation.py --base origin/main --candidate HEAD
+```
+
+The planner has three tiers.
+
+- `quick` is a short preflight for a small work window. It checks the diff,
+  verifies the shard manifest, and selects any directly affected checks.
+- `standard` adds the relevant domain validator or complete test shard. It is
+  useful before handing off a focused change or when there is time to follow a
+  problem within one area.
+- `publication` is for a frozen candidate. It includes the required complete
+  local gates, publication rendering and link checks, exact-SHA proof where it
+  applies, and independent review before a pull request, merge, or release.
+
+The duration labels printed by the planner are planning aids based on observed
+runs, not promises. Unknown, renamed, deleted, or cross-cutting paths, such as
+workflow and validation-tool changes, escalate to `publication`. Required CI
+remains authoritative. A passing `quick` or `standard` run neither replaces a
+complete pull-request or publication gate nor carries forward after the
+candidate SHA changes.
+
+To run all manifest-defined shards concurrently during a longer local session:
+
+```powershell
+python tools/run_test_shards.py --all --parallel --durations 50
+```
+
+The existing sequential `--all` mode remains available when its ordered output
+is more useful for diagnosis. Parallel mode waits for every selected shard and
+reports each result.
+
 ## Assessment validation
 
 Validate the ESAF-1500 schemas, tracked fictional examples, references, final
