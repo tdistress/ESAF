@@ -89,6 +89,38 @@ The ledger below is derived from static control flow at baseline commit `f99e403
 | `test_seal_archives_the_exact_validated_byte_snapshot` | 1 | 0 | 1 | 1 |
 | **Total** | **92** | **34** | **58** | **108** |
 
+The retained-method AST oracle uses `ast.dump(method_node, annotate_fields=True, include_attributes=False)` encoded as UTF-8 and hashed with SHA-256. These values bind all 27 baseline methods outside the selected migration, including the three zero-entry security and argument guards:
+
+| Retained method | AST SHA-256 |
+|---|---|
+| `test_accepted_minor_requires_named_acceptance_evidence` | `23319dd12547114b869fd0815418669c3869e7824e0da17b95b64f76509370b3` |
+| `test_attestation_source_sets_are_exactly_candidate_bound` | `7ca3e58598557954724bc325eba4eefe154875151a9d3cf23246b6f24912be24` |
+| `test_campaign_tree_and_package_bytes_are_exact` | `c750637c9db1cc6caa16c702b52eec3cae96cfd7cae471977e19a1895f8eecd4` |
+| `test_candidate_schema_cannot_retrieve_external_references` | `e9209852b86444d64e0ba63f072353d0be18ad400313450760b903ded8f2ad95` |
+| `test_clis_sanitize_git_operational_failures` | `697fa1a28fd0aed65935fdb639543ca966fc85f925b4031e46328c358e96d515` |
+| `test_final_campaign_rejects_archive_seal_or_draft_byte_mutation` | `ace8500c85285ccdfe1551710bfdb48a033152010a0342853e2c5db0d60e7c38` |
+| `test_final_campaign_requires_all_preserved_draft_inputs` | `dcaf9d0c09653f67b2e12fc700572282349ba9047168d9d9485381ce204d5a2d` |
+| `test_invalid_report_preserves_parsed_final_campaign_context` | `285d29a598e49cbfa0f2573f291bbb643f6c685015d2ba6dd148bcafe76d5668` |
+| `test_linux_acquisition_rejects_swap_restored_before_revalidation` | `6fb410df11aac17c7c17ec481b061ea0fc92db575b64625713f5af3ab86228db` |
+| `test_rejects_missing_duplicate_and_mismatched_role_keys` | `9ee266cb597041d94487abe486f455ab9effe02b339644601932a5c1304a438e` |
+| `test_retained_draft_revalidation_rejects_mismatched_archive_urn` | `276c95fd1102d68ecb6a71c3491f2d0224e67bfca6585c95e8add385eef99261` |
+| `test_seal_archives_the_exact_validated_byte_snapshot` | `ebbc068dcddf2e0ce61a237acb9522c5b0d7863d1e71f4c2668e18d4fe7b6975` |
+| `test_seal_cli_accepts_only_the_real_archive_digest_urn` | `6e8dc8eaa4c6322657a6b80447a51f33353e1bfeb0be7dfde9ece5437f20139f` |
+| `test_seal_cli_atomically_publishes_exact_archive_and_seal` | `6952f8478e7bc5a3930337c5ebfd36522e1ab7524e51987f24d18de7241b9563` |
+| `test_seal_cli_preserves_competing_output_and_cleans_partial_staging` | `6591b5e3411be8eff4d3cd5011c07ce120eba18ec5470326e1ebdf613bcffe9a` |
+| `test_seal_cli_publishes_nothing_after_execution_state_drift` | `ae58a0567c69c7f11ac4b18586f4105198f678ea1038542071dc64b0e02bc49c` |
+| `test_seal_cli_refuses_invalid_or_nonready_campaign` | `a9b95acdc8ebf33a0041c0971584c6da299b1e166af309b8224eb75c1848af0e` |
+| `test_seal_cli_refuses_existing_worktree_and_unsafe_destinations` | `010cf9b4c1b218de9dfb9204744fe9bf5ab4312b44e4884dc2f2fcfdfa75fc5b` |
+| `test_seal_fails_closed_when_parent_or_ancestor_is_swapped` | `cfccdb9ed35deaeb19c72888b1ff9089c60950a2303ceb61bbb034146a665f4c` |
+| `test_sha_locators_bind_package_attestation_and_worksheet_bytes` | `a22158545e4a5da79e435e24539243abcc26972e77a0edd58d8d714b6ddeaf94` |
+| `test_valid_draft_campaign_is_transition_ready` | `448e7b9e1bbdc69159d887033cd05204afd111e71db6fa493affdc9c2e02ecac` |
+| `test_valid_final_campaign_is_recursively_merge_ready` | `6caf1a1f2cc7fd6b2bd255f64a272b02bfef25193d58220c031cd447f8d8c946` |
+| `test_validator_cli_classifies_preopen_permissions_as_operational` | `788950d76b07846f2129eba5c2f17daf16407ce76509c52141383045a8d49ceb` |
+| `test_validator_cli_emits_canonical_reports_and_exit_codes` | `e40d05ed85181a7aeb8e9b2203e7bfe0df8e28077c3b57fe3cbdf6eee00d1c07` |
+| `test_validator_cli_keeps_batch_object_failure_operational` | `2d2c0983d07685de9e1ede5fc90f755712c79a95cd64c2ef8333f66f81216fed` |
+| `test_validator_cli_requires_check_and_all_or_none_draft_inputs` | `243bb8120b599e6a838848615b68a8b1db864ffe3d8bf0bda2cd4dba41d8b19e` |
+| `test_validator_cli_sanitizes_missing_and_permission_failures` | `573b65c526cd6b51147d1b860459f523b9a35f240295c8a8c644d040cece0d46` |
+
 ---
 
 ### Task 1: Freeze the case inventory and baseline ledger
@@ -101,16 +133,23 @@ The ledger below is derived from static control flow at baseline commit `f99e403
 **Interfaces:**
 - Produces: `BoundaryFamily = Literal["role_readiness", "draft_reference"]`.
 - Produces: `FixtureKind = Literal["draft", "reviewed_final", "description_candidate", "duplicate_candidate"]`.
-- Produces: frozen `FieldOperation(path: tuple[str | int, ...], value: FrozenValue)`.
-- Produces: frozen `ExpectedReport(evidence_valid: bool, readiness_name: str, readiness_value: bool, candidate_key: str, campaign_id: str, errors: tuple[str, ...])`.
+- Produces: `CandidateKey = Literal["draft", "reviewed", "description", "duplicate"]` and frozen `CandidateReference(key: CandidateKey)`.
+- Produces: frozen `FieldOperation(path: tuple[str | int, ...], value: FrozenValue | CandidateReference)`.
+- Produces: frozen `ExpectedReport(evidence_valid: bool, readiness_name: str, readiness_value: bool, candidate_key: CandidateKey, campaign_id: str, errors: tuple[str, ...])`.
 - Produces: frozen `QualifiedReviewPolicyCase(method_name: str, case_id: str, boundary: BoundaryFamily, fixture_kind: FixtureKind, operations: tuple[FieldOperation, ...], expected: ExpectedReport)`.
-- Produces: frozen `MethodBaseline(method_name: str, detail_entries: int, selected_entries: int, retained_entries: int, copytree_operations: int, retained_rationale: str)`.
-- Produces: frozen `QualifiedReviewPolicyInventory(cases: tuple[QualifiedReviewPolicyCase, ...], methods: tuple[MethodBaseline, ...], population_sha256: str)` with `cases_for_method(method_name: str) -> tuple[QualifiedReviewPolicyCase, ...]`.
+- Produces: `FullPathRoute = Literal["draft", "final", "recursive_draft", "validator_cli", "seal_cli"]`.
+- Produces: frozen `RetainedCaseBaseline(case_id: str, method_name: str, case_label: str, routes: tuple[FullPathRoute, ...], rationale: str)`.
+- Produces: frozen `MethodBaseline(method_name: str, detail_entries: int, selected_entries: int, retained_cases: tuple[RetainedCaseBaseline, ...], copytree_operations: int, retained_source_ast_sha256: str)`.
+- Produces: frozen `QualifiedReviewPolicyInventory(cases: tuple[QualifiedReviewPolicyCase, ...], methods: tuple[MethodBaseline, ...], retained_cases: tuple[RetainedCaseBaseline, ...], population_sha256: str)` with `cases_for_method(method_name: str) -> tuple[QualifiedReviewPolicyCase, ...]`.
 - Produces: `qualified_review_policy_inventory() -> QualifiedReviewPolicyInventory` and `qualified_review_population_sha256(cases: Sequence[QualifiedReviewPolicyCase]) -> str`.
 
 - [ ] **Step 1: Add failing inventory contract tests**
 
 Add `QualifiedReviewPolicyInventoryTests`. Require 43 ledger rows in the exact source order shown above, totals `(92, 34, 58, 108)`, 31 unique cases, 16 selected methods, a 27/4 boundary split, immutable tuples, valid path tokens, unique case IDs, and a recomputed digest equal to the reviewed constant.
+
+Freeze every retained baseline case as an explicit record. Use the current subtest label when one exists and `default` for an unlabelled single case. Give each record the identifier `<method-name>:retained:<case-label>`. Its `routes` tuple shall list every detailed-validation entry in order, such as `("final", "recursive_draft")` for a Final case that reaches retained Draft validation. Do not generate records or routes from a count at runtime. Require unique identifiers, nonempty labels and invariant-based rationales, allowed routes, and exactly 58 route elements across all records.
+
+For all 27 methods outside the selected migration, including the three methods with zero detailed-validation entries, store and verify the SHA-256 of the location-free AST dump from baseline commit `f99e403583877f803576dcad919025e558e5a5f6`. This makes a count-preserving loop, label, mutation, route, or zero-entry security-test change fail the ledger contract. Only the 16 methods changed by the approved Stage 2 migration are excluded from this AST binding.
 
 Use mutation tests that call the lower-level validator with one defect at a time:
 
@@ -147,6 +186,12 @@ FrozenValue: TypeAlias = JsonScalar | tuple["FrozenValue", ...] | tuple[
     tuple[str, "FrozenValue"], ...
 ]
 
+@dataclass(frozen=True)
+class CandidateReference:
+    key: CandidateKey
+
+OperationValue: TypeAlias = FrozenValue | CandidateReference
+
 payload = json.dumps(
     semantic_rows,
     ensure_ascii=False,
@@ -171,7 +216,7 @@ class QualifiedReviewPolicyCase:
 
 Give every mutation a stable identifier. Use these prefixes and counts: `ineligible` 5, `actor-alias` 4, `mapper-alias` 1, `resolved-conflict` 1, `duplicate-human` 2, `stop-open` 2, `accepted-severity` 2, `pass-open` 1, `post-correction` 2, `orphan-record` 1, `finding-set` 1, `finding-description` 1, `duplicate-finding-id` 1, `reviewed-reviewer` 2, `final-post-correction` 1, and `draft-reference` 4.
 
-Store final field values, not lambdas. Use `fixture_kind="description_candidate"` and `fixture_kind="duplicate_candidate"` for the two alternate-commit cases. Use `candidate_key` values `draft` and `reviewed` rather than embedding temporary SHAs in the digest.
+Store final field values or `CandidateReference` records, not lambdas. Canonical serialization shall encode a candidate reference as `{"candidate_reference": "<key>"}` so it cannot collide with an ordinary tuple or string value. Use `fixture_kind="description_candidate"` and `fixture_kind="duplicate_candidate"` for the two alternate-commit cases. Use candidate references and expected `candidate_key` values rather than embedding temporary SHAs in the digest. The shared support module shall resolve every reference from its fixture before applying a mutation or constructing an expected projection, and shall reject an unknown key.
 
 Set the expected errors to the current exact messages. The mapping-set prefix comes from the selected fixture, and the suffixes are:
 
@@ -373,6 +418,7 @@ git commit -m "refactor: extract Draft reference policy"
 - Produces: `run_full_case(fixture: QualifiedReviewHotPathFixture, case: QualifiedReviewPolicyCase, destination: Path) -> ReportProjection`.
 - Produces: `run_narrow_case(fixture: QualifiedReviewHotPathFixture, case: QualifiedReviewPolicyCase) -> ReportProjection`.
 - Produces: `expected_projection(fixture: QualifiedReviewHotPathFixture, case: QualifiedReviewPolicyCase) -> ReportProjection`.
+- Produces: `resolve_operation_value(fixture: QualifiedReviewHotPathFixture, value: OperationValue) -> FrozenValue`, including strict `CandidateReference` resolution.
 - Preserves: every selected test method still uses `_report()`, `_final_report()`, or direct `validate_campaign()` at the end of this task.
 
 - [ ] **Step 1: Add failing production-routing and support tests**
@@ -384,9 +430,12 @@ Add support tests that compare projected valid Draft and Final reports with dire
 - [ ] **Step 2: Run routing and support tests and verify RED**
 
 ```powershell
-python -m unittest \
-  tests.test_validate_qualified_review_evidence.QualifiedReviewPolicyRoutingTests \
-  tests.test_validate_qualified_review_evidence.QualifiedReviewHotPathSupportTests -v
+$tests = @(
+  'tests.test_validate_qualified_review_evidence.QualifiedReviewPolicyRoutingTests'
+  'tests.test_validate_qualified_review_evidence.QualifiedReviewHotPathSupportTests'
+)
+python -m unittest @tests -v
+if ($LASTEXITCODE -eq 0) { throw 'routing and support RED run unexpectedly passed' }
 ```
 
 Expected: FAIL because wrappers still own the policy and the support module is absent.
@@ -412,7 +461,7 @@ def setUpClass(cls) -> None:
 
 In `_validate_roles_and_readiness()`, replace each policy block with its staged function at the same source position. Keep `_validate_role_files()` between eligibility and findings. In `_validate_draft_reference()`, call `DistinctCandidateCheck` before recursion, call status and scalar checks after Draft validation, keep archive comparison in place, then call the seal scalar check before JSON parsing and deterministic seal reconstruction.
 
-Add one retained full-path integration method for the representative policy cases and one for a Final reference mismatch. These methods are outside the 31-case inventory and remain unchanged in Stage 2.
+Add `test_policy_boundaries_reach_full_campaign_validation` with five labelled full-path subcases: mapper alias, reviewer ineligibility, stop conclusion, authoritative-finding mismatch, and reviewed-state reviewer mismatch. Add `test_draft_reference_boundary_reaches_full_final_validation` with a manifest-digest reference mismatch that enters the Final and recursive Draft paths. These new integration anchors are outside the baseline ledger and the 31-case inventory. Structural tests shall require their exact names and labels, require complete-validator calls, and keep them unchanged in Stage 2.
 
 ```python
 validate_role_readiness_policy("reviewer_eligibility", eligibility_input)
@@ -435,14 +484,18 @@ role_result = validate_role_readiness_policy(
 - [ ] **Step 5: Run focused routing, support, and retained-path tests**
 
 ```powershell
-python -m unittest \
-  tests.test_validate_qualified_review_evidence.QualifiedReviewPolicyRoutingTests \
-  tests.test_validate_qualified_review_evidence.QualifiedReviewHotPathSupportTests \
-  tests.test_validate_qualified_review_evidence.CampaignValidationTests.test_valid_draft_campaign_is_transition_ready \
-  tests.test_validate_qualified_review_evidence.CampaignValidationTests.test_valid_final_campaign_is_recursively_merge_ready \
-  tests.test_validate_qualified_review_evidence.CampaignValidationTests.test_policy_boundaries_reach_full_campaign_validation \
-  tests.test_validate_qualified_review_evidence.CampaignValidationTests.test_draft_reference_boundary_reaches_full_final_validation -v
+$tests = @(
+  'tests.test_validate_qualified_review_evidence.QualifiedReviewPolicyRoutingTests'
+  'tests.test_validate_qualified_review_evidence.QualifiedReviewHotPathSupportTests'
+  'tests.test_validate_qualified_review_evidence.CampaignValidationTests.test_valid_draft_campaign_is_transition_ready'
+  'tests.test_validate_qualified_review_evidence.CampaignValidationTests.test_valid_final_campaign_is_recursively_merge_ready'
+  'tests.test_validate_qualified_review_evidence.CampaignValidationTests.test_policy_boundaries_reach_full_campaign_validation'
+  'tests.test_validate_qualified_review_evidence.CampaignValidationTests.test_draft_reference_boundary_reaches_full_final_validation'
+)
+python -m unittest @tests -v
+if ($LASTEXITCODE -ne 0) { throw "routing and integration run exited $LASTEXITCODE" }
 git diff --check
+if ($LASTEXITCODE -ne 0) { throw "diff check exited $LASTEXITCODE" }
 ```
 
 Expected: PASS. Inspect the selected method bodies and confirm they still call the complete path.
@@ -513,14 +566,19 @@ require_exact_candidate(root, candidate_sha, runner)
 - [ ] **Step 4: Run verifier unit tests and focused module tests**
 
 ```powershell
-python -m unittest \
-  tests.test_validate_qualified_review_evidence.QualifiedReviewHotPathEquivalenceCommandTests \
-  tests.test_validate_qualified_review_evidence.QualifiedReviewPolicyInventoryTests \
-  tests.test_validate_qualified_review_evidence.QualifiedReviewRolePolicyBoundaryTests \
-  tests.test_validate_qualified_review_evidence.QualifiedReviewDraftReferenceBoundaryTests \
-  tests.test_validate_qualified_review_evidence.QualifiedReviewPolicyRoutingTests -v
+$tests = @(
+  'tests.test_validate_qualified_review_evidence.QualifiedReviewHotPathEquivalenceCommandTests'
+  'tests.test_validate_qualified_review_evidence.QualifiedReviewPolicyInventoryTests'
+  'tests.test_validate_qualified_review_evidence.QualifiedReviewRolePolicyBoundaryTests'
+  'tests.test_validate_qualified_review_evidence.QualifiedReviewDraftReferenceBoundaryTests'
+  'tests.test_validate_qualified_review_evidence.QualifiedReviewPolicyRoutingTests'
+)
+python -m unittest @tests -v
+if ($LASTEXITCODE -ne 0) { throw "verifier-focused tests exited $LASTEXITCODE" }
 python tools/validate_test_shards.py --check
+if ($LASTEXITCODE -ne 0) { throw "shard manifest validation exited $LASTEXITCODE" }
 git diff --check
+if ($LASTEXITCODE -ne 0) { throw "diff check exited $LASTEXITCODE" }
 ```
 
 Expected: PASS. The shard manifest remains unchanged.
@@ -537,16 +595,25 @@ This commit is the mandatory observable Stage 1 candidate. Do not change a selec
 - [ ] **Step 6: Verify clean state and run the exact-SHA Stage 1 proof**
 
 ```powershell
+$ErrorActionPreference='Stop'
 $env:PYTHONDONTWRITEBYTECODE='1'
 $stage1 = git rev-parse HEAD
+if ($LASTEXITCODE -ne 0) { throw "git rev-parse exited $LASTEXITCODE" }
 if ($stage1 -notmatch '^[0-9a-f]{40}$') { throw 'invalid Stage 1 SHA' }
-if (git status --porcelain=v1 --untracked-files=all) { throw 'dirty Stage 1 checkout' }
+$stage1Status = git status --porcelain=v1 --untracked-files=all
+if ($LASTEXITCODE -ne 0) { throw "git status exited $LASTEXITCODE" }
+if ($stage1Status) { throw 'dirty Stage 1 checkout' }
 $caches = Get-ChildItem -Recurse -Directory -Filter __pycache__
 if ($caches) { throw 'generated Python cache exists' }
-python -B tools/verify_qualified_review_hot_path_equivalence.py --check --candidate-sha $stage1
+$stage1Output = & python -B tools/verify_qualified_review_hot_path_equivalence.py --check --candidate-sha $stage1 2>&1
+$stage1Exit = $LASTEXITCODE
+$stage1Output
+if ($stage1Exit -ne 0) { throw "Stage 1 equivalence exited $stage1Exit" }
+$stage1ProofUtc = [DateTimeOffset]::UtcNow.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'")
+Write-Output "proof_timestamp_utc=$stage1ProofUtc"
 ```
 
-Expected: the seven PASS lines above with `method_count=16`, `population_count=31`, and both comparison counts equal to 31. Preserve the complete output, Stage 1 SHA, and inventory digest for Task 6. Do not start Task 6 if this command fails.
+Expected: the seven PASS lines above with `method_count=16`, `population_count=31`, and both comparison counts equal to 31, followed by one RFC 3339 UTC timestamp line. Preserve the complete output, timestamp, Stage 1 SHA, and inventory digest for Task 6. Do not start Task 6 if this command fails.
 
 - [ ] **Step 7: Record proof-critical hashes outside the worktree change set**
 
@@ -610,16 +677,19 @@ Each selected method becomes one call to this helper. Do not change retained met
 
 - [ ] **Step 4: Write the humanized Stage 1 receipt**
 
-Use the humanizer skill in embedded mode. Record the full Stage 1 SHA, the exact inventory digest, all seven verifier output lines, the four proof-critical file hashes, the proof timestamp in RFC 3339 UTC, and the statement that selected methods still used the complete path at that SHA. State that Stage 2 changed only selected call sites, grouping, guards, and this receipt.
+Use the humanizer skill in embedded mode. Record the full Stage 1 SHA on exactly one line formatted `stage1_sha=<40 lowercase hexadecimal characters>`. Record the proof time on exactly one `proof_timestamp_utc=<RFC 3339 UTC value>` line. Include the exact inventory digest, all seven verifier output lines, the four proof-critical file hashes, and the statement that selected methods still used the complete path at that SHA. State that Stage 2 changed only selected call sites, grouping, guards, and this receipt.
 
 - [ ] **Step 5: Verify guards, inventory consumption, and proof-critical hashes**
 
 ```powershell
-python -m unittest \
-  tests.test_validate_qualified_review_evidence.QualifiedReviewHotPathMigrationStructureTests \
-  tests.test_validate_qualified_review_evidence.QualifiedReviewPolicyInventoryTests \
-  tests.test_validate_qualified_review_evidence.QualifiedReviewRolePolicyBoundaryTests \
-  tests.test_validate_qualified_review_evidence.QualifiedReviewDraftReferenceBoundaryTests -v
+$tests = @(
+  'tests.test_validate_qualified_review_evidence.QualifiedReviewHotPathMigrationStructureTests'
+  'tests.test_validate_qualified_review_evidence.QualifiedReviewPolicyInventoryTests'
+  'tests.test_validate_qualified_review_evidence.QualifiedReviewRolePolicyBoundaryTests'
+  'tests.test_validate_qualified_review_evidence.QualifiedReviewDraftReferenceBoundaryTests'
+)
+python -m unittest @tests -v
+if ($LASTEXITCODE -ne 0) { throw "migration verification exited $LASTEXITCODE" }
 $critical = @(
   'tests/qualified_review_policy_cases.py',
   'tests/qualified_review_hot_path_support.py',
@@ -628,6 +698,7 @@ $critical = @(
 )
 $critical | ForEach-Object { Get-FileHash -Algorithm SHA256 $_ }
 git diff --check
+if ($LASTEXITCODE -ne 0) { throw "diff check exited $LASTEXITCODE" }
 ```
 
 Expected: PASS, 31 unique case IDs consumed, and all four hashes exactly equal the Stage 1 values.
@@ -659,8 +730,11 @@ Expected: before commit, only the test module and receipt appear. If a proof-cri
 ```powershell
 $env:PYTHONDONTWRITEBYTECODE='1'
 python -m unittest tests.test_validate_qualified_review_evidence -v
+if ($LASTEXITCODE -ne 0) { throw "focused module exited $LASTEXITCODE" }
 python tools/validate_test_shards.py --check
+if ($LASTEXITCODE -ne 0) { throw "shard manifest validation exited $LASTEXITCODE" }
 python tools/run_test_shards.py --shard qualified_review_evidence --durations 50
+if ($LASTEXITCODE -ne 0) { throw "qualified-review shard exited $LASTEXITCODE" }
 ```
 
 Expected: PASS. The shard still contains `tests/test_validate_qualified_review_evidence.py` and executes the migrated population plus retained integration coverage.
@@ -669,18 +743,31 @@ Expected: PASS. The shard still contains `tests/test_validate_qualified_review_e
 
 ```powershell
 python tools/run_test_shards.py --all --durations 50
+if ($LASTEXITCODE -ne 0) { throw "aggregate shards exited $LASTEXITCODE" }
 python -m unittest discover -s tests -v --durations 50
+if ($LASTEXITCODE -ne 0) { throw "full discovery exited $LASTEXITCODE" }
 python tools/validate_assessment.py --check
+if ($LASTEXITCODE -ne 0) { throw "assessment validation exited $LASTEXITCODE" }
 python tools/validate_profiles.py --check
+if ($LASTEXITCODE -ne 0) { throw "profile validation exited $LASTEXITCODE" }
 python tools/validate_controls.py --check
+if ($LASTEXITCODE -ne 0) { throw "control validation exited $LASTEXITCODE" }
 python tools/validate_architectures.py
+if ($LASTEXITCODE -ne 0) { throw "architecture validation exited $LASTEXITCODE" }
 python tools/migrate_control_mappings.py --check
+if ($LASTEXITCODE -ne 0) { throw "mapping migration check exited $LASTEXITCODE" }
 python tools/validate_crosswalks.py --check
+if ($LASTEXITCODE -ne 0) { throw "crosswalk validation exited $LASTEXITCODE" }
 python tools/render_pci_dss_mapping_go_no_go.py --check
+if ($LASTEXITCODE -ne 0) { throw "PCI DSS renderer check exited $LASTEXITCODE" }
 python tools/release_gates.py --check
+if ($LASTEXITCODE -ne 0) { throw "release gates exited $LASTEXITCODE" }
 python tools/v05_beta_release_gates.py --check --baseline-ref origin/main
+if ($LASTEXITCODE -ne 0) { throw "v0.5 beta gates exited $LASTEXITCODE" }
 python tools/validate_links.py --check
+if ($LASTEXITCODE -ne 0) { throw "link validation exited $LASTEXITCODE" }
 python tools/mermaid_inventory.py --check-record docs/superpowers/reviews/2026-07-27-v05-beta-mermaid-rendering.md
+if ($LASTEXITCODE -ne 0) { throw "Mermaid inventory check exited $LASTEXITCODE" }
 ```
 
 Expected: every command exits zero. Any defect found after `HEAD` changes requires affected gates to run again.
@@ -689,13 +776,21 @@ Expected: every command exits zero. Any defect found after `HEAD` changes requir
 
 ```powershell
 $mergeBase = git merge-base origin/main HEAD
+if ($LASTEXITCODE -ne 0) { throw "merge-base resolution exited $LASTEXITCODE" }
 git diff --check "$mergeBase..HEAD"
-git status --short
+if ($LASTEXITCODE -ne 0) { throw "whole-branch diff check exited $LASTEXITCODE" }
+$shortStatus = git status --short
+if ($LASTEXITCODE -ne 0) { throw "git status exited $LASTEXITCODE" }
+if ($shortStatus) { throw "final checkout is dirty: $shortStatus" }
 $caches = Get-ChildItem -Recurse -Directory -Filter __pycache__
 if ($caches) { throw 'generated Python cache exists' }
 $candidate = git rev-parse HEAD
-if (git status --porcelain=v1 --untracked-files=all) { throw 'dirty final checkout' }
+if ($LASTEXITCODE -ne 0) { throw "candidate resolution exited $LASTEXITCODE" }
+$porcelain = git status --porcelain=v1 --untracked-files=all
+if ($LASTEXITCODE -ne 0) { throw "porcelain status exited $LASTEXITCODE" }
+if ($porcelain) { throw 'dirty final checkout' }
 python -B tools/verify_qualified_review_hot_path_equivalence.py --check --candidate-sha $candidate
+if ($LASTEXITCODE -ne 0) { throw "final equivalence exited $LASTEXITCODE" }
 ```
 
 Expected: clean status and exact PASS output for 16 methods and 31 cases. Confirm the final inventory digest equals the Stage 1 receipt.
@@ -732,10 +827,16 @@ If a repair changes a proof-critical artifact, this ordinary repair step is not 
 Use the humanizer skill in embedded mode for the title and body. Include scope, the 31/34/58/92 ledger, Stage 1 SHA and digest, final reviewed SHA, exact verifier outputs, retained full-path coverage, validation commands, review results, and the statement that Issue 55 remains open.
 
 ```powershell
+$ErrorActionPreference='Stop'
 $branch = git branch --show-current
-$prBody = Join-Path ([System.IO.Path]::GetTempPath()) 'esaf-qualified-review-hot-path-pr.md'
-$stage1Sha = Select-String -Path 'docs/superpowers/reviews/2026-08-07-qualified-review-hot-path-pre-migration-equivalence.md' -Pattern '[0-9a-f]{40}' | Select-Object -First 1 -ExpandProperty Matches | Select-Object -ExpandProperty Value
+if ($LASTEXITCODE -ne 0 -or -not $branch) { throw 'current branch resolution failed' }
+$prBody = Join-Path ([System.IO.Path]::GetTempPath()) ("esaf-qualified-review-hot-path-$([guid]::NewGuid()).md")
+$receipt = 'docs/superpowers/reviews/2026-08-07-qualified-review-hot-path-pre-migration-equivalence.md'
+$stage1Matches = @(Select-String -Path $receipt -Pattern '^stage1_sha=([0-9a-f]{40})$')
+if ($stage1Matches.Count -ne 1) { throw 'receipt shall contain exactly one stage1_sha field' }
+$stage1Sha = $stage1Matches[0].Matches[0].Groups[1].Value
 $candidate = git rev-parse HEAD
+if ($LASTEXITCODE -ne 0 -or $candidate -notmatch '^[0-9a-f]{40}$') { throw 'candidate SHA resolution failed' }
 $prText = @"
 ## Summary
 
@@ -756,9 +857,17 @@ The clean Stage 1 verifier compared the full, narrow, and expected projections f
   $prText,
   [System.Text.UTF8Encoding]::new($false)
 )
-git push -u origin $branch
-gh pr create --base main --head $branch --title "Optimize qualified-review validation matrices" --body-file $prBody
-Remove-Item -LiteralPath $prBody
+try {
+  git push -u origin $branch
+  if ($LASTEXITCODE -ne 0) { throw "git push exited $LASTEXITCODE" }
+  $prUrl = gh pr create --base main --head $branch --title "Optimize qualified-review validation matrices" --body-file $prBody
+  if ($LASTEXITCODE -ne 0) { throw "PR creation exited $LASTEXITCODE" }
+  if ($prUrl -notmatch '^https://github\.com/') { throw 'PR creation returned no GitHub URL' }
+  $prUrl
+}
+finally {
+  if (Test-Path -LiteralPath $prBody) { Remove-Item -LiteralPath $prBody -Force }
+}
 ```
 
 Expected: the branch pushes and the PR is ready for review. Use a temporary file outside the repository for the body and remove it after creation.
@@ -767,8 +876,14 @@ Expected: the branch pushes and the PR is ready for review. Use a temporary file
 
 ```powershell
 gh pr checks --watch
+if ($LASTEXITCODE -ne 0) { throw "PR checks exited $LASTEXITCODE" }
 $candidate = git rev-parse HEAD
-gh pr view --json headRefOid,mergeable,reviewDecision,statusCheckRollup
+if ($LASTEXITCODE -ne 0) { throw "candidate resolution exited $LASTEXITCODE" }
+$prJson = gh pr view --json headRefOid,mergeable,reviewDecision,statusCheckRollup
+if ($LASTEXITCODE -ne 0) { throw "PR inspection exited $LASTEXITCODE" }
+$pr = $prJson | ConvertFrom-Json
+if ($pr.headRefOid -ne $candidate) { throw "PR head $($pr.headRefOid) differs from reviewed $candidate" }
+if ($pr.mergeable -ne 'MERGEABLE') { throw "PR mergeable state is $($pr.mergeable)" }
 ```
 
 Expected: `headRefOid` equals the reviewed candidate, required checks pass, and the PR is mergeable. A changed head requires fresh affected validation, equivalence, and both reviews.
@@ -777,7 +892,14 @@ Expected: `headRefOid` equals the reviewed candidate, required checks pass, and 
 
 ```powershell
 gh pr merge --merge --delete-branch
-gh pr view --json state,mergedAt,mergeCommit
+$mergeExit = $LASTEXITCODE
+$mergedJson = gh pr view --json state,mergedAt,mergeCommit
+if ($LASTEXITCODE -ne 0) { throw "merged PR inspection exited $LASTEXITCODE" }
+$merged = $mergedJson | ConvertFrom-Json
+if ($merged.state -ne 'MERGED' -or -not $merged.mergedAt -or -not $merged.mergeCommit.oid) {
+  throw "PR did not reach a verified merged state; merge exit was $mergeExit"
+}
+if ($mergeExit -ne 0) { Write-Warning "merge succeeded but branch cleanup exited $mergeExit" }
 ```
 
 Expected: state is `MERGED` and a merge commit is present. If branch deletion warns because another worktree owns a branch, verify merge state before cleaning branches separately.
@@ -788,12 +910,19 @@ Run from `C:\Users\phrea\OneDrive\Documents\ESAF`:
 
 ```powershell
 git switch main
+if ($LASTEXITCODE -ne 0) { throw "switch to main exited $LASTEXITCODE" }
 git pull --ff-only origin main
+if ($LASTEXITCODE -ne 0) { throw "main fast-forward exited $LASTEXITCODE" }
 $env:PYTHONDONTWRITEBYTECODE='1'
 python -m unittest tests.test_validate_qualified_review_evidence -v
+if ($LASTEXITCODE -ne 0) { throw "post-merge focused module exited $LASTEXITCODE" }
 python tools/validate_test_shards.py --check
+if ($LASTEXITCODE -ne 0) { throw "post-merge shard validation exited $LASTEXITCODE" }
 python tools/validate_qualified_review_evidence.py --help
-git status --short
+if ($LASTEXITCODE -ne 0) { throw "qualified-review validator import exited $LASTEXITCODE" }
+$mainStatus = git status --short
+if ($LASTEXITCODE -ne 0) { throw "post-merge status exited $LASTEXITCODE" }
+if ($mainStatus) { throw "main is dirty after merge: $mainStatus" }
 ```
 
 Expected: PASS and a clean main worktree. The help command confirms the operational validator still imports without changing real evidence.
@@ -803,6 +932,7 @@ Expected: PASS and a clean main worktree. The help command confirms the operatio
 Resolve and verify the exact paths before removal:
 
 ```powershell
+$ErrorActionPreference='Stop'
 $repo = 'C:\Users\phrea\OneDrive\Documents\ESAF'
 $worktree = 'C:\Users\phrea\OneDrive\Documents\ESAF\.worktrees\agent-validation-qualified-review-hot-path'
 $repoFull = (Resolve-Path -LiteralPath $repo).Path
@@ -811,10 +941,20 @@ $repoPrefix = $repoFull.TrimEnd([System.IO.Path]::DirectorySeparatorChar) + [Sys
 if (-not $worktreeFull.StartsWith($repoPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
   throw "Refusing to remove worktree outside repository: $worktreeFull"
 }
+Set-Location -LiteralPath $repoFull
 git -C $repoFull worktree remove $worktreeFull
-git -C $repo branch -d agent/validation-qualified-review-hot-path
+if ($LASTEXITCODE -ne 0) { throw "worktree removal exited $LASTEXITCODE" }
+$localBranches = @(git -C $repoFull branch --format='%(refname:short)')
+if ($LASTEXITCODE -ne 0) { throw "local branch listing exited $LASTEXITCODE" }
+if ($localBranches -contains 'agent/validation-qualified-review-hot-path') {
+  git -C $repoFull branch -d agent/validation-qualified-review-hot-path
+  if ($LASTEXITCODE -ne 0) { throw "local branch deletion exited $LASTEXITCODE" }
+}
 git -C $repo worktree prune
-git -C $repo status --short
+if ($LASTEXITCODE -ne 0) { throw "worktree prune exited $LASTEXITCODE" }
+$cleanupStatus = git -C $repo status --short
+if ($LASTEXITCODE -ne 0) { throw "cleanup status exited $LASTEXITCODE" }
+if ($cleanupStatus) { throw "main is dirty after cleanup: $cleanupStatus" }
 ```
 
 Expected: the path guard passes, the temporary worktree and local branch are removed, and `main` remains clean.
