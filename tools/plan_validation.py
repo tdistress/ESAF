@@ -229,6 +229,21 @@ def _require_checked_out_candidate(
         raise ValueError("checkout contains tracked changes")
 
 
+def _require_no_untracked_files(root: Path, runner: Callable[..., object]) -> None:
+    """Require a proof-bearing publication plan to start from an empty checkout."""
+    result = runner(
+        ["git", "status", "--porcelain=v1", "--untracked-files=all"],
+        cwd=root,
+        check=False,
+        capture_output=True,
+    )
+    output = getattr(result, "stdout", None)
+    if getattr(result, "returncode", None) != 0 or not isinstance(output, bytes):
+        raise ValueError("could not inspect checkout untracked files")
+    if output:
+        raise ValueError("checkout contains untracked files for publication proof")
+
+
 def _require_base_ancestor(
     root: Path, base: str, candidate: str, runner: Callable[..., object]
 ) -> None:
@@ -340,26 +355,41 @@ def plan_validation(root: Path, *, base: str, candidate: str, git_runner: Callab
         commands = _bind_commands(
             _publication_commands(manifest), base=resolved_base, candidate=resolved_candidate
         )
-        return ValidationPlan(resolved_base, resolved_candidate, changed_paths, ("publication",), commands, tuple(dict.fromkeys(escalation)))
-    selected = set(command_ids)
-    commands = _bind_commands(
-        tuple(command for command in manifest.commands if command.identifier in selected),
-        base=resolved_base,
-        candidate=resolved_candidate,
-    )
-    tiers = tuple(tier for tier in TIERS if any(command.tier == tier for command in commands))
-    if not commands:
-        raise ValueError("manifest rules selected no validation commands")
-    return ValidationPlan(resolved_base, resolved_candidate, changed_paths, tiers, commands, tuple(dict.fromkeys(reasons)))
+        tiers = ("publication",)
+        selected_reasons = tuple(dict.fromkeys(escalation))
+    else:
+        selected = set(command_ids)
+        commands = _bind_commands(
+            tuple(command for command in manifest.commands if command.identifier in selected),
+            base=resolved_base,
+            candidate=resolved_candidate,
+        )
+        tiers = tuple(tier for tier in TIERS if any(command.tier == tier for command in commands))
+        if not commands:
+            raise ValueError("manifest rules selected no validation commands")
+        selected_reasons = tuple(dict.fromkeys(reasons))
+    if set(PROOF_COMMAND_IDS).intersection(command.identifier for command in commands):
+        _require_no_untracked_files(root, runner)
+    return ValidationPlan(resolved_base, resolved_candidate, changed_paths, tiers, commands, selected_reasons)
 
 
 def render_text(plan: ValidationPlan) -> str:
-    lines = [f"Base: {plan.base}", f"Candidate: {plan.candidate}", "Selected tiers: " + ", ".join(plan.selected_tiers), "Changed paths:"]
-    lines.extend(f"- {path}" for path in plan.changed_paths)
+    quote = json.dumps
+    lines = [
+        f"Base: {quote(plan.base)}",
+        f"Candidate: {quote(plan.candidate)}",
+        "Selected tiers: " + ", ".join(quote(tier) for tier in plan.selected_tiers),
+        "Changed paths:",
+    ]
+    lines.extend(f"- {quote(path)}" for path in plan.changed_paths)
     lines.append("Reasons:")
-    lines.extend(f"- {reason}" for reason in plan.reasons)
+    lines.extend(f"- {quote(reason)}" for reason in plan.reasons)
     lines.append("Commands:")
-    lines.extend(f"- {command.identifier} [{command.tier}; {command.duration}]: {' '.join(command.argv)}" for command in plan.commands)
+    lines.extend(
+        f"- {quote(command.identifier)} [{quote(command.tier)}; {quote(command.duration)}]: "
+        + " ".join(quote(argument) for argument in command.argv)
+        for command in plan.commands
+    )
     return "\n".join(lines) + "\n"
 
 
@@ -378,11 +408,15 @@ def main(argv: Sequence[str] | None = None, *, root: Path | None = None, git_run
     try:
         plan = plan_validation(root or Path.cwd(), base=arguments.base, candidate=arguments.candidate, git_runner=git_runner)
         if arguments.tier:
+            if plan.selected_tiers == ("publication",) and arguments.tier != "publication":
+                raise ValueError("publication validation route cannot be down-tiered")
             if arguments.tier == "publication":
                 manifest = validate_policy(REVIEWED_POLICY)
                 commands = _bind_commands(
                     _publication_commands(manifest), base=plan.base, candidate=plan.candidate
                 )
+                if plan.selected_tiers != ("publication",):
+                    _require_no_untracked_files(root or Path.cwd(), git_runner or subprocess.run)
             else:
                 commands = tuple(command for command in plan.commands if command.tier == arguments.tier)
             plan = ValidationPlan(

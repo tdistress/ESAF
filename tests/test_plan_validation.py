@@ -105,7 +105,10 @@ class PlanValidationTests(unittest.TestCase):
                 return subprocess.CompletedProcess(argv, 0, (resolved[1] + "\n").encode(), b"")
             if argv[1:3] == ["rev-parse", "--verify"]:
                 return subprocess.CompletedProcess(argv, 0, (next(resolves) + "\n").encode(), b"")
-            if argv == ["git", "status", "--porcelain=v1", "--untracked-files=no"]:
+            if argv in (
+                ["git", "status", "--porcelain=v1", "--untracked-files=no"],
+                ["git", "status", "--porcelain=v1", "--untracked-files=all"],
+            ):
                 return subprocess.CompletedProcess(argv, 0, b"", b"")
             if argv == ["git", "merge-base", "--is-ancestor", resolved[0], resolved[1]]:
                 return subprocess.CompletedProcess(argv, 0, b"", b"")
@@ -192,6 +195,26 @@ class PlanValidationTests(unittest.TestCase):
         self.assertEqual(["quick"], selected["selected_tiers"])
         self.assertEqual("a" * 40, selected["base"])
 
+    def test_text_rendering_json_quotes_hostile_values(self) -> None:
+        plan = plan_validation(
+            self.root,
+            base="base",
+            candidate="candidate",
+            git_runner=self.git_diff_for(b"M\0docs/guide.md\0"),
+        )
+        hostile = plan.__class__(
+            "base\n\x1b[31m\"",
+            "candidate\n\x1b[32m\"",
+            ("docs/guide\n\x1b[33m\".md",),
+            plan.selected_tiers,
+            plan.commands,
+            ("reason\n\x1b[34m\"",),
+        )
+        text = render_text(hostile)
+        self.assertIn('Base: "base\\n\\u001b[31m\\\""', text)
+        self.assertIn('- "docs/guide\\n\\u001b[33m\\\".md"', text)
+        self.assertIn('- "reason\\n\\u001b[34m\\\""', text)
+
     def test_publication_request_selects_complete_route(self) -> None:
         stream = io.StringIO()
         with contextlib.redirect_stdout(stream):
@@ -207,6 +230,71 @@ class PlanValidationTests(unittest.TestCase):
             [command["id"] for command in selected["commands"]],
         )
         self.assertEqual(["publication"], selected["selected_tiers"])
+
+    def test_publication_route_cannot_be_down_tiered(self) -> None:
+        for tier in ("quick", "standard"):
+            with self.subTest(tier=tier):
+                stderr = io.StringIO()
+                with contextlib.redirect_stderr(stderr):
+                    result = main(
+                        ["--base", "HEAD~1", "--tier", tier],
+                        root=self.root,
+                        git_runner=self.git_diff_for(b"M\0.github/workflows/check.yml\0"),
+                    )
+                self.assertEqual(2, result)
+                self.assertIn("publication", stderr.getvalue())
+
+    def test_proof_bearing_publication_route_requires_no_untracked_files(self) -> None:
+        base, candidate = "a" * 40, "b" * 40
+        observed: list[tuple[str, ...]] = []
+
+        def runner(argv, **_kwargs):
+            observed.append(tuple(argv))
+            if argv == ["git", "rev-parse", "--verify", "HEAD^{commit}"]:
+                return subprocess.CompletedProcess(argv, 0, (candidate + "\n").encode(), b"")
+            if argv[1:3] == ["rev-parse", "--verify"]:
+                resolved = base if argv[-1].startswith("base") else candidate
+                return subprocess.CompletedProcess(argv, 0, (resolved + "\n").encode(), b"")
+            if argv == ["git", "status", "--porcelain=v1", "--untracked-files=no"]:
+                return subprocess.CompletedProcess(argv, 0, b"", b"")
+            if argv == ["git", "merge-base", "--is-ancestor", base, candidate]:
+                return subprocess.CompletedProcess(argv, 0, b"", b"")
+            if argv == ["git", "diff", "--name-status", "-z", base, candidate]:
+                return subprocess.CompletedProcess(argv, 0, b"M\0.github/workflows/check.yml\0", b"")
+            if argv == ["git", "status", "--porcelain=v1", "--untracked-files=all"]:
+                return subprocess.CompletedProcess(argv, 0, b"?? user-artifact.txt\0", b"")
+            raise AssertionError(argv)
+
+        with self.assertRaisesRegex(ValueError, "untracked"):
+            plan_validation(self.root, base="base", candidate="candidate", git_runner=runner)
+        self.assertIn(
+            ("git", "status", "--porcelain=v1", "--untracked-files=all"), observed
+        )
+
+    def test_ordinary_route_allows_unrelated_untracked_files(self) -> None:
+        base, candidate = "a" * 40, "b" * 40
+        observed: list[tuple[str, ...]] = []
+
+        def runner(argv, **_kwargs):
+            observed.append(tuple(argv))
+            if argv == ["git", "rev-parse", "--verify", "HEAD^{commit}"]:
+                return subprocess.CompletedProcess(argv, 0, (candidate + "\n").encode(), b"")
+            if argv[1:3] == ["rev-parse", "--verify"]:
+                resolved = base if argv[-1].startswith("base") else candidate
+                return subprocess.CompletedProcess(argv, 0, (resolved + "\n").encode(), b"")
+            if argv == ["git", "status", "--porcelain=v1", "--untracked-files=no"]:
+                return subprocess.CompletedProcess(argv, 0, b"", b"")
+            if argv == ["git", "merge-base", "--is-ancestor", base, candidate]:
+                return subprocess.CompletedProcess(argv, 0, b"", b"")
+            if argv == ["git", "diff", "--name-status", "-z", base, candidate]:
+                return subprocess.CompletedProcess(argv, 0, b"M\0docs/guide.md\0", b"")
+            raise AssertionError(argv)
+
+        plan = plan_validation(self.root, base="base", candidate="candidate", git_runner=runner)
+        self.assertEqual(("quick", "standard"), plan.selected_tiers)
+        self.assertNotIn(
+            ("git", "status", "--porcelain=v1", "--untracked-files=all"), observed
+        )
 
     def test_reviewed_catalog_has_fixed_publication_order_and_safe_argv_templates(self) -> None:
         self.assertIsInstance(COMMAND_CATALOG, tuple)
