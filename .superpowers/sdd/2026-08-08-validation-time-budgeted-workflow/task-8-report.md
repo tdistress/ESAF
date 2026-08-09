@@ -64,3 +64,35 @@ user-created installation artifact was changed.
   fake-process coverage directly exercises the cleanup branch.
 - The full test suite needs a longer-running environment or diagnosis before a
   whole-suite success claim can be made.
+
+## Round 1 corrective follow-up
+
+### Root cause and change
+
+The initial timeout handler translated `TimeoutExpired` only after calling
+`output_path.unlink`, so a renderer descendant retaining the PNG could raise
+`PermissionError` and replace the stable timeout validation error. The
+`TemporaryDirectory` context manager could similarly raise while unwinding the
+already-created validation error if retained renderer files prevented cleanup.
+
+The renderer now treats both cleanup steps as best effort: partial-PNG unlink
+errors are suppressed before raising the stable block-specific timeout error,
+and temporary-directory cleanup is explicitly performed in `finally` with
+`OSError` suppressed. This leaves the original timeout outcome authoritative
+while retaining the existing bounded taskkill and pipe-drain behavior.
+
+### Regression coverage and validation
+
+Added deterministic fake-process tests proving the stable timeout is preserved
+and no second renderer process starts when:
+
+- taskkill raises `OSError` or `TimeoutExpired`;
+- post-kill pipe draining raises `OSError` or `TimeoutExpired`;
+- partial PNG unlink raises `PermissionError`; and
+- temporary-input cleanup raises `PermissionError`.
+
+The cleanup-failure cases verify the cleanup operation was attempted without
+masking `001-ARC-P110-1 render timed out after 60 seconds`.
+
+- `python -B -m unittest tests.test_mermaid_inventory -v`
+  - Passed: 37 tests.

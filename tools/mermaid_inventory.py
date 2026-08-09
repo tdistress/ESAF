@@ -324,8 +324,9 @@ def render_mermaid_blocks(
             "--puppeteerConfigFile",
             str(supplied),
         ]
-    with tempfile.TemporaryDirectory(prefix="esaf-mermaid-check-") as directory:
-        output_root = Path(directory)
+    temporary_directory = tempfile.TemporaryDirectory(prefix="esaf-mermaid-check-")
+    try:
+        output_root = Path(temporary_directory.name)
         inventory = write_render_inputs(blocks, output_root)
         rows = json.loads(inventory.read_text(encoding="utf-8"))
         for row in rows:
@@ -350,7 +351,10 @@ def render_mermaid_blocks(
                     root,
                 )
             except subprocess.TimeoutExpired:
-                output_path.unlink(missing_ok=True)
+                try:
+                    output_path.unlink(missing_ok=True)
+                except OSError:
+                    pass
                 raise ValueError(
                     f"{input_path.stem} render timed out after "
                     f"{RENDER_TIMEOUT_SECONDS} seconds"
@@ -364,6 +368,11 @@ def render_mermaid_blocks(
                 raise ValueError(
                     f"{row['path']} block {row['index']} render output is missing"
                 )
+    finally:
+        try:
+            temporary_directory.cleanup()
+        except OSError:
+            pass
 
 
 def check_record(

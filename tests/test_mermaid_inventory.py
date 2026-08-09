@@ -349,6 +349,19 @@ class MermaidInventoryTests(unittest.TestCase):
                         raise subprocess.TimeoutExpired(self.command, timeout)
                     return "", ""
 
+            class ManagedTemporaryDirectory:
+                def __init__(self) -> None:
+                    self.name = directory
+
+                def __enter__(self) -> str:
+                    return self.name
+
+                def __exit__(self, *args: object) -> None:
+                    return None
+
+                def cleanup(self) -> None:
+                    return None
+
             with (
                 mock.patch(
                     "tools.mermaid_inventory.shutil.which",
@@ -364,7 +377,7 @@ class MermaidInventoryTests(unittest.TestCase):
                 ),
                 mock.patch(
                     "tools.mermaid_inventory.tempfile.TemporaryDirectory",
-                    return_value=contextlib.nullcontext(directory),
+                    return_value=ManagedTemporaryDirectory(),
                 ),
             ):
                 with self.assertRaisesRegex(
@@ -378,6 +391,245 @@ class MermaidInventoryTests(unittest.TestCase):
             self.assertEqual(60, created_processes[0].timeouts[0])
             self.assertLess(created_processes[0].timeouts[1], 60)
             self.assertIn(["taskkill", "/PID", "4242", "/T", "/F"], calls)
+
+    def test_operational_renderer_preserves_timeout_when_taskkill_raises(self) -> None:
+        blocks = discover(ROOT)[:2]
+
+        for failure in (
+            OSError("taskkill unavailable"),
+            subprocess.TimeoutExpired(["taskkill"], 5),
+        ):
+            with self.subTest(failure=type(failure).__name__):
+                renderer_processes: list[object] = []
+
+                def execute(
+                    command: list[str], **kwargs: object
+                ) -> subprocess.CompletedProcess:
+                    if command[-1] == "--version" and "node" in command[0]:
+                        return subprocess.CompletedProcess(command, 0, "v22.23.1\n", "")
+                    if command[-1] == "--version":
+                        return subprocess.CompletedProcess(command, 0, "11.16.0\n", "")
+                    if command[0] == "git":
+                        return subprocess.CompletedProcess(command, 0, f"{ROOT}\n", "")
+                    self.assertEqual(["taskkill", "/PID", "8", "/T", "/F"], command)
+                    raise failure
+
+                class TimedOutProcess:
+                    pid = 8
+                    returncode = None
+
+                    def __init__(self, command: list[str], **kwargs: object) -> None:
+                        self.command = command
+                        renderer_processes.append(self)
+
+                    def communicate(self, timeout: float) -> tuple[str, str]:
+                        if timeout == 60:
+                            raise subprocess.TimeoutExpired(self.command, timeout)
+                        return "", ""
+
+                with (
+                    mock.patch(
+                        "tools.mermaid_inventory.shutil.which",
+                        side_effect=lambda name: f"C:/synthetic/{name}.cmd",
+                    ),
+                    mock.patch(
+                        "tools.mermaid_inventory.subprocess.run",
+                        side_effect=execute,
+                    ),
+                    mock.patch(
+                        "tools.mermaid_inventory.subprocess.Popen",
+                        side_effect=TimedOutProcess,
+                    ),
+                ):
+                    with self.assertRaisesRegex(
+                        ValueError,
+                        r"001-ARC-P110-1 render timed out after 60 seconds",
+                    ):
+                        render_mermaid_blocks(blocks, ROOT)
+                self.assertEqual(1, len(renderer_processes))
+
+    def test_operational_renderer_preserves_timeout_when_pipe_drain_raises(self) -> None:
+        blocks = discover(ROOT)[:2]
+
+        for failure in (
+            OSError("renderer pipe unavailable"),
+            subprocess.TimeoutExpired(["mmdc"], 5),
+        ):
+            with self.subTest(failure=type(failure).__name__):
+                renderer_processes: list[object] = []
+
+                def execute(
+                    command: list[str], **kwargs: object
+                ) -> subprocess.CompletedProcess:
+                    if command[-1] == "--version" and "node" in command[0]:
+                        return subprocess.CompletedProcess(command, 0, "v22.23.1\n", "")
+                    if command[-1] == "--version":
+                        return subprocess.CompletedProcess(command, 0, "11.16.0\n", "")
+                    if command[0] == "git":
+                        return subprocess.CompletedProcess(command, 0, f"{ROOT}\n", "")
+                    self.assertEqual(["taskkill", "/PID", "7", "/T", "/F"], command)
+                    return subprocess.CompletedProcess(command, 0, "", "")
+
+                class TimedOutProcess:
+                    pid = 7
+                    returncode = None
+
+                    def __init__(self, command: list[str], **kwargs: object) -> None:
+                        self.command = command
+                        self.communicate_count = 0
+                        renderer_processes.append(self)
+
+                    def communicate(self, timeout: float) -> tuple[str, str]:
+                        self.communicate_count += 1
+                        if self.communicate_count == 1:
+                            raise subprocess.TimeoutExpired(self.command, timeout)
+                        raise failure
+
+                with (
+                    mock.patch(
+                        "tools.mermaid_inventory.shutil.which",
+                        side_effect=lambda name: f"C:/synthetic/{name}.cmd",
+                    ),
+                    mock.patch(
+                        "tools.mermaid_inventory.subprocess.run",
+                        side_effect=execute,
+                    ),
+                    mock.patch(
+                        "tools.mermaid_inventory.subprocess.Popen",
+                        side_effect=TimedOutProcess,
+                    ),
+                ):
+                    with self.assertRaisesRegex(
+                        ValueError,
+                        r"001-ARC-P110-1 render timed out after 60 seconds",
+                    ):
+                        render_mermaid_blocks(blocks, ROOT)
+                self.assertEqual(1, len(renderer_processes))
+                self.assertEqual(2, renderer_processes[0].communicate_count)
+
+    def test_operational_renderer_preserves_timeout_when_partial_unlink_fails(self) -> None:
+        blocks = discover(ROOT)[:2]
+        renderer_processes: list[object] = []
+        unlink_attempts: list[Path] = []
+
+        def execute(command: list[str], **kwargs: object) -> subprocess.CompletedProcess:
+            if command[-1] == "--version" and "node" in command[0]:
+                return subprocess.CompletedProcess(command, 0, "v22.23.1\n", "")
+            if command[-1] == "--version":
+                return subprocess.CompletedProcess(command, 0, "11.16.0\n", "")
+            if command[0] == "git":
+                return subprocess.CompletedProcess(command, 0, f"{ROOT}\n", "")
+            return subprocess.CompletedProcess(command, 0, "", "")
+
+        class TimedOutProcess:
+            pid = 6
+            returncode = None
+
+            def __init__(self, command: list[str], **kwargs: object) -> None:
+                self.command = command
+                Path(command[command.index("--output") + 1]).write_bytes(b"partial")
+                renderer_processes.append(self)
+
+            def communicate(self, timeout: float) -> tuple[str, str]:
+                if timeout == 60:
+                    raise subprocess.TimeoutExpired(self.command, timeout)
+                return "", ""
+
+        def fail_partial_unlink(*args: object, **kwargs: object) -> None:
+            unlink_attempts.append(Path("partial.png"))
+            raise PermissionError("renderer still holds the PNG")
+
+        with (
+            mock.patch(
+                "tools.mermaid_inventory.shutil.which",
+                side_effect=lambda name: f"C:/synthetic/{name}.cmd",
+            ),
+            mock.patch(
+                "tools.mermaid_inventory.subprocess.run",
+                side_effect=execute,
+            ),
+            mock.patch(
+                "tools.mermaid_inventory.subprocess.Popen",
+                side_effect=TimedOutProcess,
+            ),
+            mock.patch("tools.mermaid_inventory.Path.unlink", side_effect=fail_partial_unlink),
+        ):
+            with self.assertRaisesRegex(
+                ValueError,
+                r"001-ARC-P110-1 render timed out after 60 seconds",
+            ):
+                render_mermaid_blocks(blocks, ROOT)
+        self.assertEqual(1, len(renderer_processes))
+        self.assertEqual(1, len(unlink_attempts))
+
+    def test_operational_renderer_preserves_timeout_when_temporary_cleanup_fails(self) -> None:
+        blocks = discover(ROOT)[:2]
+        renderer_processes: list[object] = []
+        cleanup_calls: list[None] = []
+        outer_directory = tempfile.TemporaryDirectory()
+        self.addCleanup(outer_directory.cleanup)
+
+        def execute(command: list[str], **kwargs: object) -> subprocess.CompletedProcess:
+            if command[-1] == "--version" and "node" in command[0]:
+                return subprocess.CompletedProcess(command, 0, "v22.23.1\n", "")
+            if command[-1] == "--version":
+                return subprocess.CompletedProcess(command, 0, "11.16.0\n", "")
+            if command[0] == "git":
+                return subprocess.CompletedProcess(command, 0, f"{ROOT}\n", "")
+            return subprocess.CompletedProcess(command, 0, "", "")
+
+        class TimedOutProcess:
+            pid = 5
+            returncode = None
+
+            def __init__(self, command: list[str], **kwargs: object) -> None:
+                self.command = command
+                renderer_processes.append(self)
+
+            def communicate(self, timeout: float) -> tuple[str, str]:
+                if timeout == 60:
+                    raise subprocess.TimeoutExpired(self.command, timeout)
+                return "", ""
+
+        class CleanupFailsTemporaryDirectory:
+            def __init__(self, *args: object, **kwargs: object) -> None:
+                self.name = outer_directory.name
+
+            def __enter__(self) -> str:
+                return self.name
+
+            def __exit__(self, *args: object) -> None:
+                raise PermissionError("renderer retains a temporary input")
+
+            def cleanup(self) -> None:
+                cleanup_calls.append(None)
+                raise PermissionError("renderer retains a temporary input")
+
+        with (
+            mock.patch(
+                "tools.mermaid_inventory.shutil.which",
+                side_effect=lambda name: f"C:/synthetic/{name}.cmd",
+            ),
+            mock.patch(
+                "tools.mermaid_inventory.subprocess.run",
+                side_effect=execute,
+            ),
+            mock.patch(
+                "tools.mermaid_inventory.subprocess.Popen",
+                side_effect=TimedOutProcess,
+            ),
+            mock.patch(
+                "tools.mermaid_inventory.tempfile.TemporaryDirectory",
+                side_effect=CleanupFailsTemporaryDirectory,
+            ),
+        ):
+            with self.assertRaisesRegex(
+                ValueError,
+                r"001-ARC-P110-1 render timed out after 60 seconds",
+            ):
+                render_mermaid_blocks(blocks, ROOT)
+        self.assertEqual(1, len(renderer_processes))
+        self.assertEqual([None], cleanup_calls)
 
     def test_operational_renderer_preserves_timeout_when_taskkill_fails(self) -> None:
         block = discover(ROOT)[:1]
