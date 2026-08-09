@@ -412,6 +412,37 @@ class PlanValidationTests(unittest.TestCase):
                 )
                 self.assertEqual(("publication",), plan.selected_tiers)
 
+    def test_release_metadata_paths_take_publication_route_and_cannot_be_down_tiered(self) -> None:
+        release_metadata_paths = (
+            b"README.md",
+            b"CHANGELOG.md",
+            b"ROADMAP.md",
+            b"project/BACKLOG.md",
+            b"project/MILESTONES.md",
+            b"project/RELEASE_PLAN.md",
+        )
+        for path in release_metadata_paths:
+            with self.subTest(path=path):
+                change = b"M\0" + path + b"\0"
+                plan = plan_validation(
+                    ROOT,
+                    base="base",
+                    candidate="candidate",
+                    git_runner=self.git_diff_for(change),
+                )
+                self.assertEqual(("publication",), plan.selected_tiers)
+                self.assertIn("release metadata change", plan.reasons)
+                for tier in ("quick", "standard"):
+                    stderr = io.StringIO()
+                    with contextlib.redirect_stderr(stderr):
+                        result = main(
+                            ["--base", "HEAD~1", "--tier", tier],
+                            root=self.root,
+                            git_runner=self.git_diff_for(change),
+                        )
+                    self.assertEqual(2, result)
+                    self.assertIn("publication", stderr.getvalue())
+
     def test_candidate_mismatch_dirty_checkout_and_nonancestor_base_fail_closed(self) -> None:
         base, candidate = "a" * 40, "b" * 40
 

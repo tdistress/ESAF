@@ -171,7 +171,7 @@ COMMAND_CATALOG = (
 )
 
 ROUTING_RULES = (
-    ValidationRule("documentation", (("prefix", "docs/"), ("exact", "README.md")), ("preflight", "test-shard-manifest"), ("remaining-shard", "links"), "documentation change", False),
+    ValidationRule("documentation", (("prefix", "docs/"),), ("preflight", "test-shard-manifest"), ("remaining-shard", "links"), "documentation change", False),
     ValidationRule("architectures", (("prefix", "architectures/"),), ("preflight", "test-shard-manifest"), ("architectures", "remaining-shard"), "architecture change", False),
     ValidationRule("assessment", (("prefix", "assessment/"),), ("preflight", "test-shard-manifest"), ("assessment", "remaining-shard"), "assessment change", False),
     ValidationRule("controls", (("prefix", "controls/"),), ("preflight", "test-shard-manifest"), ("controls", "remaining-shard"), "controls change", False),
@@ -181,6 +181,7 @@ ROUTING_RULES = (
     ValidationRule("mapping-review", (("prefix", "crosswalks/mapping-review/"),), ("preflight", "test-shard-manifest"), ("mapping-review-shard",), "mapping-review change", False),
     ValidationRule("workflow", (("prefix", ".github/workflows/"), ("exact", "AGENTS.md")), ("preflight",), (), "workflow change", True),
     ValidationRule("publication-evidence", (("prefix", "docs/superpowers/reviews/"), ("exact", "VERSION.md")), ("preflight",), (), "publication evidence or release metadata change", True),
+    ValidationRule("release-metadata", (("exact", "README.md"), ("exact", "CHANGELOG.md"), ("exact", "ROADMAP.md"), ("exact", "project/BACKLOG.md"), ("exact", "project/MILESTONES.md"), ("exact", "project/RELEASE_PLAN.md")), ("preflight",), (), "release metadata change", True),
     ValidationRule("validation-tools", (("prefix", "tools/"), ("prefix", "tests/")), ("preflight",), (), "validation-tool change", True),
 )
 
