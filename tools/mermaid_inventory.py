@@ -8,6 +8,7 @@ import json
 import os
 from pathlib import Path
 import re
+import signal
 import shutil
 import subprocess
 import sys
@@ -98,6 +99,14 @@ class MermaidBlock:
     digest: str
     diagram_type: str
     source: str
+
+
+class RendererCleanupError(RuntimeError):
+    """Identifies the post-timeout cleanup action that could not complete."""
+
+    def __init__(self, action: str) -> None:
+        self.action = action
+        super().__init__(action)
 
 
 def extract_blocks(text: str) -> list[str]:
@@ -226,21 +235,28 @@ def render_contract_sha256(
     ).hexdigest()
 
 
+def _renderer_runs_on_windows() -> bool:
+    return os.name == "nt"
+
+
 def _run_renderer(command: list[str], root: Path) -> subprocess.CompletedProcess[str]:
-    process = subprocess.Popen(
-        command,
-        cwd=root,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-        encoding="utf-8",
-    )
+    popen_arguments: dict[str, object] = {
+        "cwd": root,
+        "stdout": subprocess.PIPE,
+        "stderr": subprocess.PIPE,
+        "text": True,
+        "encoding": "utf-8",
+    }
+    if not _renderer_runs_on_windows():
+        popen_arguments["start_new_session"] = True
+    process = subprocess.Popen(command, **popen_arguments)
     try:
         stdout, stderr = process.communicate(timeout=RENDER_TIMEOUT_SECONDS)
     except subprocess.TimeoutExpired:
-        if os.name == "nt":
+        cleanup_failure: RendererCleanupError | None = None
+        if _renderer_runs_on_windows():
             try:
-                subprocess.run(
+                termination = subprocess.run(
                     ["taskkill", "/PID", str(process.pid), "/T", "/F"],
                     capture_output=True,
                     text=True,
@@ -249,13 +265,22 @@ def _run_renderer(command: list[str], root: Path) -> subprocess.CompletedProcess
                     timeout=POST_KILL_DRAIN_TIMEOUT_SECONDS,
                 )
             except (OSError, subprocess.TimeoutExpired):
-                pass
+                cleanup_failure = RendererCleanupError("process termination")
+            else:
+                if termination.returncode != 0:
+                    cleanup_failure = RendererCleanupError("process termination")
         else:
-            process.kill()
+            try:
+                os.killpg(process.pid, signal.SIGKILL)
+            except OSError:
+                cleanup_failure = RendererCleanupError("process termination")
         try:
             process.communicate(timeout=POST_KILL_DRAIN_TIMEOUT_SECONDS)
         except (OSError, subprocess.TimeoutExpired):
-            pass
+            if cleanup_failure is None:
+                cleanup_failure = RendererCleanupError("output drain")
+        if cleanup_failure is not None:
+            raise cleanup_failure from None
         raise
     return subprocess.CompletedProcess(command, process.returncode, stdout, stderr)
 
@@ -325,12 +350,14 @@ def render_mermaid_blocks(
             str(supplied),
         ]
     temporary_directory = tempfile.TemporaryDirectory(prefix="esaf-mermaid-check-")
+    active_input: Path | None = None
     try:
         output_root = Path(temporary_directory.name)
         inventory = write_render_inputs(blocks, output_root)
         rows = json.loads(inventory.read_text(encoding="utf-8"))
         for row in rows:
             input_path = output_root / row["input"]
+            active_input = input_path
             output_path = input_path.with_suffix(".png")
             try:
                 result = _run_renderer(
@@ -350,11 +377,18 @@ def render_mermaid_blocks(
                     ],
                     root,
                 )
+            except RendererCleanupError as error:
+                raise ValueError(
+                    f"{input_path.stem} render cleanup failed: {error.action}"
+                ) from None
             except subprocess.TimeoutExpired:
                 try:
                     output_path.unlink(missing_ok=True)
                 except OSError:
-                    pass
+                    raise ValueError(
+                        f"{input_path.stem} render cleanup failed: "
+                        "partial output removal"
+                    ) from None
                 raise ValueError(
                     f"{input_path.stem} render timed out after "
                     f"{RENDER_TIMEOUT_SECONDS} seconds"
@@ -372,7 +406,12 @@ def render_mermaid_blocks(
         try:
             temporary_directory.cleanup()
         except OSError:
-            pass
+            if active_input is not None:
+                raise ValueError(
+                    f"{active_input.stem} render cleanup failed: "
+                    "temporary input cleanup"
+                ) from None
+            raise ValueError("Mermaid render cleanup failed: temporary input cleanup") from None
 
 
 def check_record(

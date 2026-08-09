@@ -3,12 +3,14 @@ from hashlib import sha256
 import json
 import os
 from pathlib import Path
+import signal
 import subprocess
 import sys
 import tempfile
 import unittest
 from unittest import mock
 
+from tools import mermaid_inventory
 from tools.mermaid_inventory import (
     check_record,
     discover,
@@ -308,7 +310,7 @@ class MermaidInventoryTests(unittest.TestCase):
             str(config),
         )
 
-    def test_operational_renderer_terminates_timed_out_process_tree_and_stops(self) -> None:
+    def test_windows_renderer_terminates_only_the_timed_out_process_tree(self) -> None:
         blocks = discover(ROOT)[:2]
         expected_identifier = "001-ARC-P110-1"
         with tempfile.TemporaryDirectory() as directory:
@@ -316,6 +318,7 @@ class MermaidInventoryTests(unittest.TestCase):
             output_path = output_root / f"{expected_identifier}.png"
             created_processes: list[object] = []
             calls: list[list[str]] = []
+            renderer_popen_arguments: list[dict[str, object]] = []
 
             def execute(
                 command: list[str], **kwargs: object
@@ -338,6 +341,7 @@ class MermaidInventoryTests(unittest.TestCase):
 
                 def __init__(self, command: list[str], **kwargs: object) -> None:
                     created_processes.append(self)
+                    renderer_popen_arguments.append(kwargs)
                     self.command = command
                     output = Path(command[command.index("--output") + 1])
                     output.write_bytes(b"partial png")
@@ -379,6 +383,7 @@ class MermaidInventoryTests(unittest.TestCase):
                     "tools.mermaid_inventory.tempfile.TemporaryDirectory",
                     return_value=ManagedTemporaryDirectory(),
                 ),
+                mock.patch("tools.mermaid_inventory._renderer_runs_on_windows", return_value=True),
             ):
                 with self.assertRaisesRegex(
                     ValueError,
@@ -389,8 +394,104 @@ class MermaidInventoryTests(unittest.TestCase):
             self.assertEqual(1, len(created_processes))
             self.assertEqual(2, len(created_processes[0].timeouts))
             self.assertEqual(60, created_processes[0].timeouts[0])
-            self.assertLess(created_processes[0].timeouts[1], 60)
+            self.assertEqual(5, created_processes[0].timeouts[1])
             self.assertIn(["taskkill", "/PID", "4242", "/T", "/F"], calls)
+            self.assertNotIn("start_new_session", renderer_popen_arguments[0])
+
+    def test_posix_renderer_starts_dedicated_session_and_kills_process_group(self) -> None:
+        command = ["mmdc", "--input", "diagram.mmd"]
+        popen_arguments: dict[str, object] = {}
+        killed_groups: list[tuple[int, signal.Signals]] = []
+
+        class TimedOutProcess:
+            pid = 73
+            returncode = None
+
+            def __init__(self) -> None:
+                self.timeouts: list[float] = []
+
+            def communicate(self, timeout: float) -> tuple[str, str]:
+                self.timeouts.append(timeout)
+                if len(self.timeouts) == 1:
+                    raise subprocess.TimeoutExpired(command, timeout)
+                return "", ""
+
+        process: TimedOutProcess | None = None
+
+        def create_process(*args: object, **kwargs: object) -> TimedOutProcess:
+            nonlocal process
+            popen_arguments.update(kwargs)
+            process = TimedOutProcess()
+            return process
+
+        with (
+            mock.patch("tools.mermaid_inventory._renderer_runs_on_windows", return_value=False),
+            mock.patch("tools.mermaid_inventory.subprocess.Popen", side_effect=create_process),
+            mock.patch("tools.mermaid_inventory.signal.SIGKILL", 9, create=True),
+            mock.patch("tools.mermaid_inventory.os.killpg", create=True, side_effect=lambda pid, sig: killed_groups.append((pid, sig))),
+        ):
+            with self.assertRaises(subprocess.TimeoutExpired):
+                mermaid_inventory._run_renderer(command, ROOT)
+
+        self.assertTrue(popen_arguments["start_new_session"])
+        self.assertEqual([(73, 9)], killed_groups)
+        self.assertIsNotNone(process)
+        self.assertEqual([60, 5], process.timeouts)
+
+    def test_posix_renderer_reports_process_termination_cleanup_failure(self) -> None:
+        block = discover(ROOT)[:1]
+
+        class TimedOutProcess:
+            pid = 74
+            returncode = None
+
+            def __init__(self, command: list[str], **kwargs: object) -> None:
+                self.command = command
+                self.communicate_count = 0
+
+            def communicate(self, timeout: float) -> tuple[str, str]:
+                self.communicate_count += 1
+                if self.communicate_count == 1:
+                    raise subprocess.TimeoutExpired(self.command, timeout)
+                return "", ""
+
+        def execute(command: list[str], **kwargs: object) -> subprocess.CompletedProcess:
+            if command[-1] == "--version" and "node" in command[0]:
+                return subprocess.CompletedProcess(command, 0, "v22.23.1\n", "")
+            if command[-1] == "--version":
+                return subprocess.CompletedProcess(command, 0, "11.16.0\n", "")
+            if command[0] == "git":
+                return subprocess.CompletedProcess(command, 0, f"{ROOT}\n", "")
+            raise AssertionError("POSIX cleanup shall not invoke taskkill")
+
+        with (
+            mock.patch("tools.mermaid_inventory._renderer_runs_on_windows", return_value=False),
+            mock.patch(
+                "tools.mermaid_inventory.shutil.which",
+                side_effect=lambda name: f"C:/synthetic/{name}.cmd",
+            ),
+            mock.patch(
+                "tools.mermaid_inventory.subprocess.run",
+                side_effect=execute,
+            ),
+            mock.patch(
+                "tools.mermaid_inventory.subprocess.Popen",
+                side_effect=TimedOutProcess,
+            ),
+            mock.patch(
+                "tools.mermaid_inventory.signal.SIGKILL", 9, create=True,
+            ),
+            mock.patch(
+                "tools.mermaid_inventory.os.killpg",
+                create=True,
+                side_effect=OSError("renderer group is gone"),
+            ),
+        ):
+            with self.assertRaisesRegex(
+                ValueError,
+                r"001-ARC-P110-1 render cleanup failed: process termination",
+            ):
+                render_mermaid_blocks(block, ROOT)
 
     def test_operational_renderer_preserves_timeout_when_taskkill_raises(self) -> None:
         blocks = discover(ROOT)[:2]
@@ -443,7 +544,7 @@ class MermaidInventoryTests(unittest.TestCase):
                 ):
                     with self.assertRaisesRegex(
                         ValueError,
-                        r"001-ARC-P110-1 render timed out after 60 seconds",
+                        r"001-ARC-P110-1 render cleanup failed: process termination",
                     ):
                         render_mermaid_blocks(blocks, ROOT)
                 self.assertEqual(1, len(renderer_processes))
@@ -501,7 +602,7 @@ class MermaidInventoryTests(unittest.TestCase):
                 ):
                     with self.assertRaisesRegex(
                         ValueError,
-                        r"001-ARC-P110-1 render timed out after 60 seconds",
+                        r"001-ARC-P110-1 render cleanup failed: output drain",
                     ):
                         render_mermaid_blocks(blocks, ROOT)
                 self.assertEqual(1, len(renderer_processes))
@@ -556,7 +657,7 @@ class MermaidInventoryTests(unittest.TestCase):
         ):
             with self.assertRaisesRegex(
                 ValueError,
-                r"001-ARC-P110-1 render timed out after 60 seconds",
+                r"001-ARC-P110-1 render cleanup failed: partial output removal",
             ):
                 render_mermaid_blocks(blocks, ROOT)
         self.assertEqual(1, len(renderer_processes))
@@ -625,7 +726,7 @@ class MermaidInventoryTests(unittest.TestCase):
         ):
             with self.assertRaisesRegex(
                 ValueError,
-                r"001-ARC-P110-1 render timed out after 60 seconds",
+                r"001-ARC-P110-1 render cleanup failed: temporary input cleanup",
             ):
                 render_mermaid_blocks(blocks, ROOT)
         self.assertEqual(1, len(renderer_processes))
@@ -673,7 +774,7 @@ class MermaidInventoryTests(unittest.TestCase):
         ):
             with self.assertRaisesRegex(
                 ValueError,
-                r"001-ARC-P110-1 render timed out after 60 seconds",
+                r"001-ARC-P110-1 render cleanup failed: process termination",
             ):
                 render_mermaid_blocks(block, ROOT)
 
