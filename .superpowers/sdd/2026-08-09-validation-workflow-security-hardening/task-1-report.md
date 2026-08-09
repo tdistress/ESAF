@@ -38,3 +38,9 @@ total tracked: 34
 ## Scope boundary and follow-up
 
 The full repository suite is intentionally deferred to the final hardening task because Task 4 will update the workflow/foundation references that still name the deleted policy file. Existing untracked Python cache directories were preserved and not staged.
+
+## Round 1 review resolution
+
+The static catalog regression test now asserts the entire ordered `COMMAND_CATALOG` identifier sequence and a hand-authored exact argv tuple for every command identifier. It retains explicit denial of generic `qualified-review` and `mapping-review` commands and also denies the known stateful/human-evidence/arbitrary-input command identifiers.
+
+A mutation check temporarily inserted a generic `mapping-review` command that invoked `tools/build_mapping_review_bundle.py --output temporary`. The focused catalog test failed at the exact ordered identifier assertion, proving that any added command—including a stateful, human-evidence, or arbitrary-input command—fails the contract. The temporary mutation was removed before final verification.

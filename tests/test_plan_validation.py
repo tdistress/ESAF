@@ -45,6 +45,33 @@ EXPECTED_PUBLICATION_CATALOG = (
     "release-evidence",
     "pci-dss-mapping-go-no-go",
 )
+EXPECTED_COMMAND_ARGV = {
+    "preflight": ("git", "diff", "--check", "{base}", "{candidate}"),
+    "test-shard-manifest": ("python", "tools/validate_test_shards.py", "--check"),
+    "profile-shard": ("python", "tools/run_test_shards.py", "--shard", "profile_validation"),
+    "qualified-review-shard": ("python", "tools/run_test_shards.py", "--shard", "qualified_review_evidence"),
+    "mapping-review-shard": ("python", "tools/run_test_shards.py", "--shard", "mapping_review_bundle"),
+    "remaining-shard": ("python", "tools/run_test_shards.py", "--shard", "remaining"),
+    "architectures": ("python", "tools/validate_architectures.py"),
+    "assessment": ("python", "tools/validate_assessment.py", "--check"),
+    "controls": ("python", "tools/validate_controls.py", "--check"),
+    "crosswalks": ("python", "tools/validate_crosswalks.py", "--check", "--baseline-ref", "{base}"),
+    "profiles": ("python", "tools/validate_profiles.py", "--check"),
+    "full-discovery": ("python", "-B", "-m", "unittest", "discover", "-s", "tests", "-v"),
+    "mermaid-record": ("python", "tools/mermaid_inventory.py", "--check-record", "docs/superpowers/reviews/2026-07-27-v05-beta-mermaid-rendering.md"),
+    "links": ("python", "tools/validate_links.py", "--check"),
+    "qualified-review-equivalence": ("python", "tools/verify_qualified_review_hot_path_equivalence.py", "--check", "--candidate-sha", "{candidate}"),
+    "release-gates": ("python", "tools/release_gates.py", "--check", "--baseline-ref", "{base}"),
+    "release-evidence": ("python", "tools/v05_beta_release_gates.py", "--check", "--baseline-ref", "{base}"),
+    "pci-dss-mapping-go-no-go": ("python", "tools/render_pci_dss_mapping_go_no_go.py", "--check"),
+}
+FORBIDDEN_GENERIC_COMMAND_IDS = (
+    "qualified-review",
+    "mapping-review",
+    "build-mapping-review-bundle",
+    "validate-qualified-review-evidence",
+    "seal-qualified-review-campaign",
+)
 
 
 class PlanValidationTests(unittest.TestCase):
@@ -184,29 +211,18 @@ class PlanValidationTests(unittest.TestCase):
     def test_reviewed_catalog_has_fixed_publication_order_and_safe_argv_templates(self) -> None:
         self.assertIsInstance(COMMAND_CATALOG, tuple)
         self.assertIsInstance(ROUTING_RULES, tuple)
+        self.assertEqual(
+            EXPECTED_PUBLICATION_CATALOG,
+            tuple(command.identifier for command in COMMAND_CATALOG),
+        )
         self.assertEqual(EXPECTED_PUBLICATION_CATALOG, PUBLICATION_COMMAND_IDS)
         self.assertEqual(("qualified-review-equivalence",), PROOF_COMMAND_IDS)
         commands = {command.identifier: command.argv for command in COMMAND_CATALOG}
-        self.assertEqual(
-            ("git", "diff", "--check", "{base}", "{candidate}"),
-            commands["preflight"],
+        self.assertEqual(EXPECTED_COMMAND_ARGV, commands)
+        self.assertTrue(
+            set(FORBIDDEN_GENERIC_COMMAND_IDS).isdisjoint(commands),
+            "stateful, human-evidence, and arbitrary-input commands are not generic planner commands",
         )
-        self.assertEqual(
-            ("python", "tools/validate_links.py", "--check"),
-            commands["links"],
-        )
-        self.assertEqual(
-            (
-                "python",
-                "tools/verify_qualified_review_hot_path_equivalence.py",
-                "--check",
-                "--candidate-sha",
-                "{candidate}",
-            ),
-            commands["qualified-review-equivalence"],
-        )
-        self.assertNotIn("qualified-review", commands)
-        self.assertNotIn("mapping-review", commands)
 
     def test_committed_catalog_publication_route_includes_all_gates_and_base(self) -> None:
         plan = plan_validation(
