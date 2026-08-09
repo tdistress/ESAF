@@ -42,6 +42,8 @@ RENDER_OPTIONS = {
     "background": "white",
     "scale": 3,
 }
+# Per-diagram rendering time limit for the Mermaid CLI subprocess.
+RENDER_TIMEOUT_SECONDS = 60
 STATUS_FIELD_RE = re.compile(r"^Status:\s*(?P<value>.*?)\s*$", re.MULTILINE)
 RENDERER_FIELD_RE = re.compile(
     r"^Renderer version:\s*`(?P<value>[^`]+)`\s*$", re.MULTILINE
@@ -293,26 +295,34 @@ def render_mermaid_blocks(
         for row in rows:
             input_path = output_root / row["input"]
             output_path = input_path.with_suffix(".png")
-            result = subprocess.run(
-                [
-                    executable,
-                    "--input",
-                    str(input_path),
-                    "--output",
-                    str(output_path),
-                    *puppeteer_arguments,
-                    "--configFile",
-                    str(root / RENDER_CONFIG),
-                    "--backgroundColor",
-                    RENDER_OPTIONS["background"],
-                    "--scale",
-                    str(RENDER_OPTIONS["scale"]),
-                ],
-                cwd=root,
-                capture_output=True,
-                text=True,
-                encoding="utf-8",
-            )
+            try:
+                result = subprocess.run(
+                    [
+                        executable,
+                        "--input",
+                        str(input_path),
+                        "--output",
+                        str(output_path),
+                        *puppeteer_arguments,
+                        "--configFile",
+                        str(root / RENDER_CONFIG),
+                        "--backgroundColor",
+                        RENDER_OPTIONS["background"],
+                        "--scale",
+                        str(RENDER_OPTIONS["scale"]),
+                    ],
+                    cwd=root,
+                    capture_output=True,
+                    text=True,
+                    encoding="utf-8",
+                    timeout=RENDER_TIMEOUT_SECONDS,
+                )
+            except subprocess.TimeoutExpired:
+                output_path.unlink(missing_ok=True)
+                raise ValueError(
+                    f"{input_path.stem} render timed out after "
+                    f"{RENDER_TIMEOUT_SECONDS} seconds"
+                ) from None
             if result.returncode != 0:
                 raise ValueError(
                     f"{row['path']} block {row['index']} render failed: "

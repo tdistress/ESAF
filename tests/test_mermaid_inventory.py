@@ -1,3 +1,4 @@
+import contextlib
 from hashlib import sha256
 import json
 import os
@@ -292,6 +293,53 @@ class MermaidInventoryTests(unittest.TestCase):
             ],
             str(config),
         )
+
+    def test_operational_renderer_removes_partial_output_after_timeout(self) -> None:
+        blocks = discover(ROOT)[:10]
+        block = blocks[9]
+        expected_identifier = "010-ARC-P140-5"
+        self.assertEqual(Path(block.path).stem, "ARC-P140")
+        self.assertEqual(block.index, 5)
+        with tempfile.TemporaryDirectory() as directory:
+            output_root = Path(directory)
+            output_path = output_root / f"{expected_identifier}.png"
+
+            def execute(
+                command: list[str], **kwargs: object
+            ) -> subprocess.CompletedProcess:
+                if command[-1] == "--version" and "node" in command[0]:
+                    return subprocess.CompletedProcess(command, 0, "v22.23.1\n", "")
+                if command[-1] == "--version":
+                    return subprocess.CompletedProcess(command, 0, "11.16.0\n", "")
+                if command[0] == "git":
+                    return subprocess.CompletedProcess(command, 0, f"{ROOT}\n", "")
+                partial_output = Path(command[command.index("--output") + 1])
+                if partial_output == output_path:
+                    partial_output.write_bytes(b"partial png")
+                    raise subprocess.TimeoutExpired(command, 60)
+                partial_output.write_bytes(b"synthetic png")
+                return subprocess.CompletedProcess(command, 0, "", "")
+
+            with (
+                mock.patch(
+                    "tools.mermaid_inventory.shutil.which",
+                    side_effect=lambda name: f"C:/synthetic/{name}.cmd",
+                ),
+                mock.patch(
+                    "tools.mermaid_inventory.subprocess.run",
+                    side_effect=execute,
+                ),
+                mock.patch(
+                    "tools.mermaid_inventory.tempfile.TemporaryDirectory",
+                    return_value=contextlib.nullcontext(directory),
+                ),
+            ):
+                with self.assertRaisesRegex(
+                    ValueError,
+                    r"010-ARC-P140-5 render timed out after 60 seconds",
+                ):
+                    render_mermaid_blocks(blocks, ROOT)
+            self.assertFalse(output_path.exists())
 
     def test_ci_renderer_rejects_substituted_or_expanded_launch_config(
         self,
