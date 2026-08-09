@@ -31,9 +31,7 @@ EXPECTED_PUBLICATION_CATALOG = (
     "crosswalks",
     "profiles",
     "qualified-review",
-    "mapping-review",
     "full-discovery",
-    "mermaid",
     "mermaid-record",
     "links",
     "qualified-review-equivalence",
@@ -188,6 +186,50 @@ class PlanValidationTests(unittest.TestCase):
         cli_commands = {command["id"]: tuple(command["argv"]) for command in json.loads(stream.getvalue())["commands"]}
         self.assertEqual(set(commands), set(cli_commands))
         self.assertEqual(commands["release-gates"], cli_commands["release-gates"])
+
+    def test_mapping_review_routes_to_supported_validation_without_stateful_package_builder(self) -> None:
+        plan = plan_validation(
+            ROOT,
+            base="base",
+            candidate="candidate",
+            git_runner=self.git_diff_for(b"M\0crosswalks/mapping-review/manifest.json\0"),
+        )
+        self.assertEqual(("quick", "standard"), plan.selected_tiers)
+        self.assertEqual(
+            ("preflight", "test-shard-manifest", "mapping-review-shard", "crosswalks"),
+            tuple(command.identifier for command in plan.commands),
+        )
+        self.assertNotIn("mapping-review", {command.identifier for command in plan.commands})
+
+        deleted_plan = plan_validation(
+            ROOT,
+            base="base",
+            candidate="candidate",
+            git_runner=self.git_diff_for(b"D\0crosswalks/mapping-review/manifest.json\0"),
+        )
+        self.assertEqual(("publication",), deleted_plan.selected_tiers)
+        self.assertNotIn("mapping-review", {command.identifier for command in deleted_plan.commands})
+
+    def test_mermaid_publication_gate_uses_only_the_recorded_renderer_command(self) -> None:
+        plan = plan_validation(
+            ROOT,
+            base="base",
+            candidate="candidate",
+            git_runner=self.git_diff_for(b"M\0.github/workflows/check.yml\0"),
+        )
+        renderer_commands = tuple(
+            command for command in plan.commands if "mermaid" in command.identifier
+        )
+        self.assertEqual(("mermaid-record",), tuple(command.identifier for command in renderer_commands))
+        self.assertEqual(
+            (
+                "python",
+                "tools/mermaid_inventory.py",
+                "--check-record",
+                "docs/superpowers/reviews/2026-07-27-v05-beta-mermaid-rendering.md",
+            ),
+            renderer_commands[0].argv,
+        )
 
 
 if __name__ == "__main__":

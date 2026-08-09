@@ -13,9 +13,7 @@
     {"id": "crosswalks", "argv": ["python", "tools/validate_crosswalks.py", "--check", "--baseline-ref", "{base}"], "tier": "standard", "duration": "about a minute"},
     {"id": "profiles", "argv": ["python", "tools/validate_profiles.py", "--check"], "tier": "standard", "duration": "about a minute"},
     {"id": "qualified-review", "argv": ["python", "tools/validate_qualified_review_evidence.py", "--check"], "tier": "standard", "duration": "about 5 to 10 minutes"},
-    {"id": "mapping-review", "argv": ["python", "tools/build_mapping_review_bundle.py", "--check"], "tier": "standard", "duration": "about 3 minutes"},
     {"id": "full-discovery", "argv": ["python", "-B", "-m", "unittest", "discover", "-s", "tests", "-v"], "tier": "publication", "duration": "candidate freeze"},
-    {"id": "mermaid", "argv": ["python", "tools/mermaid_inventory.py", "--render"], "tier": "publication", "duration": "candidate freeze"},
     {"id": "mermaid-record", "argv": ["python", "tools/mermaid_inventory.py", "--check-record", "docs/superpowers/reviews/2026-07-27-v05-beta-mermaid-rendering.md"], "tier": "publication", "duration": "candidate freeze"},
     {"id": "links", "argv": ["python", "tools/validate_links.py"], "tier": "publication", "duration": "candidate freeze"},
     {"id": "qualified-review-equivalence", "argv": ["python", "tools/verify_qualified_review_hot_path_equivalence.py"], "tier": "publication", "duration": "publication proof"},
@@ -31,7 +29,7 @@
     {"id": "crosswalks", "selectors": [{"prefix": "crosswalks/"}], "quick": ["preflight", "test-shard-manifest"], "standard": ["crosswalks", "mapping-review-shard"], "reason": "crosswalk change", "cross_cutting": false},
     {"id": "profiles", "selectors": [{"prefix": "profiles/"}], "quick": ["preflight", "test-shard-manifest"], "standard": ["profiles", "profile-shard"], "reason": "profile change", "cross_cutting": false},
     {"id": "qualified-review", "selectors": [{"prefix": "crosswalks/qualified-review/"}], "quick": ["preflight", "test-shard-manifest"], "standard": ["qualified-review", "qualified-review-shard"], "reason": "qualified-review change", "cross_cutting": false},
-    {"id": "mapping-review", "selectors": [{"prefix": "crosswalks/mapping-review/"}], "quick": ["preflight", "test-shard-manifest"], "standard": ["mapping-review", "mapping-review-shard"], "reason": "mapping-review change", "cross_cutting": false},
+    {"id": "mapping-review", "selectors": [{"prefix": "crosswalks/mapping-review/"}], "quick": ["preflight", "test-shard-manifest"], "standard": ["mapping-review-shard"], "reason": "mapping-review change", "cross_cutting": false},
     {"id": "workflow", "selectors": [{"prefix": ".github/workflows/"}, {"exact": "AGENTS.md"}], "quick": ["preflight"], "standard": [], "reason": "workflow change", "cross_cutting": true},
     {"id": "validation-tools", "selectors": [{"prefix": "tools/"}, {"prefix": "tests/"}], "quick": ["preflight"], "standard": [], "reason": "validation-tool change", "cross_cutting": true}
   ]

@@ -264,4 +264,3 @@ git commit -m "docs: explain time-budgeted validation"
 - Spec coverage: Tasks 1 through 4 implement the planner, parallel execution, concurrency cancellation, guidance, and final validation. Required CI policy stays unchanged.
 - Placeholder scan: Every task identifies files, contracts, tests, commands, and expected results.
 - Type consistency: Task 1 owns `ValidationCommand` and `ValidationPlan`. Task 2 adds `run_all_parallel` without changing the sequential `run_all` contract.
-
