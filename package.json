@@ -1,0 +1,16 @@
+{
+  "name": "esaf",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Local tooling for ESAF publication validation",
+  "packageManager": "pnpm@11.16.0",
+  "engines": {
+    "node": ">=22.23.1"
+  },
+  "scripts": {
+    "mermaid:render": "mmdc --configFile tools/mermaid-render-config.json"
+  },
+  "devDependencies": {
+    "@mermaid-js/mermaid-cli": "11.16.0"
+  }
+}

@@ -7,3 +7,4 @@ Thumbs.db
 site/
 .cache/
 .worktrees/
+node_modules/
