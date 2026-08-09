@@ -250,6 +250,7 @@ class MermaidInventoryTests(unittest.TestCase):
         )
         blocks = discover(ROOT)[:1]
         calls: list[list[str]] = []
+        renderer_commands: list[list[str]] = []
 
         def execute(command: list[str], **kwargs: object) -> subprocess.CompletedProcess:
             calls.append(command)
@@ -264,9 +265,18 @@ class MermaidInventoryTests(unittest.TestCase):
                     f"{ROOT}\n",
                     "",
                 )
-            output = Path(command[command.index("--output") + 1])
-            output.write_bytes(b"synthetic png")
-            return subprocess.CompletedProcess(command, 0, "", "")
+            raise AssertionError("successful Mermaid rendering shall use Popen")
+
+        class SuccessfulProcess:
+            returncode = 0
+
+            def __init__(self, command: list[str], **kwargs: object) -> None:
+                renderer_commands.append(command)
+                output = Path(command[command.index("--output") + 1])
+                output.write_bytes(b"synthetic png")
+
+            def communicate(self, timeout: float) -> tuple[str, str]:
+                return "", ""
 
         with (
             mock.patch(
@@ -277,6 +287,10 @@ class MermaidInventoryTests(unittest.TestCase):
                 "tools.mermaid_inventory.subprocess.run",
                 side_effect=execute,
             ),
+            mock.patch(
+                "tools.mermaid_inventory.subprocess.Popen",
+                side_effect=SuccessfulProcess,
+            ),
             mock.patch.dict(
                 os.environ,
                 {"ESAF_MERMAID_PUPPETEER_CONFIG": config.as_posix()},
@@ -284,9 +298,9 @@ class MermaidInventoryTests(unittest.TestCase):
         ):
             render_mermaid_blocks(blocks, ROOT)
 
-        render_command = next(
-            command for command in calls if "--puppeteerConfigFile" in command
-        )
+        self.assertFalse(any(command[0] == "taskkill" for command in calls))
+        self.assertEqual(1, len(renderer_commands))
+        render_command = renderer_commands[0]
         self.assertEqual(
             render_command[
                 render_command.index("--puppeteerConfigFile") + 1
@@ -294,31 +308,46 @@ class MermaidInventoryTests(unittest.TestCase):
             str(config),
         )
 
-    def test_operational_renderer_removes_partial_output_after_timeout(self) -> None:
-        blocks = discover(ROOT)[:10]
-        block = blocks[9]
-        expected_identifier = "010-ARC-P140-5"
-        self.assertEqual(Path(block.path).stem, "ARC-P140")
-        self.assertEqual(block.index, 5)
+    def test_operational_renderer_terminates_timed_out_process_tree_and_stops(self) -> None:
+        blocks = discover(ROOT)[:2]
+        expected_identifier = "001-ARC-P110-1"
         with tempfile.TemporaryDirectory() as directory:
             output_root = Path(directory)
             output_path = output_root / f"{expected_identifier}.png"
+            created_processes: list[object] = []
+            calls: list[list[str]] = []
 
             def execute(
                 command: list[str], **kwargs: object
             ) -> subprocess.CompletedProcess:
+                calls.append(command)
                 if command[-1] == "--version" and "node" in command[0]:
                     return subprocess.CompletedProcess(command, 0, "v22.23.1\n", "")
                 if command[-1] == "--version":
                     return subprocess.CompletedProcess(command, 0, "11.16.0\n", "")
                 if command[0] == "git":
                     return subprocess.CompletedProcess(command, 0, f"{ROOT}\n", "")
-                partial_output = Path(command[command.index("--output") + 1])
-                if partial_output == output_path:
-                    partial_output.write_bytes(b"partial png")
-                    raise subprocess.TimeoutExpired(command, 60)
-                partial_output.write_bytes(b"synthetic png")
+                self.assertEqual(["taskkill", "/PID", "4242", "/T", "/F"], command)
+                self.assertTrue(kwargs["capture_output"])
+                self.assertFalse(kwargs["check"])
                 return subprocess.CompletedProcess(command, 0, "", "")
+
+            class TimedOutProcess:
+                pid = 4242
+                returncode = None
+
+                def __init__(self, command: list[str], **kwargs: object) -> None:
+                    created_processes.append(self)
+                    self.command = command
+                    output = Path(command[command.index("--output") + 1])
+                    output.write_bytes(b"partial png")
+                    self.timeouts: list[float] = []
+
+                def communicate(self, timeout: float) -> tuple[str, str]:
+                    self.timeouts.append(timeout)
+                    if len(self.timeouts) == 1:
+                        raise subprocess.TimeoutExpired(self.command, timeout)
+                    return "", ""
 
             with (
                 mock.patch(
@@ -330,16 +359,71 @@ class MermaidInventoryTests(unittest.TestCase):
                     side_effect=execute,
                 ),
                 mock.patch(
+                    "tools.mermaid_inventory.subprocess.Popen",
+                    side_effect=TimedOutProcess,
+                ),
+                mock.patch(
                     "tools.mermaid_inventory.tempfile.TemporaryDirectory",
                     return_value=contextlib.nullcontext(directory),
                 ),
             ):
                 with self.assertRaisesRegex(
                     ValueError,
-                    r"010-ARC-P140-5 render timed out after 60 seconds",
+                    r"001-ARC-P110-1 render timed out after 60 seconds",
                 ):
                     render_mermaid_blocks(blocks, ROOT)
             self.assertFalse(output_path.exists())
+            self.assertEqual(1, len(created_processes))
+            self.assertEqual(2, len(created_processes[0].timeouts))
+            self.assertEqual(60, created_processes[0].timeouts[0])
+            self.assertLess(created_processes[0].timeouts[1], 60)
+            self.assertIn(["taskkill", "/PID", "4242", "/T", "/F"], calls)
+
+    def test_operational_renderer_preserves_timeout_when_taskkill_fails(self) -> None:
+        block = discover(ROOT)[:1]
+
+        def execute(command: list[str], **kwargs: object) -> subprocess.CompletedProcess:
+            if command[-1] == "--version" and "node" in command[0]:
+                return subprocess.CompletedProcess(command, 0, "v22.23.1\n", "")
+            if command[-1] == "--version":
+                return subprocess.CompletedProcess(command, 0, "11.16.0\n", "")
+            if command[0] == "git":
+                return subprocess.CompletedProcess(command, 0, f"{ROOT}\n", "")
+            self.assertEqual(["taskkill", "/PID", "9", "/T", "/F"], command)
+            self.assertFalse(kwargs["check"])
+            return subprocess.CompletedProcess(command, 1, "", "access denied")
+
+        class TimedOutProcess:
+            pid = 9
+            returncode = None
+
+            def __init__(self, command: list[str], **kwargs: object) -> None:
+                self.command = command
+
+            def communicate(self, timeout: float) -> tuple[str, str]:
+                if timeout == 60:
+                    raise subprocess.TimeoutExpired(self.command, timeout)
+                return "", ""
+
+        with (
+            mock.patch(
+                "tools.mermaid_inventory.shutil.which",
+                side_effect=lambda name: f"C:/synthetic/{name}.cmd",
+            ),
+            mock.patch(
+                "tools.mermaid_inventory.subprocess.run",
+                side_effect=execute,
+            ),
+            mock.patch(
+                "tools.mermaid_inventory.subprocess.Popen",
+                side_effect=TimedOutProcess,
+            ),
+        ):
+            with self.assertRaisesRegex(
+                ValueError,
+                r"001-ARC-P110-1 render timed out after 60 seconds",
+            ):
+                render_mermaid_blocks(block, ROOT)
 
     def test_ci_renderer_rejects_substituted_or_expanded_launch_config(
         self,

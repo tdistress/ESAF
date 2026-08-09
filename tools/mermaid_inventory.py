@@ -44,6 +44,8 @@ RENDER_OPTIONS = {
 }
 # Per-diagram rendering time limit for the Mermaid CLI subprocess.
 RENDER_TIMEOUT_SECONDS = 60
+# Time allowed to drain renderer pipes after its timed-out process tree is killed.
+POST_KILL_DRAIN_TIMEOUT_SECONDS = 5
 STATUS_FIELD_RE = re.compile(r"^Status:\s*(?P<value>.*?)\s*$", re.MULTILINE)
 RENDERER_FIELD_RE = re.compile(
     r"^Renderer version:\s*`(?P<value>[^`]+)`\s*$", re.MULTILINE
@@ -224,6 +226,40 @@ def render_contract_sha256(
     ).hexdigest()
 
 
+def _run_renderer(command: list[str], root: Path) -> subprocess.CompletedProcess[str]:
+    process = subprocess.Popen(
+        command,
+        cwd=root,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        encoding="utf-8",
+    )
+    try:
+        stdout, stderr = process.communicate(timeout=RENDER_TIMEOUT_SECONDS)
+    except subprocess.TimeoutExpired:
+        if os.name == "nt":
+            try:
+                subprocess.run(
+                    ["taskkill", "/PID", str(process.pid), "/T", "/F"],
+                    capture_output=True,
+                    text=True,
+                    encoding="utf-8",
+                    check=False,
+                    timeout=POST_KILL_DRAIN_TIMEOUT_SECONDS,
+                )
+            except (OSError, subprocess.TimeoutExpired):
+                pass
+        else:
+            process.kill()
+        try:
+            process.communicate(timeout=POST_KILL_DRAIN_TIMEOUT_SECONDS)
+        except (OSError, subprocess.TimeoutExpired):
+            pass
+        raise
+    return subprocess.CompletedProcess(command, process.returncode, stdout, stderr)
+
+
 def render_mermaid_blocks(
     blocks: list[MermaidBlock],
     root: Path,
@@ -296,7 +332,7 @@ def render_mermaid_blocks(
             input_path = output_root / row["input"]
             output_path = input_path.with_suffix(".png")
             try:
-                result = subprocess.run(
+                result = _run_renderer(
                     [
                         executable,
                         "--input",
@@ -311,11 +347,7 @@ def render_mermaid_blocks(
                         "--scale",
                         str(RENDER_OPTIONS["scale"]),
                     ],
-                    cwd=root,
-                    capture_output=True,
-                    text=True,
-                    encoding="utf-8",
-                    timeout=RENDER_TIMEOUT_SECONDS,
+                    root,
                 )
             except subprocess.TimeoutExpired:
                 output_path.unlink(missing_ok=True)
