@@ -104,4 +104,3 @@
 - Static policy and planner enforcement are isolated from renderer cleanup.
 - Every changed production behavior begins with a focused failing test.
 - Final validation requires a clean detached worktree and redispatched security and specification reviews on the final SHA.
-

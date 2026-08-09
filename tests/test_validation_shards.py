@@ -313,14 +313,13 @@ class ValidationShardWorkflowTests(unittest.TestCase):
             runs,
         )
 
-    def test_ci_validates_the_manifest_and_tracks_all_shard_tools(self) -> None:
+    def test_ci_tracks_the_static_planner_policy_and_shard_tools(self) -> None:
         workflow = self.workflow()
         shard_paths = (
             "tools/test-shards.json",
             "tools/test_shards.py",
             "tools/validate_test_shards.py",
             "tools/run_test_shards.py",
-            "tools/validation-plans.json",
             "tools/plan_validation.py",
         )
         for event in ("pull_request", "push"):
@@ -328,6 +327,8 @@ class ValidationShardWorkflowTests(unittest.TestCase):
             for path in shard_paths:
                 with self.subTest(event=event, path=path):
                     self.assertEqual(1, paths.count(path))
+            with self.subTest(event=event):
+                self.assertNotIn("tools/validation-plans.json", paths)
 
         self.assertIn("validation_gates", workflow["jobs"])
         gate_runs = [

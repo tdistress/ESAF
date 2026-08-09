@@ -14,7 +14,13 @@ python tools/plan_validation.py --base origin/main --candidate HEAD
 
 The requested candidate must be the current clean checkout `HEAD`; the planner
 rejects tracked modifications and a non-ancestor base while leaving unrelated
-untracked artifacts alone. The planner has three tiers.
+untracked artifacts alone. Its command catalog and routing policy are static,
+reviewed Python records in `tools/plan_validation.py`. The planner does not
+load executable commands or routing policy from the external JSON policy file
+that this source replaced. It quotes paths, reasons, and command arguments in
+its diagnostic output so control characters and punctuation remain data.
+
+The planner has three tiers.
 
 - `quick` is a short preflight for a small work window. It checks the diff,
   verifies the shard manifest, and selects any directly affected checks.
@@ -24,6 +30,11 @@ untracked artifacts alone. The planner has three tiers.
 - `publication` is for a frozen candidate. It includes the required complete
   local gates, publication rendering and link checks, exact-SHA proof where it
   applies, and independent review before a pull request, merge, or release.
+
+The planner selects the natural route before it applies a requested tier. A
+publication route cannot be reduced to `quick` or `standard`. The full
+cleanliness check is required only when the exact-SHA proof command is in the
+selected plan; ordinary plans may have unrelated untracked artifacts.
 
 The duration labels printed by the planner are planning aids based on observed
 runs, not promises. Unknown, renamed, deleted, or cross-cutting paths, such as
@@ -196,6 +207,10 @@ recomputes that contract and also requires all 23 operational renders to
 succeed. Temporary PNG byte hashes are not a durable repository invariant
 because browser rasterization can change antialiased pixels. The named visual
 review remains a separate human attestation.
+
+If a renderer times out, the validator makes a bounded best-effort attempt to
+terminate only that renderer's process tree and remove its partial output. A
+failed termination, drain, or cleanup is reported as a validation failure.
 
 ## Qualified mapping review packages
 

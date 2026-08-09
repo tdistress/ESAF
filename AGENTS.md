@@ -29,7 +29,7 @@ These instructions preserve durable project conventions for future Codex develop
 6. Record the reviewed head SHA in the pull-request description and ensure it still matches the PR head before merge.
 7. Require passing GitHub checks and a clean merge state before merging.
 8. After merge, update local `main`, rerun proportional validation, verify a clean worktree, then remove the temporary branch and worktree.
-9. For short work sessions, start with `python tools/plan_validation.py --base origin/main --candidate HEAD` and use its quick or standard commands for the current candidate. Treat the planner's duration labels as estimates, not deadlines. Unknown, renamed, deleted, workflow, and validation-tool paths shall use the publication tier. Required CI and publication gates remain authoritative, and every earlier validation result expires when the candidate SHA changes.
+9. For short work sessions, start with `python tools/plan_validation.py --base origin/main --candidate HEAD` and use the route selected for the current candidate. The planner's catalog and routing policy are static reviewed Python records, and its diagnostic output JSON-quotes paths, reasons, and command arguments. Treat duration labels as estimates, not deadlines. Unknown, renamed, deleted, workflow, and validation-tool paths shall use the publication tier. A publication route cannot be reduced to quick or standard. Full cleanliness is required only when exact-SHA proof is selected; ordinary routes may have unrelated untracked artifacts. Required CI and publication gates remain authoritative, and every earlier validation result expires when the candidate SHA changes.
 10. Use `python tools/run_test_shards.py --all --parallel --durations 50` when concurrent local shard feedback is useful. Retain sequential `--all` mode when ordered diagnostics are needed; parallel execution shall collect every selected shard result.
 
 ## Required validation habits
@@ -42,6 +42,7 @@ These instructions preserve durable project conventions for future Codex develop
 - Run `python tools/validate_architectures.py` when architecture content or links may be affected.
 - Run ordinary working-tree checks such as `git diff --check` during development, then run `git diff --check <merge-base>..HEAD` for final whole-branch review; ensure generated caches or build outputs are not committed.
 - Render every Mermaid diagram, not merely count fenced blocks. A syntactically valid Markdown file can still contain a Mermaid parse failure.
+- For a timed-out Mermaid renderer, make a bounded best-effort attempt to terminate only its process tree and clean up partial output. Treat a failed termination, drain, or cleanup as a validation failure.
 - Do not claim success from prior evidence after the branch head changes; rerun the affected gates.
 
 ## Review discipline

@@ -63,4 +63,3 @@ Final validation shall run focused suites, the full test suite from a clean deta
 - Adding GPU flags, retry loops, or alternative renderer versions.
 - Making generated review evidence optional for publication.
 - Replacing required CI with the local planner.
-
