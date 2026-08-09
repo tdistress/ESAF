@@ -12,7 +12,9 @@ the commands selected for each tier:
 python tools/plan_validation.py --base origin/main --candidate HEAD
 ```
 
-The planner has three tiers.
+The requested candidate must be the current clean checkout `HEAD`; the planner
+rejects tracked modifications and a non-ancestor base while leaving unrelated
+untracked artifacts alone. The planner has three tiers.
 
 - `quick` is a short preflight for a small work window. It checks the diff,
   verifies the shard manifest, and selects any directly affected checks.

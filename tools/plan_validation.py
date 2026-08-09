@@ -179,6 +179,40 @@ def _resolve(root: Path, ref: str, runner: Callable[..., object]) -> str:
     return resolved
 
 
+def _require_checked_out_candidate(
+    root: Path, candidate: str, runner: Callable[..., object]
+) -> None:
+    """Require the requested candidate to be the clean checked-out commit."""
+    head = _resolve(root, "HEAD", runner)
+    if head != candidate:
+        raise ValueError("resolved candidate does not match checkout HEAD")
+    result = runner(
+        ["git", "status", "--porcelain=v1", "--untracked-files=no"],
+        cwd=root,
+        check=False,
+        capture_output=True,
+    )
+    output = getattr(result, "stdout", None)
+    if getattr(result, "returncode", None) != 0 or not isinstance(output, bytes):
+        raise ValueError("could not inspect tracked checkout changes")
+    if output:
+        raise ValueError("checkout contains tracked changes")
+
+
+def _require_base_ancestor(
+    root: Path, base: str, candidate: str, runner: Callable[..., object]
+) -> None:
+    """Require the validation comparison to advance from its declared base."""
+    result = runner(
+        ["git", "merge-base", "--is-ancestor", base, candidate],
+        cwd=root,
+        check=False,
+        capture_output=True,
+    )
+    if getattr(result, "returncode", None) != 0:
+        raise ValueError("resolved base is not an ancestor of resolved candidate")
+
+
 def _diff_paths(root: Path, base: str, candidate: str, runner: Callable[..., object]) -> tuple[tuple[str, str], ...]:
     result = runner(["git", "diff", "--name-status", "-z", base, candidate], cwd=root, check=False, capture_output=True)
     output = getattr(result, "stdout", None)
@@ -239,6 +273,8 @@ def plan_validation(root: Path, *, base: str, candidate: str, git_runner: Callab
     runner = git_runner if git_runner is not None else subprocess.run
     resolved_base = _resolve(root, base, runner)
     resolved_candidate = _resolve(root, candidate, runner)
+    _require_checked_out_candidate(root, resolved_candidate, runner)
+    _require_base_ancestor(root, resolved_base, resolved_candidate, runner)
     changes = _diff_paths(root, resolved_base, resolved_candidate, runner)
     changed_paths = tuple(path for _, path in changes)
     escalation: list[str] = []

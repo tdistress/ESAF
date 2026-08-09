@@ -30,7 +30,6 @@ EXPECTED_PUBLICATION_CATALOG = (
     "controls",
     "crosswalks",
     "profiles",
-    "qualified-review",
     "full-discovery",
     "mermaid-record",
     "links",
@@ -55,14 +54,15 @@ class PlanValidationTests(unittest.TestCase):
         return {
             "schema": "esaf-validation-plans-v1",
             "commands": [
-                {"id": "preflight", "argv": ["git", "diff", "--check"], "tier": "quick", "duration": "under a minute"},
+                {"id": "preflight", "argv": ["git", "diff", "--check", "{base}", "{candidate}"], "tier": "quick", "duration": "under a minute"},
                 {"id": "docs", "argv": ["python", "-B", "-m", "unittest", "tests/test_esaf_1600_foundation.py"], "tier": "standard", "duration": "about a minute"},
-                {"id": "qualified", "argv": ["python", "tools/validate_qualified_review_evidence.py", "--check"], "tier": "standard", "duration": "several minutes"},
+                {"id": "links", "argv": ["python", "tools/validate_links.py", "--check"], "tier": "standard", "duration": "about a minute"},
+                {"id": "qualified-review-shard", "argv": ["python", "tools/run_test_shards.py", "--shard", "qualified_review_evidence"], "tier": "standard", "duration": "several minutes"},
                 {"id": "publication", "argv": ["python", "-B", "-m", "unittest", "discover", "-s", "tests", "-v"], "tier": "publication", "duration": "candidate freeze"},
             ],
             "rules": [
-                {"id": "documentation", "selectors": [{"prefix": "docs/"}], "quick": ["preflight"], "standard": ["docs"], "reason": "documentation change", "cross_cutting": False},
-                {"id": "qualified-review", "selectors": [{"prefix": "crosswalks/qualified-review/"}], "quick": ["preflight"], "standard": ["qualified"], "reason": "qualified-review change", "cross_cutting": False},
+                {"id": "documentation", "selectors": [{"prefix": "docs/"}], "quick": ["preflight"], "standard": ["docs", "links"], "reason": "documentation change", "cross_cutting": False},
+                {"id": "qualified-review", "selectors": [{"prefix": "crosswalks/qualified-review/"}], "quick": ["preflight"], "standard": ["qualified-review-shard"], "reason": "qualified-review change", "cross_cutting": False},
                 {"id": "workflow", "selectors": [{"prefix": ".github/workflows/"}], "quick": ["preflight"], "standard": [], "reason": "workflow change", "cross_cutting": True},
             ],
         }
@@ -74,15 +74,21 @@ class PlanValidationTests(unittest.TestCase):
     def git_diff_for(self, output: bytes, *, resolved: tuple[str, str] = ("a" * 40, "b" * 40)):
         resolves = iter(resolved)
         def runner(argv, **_kwargs):
+            if argv == ["git", "rev-parse", "--verify", "HEAD^{commit}"]:
+                return subprocess.CompletedProcess(argv, 0, (resolved[1] + "\n").encode(), b"")
             if argv[1:3] == ["rev-parse", "--verify"]:
                 return subprocess.CompletedProcess(argv, 0, (next(resolves) + "\n").encode(), b"")
+            if argv == ["git", "status", "--porcelain=v1", "--untracked-files=no"]:
+                return subprocess.CompletedProcess(argv, 0, b"", b"")
+            if argv == ["git", "merge-base", "--is-ancestor", resolved[0], resolved[1]]:
+                return subprocess.CompletedProcess(argv, 0, b"", b"")
             return subprocess.CompletedProcess(argv, 0, output, b"")
         return runner
 
     def test_documentation_and_qualified_review_route_to_standard(self) -> None:
         plan = plan_validation(self.root, base="base", candidate="candidate", git_runner=self.git_diff_for(b"M\0docs/guide.md\0M\0crosswalks/qualified-review/a.json\0"))
         self.assertEqual(("quick", "standard"), plan.selected_tiers)
-        self.assertEqual(("preflight", "docs", "qualified"), tuple(command.identifier for command in plan.commands))
+        self.assertEqual(("preflight", "docs", "links", "qualified-review-shard"), tuple(command.identifier for command in plan.commands))
 
     def test_unknown_path_escalates_to_publication(self) -> None:
         plan = plan_validation(self.root, base="base", candidate="candidate", git_runner=self.git_diff_for(b"M\0new-area/file.md\0"))
@@ -146,7 +152,7 @@ class PlanValidationTests(unittest.TestCase):
         self.assertEqual(0, result)
         selected = json.loads(stream.getvalue())
         self.assertEqual(
-            ["preflight", "docs", "qualified", "publication"],
+            ["preflight", "docs", "links", "qualified-review-shard", "publication"],
             [command["id"] for command in selected["commands"]],
         )
         self.assertEqual(["publication"], selected["selected_tiers"])
@@ -163,6 +169,26 @@ class PlanValidationTests(unittest.TestCase):
             tuple(command.identifier for command in plan.commands),
         )
         commands = {command.identifier: command.argv for command in plan.commands}
+        self.assertEqual(
+            ("git", "diff", "--check", "a" * 40, "b" * 40),
+            commands["preflight"],
+        )
+        self.assertEqual(
+            ("python", "tools/validate_links.py", "--check"),
+            commands["links"],
+        )
+        self.assertEqual(
+            (
+                "python",
+                "tools/verify_qualified_review_hot_path_equivalence.py",
+                "--check",
+                "--candidate-sha",
+                "b" * 40,
+            ),
+            commands["qualified-review-equivalence"],
+        )
+        self.assertNotIn("qualified-review", commands)
+        self.assertIn("qualified-review-shard", commands)
         self.assertEqual(
             ("python", "tools/release_gates.py", "--check", "--baseline-ref", "a" * 40),
             commands["release-gates"],
@@ -186,6 +212,78 @@ class PlanValidationTests(unittest.TestCase):
         cli_commands = {command["id"]: tuple(command["argv"]) for command in json.loads(stream.getvalue())["commands"]}
         self.assertEqual(set(commands), set(cli_commands))
         self.assertEqual(commands["release-gates"], cli_commands["release-gates"])
+
+    def test_committed_catalog_routes_ordinary_docs_and_qualified_review_to_standard(self) -> None:
+        ordinary_docs = plan_validation(
+            ROOT,
+            base="base",
+            candidate="candidate",
+            git_runner=self.git_diff_for(b"M\0docs/ordinary-guide.md\0"),
+        )
+        self.assertEqual(("quick", "standard"), ordinary_docs.selected_tiers)
+        self.assertEqual(
+            ("preflight", "test-shard-manifest", "remaining-shard", "links"),
+            tuple(command.identifier for command in ordinary_docs.commands),
+        )
+
+        qualified_review = plan_validation(
+            ROOT,
+            base="base",
+            candidate="candidate",
+            git_runner=self.git_diff_for(
+                b"M\0crosswalks/qualified-review/campaign/manifest.json\0"
+            ),
+        )
+        self.assertEqual(("quick", "standard"), qualified_review.selected_tiers)
+        self.assertEqual(
+            (
+                "preflight",
+                "test-shard-manifest",
+                "qualified-review-shard",
+                "mapping-review-shard",
+                "crosswalks",
+            ),
+            tuple(command.identifier for command in qualified_review.commands),
+        )
+
+    def test_publication_evidence_and_version_changes_take_publication_route(self) -> None:
+        for changed_path in (b"M\0docs/superpowers/reviews/record.md\0", b"M\0VERSION.md\0"):
+            with self.subTest(changed_path=changed_path):
+                plan = plan_validation(
+                    ROOT,
+                    base="base",
+                    candidate="candidate",
+                    git_runner=self.git_diff_for(changed_path),
+                )
+                self.assertEqual(("publication",), plan.selected_tiers)
+
+    def test_candidate_mismatch_dirty_checkout_and_nonancestor_base_fail_closed(self) -> None:
+        base, candidate = "a" * 40, "b" * 40
+
+        def runner_for(*, head: str = candidate, status: bytes = b"", ancestry: int = 0):
+            resolves = iter((base, candidate))
+
+            def runner(argv, **_kwargs):
+                if argv == ["git", "rev-parse", "--verify", "HEAD^{commit}"]:
+                    return subprocess.CompletedProcess(argv, 0, (head + "\n").encode(), b"")
+                if argv[1:3] == ["rev-parse", "--verify"]:
+                    return subprocess.CompletedProcess(argv, 0, (next(resolves) + "\n").encode(), b"")
+                if argv == ["git", "status", "--porcelain=v1", "--untracked-files=no"]:
+                    return subprocess.CompletedProcess(argv, 0, status, b"")
+                if argv == ["git", "merge-base", "--is-ancestor", base, candidate]:
+                    return subprocess.CompletedProcess(argv, ancestry, b"", b"")
+                return subprocess.CompletedProcess(argv, 0, b"M\0docs/a.md\0", b"")
+
+            return runner
+
+        for runner, message in (
+            (runner_for(head="c" * 40), "does not match checkout HEAD"),
+            (runner_for(status=b" M tools/plan_validation.py\0"), "tracked changes"),
+            (runner_for(ancestry=1), "not an ancestor"),
+        ):
+            with self.subTest(message=message):
+                with self.assertRaisesRegex(ValueError, message):
+                    plan_validation(self.root, base="base", candidate="candidate", git_runner=runner)
 
     def test_mapping_review_routes_to_supported_validation_without_stateful_package_builder(self) -> None:
         plan = plan_validation(
