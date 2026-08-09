@@ -9,11 +9,18 @@ import unittest
 from pathlib import Path
 
 from tools.plan_validation import (
-    load_manifest,
+    COMMAND_CATALOG,
+    PROOF_COMMAND_IDS,
+    PUBLICATION_COMMAND_IDS,
+    ROUTING_RULES,
+    ValidationCommand,
+    ValidationPolicy,
+    ValidationRule,
     main,
     plan_validation,
     render_json,
     render_text,
+    validate_policy,
 )
 
 
@@ -44,32 +51,25 @@ class PlanValidationTests(unittest.TestCase):
     def setUp(self) -> None:
         self.temp = tempfile.TemporaryDirectory()
         self.root = Path(self.temp.name)
-        (self.root / "tools").mkdir()
-        self.write_manifest(self.valid_manifest())
 
     def tearDown(self) -> None:
         self.temp.cleanup()
 
-    def valid_manifest(self) -> dict[str, object]:
-        return {
-            "schema": "esaf-validation-plans-v1",
-            "commands": [
-                {"id": "preflight", "argv": ["git", "diff", "--check", "{base}", "{candidate}"], "tier": "quick", "duration": "under a minute"},
-                {"id": "docs", "argv": ["python", "-B", "-m", "unittest", "tests/test_esaf_1600_foundation.py"], "tier": "standard", "duration": "about a minute"},
-                {"id": "links", "argv": ["python", "tools/validate_links.py", "--check"], "tier": "standard", "duration": "about a minute"},
-                {"id": "qualified-review-shard", "argv": ["python", "tools/run_test_shards.py", "--shard", "qualified_review_evidence"], "tier": "standard", "duration": "several minutes"},
-                {"id": "publication", "argv": ["python", "-B", "-m", "unittest", "discover", "-s", "tests", "-v"], "tier": "publication", "duration": "candidate freeze"},
-            ],
-            "rules": [
-                {"id": "documentation", "selectors": [{"prefix": "docs/"}], "quick": ["preflight"], "standard": ["docs", "links"], "reason": "documentation change", "cross_cutting": False},
-                {"id": "qualified-review", "selectors": [{"prefix": "crosswalks/qualified-review/"}], "quick": ["preflight"], "standard": ["qualified-review-shard"], "reason": "qualified-review change", "cross_cutting": False},
-                {"id": "workflow", "selectors": [{"prefix": ".github/workflows/"}], "quick": ["preflight"], "standard": [], "reason": "workflow change", "cross_cutting": True},
-            ],
-        }
-
-    def write_manifest(self, document: object, *, raw: str | None = None) -> None:
-        path = self.root / "tools" / "validation-plans.json"
-        path.write_text(raw if raw is not None else json.dumps(document), encoding="utf-8")
+    def valid_policy(self) -> ValidationPolicy:
+        return ValidationPolicy(
+            commands=(
+                ValidationCommand("preflight", ("git", "diff", "--check", "{base}", "{candidate}"), "quick", "under a minute"),
+                ValidationCommand("docs", ("python", "-B", "-m", "unittest", "tests/test_esaf_1600_foundation.py"), "standard", "about a minute"),
+                ValidationCommand("links", ("python", "tools/validate_links.py", "--check"), "standard", "about a minute"),
+                ValidationCommand("qualified-review-shard", ("python", "tools/run_test_shards.py", "--shard", "qualified_review_evidence"), "standard", "several minutes"),
+                ValidationCommand("publication", ("python", "-B", "-m", "unittest", "discover", "-s", "tests", "-v"), "publication", "candidate freeze"),
+            ),
+            rules=(
+                ValidationRule("documentation", (("prefix", "docs/"),), ("preflight",), ("docs", "links"), "documentation change", False),
+                ValidationRule("qualified-review", (("prefix", "crosswalks/qualified-review/"),), ("preflight",), ("qualified-review-shard",), "qualified-review change", False),
+                ValidationRule("workflow", (("prefix", ".github/workflows/"),), ("preflight",), (), "workflow change", True),
+            ),
+        )
 
     def git_diff_for(self, output: bytes, *, resolved: tuple[str, str] = ("a" * 40, "b" * 40)):
         resolves = iter(resolved)
@@ -88,7 +88,10 @@ class PlanValidationTests(unittest.TestCase):
     def test_documentation_and_qualified_review_route_to_standard(self) -> None:
         plan = plan_validation(self.root, base="base", candidate="candidate", git_runner=self.git_diff_for(b"M\0docs/guide.md\0M\0crosswalks/qualified-review/a.json\0"))
         self.assertEqual(("quick", "standard"), plan.selected_tiers)
-        self.assertEqual(("preflight", "docs", "links", "qualified-review-shard"), tuple(command.identifier for command in plan.commands))
+        self.assertEqual(
+            ("preflight", "test-shard-manifest", "qualified-review-shard", "mapping-review-shard", "remaining-shard", "crosswalks", "links"),
+            tuple(command.identifier for command in plan.commands),
+        )
 
     def test_unknown_path_escalates_to_publication(self) -> None:
         plan = plan_validation(self.root, base="base", candidate="candidate", git_runner=self.git_diff_for(b"M\0new-area/file.md\0"))
@@ -101,22 +104,43 @@ class PlanValidationTests(unittest.TestCase):
                 plan = plan_validation(self.root, base="base", candidate="candidate", git_runner=self.git_diff_for(output))
                 self.assertEqual(("publication",), plan.selected_tiers)
 
-    def test_manifest_rejects_duplicate_json_keys_and_invalid_rules_before_git(self) -> None:
-        self.write_manifest({}, raw='{"schema":"esaf-validation-plans-v1","schema":"esaf-validation-plans-v1"}')
-        with self.assertRaisesRegex(ValueError, "duplicate key"):
-            load_manifest(self.root)
-        for mutate, expected in (
-            (lambda d: d["rules"].append(dict(d["rules"][0])), "duplicate rule"),
-            (lambda d: d["rules"][0].update({"quick": ["missing"]}), "unknown command"),
-            (lambda d: d["rules"][0].update({"selectors": []}), "selectors"),
-            (lambda d: d["rules"][0].update({"selectors": [{"exact": "docs/a.md"}, {"exact": "docs/a.md"}]}), "ambiguous exact"),
-        ):
+    def test_policy_validation_rejects_invalid_in_memory_records(self) -> None:
+        policy = self.valid_policy()
+        invalid_policies = (
+            (
+                ValidationPolicy(policy.commands + (policy.commands[0],), policy.rules),
+                "duplicate command",
+            ),
+            (
+                ValidationPolicy(policy.commands, policy.rules + (policy.rules[0],)),
+                "duplicate rule",
+            ),
+            (
+                ValidationPolicy(
+                    policy.commands,
+                    (ValidationRule("bad", (("prefix", "docs/"),), ("missing",), (), "bad", False),),
+                ),
+                "unknown command",
+            ),
+            (
+                ValidationPolicy(
+                    policy.commands,
+                    (ValidationRule("bad", (), (), (), "bad", False),),
+                ),
+                "selectors",
+            ),
+            (
+                ValidationPolicy(
+                    policy.commands,
+                    (ValidationRule("bad", (("exact", "docs/a.md"), ("exact", "docs/a.md")), (), (), "bad", False),),
+                ),
+                "ambiguous exact",
+            ),
+        )
+        for invalid_policy, expected in invalid_policies:
             with self.subTest(expected=expected):
-                document = self.valid_manifest()
-                mutate(document)
-                self.write_manifest(document)
                 with self.assertRaisesRegex(ValueError, expected):
-                    load_manifest(self.root)
+                    validate_policy(invalid_policy)
 
     def test_unresolved_reference_and_malformed_diff_fail(self) -> None:
         def unresolved(argv, **_kwargs):
@@ -152,10 +176,37 @@ class PlanValidationTests(unittest.TestCase):
         self.assertEqual(0, result)
         selected = json.loads(stream.getvalue())
         self.assertEqual(
-            ["preflight", "docs", "links", "qualified-review-shard", "publication"],
+            list(EXPECTED_PUBLICATION_CATALOG),
             [command["id"] for command in selected["commands"]],
         )
         self.assertEqual(["publication"], selected["selected_tiers"])
+
+    def test_reviewed_catalog_has_fixed_publication_order_and_safe_argv_templates(self) -> None:
+        self.assertIsInstance(COMMAND_CATALOG, tuple)
+        self.assertIsInstance(ROUTING_RULES, tuple)
+        self.assertEqual(EXPECTED_PUBLICATION_CATALOG, PUBLICATION_COMMAND_IDS)
+        self.assertEqual(("qualified-review-equivalence",), PROOF_COMMAND_IDS)
+        commands = {command.identifier: command.argv for command in COMMAND_CATALOG}
+        self.assertEqual(
+            ("git", "diff", "--check", "{base}", "{candidate}"),
+            commands["preflight"],
+        )
+        self.assertEqual(
+            ("python", "tools/validate_links.py", "--check"),
+            commands["links"],
+        )
+        self.assertEqual(
+            (
+                "python",
+                "tools/verify_qualified_review_hot_path_equivalence.py",
+                "--check",
+                "--candidate-sha",
+                "{candidate}",
+            ),
+            commands["qualified-review-equivalence"],
+        )
+        self.assertNotIn("qualified-review", commands)
+        self.assertNotIn("mapping-review", commands)
 
     def test_committed_catalog_publication_route_includes_all_gates_and_base(self) -> None:
         plan = plan_validation(

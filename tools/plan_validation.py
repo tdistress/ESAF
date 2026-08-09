@@ -12,8 +12,6 @@ import sys
 from collections.abc import Callable, Sequence
 
 
-MANIFEST_PATH = Path("tools/validation-plans.json")
-SCHEMA = "esaf-validation-plans-v1"
 TIERS = ("quick", "standard", "publication")
 COMMIT_ID = re.compile(r"^[0-9a-f]{40,64}$")
 COMMAND_PLACEHOLDERS = {"{base}", "{candidate}"}
@@ -44,6 +42,14 @@ class ValidationManifest:
 
 
 @dataclass(frozen=True)
+class ValidationPolicy:
+    """Reviewed in-memory command catalog and routing rules."""
+
+    commands: tuple[ValidationCommand, ...]
+    rules: tuple[ValidationRule, ...]
+
+
+@dataclass(frozen=True)
 class ValidationPlan:
     base: str
     candidate: str
@@ -51,16 +57,6 @@ class ValidationPlan:
     selected_tiers: tuple[str, ...]
     commands: tuple[ValidationCommand, ...]
     reasons: tuple[str, ...]
-
-
-def reject_duplicate_keys(pairs: list[tuple[str, object]]) -> dict[str, object]:
-    """Build a JSON object while rejecting repeated keys."""
-    result: dict[str, object] = {}
-    for key, value in pairs:
-        if key in result:
-            raise ValueError(f"manifest has duplicate key {key!r}")
-        result[key] = value
-    return result
 
 
 def _path(value: object, *, selector: str) -> str:
@@ -77,92 +73,126 @@ def _path(value: object, *, selector: str) -> str:
 
 
 def _command_ids(value: object, *, field: str, known: set[str]) -> tuple[str, ...]:
-    if not isinstance(value, list) or any(not isinstance(item, str) or not item for item in value):
-        raise ValueError(f"manifest {field} commands must be a list of identifiers")
+    if not isinstance(value, tuple) or any(not isinstance(item, str) or not item for item in value):
+        raise ValueError(f"policy {field} commands must be a tuple of identifiers")
     if len(value) != len(set(value)):
-        raise ValueError(f"manifest {field} commands contain duplicate identifiers")
+        raise ValueError(f"policy {field} commands contain duplicate identifiers")
     unknown = sorted(set(value) - known)
     if unknown:
-        raise ValueError("manifest rule refers to unknown command: " + ", ".join(unknown))
+        raise ValueError("policy rule refers to unknown command: " + ", ".join(unknown))
     return tuple(value)
 
 
-def load_manifest(root: Path) -> ValidationManifest:
-    """Load and strictly validate the validation routing manifest."""
-    try:
-        document = json.loads(
-            (root / MANIFEST_PATH).read_text(encoding="utf-8"),
-            object_pairs_hook=reject_duplicate_keys,
-        )
-    except json.JSONDecodeError as error:
-        raise ValueError("validation plan manifest is not valid JSON") from error
-    except (OSError, UnicodeDecodeError) as error:
-        raise ValueError("validation plan manifest could not be read") from error
-    if not isinstance(document, dict) or set(document) != {"schema", "commands", "rules"}:
-        raise ValueError("manifest top-level keys must be schema, commands, and rules")
-    if document["schema"] != SCHEMA:
-        raise ValueError(f"manifest schema must be {SCHEMA!r}")
-    raw_commands = document["commands"]
-    if not isinstance(raw_commands, list) or not raw_commands:
-        raise ValueError("manifest commands must be a non-empty list")
+def validate_policy(policy: ValidationPolicy) -> ValidationManifest:
+    """Validate reviewed policy records before they drive command selection."""
+    if not isinstance(policy, ValidationPolicy):
+        raise ValueError("validation policy is invalid")
+    raw_commands = policy.commands
+    if not isinstance(raw_commands, tuple) or not raw_commands:
+        raise ValueError("policy commands must be a non-empty tuple")
     commands: list[ValidationCommand] = []
     identifiers: set[str] = set()
     for raw in raw_commands:
-        if not isinstance(raw, dict) or set(raw) != {"id", "argv", "tier", "duration"}:
-            raise ValueError("manifest command keys must be id, argv, tier, and duration")
-        identifier, argv, tier, duration = raw["id"], raw["argv"], raw["tier"], raw["duration"]
+        if not isinstance(raw, ValidationCommand):
+            raise ValueError("policy command record is invalid")
+        identifier, argv, tier, duration = raw.identifier, raw.argv, raw.tier, raw.duration
         if not isinstance(identifier, str) or not identifier:
-            raise ValueError("manifest command id must be a non-empty string")
+            raise ValueError("policy command id must be a non-empty string")
         if identifier in identifiers:
-            raise ValueError(f"manifest has duplicate command id {identifier!r}")
-        if not isinstance(argv, list) or not argv or any(
+            raise ValueError(f"policy has duplicate command id {identifier!r}")
+        if not isinstance(argv, tuple) or not argv or any(
             not isinstance(item, str) or not item for item in argv
         ):
-            raise ValueError(f"manifest command {identifier!r} argv must contain non-empty strings")
+            raise ValueError(f"policy command {identifier!r} argv must contain non-empty strings")
         if any(item.startswith("{") or item.endswith("}") for item in argv if item not in COMMAND_PLACEHOLDERS):
-            raise ValueError(f"manifest command {identifier!r} has an invalid argv placeholder")
+            raise ValueError(f"policy command {identifier!r} has an invalid argv placeholder")
         if tier not in TIERS or not isinstance(duration, str) or not duration:
-            raise ValueError(f"manifest command {identifier!r} has invalid tier or duration")
+            raise ValueError(f"policy command {identifier!r} has invalid tier or duration")
         identifiers.add(identifier)
-        commands.append(ValidationCommand(identifier, tuple(argv), tier, duration))
-    raw_rules = document["rules"]
-    if not isinstance(raw_rules, list) or not raw_rules:
-        raise ValueError("manifest rules must be a non-empty list")
+        commands.append(raw)
+    raw_rules = policy.rules
+    if not isinstance(raw_rules, tuple) or not raw_rules:
+        raise ValueError("policy rules must be a non-empty tuple")
     rules: list[ValidationRule] = []
     rule_ids: set[str] = set()
     exact_selectors: set[str] = set()
-    required = {"id", "selectors", "quick", "standard", "reason", "cross_cutting"}
     for raw in raw_rules:
-        if not isinstance(raw, dict) or set(raw) != required:
-            raise ValueError("manifest rule has invalid keys")
-        identifier = raw["id"]
+        if not isinstance(raw, ValidationRule):
+            raise ValueError("policy rule record is invalid")
+        identifier = raw.identifier
         if not isinstance(identifier, str) or not identifier:
-            raise ValueError("manifest rule id must be a non-empty string")
+            raise ValueError("policy rule id must be a non-empty string")
         if identifier in rule_ids:
-            raise ValueError(f"manifest has duplicate rule id {identifier!r}")
-        selectors = raw["selectors"]
-        if not isinstance(selectors, list) or not selectors:
-            raise ValueError(f"manifest rule {identifier!r} selectors must be non-empty")
+            raise ValueError(f"policy has duplicate rule id {identifier!r}")
+        selectors = raw.selectors
+        if not isinstance(selectors, tuple) or not selectors:
+            raise ValueError(f"policy rule {identifier!r} selectors must be non-empty")
         parsed: list[tuple[str, str]] = []
         for raw_selector in selectors:
-            if not isinstance(raw_selector, dict) or len(raw_selector) != 1:
-                raise ValueError(f"manifest rule {identifier!r} selector is invalid")
-            kind, value = next(iter(raw_selector.items()))
+            if not isinstance(raw_selector, tuple) or len(raw_selector) != 2:
+                raise ValueError(f"policy rule {identifier!r} selector is invalid")
+            kind, value = raw_selector
             if kind not in {"exact", "prefix"}:
-                raise ValueError(f"manifest rule {identifier!r} selector is invalid")
+                raise ValueError(f"policy rule {identifier!r} selector is invalid")
             path = _path(value, selector=kind)
             if kind == "exact":
                 if path in exact_selectors:
-                    raise ValueError(f"manifest has ambiguous exact selector {path!r}")
+                    raise ValueError(f"policy has ambiguous exact selector {path!r}")
                 exact_selectors.add(path)
             parsed.append((kind, path))
-        quick = _command_ids(raw["quick"], field="quick", known=identifiers)
-        standard = _command_ids(raw["standard"], field="standard", known=identifiers)
-        if not isinstance(raw["reason"], str) or not raw["reason"] or not isinstance(raw["cross_cutting"], bool):
-            raise ValueError(f"manifest rule {identifier!r} reason or cross_cutting is invalid")
+        quick = _command_ids(raw.quick, field="quick", known=identifiers)
+        standard = _command_ids(raw.standard, field="standard", known=identifiers)
+        if not isinstance(raw.reason, str) or not raw.reason or not isinstance(raw.cross_cutting, bool):
+            raise ValueError(f"policy rule {identifier!r} reason or cross_cutting is invalid")
         rule_ids.add(identifier)
-        rules.append(ValidationRule(identifier, tuple(parsed), quick, standard, raw["reason"], raw["cross_cutting"]))
+        rules.append(ValidationRule(identifier, tuple(parsed), quick, standard, raw.reason, raw.cross_cutting))
     return ValidationManifest(tuple(commands), tuple(rules))
+
+
+COMMAND_CATALOG = (
+    ValidationCommand("preflight", ("git", "diff", "--check", "{base}", "{candidate}"), "quick", "under a minute"),
+    ValidationCommand("test-shard-manifest", ("python", "tools/validate_test_shards.py", "--check"), "quick", "under a minute"),
+    ValidationCommand("profile-shard", ("python", "tools/run_test_shards.py", "--shard", "profile_validation"), "standard", "under a minute"),
+    ValidationCommand("qualified-review-shard", ("python", "tools/run_test_shards.py", "--shard", "qualified_review_evidence"), "standard", "about 5 to 10 minutes"),
+    ValidationCommand("mapping-review-shard", ("python", "tools/run_test_shards.py", "--shard", "mapping_review_bundle"), "standard", "about 3 minutes"),
+    ValidationCommand("remaining-shard", ("python", "tools/run_test_shards.py", "--shard", "remaining"), "standard", "about 3 minutes"),
+    ValidationCommand("architectures", ("python", "tools/validate_architectures.py"), "standard", "about a minute"),
+    ValidationCommand("assessment", ("python", "tools/validate_assessment.py", "--check"), "standard", "about a minute"),
+    ValidationCommand("controls", ("python", "tools/validate_controls.py", "--check"), "standard", "about a minute"),
+    ValidationCommand("crosswalks", ("python", "tools/validate_crosswalks.py", "--check", "--baseline-ref", "{base}"), "standard", "about a minute"),
+    ValidationCommand("profiles", ("python", "tools/validate_profiles.py", "--check"), "standard", "about a minute"),
+    ValidationCommand("full-discovery", ("python", "-B", "-m", "unittest", "discover", "-s", "tests", "-v"), "publication", "candidate freeze"),
+    ValidationCommand("mermaid-record", ("python", "tools/mermaid_inventory.py", "--check-record", "docs/superpowers/reviews/2026-07-27-v05-beta-mermaid-rendering.md"), "publication", "candidate freeze"),
+    ValidationCommand("links", ("python", "tools/validate_links.py", "--check"), "standard", "about a minute"),
+    ValidationCommand("qualified-review-equivalence", ("python", "tools/verify_qualified_review_hot_path_equivalence.py", "--check", "--candidate-sha", "{candidate}"), "publication", "publication proof"),
+    ValidationCommand("release-gates", ("python", "tools/release_gates.py", "--check", "--baseline-ref", "{base}"), "publication", "candidate freeze"),
+    ValidationCommand("release-evidence", ("python", "tools/v05_beta_release_gates.py", "--check", "--baseline-ref", "{base}"), "publication", "candidate freeze"),
+    ValidationCommand("pci-dss-mapping-go-no-go", ("python", "tools/render_pci_dss_mapping_go_no_go.py", "--check"), "publication", "candidate freeze"),
+)
+
+ROUTING_RULES = (
+    ValidationRule("documentation", (("prefix", "docs/"), ("exact", "README.md")), ("preflight", "test-shard-manifest"), ("remaining-shard", "links"), "documentation change", False),
+    ValidationRule("architectures", (("prefix", "architectures/"),), ("preflight", "test-shard-manifest"), ("architectures", "remaining-shard"), "architecture change", False),
+    ValidationRule("assessment", (("prefix", "assessment/"),), ("preflight", "test-shard-manifest"), ("assessment", "remaining-shard"), "assessment change", False),
+    ValidationRule("controls", (("prefix", "controls/"),), ("preflight", "test-shard-manifest"), ("controls", "remaining-shard"), "controls change", False),
+    ValidationRule("crosswalks", (("prefix", "crosswalks/"),), ("preflight", "test-shard-manifest"), ("crosswalks", "mapping-review-shard"), "crosswalk change", False),
+    ValidationRule("profiles", (("prefix", "profiles/"),), ("preflight", "test-shard-manifest"), ("profiles", "profile-shard"), "profile change", False),
+    ValidationRule("qualified-review", (("prefix", "crosswalks/qualified-review/"),), ("preflight", "test-shard-manifest"), ("qualified-review-shard",), "qualified-review change", False),
+    ValidationRule("mapping-review", (("prefix", "crosswalks/mapping-review/"),), ("preflight", "test-shard-manifest"), ("mapping-review-shard",), "mapping-review change", False),
+    ValidationRule("workflow", (("prefix", ".github/workflows/"), ("exact", "AGENTS.md")), ("preflight",), (), "workflow change", True),
+    ValidationRule("publication-evidence", (("prefix", "docs/superpowers/reviews/"), ("exact", "VERSION.md")), ("preflight",), (), "publication evidence or release metadata change", True),
+    ValidationRule("validation-tools", (("prefix", "tools/"), ("prefix", "tests/")), ("preflight",), (), "validation-tool change", True),
+)
+
+PUBLICATION_COMMAND_IDS = (
+    "preflight", "test-shard-manifest", "profile-shard", "qualified-review-shard",
+    "mapping-review-shard", "remaining-shard", "architectures", "assessment", "controls",
+    "crosswalks", "profiles", "full-discovery", "mermaid-record", "links",
+    "qualified-review-equivalence", "release-gates", "release-evidence",
+    "pci-dss-mapping-go-no-go",
+)
+PROOF_COMMAND_IDS = ("qualified-review-equivalence",)
+REVIEWED_POLICY = ValidationPolicy(COMMAND_CATALOG, ROUTING_RULES)
 
 
 def _resolve(root: Path, ref: str, runner: Callable[..., object]) -> str:
@@ -267,9 +297,17 @@ def _bind_commands(
     )
 
 
+def _publication_commands(manifest: ValidationManifest) -> tuple[ValidationCommand, ...]:
+    commands = {command.identifier: command for command in manifest.commands}
+    try:
+        return tuple(commands[identifier] for identifier in PUBLICATION_COMMAND_IDS)
+    except KeyError as error:
+        raise ValueError(f"policy publication command is missing: {error.args[0]}") from error
+
+
 def plan_validation(root: Path, *, base: str, candidate: str, git_runner: Callable[..., object] | None = None) -> ValidationPlan:
     """Return the conservative validation plan for the resolved Git comparison."""
-    manifest = load_manifest(root)
+    manifest = validate_policy(REVIEWED_POLICY)
     runner = git_runner if git_runner is not None else subprocess.run
     resolved_base = _resolve(root, base, runner)
     resolved_candidate = _resolve(root, candidate, runner)
@@ -300,7 +338,7 @@ def plan_validation(root: Path, *, base: str, candidate: str, git_runner: Callab
             command_ids.extend(rule.standard)
     if escalation:
         commands = _bind_commands(
-            manifest.commands, base=resolved_base, candidate=resolved_candidate
+            _publication_commands(manifest), base=resolved_base, candidate=resolved_candidate
         )
         return ValidationPlan(resolved_base, resolved_candidate, changed_paths, ("publication",), commands, tuple(dict.fromkeys(escalation)))
     selected = set(command_ids)
@@ -341,9 +379,9 @@ def main(argv: Sequence[str] | None = None, *, root: Path | None = None, git_run
         plan = plan_validation(root or Path.cwd(), base=arguments.base, candidate=arguments.candidate, git_runner=git_runner)
         if arguments.tier:
             if arguments.tier == "publication":
-                manifest = load_manifest(root or Path.cwd())
+                manifest = validate_policy(REVIEWED_POLICY)
                 commands = _bind_commands(
-                    manifest.commands, base=plan.base, candidate=plan.candidate
+                    _publication_commands(manifest), base=plan.base, candidate=plan.candidate
                 )
             else:
                 commands = tuple(command for command in plan.commands if command.tier == arguments.tier)
