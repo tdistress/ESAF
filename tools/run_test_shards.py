@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 import os
 from pathlib import Path
@@ -102,6 +103,51 @@ def run_all(
     )
 
 
+def _worker_failure(shard: Shard, error: BaseException) -> ShardResult:
+    """Represent an unexpected worker exception as a failed shard result."""
+    message = (
+        f"unexpected runner failure for shard {shard.identifier}: "
+        f"{type(error).__name__}: {error}\n"
+    )
+    return ShardResult(
+        shard.identifier,
+        shard.modules,
+        0.0,
+        1,
+        b"",
+        message.encode("utf-8", errors="replace"),
+    )
+
+
+def run_all_parallel(
+    root: Path,
+    shards: tuple[Shard, ...],
+    durations: int,
+    runner: Callable[..., object] | None = None,
+    clock: Callable[[], float] | None = None,
+) -> tuple[ShardResult, ...]:
+    """Run every shard concurrently and return results in manifest order."""
+    if not shards:
+        return ()
+    with ThreadPoolExecutor(max_workers=len(shards)) as executor:
+        futures = tuple(
+            (
+                shard,
+                executor.submit(
+                    run_shard, root, shard, durations, runner=runner, clock=clock
+                ),
+            )
+            for shard in shards
+        )
+        results = []
+        for shard, future in futures:
+            try:
+                results.append(future.result())
+            except Exception as error:
+                results.append(_worker_failure(shard, error))
+    return tuple(results)
+
+
 def _byte_tail(value: bytes, limit: int) -> str:
     """Return an UTF-8-safe tail whose encoded length fits *limit* bytes."""
     text = value.decode("utf-8", errors="replace")
@@ -170,6 +216,7 @@ def build_parser() -> argparse.ArgumentParser:
     selection = parser.add_mutually_exclusive_group(required=True)
     selection.add_argument("--shard", metavar="ID")
     selection.add_argument("--all", action="store_true")
+    parser.add_argument("--parallel", action="store_true")
     parser.add_argument("--durations", type=int, default=50)
     return parser
 
@@ -189,13 +236,21 @@ def main(
     options = parser.parse_args(arguments)
     if options.durations < 1:
         parser.error("--durations shall be at least 1")
+    if options.parallel and not options.all:
+        parser.error("--parallel shall be used only with --all")
     output = stdout or sys.stdout
     errors = stderr or sys.stderr
     shards = manifest_validator(root)
+    execution_started = (clock or time.monotonic)()
     if options.all:
-        results = run_all(
-            root, shards, options.durations, runner=runner, clock=clock
-        )
+        if options.parallel:
+            results = run_all_parallel(
+                root, shards, options.durations, runner=runner, clock=clock
+            )
+        else:
+            results = run_all(
+                root, shards, options.durations, runner=runner, clock=clock
+            )
     else:
         selected = next(
             (shard for shard in shards if shard.identifier == options.shard),
@@ -208,6 +263,9 @@ def main(
                 root, selected, options.durations, runner=runner, clock=clock
             ),
         )
+    overall_elapsed_seconds = (clock or time.monotonic)() - execution_started
+    print(f"Mode: {'parallel' if options.parallel else 'sequential'}", file=output)
+    print(f"Overall elapsed seconds: {overall_elapsed_seconds:.3f}", file=output)
     for result in results:
         _write_result(result, output, errors)
     summary = _failure_summary(results)
