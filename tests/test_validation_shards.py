@@ -6,6 +6,7 @@ import os
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 import unittest
 from pathlib import Path
@@ -20,6 +21,7 @@ from tools.run_test_shards import (
     build_command,
     main,
     run_all,
+    run_all_parallel,
     run_shard,
 )
 from tools.test_shards import load_manifest, tracked_test_modules, validate_manifest
@@ -311,19 +313,22 @@ class ValidationShardWorkflowTests(unittest.TestCase):
             runs,
         )
 
-    def test_ci_validates_the_manifest_and_tracks_all_shard_tools(self) -> None:
+    def test_ci_tracks_the_static_planner_policy_and_shard_tools(self) -> None:
         workflow = self.workflow()
         shard_paths = (
             "tools/test-shards.json",
             "tools/test_shards.py",
             "tools/validate_test_shards.py",
             "tools/run_test_shards.py",
+            "tools/plan_validation.py",
         )
         for event in ("pull_request", "push"):
             paths = workflow["on"][event]["paths"]
             for path in shard_paths:
                 with self.subTest(event=event, path=path):
                     self.assertEqual(1, paths.count(path))
+            with self.subTest(event=event):
+                self.assertNotIn("tools/validation-plans.json", paths)
 
         self.assertIn("validation_gates", workflow["jobs"])
         gate_runs = [
@@ -333,6 +338,19 @@ class ValidationShardWorkflowTests(unittest.TestCase):
         self.assertEqual(
             1,
             gate_runs.count("python tools/validate_test_shards.py --check"),
+        )
+
+    def test_ci_cancels_only_superseded_runs_for_the_same_pull_request_or_ref(self) -> None:
+        workflow = self.workflow()
+        self.assertEqual(
+            {
+                "group": (
+                    "${{ github.workflow }}-"
+                    "${{ github.event.pull_request.number || github.ref }}"
+                ),
+                "cancel-in-progress": "true",
+            },
+            workflow["concurrency"],
         )
 
     def test_ci_publishes_one_aggregate_required_check(self) -> None:
@@ -386,6 +404,7 @@ class TestShardRunnerTests(unittest.TestCase):
             cwd=ROOT,
             check=False,
             capture_output=True,
+            env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
         )
 
         self.assertEqual(0, completed.returncode)
@@ -468,6 +487,115 @@ class TestShardRunnerTests(unittest.TestCase):
         self.assertEqual([1, 0, 0, 0], [item.exit_code for item in results])
         self.assertEqual([1.0, 1.0, 1.0, 1.0], [item.elapsed_seconds for item in results])
 
+    def test_run_all_parallel_starts_every_shard_and_retains_mixed_failures(self) -> None:
+        shards = load_manifest(ROOT)
+        started: list[str] = []
+        completed: list[str] = []
+        release = threading.Event()
+        all_started = threading.Event()
+        lock = threading.Lock()
+        completion_gates = [threading.Event() for _ in shards]
+        completion_events = [threading.Event() for _ in shards]
+
+        def runner(command: list[str], **kwargs: object) -> object:
+            shard = next(
+                item for item in shards if list(item.modules) == command[3:-3]
+            )
+            with lock:
+                started.append(shard.identifier)
+                if len(started) == len(shards):
+                    all_started.set()
+            release.wait(timeout=1)
+            index = shards.index(shard)
+            completion_gates[index].wait(timeout=1)
+            with lock:
+                completed.append(shard.identifier)
+            completion_events[index].set()
+            return subprocess.CompletedProcess(
+                command,
+                1 if shard.identifier == "profile_validation" else 0,
+                b"",
+                b"",
+            )
+
+        def release_workers() -> None:
+            self.assertTrue(all_started.wait(timeout=1))
+            release.set()
+            for index in reversed(range(len(shards))):
+                completion_gates[index].set()
+                self.assertTrue(completion_events[index].wait(timeout=1))
+
+        releaser = threading.Thread(target=release_workers)
+        releaser.start()
+        results = run_all_parallel(ROOT, shards, 50, runner=runner)
+        releaser.join(timeout=1)
+
+        self.assertFalse(releaser.is_alive())
+        self.assertCountEqual([item.identifier for item in shards], started)
+        self.assertEqual(
+            [item.identifier for item in reversed(shards)], completed
+        )
+        self.assertEqual(
+            [item.identifier for item in shards],
+            [item.identifier for item in results],
+        )
+        self.assertEqual([1, 0, 0, 0], [item.exit_code for item in results])
+
+    def test_run_all_parallel_converts_worker_exception_and_retains_siblings(self) -> None:
+        shards = load_manifest(ROOT)
+        calls: list[str] = []
+
+        def runner(command: list[str], **kwargs: object) -> object:
+            shard = next(
+                item for item in shards if list(item.modules) == command[3:-3]
+            )
+            calls.append(shard.identifier)
+            if shard.identifier == "qualified_review_evidence":
+                raise RuntimeError("worker exploded")
+            return subprocess.CompletedProcess(command, 0, b"ok\n", b"")
+
+        results = run_all_parallel(ROOT, shards, 50, runner=runner)
+
+        self.assertEqual(
+            [item.identifier for item in shards],
+            [item.identifier for item in results],
+        )
+        failed = results[1]
+        self.assertNotEqual(0, failed.exit_code)
+        self.assertIn(b"qualified_review_evidence", failed.stderr)
+        self.assertIn(b"worker exploded", failed.stderr)
+        self.assertEqual([0, failed.exit_code, 0, 0], [item.exit_code for item in results])
+        self.assertCountEqual([item.identifier for item in shards], calls)
+
+    def test_parallel_cli_requires_all_selection(self) -> None:
+        with patch.object(sys, "stderr", io.StringIO()):
+            with self.assertRaisesRegex(SystemExit, "2"):
+                main(["--shard", "profile_validation", "--parallel"])
+
+    def test_all_parallel_prints_mode_and_overall_elapsed_before_shards(self) -> None:
+        shards = load_manifest(ROOT)
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+
+        def runner(command: list[str], **kwargs: object) -> object:
+            return subprocess.CompletedProcess(command, 0, b"", b"")
+
+        exit_code = main(
+            ["--all", "--parallel"],
+            root=ROOT,
+            runner=runner,
+            clock=lambda: 0.0,
+            stdout=stdout,
+            stderr=stderr,
+            manifest_validator=lambda _root: shards,
+        )
+
+        lines = stdout.getvalue().splitlines()
+        self.assertEqual(0, exit_code)
+        self.assertEqual("Mode: parallel", lines[0])
+        self.assertEqual("Overall elapsed seconds: 0.000", lines[1])
+        self.assertEqual("Shard: profile_validation", lines[2])
+
     def test_successful_all_prints_every_module_in_order_with_elapsed_time(
         self,
     ) -> None:
@@ -478,7 +606,9 @@ class TestShardRunnerTests(unittest.TestCase):
         def runner(command: list[str], **kwargs: object) -> object:
             return subprocess.CompletedProcess(command, 0, b"", b"")
 
-        ticks = iter((0.0, 1.25, 10.0, 12.5, 20.0, 23.75, 30.0, 35.0))
+        ticks = iter(
+            (0.0, 0.0, 1.25, 10.0, 12.5, 20.0, 23.75, 30.0, 35.0, 40.0)
+        )
         exit_code = main(
             ["--all", "--durations", "50"],
             root=ROOT,
@@ -497,6 +627,8 @@ class TestShardRunnerTests(unittest.TestCase):
             line for line in output_lines if line.startswith("tests/test_")
         ]
         self.assertEqual(0, exit_code)
+        self.assertEqual("Mode: sequential", output_lines[0])
+        self.assertEqual("Overall elapsed seconds: 40.000", output_lines[1])
         self.assertEqual(expected_modules, printed_modules)
         for module in expected_modules:
             with self.subTest(module=module):

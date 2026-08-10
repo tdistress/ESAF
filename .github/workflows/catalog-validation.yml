@@ -33,6 +33,7 @@ on:
       - "tools/test_shards.py"
       - "tools/validate_test_shards.py"
       - "tools/run_test_shards.py"
+      - "tools/plan_validation.py"
       - "tools/release_gates.py"
       - "tools/v05_beta_release_gates.py"
       - "tools/v05_beta_release_evidence.py"
@@ -84,6 +85,7 @@ on:
       - "tools/test_shards.py"
       - "tools/validate_test_shards.py"
       - "tools/run_test_shards.py"
+      - "tools/plan_validation.py"
       - "tools/release_gates.py"
       - "tools/v05_beta_release_gates.py"
       - "tools/v05_beta_release_evidence.py"
@@ -106,6 +108,10 @@ on:
 
 permissions:
   contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   unit_tests:
