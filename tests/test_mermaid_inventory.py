@@ -541,6 +541,10 @@ class MermaidInventoryTests(unittest.TestCase):
                         "tools.mermaid_inventory.subprocess.Popen",
                         side_effect=TimedOutProcess,
                     ),
+                    mock.patch(
+                        "tools.mermaid_inventory._renderer_runs_on_windows",
+                        return_value=True,
+                    ),
                 ):
                     with self.assertRaisesRegex(
                         ValueError,
@@ -599,6 +603,10 @@ class MermaidInventoryTests(unittest.TestCase):
                         "tools.mermaid_inventory.subprocess.Popen",
                         side_effect=TimedOutProcess,
                     ),
+                    mock.patch(
+                        "tools.mermaid_inventory._renderer_runs_on_windows",
+                        return_value=True,
+                    ),
                 ):
                     with self.assertRaisesRegex(
                         ValueError,
@@ -652,6 +660,10 @@ class MermaidInventoryTests(unittest.TestCase):
             mock.patch(
                 "tools.mermaid_inventory.subprocess.Popen",
                 side_effect=TimedOutProcess,
+            ),
+            mock.patch(
+                "tools.mermaid_inventory._renderer_runs_on_windows",
+                return_value=True,
             ),
             mock.patch("tools.mermaid_inventory.Path.unlink", side_effect=fail_partial_unlink),
         ):
@@ -720,6 +732,10 @@ class MermaidInventoryTests(unittest.TestCase):
                 side_effect=TimedOutProcess,
             ),
             mock.patch(
+                "tools.mermaid_inventory._renderer_runs_on_windows",
+                return_value=True,
+            ),
+            mock.patch(
                 "tools.mermaid_inventory.tempfile.TemporaryDirectory",
                 side_effect=CleanupFailsTemporaryDirectory,
             ),
@@ -770,6 +786,10 @@ class MermaidInventoryTests(unittest.TestCase):
             mock.patch(
                 "tools.mermaid_inventory.subprocess.Popen",
                 side_effect=TimedOutProcess,
+            ),
+            mock.patch(
+                "tools.mermaid_inventory._renderer_runs_on_windows",
+                return_value=True,
             ),
         ):
             with self.assertRaisesRegex(
