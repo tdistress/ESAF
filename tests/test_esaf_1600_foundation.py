@@ -499,6 +499,7 @@ class Esaf1600FoundationTests(unittest.TestCase):
             "tests/test_v05_beta_release_evidence.py",
             "docs/superpowers/reviews/2026-07-27-v05-beta-publication-readiness.md",
             "docs/superpowers/reviews/2026-07-27-v05-beta-mermaid-rendering.md",
+            "tools/v09_rc1_release_gates.py",
             "tools/mermaid-render-config.json",
             "tools/mermaid-puppeteer-ci.json",
             "tools/mermaid_inventory.py",
@@ -668,6 +669,12 @@ class Esaf1600FoundationTests(unittest.TestCase):
             ),
         })
 
+        v09_rc1_gate = unique_step("Validate v0.9-rc1 release record")
+        self.assertEqual(v09_rc1_gate, {
+            "name": "Validate v0.9-rc1 release record",
+            "run": "python tools/v09_rc1_release_gates.py --check",
+        })
+
         release_gate_runs = [
             (step["run"], step.get("if", ""))
             for step in steps
@@ -705,6 +712,10 @@ class Esaf1600FoundationTests(unittest.TestCase):
                     "python tools/v05_beta_release_gates.py --check "
                     '--baseline-ref "HEAD^"',
                     "github.event_name == 'workflow_dispatch'",
+                ),
+                (
+                    "python tools/v09_rc1_release_gates.py --check",
+                    "",
                 ),
             ],
         )
