@@ -420,9 +420,24 @@ def validate_baseline_transition(
         )
     except (OSError, ValueError, subprocess.CalledProcessError) as exc:
         return [f"baseline readiness record could not be loaded: {exc}"]
+    # Match the v0.5-beta gate: post-publication maintenance PRs keep phase
+    # ``published`` against a ``published`` baseline. The first published
+    # transition still requires ``closure_candidate``.
+    if (
+        candidate_phase == "published"
+        and baseline_record.get("phase") == "published"
+    ):
+        expected_previous = "published"
     if baseline_record.get("phase") != expected_previous:
         errors.append(
             f"{candidate_phase} shall transition only from {expected_previous}"
+        )
+    if (
+        baseline_record.get("phase") == "published"
+        and candidate_phase in {"evidence_candidate", "closure_candidate"}
+    ):
+        errors.append(
+            "published record shall not transition to a candidate phase"
         )
     # Match the v0.5-beta gate: the metadata allowlist binds only the
     # closure_candidate transition. The published-record PR may also update
@@ -439,6 +454,35 @@ def validate_baseline_transition(
         if baseline_record.get(field) != candidate_record.get(field):
             errors.append(
                 f"{candidate_phase} shall preserve {field} from the baseline record"
+            )
+    if baseline_record.get("phase") == candidate_phase == "published":
+        previous_publication = baseline_record.get("publication")
+        candidate_publication = candidate_record.get("publication")
+        immutable_fields = (
+            "condition",
+            "date",
+            "evidence",
+            "tag_object",
+            "tagged_commit",
+            "issue_evidence_url",
+        )
+        previous_identity = (
+            {field: previous_publication.get(field) for field in immutable_fields}
+            if isinstance(previous_publication, dict)
+            else None
+        )
+        candidate_identity = (
+            {field: candidate_publication.get(field) for field in immutable_fields}
+            if isinstance(candidate_publication, dict)
+            else None
+        )
+        if (
+            previous_identity != candidate_identity
+            or baseline_record.get("gates") != candidate_record.get("gates")
+        ):
+            errors.append(
+                "published publication identity and closed gate truth "
+                "shall remain unchanged"
             )
     return errors
 
