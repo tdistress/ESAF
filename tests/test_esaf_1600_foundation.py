@@ -34,6 +34,8 @@ README_LINK_TARGETS = {
     "CATALOG.md",
     "catalog.json",
     "../tools/README.md",
+    "nist-ai-rmf.md",
+    "pci-dss.md",
 }
 ESAF_1600_DECISIONS = (
     "Provision Markdown is the authoritative crosswalk source.",
@@ -132,6 +134,26 @@ class Esaf1600FoundationTests(unittest.TestCase):
             r"(?im)^## Approved mappings$|"
             r"^\| External provision \| ESAF control \|$|"
             r"PCI DSS \d+(?:\.\d+)+ maps directly",
+        )
+
+    def assert_nist_ai_rmf_hold_landing_page(self, text: str) -> None:
+        normalized = normalize_markdown_contract(text)
+        statuses = re.findall(
+            r"(?m)^\*\*Status:\*\*\s*(\S.*?)\s*$",
+            normalized,
+        )
+        self.assertEqual(statuses, ["Readiness HOLD"])
+        self.assertNotRegex(
+            normalized,
+            r"(?im)^\*\*Status:\*\*\s*(?:Approved|Reviewed|Published)\s*$",
+        )
+        self.assertIn("[ESAF-1600](ESAF-1600.md)", normalized)
+        self.assertIn("NIST AI RMF mapping artifacts: `0`", normalized)
+        self.assertNotRegex(
+            normalized,
+            r"(?im)^## Approved mappings$|"
+            r"^\| External provision \| ESAF control \|$|"
+            r"NIST AI RMF .+ maps directly",
         )
 
     def test_required_foundation_files_exist(self) -> None:
@@ -357,6 +379,8 @@ class Esaf1600FoundationTests(unittest.TestCase):
     def test_unmapped_landing_pages_publish_readiness_and_link_methodology(self) -> None:
         pci = (ROOT / "crosswalks/pci-dss.md").read_text(encoding="utf-8")
         self.assert_pci_hold_landing_page(pci)
+        nist = (ROOT / "crosswalks/nist-ai-rmf.md").read_text(encoding="utf-8")
+        self.assert_nist_ai_rmf_hold_landing_page(nist)
         hitrust = (ROOT / "crosswalks/hitrust-csf.md").read_text(encoding="utf-8")
         self.assert_planned_landing_page("hitrust-csf.md", hitrust)
 
@@ -485,6 +509,7 @@ class Esaf1600FoundationTests(unittest.TestCase):
             "tools/validate_crosswalks.py",
             "tools/validate_profiles.py",
             "tools/render_pci_dss_mapping_go_no_go.py",
+            "tools/render_nist_ai_rmf_mapping_go_no_go.py",
             "requirements-dev.txt",
         ]
         for event in ("pull_request", "push"):
@@ -537,6 +562,12 @@ class Esaf1600FoundationTests(unittest.TestCase):
         self.assertEqual(pci_readiness, {
             "name": "Validate PCI DSS readiness review",
             "run": "python tools/render_pci_dss_mapping_go_no_go.py --check",
+        })
+
+        nist_readiness = unique_step("Validate NIST AI RMF readiness review")
+        self.assertEqual(nist_readiness, {
+            "name": "Validate NIST AI RMF readiness review",
+            "run": "python tools/render_nist_ai_rmf_mapping_go_no_go.py --check",
         })
 
         pull_request = unique_step("Validate crosswalk history on pull request")
