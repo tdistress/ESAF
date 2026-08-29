@@ -2,7 +2,26 @@
 
 **Status:** Working Draft
 
-**Version:** 0.5-beta
+**Version:** 0.9-rc1
+
+## 0.9-rc1 delivery sequence
+
+`v0.9-rc1` is the bounded Working Draft release candidate. Delivery order:
+
+1. close validation-harness Phase 2 performance work;
+2. author ESAF-1300, ESAF-1400, and ESAF-1700 Working Draft foundations;
+3. complete one public-source crosswalk readiness package, defaulting to NIST
+   AI RMF unless the owner selects another public source; and
+4. close ordinary `v0.9-rc1` publication gates on the exact candidate.
+
+Deferred mapping assurance remains tracked after beta through issue 55 and does
+not stop later engineering work. HITRUST readiness remains separately gated
+through issue 60. The Phase 4, Phase 5, and Phase 6 lists remain long-term
+direction, not `v0.9-rc1` exit criteria.
+
+Publication remains conditional on the remote annotated `v0.9-rc1` tag
+resolving to the exact validated merged commit. The tag has not been created,
+and the post-merge gate remains open.
 
 ## 0.5-beta delivery sequence
 
@@ -16,21 +35,6 @@ not stop later engineering work. Publication does not change any control,
 architecture, profile, mapping-set, or mapping-record lifecycle state. The
 Phase 4 and Phase 5 lists remain long-term direction, not `v0.5-beta` exit
 criteria.
-
-## 0.9-rc1 delivery sequence
-
-`v0.9-rc1` is the next bounded Working Draft release candidate. Delivery order:
-
-1. close validation-harness Phase 2 performance work;
-2. author ESAF-1300, ESAF-1400, and ESAF-1700 Working Draft foundations;
-3. complete one public-source crosswalk readiness package, defaulting to NIST
-   AI RMF unless the owner selects another public source; and
-4. close ordinary `v0.9-rc1` publication gates on the exact candidate.
-
-Deferred mapping assurance remains tracked after beta through issue 55 and does
-not stop later engineering work. HITRUST readiness remains separately gated
-through issue 60. The Phase 4, Phase 5, and Phase 6 lists remain long-term
-direction, not `v0.9-rc1` exit criteria.
 
 ## Phase 0 - Foundation
 
