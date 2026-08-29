@@ -98,6 +98,18 @@
 - ESAF-1000, ESAF-1100, ESAF-1200, the ESAF-1500 foundation, ESAF-1600, the UK
   pilot profile, and the three UK mapping snapshots remain Draft.
 
+### Publication state
+
+- The `v0.9-rc1` Working Draft was published on 2026-08-29 through annotated
+  tag `v0.9-rc1` at `4136cfdc71a85ea2becd0f23c95424e7580cafa3` (tag object
+  `1b5cdead5c56c4f209b5cf091c665ca40e709590`).
+- Publication closes the repository release gates only. Controls,
+  architectures, profiles, mapping sets, mapping records, and the ESAF-1300,
+  ESAF-1400, and ESAF-1700 Working Drafts remain Draft or Working Draft as
+  recorded.
+- Issue 60 remains separately gated. Deferred UK mapping assurance remains
+  tracked under Issue 55 policy even if GitHub issue state drifts.
+
 ### Required workstreams
 
 1. **Validation-harness Phase 2 closeout.** ESAF shall land the remaining
