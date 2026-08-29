@@ -17,24 +17,29 @@ Cyber Essentials core and Cyber Essentials Plus remain separate mapping sets.
 
 ## Separately gated future work
 
-- Establish HITRUST CSF source and review readiness only after licensed-source
-  access, publication rights, and qualified-review availability are confirmed.
-  This work does not block `v0.5-beta`.
+- [Issue 60](https://github.com/tdistress/ESAF/issues/60) tracks HITRUST CSF
+  source and review readiness only after licensed-source access, publication
+  rights, and qualified-review availability are confirmed. This work does not
+  block `v0.5-beta` or `v0.9-rc1`.
 
 ## Post-beta scheduled queue
 
-These initiatives are required for `v0.9-rc1` and do not yet have open GitHub
-Issues. Ready-to-file bodies live in
-`docs/superpowers/plans/2026-08-29-v09-rc1-next-steps.md`. Deferred mapping
-assurance and HITRUST readiness remain tracked separately and do not stop later
-engineering work.
+These initiatives are required for `v0.9-rc1` and are tracked in open GitHub
+Issues under milestone `v0.9-rc1`. Deferred mapping assurance and HITRUST
+readiness remain tracked separately and do not stop later engineering work.
 
-- Close validation-harness Phase 2 performance target.
-- Author ESAF-1300 Governance Manual Working Draft.
-- Author ESAF-1400 Implementation Guide Working Draft.
-- Author ESAF-1700 Enterprise AI Data Model Working Draft.
-- Complete NIST AI RMF public-source readiness and mapping go/no-go.
-- Close the v0.9-rc1 publication gates.
+- [Issue 90](https://github.com/tdistress/ESAF/issues/90): Close
+  validation-harness Phase 2 performance target.
+- [Issue 91](https://github.com/tdistress/ESAF/issues/91): Author ESAF-1300
+  Governance Manual Working Draft.
+- [Issue 92](https://github.com/tdistress/ESAF/issues/92): Author ESAF-1400
+  Implementation Guide Working Draft.
+- [Issue 93](https://github.com/tdistress/ESAF/issues/93): Author ESAF-1700
+  Enterprise AI Data Model Working Draft.
+- [Issue 94](https://github.com/tdistress/ESAF/issues/94): Complete NIST AI RMF
+  public-source readiness and mapping go/no-go.
+- [Issue 95](https://github.com/tdistress/ESAF/issues/95): Close the v0.9-rc1
+  publication gates.
 
 ## Completed workstreams
 
