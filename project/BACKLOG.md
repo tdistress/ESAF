@@ -21,6 +21,21 @@ Cyber Essentials core and Cyber Essentials Plus remain separate mapping sets.
   access, publication rights, and qualified-review availability are confirmed.
   This work does not block `v0.5-beta`.
 
+## Post-beta scheduled queue
+
+These initiatives are required for `v0.9-rc1` and do not yet have open GitHub
+Issues. Ready-to-file bodies live in
+`docs/superpowers/plans/2026-08-29-v09-rc1-next-steps.md`. Deferred mapping
+assurance and HITRUST readiness remain tracked separately and do not stop later
+engineering work.
+
+- Close validation-harness Phase 2 performance target.
+- Author ESAF-1300 Governance Manual Working Draft.
+- Author ESAF-1400 Implementation Guide Working Draft.
+- Author ESAF-1700 Enterprise AI Data Model Working Draft.
+- Complete NIST AI RMF public-source readiness and mapping go/no-go.
+- Close the v0.9-rc1 publication gates.
+
 ## Completed workstreams
 
 - [Issue 59](https://github.com/tdistress/ESAF/issues/59), the `v0.5-beta`
