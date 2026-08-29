@@ -841,6 +841,28 @@ def _read_package_files(
     }
 
 
+def validate_metadata_against_schema(
+    schema: object,
+    metadata: dict[str, object],
+    subject: str,
+) -> None:
+    """Validate already-loaded metadata against an already-loaded schema.
+
+    This is the pure candidate-metadata boundary: it assumes the caller has
+    already confirmed the schema itself is well-formed (invalid-schema
+    handling stays with the loader in `_validate_candidate_metadata`).
+    """
+    validator = Draft202012Validator(schema, format_checker=FormatChecker())
+    errors = sorted(
+        validator.iter_errors(metadata),
+        key=lambda error: list(error.absolute_path),
+    )
+    if errors:
+        raise ValueError(
+            f"{subject} candidate schema validation failed: {errors[0].message}"
+        )
+
+
 def _validate_candidate_metadata(
     reader: GitReader,
     commit: str,
@@ -851,20 +873,9 @@ def _validate_candidate_metadata(
     try:
         schema = json.loads(reader.read_bytes(commit, schema_path))
         Draft202012Validator.check_schema(schema)
-        validator = Draft202012Validator(
-            schema,
-            format_checker=FormatChecker(),
-        )
     except (UnicodeDecodeError, json.JSONDecodeError, SchemaError, ValueError) as error:
         raise ValueError(f"invalid candidate schema: {schema_path}") from error
-    errors = sorted(
-        validator.iter_errors(metadata),
-        key=lambda error: list(error.absolute_path),
-    )
-    if errors:
-        raise ValueError(
-            f"{subject} candidate schema validation failed: {errors[0].message}"
-        )
+    validate_metadata_against_schema(schema, metadata, subject)
 
 
 def _candidate_validators(reader: GitReader, commit: str) -> dict[str, object]:

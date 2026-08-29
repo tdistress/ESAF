@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import ast
 from contextlib import redirect_stderr, redirect_stdout
 import hashlib
+import inspect
 import io
 import json
 import os
@@ -35,6 +37,11 @@ from tools.build_mapping_review_bundle import (
     write_package,
 )
 from tools.crosswalks.digests import snapshot_digest_from_files
+from tests.mapping_review_bundle_hot_path_support import run_narrow_case
+from tests.mapping_review_bundle_policy_cases import (
+    mapping_review_bundle_policy_inventory,
+    validate_mapping_review_bundle_policy_inventory,
+)
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -2644,87 +2651,61 @@ class ReviewedCandidateAssemblyTests(unittest.TestCase):
         self.assertIn("| Candidate state | `reviewed` |", index)
         self.assertIn("reviewed but is not approved, published", index)
 
+    def _run_hot_path_cases(self, method_name: str, expected_count: int) -> None:
+        """Run the frozen narrow-boundary cases selected for one baseline
+        reject method (see the Issue #90 bundle hot-path design). These
+        cases fail inside a pure boundary before package-completeness work
+        is the subject of the assertion, so they no longer pay for an
+        assemble_package / Git commit round trip.
+        """
+        cases = mapping_review_bundle_policy_inventory().cases_for_method(
+            method_name
+        )
+        self.assertEqual(len(cases), expected_count)
+        for case in cases:
+            with self.subTest(case_id=case.case_id):
+                with self.assertRaisesRegex(ValueError, case.expected_error_regex):
+                    run_narrow_case(case)
+
     def test_reviewed_candidate_rejects_mixed_or_approved_states(self) -> None:
-        for label, relative, update, message in (
-            (
-                "mixed-record",
-                self._record_relative(),
-                lambda metadata: metadata.update(status="draft"),
-                "must be reviewed",
-            ),
-            (
-                "approved-snapshot",
-                f"{self.profile.snapshot_path}/README.md",
-                lambda metadata: metadata.update(status="approved"),
-                "candidate schema validation",
-            ),
-            (
-                "approved-record",
-                self._record_relative(),
-                lambda metadata: metadata.update(status="approved"),
-                "candidate schema validation",
-            ),
-        ):
-            with self.subTest(label=label):
-                self._fresh_candidate()
-                with self.assertRaisesRegex(ValueError, message):
-                    self._assemble_after(relative, update)
+        self._run_hot_path_cases(
+            "test_reviewed_candidate_rejects_mixed_or_approved_states", 3
+        )
 
     def test_reviewed_candidate_rejects_missing_reviewer_metadata(self) -> None:
-        for label, relative in (
-            ("snapshot", f"{self.profile.snapshot_path}/README.md"),
-            ("record", self._record_relative()),
-        ):
-            with self.subTest(label=label):
-                self._fresh_candidate()
-                with self.assertRaisesRegex(ValueError, "candidate schema validation"):
-                    self._assemble_after(relative, lambda metadata: metadata.pop("reviewer"))
+        self._run_hot_path_cases(
+            "test_reviewed_candidate_rejects_missing_reviewer_metadata", 2
+        )
 
     def test_reviewed_candidate_rejects_mapper_self_review(self) -> None:
-        for relative in (f"{self.profile.snapshot_path}/README.md", self._record_relative()):
-            with self.subTest(relative=relative):
-                self._fresh_candidate()
-                def self_review(metadata: dict[str, object]) -> None:
-                    reviewer = metadata["reviewer"]
-                    mapper = metadata["mapper"]
-                    assert isinstance(reviewer, dict) and isinstance(mapper, dict)
-                    reviewer["id"] = mapper["id"]
-                with self.assertRaisesRegex(ValueError, "reviewer must differ from mapper"):
-                    self._assemble_after(relative, self_review)
+        self._run_hot_path_cases(
+            "test_reviewed_candidate_rejects_mapper_self_review", 2
+        )
+
+    def test_reviewed_candidate_mapper_self_review_still_routes_through_assemble_package(
+        self,
+    ) -> None:
+        """Thin full-path smoke: one representative reject (mapper
+        self-review on the mapping-set README) must still be rejected by
+        the complete assemble_package path, proving production still
+        routes through it even though the hot-path matrix now covers the
+        pure-boundary equivalents.
+        """
+        readme = f"{self.profile.snapshot_path}/README.md"
+
+        def self_review(metadata: dict[str, object]) -> None:
+            reviewer = metadata["reviewer"]
+            mapper = metadata["mapper"]
+            assert isinstance(reviewer, dict) and isinstance(mapper, dict)
+            reviewer["id"] = mapper["id"]
+
+        with self.assertRaisesRegex(ValueError, "reviewer must differ from mapper"):
+            self._assemble_after(readme, self_review)
 
     def test_reviewed_candidate_rejects_critical_and_important_findings(self) -> None:
-        readme = f"{self.profile.snapshot_path}/README.md"
-        for severity, status in (
-            ("Critical", "open"),
-            ("Critical", "accepted"),
-            ("Important", "open"),
-            ("Important", "accepted"),
-        ):
-            with self.subTest(severity=severity, status=status):
-                self._fresh_candidate()
-
-                def add_finding(metadata: dict[str, object]) -> None:
-                    finding: dict[str, object] = {
-                        "finding_id": "review-finding",
-                        "affected_record_ids": ["ce33-d-001"],
-                        "severity": severity,
-                        "status": status,
-                        "description": "Fixture finding.",
-                        "disposition": "Fixture disposition.",
-                    }
-                    if status == "accepted":
-                        finding.update(
-                            resolver_or_acceptor="fixture-acceptor",
-                            disposition_date="2026-07-25",
-                            acceptance_rationale="Fixture rationale.",
-                        )
-                    metadata["findings"] = [finding]
-
-                with self.assertRaisesRegex(
-                    ValueError,
-                    f"{severity} finding must be resolved",
-                ):
-                    self._assemble_after(readme, add_finding)
+        self._run_hot_path_cases(
+            "test_reviewed_candidate_rejects_critical_and_important_findings", 4
+        )
 
     def test_reviewed_candidate_rejects_lifecycle_events(self) -> None:
         registry = f"crosswalks/registry/{CORE_ID}.md"
@@ -2735,24 +2716,9 @@ class ReviewedCandidateAssemblyTests(unittest.TestCase):
             )
 
     def test_reviewed_candidate_rejects_each_required_reviewer_field(self) -> None:
-        readme = f"{self.profile.snapshot_path}/README.md"
-        for field in (
-            "id",
-            "qualification",
-            "date",
-            "authorized_source_access",
-            "findings_disposition",
-        ):
-            with self.subTest(field=field):
-                self._fresh_candidate()
-
-                def remove_field(metadata: dict[str, object]) -> None:
-                    reviewer = metadata["reviewer"]
-                    assert isinstance(reviewer, dict)
-                    reviewer.pop(field)
-
-                with self.assertRaisesRegex(ValueError, "candidate schema validation"):
-                    self._assemble_after(readme, remove_field)
+        self._run_hot_path_cases(
+            "test_reviewed_candidate_rejects_each_required_reviewer_field", 5
+        )
 
     def test_reviewed_candidate_uses_candidate_sourced_schemas(self) -> None:
         cases = (
@@ -2843,6 +2809,74 @@ class CandidateValidationTests(unittest.TestCase):
                 ),
                 [],
             )
+
+
+class BundlePolicyInventoryTests(unittest.TestCase):
+    """Validate the frozen mapping-review bundle reject-case population."""
+
+    def test_population_size_is_sixteen(self) -> None:
+        inventory = mapping_review_bundle_policy_inventory()
+        self.assertEqual(len(inventory.cases), 16)
+
+    def test_population_digest_matches_reviewed_inventory(self) -> None:
+        inventory = mapping_review_bundle_policy_inventory()
+        validate_mapping_review_bundle_policy_inventory(
+            inventory.cases, inventory.population_sha256
+        )
+
+    def test_case_identifiers_are_unique(self) -> None:
+        inventory = mapping_review_bundle_policy_inventory()
+        case_ids = [case.case_id for case in inventory.cases]
+        self.assertEqual(len(case_ids), len(set(case_ids)))
+
+    def test_digest_drift_is_rejected(self) -> None:
+        inventory = mapping_review_bundle_policy_inventory()
+        with self.assertRaisesRegex(ValueError, "population digest"):
+            validate_mapping_review_bundle_policy_inventory(
+                inventory.cases, "0" * 64
+            )
+
+    def test_case_count_drift_is_rejected(self) -> None:
+        inventory = mapping_review_bundle_policy_inventory()
+        with self.assertRaisesRegex(ValueError, "case count must remain 16"):
+            validate_mapping_review_bundle_policy_inventory(
+                inventory.cases[:-1], inventory.population_sha256
+            )
+
+
+class BundleHotPathMatrixTests(unittest.TestCase):
+    """Exercise every frozen reject case through its pure boundary only.
+
+    This class must not use assemble_package, TemporaryDirectory, or a Git
+    clone/commit: every one of the 16 selected reviewed-candidate reject
+    mutations fails inside a pure production boundary
+    (validate_metadata_against_schema, _require_candidate_state, or
+    _require_reviewed_findings) over an in-memory metadata dict.
+    """
+
+    def test_every_inventory_case_rejects_through_its_pure_boundary(self) -> None:
+        inventory = mapping_review_bundle_policy_inventory()
+        self.assertEqual(len(inventory.cases), 16)
+        for case in inventory.cases:
+            with self.subTest(case_id=case.case_id):
+                with self.assertRaisesRegex(ValueError, case.expected_error_regex):
+                    run_narrow_case(case)
+
+    def test_source_does_not_reference_full_assembly_helpers(self) -> None:
+        source = inspect.getsource(BundleHotPathMatrixTests)
+        tree = ast.parse(source)
+        forbidden_names = {"assemble_package", "_assemble_after"}
+        referenced = {
+            node.id
+            for node in ast.walk(tree)
+            if isinstance(node, ast.Name) and node.id in forbidden_names
+        }
+        referenced |= {
+            node.attr
+            for node in ast.walk(tree)
+            if isinstance(node, ast.Attribute) and node.attr in forbidden_names
+        }
+        self.assertEqual(referenced, set())
 
 
 class PackageWriterTests(unittest.TestCase):
