@@ -50,6 +50,7 @@
         "tests/test_uk_cyber_essentials_v33_crosswalk.py",
         "tests/test_v05_beta_release_evidence.py",
         "tests/test_v05_beta_release_gates.py",
+        "tests/test_v09_rc1_release_gates.py",
         "tests/test_validate_architectures.py",
         "tests/test_validate_assessment.py",
         "tests/test_validate_crosswalks.py",

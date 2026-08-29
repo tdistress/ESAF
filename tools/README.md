@@ -195,6 +195,26 @@ mandatory.
 Exact candidate, approval, merge, and tag SHAs remain in GitHub evidence and
 an external temporary JSON file until durable publication evidence exists.
 
+## v0.9-rc1 release-record validation
+
+Validate the current v0.9-rc1 evidence-candidate readiness record without
+changing files:
+
+```shell
+python tools/v09_rc1_release_gates.py --check
+```
+
+The validator requires the exact front-matter contract, recomputes release
+scope from the live `controls/catalog.json`, `crosswalks/catalog.json`,
+architecture pattern files, assessment foundation, and Draft UK profile, and
+fails on drift. It also requires each prerequisite path (Phase 2 timing
+deferral, ESAF-1300/1400/1700, and the NIST AI RMF crosswalk) to exist and
+contain its recorded disposition marker. Only the `evidence_candidate` phase
+is currently supported; `--baseline-ref` is reserved for later
+`closure_candidate`/`published` transition checks and is rejected for
+`evidence_candidate` records. `tools/release_gates.py` and
+`tools/v05_beta_release_gates.py` remain frozen historical validators.
+
 ## Mermaid publication rendering
 
 Inventory every tracked Mermaid block and write temporary renderer inputs beneath the system temporary directory, outside the repository:
