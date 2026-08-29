@@ -108,6 +108,12 @@ reduction (≤ ~450.6s). Timing remains diagnostic for intermediate commits; the
 final Issue #90 closeout shall either meet the target or explicitly defer with
 evidence.
 
+**Closeout disposition (2026-08-29):** `DEFER`. Evidence:
+`docs/superpowers/reviews/2026-08-29-phase2-hosted-timing-deferral.md`. The
+bundle hot-path technical deliverables are complete; the sealed serial-wall-time
+≥40% claim is deferred because CI measures parallel shards and only two
+post-hot-path hosted samples were available.
+
 ## Non-goals
 
 - Changing package bytes, directions, or review protocol semantics
