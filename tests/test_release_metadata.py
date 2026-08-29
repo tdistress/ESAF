@@ -1172,18 +1172,24 @@ class ReleaseMetadataTests(unittest.TestCase):
     def test_backlog_queues_post_beta_v09_rc1_initiatives(self) -> None:
         backlog = read_repository_file("project/BACKLOG.md")
         queue = markdown_section(backlog, "## Post-beta scheduled queue")
+        completed = markdown_section(backlog, "## Completed workstreams")
         for required in (
-            "Close validation-harness Phase 2 performance target",
+            "v0.9-rc1 initiatives previously queued here are complete",
+            "do not stop later engineering work",
+            "New post-`v0.9-rc1` initiatives",
+        ):
+            with self.subTest(required=required):
+                self.assertTrue(contains_normalized_phrase(queue, required))
+        for required in (
+            "Close the v0.9-rc1 publication gates",
             "Author ESAF-1300 Governance Manual Working Draft",
             "Author ESAF-1400 Implementation Guide Working Draft",
             "Author ESAF-1700 Enterprise AI Data Model Working Draft",
             "Complete NIST AI RMF public-source readiness and mapping go/no-go",
-            "Close the v0.9-rc1 publication gates",
-            "tracked in open GitHub Issues",
-            "do not stop later engineering work",
+            "Close validation-harness Phase 2 performance target",
         ):
             with self.subTest(required=required):
-                self.assertTrue(contains_normalized_phrase(queue, required))
+                self.assertTrue(contains_normalized_phrase(completed, required))
         for issue_url in (
             "https://github.com/tdistress/ESAF/issues/90",
             "https://github.com/tdistress/ESAF/issues/91",
@@ -1193,9 +1199,28 @@ class ReleaseMetadataTests(unittest.TestCase):
             "https://github.com/tdistress/ESAF/issues/95",
         ):
             with self.subTest(issue_url=issue_url):
-                self.assertIn(issue_url, queue)
+                self.assertIn(issue_url, completed)
+                self.assertNotIn(issue_url, queue)
         self.assertNotIn("https://github.com/tdistress/ESAF/issues/55", queue)
         self.assertNotIn("https://github.com/tdistress/ESAF/issues/60", queue)
+
+    def test_v09_rc1_milestones_record_publication_state(self) -> None:
+        milestones = read_repository_file("project/MILESTONES.md")
+        section = milestones[milestones.index("## v0.9-rc1") :]
+        publication = section[
+            section.index("### Publication state") : section.index(
+                "### Required workstreams"
+            )
+        ]
+        for required in (
+            "published on 2026-08-29",
+            "v0.9-rc1",
+            "4136cfdc71a85ea2becd0f23c95424e7580cafa3",
+            "1b5cdead5c56c4f209b5cf091c665ca40e709590",
+            "Publication closes the repository release gates only",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, publication)
 
     def test_hitrust_backlog_links_open_issue_60(self) -> None:
         backlog = read_repository_file("project/BACKLOG.md")
