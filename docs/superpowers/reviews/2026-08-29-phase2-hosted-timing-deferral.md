@@ -1,7 +1,7 @@
 # Phase 2 hosted timing closeout — Issue #90
 
-**Date:** 2026-08-29  
-**Candidate:** `ea27c5b4d1fee53b2e1e7f68a0ed54a1ad0b0fe2` (PR #97 merge)  
+**Date:** 2026-08-29
+**Candidate:** `ea27c5b4d1fee53b2e1e7f68a0ed54a1ad0b0fe2` (PR #97 merge)
 **Disposition:** `DEFER` the sealed ≥40% serial full-suite wall-time target
 
 ## Sealed criterion
