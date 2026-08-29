@@ -40,8 +40,12 @@ def _evidence_candidate_record(source: dict) -> dict:
 
 
 def _previous_phase_ref(phase: object) -> str:
+    from tools.v09_rc1_release_gates import CLOSURE_ALLOWLIST, changed_paths_since
+
     expected = PREVIOUS_PHASE[phase]  # type: ignore[index]
-    for ref in ("origin/main", "HEAD~1", "HEAD~2", "HEAD~3"):
+    # Prefer nearby ancestors first so a stacked allowlist commit validates
+    # against its immediate evidence parent rather than a lagging origin/main.
+    for ref in ("HEAD~1", "HEAD~2", "HEAD~3", "origin/main"):
         result = subprocess.run(
             ["git", "show", f"{ref}:{RECORD_RELATIVE}"],
             cwd=ROOT,
@@ -57,8 +61,15 @@ def _previous_phase_ref(phase: object) -> str:
         import yaml
 
         value = yaml.safe_load(text[4:boundary])
-        if isinstance(value, dict) and value.get("phase") == expected:
-            return ref
+        if not isinstance(value, dict) or value.get("phase") != expected:
+            continue
+        if phase in {"closure_candidate", "published"}:
+            disallowed = sorted(
+                changed_paths_since(ROOT, ref) - set(CLOSURE_ALLOWLIST)
+            )
+            if disallowed:
+                continue
+        return ref
     raise AssertionError(
         f"no git ref found with readiness phase {expected!r} for {phase!r}"
     )
