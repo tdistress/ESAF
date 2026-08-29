@@ -44,6 +44,7 @@ EXPECTED_PUBLICATION_CATALOG = (
     "release-gates",
     "release-evidence",
     "pci-dss-mapping-go-no-go",
+    "nist-ai-rmf-mapping-go-no-go",
 )
 EXPECTED_COMMAND_ARGV = {
     "preflight": ("git", "diff", "--check", "{base}", "{candidate}"),
@@ -64,6 +65,7 @@ EXPECTED_COMMAND_ARGV = {
     "release-gates": ("python", "tools/release_gates.py", "--check", "--baseline-ref", "{base}"),
     "release-evidence": ("python", "tools/v05_beta_release_gates.py", "--check", "--baseline-ref", "{base}"),
     "pci-dss-mapping-go-no-go": ("python", "tools/render_pci_dss_mapping_go_no_go.py", "--check"),
+    "nist-ai-rmf-mapping-go-no-go": ("python", "tools/render_nist_ai_rmf_mapping_go_no_go.py", "--check"),
 }
 FORBIDDEN_GENERIC_COMMAND_IDS = (
     "qualified-review",
@@ -351,6 +353,10 @@ class PlanValidationTests(unittest.TestCase):
         self.assertEqual(
             ("python", "tools/render_pci_dss_mapping_go_no_go.py", "--check"),
             commands["pci-dss-mapping-go-no-go"],
+        )
+        self.assertEqual(
+            ("python", "tools/render_nist_ai_rmf_mapping_go_no_go.py", "--check"),
+            commands["nist-ai-rmf-mapping-go-no-go"],
         )
         self.assertEqual(
             ("python", "tools/mermaid_inventory.py", "--check-record", "docs/superpowers/reviews/2026-07-27-v05-beta-mermaid-rendering.md"),
