@@ -212,8 +212,15 @@ jobs:
       - name: Validate v0.5-beta release record on workflow dispatch
         if: github.event_name == 'workflow_dispatch'
         run: python tools/v05_beta_release_gates.py --check --baseline-ref "HEAD^"
-      - name: Validate v0.9-rc1 release record
-        run: python tools/v09_rc1_release_gates.py --check
+      - name: Validate v0.9-rc1 release record on pull request
+        if: github.event_name == 'pull_request'
+        run: python tools/v09_rc1_release_gates.py --check --baseline-ref "${{ github.event.pull_request.base.sha }}"
+      - name: Validate v0.9-rc1 release record on protected-branch push
+        if: github.event_name == 'push'
+        run: python tools/v09_rc1_release_gates.py --check --baseline-ref "${{ github.event.before }}"
+      - name: Validate v0.9-rc1 release record on workflow dispatch
+        if: github.event_name == 'workflow_dispatch'
+        run: python tools/v09_rc1_release_gates.py --check --baseline-ref "HEAD^"
       - name: Render and validate the v0.5-beta Mermaid baseline
         env:
           ESAF_MERMAID_PUPPETEER_CONFIG: tools/mermaid-puppeteer-ci.json

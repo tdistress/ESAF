@@ -169,7 +169,7 @@ COMMAND_CATALOG = (
     ValidationCommand("release-evidence", ("python", "tools/v05_beta_release_gates.py", "--check", "--baseline-ref", "{base}"), "publication", "candidate freeze"),
     ValidationCommand("pci-dss-mapping-go-no-go", ("python", "tools/render_pci_dss_mapping_go_no_go.py", "--check"), "publication", "candidate freeze"),
     ValidationCommand("nist-ai-rmf-mapping-go-no-go", ("python", "tools/render_nist_ai_rmf_mapping_go_no_go.py", "--check"), "publication", "candidate freeze"),
-    ValidationCommand("v09-rc1-release-gates", ("python", "tools/v09_rc1_release_gates.py", "--check"), "publication", "candidate freeze"),
+    ValidationCommand("v09-rc1-release-gates", ("python", "tools/v09_rc1_release_gates.py", "--check", "--baseline-ref", "{base}"), "publication", "candidate freeze"),
 )
 
 ROUTING_RULES = (

@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 """Validate the v0.9-rc1 publication-readiness record contract (Issue #95).
 
-This validator currently supports the ``evidence_candidate`` phase only. The
-``closure_candidate`` and ``published`` phases, the closure allowlist, and
-baseline-ref transition checks are reserved for later publication-gate work
-and are intentionally not implemented here. ``tools/release_gates.py`` and
-``tools/v05_beta_release_gates.py`` remain frozen historical validators.
+Supports ``evidence_candidate``, ``closure_candidate``, and ``published``
+phases, including ``--baseline-ref`` previous-phase and closure-allowlist
+checks. ``tools/release_gates.py`` and ``tools/v05_beta_release_gates.py``
+remain frozen historical validators.
 """
 
 from __future__ import annotations
@@ -19,6 +18,8 @@ import sys
 from typing import Any, Sequence
 
 import yaml
+
+DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 
 RELEASE = "0.9-rc1"
@@ -229,14 +230,36 @@ def _validate_publication(errors: list[str], phase: object, publication: object)
                 errors.append("evidence candidate publication date shall be null")
             if publication.get("evidence") != []:
                 errors.append("evidence candidate publication evidence shall be empty")
+        elif phase == "closure_candidate":
+            date_value = publication.get("date")
+            if date_value is not None and (
+                not isinstance(date_value, str) or not DATE_RE.fullmatch(date_value)
+            ):
+                errors.append(
+                    "closure candidate publication date shall be YYYY-MM-DD or null"
+                )
+            evidence = publication.get("evidence")
+            if not isinstance(evidence, list):
+                errors.append("closure candidate publication evidence shall be a list")
+            elif any(not _https(locator) for locator in evidence):
+                errors.append(
+                    "closure candidate publication evidence shall use HTTPS locators"
+                )
     elif phase == "published":
+        date_value = publication.get("date")
+        if not isinstance(date_value, str) or not DATE_RE.fullmatch(date_value):
+            errors.append("published publication date shall be YYYY-MM-DD")
         if not _sha(publication.get("tag_object")):
             errors.append("published tag object shall be a 40-character SHA")
         if not _sha(publication.get("tagged_commit")):
             errors.append("published tagged commit shall be a 40-character SHA")
+        if not _https(publication.get("issue_evidence_url")):
+            errors.append("published issue evidence URL shall be an HTTPS locator")
         evidence = publication.get("evidence")
         if not isinstance(evidence, list) or not evidence:
             errors.append("published publication evidence is required")
+        elif any(not _https(locator) for locator in evidence):
+            errors.append("published publication evidence shall use HTTPS locators")
 
 
 def _validate_prerequisites(errors: list[str], root: Path, value: object) -> None:
@@ -352,14 +375,79 @@ def validate_readiness_body(body: str) -> list[str]:
     return errors
 
 
+def _git_show_text(root: Path, ref: str, relative_path: str) -> str:
+    result = subprocess.run(
+        ["git", "show", f"{ref}:{relative_path}"],
+        cwd=root,
+        check=True,
+        capture_output=True,
+    )
+    return result.stdout.decode("utf-8")
+
+
+def changed_paths_since(root: Path, baseline_ref: str) -> set[str]:
+    """Return path names changed between baseline_ref and HEAD."""
+    result = subprocess.run(
+        ["git", "diff", "--name-only", baseline_ref, "HEAD"],
+        cwd=root,
+        check=True,
+        capture_output=True,
+    )
+    return {
+        path
+        for path in result.stdout.decode("utf-8").splitlines()
+        if path.strip()
+    }
+
+
+def validate_baseline_transition(
+    root: Path,
+    *,
+    baseline_ref: str,
+    candidate_phase: object,
+    candidate_record: dict[str, object],
+) -> list[str]:
+    """Validate previous-phase ancestry and the closure allowlist."""
+    errors: list[str] = []
+    expected_previous = PREVIOUS_PHASE.get(candidate_phase)  # type: ignore[arg-type]
+    if expected_previous is None:
+        errors.append(f"phase {candidate_phase!r} does not support baseline-ref")
+        return errors
+    try:
+        baseline_text = _git_show_text(root, baseline_ref, RECORD_RELATIVE)
+        baseline_record, _ = _front_matter_parts(
+            baseline_text, f"{baseline_ref}:{RECORD_RELATIVE}"
+        )
+    except (OSError, ValueError, subprocess.CalledProcessError) as exc:
+        return [f"baseline readiness record could not be loaded: {exc}"]
+    if baseline_record.get("phase") != expected_previous:
+        errors.append(
+            f"{candidate_phase} shall transition only from {expected_previous}"
+        )
+    if candidate_phase in {"closure_candidate", "published"}:
+        changed = changed_paths_since(root, baseline_ref)
+        disallowed = sorted(changed - set(CLOSURE_ALLOWLIST))
+        for path in disallowed:
+            errors.append(
+                f"{candidate_phase} baseline diff includes non-allowlist path: {path}"
+            )
+    # Keep candidate identity fields stable across the transition.
+    for field in ("release", "tag", "issue", "repository_scope"):
+        if baseline_record.get(field) != candidate_record.get(field):
+            errors.append(
+                f"{candidate_phase} shall preserve {field} from the baseline record"
+            )
+    return errors
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true", required=True)
     parser.add_argument(
         "--baseline-ref",
         help=(
-            "reserved for closure_candidate/published transition checks; "
-            "evidence_candidate records shall not supply this option"
+            "previous-phase readiness baseline for closure_candidate/published "
+            "transition and allowlist checks; ignored for evidence_candidate"
         ),
     )
     arguments = parser.parse_args(argv)
@@ -368,14 +456,22 @@ def main(argv: Sequence[str] | None = None) -> int:
         record, body = load_readiness_document(root / RECORD_RELATIVE)
         errors = [*validate_record(root, record), *validate_readiness_body(body)]
         phase = record.get("phase")
-        if arguments.baseline_ref:
-            if phase == "evidence_candidate":
-                errors.append("evidence_candidate shall not have a baseline-ref")
-            elif phase in PREVIOUS_PHASE:
-                errors.append(
-                    f"{phase} baseline-ref transition validation is not yet "
-                    "implemented"
+        if phase in PREVIOUS_PHASE and not arguments.baseline_ref:
+            label = (
+                "closure candidate"
+                if phase == "closure_candidate"
+                else "published"
+            )
+            errors.append(f"baseline-ref is required for {label}")
+        elif arguments.baseline_ref and phase in PREVIOUS_PHASE:
+            errors.extend(
+                validate_baseline_transition(
+                    root,
+                    baseline_ref=arguments.baseline_ref,
+                    candidate_phase=phase,
+                    candidate_record=record,
                 )
+            )
     except (OSError, ValueError, subprocess.CalledProcessError, json.JSONDecodeError) as exc:
         errors = [f"release record could not be validated: {exc}"]
     for error in errors:

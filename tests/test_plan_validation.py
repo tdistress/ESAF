@@ -67,7 +67,7 @@ EXPECTED_COMMAND_ARGV = {
     "release-evidence": ("python", "tools/v05_beta_release_gates.py", "--check", "--baseline-ref", "{base}"),
     "pci-dss-mapping-go-no-go": ("python", "tools/render_pci_dss_mapping_go_no_go.py", "--check"),
     "nist-ai-rmf-mapping-go-no-go": ("python", "tools/render_nist_ai_rmf_mapping_go_no_go.py", "--check"),
-    "v09-rc1-release-gates": ("python", "tools/v09_rc1_release_gates.py", "--check"),
+    "v09-rc1-release-gates": ("python", "tools/v09_rc1_release_gates.py", "--check", "--baseline-ref", "{base}"),
 }
 FORBIDDEN_GENERIC_COMMAND_IDS = (
     "qualified-review",
