@@ -4,7 +4,41 @@ All notable changes to ESAF are documented in this file.
 
 Versions 0.2-alpha and 0.3-alpha remain unreleased working-draft stages.
 Version 0.4-alpha is a tagged Working Draft. Version 0.5-beta is a tagged
-Working Draft.
+Working Draft. Version 0.9-rc1 is an unreleased Working Draft release
+candidate.
+
+## 0.9-rc1 - Unreleased
+
+### Added
+
+- Added the v0.9-rc1 evidence-candidate readiness record and release-gate
+  validator, including prerequisite dispositions for Phase 2 hosted-timing
+  `DEFER`, ESAF-1300/1400/1700 Working Drafts, and the NIST AI RMF readiness
+  `HOLD`.
+- Recorded independent technical, editorial, and governance reviews of the
+  exact evidence candidate and prepared the metadata-only `v0.9-rc1` closure
+  candidate. This candidate does not approve publication.
+- Carried forward the seven Draft architecture patterns in the current
+  Working Draft: ARC-P100, Enterprise AI platform and gateway; ARC-P110,
+  Enterprise copilot; ARC-P120, Retrieval-augmented generation; ARC-P130,
+  Agentic and multi-agent AI; ARC-P140, Private model deployment; ARC-P150,
+  AI integration services; and ARC-P160, AI observability.
+- Carried forward the Draft Cyber Essentials v3.3 mapping snapshot.
+- Carried forward the Draft Cyber Essentials Plus v3.2 `esaf_to_external`
+  mapping snapshot.
+- Carried forward the Draft Cyber Essentials Plus v3.2 `external_to_esaf`
+  mapping snapshot.
+
+### Changed
+
+- Advanced Working Draft status surfaces to `0.9-rc1` for the exact
+  metadata-only closure candidate. Publication remains conditional on the
+  remote annotated `v0.9-rc1` tag resolving to the exact validated merged
+  commit. The tag has not been created, and the post-merge gate remains open.
+- Clarified that this stage does not establish certification, compliance,
+  equivalence, endorsement, assurance, legal sufficiency, implementation
+  assessment, production readiness, or replacement of qualified professional
+  judgment. Issues 55 and 60 remain open.
 
 ## 0.5-beta - 2026-08-01
 
