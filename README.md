@@ -36,11 +36,11 @@ Every requirement, control, architecture, assessment, and governance artifact wi
 | ESAF-1000 | Enterprise Standard | `framework/` |
 | ESAF-1100 | Control Catalog | `controls/` |
 | ESAF-1200 | Reference Architecture | `architectures/` |
-| ESAF-1300 | Governance Manual | `governance/` |
-| ESAF-1400 | Implementation Guide | `implementation/` |
+| [ESAF-1300](governance/ESAF-1300.md) | Governance Manual | [governance/ESAF-1300.md](governance/ESAF-1300.md) |
+| [ESAF-1400](implementation/ESAF-1400.md) | Implementation Guide | [implementation/ESAF-1400.md](implementation/ESAF-1400.md) |
 | [ESAF-1500](assessment/ESAF-1500.md) | Assessment Guide | [assessment/ESAF-1500.md](assessment/ESAF-1500.md) |
 | ESAF-1600 | Standards Crosswalk | `crosswalks/` |
-| ESAF-1700 | Enterprise AI Data Model | `data-model/` |
+| [ESAF-1700](data-model/ESAF-1700.md) | Enterprise AI Data Model | [data-model/ESAF-1700.md](data-model/ESAF-1700.md) |
 | [ESAF-1800](profiles/ESAF-1800.md) | Industry, jurisdiction, and risk profiles | [profiles/ESAF-1800.md](profiles/ESAF-1800.md) |
 
 The current profile package is the [Draft United Kingdom jurisdiction pilot](profiles/uk/0.1.0/README.md).
