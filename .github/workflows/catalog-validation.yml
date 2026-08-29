@@ -51,6 +51,7 @@ on:
       - "tools/validate_crosswalks.py"
       - "tools/validate_profiles.py"
       - "tools/render_pci_dss_mapping_go_no_go.py"
+      - "tools/render_nist_ai_rmf_mapping_go_no_go.py"
       - "requirements-dev.txt"
   push:
     branches: [main]
@@ -103,6 +104,7 @@ on:
       - "tools/validate_crosswalks.py"
       - "tools/validate_profiles.py"
       - "tools/render_pci_dss_mapping_go_no_go.py"
+      - "tools/render_nist_ai_rmf_mapping_go_no_go.py"
       - "requirements-dev.txt"
   workflow_dispatch:
 
@@ -182,6 +184,8 @@ jobs:
         run: python tools/validate_crosswalks.py --check
       - name: Validate PCI DSS readiness review
         run: python tools/render_pci_dss_mapping_go_no_go.py --check
+      - name: Validate NIST AI RMF readiness review
+        run: python tools/render_nist_ai_rmf_mapping_go_no_go.py --check
       - name: Validate crosswalk history on pull request
         if: github.event_name == 'pull_request'
         run: python tools/validate_crosswalks.py --check --baseline-ref "${{ github.event.pull_request.base.sha }}"

@@ -139,6 +139,21 @@ protected source, create a provision inventory or mapping, or assert compliance,
 certification, equivalence, endorsement, authorization, coverage, or legal
 sufficiency.
 
+## NIST AI RMF readiness validation
+
+Validate the closed NIST AI RMF readiness matrix, derive the GO/HOLD decision,
+and require the generated review to match without rewriting it:
+
+```shell
+python tools/render_nist_ai_rmf_mapping_go_no_go.py --check
+```
+
+The current decision is `HOLD` because named mapper and independent reviewers
+are not evidenced. Source identity, public PDF digests, publication rights,
+and the subcategory inventory are recorded. This validation does not create a
+mapping or assert NIST approval, compliance, certification, equivalence, or
+endorsement.
+
 ## Architecture validation
 
 Validate the ESAF-1200 foundation, pattern registry, pattern metadata and structure, links, control references, placeholders, and text encoding:

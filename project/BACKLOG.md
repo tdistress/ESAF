@@ -39,7 +39,9 @@ readiness remain tracked separately and do not stop later engineering work.
 - [Issue 93](https://github.com/tdistress/ESAF/issues/93): Author ESAF-1700
   Enterprise AI Data Model Working Draft.
 - [Issue 94](https://github.com/tdistress/ESAF/issues/94): Complete NIST AI RMF
-  public-source readiness and mapping go/no-go.
+  public-source readiness and mapping go/no-go. Readiness decision recorded as
+  `HOLD` pending named mapper and independent reviewers
+  (`crosswalks/nist-ai-rmf.md`).
 - [Issue 95](https://github.com/tdistress/ESAF/issues/95): Close the v0.9-rc1
   publication gates.
 
