@@ -1148,13 +1148,32 @@ class ReleaseMetadataTests(unittest.TestCase):
             "Author ESAF-1700 Enterprise AI Data Model Working Draft",
             "Complete NIST AI RMF public-source readiness and mapping go/no-go",
             "Close the v0.9-rc1 publication gates",
-            "do not yet have open GitHub Issues",
+            "tracked in open GitHub Issues",
             "do not stop later engineering work",
         ):
             with self.subTest(required=required):
                 self.assertTrue(contains_normalized_phrase(queue, required))
+        for issue_url in (
+            "https://github.com/tdistress/ESAF/issues/90",
+            "https://github.com/tdistress/ESAF/issues/91",
+            "https://github.com/tdistress/ESAF/issues/92",
+            "https://github.com/tdistress/ESAF/issues/93",
+            "https://github.com/tdistress/ESAF/issues/94",
+            "https://github.com/tdistress/ESAF/issues/95",
+        ):
+            with self.subTest(issue_url=issue_url):
+                self.assertIn(issue_url, queue)
         self.assertNotIn("https://github.com/tdistress/ESAF/issues/55", queue)
         self.assertNotIn("https://github.com/tdistress/ESAF/issues/60", queue)
+
+    def test_hitrust_backlog_links_open_issue_60(self) -> None:
+        backlog = read_repository_file("project/BACKLOG.md")
+        gated = markdown_section(backlog, "## Separately gated future work")
+        self.assertIn("https://github.com/tdistress/ESAF/issues/60", gated)
+        self.assertTrue(contains_normalized_phrase(
+            gated,
+            "does not block `v0.5-beta` or `v0.9-rc1`",
+        ))
 
     def test_roadmap_defines_v09_rc1_delivery_sequence(self) -> None:
         roadmap = read_repository_file("ROADMAP.md")
