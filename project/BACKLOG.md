@@ -29,8 +29,8 @@ Issues under milestone `v0.9-rc1`. Deferred mapping assurance and HITRUST
 readiness remain tracked separately and do not stop later engineering work.
 
 - [Issue 90](https://github.com/tdistress/ESAF/issues/90): Close
-  validation-harness Phase 2 — hot-path delivered in PR #97; hosted serial
-  ≥40% timing criterion recorded as `DEFER`
+  validation-harness Phase 2 performance target. Hot-path delivered in PR #97;
+  hosted serial ≥40% timing criterion recorded as `DEFER`
   (`docs/superpowers/reviews/2026-08-29-phase2-hosted-timing-deferral.md`).
 - [Issue 91](https://github.com/tdistress/ESAF/issues/91): Author ESAF-1300
   Governance Manual Working Draft.
