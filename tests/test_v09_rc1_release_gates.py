@@ -322,6 +322,87 @@ class V09RC1ReleaseGatesTests(unittest.TestCase):
         disallowed = sorted(changed - set(CLOSURE_ALLOWLIST))
         self.assertEqual(["tools/v09_rc1_release_gates.py"], disallowed)
 
+    def test_published_same_phase_baseline_is_allowed(self) -> None:
+        from unittest.mock import patch
+
+        from tools.v09_rc1_release_gates import validate_baseline_transition
+
+        if self.record.get("phase") != "published":
+            self.skipTest("current readiness record is not published")
+        baseline = deepcopy(self.record)
+        with patch(
+            "tools.v09_rc1_release_gates._git_show_text",
+            return_value=_record_front_matter(baseline),
+        ):
+            errors = validate_baseline_transition(
+                ROOT,
+                baseline_ref="origin/main",
+                candidate_phase="published",
+                candidate_record=deepcopy(self.record),
+            )
+        self.assertEqual([], errors)
+
+    def test_published_same_phase_rejects_mutated_publication_identity(self) -> None:
+        from unittest.mock import patch
+
+        from tools.v09_rc1_release_gates import validate_baseline_transition
+
+        if self.record.get("phase") != "published":
+            self.skipTest("current readiness record is not published")
+        baseline = deepcopy(self.record)
+        candidate = deepcopy(self.record)
+        candidate["publication"] = deepcopy(baseline["publication"])
+        candidate["publication"]["tagged_commit"] = "0" * 40
+        with patch(
+            "tools.v09_rc1_release_gates._git_show_text",
+            return_value=_record_front_matter(baseline),
+        ):
+            errors = validate_baseline_transition(
+                ROOT,
+                baseline_ref="origin/main",
+                candidate_phase="published",
+                candidate_record=candidate,
+            )
+        self.assertTrue(
+            any(
+                "published publication identity and closed gate truth "
+                "shall remain unchanged" in error
+                for error in errors
+            )
+        )
+
+    def test_published_rejects_regression_to_candidate_phase(self) -> None:
+        from unittest.mock import patch
+
+        from tools.v09_rc1_release_gates import validate_baseline_transition
+
+        if self.record.get("phase") != "published":
+            self.skipTest("current readiness record is not published")
+        baseline = deepcopy(self.record)
+        candidate = _closure_candidate_record(self.record)
+        with patch(
+            "tools.v09_rc1_release_gates._git_show_text",
+            return_value=_record_front_matter(baseline),
+        ):
+            errors = validate_baseline_transition(
+                ROOT,
+                baseline_ref="origin/main",
+                candidate_phase="closure_candidate",
+                candidate_record=candidate,
+            )
+        self.assertTrue(
+            any(
+                "published record shall not transition to a candidate phase" in error
+                for error in errors
+            )
+        )
+
+
+def _record_front_matter(record: dict) -> str:
+    import yaml
+
+    return "---\n" + yaml.safe_dump(record, sort_keys=False) + "---\n\n# body\n"
+
 
 if __name__ == "__main__":
     unittest.main()
