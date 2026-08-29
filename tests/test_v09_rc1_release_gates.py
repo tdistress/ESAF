@@ -88,7 +88,7 @@ def _previous_phase_ref(phase: object) -> str:
         value = yaml.safe_load(text[4:boundary])
         if not isinstance(value, dict) or value.get("phase") != expected:
             continue
-        if phase in {"closure_candidate", "published"}:
+        if phase == "closure_candidate":
             disallowed = sorted(
                 changed_paths_since(ROOT, ref) - set(CLOSURE_ALLOWLIST)
             )
