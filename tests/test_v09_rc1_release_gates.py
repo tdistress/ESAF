@@ -8,6 +8,8 @@ import unittest
 
 from tools.v09_rc1_release_gates import (
     GATE_IDS,
+    PHASE_GATE_STATES,
+    PREVIOUS_PHASE,
     RECORD_RELATIVE,
     derive_scope,
     load_readiness_document,
@@ -20,13 +22,70 @@ ROOT = Path(__file__).resolve().parents[1]
 RECORD_PATH = ROOT / RECORD_RELATIVE
 
 
+def _evidence_candidate_record(source: dict) -> dict:
+    record = deepcopy(source)
+    record["phase"] = "evidence_candidate"
+    record["publication"] = {
+        "date": None,
+        "condition": record["publication"]["condition"],
+        "evidence": [],
+        "tag_object": None,
+        "tagged_commit": None,
+        "issue_evidence_url": None,
+    }
+    record["gates"] = {
+        gate: {"state": "open", "evidence": []} for gate in GATE_IDS
+    }
+    return record
+
+
+def _previous_phase_ref(phase: object) -> str:
+    from tools.v09_rc1_release_gates import CLOSURE_ALLOWLIST, changed_paths_since
+
+    expected = PREVIOUS_PHASE[phase]  # type: ignore[index]
+    # Prefer nearby ancestors first so a stacked allowlist commit validates
+    # against its immediate evidence parent rather than a lagging origin/main.
+    for ref in ("HEAD~1", "HEAD~2", "HEAD~3", "origin/main"):
+        result = subprocess.run(
+            ["git", "show", f"{ref}:{RECORD_RELATIVE}"],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode != 0:
+            continue
+        text = result.stdout
+        if not text.startswith("---\n") or "\n---\n" not in text[4:]:
+            continue
+        boundary = text.index("\n---\n", 4)
+        import yaml
+
+        value = yaml.safe_load(text[4:boundary])
+        if not isinstance(value, dict) or value.get("phase") != expected:
+            continue
+        if phase in {"closure_candidate", "published"}:
+            disallowed = sorted(
+                changed_paths_since(ROOT, ref) - set(CLOSURE_ALLOWLIST)
+            )
+            if disallowed:
+                continue
+        return ref
+    raise AssertionError(
+        f"no git ref found with readiness phase {expected!r} for {phase!r}"
+    )
+
+
 class V09RC1ReleaseGatesTests(unittest.TestCase):
     def setUp(self) -> None:
         self.record, self.body = load_readiness_document(RECORD_PATH)
 
     def test_check_passes_on_current_repo_record(self) -> None:
+        command = [sys.executable, "tools/v09_rc1_release_gates.py", "--check"]
+        phase = self.record.get("phase")
+        if phase in PREVIOUS_PHASE:
+            command.extend(["--baseline-ref", _previous_phase_ref(phase)])
         result = subprocess.run(
-            [sys.executable, "tools/v09_rc1_release_gates.py", "--check"],
+            command,
             cwd=ROOT,
             capture_output=True,
             text=True,
@@ -58,7 +117,7 @@ class V09RC1ReleaseGatesTests(unittest.TestCase):
     def test_rejects_wrong_gate_state_for_evidence_candidate(self) -> None:
         for gate in GATE_IDS:
             with self.subTest(gate=gate):
-                record = deepcopy(self.record)
+                record = _evidence_candidate_record(self.record)
                 record["gates"][gate]["state"] = "ready"
                 errors = validate_record(ROOT, record)
                 self.assertTrue(
@@ -145,8 +204,10 @@ class V09RC1ReleaseGatesTests(unittest.TestCase):
         errors = validate_record(ROOT, record)
         self.assertIn("unknown top-level key unexpected", errors)
 
-    def test_rejects_nonnull_publication_identity_for_evidence_candidate(self) -> None:
+    def test_rejects_nonnull_publication_identity_for_candidate_phases(self) -> None:
         record = deepcopy(self.record)
+        if record["phase"] == "published":
+            record = _evidence_candidate_record(record)
         record["publication"]["tag_object"] = "a" * 40
         errors = validate_record(ROOT, record)
         self.assertTrue(
@@ -164,23 +225,19 @@ class V09RC1ReleaseGatesTests(unittest.TestCase):
         )
 
     def test_evidence_candidate_ignores_baseline_ref(self) -> None:
-        result = subprocess.run(
-            [
-                sys.executable,
-                "tools/v09_rc1_release_gates.py",
-                "--check",
-                "--baseline-ref",
-                "HEAD",
-            ],
-            cwd=ROOT,
-            capture_output=True,
-            text=True,
-        )
-        self.assertEqual(
-            0,
-            result.returncode,
-            msg=f"stdout={result.stdout!r} stderr={result.stderr!r}",
-        )
+        from unittest.mock import patch
+
+        from tools.v09_rc1_release_gates import main
+
+        evidence = _evidence_candidate_record(self.record)
+        with patch(
+            "tools.v09_rc1_release_gates.load_readiness_document",
+            return_value=(evidence, self.body),
+        ):
+            with patch("sys.stderr", new_callable=lambda: __import__("io").StringIO()) as err:
+                code = main(["--check", "--baseline-ref", "HEAD"])
+                stderr = err.getvalue()
+        self.assertEqual(0, code, msg=stderr)
 
     def test_closure_candidate_cli_requires_baseline_ref(self) -> None:
         from unittest.mock import patch
