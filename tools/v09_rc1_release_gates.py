@@ -424,7 +424,10 @@ def validate_baseline_transition(
         errors.append(
             f"{candidate_phase} shall transition only from {expected_previous}"
         )
-    if candidate_phase in {"closure_candidate", "published"}:
+    # Match the v0.5-beta gate: the metadata allowlist binds only the
+    # closure_candidate transition. The published-record PR may also update
+    # companion tests and validators after the annotated tag exists.
+    if candidate_phase == "closure_candidate":
         changed = changed_paths_since(root, baseline_ref)
         disallowed = sorted(changed - set(CLOSURE_ALLOWLIST))
         for path in disallowed:
