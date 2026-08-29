@@ -197,11 +197,17 @@ an external temporary JSON file until durable publication evidence exists.
 
 ## v0.9-rc1 release-record validation
 
-Validate the current v0.9-rc1 evidence-candidate readiness record without
-changing files:
+Validate the current v0.9-rc1 readiness record without changing files:
 
 ```shell
 python tools/v09_rc1_release_gates.py --check
+```
+
+For `closure_candidate` and `published` transitions, also pass the previous
+phase baseline:
+
+```shell
+python tools/v09_rc1_release_gates.py --check --baseline-ref <baseline-sha>
 ```
 
 The validator requires the exact front-matter contract, recomputes release
@@ -209,11 +215,12 @@ scope from the live `controls/catalog.json`, `crosswalks/catalog.json`,
 architecture pattern files, assessment foundation, and Draft UK profile, and
 fails on drift. It also requires each prerequisite path (Phase 2 timing
 deferral, ESAF-1300/1400/1700, and the NIST AI RMF crosswalk) to exist and
-contain its recorded disposition marker. Only the `evidence_candidate` phase
-is currently supported; `--baseline-ref` is reserved for later
-`closure_candidate`/`published` transition checks and is rejected for
-`evidence_candidate` records. `tools/release_gates.py` and
-`tools/v05_beta_release_gates.py` remain frozen historical validators.
+contain its recorded disposition marker. `--baseline-ref` is ignored for
+`evidence_candidate` records and is required for `closure_candidate` and
+`published`, where it enforces previous-phase ancestry and the closure
+allowlist (`VERSION.md`, `README.md`, `ROADMAP.md`, `CHANGELOG.md`,
+`project/RELEASE_PLAN.md`, and the readiness record). `tools/release_gates.py`
+and `tools/v05_beta_release_gates.py` remain frozen historical validators.
 
 ## Mermaid publication rendering
 

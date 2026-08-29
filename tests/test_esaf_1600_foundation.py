@@ -669,10 +669,36 @@ class Esaf1600FoundationTests(unittest.TestCase):
             ),
         })
 
-        v09_rc1_gate = unique_step("Validate v0.9-rc1 release record")
-        self.assertEqual(v09_rc1_gate, {
-            "name": "Validate v0.9-rc1 release record",
-            "run": "python tools/v09_rc1_release_gates.py --check",
+        v09_rc1_pr = unique_step("Validate v0.9-rc1 release record on pull request")
+        self.assertEqual(v09_rc1_pr, {
+            "name": "Validate v0.9-rc1 release record on pull request",
+            "if": "github.event_name == 'pull_request'",
+            "run": (
+                "python tools/v09_rc1_release_gates.py --check "
+                '--baseline-ref "${{ github.event.pull_request.base.sha }}"'
+            ),
+        })
+        v09_rc1_push = unique_step(
+            "Validate v0.9-rc1 release record on protected-branch push"
+        )
+        self.assertEqual(v09_rc1_push, {
+            "name": "Validate v0.9-rc1 release record on protected-branch push",
+            "if": "github.event_name == 'push'",
+            "run": (
+                "python tools/v09_rc1_release_gates.py --check "
+                '--baseline-ref "${{ github.event.before }}"'
+            ),
+        })
+        v09_rc1_dispatch = unique_step(
+            "Validate v0.9-rc1 release record on workflow dispatch"
+        )
+        self.assertEqual(v09_rc1_dispatch, {
+            "name": "Validate v0.9-rc1 release record on workflow dispatch",
+            "if": "github.event_name == 'workflow_dispatch'",
+            "run": (
+                "python tools/v09_rc1_release_gates.py --check "
+                '--baseline-ref "HEAD^"'
+            ),
         })
 
         release_gate_runs = [
@@ -714,8 +740,19 @@ class Esaf1600FoundationTests(unittest.TestCase):
                     "github.event_name == 'workflow_dispatch'",
                 ),
                 (
-                    "python tools/v09_rc1_release_gates.py --check",
-                    "",
+                    "python tools/v09_rc1_release_gates.py --check "
+                    '--baseline-ref "${{ github.event.pull_request.base.sha }}"',
+                    "github.event_name == 'pull_request'",
+                ),
+                (
+                    "python tools/v09_rc1_release_gates.py --check "
+                    '--baseline-ref "${{ github.event.before }}"',
+                    "github.event_name == 'push'",
+                ),
+                (
+                    "python tools/v09_rc1_release_gates.py --check "
+                    '--baseline-ref "HEAD^"',
+                    "github.event_name == 'workflow_dispatch'",
                 ),
             ],
         )
