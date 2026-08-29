@@ -39,6 +39,31 @@ def _evidence_candidate_record(source: dict) -> dict:
     return record
 
 
+def _closure_candidate_record(source: dict) -> dict:
+    record = deepcopy(source)
+    record["phase"] = "closure_candidate"
+    record["publication"] = {
+        "date": None,
+        "condition": record["publication"]["condition"],
+        "evidence": [],
+        "tag_object": None,
+        "tagged_commit": None,
+        "issue_evidence_url": None,
+    }
+    record["gates"] = {
+        gate: {
+            "state": PHASE_GATE_STATES["closure_candidate"][gate],
+            "evidence": (
+                []
+                if gate == "post_merge"
+                else ["https://github.com/tdistress/ESAF/pull/101"]
+            ),
+        }
+        for gate in GATE_IDS
+    }
+    return record
+
+
 def _previous_phase_ref(phase: object) -> str:
     from tools.v09_rc1_release_gates import CLOSURE_ALLOWLIST, changed_paths_since
 
@@ -242,21 +267,9 @@ class V09RC1ReleaseGatesTests(unittest.TestCase):
     def test_closure_candidate_cli_requires_baseline_ref(self) -> None:
         from unittest.mock import patch
 
-        from tools.v09_rc1_release_gates import PHASE_GATE_STATES, main
+        from tools.v09_rc1_release_gates import main
 
-        record = deepcopy(self.record)
-        record["phase"] = "closure_candidate"
-        record["gates"] = {
-            gate: {
-                "state": PHASE_GATE_STATES["closure_candidate"][gate],
-                "evidence": (
-                    []
-                    if gate == "post_merge"
-                    else ["https://github.com/tdistress/ESAF/pull/101"]
-                ),
-            }
-            for gate in GATE_IDS
-        }
+        record = _closure_candidate_record(self.record)
         with patch(
             "tools.v09_rc1_release_gates.load_readiness_document",
             return_value=(record, self.body),
@@ -268,47 +281,19 @@ class V09RC1ReleaseGatesTests(unittest.TestCase):
         self.assertIn("baseline-ref is required for closure candidate", stderr)
 
     def test_closure_candidate_requires_ready_gates_with_https_evidence(self) -> None:
-        from tools.v09_rc1_release_gates import (
-            GATE_IDS,
-            PHASE_GATE_STATES,
-            validate_record,
-        )
-
-        record = deepcopy(self.record)
-        record["phase"] = "closure_candidate"
+        record = _closure_candidate_record(self.record)
         record["publication"]["date"] = "2026-08-29"
-        record["gates"] = {
-            gate: {
-                "state": PHASE_GATE_STATES["closure_candidate"][gate],
-                "evidence": (
-                    []
-                    if gate == "post_merge"
-                    else ["https://github.com/tdistress/ESAF/pull/101"]
-                ),
-            }
-            for gate in GATE_IDS
-        }
         self.assertEqual([], validate_record(ROOT, record))
 
     def test_closure_candidate_rejects_missing_gate_evidence(self) -> None:
-        from tools.v09_rc1_release_gates import PHASE_GATE_STATES, validate_record
-
-        record = deepcopy(self.record)
-        record["phase"] = "closure_candidate"
-        record["gates"] = {
-            gate: {
-                "state": PHASE_GATE_STATES["closure_candidate"][gate],
-                "evidence": [],
-            }
-            for gate in PHASE_GATE_STATES["closure_candidate"]
-        }
+        record = _closure_candidate_record(self.record)
+        for gate in GATE_IDS:
+            record["gates"][gate]["evidence"] = []
         errors = validate_record(ROOT, record)
         self.assertTrue(any("evidence is required" in error for error in errors))
 
     def test_published_requires_tag_identity(self) -> None:
-        from tools.v09_rc1_release_gates import PHASE_GATE_STATES, validate_record
-
-        record = deepcopy(self.record)
+        record = _closure_candidate_record(self.record)
         record["phase"] = "published"
         record["publication"] = {
             "date": "2026-08-29",

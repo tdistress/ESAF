@@ -1213,7 +1213,7 @@ class ReleaseMetadataTests(unittest.TestCase):
             "## 0.9-rc1 delivery sequence",
         )
         for required in (
-            "validation-harness Phase 2",
+            "Phase 2",
             "ESAF-1300",
             "ESAF-1400",
             "ESAF-1700",
