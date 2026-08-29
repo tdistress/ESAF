@@ -314,12 +314,7 @@ class ReleaseMetadataTests(unittest.TestCase):
     def test_v05_version_matches_release_record_phase(self) -> None:
         record = load_v05_front_matter(ROOT / V05_RECORD_RELATIVE)
         version = read_repository_file("VERSION.md")
-        expected = (
-            "Current Version: **0.4-alpha**"
-            if record["phase"] == "evidence_candidate"
-            else "Current Version: **0.5-beta**"
-        )
-        self.assertIn(expected, version)
+        version_name = current_version()
         self.assertEqual(
             V05_PHASE_GATE_STATES[record["phase"]],
             {
@@ -327,22 +322,54 @@ class ReleaseMetadataTests(unittest.TestCase):
                 for gate, value in record["gates"].items()
             },
         )
-        if record["phase"] == "closure_candidate":
+        if record["phase"] == "evidence_candidate":
+            self.assertEqual("0.4-alpha", version_name)
+            self.assertIn("Current Version: **0.4-alpha**", version)
+        elif record["phase"] == "closure_candidate":
+            self.assertEqual("0.5-beta", version_name)
+            self.assertIn("Current Version: **0.5-beta**", version)
             self.assertIn("conditional", version.casefold())
             self.assertNotIn(
                 "tag condition was satisfied",
                 version.casefold(),
             )
-        if record["phase"] == "published":
-            readme = read_repository_file("README.md")
-            for text in (version, readme):
-                normalized = text.casefold()
-                self.assertIn("published on 2026-08-01", normalized)
-                self.assertIn("fc2876cf52791edba6e923a25e0cdb8dec981e1c", normalized)
-                self.assertIn("255f8806917aaf8c6a2441152b4638fc9fd2bfda", normalized)
-                self.assertNotIn("publication remains conditional", normalized)
-                self.assertNotIn("tag has not been created", normalized)
-                self.assertNotIn("this closure candidate", normalized)
+        elif record["phase"] == "published":
+            if version_name == "0.5-beta":
+                self.assertIn("Current Version: **0.5-beta**", version)
+                readme = read_repository_file("README.md")
+                for text in (version, readme):
+                    normalized = text.casefold()
+                    self.assertIn("published on 2026-08-01", normalized)
+                    self.assertIn(
+                        "fc2876cf52791edba6e923a25e0cdb8dec981e1c",
+                        normalized,
+                    )
+                    self.assertIn(
+                        "255f8806917aaf8c6a2441152b4638fc9fd2bfda",
+                        normalized,
+                    )
+                    self.assertNotIn(
+                        "publication remains conditional",
+                        normalized,
+                    )
+                    self.assertNotIn("tag has not been created", normalized)
+                    self.assertNotIn("this closure candidate", normalized)
+            else:
+                # A later Working Draft is current; keep the published
+                # v0.5-beta identity in historical release surfaces.
+                self.assertIn(
+                    "Previous Release Stage: **Priority Crosswalk and "
+                    "Draft Profile Beta**",
+                    version,
+                )
+                changelog = read_repository_file("CHANGELOG.md")
+                self.assertIn("## 0.5-beta - 2026-08-01", changelog)
+                release_plan = read_repository_file("project/RELEASE_PLAN.md")
+                self.assertIn("## 0.5-beta publication", release_plan)
+                self.assertIn(V05_PUBLISHED_TAG_OBJECT, release_plan)
+                self.assertIn(V05_PUBLISHED_COMMIT, release_plan)
+        else:
+            self.fail(f"unexpected v0.5-beta phase: {record['phase']!r}")
 
     def test_v05_operator_commands_use_module_invocation(self) -> None:
         readme = read_repository_file("tools/README.md")
@@ -551,9 +578,13 @@ class ReleaseMetadataTests(unittest.TestCase):
     def test_version_metadata_declares_working_draft_release_stage(self) -> None:
         version_text = read_repository_file("VERSION.md")
         self.assertIn("Status: **Working Draft**", version_text)
-        self.assertIn(
-            "Release Stage: **Initial Reference Architecture Draft Library**",
+        self.assertRegex(
             version_text,
+            r"(?m)^Release Stage: \*\*[^*]+\*\*$",
+        )
+        self.assertRegex(
+            version_text,
+            r"(?m)^Previous Release Stage: \*\*[^*]+\*\*$",
         )
 
     def test_current_changelog_section_records_published_working_draft(self) -> None:
