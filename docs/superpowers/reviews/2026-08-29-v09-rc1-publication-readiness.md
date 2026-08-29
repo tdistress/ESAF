@@ -1,17 +1,20 @@
 ---
 release: 0.9-rc1
-phase: closure_candidate
+phase: published
 tag: v0.9-rc1
 issue: 95
 repository_scope: complete_git_tracked_repository
 publication:
-  date: null
+  date: "2026-08-29"
   condition: remote_annotated_tag_matches_exact_validated_commit
   evidence:
     - https://github.com/tdistress/ESAF/issues/95
-  tag_object: null
-  tagged_commit: null
-  issue_evidence_url: null
+    - https://github.com/tdistress/ESAF/actions/runs/33277455030
+    - https://github.com/tdistress/ESAF/commit/4136cfdc71a85ea2becd0f23c95424e7580cafa3
+    - https://github.com/tdistress/ESAF/releases/tag/v0.9-rc1
+  tag_object: 1b5cdead5c56c4f209b5cf091c665ca40e709590
+  tagged_commit: 4136cfdc71a85ea2becd0f23c95424e7580cafa3
+  issue_evidence_url: https://github.com/tdistress/ESAF/issues/95
 prerequisite_dispositions:
   phase2_timing: DEFER
   phase2_evidence: docs/superpowers/reviews/2026-08-29-phase2-hosted-timing-deferral.md
@@ -36,26 +39,26 @@ scope:
   pci_dss_disposition: HOLD
   nist_ai_rmf_disposition: HOLD
 gates:
-  scope: {state: ready, evidence: [https://github.com/tdistress/ESAF/pull/101]}
-  technical: {state: ready, evidence: [https://github.com/tdistress/ESAF/blob/8f31ab7c96a95072dee200cd232af6e36c3e2b79/docs/superpowers/reviews/2026-08-29-v09-rc1-technical-review.md]}
-  editorial: {state: ready, evidence: [https://github.com/tdistress/ESAF/blob/8f31ab7c96a95072dee200cd232af6e36c3e2b79/docs/superpowers/reviews/2026-08-29-v09-rc1-editorial-review.md]}
-  terminology: {state: ready, evidence: [https://github.com/tdistress/ESAF/blob/8f31ab7c96a95072dee200cd232af6e36c3e2b79/docs/superpowers/reviews/2026-08-29-v09-rc1-editorial-review.md]}
-  cross_reference_rendering: {state: ready, evidence: [https://github.com/tdistress/ESAF/pull/102]}
-  standards_mapping: {state: ready, evidence: [https://github.com/tdistress/ESAF/pull/101]}
-  profile_scope: {state: ready, evidence: [https://github.com/tdistress/ESAF/pull/101]}
-  release_metadata: {state: ready, evidence: [https://github.com/tdistress/ESAF/pull/102]}
-  governance: {state: ready, evidence: [https://github.com/tdistress/ESAF/blob/8f31ab7c96a95072dee200cd232af6e36c3e2b79/docs/superpowers/reviews/2026-08-29-v09-rc1-governance-review.md]}
-  post_merge: {state: open, evidence: []}
+  scope: {state: closed, evidence: [https://github.com/tdistress/ESAF/issues/95]}
+  technical: {state: closed, evidence: [https://github.com/tdistress/ESAF/issues/95]}
+  editorial: {state: closed, evidence: [https://github.com/tdistress/ESAF/issues/95]}
+  terminology: {state: closed, evidence: [https://github.com/tdistress/ESAF/issues/95]}
+  cross_reference_rendering: {state: closed, evidence: [https://github.com/tdistress/ESAF/issues/95]}
+  standards_mapping: {state: closed, evidence: [https://github.com/tdistress/ESAF/issues/95]}
+  profile_scope: {state: closed, evidence: [https://github.com/tdistress/ESAF/issues/95]}
+  release_metadata: {state: closed, evidence: [https://github.com/tdistress/ESAF/issues/95]}
+  governance: {state: closed, evidence: [https://github.com/tdistress/ESAF/issues/95]}
+  post_merge: {state: closed, evidence: [https://github.com/tdistress/ESAF/actions/runs/33277455030]}
 ---
 
 # v0.9-rc1 publication readiness
 
 ## Scope
 
-This closure candidate covers the complete Git-tracked repository. Its
-derived inventory contains 91 controls in 16 families, 7 architecture
-patterns, 3 mapping sets, and 404 mapping provisions. The mappings contain 81
-relationship legs and 325 negative dispositions.
+This published record covers the complete Git-tracked repository. Its derived
+inventory contains 91 controls in 16 families, 7 architecture patterns, 3
+mapping sets, and 404 mapping provisions. The mappings contain 81 relationship
+legs and 325 negative dispositions.
 
 The scope includes the ESAF-1500 assessment foundation and one Draft UK pilot
 profile under the reusable profile contract. The PCI DSS readiness record has
@@ -72,31 +75,30 @@ ESAF-1300, ESAF-1400, and ESAF-1700 are linked as Working Drafts at
 `governance/ESAF-1300.md`, `implementation/ESAF-1400.md`, and
 `data-model/ESAF-1700.md`. The NIST AI RMF crosswalk readiness decision is
 `HOLD`, recorded at `crosswalks/nist-ai-rmf.md`. Issues 55 and 60 may remain
-open; this candidate does not require their closure.
+open; this publication does not require their closure.
 
 ## Lifecycle boundary
 
-The current ESAF version is `0.9-rc1`. The non-post-merge v0.9 gates are
-`ready`, the post-merge gate is `open`, and the `v0.9-rc1` tag has not been
-created. The `v0.9-rc1` release status is Working Draft. This closure
-candidate does not approve publication.
+The current ESAF version is `0.9-rc1`. The `v0.9-rc1` Working Draft is
+published. Publication is limited to the repository Working Draft and does not
+change any artifact lifecycle state.
 
 This record does not advance any Draft artifact, control, architecture
 pattern, mapping set, or profile to an approved lifecycle state.
 
 ## Nonclaims
 
-This closure candidate does not claim certification, compliance,
+This published Working Draft does not claim certification, compliance,
 equivalence, endorsement, assurance, or production readiness. It does not
 close Issue 55 or Issue 60, and it does not clear the PCI DSS or HITRUST
-blockers. It does not approve publication.
+blockers.
 
 ## Publication evidence
 
-Publication remains conditional on the remote annotated `v0.9-rc1` tag
-resolving to the exact validated merged commit. The tag has not been
-created. The publication `date`, `tag_object`, `tagged_commit`, and
-`issue_evidence_url` fields remain `null` until after merge to `main` and
-creation of the annotated tag on the exact validated merged commit. Issue
+The annotated `v0.9-rc1` tag object is
+`1b5cdead5c56c4f209b5cf091c665ca40e709590` and peels to validated commit
+`4136cfdc71a85ea2becd0f23c95424e7580cafa3`. Post-merge validation evidence is
+https://github.com/tdistress/ESAF/actions/runs/33277455030. Issue
 [#95](https://github.com/tdistress/ESAF/issues/95) tracks the publication
-gates.
+gates. A consolidating issue comment may be added by the repository owner when
+write access to issues is available.

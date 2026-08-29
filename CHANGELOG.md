@@ -4,10 +4,9 @@ All notable changes to ESAF are documented in this file.
 
 Versions 0.2-alpha and 0.3-alpha remain unreleased working-draft stages.
 Version 0.4-alpha is a tagged Working Draft. Version 0.5-beta is a tagged
-Working Draft. Version 0.9-rc1 is an unreleased Working Draft release
-candidate.
+Working Draft. Version 0.9-rc1 is a tagged Working Draft.
 
-## 0.9-rc1 - Unreleased
+## 0.9-rc1 - 2026-08-29
 
 ### Added
 
@@ -16,8 +15,9 @@ candidate.
   `DEFER`, ESAF-1300/1400/1700 Working Drafts, and the NIST AI RMF readiness
   `HOLD`.
 - Recorded independent technical, editorial, and governance reviews of the
-  exact evidence candidate and prepared the metadata-only `v0.9-rc1` closure
-  candidate. This candidate does not approve publication.
+  exact evidence candidate and the immutable published readiness record,
+  including the annotated tag object, tagged commit, UTC publication date,
+  and issue 95 evidence locators.
 - Carried forward the seven Draft architecture patterns in the current
   Working Draft: ARC-P100, Enterprise AI platform and gateway; ARC-P110,
   Enterprise copilot; ARC-P120, Retrieval-augmented generation; ARC-P130,
@@ -31,14 +31,14 @@ candidate.
 
 ### Changed
 
-- Advanced Working Draft status surfaces to `0.9-rc1` for the exact
-  metadata-only closure candidate. Publication remains conditional on the
-  remote annotated `v0.9-rc1` tag resolving to the exact validated merged
-  commit. The tag has not been created, and the post-merge gate remains open.
-- Clarified that this stage does not establish certification, compliance,
+- Published the `v0.9-rc1` Working Draft through the annotated `v0.9-rc1`
+  tag. Prerequisite dispositions remain Phase 2 timing `DEFER`,
+  ESAF-1300/1400/1700 Working Drafts, and NIST AI RMF `HOLD`. Issues 55 and
+  60 remain open.
+- Clarified that publication does not establish certification, compliance,
   equivalence, endorsement, assurance, legal sufficiency, implementation
   assessment, production readiness, or replacement of qualified professional
-  judgment. Issues 55 and 60 remain open.
+  judgment.
 
 ## 0.5-beta - 2026-08-01
 
