@@ -99,3 +99,7 @@ This review is not legal advice. It does not claim NIST approval, endorsement,
 equivalence, compliance, certification, or assurance. It does not authorize
 substantive mapping records while the readiness matrix remains `HOLD` for other
 gates. It does not close Issues #55 or #60.
+
+## Final decision
+
+`PASS`. All six ESAF-1600 mapping field classes are permitted for public NIST AI RMF 1.0 content with attribution and without NIST endorsement claims.
