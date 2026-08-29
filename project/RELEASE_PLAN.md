@@ -43,16 +43,34 @@ compliance, certification, equivalence, endorsement, external-scheme approval,
 or production readiness. Historical `v0.4-alpha` evidence cannot approve
 `v0.5-beta`.
 
-## 0.9-rc1 closure candidate
+## 0.9-rc1 publication
 
-The exact metadata-only closure candidate sets every non-post-merge gate to
-Ready and leaves the post-merge gate Open. It records prerequisite
-dispositions already on `main` and does not approve publication.
+Publication gates are Closed. The `v0.9-rc1` Working Draft was published
+through annotated tag `v0.9-rc1` on 2026-08-29. The tag object is
+`1b5cdead5c56c4f209b5cf091c665ca40e709590` and its peeled commit is
+`4136cfdc71a85ea2becd0f23c95424e7580cafa3`. Issue
+[#95](https://github.com/tdistress/ESAF/issues/95) tracks the publication
+gates. Post-merge validation evidence is
+https://github.com/tdistress/ESAF/actions/runs/33277455030.
 
-Publication remains conditional on the remote annotated `v0.9-rc1` tag
-resolving to the exact validated merged commit. The tag has not been created.
-Exact-head reviews, successful checks, clean merge state, merged-main
-validation, and remote tag verification remain required.
+Publication is limited to the repository Working Draft. All controls,
+architecture patterns, the pilot profile, mapping sets, and mapping records
+remain Draft; their lifecycle records remain unchanged. Prerequisite
+dispositions remain Phase 2 timing `DEFER`, ESAF-1300/1400/1700 Working
+Drafts, and NIST AI RMF `HOLD`. Issues 55 and 60 remain open. Publication
+does not establish certification, compliance, equivalence, endorsement,
+assurance, or artifact lifecycle approval.
+
+| Gate | Current state | Final evidence |
+|---|---|---|
+| Scope and milestone approval | Closed | https://github.com/tdistress/ESAF/issues/95 |
+| Normative and technical review | Closed | https://github.com/tdistress/ESAF/issues/95 |
+| Editorial and terminology review | Closed | https://github.com/tdistress/ESAF/issues/95 |
+| Cross-reference and rendering review | Closed | https://github.com/tdistress/ESAF/issues/95 |
+| Standards mapping review | Closed | https://github.com/tdistress/ESAF/issues/95 |
+| Release metadata synchronization | Closed | https://github.com/tdistress/ESAF/issues/95 |
+| Governance approval | Closed | https://github.com/tdistress/ESAF/issues/95 |
+| Post-merge validation | Closed | https://github.com/tdistress/ESAF/actions/runs/33277455030 |
 
 ## 0.5-beta publication
 

@@ -217,10 +217,13 @@ fails on drift. It also requires each prerequisite path (Phase 2 timing
 deferral, ESAF-1300/1400/1700, and the NIST AI RMF crosswalk) to exist and
 contain its recorded disposition marker. `--baseline-ref` is ignored for
 `evidence_candidate` records and is required for `closure_candidate` and
-`published`, where it enforces previous-phase ancestry and the closure
-allowlist (`VERSION.md`, `README.md`, `ROADMAP.md`, `CHANGELOG.md`,
-`project/RELEASE_PLAN.md`, and the readiness record). `tools/release_gates.py`
-and `tools/v05_beta_release_gates.py` remain frozen historical validators.
+`published`. For `closure_candidate` it also enforces the closure allowlist
+(`VERSION.md`, `README.md`, `ROADMAP.md`, `CHANGELOG.md`,
+`project/RELEASE_PLAN.md`, and the readiness record). The `published`
+transition still requires previous-phase ancestry and identity preservation,
+but may update companion tests and validators after the annotated tag exists.
+`tools/release_gates.py` and `tools/v05_beta_release_gates.py` remain frozen
+historical validators.
 
 ## Mermaid publication rendering
 

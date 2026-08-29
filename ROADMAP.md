@@ -6,22 +6,18 @@
 
 ## 0.9-rc1 delivery sequence
 
-`v0.9-rc1` is the bounded Working Draft release candidate. Delivery order:
-
-1. close validation-harness Phase 2 performance work;
-2. author ESAF-1300, ESAF-1400, and ESAF-1700 Working Draft foundations;
-3. complete one public-source crosswalk readiness package, defaulting to NIST
-   AI RMF unless the owner selects another public source; and
-4. close ordinary `v0.9-rc1` publication gates on the exact candidate.
-
-Deferred mapping assurance remains tracked after beta through issue 55 and does
-not stop later engineering work. HITRUST readiness remains separately gated
-through issue 60. The Phase 4, Phase 5, and Phase 6 lists remain long-term
-direction, not `v0.9-rc1` exit criteria.
-
-Publication remains conditional on the remote annotated `v0.9-rc1` tag
-resolving to the exact validated merged commit. The tag has not been created,
-and the post-merge gate remains open.
+The `v0.9-rc1` Working Draft was published on 2026-08-29 through the
+annotated `v0.9-rc1` tag at
+`4136cfdc71a85ea2becd0f23c95424e7580cafa3`. It closes validation-harness
+Phase 2 performance work (hosted-timing `DEFER`), authors ESAF-1300,
+ESAF-1400, and ESAF-1700 Working Draft foundations, records the NIST AI RMF
+readiness `HOLD`, and closes ordinary publication gates on the exact
+candidate. Deferred mapping assurance remains tracked after beta through
+issue 55 and does not stop later engineering work. HITRUST readiness remains
+separately gated through issue 60. Publication does not change any control,
+architecture, profile, mapping-set, or mapping-record lifecycle state. The
+Phase 4, Phase 5, and Phase 6 lists remain long-term direction, not
+`v0.9-rc1` exit criteria.
 
 ## 0.5-beta delivery sequence
 
