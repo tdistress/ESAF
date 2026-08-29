@@ -57,6 +57,89 @@ PINNED_PLANNED_ISSUE_55_BODY_SHA256 = (
 PINNED_PLANNED_ISSUE_59_BODY_SHA256 = (
     "cde2b992f3a81baf9213053acbf55aef9eed761f61a6d19709359cd934c0160c"
 )
+PINNED_V09_ISSUE_A_BODY_SHA256 = (
+    "cd20a4858b2b645e7ca204ff7fdd604e1d886a9b21f58fa612e908fcf2a196ed"
+)
+PINNED_V09_ISSUE_B_BODY_SHA256 = (
+    "5fa8858750c7f91a693e436704756c9603778ab48ad22c8ba9287c831e3653d3"
+)
+PINNED_V09_ISSUE_C_BODY_SHA256 = (
+    "1e9511d6060463e34f087614ca1b0a48368df8464d4743f70fe244bc37aea6bb"
+)
+PINNED_V09_ISSUE_D_BODY_SHA256 = (
+    "ef2c7b36841809c242ef775b4b70091226592bdb4f7b832784034e032937cf20"
+)
+PINNED_V09_ISSUE_E_BODY_SHA256 = (
+    "2499ad35872a300bcd16b0cec2f6769cb8548060f65fa95735cc73f04b31ef11"
+)
+PINNED_V09_ISSUE_F_BODY_SHA256 = (
+    "5aca57a9f42f2f2f7881edaf92ff216b49b33c06aa15e537513e1dca2f167fdf"
+)
+V09_NEXT_STEPS_PLAN = (
+    "docs/superpowers/plans/2026-08-29-v09-rc1-next-steps.md"
+)
+V09_READY_ISSUE_TASKS = (
+    (
+        "## Task 4: Ready-to-file Issue A - harness closeout",
+        "Close validation-harness Phase 2 performance target",
+        PINNED_V09_ISSUE_A_BODY_SHA256,
+        (
+            "bundle mutation-matrix hot path",
+            "hosted full-suite",
+            "does not depend on Issues #55 or #60",
+        ),
+    ),
+    (
+        "## Task 5: Ready-to-file Issue B - ESAF-1300",
+        "Author ESAF-1300 Governance Manual Working Draft",
+        PINNED_V09_ISSUE_B_BODY_SHA256,
+        (
+            "decision rights",
+            "lifecycle gates",
+            "Working Draft only",
+        ),
+    ),
+    (
+        "## Task 6: Ready-to-file Issue C - ESAF-1400",
+        "Author ESAF-1400 Implementation Guide Working Draft",
+        PINNED_V09_ISSUE_C_BODY_SHA256,
+        (
+            "non-normative",
+            "implementation guidance",
+            "does not approve certification",
+        ),
+    ),
+    (
+        "## Task 7: Ready-to-file Issue D - ESAF-1700",
+        "Author ESAF-1700 Enterprise AI Data Model Working Draft",
+        PINNED_V09_ISSUE_D_BODY_SHA256,
+        (
+            "canonical entities",
+            "ESAF-1500 assessment contracts",
+            "Working Draft only",
+        ),
+    ),
+    (
+        "## Task 8: Ready-to-file Issue E - NIST AI RMF readiness",
+        "Complete NIST AI RMF public-source readiness and mapping go/no-go",
+        PINNED_V09_ISSUE_E_BODY_SHA256,
+        (
+            "No mapping records may be published before the go/no-go decision",
+            "`GO`, `HOLD`, or `NO_GO`",
+            "does not close Issue #55",
+        ),
+    ),
+    (
+        "## Task 9: Ready-to-file Issue F - v0.9-rc1 publication gates",
+        "Close the v0.9-rc1 publication gates",
+        PINNED_V09_ISSUE_F_BODY_SHA256,
+        (
+            "Issues #55 and #60 may remain open",
+            "Every `v0.9-rc1` exit criterion",
+            "Working Draft release candidate",
+        ),
+    ),
+)
 
 
 def read_repository_file(relative_path: str) -> str:
@@ -1012,6 +1095,100 @@ class ReleaseMetadataTests(unittest.TestCase):
             sequence,
             "first closes mapping assurance debt",
         ))
+
+    def test_v09_rc1_has_bounded_workstreams_and_exit_criteria(self) -> None:
+        milestones = read_repository_file("project/MILESTONES.md")
+        section = milestones[milestones.index("## v0.9-rc1"):]
+        for heading in (
+            "### Entry state",
+            "### Required workstreams",
+            "### Exit criteria",
+            "### Non-goals",
+        ):
+            self.assertIn(heading, section)
+        for required in (
+            "Validation-harness Phase 2 closeout",
+            "ESAF-1300 first Working Draft",
+            "ESAF-1400 first Working Draft",
+            "ESAF-1700 first Working Draft",
+            "Next public-source crosswalk readiness",
+            "NIST AI RMF",
+            "`GO`",
+            "`HOLD`",
+            "`NO_GO`",
+            "Critical and Important",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, section)
+
+    def test_v09_rc1_preserves_bounded_non_goals(self) -> None:
+        milestones = read_repository_file("project/MILESTONES.md")
+        non_goals = milestones[
+            milestones.index("## v0.9-rc1"):
+        ]
+        non_goals = non_goals[non_goals.index("### Non-goals"):]
+        for non_goal in (
+            "closing Issue `#55`",
+            "substantive HITRUST mapping",
+            "PCI DSS `HOLD`",
+            "all roadmap crosswalks",
+            "all planned profiles",
+            "redesigning `v1.0`",
+        ):
+            with self.subTest(non_goal=non_goal):
+                self.assertIn(non_goal, non_goals)
+
+    def test_backlog_queues_post_beta_v09_rc1_initiatives(self) -> None:
+        backlog = read_repository_file("project/BACKLOG.md")
+        queue = markdown_section(backlog, "## Post-beta scheduled queue")
+        for required in (
+            "Close validation-harness Phase 2 performance target",
+            "Author ESAF-1300 Governance Manual Working Draft",
+            "Author ESAF-1400 Implementation Guide Working Draft",
+            "Author ESAF-1700 Enterprise AI Data Model Working Draft",
+            "Complete NIST AI RMF public-source readiness and mapping go/no-go",
+            "Close the v0.9-rc1 publication gates",
+            "do not yet have open GitHub Issues",
+            "do not stop later engineering work",
+        ):
+            with self.subTest(required=required):
+                self.assertTrue(contains_normalized_phrase(queue, required))
+        self.assertNotIn("https://github.com/tdistress/ESAF/issues/55", queue)
+        self.assertNotIn("https://github.com/tdistress/ESAF/issues/60", queue)
+
+    def test_roadmap_defines_v09_rc1_delivery_sequence(self) -> None:
+        roadmap = read_repository_file("ROADMAP.md")
+        sequence = markdown_section(
+            roadmap,
+            "## 0.9-rc1 delivery sequence",
+        )
+        for required in (
+            "validation-harness Phase 2",
+            "ESAF-1300",
+            "ESAF-1400",
+            "ESAF-1700",
+            "NIST AI RMF",
+            "issue 55",
+            "issue 60",
+            "does not stop later engineering work",
+            "not `v0.9-rc1` exit criteria",
+        ):
+            with self.subTest(required=required):
+                self.assertTrue(contains_normalized_phrase(sequence, required))
+
+    def test_planned_v09_issue_bodies_preserve_boundaries_and_digests(self) -> None:
+        plan = read_repository_file(V09_NEXT_STEPS_PLAN)
+        for task_heading, title, digest, required_phrases in V09_READY_ISSUE_TASKS:
+            with self.subTest(title=title):
+                self.assertIn(f"Title: `{title}`", plan)
+                body = fenced_markdown_in_task(plan, task_heading)
+                for required in required_phrases:
+                    self.assertTrue(contains_normalized_phrase(body, required))
+                self.assertEqual(digest, sha256_text(body))
+                self.assertFalse(contains_normalized_phrase(
+                    body,
+                    "closes issue 55",
+                ))
 
     def test_v05_issue_bodies_state_their_dependencies(self) -> None:
         plan = read_repository_file(
