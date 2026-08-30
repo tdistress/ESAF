@@ -83,6 +83,16 @@ class BreadthDeepenContracts(unittest.TestCase):
         ):
             self.assertIn(needle, text.replace("\\", "/"))
 
+    def test_esaf_1700_has_inline_example_anchors(self) -> None:
+        text = CORE["1700"].read_text(encoding="utf-8")
+        self.assertIn("**Version:** 0.2.0", text)
+        self.assertIn(
+            "examples/esaf-1700/entity-instances.example.md",
+            text.replace("\\", "/"),
+        )
+        self.assertRegex(text, r"CAP-[A-Z0-9-]+")
+        self.assertIn("EVD-", text)
+
     def test_esaf_1400_remains_informative_without_local_shall(self) -> None:
         text = CORE["1400"].read_text(encoding="utf-8")
         self.assertIn("informative", text.lower())

@@ -7,6 +7,8 @@ ESAF library.
   relationships, identifier conventions, and exchange guidance for
   enterprise AI capabilities, systems, assets, ownership, risk, lifecycle
   decisions, exceptions, and assessment records.
+- The [ESAF-1700 example pack](../examples/esaf-1700/) provides an
+  informative connected entity-instance worksheet.
 
 ESAF-1700 is a canonical conceptual and logical model, not a runtime
 database schema, API contract, product data model, or vendor implementation
