@@ -1199,10 +1199,12 @@ class ReleaseMetadataTests(unittest.TestCase):
         self.assertNotIn("https://github.com/tdistress/ESAF/issues/60", queue)
 
     def test_post_v09_surfaces_record_completed_020_breadth_deepen(self) -> None:
-        changelog = markdown_section(
-            read_repository_file("CHANGELOG.md"),
-            "## Unreleased",
-        )
+        changelog_text = read_repository_file("CHANGELOG.md")
+        self.assertEqual(1, changelog_text.count("## Unreleased"))
+        changelog = changelog_text.split("## Unreleased", 1)[1].split(
+            "\n## ",
+            1,
+        )[0]
         backlog = markdown_section(
             read_repository_file("project/BACKLOG.md"),
             "## Completed workstreams",
