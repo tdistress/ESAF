@@ -64,6 +64,16 @@ class BreadthDeepenContracts(unittest.TestCase):
                 msg=f"{key} shall link to {needle}",
             )
 
+    def test_esaf_1300_has_inline_example_anchors(self) -> None:
+        text = CORE["1300"].read_text(encoding="utf-8")
+        for needle in (
+            "examples/esaf-1300/charter-worksheet.md",
+            "examples/esaf-1300/decision-rights-matrix.example.md",
+            "examples/esaf-1300/exception-workflow.example.md",
+            "**Version:** 0.2.0",
+        ):
+            self.assertIn(needle, text.replace("\\", "/"))
+
     def test_esaf_1400_remains_informative_without_local_shall(self) -> None:
         text = CORE["1400"].read_text(encoding="utf-8")
         self.assertIn("informative", text.lower())

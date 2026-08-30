@@ -7,3 +7,5 @@ charters, RACI assignments, and an exception workflow.
 - [ESAF-1300](ESAF-1300.md) defines governance charters, decision rights, the
   RACI model, lifecycle-gate operating detail, the exception workflow,
   artifact-register pointers, and governance records.
+- [ESAF-1300 worksheets](../examples/esaf-1300/) provide informative charter,
+  decision-rights, and exception-workflow working examples.
