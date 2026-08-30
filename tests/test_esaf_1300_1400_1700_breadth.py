@@ -74,6 +74,21 @@ class BreadthDeepenContracts(unittest.TestCase):
         ):
             self.assertIn(needle, text.replace("\\", "/"))
 
+    def test_esaf_1300_does_not_overstate_raci_or_quorum_requirements(self) -> None:
+        text = CORE["1300"].read_text(encoding="utf-8")
+        self.assertIn(
+            "Internal audit or independent assurance is Informed at every gate.",
+            text,
+        )
+        self.assertNotIn(
+            "internal audit or independent assurance\nshall be Consulted",
+            text,
+        )
+        self.assertNotIn(
+            "quorum, and meeting cadence, as\nrequired by GOV-100",
+            text,
+        )
+
     def test_esaf_1400_has_inline_example_anchors(self) -> None:
         text = CORE["1400"].read_text(encoding="utf-8")
         self.assertRegex(text, r"(?m)^\|\s*Version\s*\|\s*0\.2\.0\s*\|")
@@ -82,6 +97,15 @@ class BreadthDeepenContracts(unittest.TestCase):
             "examples/esaf-1400/capability-control-mapping.example.md",
         ):
             self.assertIn(needle, text.replace("\\", "/"))
+
+    def test_esaf_1400_vignette_uses_esaf_1500_record_identifiers(self) -> None:
+        text = (
+            ROOT / "examples/esaf-1400/adoption-vignette.example.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn("`EVD-140-001`", text)
+        self.assertIn("`ASR-140-01`", text)
+        for reserved_or_legacy in ("`EV-140-", "`ASM-140-", "`FND-140-"):
+            self.assertNotIn(reserved_or_legacy, text)
 
     def test_esaf_1700_has_inline_example_anchors(self) -> None:
         text = CORE["1700"].read_text(encoding="utf-8")
@@ -92,6 +116,24 @@ class BreadthDeepenContracts(unittest.TestCase):
         )
         self.assertRegex(text, r"CAP-[A-Z0-9-]+")
         self.assertIn("EVD-", text)
+
+    def test_esaf_1700_tables_and_example_cover_parent_attributes(self) -> None:
+        core = CORE["1700"].read_text(encoding="utf-8")
+        example = (
+            ROOT / "examples/esaf-1700/entity-instances.example.md"
+        ).read_text(encoding="utf-8")
+        for attribute in (
+            "required_evidence",
+            "approval_authority",
+            "monitoring",
+            "review_frequency",
+            "independent_assurance",
+            "human_oversight",
+            "acceptance_authority",
+        ):
+            marker = f"`{attribute}`"
+            self.assertIn(marker, core, msg=f"core table missing {marker}")
+            self.assertIn(marker, example, msg=f"example missing {marker}")
 
     def test_esaf_1400_remains_informative_without_local_shall(self) -> None:
         text = CORE["1400"].read_text(encoding="utf-8")

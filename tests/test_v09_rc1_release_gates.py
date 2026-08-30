@@ -68,13 +68,20 @@ def _previous_phase_ref(phase: object) -> str:
     from tools.v09_rc1_release_gates import CLOSURE_ALLOWLIST, changed_paths_since
 
     expected = PREVIOUS_PHASE[phase]  # type: ignore[index]
-    # Prefer nearby ancestors first so a stacked allowlist commit validates
-    # against its immediate evidence parent rather than a lagging origin/main.
-    candidate_refs = (
-        *(f"HEAD~{distance}" for distance in range(1, 31)),
-        "origin/main",
-        "origin/main~1",
+    history = subprocess.run(
+        ["git", "rev-list", "--first-parent", "HEAD"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
     )
+    if history.returncode != 0:
+        raise AssertionError(
+            "could not enumerate git history while locating readiness phase "
+            f"{expected!r}: {history.stderr.strip()}"
+        )
+    # rev-list is nearest-first, so a stacked allowlist commit validates
+    # against its nearest evidence ancestor without a fixed history window.
+    candidate_refs = history.stdout.splitlines()
     for ref in candidate_refs:
         result = subprocess.run(
             ["git", "show", f"{ref}:{RECORD_RELATIVE}"],
@@ -125,6 +132,38 @@ class V09RC1ReleaseGatesTests(unittest.TestCase):
             result.returncode,
             msg=f"stdout={result.stdout!r} stderr={result.stderr!r}",
         )
+
+    def test_previous_phase_ref_searches_beyond_fixed_ancestor_window(self) -> None:
+        from unittest.mock import patch
+
+        ancestors = [f"ancestor-{distance}" for distance in range(1, 36)]
+
+        def fake_run(command: list[str], **_: object) -> subprocess.CompletedProcess:
+            if command[:2] == ["git", "rev-list"]:
+                return subprocess.CompletedProcess(
+                    command,
+                    0,
+                    stdout="\n".join(ancestors) + "\n",
+                    stderr="",
+                )
+            if command[:2] == ["git", "show"] and command[2].startswith(
+                f"{ancestors[-1]}:"
+            ):
+                return subprocess.CompletedProcess(
+                    command,
+                    0,
+                    stdout=_record_front_matter({"phase": "closure_candidate"}),
+                    stderr="",
+                )
+            return subprocess.CompletedProcess(
+                command,
+                128,
+                stdout="",
+                stderr="missing",
+            )
+
+        with patch(f"{__name__}.subprocess.run", side_effect=fake_run):
+            self.assertEqual(ancestors[-1], _previous_phase_ref("published"))
 
     def test_happy_path_record_has_no_errors(self) -> None:
         errors = [

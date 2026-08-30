@@ -86,7 +86,13 @@ therefore follows both paths back to `CAP-CLAIMS-01`.
 | `determined_at` | 2026-08-15 |
 | `required_gates` | Security and risk, production readiness, periodic recertification, material change |
 | `required_controls` | Applicable Protect AI and Govern AI controls recorded in the capability inventory |
+| `required_evidence` | Initial risk assessment, architecture decision, validation report, production authorization, and monitoring reviews |
+| `approval_authority` | Enterprise Risk Committee |
+| `monitoring` | Unsupported-summary rate, uncertain-case routing, access failures, policy-model changes, and reviewer overrides |
+| `review_frequency` | Quarterly and upon a material change |
 | `review_date` | 2026-11-30 |
+| `independent_assurance` | Annual independent review of control design and operating effectiveness |
+| `human_oversight` | Authorized reviewer decides every uncertain case and may stop use of the capability |
 
 ## Lifecycle Gate Decision
 
@@ -115,6 +121,7 @@ therefore follows both paths back to `CAP-CLAIMS-01`.
 | `compensating_measures` | Restricted access, daily export reconciliation, and supervisory review |
 | `owner` | `OWNER-CLAIMS-TECHNICAL` |
 | `approver` | Enterprise Risk Committee |
+| `acceptance_authority` | Enterprise Risk Committee |
 | `expiration` | 2026-10-31 |
 | `monitoring` | Daily reconciliation exceptions reviewed by Claims Security |
 | `remediation_plan` | Deploy structured event logging before expiration |
