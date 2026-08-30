@@ -43,6 +43,11 @@ Every requirement, control, architecture, assessment, and governance artifact wi
 | [ESAF-1700](data-model/ESAF-1700.md) | Enterprise AI Data Model | [data-model/ESAF-1700.md](data-model/ESAF-1700.md) |
 | [ESAF-1800](profiles/ESAF-1800.md) | Industry, jurisdiction, and risk profiles | [profiles/ESAF-1800.md](profiles/ESAF-1800.md) |
 
+Non-normative worksheets and worked examples for ESAF-1300, ESAF-1400, and
+ESAF-1700 are available in [`examples/esaf-1300/`](examples/esaf-1300/),
+[`examples/esaf-1400/`](examples/esaf-1400/), and
+[`examples/esaf-1700/`](examples/esaf-1700/).
+
 The current profile package is the [Draft United Kingdom jurisdiction pilot](profiles/uk/0.1.0/README.md).
 
 ## Standards alignment

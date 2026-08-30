@@ -1169,7 +1169,7 @@ class ReleaseMetadataTests(unittest.TestCase):
             with self.subTest(non_goal=non_goal):
                 self.assertIn(non_goal, non_goals)
 
-    def test_backlog_queues_post_beta_v09_rc1_initiatives(self) -> None:
+    def test_backlog_records_post_beta_v09_rc1_initiatives(self) -> None:
         backlog = read_repository_file("project/BACKLOG.md")
         queue = markdown_section(backlog, "## Post-beta scheduled queue")
         for required in (
@@ -1179,8 +1179,9 @@ class ReleaseMetadataTests(unittest.TestCase):
             "Author ESAF-1700 Enterprise AI Data Model Working Draft",
             "Complete NIST AI RMF public-source readiness and mapping go/no-go",
             "Close the v0.9-rc1 publication gates",
-            "tracked in open GitHub Issues",
+            "were tracked in GitHub Issues",
             "do not stop later engineering work",
+            "first Working Draft completed",
         ):
             with self.subTest(required=required):
                 self.assertTrue(contains_normalized_phrase(queue, required))
@@ -1196,6 +1197,43 @@ class ReleaseMetadataTests(unittest.TestCase):
                 self.assertIn(issue_url, queue)
         self.assertNotIn("https://github.com/tdistress/ESAF/issues/55", queue)
         self.assertNotIn("https://github.com/tdistress/ESAF/issues/60", queue)
+
+    def test_post_v09_surfaces_record_completed_020_breadth_deepen(self) -> None:
+        changelog = markdown_section(
+            read_repository_file("CHANGELOG.md"),
+            "## Unreleased",
+        )
+        backlog = markdown_section(
+            read_repository_file("project/BACKLOG.md"),
+            "## Completed workstreams",
+        )
+        milestones = markdown_section(
+            read_repository_file("project/MILESTONES.md"),
+            "### Post-publication breadth deepen",
+        )
+        for path, text in (
+            ("CHANGELOG.md", changelog),
+            ("project/BACKLOG.md", backlog),
+            ("project/MILESTONES.md", milestones),
+        ):
+            with self.subTest(path=path, phrase="0.2.0 breadth deepen"):
+                self.assertTrue(
+                    contains_normalized_phrase(text, "0.2.0 breadth deepen")
+                )
+            for publication in ("ESAF-1300", "ESAF-1400", "ESAF-1700"):
+                with self.subTest(path=path, publication=publication):
+                    self.assertIn(publication, text)
+
+        readme = read_repository_file("README.md")
+        for example_pack in (
+            "examples/esaf-1300/",
+            "examples/esaf-1400/",
+            "examples/esaf-1700/",
+        ):
+            with self.subTest(example_pack=example_pack):
+                self.assertIn(example_pack, changelog)
+                self.assertIn(example_pack, readme)
+        self.assertTrue(contains_normalized_phrase(readme, "non-normative"))
 
     def test_hitrust_backlog_links_open_issue_60(self) -> None:
         backlog = read_repository_file("project/BACKLOG.md")

@@ -24,28 +24,39 @@ Cyber Essentials core and Cyber Essentials Plus remain separate mapping sets.
 
 ## Post-beta scheduled queue
 
-These initiatives are required for `v0.9-rc1` and are tracked in open GitHub
-Issues under milestone `v0.9-rc1`. Deferred mapping assurance and HITRUST
-readiness remain tracked separately and do not stop later engineering work.
+These initiatives were required for `v0.9-rc1` and were tracked in GitHub
+Issues under milestone `v0.9-rc1`. The published first Working Draft
+workstreams are retained as historical context with their follow-up status
+stated inline. Deferred mapping assurance and HITRUST readiness remain tracked
+separately and do not stop later engineering work.
 
 - [Issue 90](https://github.com/tdistress/ESAF/issues/90): Close
   validation-harness Phase 2 performance target. Hot-path delivered in PR #97;
   hosted serial ≥40% timing criterion recorded as `DEFER`
   (`docs/superpowers/reviews/2026-08-29-phase2-hosted-timing-deferral.md`).
 - [Issue 91](https://github.com/tdistress/ESAF/issues/91): Author ESAF-1300
-  Governance Manual Working Draft.
+  Governance Manual Working Draft. First Working Draft completed for
+  `v0.9-rc1`; the 0.2.0 breadth deepen and example pack are also complete.
 - [Issue 92](https://github.com/tdistress/ESAF/issues/92): Author ESAF-1400
-  Implementation Guide Working Draft.
+  Implementation Guide Working Draft. First Working Draft completed for
+  `v0.9-rc1`; the 0.2.0 breadth deepen and example pack are also complete.
 - [Issue 93](https://github.com/tdistress/ESAF/issues/93): Author ESAF-1700
-  Enterprise AI Data Model Working Draft.
+  Enterprise AI Data Model Working Draft. First Working Draft completed for
+  `v0.9-rc1`; the 0.2.0 breadth deepen and example pack are also complete.
 - [Issue 94](https://github.com/tdistress/ESAF/issues/94): Complete NIST AI RMF
   public-source readiness and mapping go/no-go. Readiness decision recorded as
   `HOLD` pending named mapper and independent reviewers
   (`crosswalks/nist-ai-rmf.md`).
 - [Issue 95](https://github.com/tdistress/ESAF/issues/95): Close the v0.9-rc1
-  publication gates.
+  publication gates. The `v0.9-rc1` Working Draft was published on
+  2026-08-29.
 
 ## Completed workstreams
+
+- The ESAF-1300, ESAF-1400, and ESAF-1700 0.2.0 breadth deepen is complete,
+  including the non-normative packs under `examples/esaf-1300/`,
+  `examples/esaf-1400/`, and `examples/esaf-1700/`. This follow-up does not
+  change the published `v0.9-rc1` release identity.
 
 - [Issue 59](https://github.com/tdistress/ESAF/issues/59), the `v0.5-beta`
   publication gates, is closed. The `v0.5-beta` Working Draft was published

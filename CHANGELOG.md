@@ -6,6 +6,28 @@ Versions 0.2-alpha and 0.3-alpha remain unreleased working-draft stages.
 Version 0.4-alpha is a tagged Working Draft. Version 0.5-beta is a tagged
 Working Draft. Version 0.9-rc1 is a tagged Working Draft.
 
+## Unreleased
+
+### Added
+
+- Added non-normative worksheet and worked-example packs for ESAF-1300,
+  ESAF-1400, and ESAF-1700 under
+  [`examples/esaf-1300/`](examples/esaf-1300/),
+  [`examples/esaf-1400/`](examples/esaf-1400/), and
+  [`examples/esaf-1700/`](examples/esaf-1700/).
+
+### Changed
+
+- Completed the ESAF-1300 0.2.0 breadth deepen with expanded governance
+  charters, decision rights, lifecycle-gate operation, RACI, exceptions, and
+  governance records.
+- Completed the ESAF-1400 0.2.0 breadth deepen with an expanded adoption
+  sequence, control and architecture mappings, roadmap guidance, evidence
+  handoff, vendor-neutral policy, and failure modes.
+- Completed the ESAF-1700 0.2.0 breadth deepen with expanded canonical
+  entities, relationships, identifier conventions, exchange guidance, and
+  alignment to ESAF-1500 assessment records.
+
 ## 0.9-rc1 - 2026-08-29
 
 ### Added
