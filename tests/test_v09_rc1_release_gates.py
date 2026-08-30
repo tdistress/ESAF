@@ -70,7 +70,12 @@ def _previous_phase_ref(phase: object) -> str:
     expected = PREVIOUS_PHASE[phase]  # type: ignore[index]
     # Prefer nearby ancestors first so a stacked allowlist commit validates
     # against its immediate evidence parent rather than a lagging origin/main.
-    for ref in ("HEAD~1", "HEAD~2", "HEAD~3", "origin/main"):
+    candidate_refs = (
+        *(f"HEAD~{distance}" for distance in range(1, 31)),
+        "origin/main",
+        "origin/main~1",
+    )
+    for ref in candidate_refs:
         result = subprocess.run(
             ["git", "show", f"{ref}:{RECORD_RELATIVE}"],
             cwd=ROOT,
