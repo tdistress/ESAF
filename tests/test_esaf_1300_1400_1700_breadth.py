@@ -37,7 +37,7 @@ class BreadthDeepenContracts(unittest.TestCase):
             text = path.read_text(encoding="utf-8")
             self.assertRegex(
                 text,
-                r"(?m)^(\*\*Version:\*\*|Version)\s*\|\s*0\.2\.0|^\*\*Version:\*\*\s*0\.2\.0",
+                r"(?m)^(?:\|\s*Version\s*\|\s*0\.2\.0\s*\||\*\*Version:\*\*\s*0\.2\.0)",
                 msg=f"{key} missing Version 0.2.0",
             )
             self.assertIn("Working Draft", text)
