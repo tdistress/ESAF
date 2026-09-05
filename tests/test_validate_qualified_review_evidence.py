@@ -3520,12 +3520,47 @@ class CampaignValidationTests(unittest.TestCase):
         manifest = self._manifest()
         mapping_sets = manifest["mapping_sets"]
         assert isinstance(mapping_sets, list)
-        mapping_set = mapping_sets[mapping_index]
-        assert isinstance(mapping_set, dict)
-        roles = mapping_set["roles"]
-        assert isinstance(roles, list)
-        role = roles[role_index]
-        assert isinstance(role, dict)
+
+        def role_at(map_idx: int, role_idx: int) -> dict[str, object]:
+            mapping_set = mapping_sets[map_idx]
+            assert isinstance(mapping_set, dict)
+            roles = mapping_set["roles"]
+            assert isinstance(roles, list)
+            role = roles[role_idx]
+            assert isinstance(role, dict)
+            return role
+
+        # Callers may read an attestation via filesystem glob order, which is
+        # not stable across runners. Resolve the role whose attestation
+        # actually contains ``old`` so mutation stays bound to that text.
+        candidates: list[tuple[int, int]] = [(mapping_index, role_index)]
+        for map_idx, mapping_set in enumerate(mapping_sets):
+            assert isinstance(mapping_set, dict)
+            roles = mapping_set["roles"]
+            assert isinstance(roles, list)
+            for role_idx, _role in enumerate(roles):
+                pair = (map_idx, role_idx)
+                if pair not in candidates:
+                    candidates.append(pair)
+
+        selected: tuple[int, int] | None = None
+        content = ""
+        for map_idx, role_idx in candidates:
+            role = role_at(map_idx, role_idx)
+            attestation = role["attestation"]
+            assert isinstance(attestation, dict)
+            attestation_path = self.campaign_root.joinpath(
+                *str(attestation["path"]).split("/")
+            )
+            candidate_text = attestation_path.read_text(encoding="utf-8")
+            if old in candidate_text:
+                selected = (map_idx, role_idx)
+                content = candidate_text
+                break
+        self.assertIsNotNone(selected, f"attestation text not found: {old!r}")
+        assert selected is not None
+        mapping_index, role_index = selected
+        role = role_at(mapping_index, role_index)
         attestation = role["attestation"]
         worksheet = role["worksheet"]
         assert isinstance(attestation, dict)
@@ -3534,8 +3569,6 @@ class CampaignValidationTests(unittest.TestCase):
             *str(attestation["path"]).split("/")
         )
         prior_digest = str(attestation["sha256"])
-        content = attestation_path.read_text(encoding="utf-8")
-        self.assertIn(old, content)
         revised = content.replace(old, new, 1).encode("utf-8")
         attestation_path.write_bytes(revised)
         current_digest = hashlib.sha256(revised).hexdigest()
@@ -3783,22 +3816,8 @@ class CampaignValidationTests(unittest.TestCase):
                 self.assertFalse(report.evidence_valid, report)
 
     def test_attestation_source_sets_are_exactly_candidate_bound(self) -> None:
-        # Read from the same attestation `_replace_attestation_text` mutates
-        # (mapping_sets[0].roles[0]). Glob order across attestations is
-        # filesystem-dependent and must not drive the expected old values.
-        manifest = self._manifest()
-        mapping_sets = manifest["mapping_sets"]
-        assert isinstance(mapping_sets, list)
-        mapping_set = mapping_sets[0]
-        assert isinstance(mapping_set, dict)
-        roles = mapping_set["roles"]
-        assert isinstance(roles, list)
-        role = roles[0]
-        assert isinstance(role, dict)
-        attestation = role["attestation"]
-        assert isinstance(attestation, dict)
-        attestation_path = self.campaign_root.joinpath(
-            *str(attestation["path"]).split("/")
+        attestation_path = next(
+            (self.campaign_root / "attestations").glob("*.md")
         )
         text = attestation_path.read_text(encoding="utf-8")
         checksum_line = next(
