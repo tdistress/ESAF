@@ -26,6 +26,7 @@
         "tests/test_arc_p160_pattern.py",
         "tests/test_assessment_foundation.py",
         "tests/test_crosswalk_schemas.py",
+        "tests/test_esaf_1300_1400_1700_breadth.py",
         "tests/test_esaf_1600_foundation.py",
         "tests/test_license_metadata.py",
         "tests/test_mapping_review_protocol.py",

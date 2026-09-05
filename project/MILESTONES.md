@@ -98,6 +98,14 @@
 - ESAF-1000, ESAF-1100, ESAF-1200, the ESAF-1500 foundation, ESAF-1600, the UK
   pilot profile, and the three UK mapping snapshots remain Draft.
 
+### Publication state
+
+- The `v0.9-rc1` Working Draft was published on 2026-08-29 through annotated
+  tag `v0.9-rc1`.
+- The first Working Draft scope for ESAF-1300, ESAF-1400, and ESAF-1700 was
+  completed for that publication. The historical requirements and exit
+  criteria below remain the record of the closed milestone.
+
 ### Required workstreams
 
 1. **Validation-harness Phase 2 closeout.** ESAF shall land the remaining
@@ -141,6 +149,14 @@
 - Critical and Important review findings are resolved; and
 - the exact candidate receives technical, editorial, and governance approval
   appropriate to its contents.
+
+### Post-publication breadth deepen
+
+- The ESAF-1300, ESAF-1400, and ESAF-1700 0.2.0 breadth deepen is complete.
+- Each publication now has a discoverable non-normative example pack under
+  `examples/esaf-1300/`, `examples/esaf-1400/`, or `examples/esaf-1700/`.
+- This follow-up does not alter the closed `v0.9-rc1` publication state or
+  create a new tagged release.
 
 ### Non-goals
 

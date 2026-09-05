@@ -8,6 +8,8 @@ ESAF-1000, ESAF-1100, and ESAF-1200.
   patterns, phases a vendor-neutral roadmap, sets a vendor-neutral product and
   configuration policy, describes the evidence handoff to
   [ESAF-1500](../assessment/ESAF-1500.md), and catalogs common failure modes.
+- The [ESAF-1400 example pack](../examples/esaf-1400/) provides a filled
+  nine-step adoption vignette and a multi-capability control-mapping worksheet.
 
 ESAF-1400 is informative. It does not establish, waive, or reinterpret a
 `shall` requirement, and it does not approve certification, compliance,
