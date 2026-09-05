@@ -425,5 +425,56 @@ class AssessmentSchemaTests(unittest.TestCase):
                     self.assertTrue(list(validator.iter_errors(mutated)))
 
 
+class AssessmentWorkbookStarterTests(unittest.TestCase):
+    workbook_root = ROOT / "assessment" / "workbook"
+    worksheet_root = workbook_root / "worksheets"
+    worksheet_files = {
+        "evidence-record": worksheet_root / "evidence-record.worksheet.json",
+        "assessment-result": worksheet_root / "assessment-result.worksheet.json",
+        "maturity-assessment": worksheet_root
+        / "maturity-assessment.worksheet.json",
+    }
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.schemas = {
+            name: json.loads(
+                (SCHEMA_ROOT / f"{name}.schema.json").read_text(encoding="utf-8")
+            )
+            for name in SCHEMA_NAMES
+        }
+
+    def test_workbook_guide_is_draft_and_nonclaiming(self) -> None:
+        guide = (self.workbook_root / "ESAF-1500-workbook.md").read_text(
+            encoding="utf-8"
+        )
+        readme = (self.workbook_root / "README.md").read_text(encoding="utf-8")
+        for document in (guide, readme):
+            with self.subTest(document=document[:40]):
+                self.assertRegex(document, r"(?im)\bDraft\b")
+                self.assertRegex(document, r"(?im)certification")
+                self.assertRegex(document, r"(?im)compliance")
+                self.assertIn("ESAF-1500", document)
+                self.assertIn("ESAF-1100", document)
+
+    def test_workbook_worksheets_validate_against_esaf_1500_schemas(self) -> None:
+        for name, path in self.worksheet_files.items():
+            with self.subTest(name=name):
+                self.assertTrue(path.is_file(), msg=f"missing {path}")
+                document = json.loads(path.read_text(encoding="utf-8"))
+                validator = Draft202012Validator(
+                    self.schemas[name],
+                    format_checker=ASSESSMENT_FORMAT_CHECKER,
+                )
+                errors = list(validator.iter_errors(document))
+                self.assertEqual(
+                    errors,
+                    [],
+                    msg="; ".join(error.message for error in errors),
+                )
+                if name != "evidence-record":
+                    self.assertEqual(document.get("status"), "draft")
+
+
 if __name__ == "__main__":
     unittest.main()

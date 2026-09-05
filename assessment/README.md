@@ -1,7 +1,7 @@
 # ESAF-1500 Assessment Guide
 
 This directory contains the normative assessment guide, its machine-readable
-contracts, and fictional examples.
+contracts, fictional examples, and a Draft operator workbook starter.
 
 - [ESAF-1500](ESAF-1500.md) defines shared assessment methodology, evidence
   expectations, assessment results, and maturity semantics.
@@ -13,6 +13,10 @@ contracts, and fictional examples.
   [fictional assessment-result example](examples/assessment-result.example.json),
   and [fictional maturity-assessment example](examples/maturity-assessment.example.json)
   demonstrate the contracts without assessing an organization or control.
+- [Draft assessment workbook starter](workbook/README.md) provides operator
+  guidance and schema-conforming worksheet stubs bound to ESAF-1500 and
+  ESAF-1100 assessment procedures. Completing worksheets does not establish
+  certification, compliance, equivalence, endorsement, or assurance.
 
 Validate the guide, schemas, examples, references, final states, maturity
 prerequisites, component roll-ups, and non-claim boundaries with:

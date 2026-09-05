@@ -46,7 +46,9 @@ Every requirement, control, architecture, assessment, and governance artifact wi
 Non-normative worksheets and worked examples for ESAF-1300, ESAF-1400, and
 ESAF-1700 are available in [`examples/esaf-1300/`](examples/esaf-1300/),
 [`examples/esaf-1400/`](examples/esaf-1400/), and
-[`examples/esaf-1700/`](examples/esaf-1700/).
+[`examples/esaf-1700/`](examples/esaf-1700/). A Draft ESAF-1500 assessment
+workbook starter is available in
+[`assessment/workbook/`](assessment/workbook/).
 
 The current profile package is the [Draft United Kingdom jurisdiction pilot](profiles/uk/0.1.0/README.md).
 

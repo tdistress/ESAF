@@ -15,6 +15,9 @@ Working Draft. Version 0.9-rc1 is a tagged Working Draft.
   [`examples/esaf-1300/`](examples/esaf-1300/),
   [`examples/esaf-1400/`](examples/esaf-1400/), and
   [`examples/esaf-1700/`](examples/esaf-1700/).
+- Added a Draft ESAF-1500 assessment workbook starter under
+  [`assessment/workbook/`](assessment/workbook/) with operator guidance and
+  schema-conforming worksheet stubs.
 
 ### Changed
 
