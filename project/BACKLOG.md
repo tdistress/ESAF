@@ -57,12 +57,18 @@ These initiatives are required for `v0.10-draft` and shall be tracked in GitHub
 Issues under milestone `v0.10-draft`. Deferred mapping assurance and HITRUST
 readiness remain tracked separately and do not stop later engineering work.
 
-- Sync post-rc1 tracker hygiene
-- Author assessment workbook Draft starter
-- Author evidence catalog Draft starter
-- Author audit checklist Draft starter
-- Author governance templates Draft starter
-- Close the v0.10-draft publication gates
+- [Issue 114](https://github.com/tdistress/ESAF/issues/114): Sync post-rc1
+  tracker hygiene
+- [Issue 115](https://github.com/tdistress/ESAF/issues/115): Author assessment
+  workbook Draft starter
+- [Issue 116](https://github.com/tdistress/ESAF/issues/116): Author evidence
+  catalog Draft starter
+- [Issue 117](https://github.com/tdistress/ESAF/issues/117): Author audit
+  checklist Draft starter
+- [Issue 118](https://github.com/tdistress/ESAF/issues/118): Author governance
+  templates Draft starter
+- [Issue 119](https://github.com/tdistress/ESAF/issues/119): Close the
+  v0.10-draft publication gates
 
 ## Completed workstreams
 

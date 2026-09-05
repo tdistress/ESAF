@@ -1461,6 +1461,18 @@ class ReleaseMetadataTests(unittest.TestCase):
         ):
             with self.subTest(required=required):
                 self.assertTrue(contains_normalized_phrase(queue, required))
+        for issue_url in (
+            "https://github.com/tdistress/ESAF/issues/114",
+            "https://github.com/tdistress/ESAF/issues/115",
+            "https://github.com/tdistress/ESAF/issues/116",
+            "https://github.com/tdistress/ESAF/issues/117",
+            "https://github.com/tdistress/ESAF/issues/118",
+            "https://github.com/tdistress/ESAF/issues/119",
+        ):
+            with self.subTest(issue_url=issue_url):
+                self.assertIn(issue_url, queue)
+        self.assertNotIn("https://github.com/tdistress/ESAF/issues/55", queue)
+        self.assertNotIn("https://github.com/tdistress/ESAF/issues/60", queue)
 
     def test_roadmap_records_v010_draft_delivery_sequence(self) -> None:
         roadmap = read_repository_file("ROADMAP.md")
