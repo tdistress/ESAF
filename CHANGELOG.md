@@ -4,9 +4,10 @@ All notable changes to ESAF are documented in this file.
 
 Versions 0.2-alpha and 0.3-alpha remain unreleased working-draft stages.
 Version 0.4-alpha is a tagged Working Draft. Version 0.5-beta is a tagged
-Working Draft. Version 0.9-rc1 is a tagged Working Draft.
+Working Draft. Version 0.9-rc1 is a tagged Working Draft. Version 0.10-draft is an
+unreleased Working Draft.
 
-## Unreleased
+## 0.10-draft - Unreleased
 
 ### Added
 
@@ -28,9 +29,20 @@ Working Draft. Version 0.9-rc1 is a tagged Working Draft.
 - Added the Issue #119 `v0.10-draft` publication-readiness evidence candidate,
   release-gate validator, and exact-SHA review records, starting at
   [`docs/superpowers/reviews/2026-09-05-v010-draft-publication-readiness.md`](docs/superpowers/reviews/2026-09-05-v010-draft-publication-readiness.md).
+- Recorded independent technical, editorial, and governance reviews of the
+  exact evidence candidate and prepared the metadata-only `v0.10-draft`
+  closure candidate. This candidate does not approve publication.
 
 ### Changed
 
+- Advanced Working Draft status surfaces to `0.10-draft` for the exact
+  metadata-only closure candidate. Publication remains conditional on the
+  remote annotated `v0.10-draft` tag resolving to the exact validated merged
+  commit. The tag has not been created, and the post-merge gate remains open.
+- Clarified that this stage does not establish certification, compliance,
+  equivalence, endorsement, assurance, legal sufficiency, implementation
+  assessment, production readiness, or replacement of qualified professional
+  judgment. Issues 55 and 60 remain open.
 - Completed the ESAF-1300 0.2.0 breadth deepen with expanded governance
   charters, decision rights, lifecycle-gate operation, RACI, exceptions, and
   governance records.

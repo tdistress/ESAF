@@ -43,7 +43,36 @@ compliance, certification, equivalence, endorsement, external-scheme approval,
 or production readiness. Historical `v0.4-alpha` evidence cannot approve
 `v0.5-beta`.
 
+## 0.10-draft publication
+
+Publication remains conditional. Working Draft surfaces identify `0.10-draft`
+for the exact metadata-only closure candidate. The annotated `v0.10-draft` tag
+has not been created, and the post-merge gate remains open. Issue
+[#119](https://github.com/tdistress/ESAF/issues/119) tracks the publication
+gates.
+
+Publication is limited to the repository Working Draft. All controls,
+architecture patterns, the pilot profile, mapping sets, and mapping records
+remain Draft; their lifecycle records remain unchanged. Prerequisite
+dispositions remain Phase 2 timing `DEFER`, ESAF-1300/1400/1700 Working
+Drafts, NIST AI RMF `HOLD`, and the Phase 6 Draft toolkit starters. Issues 55
+and 60 remain open. This candidate does not establish certification,
+compliance, equivalence, endorsement, assurance, or artifact lifecycle
+approval.
+
+| Gate | Current state | Final evidence |
+|---|---|---|
+| Scope and milestone approval | Ready | https://github.com/tdistress/ESAF/pull/112 |
+| Normative and technical review | Ready | https://github.com/tdistress/ESAF/blob/76d593a3dad04376871ca8acb75d791fc9f7c255/docs/superpowers/reviews/2026-09-05-v010-draft-technical-review.md |
+| Editorial and terminology review | Ready | https://github.com/tdistress/ESAF/blob/76d593a3dad04376871ca8acb75d791fc9f7c255/docs/superpowers/reviews/2026-09-05-v010-draft-editorial-review.md |
+| Cross-reference and rendering review | Ready | https://github.com/tdistress/ESAF/pull/112 |
+| Standards mapping review | Ready | https://github.com/tdistress/ESAF/pull/112 |
+| Release metadata synchronization | Ready | https://github.com/tdistress/ESAF/pull/112 |
+| Governance approval | Ready | https://github.com/tdistress/ESAF/blob/76d593a3dad04376871ca8acb75d791fc9f7c255/docs/superpowers/reviews/2026-09-05-v010-draft-governance-review.md |
+| Post-merge validation | Open | pending merge to `main` |
+
 ## 0.9-rc1 publication
+
 
 Publication gates are Closed. The `v0.9-rc1` Working Draft was published
 through annotated tag `v0.9-rc1` on 2026-08-29. The tag object is
