@@ -22,7 +22,10 @@ procedures. It does not replace [ESAF-1500](../ESAF-1500.md).
 2. Replace every `WORKSHEET` placeholder value before treating a record as
    final.
 3. Keep field names and enumerations aligned to the schemas under
-   [`../schema/`](../schema/).
+   [`../schema/evidence-record.schema.json`](../schema/evidence-record.schema.json),
+   [`../schema/assessment-result.schema.json`](../schema/assessment-result.schema.json),
+   and
+   [`../schema/maturity-assessment.schema.json`](../schema/maturity-assessment.schema.json).
 4. Validate filled records with `python tools/validate_assessment.py --check`
    after placing finalized examples under `assessment/examples/` or by running
    the workbook worksheet tests.

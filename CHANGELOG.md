@@ -18,6 +18,10 @@ Working Draft. Version 0.9-rc1 is a tagged Working Draft.
 - Added a Draft ESAF-1500 assessment workbook starter under
   [`assessment/workbook/`](assessment/workbook/) with operator guidance and
   schema-conforming worksheet stubs.
+- Added a Draft ESAF-1500 evidence catalog starter under
+  [`assessment/evidence-catalog/`](assessment/evidence-catalog/).
+- Added a Draft ESAF-1500 audit checklist starter under
+  [`assessment/audit-checklist/`](assessment/audit-checklist/).
 
 ### Changed
 

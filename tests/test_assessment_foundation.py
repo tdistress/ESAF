@@ -476,5 +476,81 @@ class AssessmentWorkbookStarterTests(unittest.TestCase):
                     self.assertEqual(document.get("status"), "draft")
 
 
+class AssessmentEvidenceCatalogStarterTests(unittest.TestCase):
+    catalog_root = ROOT / "assessment" / "evidence-catalog"
+    evidence_types = (
+        "policy",
+        "procedure",
+        "record",
+        "configuration",
+        "log",
+        "technical_test",
+        "observation",
+        "interview",
+        "metric",
+        "contract",
+        "external_assurance",
+        "other",
+    )
+
+    def test_evidence_catalog_is_draft_and_bound_to_esaf_1500(self) -> None:
+        catalog = (self.catalog_root / "ESAF-1500-evidence-catalog.md").read_text(
+            encoding="utf-8"
+        )
+        readme = (self.catalog_root / "README.md").read_text(encoding="utf-8")
+        for document in (catalog, readme):
+            with self.subTest(document=document[:40]):
+                self.assertRegex(document, r"(?im)\bDraft\b")
+                self.assertRegex(document, r"(?im)certification")
+                self.assertRegex(document, r"(?im)compliance")
+                self.assertIn("ESAF-1500", document)
+        for evidence_type in self.evidence_types:
+            with self.subTest(evidence_type=evidence_type):
+                self.assertIn(f"`{evidence_type}`", catalog)
+        for attribute in QUALITY_ATTRIBUTES:
+            with self.subTest(attribute=attribute):
+                self.assertIn(attribute, catalog)
+        self.assertNotRegex(catalog, r"(?m)^\| `[^`]+` \|.*shall ")
+
+
+class AssessmentAuditChecklistStarterTests(unittest.TestCase):
+    checklist_root = ROOT / "assessment" / "audit-checklist"
+    determinations = (
+        "satisfied",
+        "partially_satisfied",
+        "not_satisfied",
+        "not_applicable",
+        "not_assessed",
+    )
+    methods = ("Examine", "Interview", "Test", "Observe")
+
+    def test_audit_checklist_is_draft_and_bound_to_result_contract(self) -> None:
+        checklist = (
+            self.checklist_root / "ESAF-1500-audit-checklist.md"
+        ).read_text(encoding="utf-8")
+        readme = (self.checklist_root / "README.md").read_text(encoding="utf-8")
+        for document in (checklist, readme):
+            with self.subTest(document=document[:40]):
+                self.assertRegex(document, r"(?im)\bDraft\b")
+                self.assertRegex(document, r"(?im)certification")
+                self.assertRegex(document, r"(?im)compliance")
+                self.assertIn("ESAF-1500", document)
+        for heading in (
+            "Sampling intent",
+            "Procedure references",
+            "Evidence pointers",
+            "Determination capture",
+            "Limitation notes",
+        ):
+            with self.subTest(heading=heading):
+                self.assertIn(heading, checklist)
+        for determination in self.determinations:
+            with self.subTest(determination=determination):
+                self.assertIn(f"`{determination}`", checklist)
+        for method in self.methods:
+            with self.subTest(method=method):
+                self.assertIn(f"`{method}`", checklist)
+
+
 if __name__ == "__main__":
     unittest.main()
