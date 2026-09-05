@@ -4,6 +4,19 @@
 
 **Version:** 0.9-rc1
 
+## 0.10-draft delivery sequence
+
+`v0.10-draft` follows tracker hygiene, then the Phase 6 assessment-toolkit
+starter (assessment workbook, evidence catalog, audit checklist, and
+governance templates), then ordinary publication gates on the exact candidate.
+Deferred mapping assurance remains tracked through issue 55 and does not stop
+later engineering work. HITRUST readiness remains separately gated through
+issue 60. Issues 55 and 60 are not `v0.10-draft` exit criteria. Publication
+does not change any control, architecture, profile, mapping-set, or
+mapping-record lifecycle state. Phases 4 and 5 remain long-term direction.
+Phase 6 remains long-term direction except for the bounded starter packs
+required by this milestone.
+
 ## 0.9-rc1 delivery sequence
 
 The `v0.9-rc1` Working Draft was published on 2026-08-29 through the
