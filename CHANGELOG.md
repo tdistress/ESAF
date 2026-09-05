@@ -15,6 +15,19 @@ Working Draft. Version 0.9-rc1 is a tagged Working Draft.
   [`examples/esaf-1300/`](examples/esaf-1300/),
   [`examples/esaf-1400/`](examples/esaf-1400/), and
   [`examples/esaf-1700/`](examples/esaf-1700/).
+- Added a Draft ESAF-1500 assessment workbook starter under
+  [`assessment/workbook/`](assessment/workbook/) with operator guidance and
+  schema-conforming worksheet stubs.
+- Added a Draft ESAF-1500 evidence catalog starter under
+  [`assessment/evidence-catalog/`](assessment/evidence-catalog/).
+- Added a Draft ESAF-1500 audit checklist starter under
+  [`assessment/audit-checklist/`](assessment/audit-checklist/).
+- Added a Draft governance template starter pack under
+  [`templates/`](templates/) for risk, exception, decision, and retirement
+  records.
+- Added the Issue #119 `v0.10-draft` publication-readiness evidence candidate,
+  release-gate validator, and exact-SHA review records, starting at
+  [`docs/superpowers/reviews/2026-09-05-v010-draft-publication-readiness.md`](docs/superpowers/reviews/2026-09-05-v010-draft-publication-readiness.md).
 
 ### Changed
 

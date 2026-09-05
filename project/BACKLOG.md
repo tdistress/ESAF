@@ -20,7 +20,7 @@ Cyber Essentials core and Cyber Essentials Plus remain separate mapping sets.
 - [Issue 60](https://github.com/tdistress/ESAF/issues/60) tracks HITRUST CSF
   source and review readiness only after licensed-source access, publication
   rights, and qualified-review availability are confirmed. This work does not
-  block `v0.5-beta` or `v0.9-rc1`.
+  block `v0.5-beta`, `v0.9-rc1`, or `v0.10-draft`.
 
 ## Post-beta scheduled queue
 
@@ -50,6 +50,25 @@ separately and do not stop later engineering work.
 - [Issue 95](https://github.com/tdistress/ESAF/issues/95): Close the v0.9-rc1
   publication gates. The `v0.9-rc1` Working Draft was published on
   2026-08-29.
+
+## Post-rc1 scheduled queue
+
+These initiatives are required for `v0.10-draft` and shall be tracked in GitHub
+Issues under milestone `v0.10-draft`. Deferred mapping assurance and HITRUST
+readiness remain tracked separately and do not stop later engineering work.
+
+- [Issue 114](https://github.com/tdistress/ESAF/issues/114): Sync post-rc1
+  tracker hygiene
+- [Issue 115](https://github.com/tdistress/ESAF/issues/115): Author assessment
+  workbook Draft starter
+- [Issue 116](https://github.com/tdistress/ESAF/issues/116): Author evidence
+  catalog Draft starter
+- [Issue 117](https://github.com/tdistress/ESAF/issues/117): Author audit
+  checklist Draft starter
+- [Issue 118](https://github.com/tdistress/ESAF/issues/118): Author governance
+  templates Draft starter
+- [Issue 119](https://github.com/tdistress/ESAF/issues/119): Close the
+  v0.10-draft publication gates
 
 ## Completed workstreams
 
