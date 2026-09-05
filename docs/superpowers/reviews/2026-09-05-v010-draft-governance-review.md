@@ -4,6 +4,7 @@
 
 - Reviewer: `Codex ESAF Governance Publication Reviewer`
 - Review date: 2026-09-05
+- Exact candidate SHA: `1634456a7234e987dcc0e9bd9fe92fc8441bce1d`
 - Exact candidate branch: `cursor/v010-draft-next-steps-design-23ea`
 - Scope: Issue #119 evidence-candidate boundaries, milestone non-goals, and
   template non-normativity relative to ESAF-1300 / ESAF-1400.

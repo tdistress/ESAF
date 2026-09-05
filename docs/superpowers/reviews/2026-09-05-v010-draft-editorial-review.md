@@ -4,6 +4,7 @@
 
 - Reviewer: `Codex ESAF Editorial Publication Reviewer`
 - Review date: 2026-09-05
+- Exact candidate SHA: `1634456a7234e987dcc0e9bd9fe92fc8441bce1d`
 - Exact candidate branch: `cursor/v010-draft-next-steps-design-23ea`
 - Scope: Draft starter prose for the Phase 6 assessment toolkit and the
   evidence-candidate publication-readiness record.
