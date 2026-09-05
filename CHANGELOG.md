@@ -7,7 +7,7 @@ Version 0.4-alpha is a tagged Working Draft. Version 0.5-beta is a tagged
 Working Draft. Version 0.9-rc1 is a tagged Working Draft. Version 0.10-draft is an
 unreleased Working Draft.
 
-## 0.10-draft - Unreleased
+## Unreleased
 
 ### Added
 
@@ -16,6 +16,23 @@ unreleased Working Draft.
   [`examples/esaf-1300/`](examples/esaf-1300/),
   [`examples/esaf-1400/`](examples/esaf-1400/), and
   [`examples/esaf-1700/`](examples/esaf-1700/).
+
+### Changed
+
+- Completed the ESAF-1300 0.2.0 breadth deepen with expanded governance
+  charters, decision rights, lifecycle-gate operation, RACI, exceptions, and
+  governance records.
+- Completed the ESAF-1400 0.2.0 breadth deepen with an expanded adoption
+  sequence, control and architecture mappings, roadmap guidance, evidence
+  handoff, vendor-neutral policy, and failure modes.
+- Completed the ESAF-1700 0.2.0 breadth deepen with expanded canonical
+  entities, relationships, identifier conventions, exchange guidance, and
+  alignment to ESAF-1500 assessment records.
+
+## 0.10-draft - Unreleased
+
+### Added
+
 - Added a Draft ESAF-1500 assessment workbook starter under
   [`assessment/workbook/`](assessment/workbook/) with operator guidance and
   schema-conforming worksheet stubs.
@@ -32,6 +49,16 @@ unreleased Working Draft.
 - Recorded independent technical, editorial, and governance reviews of the
   exact evidence candidate and prepared the metadata-only `v0.10-draft`
   closure candidate. This candidate does not approve publication.
+- Carried forward the seven Draft architecture patterns in the current
+  Working Draft: ARC-P100, Enterprise AI platform and gateway; ARC-P110,
+  Enterprise copilot; ARC-P120, Retrieval-augmented generation; ARC-P130,
+  Agentic and multi-agent AI; ARC-P140, Private model deployment; ARC-P150,
+  AI integration services; and ARC-P160, AI observability.
+- Carried forward the Draft Cyber Essentials v3.3 mapping snapshot.
+- Carried forward the Draft Cyber Essentials Plus v3.2 `esaf_to_external`
+  mapping snapshot.
+- Carried forward the Draft Cyber Essentials Plus v3.2 `external_to_esaf`
+  mapping snapshot.
 
 ### Changed
 
@@ -43,15 +70,6 @@ unreleased Working Draft.
   equivalence, endorsement, assurance, legal sufficiency, implementation
   assessment, production readiness, or replacement of qualified professional
   judgment. Issues 55 and 60 remain open.
-- Completed the ESAF-1300 0.2.0 breadth deepen with expanded governance
-  charters, decision rights, lifecycle-gate operation, RACI, exceptions, and
-  governance records.
-- Completed the ESAF-1400 0.2.0 breadth deepen with an expanded adoption
-  sequence, control and architecture mappings, roadmap guidance, evidence
-  handoff, vendor-neutral policy, and failure modes.
-- Completed the ESAF-1700 0.2.0 breadth deepen with expanded canonical
-  entities, relationships, identifier conventions, exchange guidance, and
-  alignment to ESAF-1500 assessment records.
 
 ## 0.9-rc1 - 2026-08-29
 
