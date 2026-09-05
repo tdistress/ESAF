@@ -354,6 +354,28 @@ def markdown_section(text: str, heading: str) -> str:
     return text[section_start:section_end]
 
 
+def milestone_section(text: str, heading: str) -> str:
+    start_match = re.search(
+        rf"^{re.escape(heading)}\s*$",
+        text,
+        re.MULTILINE,
+    )
+    if start_match is None:
+        raise AssertionError(f"missing milestone section {heading!r}")
+    section_start = start_match.start()
+    next_heading = re.search(
+        r"^## .+$",
+        text[start_match.end():],
+        re.MULTILINE,
+    )
+    section_end = (
+        start_match.end() + next_heading.start()
+        if next_heading is not None
+        else len(text)
+    )
+    return text[section_start:section_end]
+
+
 def release_readiness_rows() -> list[tuple[str, str, str]]:
     release_plan = read_repository_file("project/RELEASE_PLAN.md")
     section_match = re.search(
@@ -1217,9 +1239,27 @@ class ReleaseMetadataTests(unittest.TestCase):
             "first closes mapping assurance debt",
         ))
 
+    def test_fenced_markdown_in_task_ignores_indented_decoy_heading_in_fence(
+        self,
+    ) -> None:
+        plan = (
+            "## Task 1: Setup\n\n"
+            "```markdown\n"
+            "    ## Task 2: Example\n"
+            "decoy body that must not win\n"
+            "```\n\n"
+            "## Task 2: Example\n\n"
+            "```markdown\n"
+            "real extracted body\n"
+            "```\n"
+        )
+        body = fenced_markdown_in_task(plan, "## Task 2: Example")
+        self.assertEqual(body, "real extracted body")
+        self.assertNotIn("decoy body", body)
+
     def test_v09_rc1_has_bounded_workstreams_and_exit_criteria(self) -> None:
         milestones = read_repository_file("project/MILESTONES.md")
-        section = milestones[milestones.index("## v0.9-rc1"):]
+        section = milestone_section(milestones, "## v0.9-rc1")
         for heading in (
             "### Entry state",
             "### Required workstreams",
@@ -1244,10 +1284,8 @@ class ReleaseMetadataTests(unittest.TestCase):
 
     def test_v09_rc1_preserves_bounded_non_goals(self) -> None:
         milestones = read_repository_file("project/MILESTONES.md")
-        non_goals = milestones[
-            milestones.index("## v0.9-rc1"):
-        ]
-        non_goals = non_goals[non_goals.index("### Non-goals"):]
+        section = milestone_section(milestones, "## v0.9-rc1")
+        non_goals = section[section.index("### Non-goals"):]
         for non_goal in (
             "closing Issue `#55`",
             "substantive HITRUST mapping",
@@ -1333,7 +1371,7 @@ class ReleaseMetadataTests(unittest.TestCase):
         self.assertIn("https://github.com/tdistress/ESAF/issues/60", gated)
         self.assertTrue(contains_normalized_phrase(
             gated,
-            "does not block `v0.5-beta` or `v0.9-rc1`",
+            "does not block `v0.5-beta`, `v0.9-rc1`, or `v0.10-draft`.",
         ))
 
     def test_roadmap_defines_v09_rc1_delivery_sequence(self) -> None:
@@ -1372,7 +1410,7 @@ class ReleaseMetadataTests(unittest.TestCase):
 
     def test_v010_draft_has_bounded_workstreams_and_exit_criteria(self) -> None:
         milestones = read_repository_file("project/MILESTONES.md")
-        section = milestones[milestones.index("## v0.10-draft"):]
+        section = milestone_section(milestones, "## v0.10-draft")
         for heading in (
             "### Entry state",
             "### Required workstreams",
@@ -1395,10 +1433,8 @@ class ReleaseMetadataTests(unittest.TestCase):
 
     def test_v010_draft_preserves_bounded_non_goals(self) -> None:
         milestones = read_repository_file("project/MILESTONES.md")
-        non_goals = milestones[
-            milestones.index("## v0.10-draft"):
-        ]
-        non_goals = non_goals[non_goals.index("### Non-goals"):]
+        section = milestone_section(milestones, "## v0.10-draft")
+        non_goals = section[section.index("### Non-goals"):]
         for non_goal in (
             "closing Issue `#55`",
             "substantive HITRUST mapping",
