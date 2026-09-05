@@ -10,6 +10,35 @@ Each release shall complete the following gates:
 6. Changelog and version metadata updated.
 7. Release approved under `GOVERNANCE.md`.
 
+## 0.10-draft publication
+
+Publication gates are Ready except post-merge, which remains Open. Working Draft
+surfaces identify `0.10-draft` for the exact metadata-only closure candidate.
+Publication remains conditional on the remote annotated `v0.10-draft` tag
+resolving to the exact validated merged commit. The tag has not been created.
+Issue [#119](https://github.com/tdistress/ESAF/issues/119) tracks the
+publication gates.
+
+Publication is limited to the repository Working Draft. All controls,
+architecture patterns, the pilot profile, mapping sets, and mapping records
+remain Draft; their lifecycle records remain unchanged. Prerequisite
+dispositions remain Phase 2 timing `DEFER`, ESAF-1300/1400/1700 Working
+Drafts, NIST AI RMF `HOLD`, and the Phase 6 Draft toolkit starters. Issues 55
+and 60 remain open. This candidate does not establish certification,
+compliance, equivalence, endorsement, assurance, or artifact lifecycle
+approval.
+
+| Gate | Current state | Final evidence |
+|---|---|---|
+| Scope and milestone approval | Ready | https://github.com/tdistress/ESAF/pull/112 |
+| Normative and technical review | Ready | https://github.com/tdistress/ESAF/blob/98e15f1f500096aa2ccbb8c615d44f49969bdf79/docs/superpowers/reviews/2026-09-05-v010-draft-technical-review.md |
+| Editorial and terminology review | Ready | https://github.com/tdistress/ESAF/blob/98e15f1f500096aa2ccbb8c615d44f49969bdf79/docs/superpowers/reviews/2026-09-05-v010-draft-editorial-review.md |
+| Cross-reference and rendering review | Ready | https://github.com/tdistress/ESAF/pull/112 |
+| Standards mapping review | Ready | https://github.com/tdistress/ESAF/pull/112 |
+| Release metadata synchronization | Ready | https://github.com/tdistress/ESAF/pull/112 |
+| Governance approval | Ready | https://github.com/tdistress/ESAF/blob/98e15f1f500096aa2ccbb8c615d44f49969bdf79/docs/superpowers/reviews/2026-09-05-v010-draft-governance-review.md |
+| Post-merge validation | Open | pending merge to `main` |
+
 ## v0.5-beta deferred mapping assurance
 
 The `v0.5-beta` mapping-assurance gate shall use either completed qualified

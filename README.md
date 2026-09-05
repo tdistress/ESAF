@@ -3,7 +3,7 @@
 > An open enterprise standard for the secure governance, architecture, adoption, and operation of artificial intelligence.
 
 ![Status](https://img.shields.io/badge/status-Working%20Draft-blue)
-![Version](https://img.shields.io/badge/version-0.9--rc1-orange)
+![Version](https://img.shields.io/badge/version-0.10--draft-orange)
 
 ## Vision
 

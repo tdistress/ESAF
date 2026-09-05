@@ -4,9 +4,10 @@ All notable changes to ESAF are documented in this file.
 
 Versions 0.2-alpha and 0.3-alpha remain unreleased working-draft stages.
 Version 0.4-alpha is a tagged Working Draft. Version 0.5-beta is a tagged
-Working Draft. Version 0.9-rc1 is a tagged Working Draft.
+Working Draft. Version 0.9-rc1 is a tagged Working Draft. Version 0.10-draft
+is an unreleased Working Draft closure candidate.
 
-## Unreleased
+## 0.10-draft - Unreleased
 
 ### Added
 
@@ -31,6 +32,10 @@ Working Draft. Version 0.9-rc1 is a tagged Working Draft.
 
 ### Changed
 
+- Advanced Working Draft status surfaces to `0.10-draft` for the exact
+  metadata-only closure candidate. Publication remains conditional on the
+  remote annotated `v0.10-draft` tag resolving to the exact validated merged
+  commit. The tag has not been created, and the post-merge gate remains open.
 - Completed the ESAF-1300 0.2.0 breadth deepen with expanded governance
   charters, decision rights, lifecycle-gate operation, RACI, exceptions, and
   governance records.
