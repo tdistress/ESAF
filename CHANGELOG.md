@@ -25,6 +25,9 @@ Working Draft. Version 0.9-rc1 is a tagged Working Draft.
 - Added a Draft governance template starter pack under
   [`templates/`](templates/) for risk, exception, decision, and retirement
   records.
+- Added the Issue #119 `v0.10-draft` publication-readiness evidence candidate,
+  release-gate validator, and exact-SHA review records, starting at
+  [`docs/superpowers/reviews/2026-09-05-v010-draft-publication-readiness.md`](docs/superpowers/reviews/2026-09-05-v010-draft-publication-readiness.md).
 
 ### Changed
 
