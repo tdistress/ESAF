@@ -3783,8 +3783,22 @@ class CampaignValidationTests(unittest.TestCase):
                 self.assertFalse(report.evidence_valid, report)
 
     def test_attestation_source_sets_are_exactly_candidate_bound(self) -> None:
-        attestation_path = next(
-            (self.campaign_root / "attestations").glob("*.md")
+        # Read from the same attestation `_replace_attestation_text` mutates
+        # (mapping_sets[0].roles[0]). Glob order across attestations is
+        # filesystem-dependent and must not drive the expected old values.
+        manifest = self._manifest()
+        mapping_sets = manifest["mapping_sets"]
+        assert isinstance(mapping_sets, list)
+        mapping_set = mapping_sets[0]
+        assert isinstance(mapping_set, dict)
+        roles = mapping_set["roles"]
+        assert isinstance(roles, list)
+        role = roles[0]
+        assert isinstance(role, dict)
+        attestation = role["attestation"]
+        assert isinstance(attestation, dict)
+        attestation_path = self.campaign_root.joinpath(
+            *str(attestation["path"]).split("/")
         )
         text = attestation_path.read_text(encoding="utf-8")
         checksum_line = next(

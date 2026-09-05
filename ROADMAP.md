@@ -2,7 +2,7 @@
 
 **Status:** Working Draft
 
-**Version:** 0.10-draft
+**Version:** 0.9-rc1
 
 ## 0.10-draft delivery sequence
 
