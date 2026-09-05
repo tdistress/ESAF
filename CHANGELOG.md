@@ -22,6 +22,9 @@ Working Draft. Version 0.9-rc1 is a tagged Working Draft.
   [`assessment/evidence-catalog/`](assessment/evidence-catalog/).
 - Added a Draft ESAF-1500 audit checklist starter under
   [`assessment/audit-checklist/`](assessment/audit-checklist/).
+- Added a Draft governance template starter pack under
+  [`templates/`](templates/) for risk, exception, decision, and retirement
+  records.
 
 ### Changed
 

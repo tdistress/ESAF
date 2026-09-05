@@ -9,3 +9,5 @@ charters, RACI assignments, and an exception workflow.
   artifact-register pointers, and governance records.
 - [ESAF-1300 worksheets](../examples/esaf-1300/) provide informative charter,
   decision-rights, and exception-workflow working examples.
+- [Draft governance templates](../templates/) provide non-normative starters for
+  risk, exception, decision, and retirement records.
