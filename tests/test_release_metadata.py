@@ -78,6 +78,89 @@ PINNED_V09_ISSUE_F_BODY_SHA256 = (
 V09_NEXT_STEPS_PLAN = (
     "docs/superpowers/plans/2026-08-29-v09-rc1-next-steps.md"
 )
+V010_NEXT_STEPS_PLAN = (
+    "docs/superpowers/plans/2026-09-05-v010-draft-next-steps.md"
+)
+PINNED_V010_ISSUE_A_BODY_SHA256 = (
+    "0000000000000000000000000000000000000000000000000000000000000000"
+)
+PINNED_V010_ISSUE_B_BODY_SHA256 = (
+    "1111111111111111111111111111111111111111111111111111111111111111"
+)
+PINNED_V010_ISSUE_C_BODY_SHA256 = (
+    "2222222222222222222222222222222222222222222222222222222222222222"
+)
+PINNED_V010_ISSUE_D_BODY_SHA256 = (
+    "3333333333333333333333333333333333333333333333333333333333333333"
+)
+PINNED_V010_ISSUE_E_BODY_SHA256 = (
+    "4444444444444444444444444444444444444444444444444444444444444444"
+)
+PINNED_V010_ISSUE_F_BODY_SHA256 = (
+    "5555555555555555555555555555555555555555555555555555555555555555"
+)
+V010_READY_ISSUE_TASKS = (
+    (
+        "## Task 4: Ready-to-file Issue A - tracker hygiene",
+        "Sync post-rc1 tracker hygiene",
+        PINNED_V010_ISSUE_A_BODY_SHA256,
+        (
+            "reopen Issue #55",
+            "Issues #90",
+            "does not change normative",
+        ),
+    ),
+    (
+        "## Task 5: Ready-to-file Issue B - assessment workbook",
+        "Author assessment workbook Draft starter",
+        PINNED_V010_ISSUE_B_BODY_SHA256,
+        (
+            "ESAF-1500",
+            "ESAF-1100",
+            "Draft starter",
+        ),
+    ),
+    (
+        "## Task 6: Ready-to-file Issue C - evidence catalog",
+        "Author evidence catalog Draft starter",
+        PINNED_V010_ISSUE_C_BODY_SHA256,
+        (
+            "evidence catalog",
+            "ESAF-1500 evidence contract",
+            "Draft starter",
+        ),
+    ),
+    (
+        "## Task 7: Ready-to-file Issue D - audit checklist",
+        "Author audit checklist Draft starter",
+        PINNED_V010_ISSUE_D_BODY_SHA256,
+        (
+            "audit checklist",
+            "assessment-result",
+            "Draft starter",
+        ),
+    ),
+    (
+        "## Task 8: Ready-to-file Issue E - governance templates",
+        "Author governance templates Draft starter",
+        PINNED_V010_ISSUE_E_BODY_SHA256,
+        (
+            "templates/",
+            "ESAF-1300",
+            "ESAF-1400",
+        ),
+    ),
+    (
+        "## Task 9: Ready-to-file Issue F - v0.10-draft publication gates",
+        "Close the v0.10-draft publication gates",
+        PINNED_V010_ISSUE_F_BODY_SHA256,
+        (
+            "Issues #55 and #60 may remain open",
+            "Every `v0.10-draft` exit criterion",
+            "Working Draft",
+        ),
+    ),
+)
 V09_READY_ISSUE_TASKS = (
     (
         "## Task 4: Ready-to-file Issue A - harness closeout",
@@ -210,7 +293,14 @@ def uk_mapping_set_ids(text: str) -> tuple[str, ...]:
 
 
 def fenced_markdown_in_task(plan: str, task_heading: str) -> str:
-    task_start = plan.index(task_heading)
+    heading_match = re.search(
+        rf"^{re.escape(task_heading)}\s*$",
+        plan,
+        re.MULTILINE,
+    )
+    if heading_match is None:
+        raise ValueError(f"task heading not found: {task_heading!r}")
+    task_start = heading_match.start()
     next_task = re.search(r"^## Task \d+:", plan[task_start + 1:], re.MULTILINE)
     task_end = (
         task_start + 1 + next_task.start()
@@ -1269,6 +1359,97 @@ class ReleaseMetadataTests(unittest.TestCase):
     def test_planned_v09_issue_bodies_preserve_boundaries_and_digests(self) -> None:
         plan = read_repository_file(V09_NEXT_STEPS_PLAN)
         for task_heading, title, digest, required_phrases in V09_READY_ISSUE_TASKS:
+            with self.subTest(title=title):
+                self.assertIn(f"Title: `{title}`", plan)
+                body = fenced_markdown_in_task(plan, task_heading)
+                for required in required_phrases:
+                    self.assertTrue(contains_normalized_phrase(body, required))
+                self.assertEqual(digest, sha256_text(body))
+                self.assertFalse(contains_normalized_phrase(
+                    body,
+                    "closes issue 55",
+                ))
+
+    def test_v010_draft_has_bounded_workstreams_and_exit_criteria(self) -> None:
+        milestones = read_repository_file("project/MILESTONES.md")
+        section = milestones[milestones.index("## v0.10-draft"):]
+        for heading in (
+            "### Entry state",
+            "### Required workstreams",
+            "### Exit criteria",
+            "### Non-goals",
+        ):
+            self.assertIn(heading, section)
+        for required in (
+            "Tracker hygiene",
+            "Assessment workbook Draft starter",
+            "Evidence catalog Draft starter",
+            "Audit checklist Draft starter",
+            "Governance templates Draft starter",
+            "Release closure",
+            "Issues `#90`–`#95`",
+            "Critical and Important",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, section)
+
+    def test_v010_draft_preserves_bounded_non_goals(self) -> None:
+        milestones = read_repository_file("project/MILESTONES.md")
+        non_goals = milestones[
+            milestones.index("## v0.10-draft"):
+        ]
+        non_goals = non_goals[non_goals.index("### Non-goals"):]
+        for non_goal in (
+            "closing Issue `#55`",
+            "substantive HITRUST mapping",
+            "PCI DSS `HOLD`",
+            "NIST AI RMF `HOLD`",
+            "all roadmap crosswalks",
+            "all planned profiles",
+            "redesigning `v1.0`",
+        ):
+            with self.subTest(non_goal=non_goal):
+                self.assertIn(non_goal, non_goals)
+
+    def test_backlog_records_post_rc1_v010_draft_initiatives(self) -> None:
+        backlog = read_repository_file("project/BACKLOG.md")
+        queue = markdown_section(backlog, "## Post-rc1 scheduled queue")
+        for required in (
+            "Sync post-rc1 tracker hygiene",
+            "Author assessment workbook Draft starter",
+            "Author evidence catalog Draft starter",
+            "Author audit checklist Draft starter",
+            "Author governance templates Draft starter",
+            "Close the v0.10-draft publication gates",
+            "do not stop later engineering work",
+        ):
+            with self.subTest(required=required):
+                self.assertTrue(contains_normalized_phrase(queue, required))
+
+    def test_roadmap_records_v010_draft_delivery_sequence(self) -> None:
+        roadmap = read_repository_file("ROADMAP.md")
+        sequence = markdown_section(
+            roadmap,
+            "## 0.10-draft delivery sequence",
+        )
+        for required in (
+            "tracker hygiene",
+            "assessment workbook",
+            "evidence catalog",
+            "audit checklist",
+            "governance templates",
+            "issue 55",
+            "issue 60",
+            "does not stop later engineering work",
+            "not `v0.10-draft` exit criteria",
+            "Phase 6",
+        ):
+            with self.subTest(required=required):
+                self.assertTrue(contains_normalized_phrase(sequence, required))
+
+    def test_planned_v010_issue_bodies_preserve_boundaries_and_digests(self) -> None:
+        plan = read_repository_file(V010_NEXT_STEPS_PLAN)
+        for task_heading, title, digest, required_phrases in V010_READY_ISSUE_TASKS:
             with self.subTest(title=title):
                 self.assertIn(f"Title: `{title}`", plan)
                 body = fenced_markdown_in_task(plan, task_heading)
