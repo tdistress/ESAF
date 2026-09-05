@@ -3,7 +3,7 @@
 > An open enterprise standard for the secure governance, architecture, adoption, and operation of artificial intelligence.
 
 ![Status](https://img.shields.io/badge/status-Working%20Draft-blue)
-![Version](https://img.shields.io/badge/version-0.10--draft-orange)
+![Version](https://img.shields.io/badge/version-0.9--rc1-orange)
 
 ## Vision
 
@@ -83,14 +83,11 @@ project/          Management of the ESAF initiative itself
 
 ESAF is a **working draft**. Content may change before Version 1.0 and shall not be represented as an approved certification scheme.
 
-Working Draft surfaces currently identify `0.10-draft`. Publication remains
-conditional on the remote annotated `v0.10-draft` tag resolving to the exact
-validated merged commit. The tag has not been created. The prior `v0.9-rc1`
-Working Draft remains published through annotated tag object
-`1b5cdead5c56c4f209b5cf091c665ca40e709590`, which resolves to validated commit
-`4136cfdc71a85ea2becd0f23c95424e7580cafa3`. Publication does not approve
-certification, compliance, framework equivalence, or Draft mapping lifecycle
-promotion.
+The `v0.9-rc1` Working Draft was published on 2026-08-29 through annotated
+tag object `1b5cdead5c56c4f209b5cf091c665ca40e709590`, which resolves to
+validated commit `4136cfdc71a85ea2becd0f23c95424e7580cafa3`. Publication does
+not approve certification, compliance, framework equivalence, or Draft mapping
+lifecycle promotion.
 
 See [the roadmap](ROADMAP.md), [project charter](PROJECT_CHARTER.md), [governance model](GOVERNANCE.md), [style guide](STYLE_GUIDE.md), and [contribution guide](CONTRIBUTING.md).
 
