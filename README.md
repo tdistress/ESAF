@@ -83,9 +83,9 @@ project/          Management of the ESAF initiative itself
 
 ESAF is a **working draft**. Content may change before Version 1.0 and shall not be represented as an approved certification scheme.
 
-The `v0.9-rc1` Working Draft was published on 2026-08-29 through annotated
-tag object `1b5cdead5c56c4f209b5cf091c665ca40e709590`, which resolves to
-validated commit `4136cfdc71a85ea2becd0f23c95424e7580cafa3`. Publication does
+The `v0.10-draft` Working Draft was published on 2026-09-05 through annotated
+tag object `7f982082d20e600863c0b564408d4591dfebcbc7`, which resolves to
+validated commit `05b7ebdd588d9959412fce1d2d4d9bdf663e998e`. Publication does
 not approve certification, compliance, framework equivalence, or Draft mapping
 lifecycle promotion.
 
