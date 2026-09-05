@@ -13,9 +13,9 @@ unreleased Working Draft.
 
 - Added non-normative worksheet and worked-example packs for ESAF-1300,
   ESAF-1400, and ESAF-1700 under
-  [](examples/esaf-1300/),
-  [](examples/esaf-1400/), and
-  [](examples/esaf-1700/).
+  [`examples/esaf-1300/`](examples/esaf-1300/),
+  [`examples/esaf-1400/`](examples/esaf-1400/), and
+  [`examples/esaf-1700/`](examples/esaf-1700/).
 
 ### Changed
 
@@ -34,20 +34,20 @@ unreleased Working Draft.
 ### Added
 
 - Added a Draft ESAF-1500 assessment workbook starter under
-  [](assessment/workbook/) with operator guidance and
+  [`assessment/workbook/`](assessment/workbook/) with operator guidance and
   schema-conforming worksheet stubs.
 - Added a Draft ESAF-1500 evidence catalog starter under
-  [](assessment/evidence-catalog/).
+  [`assessment/evidence-catalog/`](assessment/evidence-catalog/).
 - Added a Draft ESAF-1500 audit checklist starter under
-  [](assessment/audit-checklist/).
+  [`assessment/audit-checklist/`](assessment/audit-checklist/).
 - Added a Draft governance template starter pack under
-  [](templates/) for risk, exception, decision, and retirement
+  [`templates/`](templates/) for risk, exception, decision, and retirement
   records.
-- Added the Issue #119  publication-readiness evidence candidate,
+- Added the Issue #119 `v0.10-draft` publication-readiness evidence candidate,
   release-gate validator, and exact-SHA review records, starting at
-  [](docs/superpowers/reviews/2026-09-05-v010-draft-publication-readiness.md).
+  [`docs/superpowers/reviews/2026-09-05-v010-draft-publication-readiness.md`](docs/superpowers/reviews/2026-09-05-v010-draft-publication-readiness.md).
 - Recorded independent technical, editorial, and governance reviews of the
-  exact evidence candidate and prepared the metadata-only 
+  exact evidence candidate and prepared the metadata-only `v0.10-draft`
   closure candidate. This candidate does not approve publication.
 - Carried forward the seven Draft architecture patterns in the current
   Working Draft: ARC-P100, Enterprise AI platform and gateway; ARC-P110,
@@ -55,16 +55,16 @@ unreleased Working Draft.
   Agentic and multi-agent AI; ARC-P140, Private model deployment; ARC-P150,
   AI integration services; and ARC-P160, AI observability.
 - Carried forward the Draft Cyber Essentials v3.3 mapping snapshot.
-- Carried forward the Draft Cyber Essentials Plus v3.2 
+- Carried forward the Draft Cyber Essentials Plus v3.2 `esaf_to_external`
   mapping snapshot.
-- Carried forward the Draft Cyber Essentials Plus v3.2 
+- Carried forward the Draft Cyber Essentials Plus v3.2 `external_to_esaf`
   mapping snapshot.
 
 ### Changed
 
-- Advanced Working Draft status surfaces to  for the exact
+- Advanced Working Draft status surfaces to `0.10-draft` for the exact
   metadata-only closure candidate. Publication remains conditional on the
-  remote annotated  tag resolving to the exact validated merged
+  remote annotated `v0.10-draft` tag resolving to the exact validated merged
   commit. The tag has not been created, and the post-merge gate remains open.
 - Clarified that this stage does not establish certification, compliance,
   equivalence, endorsement, assurance, legal sufficiency, implementation
