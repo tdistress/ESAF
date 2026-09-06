@@ -1,0 +1,98 @@
+{
+  "$schema": "../schema/assessment-result.schema.json",
+  "schema_version": "0.1.0",
+  "result_id": "ASR-SAMP-GOV100",
+  "status": "draft",
+  "title": "Fictional sampling result for GOV-100 AI governance authority",
+  "assessor": {
+    "name": "Avery Chen",
+    "role": "Independent assessor",
+    "organization": "Fictional Contour Assurance LLP",
+    "independence_statement": "This fictional assessor has no operational ownership of the assessed Northbridge intake capability."
+  },
+  "assessment_scope": {
+    "subject": "Fictional Northbridge AI governance authority for customer-support summarization intake",
+    "requirement_ids": [
+      "GOV-100"
+    ],
+    "boundary": "Production AI intake governance charter and escalation ownership for the support-summarization capability.",
+    "exclusions": [
+      "Training-pipeline governance controls"
+    ],
+    "population": "Fictional GOV controls assigned to the support-summarization capability.",
+    "sample": "GOV-100 only, as selected in the Draft deepen sampling vignette."
+  },
+  "methods": [
+    {
+      "method": "Examine",
+      "procedure": "Examine the fictional approved AI governance charter package.",
+      "object": "EVD-SAMP-GOV100-CHARTER fictional charter extract.",
+      "expected_result": "An approved charter identifies authority, membership, and escalation paths for the period.",
+      "actual_work": "Examined the fictional charter body and approval metadata for 2026-05-01 through 2026-07-31."
+    },
+    {
+      "method": "Interview",
+      "procedure": "Interview the fictional AI governance owner about exception escalation.",
+      "object": "EVD-SAMP-GOV100-INTERVIEW fictional interview notes.",
+      "expected_result": "The owner can describe escalation paths consistent with the charter.",
+      "actual_work": "Interviewed the fictional governance owner using retained prompts about production exceptions."
+    }
+  ],
+  "time_boundary": {
+    "assessment_start": "2026-08-18T13:00:00Z",
+    "assessment_end": "2026-08-19T19:00:00Z",
+    "result_date": "2026-08-19T19:30:00Z"
+  },
+  "evidence_refs": [
+    "EVD-SAMP-GOV100-CHARTER",
+    "EVD-SAMP-GOV100-INTERVIEW"
+  ],
+  "determination": "partially_satisfied",
+  "determination_rationale": "The fictional charter is approved and names authority, but exception-ticket corroboration for described escalations is missing, so the operating picture remains only partially supported.",
+  "design_effectiveness": "effective",
+  "operating_effectiveness": "partially_effective",
+  "findings": [
+    {
+      "finding_id": "FND-SAMP-GOV100-ESCALATION",
+      "severity": "minor",
+      "status": "open",
+      "affected_requirement_ids": [
+        "GOV-100"
+      ],
+      "statement": "Fictional interview statements about exception escalation are not yet corroborated by exception-ticket extracts.",
+      "evidence_refs": [
+        "EVD-SAMP-GOV100-INTERVIEW"
+      ],
+      "owner": {
+        "name": "Jordan Lee",
+        "role": "Governance program manager",
+        "organization": "Fictional Northbridge Enterprises"
+      },
+      "disposition": {
+        "action": "Provide exception-ticket extracts covering the assessment period.",
+        "rationale": "Corroboration is required before any final determination."
+      },
+      "identified_at": "2026-08-19T18:45:00Z",
+      "disposition_at": "2026-08-19T19:00:00Z"
+    }
+  ],
+  "limitations": [
+    "This fictional Draft deepen result does not assess a real organization.",
+    "Interview evidence was not corroborated against exception tickets."
+  ],
+  "traceability": {
+    "esaf_requirement_ids": [
+      "GOV-100"
+    ],
+    "external_or_profile_ids": []
+  },
+  "change_history": [
+    {
+      "version": "0.1.0",
+      "date": "2026-08-19T19:30:00Z",
+      "author": "Avery Chen",
+      "description": "Created the fictional draft sampling result for GOV-100."
+    }
+  ],
+  "example_notice": "Fictional non-authoritative example; no organization, ESAF control, profile, or external framework has been assessed."
+}

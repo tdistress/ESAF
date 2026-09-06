@@ -22,8 +22,10 @@ contracts, fictional examples, and Draft operator toolkit starters.
   evidence types, shared contract fields, quality attributes, per-type
   good-enough versus common-failure notes, and a small fictional filled
   evidence set for reuse by operators, profiles, and crosswalks.
-- [Draft audit checklist starter](audit-checklist/README.md) supports control or
-  capability sampling against the shared ESAF-1500 assessment-result contract.
+- [Draft audit checklist deepen](audit-checklist/README.md) supports control or
+  capability sampling against the shared ESAF-1500 assessment-result contract,
+  including one fictional two-control sampling vignette with Draft filled
+  assessment-result examples.
 
 Validate the guide, schemas, examples, references, final states, maturity
 prerequisites, component roll-ups, and non-claim boundaries with:

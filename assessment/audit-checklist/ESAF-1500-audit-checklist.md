@@ -1,14 +1,18 @@
 # ESAF-1500 Audit Checklist
 
-**Status:** Draft starter  
+**Status:** Draft deepen
 **Authority:** [ESAF-1500](../ESAF-1500.md) assessment-result contract;
 [ESAF-1100](../../controls/ESAF-1100.md) assessment procedures and methods.
+**Issue:** [#126](https://github.com/tdistress/ESAF/issues/126)
 
 ## Purpose
 
 Support control or capability sampling engagements that capture determinations
 in the shared ESAF-1500 assessment-result vocabulary. Do not invent parallel
 determination, effectiveness, or method names.
+
+For a fictional filled two-control example, see
+[sampling-vignette.example.md](sampling-vignette.example.md).
 
 ## Engagement header
 
@@ -87,6 +91,6 @@ visible.
 
 ## Nonclaims
 
-This Draft starter does not create a certification audit program and does not
+This Draft deepen does not create a certification audit program and does not
 approve certification, compliance, equivalence, endorsement, assurance, or
 production readiness. Checklist completion does not satisfy controls by itself.
