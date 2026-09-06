@@ -1,6 +1,6 @@
 # ESAF-1500 Assessment Workbook (Draft)
 
-**Status:** Draft deepen  
+**Status:** Draft deepen
 **Issues:** [#115](https://github.com/tdistress/ESAF/issues/115) starter;
 [#124](https://github.com/tdistress/ESAF/issues/124) deepen
 

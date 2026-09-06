@@ -1,7 +1,7 @@
 # Workbook engagement vignette (informative)
 
-**Status:** Draft deepen example  
-**Issue:** [#124](https://github.com/tdistress/ESAF/issues/124)  
+**Status:** Draft deepen example
+**Issue:** [#124](https://github.com/tdistress/ESAF/issues/124)
 **Subject control:** `GOV-100` Enterprise AI Governance Authority
 
 This fictional walkthrough shows how an assessor can use the ESAF-1500 workbook
