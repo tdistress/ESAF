@@ -1,0 +1,73 @@
+{
+  "$schema": "../schema/assessment-result.schema.json",
+  "schema_version": "0.1.0",
+  "result_id": "ASR-SAMP-SYS220",
+  "status": "draft",
+  "title": "Fictional sampling result for SYS-220 model-gateway allowlist",
+  "assessor": {
+    "name": "Avery Chen",
+    "role": "Independent assessor",
+    "organization": "Fictional Contour Assurance LLP",
+    "independence_statement": "This fictional assessor has no operational ownership of the assessed Northbridge gateway."
+  },
+  "assessment_scope": {
+    "subject": "Fictional Northbridge model-gateway allowlist enforcement for support-summarization traffic",
+    "requirement_ids": [
+      "SYS-220"
+    ],
+    "boundary": "Production-like model gateway allowlist for blocked and allowed model identifiers.",
+    "exclusions": [
+      "Training-cluster model registries"
+    ],
+    "population": "Configured blocked and allowed model identifiers on the fictional gateway.",
+    "sample": "Five blocked identifiers and one allowed control identifier from the Draft deepen vignette."
+  },
+  "methods": [
+    {
+      "method": "Test",
+      "procedure": "Execute the fictional allowlist enforcement harness against sampled model identifiers.",
+      "object": "EVD-SAMP-SYS220-ALLOWLIST fictional Test output.",
+      "expected_result": "Blocked identifiers are denied and the allowed control identifier is accepted.",
+      "actual_work": "Ran the fictional harness and retained stdout, expected results, and environment metadata."
+    },
+    {
+      "method": "Examine",
+      "procedure": "Examine harness metadata for environment labeling and configuration provenance.",
+      "object": "EVD-SAMP-SYS220-ALLOWLIST export metadata.",
+      "expected_result": "Metadata identifies the environment label and configuration source used for the Test.",
+      "actual_work": "Examined the fictional harness metadata card packaged with the Test output."
+    }
+  ],
+  "time_boundary": {
+    "assessment_start": "2026-08-20T15:00:00Z",
+    "assessment_end": "2026-08-20T16:15:00Z",
+    "result_date": "2026-08-20T16:30:00Z"
+  },
+  "evidence_refs": [
+    "EVD-SAMP-SYS220-ALLOWLIST"
+  ],
+  "determination": "satisfied",
+  "determination_rationale": "The fictional harness denied all five blocked model identifiers and accepted the allowed control case, with retained method detail and metadata.",
+  "design_effectiveness": "effective",
+  "operating_effectiveness": "effective",
+  "findings": [],
+  "limitations": [
+    "This fictional Draft deepen result does not assess a real organization.",
+    "The harness environment is labeled production-like and is not claimed to be the live production plane."
+  ],
+  "traceability": {
+    "esaf_requirement_ids": [
+      "SYS-220"
+    ],
+    "external_or_profile_ids": []
+  },
+  "change_history": [
+    {
+      "version": "0.1.0",
+      "date": "2026-08-20T16:30:00Z",
+      "author": "Avery Chen",
+      "description": "Created the fictional draft sampling result for SYS-220."
+    }
+  ],
+  "example_notice": "Fictional non-authoritative example; no organization, ESAF control, profile, or external framework has been assessed."
+}

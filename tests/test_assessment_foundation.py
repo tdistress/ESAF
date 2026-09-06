@@ -660,6 +660,79 @@ class AssessmentAuditChecklistStarterTests(unittest.TestCase):
             with self.subTest(method=method):
                 self.assertIn(f"`{method}`", checklist)
 
+    def test_audit_checklist_deepen_sampling_vignette_exists(self) -> None:
+        checklist = (
+            self.checklist_root / "ESAF-1500-audit-checklist.md"
+        ).read_text(encoding="utf-8")
+        readme = (self.checklist_root / "README.md").read_text(encoding="utf-8")
+        vignette_path = self.checklist_root / "sampling-vignette.example.md"
+        example_root = self.checklist_root / "examples"
+        filled_results = (
+            example_root / "sampling-gov100-assessment-result.example.json",
+            example_root / "sampling-sys220-assessment-result.example.json",
+        )
+        self.assertTrue(vignette_path.is_file(), msg=f"missing {vignette_path}")
+        vignette = vignette_path.read_text(encoding="utf-8")
+        for document in (checklist, readme, vignette):
+            with self.subTest(document=document[:40]):
+                self.assertRegex(document, r"(?im)\bDraft deepen\b")
+                self.assertRegex(document, r"(?im)certification")
+                self.assertRegex(document, r"(?im)compliance")
+        self.assertIn("#126", readme)
+        self.assertIn("sampling-vignette.example.md", readme)
+        self.assertIn("sampling-vignette.example.md", checklist)
+        for heading in (
+            "Sampling intent",
+            "Procedure references",
+            "Evidence pointers",
+            "Determination capture",
+            "Limitation notes",
+        ):
+            with self.subTest(vignette_heading=heading):
+                self.assertIn(heading, vignette)
+        for control_id in ("GOV-100", "SYS-220"):
+            with self.subTest(control_id=control_id):
+                self.assertIn(control_id, vignette)
+        for determination in ("partially_satisfied", "satisfied"):
+            with self.subTest(determination=determination):
+                self.assertIn(f"`{determination}`", vignette)
+        for method in ("Examine", "Interview", "Test"):
+            with self.subTest(method=method):
+                self.assertIn(f"`{method}`", vignette)
+        schema = json.loads(
+            (SCHEMA_ROOT / "assessment-result.schema.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        validator = Draft202012Validator(
+            schema, format_checker=ASSESSMENT_FORMAT_CHECKER
+        )
+        notice = (
+            "Fictional non-authoritative example; no organization, ESAF control, "
+            "profile, or external framework has been assessed."
+        )
+        for path in filled_results:
+            with self.subTest(example=path.name):
+                self.assertTrue(path.is_file(), msg=f"missing {path}")
+                self.assertIn(path.name, vignette)
+                self.assertIn(path.name, readme)
+                document = json.loads(path.read_text(encoding="utf-8"))
+                errors = list(validator.iter_errors(document))
+                self.assertEqual(
+                    errors,
+                    [],
+                    msg="; ".join(error.message for error in errors),
+                )
+                self.assertEqual(document.get("example_notice"), notice)
+                self.assertEqual(document.get("status"), "draft")
+                self.assertIn(
+                    document.get("determination"),
+                    self.determinations,
+                )
+                self.assertTrue(
+                    str(document.get("result_id", "")).startswith("ASR-SAMP-")
+                )
+
 
 if __name__ == "__main__":
     unittest.main()

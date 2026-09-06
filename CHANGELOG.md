@@ -11,6 +11,10 @@ is a tagged Working Draft.
 
 ### Added
 
+- Deepened the Draft ESAF-1500 audit checklist with a fictional two-control
+  sampling vignette and Draft filled assessment-result examples under
+  `assessment/audit-checklist/`.
+
 - Deepened the Draft ESAF-1500 evidence catalog with per-type good-enough versus
   common-failure notes and three fictional filled evidence records under
   `assessment/evidence-catalog/`.
