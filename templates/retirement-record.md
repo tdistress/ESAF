@@ -1,7 +1,8 @@
 # Retirement Record Template
 
-**Status:** Draft starter  
-**Class:** Retirement  
+**Status:** Draft deepen
+**Issue:** [#127](https://github.com/tdistress/ESAF/issues/127)
+**Class:** Retirement
 **Informative for:** ESAF-1000 Appendix A retirement record; ESAF-1300
 retirement gate; ESAF-1400 optimize-phase retirement practice.
 

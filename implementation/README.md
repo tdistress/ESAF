@@ -11,6 +11,7 @@ ESAF-1000, ESAF-1100, and ESAF-1200.
 - The [ESAF-1400 example pack](../examples/esaf-1400/) provides a filled
   nine-step adoption vignette and a multi-capability control-mapping worksheet.
 - [Draft governance templates](../templates/) provide non-normative starters for
+- Filled fictional Draft deepen examples start at [`templates/examples/risk-assessment.example.md`](../templates/examples/risk-assessment.example.md).
   risk, exception, decision, and retirement records used during adoption.
 
 ESAF-1400 is informative. It does not establish, waive, or reinterpret a

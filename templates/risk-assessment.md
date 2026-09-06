@@ -1,7 +1,8 @@
 # Risk Assessment Template
 
-**Status:** Draft starter  
-**Class:** Risk  
+**Status:** Draft deepen
+**Issue:** [#127](https://github.com/tdistress/ESAF/issues/127)
+**Class:** Risk
 **Informative for:** ESAF-1000 Appendix A AI risk assessment; ESAF-1300 and
 ESAF-1400 operating practice.
 

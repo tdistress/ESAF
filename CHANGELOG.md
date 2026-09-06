@@ -11,6 +11,10 @@ is a tagged Working Draft.
 
 ### Added
 
+- Deepened the Draft governance template pack with one filled fictional
+  example per class (risk, exception, decision, retirement) under
+  `templates/examples/`.
+
 - Deepened the Draft ESAF-1500 audit checklist with a fictional two-control
   sampling vignette and Draft filled assessment-result examples under
   `assessment/audit-checklist/`.
