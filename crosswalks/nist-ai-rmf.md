@@ -2,6 +2,10 @@
 
 **Status:** Readiness HOLD
 
+This package is a refreshed evidenced `HOLD` for Issue #128 after
+`v0.10-draft`. Named mapper and independent reviewer evidence remains
+unavailable, so the readiness decision stays `HOLD`.
+
 The mechanically derived readiness decision is `HOLD`. No substantive NIST AI
 RMF mapping is approved or present. NIST AI RMF mapping artifacts: `0`. The
 generated crosswalk catalog remains unchanged at 3 mapping sets, 404
@@ -14,7 +18,7 @@ provisions, 81 relationships, and 325 negative dispositions.
 - [Publication-rights review](../docs/superpowers/reviews/2026-08-29-nist-ai-rmf-publication-rights-review.md)
 - [Mechanical readiness matrix](../docs/superpowers/specs/2026-08-29-nist-ai-rmf-mapping-readiness-matrix.json)
 - [Generated GO/HOLD review](../docs/superpowers/reviews/2026-08-29-nist-ai-rmf-1.0-mapping-go-no-go-review.md)
-- [Issue 94 traceability](../docs/superpowers/reviews/2026-08-29-nist-ai-rmf-1.0-mapping-go-no-go-traceability.md)
+- [Issue #128 / Issue #94 traceability](../docs/superpowers/reviews/2026-08-29-nist-ai-rmf-1.0-mapping-go-no-go-traceability.md)
 - [ESAF qualified mapping review protocol](reviews/QUALIFIED_REVIEW_PROTOCOL.md)
 
 ## Blocking conditions
