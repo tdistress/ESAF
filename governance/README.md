@@ -10,4 +10,5 @@ charters, RACI assignments, and an exception workflow.
 - [ESAF-1300 worksheets](../examples/esaf-1300/) provide informative charter,
   decision-rights, and exception-workflow working examples.
 - [Draft governance templates](../templates/) provide non-normative starters for
+- Filled fictional Draft deepen examples start at [`templates/examples/risk-assessment.example.md`](../templates/examples/risk-assessment.example.md).
   risk, exception, decision, and retirement records.

@@ -1,7 +1,8 @@
 # Decision Record Template
 
-**Status:** Draft starter  
-**Class:** Decision  
+**Status:** Draft deepen
+**Issue:** [#127](https://github.com/tdistress/ESAF/issues/127)
+**Class:** Decision
 **Informative for:** ESAF-1000 Appendix A architecture decision record;
 ESAF-1300 decision rights; ESAF-1400 mapping practice.
 

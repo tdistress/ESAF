@@ -1,7 +1,8 @@
 # Exception Record Template
 
-**Status:** Draft starter  
-**Class:** Exception  
+**Status:** Draft deepen
+**Issue:** [#127](https://github.com/tdistress/ESAF/issues/127)
+**Class:** Exception
 **Informative for:** ESAF-1300 exception workflow; GOV-140 field coverage.
 
 This non-normative template helps operators record a time-bounded exception. It
