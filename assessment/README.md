@@ -13,9 +13,10 @@ contracts, fictional examples, and Draft operator toolkit starters.
   [fictional assessment-result example](examples/assessment-result.example.json),
   and [fictional maturity-assessment example](examples/maturity-assessment.example.json)
   demonstrate the contracts without assessing an organization or control.
-- [Draft assessment workbook starter](workbook/README.md) provides operator
-  guidance and schema-conforming worksheet stubs bound to ESAF-1500 and
-  ESAF-1100 assessment procedures. Completing worksheets does not establish
+- [Draft assessment workbook](workbook/README.md) provides operator guidance,
+  schema-conforming worksheet stubs, and one fictional worked engagement
+  vignette with a filled worksheet trio bound to ESAF-1500 and ESAF-1100
+  assessment procedures. Completing worksheets does not establish
   certification, compliance, equivalence, endorsement, or assurance.
 - [Draft evidence catalog starter](evidence-catalog/README.md) indexes ESAF-1500
   evidence types, shared contract fields, and quality attributes for reuse by

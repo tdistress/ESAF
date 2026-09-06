@@ -1,0 +1,58 @@
+{
+  "$schema": "../schema/maturity-assessment.schema.json",
+  "schema_version": "0.1.0",
+  "maturity_id": "MAT-ENG-GOV100",
+  "status": "draft",
+  "scope": "Fictional Northbridge AI governance authority capability for the workbook engagement period.",
+  "exclusions": [
+    "Maturity of downstream capability-level owners outside GOV-100."
+  ],
+  "assessor": {
+    "name": "Avery Chen",
+    "role": "Independent assessor",
+    "organization": "Fictional Contour Assurance LLP",
+    "independence_statement": "This fictional assessor is presented only to illustrate workbook recording structure."
+  },
+  "assessed_at": "2026-08-14T18:00:00Z",
+  "level": "M1",
+  "criteria": [
+    {
+      "level": "M0",
+      "criterion_id": "M0-GOV100-BASELINE",
+      "statement": "The fictional governance authority current state is explicitly documented.",
+      "met": true,
+      "rationale": "The fictional charter extract documents the baseline authority structure.",
+      "basis_refs": [
+        "EVD-ENG-GOV100-CHARTER",
+        "ASR-ENG-GOV100"
+      ]
+    },
+    {
+      "level": "M1",
+      "criterion_id": "M1-GOV100-OWNERSHIP",
+      "statement": "The fictional governance authority has accountable ownership and basic repeatable operation.",
+      "met": true,
+      "rationale": "The fictional charter identifies membership and decision rights sufficient to illustrate M1 for workbook purposes.",
+      "basis_refs": [
+        "EVD-ENG-GOV100-CHARTER",
+        "ASR-ENG-GOV100"
+      ]
+    }
+  ],
+  "basis_refs": [
+    "EVD-ENG-GOV100-CHARTER",
+    "ASR-ENG-GOV100"
+  ],
+  "limitations": [
+    "This fictional draft maturity example does not assess an organization or establish any assurance outcome."
+  ],
+  "change_history": [
+    {
+      "version": "0.1.0-draft",
+      "date": "2026-08-14T18:00:00Z",
+      "author": "Avery Chen",
+      "description": "Created the fictional draft workbook maturity assessment."
+    }
+  ],
+  "example_notice": "Fictional non-authoritative example; no organization, ESAF control, profile, or external framework has been assessed."
+}

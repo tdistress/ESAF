@@ -1,0 +1,93 @@
+{
+  "$schema": "../schema/evidence-record.schema.json",
+  "schema_version": "0.1.0",
+  "evidence_id": "EVD-ENG-GOV100-CHARTER",
+  "title": "Fictional AI governance charter extract for Northbridge engagement",
+  "description": "A fictional charter excerpt used in the workbook engagement vignette to support examination of GOV-100 authority documentation.",
+  "evidence_type": "record",
+  "source": {
+    "identity": "Fictional Northbridge AI governance repository",
+    "locator": "example://northbridge/ai-governance/charter-v3"
+  },
+  "custodian": {
+    "name": "Jordan Lee",
+    "role": "Governance program manager",
+    "organization": "Fictional Northbridge Enterprises"
+  },
+  "collected_at": "2026-08-12T14:00:00Z",
+  "collection_method": "Read-only export supplied for the fictional workbook engagement.",
+  "scope": {
+    "description": "Fictional enterprise AI governance authority charter in effect during the engagement period."
+  },
+  "period": {
+    "start": "2026-05-01T00:00:00Z",
+    "end": "2026-07-31T23:59:59Z"
+  },
+  "population": {
+    "description": "One fictional approved AI governance charter and its linked membership annex.",
+    "sample": "The complete fictional charter package.",
+    "selection_rationale": "GOV-100 examination focuses on the authoritative charter artifact."
+  },
+  "quality": {
+    "relevance": {
+      "rating": "adequate",
+      "rationale": "The log directly records the fictional review activity."
+    },
+    "reliability": {
+      "rating": "limited",
+      "rationale": "The example does not independently verify the source system."
+    },
+    "completeness": {
+      "rating": "adequate",
+      "rationale": "The example states that it contains the complete fictional population."
+    },
+    "timeliness": {
+      "rating": "adequate",
+      "rationale": "The period aligns with the fictional assessment period."
+    },
+    "attribution": {
+      "rating": "adequate",
+      "rationale": "The fictional source and custodian are identified."
+    },
+    "integrity": {
+      "rating": "limited",
+      "rationale": "The fictional digest illustrates verification without asserting real assurance."
+    },
+    "traceability": {
+      "rating": "adequate",
+      "rationale": "The example links to the fictional assessment result."
+    },
+    "sufficiency": "limited",
+    "evaluated_by": {
+      "name": "Avery Chen",
+      "role": "Independent assessor",
+      "organization": "Fictional Contour Assurance LLP"
+    },
+    "evaluated_at": "2026-08-12T15:00:00Z",
+    "sufficiency_rationale": "The fictional charter is limited evidence for GOV-100 and requires corroborating interview and decision-log evidence in a real engagement."
+  },
+  "integrity": {
+    "digest_algorithm": "sha-256",
+    "digest": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+  },
+  "limitations": [
+    "This fictional workbook example does not demonstrate an actual organization's governance authority.",
+    "Membership attendance and decision execution are not proven by the charter extract alone."
+  ],
+  "retention": {
+    "authority": "Fictional Northbridge records schedule",
+    "end_condition": "Retain until the fictional assessment archive period ends."
+  },
+  "traceability": {
+    "requirement_refs": [
+      "GOV-100"
+    ],
+    "procedure_refs": [
+      "GOV-100-A1"
+    ],
+    "result_refs": [
+      "ASR-ENG-GOV100"
+    ]
+  },
+  "example_notice": "Fictional non-authoritative example; no organization, ESAF control, profile, or external framework has been assessed."
+}

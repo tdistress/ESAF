@@ -76,13 +76,20 @@ These initiatives are required for `v0.11-draft` and shall be tracked in GitHub
 Issues under milestone `v0.11-draft`. Deferred mapping assurance and HITRUST
 readiness remain tracked separately and do not stop later engineering work.
 
-- Sync post-v0.10 tracker hygiene
-- Deepen assessment workbook Draft pack
-- Deepen evidence catalog Draft pack
-- Deepen audit checklist Draft pack
-- Deepen governance templates Draft pack
-- Refresh NIST AI RMF readiness package
-- Close the v0.11-draft publication gates
+- [Issue 123](https://github.com/tdistress/ESAF/issues/123): Sync post-v0.10
+  tracker hygiene (closed; hygiene matrix recorded)
+- [Issue 124](https://github.com/tdistress/ESAF/issues/124): Deepen assessment
+  workbook Draft pack
+- [Issue 125](https://github.com/tdistress/ESAF/issues/125): Deepen evidence
+  catalog Draft pack
+- [Issue 126](https://github.com/tdistress/ESAF/issues/126): Deepen audit
+  checklist Draft pack
+- [Issue 127](https://github.com/tdistress/ESAF/issues/127): Deepen governance
+  templates Draft pack
+- [Issue 128](https://github.com/tdistress/ESAF/issues/128): Refresh NIST AI RMF
+  readiness package
+- [Issue 129](https://github.com/tdistress/ESAF/issues/129): Close the
+  v0.11-draft publication gates
 
 ## Completed workstreams
 
