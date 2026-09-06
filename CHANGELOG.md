@@ -36,6 +36,16 @@ is a tagged Working Draft.
 - Deepened the Draft ESAF-1500 assessment workbook with a fictional GOV-100
   engagement vignette and a filled worksheet trio under
   `assessment/workbook/`.
+- Carried forward the seven Draft architecture patterns in the current
+  Working Draft: ARC-P100, Enterprise AI platform and gateway; ARC-P110,
+  Enterprise copilot; ARC-P120, Retrieval-augmented generation; ARC-P130,
+  Agentic and multi-agent AI; ARC-P140, Private model deployment; ARC-P150,
+  AI integration services; and ARC-P160, AI observability.
+- Carried forward the Draft Cyber Essentials v3.3 mapping snapshot.
+- Carried forward the Draft Cyber Essentials Plus v3.2 `esaf_to_external`
+  mapping snapshot.
+- Carried forward the Draft Cyber Essentials Plus v3.2 `external_to_esaf`
+  mapping snapshot.
 
 ## Unreleased
 
