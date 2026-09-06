@@ -11,6 +11,10 @@ is a tagged Working Draft.
 
 ### Added
 
+- Deepened the Draft ESAF-1500 evidence catalog with per-type good-enough versus
+  common-failure notes and three fictional filled evidence records under
+  `assessment/evidence-catalog/`.
+
 - Deepened the Draft ESAF-1500 assessment workbook with a fictional GOV-100
   engagement vignette and a filled worksheet trio under
   `assessment/workbook/`.
