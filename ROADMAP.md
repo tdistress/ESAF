@@ -6,14 +6,16 @@
 
 ## 0.11-draft delivery sequence
 
-`v0.11-draft` follows tracker hygiene, then the Phase 6 assessment-toolkit
-deepen (assessment workbook, evidence catalog, audit checklist, and
-governance templates), then NIST AI RMF readiness re-entry, then ordinary
-publication gates on the exact candidate. Deferred mapping assurance remains
-tracked through issue 55 and does not stop later engineering work. HITRUST
-readiness remains separately gated through issue 60. Issues 55 and 60 are not
-`v0.11-draft` exit criteria. NIST readiness re-entry may exit as a refreshed
-evidenced `HOLD` when named mapper and independent reviewers remain
+The `v0.11-draft` Working Draft was published on 2026-09-06 through the
+annotated `v0.11-draft` tag at
+`0afbf963a6c11ee1feb65384b8e685461fe2dc85`. It follows tracker hygiene, then the Phase 6
+assessment-toolkit deepen (assessment workbook, evidence catalog, audit
+checklist, and governance templates), then NIST AI RMF readiness re-entry, then
+ordinary publication gates on the exact candidate. Deferred mapping assurance
+remains tracked through issue 55 and does not stop later engineering work.
+HITRUST readiness remains separately gated through issue 60. Issues 55 and 60
+are not `v0.11-draft` exit criteria. NIST readiness re-entry exited as a
+refreshed evidenced `HOLD` because named mapper and independent reviewers remain
 unavailable; while `HOLD`, no NIST mapping records are authored. Publication
 does not change any control, architecture, profile, mapping-set, or
 mapping-record lifecycle state. Phases 4 and 5 remain long-term direction.

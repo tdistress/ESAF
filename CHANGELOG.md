@@ -5,19 +5,23 @@ All notable changes to ESAF are documented in this file.
 Versions 0.2-alpha and 0.3-alpha remain unreleased working-draft stages.
 Version 0.4-alpha is a tagged Working Draft. Version 0.5-beta is a tagged
 Working Draft. Version 0.9-rc1 is a tagged Working Draft. Version 0.10-draft
-is a tagged Working Draft.
+is a tagged Working Draft. Version 0.11-draft is a tagged Working Draft.
 
-## 0.11-draft - Unreleased
+## 0.11-draft - 2026-09-06
 
 ### Changed
 
-- Advanced Working Draft status surfaces to `0.11-draft` for the exact
-  metadata-only closure candidate. Publication remains conditional on the
-  remote annotated `v0.11-draft` tag resolving to the exact validated merged
-  commit. The tag has not been created, and the post-merge gate remains open.
+- Published the `v0.11-draft` Working Draft through the annotated `v0.11-draft`
+  tag. Prerequisite dispositions remain Phase 2 timing `DEFER`,
+  ESAF-1300/1400/1700 Working Drafts, NIST AI RMF `HOLD`, and the Phase 6
+  Draft toolkit deepen packs. Issues 55 and 60 remain open.
+- Clarified that publication does not establish certification, compliance,
+  equivalence, endorsement, assurance, legal sufficiency, implementation
+  assessment, production readiness, or replacement of qualified professional
+  judgment.
 - Added the v0.11-draft publication evidence-candidate gates, readiness
   record, and Issue #129 validator wiring without advancing VERSION.md before
-  this closure candidate.
+  the closure candidate.
 - Refreshed the NIST AI RMF readiness package as an evidenced `HOLD` for
   Issue #128: re-verified public PDF identity, restated blocker
   `NIST-AI-RMF-READINESS-B001`, and kept mapping artifact counts at zero.
@@ -36,6 +40,10 @@ is a tagged Working Draft.
 - Deepened the Draft ESAF-1500 assessment workbook with a fictional GOV-100
   engagement vignette and a filled worksheet trio under
   `assessment/workbook/`.
+- Recorded independent technical, editorial, and governance reviews of the
+  exact evidence candidate and the immutable published readiness record,
+  including the annotated tag object, tagged commit, UTC publication date,
+  and issue 129 evidence locators.
 - Carried forward the seven Draft architecture patterns in the current
   Working Draft: ARC-P100, Enterprise AI platform and gateway; ARC-P110,
   Enterprise copilot; ARC-P120, Retrieval-augmented generation; ARC-P130,
