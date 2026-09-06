@@ -1,0 +1,42 @@
+{
+  "$schema": "../schema/assessment-result.schema.json",
+  "schema_version": "0.1.0",
+  "result_id": "ASR-WORKSHEET-TEMPLATE",
+  "status": "draft",
+  "title": "REPLACE: assessment result title",
+  "assessor": {
+    "name": "REPLACE: assessor name",
+    "role": "REPLACE: assessor role",
+    "organization": "REPLACE: assessor organization",
+    "independence_statement": "REPLACE: independence statement appropriate to the assessment purpose"
+  },
+  "assessment_scope": {
+    "subject": "REPLACE: assessed subject",
+    "requirement_ids": ["ESAF-WORKSHEET-REQUIREMENT"],
+    "boundary": "REPLACE: assessment boundary",
+    "exclusions": [],
+    "population": "REPLACE: population",
+    "sample": "REPLACE: sample"
+  },
+  "methods": [],
+  "time_boundary": {
+    "assessment_start": "1970-01-01T00:00:00Z",
+    "assessment_end": "1970-01-01T00:00:00Z",
+    "result_date": "1970-01-01T00:00:00Z"
+  },
+  "evidence_refs": [],
+  "determination": "not_assessed",
+  "determination_rationale": "Worksheet template only; replace after assessment work is performed.",
+  "scope_exclusion_rationale": "Worksheet template placeholder; replace with the engagement-specific rationale when determination remains not_assessed, or remove this field when another determination is selected.",
+  "design_effectiveness": "not_assessed",
+  "operating_effectiveness": "not_assessed",
+  "findings": [],
+  "limitations": [
+    "Worksheet template only; replace with engagement-specific limitations."
+  ],
+  "traceability": {
+    "esaf_requirement_ids": ["ESAF-WORKSHEET-REQUIREMENT"],
+    "external_or_profile_ids": []
+  },
+  "change_history": []
+}

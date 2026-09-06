@@ -170,6 +170,7 @@ COMMAND_CATALOG = (
     ValidationCommand("pci-dss-mapping-go-no-go", ("python", "tools/render_pci_dss_mapping_go_no_go.py", "--check"), "publication", "candidate freeze"),
     ValidationCommand("nist-ai-rmf-mapping-go-no-go", ("python", "tools/render_nist_ai_rmf_mapping_go_no_go.py", "--check"), "publication", "candidate freeze"),
     ValidationCommand("v09-rc1-release-gates", ("python", "tools/v09_rc1_release_gates.py", "--check", "--baseline-ref", "{base}"), "publication", "candidate freeze"),
+    ValidationCommand("v010-draft-release-gates", ("python", "tools/v010_draft_release_gates.py", "--check", "--baseline-ref", "{base}"), "publication", "candidate freeze"),
 )
 
 ROUTING_RULES = (
@@ -193,7 +194,7 @@ PUBLICATION_COMMAND_IDS = (
     "crosswalks", "profiles", "full-discovery", "mermaid-record", "links",
     "qualified-review-equivalence", "release-gates", "release-evidence",
     "pci-dss-mapping-go-no-go", "nist-ai-rmf-mapping-go-no-go",
-    "v09-rc1-release-gates",
+    "v09-rc1-release-gates", "v010-draft-release-gates",
 )
 PROOF_COMMAND_IDS = ("qualified-review-equivalence",)
 REVIEWED_POLICY = ValidationPolicy(COMMAND_CATALOG, ROUTING_RULES)

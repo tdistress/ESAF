@@ -1,0 +1,85 @@
+{
+  "$schema": "../schema/evidence-record.schema.json",
+  "schema_version": "0.1.0",
+  "evidence_id": "EVD-WORKSHEET-TEMPLATE",
+  "title": "REPLACE: evidence title",
+  "description": "REPLACE: what fact or condition this artifact is intended to support.",
+  "evidence_type": "record",
+  "source": {
+    "identity": "REPLACE: source system or originating party",
+    "locator": "REPLACE: source locator"
+  },
+  "custodian": {
+    "name": "REPLACE: custodian name",
+    "role": "REPLACE: custodian role",
+    "organization": "REPLACE: custodian organization"
+  },
+  "collected_at": "1970-01-01T00:00:00Z",
+  "collection_method": "REPLACE: how the evidence was obtained",
+  "scope": {
+    "description": "REPLACE: in-scope capability, system, control, requirement, or population"
+  },
+  "period": {
+    "start": "1970-01-01T00:00:00Z",
+    "end": "1970-01-01T00:00:00Z"
+  },
+  "population": {
+    "description": "REPLACE: defined population",
+    "sample": "REPLACE: sample description or complete population",
+    "selection_rationale": "REPLACE: selection rationale"
+  },
+  "quality": {
+    "relevance": {
+      "rating": "not_evaluated",
+      "rationale": "REPLACE: relevance evaluation"
+    },
+    "reliability": {
+      "rating": "not_evaluated",
+      "rationale": "REPLACE: reliability evaluation"
+    },
+    "completeness": {
+      "rating": "not_evaluated",
+      "rationale": "REPLACE: completeness evaluation"
+    },
+    "timeliness": {
+      "rating": "not_evaluated",
+      "rationale": "REPLACE: timeliness evaluation"
+    },
+    "attribution": {
+      "rating": "not_evaluated",
+      "rationale": "REPLACE: attribution evaluation"
+    },
+    "integrity": {
+      "rating": "not_evaluated",
+      "rationale": "REPLACE: integrity evaluation"
+    },
+    "traceability": {
+      "rating": "not_evaluated",
+      "rationale": "REPLACE: traceability evaluation"
+    },
+    "sufficiency": "insufficient",
+    "evaluated_by": {
+      "name": "REPLACE: evaluator name",
+      "role": "REPLACE: evaluator role",
+      "organization": "REPLACE: evaluator organization"
+    },
+    "evaluated_at": "1970-01-01T00:00:00Z",
+    "sufficiency_rationale": "Worksheet template only; replace before use."
+  },
+  "integrity": {
+    "protected_record_locator": "REPLACE: protected-record locator",
+    "verification_method": "REPLACE: verification method"
+  },
+  "limitations": [
+    "Worksheet template only; replace limitations with engagement-specific known gaps."
+  ],
+  "retention": {
+    "authority": "REPLACE: retention authority",
+    "end_condition": "REPLACE: retention end condition"
+  },
+  "traceability": {
+    "requirement_refs": ["ESAF-WORKSHEET-REQUIREMENT"],
+    "procedure_refs": ["PROC-WORKSHEET-PROCEDURE"],
+    "result_refs": ["ASR-WORKSHEET-TEMPLATE"]
+  }
+}

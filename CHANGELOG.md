@@ -4,7 +4,89 @@ All notable changes to ESAF are documented in this file.
 
 Versions 0.2-alpha and 0.3-alpha remain unreleased working-draft stages.
 Version 0.4-alpha is a tagged Working Draft. Version 0.5-beta is a tagged
-Working Draft. Version 0.9-rc1 is a tagged Working Draft.
+Working Draft. Version 0.9-rc1 is a tagged Working Draft. Version 0.10-draft
+is a tagged Working Draft.
+
+## Unreleased
+
+### Added
+
+- Deepened the Draft governance template pack with one filled fictional
+  example per class (risk, exception, decision, retirement) under
+  `templates/examples/`.
+
+- Deepened the Draft ESAF-1500 audit checklist with a fictional two-control
+  sampling vignette and Draft filled assessment-result examples under
+  `assessment/audit-checklist/`.
+
+- Deepened the Draft ESAF-1500 evidence catalog with per-type good-enough versus
+  common-failure notes and three fictional filled evidence records under
+  `assessment/evidence-catalog/`.
+
+- Deepened the Draft ESAF-1500 assessment workbook with a fictional GOV-100
+  engagement vignette and a filled worksheet trio under
+  `assessment/workbook/`.
+
+- Added non-normative worksheet and worked-example packs for ESAF-1300,
+  ESAF-1400, and ESAF-1700 under
+  [`examples/esaf-1300/`](examples/esaf-1300/),
+  [`examples/esaf-1400/`](examples/esaf-1400/), and
+  [`examples/esaf-1700/`](examples/esaf-1700/).
+
+### Changed
+
+- Completed the ESAF-1300 0.2.0 breadth deepen with expanded governance
+  charters, decision rights, lifecycle-gate operation, RACI, exceptions, and
+  governance records.
+- Completed the ESAF-1400 0.2.0 breadth deepen with an expanded adoption
+  sequence, control and architecture mappings, roadmap guidance, evidence
+  handoff, vendor-neutral policy, and failure modes.
+- Completed the ESAF-1700 0.2.0 breadth deepen with expanded canonical
+  entities, relationships, identifier conventions, exchange guidance, and
+  alignment to ESAF-1500 assessment records.
+
+## 0.10-draft - 2026-09-05
+
+### Added
+
+- Added a Draft ESAF-1500 assessment workbook starter under
+  [`assessment/workbook/`](assessment/workbook/) with operator guidance and
+  schema-conforming worksheet stubs.
+- Added a Draft ESAF-1500 evidence catalog starter under
+  [`assessment/evidence-catalog/`](assessment/evidence-catalog/).
+- Added a Draft ESAF-1500 audit checklist starter under
+  [`assessment/audit-checklist/`](assessment/audit-checklist/).
+- Added a Draft governance template starter pack under
+  [`templates/`](templates/) for risk, exception, decision, and retirement
+  records.
+- Added the Issue #119 `v0.10-draft` publication-readiness evidence candidate,
+  release-gate validator, and exact-SHA review records, starting at
+  [`docs/superpowers/reviews/2026-09-05-v010-draft-publication-readiness.md`](docs/superpowers/reviews/2026-09-05-v010-draft-publication-readiness.md).
+- Recorded independent technical, editorial, and governance reviews of the
+  exact evidence candidate and the immutable published readiness record,
+  including the annotated tag object, tagged commit, UTC publication date,
+  and issue 119 evidence locators.
+- Carried forward the seven Draft architecture patterns in the current
+  Working Draft: ARC-P100, Enterprise AI platform and gateway; ARC-P110,
+  Enterprise copilot; ARC-P120, Retrieval-augmented generation; ARC-P130,
+  Agentic and multi-agent AI; ARC-P140, Private model deployment; ARC-P150,
+  AI integration services; and ARC-P160, AI observability.
+- Carried forward the Draft Cyber Essentials v3.3 mapping snapshot.
+- Carried forward the Draft Cyber Essentials Plus v3.2 `esaf_to_external`
+  mapping snapshot.
+- Carried forward the Draft Cyber Essentials Plus v3.2 `external_to_esaf`
+  mapping snapshot.
+
+### Changed
+
+- Published the `v0.10-draft` Working Draft through the annotated `v0.10-draft`
+  tag. Prerequisite dispositions remain Phase 2 timing `DEFER`,
+  ESAF-1300/1400/1700 Working Drafts, NIST AI RMF `HOLD`, and the Phase 6
+  Draft toolkit starters. Issues 55 and 60 remain open.
+- Clarified that publication does not establish certification, compliance,
+  equivalence, endorsement, assurance, legal sufficiency, implementation
+  assessment, production readiness, or replacement of qualified professional
+  judgment.
 
 ## 0.9-rc1 - 2026-08-29
 

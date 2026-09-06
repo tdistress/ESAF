@@ -1,0 +1,93 @@
+{
+  "$schema": "../schema/evidence-record.schema.json",
+  "schema_version": "0.1.0",
+  "evidence_id": "EVD-CAT-POLICY-AI-GOV",
+  "title": "Fictional enterprise AI governance policy excerpt",
+  "description": "A fictional approved AI governance policy excerpt used to illustrate a catalog `policy` evidence record for GOV-oriented examination.",
+  "evidence_type": "policy",
+  "source": {
+    "identity": "Fictional Contour policy library",
+    "locator": "example://contour/policies/ai-governance-v2"
+  },
+  "custodian": {
+    "name": "Riley Nguyen",
+    "role": "Policy steward",
+    "organization": "Fictional Contour Holdings"
+  },
+  "collected_at": "2026-08-18T16:00:00Z",
+  "collection_method": "Read-only export of the approved policy PDF and metadata card.",
+  "scope": {
+    "description": "Fictional enterprise-wide AI governance policy applicable to production AI systems during the assessment period."
+  },
+  "period": {
+    "start": "2026-05-01T00:00:00Z",
+    "end": "2026-07-31T23:59:59Z"
+  },
+  "population": {
+    "description": "One fictional approved AI governance policy version and its approval record.",
+    "sample": "The complete fictional policy package for version 2.1.",
+    "selection_rationale": "The catalog example needs a single authoritative policy artifact."
+  },
+  "quality": {
+    "relevance": {
+      "rating": "adequate",
+      "rationale": "The policy text addresses the fictional governance obligations under examination."
+    },
+    "reliability": {
+      "rating": "adequate",
+      "rationale": "The export came from the fictional controlled policy library with version metadata."
+    },
+    "completeness": {
+      "rating": "adequate",
+      "rationale": "The package includes the approved body and the linked approval record."
+    },
+    "timeliness": {
+      "rating": "adequate",
+      "rationale": "Version 2.1 was effective throughout the fictional assessment period."
+    },
+    "attribution": {
+      "rating": "adequate",
+      "rationale": "Issuer, steward, and approval actors are identified in the metadata card."
+    },
+    "integrity": {
+      "rating": "limited",
+      "rationale": "The fictional digest illustrates verification without asserting real assurance."
+    },
+    "traceability": {
+      "rating": "adequate",
+      "rationale": "The example links to a fictional GOV procedure and assessment result."
+    },
+    "sufficiency": "limited",
+    "evaluated_by": {
+      "name": "Avery Chen",
+      "role": "Independent assessor",
+      "organization": "Fictional Contour Assurance LLP"
+    },
+    "evaluated_at": "2026-08-18T17:00:00Z",
+    "sufficiency_rationale": "A single policy excerpt is limited evidence and needs corroborating procedure and decision records in a real engagement."
+  },
+  "integrity": {
+    "digest_algorithm": "sha-256",
+    "digest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "limitations": [
+    "This fictional catalog example does not demonstrate an actual organization's policy control.",
+    "Operating effectiveness is not established by the policy text alone."
+  ],
+  "retention": {
+    "authority": "Fictional Contour records schedule",
+    "end_condition": "Retain until the fictional assessment archive period ends."
+  },
+  "traceability": {
+    "requirement_refs": [
+      "GOV-100"
+    ],
+    "procedure_refs": [
+      "GOV-100-A1"
+    ],
+    "result_refs": [
+      "ASR-CAT-POLICY-DEMO"
+    ]
+  },
+  "example_notice": "Fictional non-authoritative example; no organization, ESAF control, profile, or external framework has been assessed."
+}

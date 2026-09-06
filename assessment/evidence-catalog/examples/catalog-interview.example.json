@@ -1,0 +1,92 @@
+{
+  "$schema": "../schema/evidence-record.schema.json",
+  "schema_version": "0.1.0",
+  "evidence_id": "EVD-CAT-INTERVIEW-GOV-OWNER",
+  "title": "Fictional interview notes with AI governance owner",
+  "description": "Fictional interview notes used to illustrate a catalog `interview` evidence record for ownership and escalation questioning.",
+  "evidence_type": "interview",
+  "source": {
+    "identity": "Fictional Contour assessment interview workspace",
+    "locator": "example://contour/assessment/interviews/gov-owner-2026-08-19"
+  },
+  "custodian": {
+    "name": "Morgan Ellis",
+    "role": "Lead assessor",
+    "organization": "Fictional Contour Assurance LLP"
+  },
+  "collected_at": "2026-08-19T18:30:00Z",
+  "collection_method": "Structured interview with retained prompts and contemporaneous notes.",
+  "scope": {
+    "description": "Fictional interview of the AI governance owner about escalation paths for production AI exceptions."
+  },
+  "period": {
+    "point_in_time": "2026-08-19T17:00:00Z"
+  },
+  "population": {
+    "description": "One fictional AI governance owner interview covering escalation and exception handling.",
+    "sample": "The complete fictional interview packet for the governance owner.",
+    "selection_rationale": "The catalog example focuses on a single accountable role interview."
+  },
+  "quality": {
+    "relevance": {
+      "rating": "adequate",
+      "rationale": "The retained prompts address the fictional escalation obligations under examination."
+    },
+    "reliability": {
+      "rating": "limited",
+      "rationale": "Interview answers are self-reported and require corroboration from records."
+    },
+    "completeness": {
+      "rating": "adequate",
+      "rationale": "All planned prompts and answers for the fictional interview are retained."
+    },
+    "timeliness": {
+      "rating": "adequate",
+      "rationale": "The interview occurred during the fictional assessment fieldwork window."
+    },
+    "attribution": {
+      "rating": "adequate",
+      "rationale": "Interviewee role, interviewer, and note-taker are identified."
+    },
+    "integrity": {
+      "rating": "limited",
+      "rationale": "The fictional digest illustrates verification without asserting real assurance."
+    },
+    "traceability": {
+      "rating": "adequate",
+      "rationale": "The example links prompts to a fictional GOV procedure and assessment result."
+    },
+    "sufficiency": "limited",
+    "evaluated_by": {
+      "name": "Avery Chen",
+      "role": "Independent assessor",
+      "organization": "Fictional Contour Assurance LLP"
+    },
+    "evaluated_at": "2026-08-19T19:00:00Z",
+    "sufficiency_rationale": "Interview notes alone are limited evidence and need corroborating decision records."
+  },
+  "integrity": {
+    "digest_algorithm": "sha-256",
+    "digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "limitations": [
+    "This fictional catalog example does not demonstrate an actual interview program.",
+    "Answers were not independently verified against production exception tickets in this example."
+  ],
+  "retention": {
+    "authority": "Fictional Contour assessment retention schedule",
+    "end_condition": "Retain until the fictional assessment archive period ends."
+  },
+  "traceability": {
+    "requirement_refs": [
+      "GOV-100"
+    ],
+    "procedure_refs": [
+      "GOV-100-A2"
+    ],
+    "result_refs": [
+      "ASR-CAT-INTERVIEW-DEMO"
+    ]
+  },
+  "example_notice": "Fictional non-authoritative example; no organization, ESAF control, profile, or external framework has been assessed."
+}

@@ -1,0 +1,90 @@
+{
+  "$schema": "../schema/assessment-result.schema.json",
+  "schema_version": "0.1.0",
+  "result_id": "ASR-ENG-GOV100",
+  "status": "draft",
+  "title": "Fictional draft assessment of GOV-100 for Northbridge workbook engagement",
+  "assessor": {
+    "name": "Avery Chen",
+    "role": "Independent assessor",
+    "organization": "Fictional Contour Assurance LLP",
+    "independence_statement": "This fictional assessor is presented only to illustrate workbook recording structure."
+  },
+  "assessment_scope": {
+    "subject": "Fictional Northbridge enterprise AI governance authority",
+    "requirement_ids": [
+      "GOV-100"
+    ],
+    "boundary": "Enterprise AI governance charter, membership, and decision rights documentation for the engagement period.",
+    "exclusions": [
+      "Operating effectiveness of meeting cadence outside the sampled period."
+    ],
+    "population": "Fictional approved charter package and linked membership annex.",
+    "sample": "Complete examination of the fictional charter package."
+  },
+  "methods": [
+    {
+      "method": "Examine",
+      "procedure": "GOV-100-A1 - Examine the fictional charter for accountability, membership, decision rights, escalation, and cadence.",
+      "object": "Fictional AI governance charter extract.",
+      "expected_result": "Charter defines the required governance authority elements.",
+      "actual_work": "Examined the fictional charter sections covering membership, decision rights, escalation, and cadence."
+    }
+  ],
+  "time_boundary": {
+    "assessment_start": "2026-08-10T09:00:00Z",
+    "assessment_end": "2026-08-14T17:00:00Z",
+    "result_date": "2026-08-14T17:30:00Z"
+  },
+  "evidence_refs": [
+    "EVD-ENG-GOV100-CHARTER"
+  ],
+  "determination": "partially_satisfied",
+  "determination_rationale": "The fictional charter documents authority and membership, with one open documentation gap on escalation triggers recorded as a draft finding.",
+  "design_effectiveness": "partially_effective",
+  "operating_effectiveness": "not_assessed",
+  "findings": [
+    {
+      "finding_id": "FND-ENG-GOV100-ESCALATION",
+      "severity": "minor",
+      "status": "open",
+      "affected_requirement_ids": [
+        "GOV-100"
+      ],
+      "statement": "The fictional charter names an escalation path but does not define concrete trigger criteria for board escalation.",
+      "evidence_refs": [
+        "EVD-ENG-GOV100-CHARTER"
+      ],
+      "owner": {
+        "name": "Jordan Lee",
+        "role": "Governance program manager",
+        "organization": "Fictional Northbridge Enterprises"
+      },
+      "disposition": {
+        "action": "Pending fictional charter amendment to add escalation triggers.",
+        "rationale": "Draft engagement remains open until the fictional documentation gap is addressed or accepted with residual risk."
+      },
+      "identified_at": "2026-08-13T11:00:00Z",
+      "disposition_at": "2026-08-14T16:00:00Z"
+    }
+  ],
+  "limitations": [
+    "This fictional draft result is a workbook teaching example and makes no compliance claim.",
+    "Operating effectiveness was not assessed in this workbook vignette."
+  ],
+  "traceability": {
+    "esaf_requirement_ids": [
+      "GOV-100"
+    ],
+    "external_or_profile_ids": []
+  },
+  "change_history": [
+    {
+      "version": "0.1.0-draft",
+      "date": "2026-08-14T17:30:00Z",
+      "author": "Avery Chen",
+      "description": "Created the fictional draft workbook engagement result."
+    }
+  ],
+  "example_notice": "Fictional non-authoritative example; no organization, ESAF control, profile, or external framework has been assessed."
+}

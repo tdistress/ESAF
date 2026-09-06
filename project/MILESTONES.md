@@ -101,14 +101,10 @@
 ### Publication state
 
 - The `v0.9-rc1` Working Draft was published on 2026-08-29 through annotated
-  tag `v0.9-rc1` at `4136cfdc71a85ea2becd0f23c95424e7580cafa3` (tag object
-  `1b5cdead5c56c4f209b5cf091c665ca40e709590`).
-- Publication closes the repository release gates only. Controls,
-  architectures, profiles, mapping sets, mapping records, and the ESAF-1300,
-  ESAF-1400, and ESAF-1700 Working Drafts remain Draft or Working Draft as
-  recorded.
-- Issue 60 remains separately gated. Deferred UK mapping assurance remains
-  tracked under Issue 55 policy even if GitHub issue state drifts.
+  tag `v0.9-rc1`.
+- The first Working Draft scope for ESAF-1300, ESAF-1400, and ESAF-1700 was
+  completed for that publication. The historical requirements and exit
+  criteria below remain the record of the closed milestone.
 
 ### Required workstreams
 
@@ -154,6 +150,14 @@
 - the exact candidate receives technical, editorial, and governance approval
   appropriate to its contents.
 
+### Post-publication breadth deepen
+
+- The ESAF-1300, ESAF-1400, and ESAF-1700 0.2.0 breadth deepen is complete.
+- Each publication now has a discoverable non-normative example pack under
+  `examples/esaf-1300/`, `examples/esaf-1400/`, or `examples/esaf-1700/`.
+- This follow-up does not alter the closed `v0.9-rc1` publication state or
+  create a new tagged release.
+
 ### Non-goals
 
 `v0.9-rc1` does not require:
@@ -166,4 +170,171 @@
   approved lifecycle state without their own evidence;
 - a complete assessment workbook, audit-checklist library, or every template
   named in `templates/README.md`; or
+- redesigning `v1.0`.
+
+## v0.10-draft
+
+### Entry state
+
+- `v0.9-rc1` is published and its publication evidence is closed.
+- ESAF-1300, ESAF-1400, and ESAF-1700 are at least at post-rc1 Working Draft
+  `0.2.0` depth with discoverable example packs.
+- ESAF-1500 foundation schemas and examples remain Draft and authoritative for
+  shared assessment semantics.
+- Issues `#55` and `#60` may remain open after hygiene; they are not
+  `v0.10-draft` blockers.
+- ESAF-1000, ESAF-1100, ESAF-1200, ESAF-1600 method artifacts, the UK pilot
+  profile, and the three UK mapping snapshots remain Draft.
+
+### Required workstreams
+
+1. **Tracker hygiene.** ESAF shall reopen Issue `#55` if qualified UK mapping
+   review remains outstanding, close or explicitly annotate Issues `#90`–`#95`
+   as historical completed `v0.9-rc1` work, and align backlog and GitHub
+   milestone state with published truth. This workstream does not change
+   normative content.
+2. **Assessment workbook Draft starter.** ESAF shall author a Draft assessor
+   workbook skeleton bound to ESAF-1500 shared contracts and ESAF-1100 control
+   assessment procedures without inventing parallel evidence, result, or
+   maturity semantics.
+3. **Evidence catalog Draft starter.** ESAF shall author a Draft starter catalog
+   of evidence types and expectations reusable by profiles and crosswalks,
+   aligned to the ESAF-1500 evidence contract.
+4. **Audit checklist Draft starter.** ESAF shall author a Draft checklist for
+   control/capability sampling against the shared assessment-result contract.
+5. **Governance templates Draft starter.** ESAF shall author a Draft starter pack
+   under `templates/` covering risk, exception, decision, and retirement-class
+   artifacts, linked from ESAF-1300 / ESAF-1400 without adding new normative
+   requirements.
+6. **Release closure.** ESAF shall complete ordinary release gates on the exact
+   `v0.10-draft` candidate, publish annotated tag `v0.10-draft`, and synchronize
+   Working Draft status surfaces.
+
+### Exit criteria
+
+`v0.10-draft` is complete only when:
+
+- tracker hygiene is complete: Issues `#90`–`#95` are closed or explicitly
+  annotated as historical, and Issue `#55` is open if and only if qualified UK
+  review remains outstanding;
+- the assessment workbook, evidence catalog, audit checklist, and governance
+  template starter each exist as Draft and are linked from applicable indexes;
+- each toolkit pack reuses ESAF-1500 shared semantics and does not invent
+  parallel maturity, evidence, or result contracts;
+- generated catalogs and affected traceability records are current;
+- the full test suite, control, architecture, assessment, profile, crosswalk,
+  link, release, working-tree, and applicable Mermaid-rendering gates pass on
+  the exact candidate;
+- Critical and Important review findings are resolved;
+- the exact candidate receives technical, editorial, and governance approval
+  appropriate to its contents; and
+- annotated tag `v0.10-draft` is published and Working Draft surfaces are
+  synchronized.
+
+### Non-goals
+
+`v0.10-draft` does not require:
+
+- closing Issue `#55` via owner-risk acceptance or completing the six qualified
+  UK mapping role dispositions;
+- licensed HITRUST CSF access or substantive HITRUST mapping;
+- clearing the PCI DSS `HOLD` without its recorded reconsideration triggers;
+- clearing the NIST AI RMF `HOLD` or authoring NIST mapping records;
+- all roadmap crosswalks or all planned profiles;
+- advancing Draft controls, architectures, mappings, or profiles to an approved
+  lifecycle state without their own evidence;
+- a certification or accreditation scheme; or
+- redesigning `v1.0`.
+
+## v0.11-draft
+
+### Entry state
+
+- `v0.10-draft` is published and its publication evidence is closed.
+- ESAF-1300, ESAF-1400, and ESAF-1700 remain at least at Working Draft `0.2.0`
+  depth with discoverable example packs.
+- ESAF-1500 foundation schemas, examples, and the four Phase 6 Draft starters
+  remain Draft and authoritative for shared assessment semantics.
+- NIST AI RMF readiness remains evidenced `HOLD`; mapping artifact count remains
+  `0`.
+- Issues `#55` and `#60` may remain open after hygiene; they are not
+  `v0.11-draft` blockers.
+- ESAF-1000, ESAF-1100, ESAF-1200, ESAF-1600 method artifacts, the UK pilot
+  profile, and the three UK mapping snapshots remain Draft.
+
+### Required workstreams
+
+1. **Tracker hygiene.** ESAF shall reopen Issue `#55` if qualified UK mapping
+   review remains outstanding, close or explicitly annotate Issues `#114`–`#119`
+   as historical completed `v0.10-draft` work, and align backlog and GitHub
+   milestone state with published truth. This workstream does not change
+   normative content.
+2. **Assessment workbook Draft deepen.** ESAF shall add one worked fictional
+   engagement with scope narrative and a filled worksheet trio bound to
+   ESAF-1500 schemas and ESAF-1100 procedures, keeping pack status Draft and
+   worksheets schema-valid.
+3. **Evidence catalog Draft deepen.** ESAF shall add short per-type quality
+   notes and a small set of fictional filled evidence records keyed to catalog
+   types, remaining profile-neutral and bound to the ESAF-1500 evidence
+   contract.
+4. **Audit checklist Draft deepen.** ESAF shall add one small sampling vignette
+   with procedure IDs, methods, evidence references, and determinations against
+   the shared assessment-result vocabulary, without authoring a full
+   control-family library.
+5. **Governance templates Draft deepen.** ESAF shall add one filled informative
+   instance per template class under `examples/` or an adjacent informative
+   path, linked from `templates/` and ESAF-1300 / ESAF-1400 without adding new
+   normative `shall` requirements.
+6. **NIST AI RMF readiness re-entry.** ESAF shall refresh the NIST AI RMF
+   readiness package. The default acceptable exit is a refreshed evidenced
+   `HOLD` that restates blockers, owners, reconsideration triggers, re-entry
+   tests, and nonclaims. A matrix-derived `GO` is allowed only when named
+   mapper and independent reviewer evidence fully clears the people gate.
+   While the decision remains `HOLD`, ESAF shall not create NIST mapping
+   records or catalog increments.
+7. **Release closure.** ESAF shall complete ordinary release gates on the exact
+   `v0.11-draft` candidate, publish annotated tag `v0.11-draft`, and synchronize
+   Working Draft status surfaces.
+
+### Exit criteria
+
+`v0.11-draft` is complete only when:
+
+- tracker hygiene is complete: Issues `#114`–`#119` are closed or explicitly
+  annotated as historical, and Issue `#55` is open if and only if qualified UK
+  review remains outstanding;
+- each of the four toolkit packs has a Draft deepen deliverable linked from
+  applicable indexes and still reuses ESAF-1500 shared semantics without
+  inventing parallel maturity, evidence, or result contracts;
+- NIST AI RMF readiness re-entry is recorded as either a refreshed evidenced
+  `HOLD` or a matrix-derived `GO` with zero blockers; if `HOLD`, NIST mapping
+  artifact count remains `0` and generated crosswalk catalog counts are
+  unchanged by this workstream;
+- generated catalogs and affected traceability records are current;
+- the full test suite, control, architecture, assessment, profile, crosswalk,
+  link, release, working-tree, and applicable Mermaid-rendering gates pass on
+  the exact candidate;
+- Critical and Important review findings are resolved;
+- the exact candidate receives technical, editorial, and governance approval
+  appropriate to its contents; and
+- annotated tag `v0.11-draft` is published and Working Draft surfaces are
+  synchronized.
+
+### Non-goals
+
+`v0.11-draft` does not require:
+
+- closing Issue `#55` via owner-risk acceptance or completing the six qualified
+  UK mapping role dispositions;
+- licensed HITRUST CSF access or substantive HITRUST mapping;
+- clearing the PCI DSS `HOLD` without its recorded reconsideration triggers;
+- clearing the NIST AI RMF `HOLD` when named mapper and independent reviewers
+  remain unavailable;
+- authoring NIST AI RMF mapping records, snapshots, or catalog entries;
+- a complete Phase 6 workbook, evidence library, audit-checklist library, or
+  template library;
+- all roadmap crosswalks or all planned profiles;
+- advancing Draft controls, architectures, mappings, or profiles to an approved
+  lifecycle state without their own evidence;
+- a certification or accreditation scheme; or
 - redesigning `v1.0`.

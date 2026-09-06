@@ -3,7 +3,7 @@
 > An open enterprise standard for the secure governance, architecture, adoption, and operation of artificial intelligence.
 
 ![Status](https://img.shields.io/badge/status-Working%20Draft-blue)
-![Version](https://img.shields.io/badge/version-0.9--rc1-orange)
+![Version](https://img.shields.io/badge/version-0.10--draft-orange)
 
 ## Vision
 
@@ -43,6 +43,13 @@ Every requirement, control, architecture, assessment, and governance artifact wi
 | [ESAF-1700](data-model/ESAF-1700.md) | Enterprise AI Data Model | [data-model/ESAF-1700.md](data-model/ESAF-1700.md) |
 | [ESAF-1800](profiles/ESAF-1800.md) | Industry, jurisdiction, and risk profiles | [profiles/ESAF-1800.md](profiles/ESAF-1800.md) |
 
+Non-normative worksheets and worked examples for ESAF-1300, ESAF-1400, and
+ESAF-1700 are available in [`examples/esaf-1300/`](examples/esaf-1300/),
+[`examples/esaf-1400/`](examples/esaf-1400/), and
+[`examples/esaf-1700/`](examples/esaf-1700/). A Draft ESAF-1500 assessment
+workbook starter is available in
+[`assessment/workbook/`](assessment/workbook/).
+
 The current profile package is the [Draft United Kingdom jurisdiction pilot](profiles/uk/0.1.0/README.md).
 
 ## Standards alignment
@@ -76,9 +83,9 @@ project/          Management of the ESAF initiative itself
 
 ESAF is a **working draft**. Content may change before Version 1.0 and shall not be represented as an approved certification scheme.
 
-The `v0.9-rc1` Working Draft was published on 2026-08-29 through annotated
-tag object `1b5cdead5c56c4f209b5cf091c665ca40e709590`, which resolves to
-validated commit `4136cfdc71a85ea2becd0f23c95424e7580cafa3`. Publication does
+The `v0.10-draft` Working Draft was published on 2026-09-05 through annotated
+tag object `7f982082d20e600863c0b564408d4591dfebcbc7`, which resolves to
+validated commit `05b7ebdd588d9959412fce1d2d4d9bdf663e998e`. Publication does
 not approve certification, compliance, framework equivalence, or Draft mapping
 lifecycle promotion.
 

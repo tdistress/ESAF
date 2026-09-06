@@ -1,14 +1,14 @@
 # ESAF Version
 
-Current Version: **0.9-rc1**
+Current Version: **0.10-draft**
 
 Status: **Working Draft**
 
-Release Stage: **Bounded Working Draft Release Candidate**
+Release Stage: **Bounded Working Draft**
 
-This Working Draft was published on 2026-08-29 through annotated tag
-`v0.9-rc1` (tag object `1b5cdead5c56c4f209b5cf091c665ca40e709590`),
+This Working Draft was published on 2026-09-05 through annotated tag
+`v0.10-draft` (tag object `7f982082d20e600863c0b564408d4591dfebcbc7`),
 which resolves to validated commit
-`4136cfdc71a85ea2becd0f23c95424e7580cafa3`.
+`05b7ebdd588d9959412fce1d2d4d9bdf663e998e`.
 
 Previous Release Stage: **Priority Crosswalk and Draft Profile Beta**

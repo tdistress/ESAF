@@ -425,5 +425,314 @@ class AssessmentSchemaTests(unittest.TestCase):
                     self.assertTrue(list(validator.iter_errors(mutated)))
 
 
+class AssessmentWorkbookStarterTests(unittest.TestCase):
+    workbook_root = ROOT / "assessment" / "workbook"
+    worksheet_root = workbook_root / "worksheets"
+    worksheet_files = {
+        "evidence-record": worksheet_root / "evidence-record.worksheet.json",
+        "assessment-result": worksheet_root / "assessment-result.worksheet.json",
+        "maturity-assessment": worksheet_root
+        / "maturity-assessment.worksheet.json",
+    }
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.schemas = {
+            name: json.loads(
+                (SCHEMA_ROOT / f"{name}.schema.json").read_text(encoding="utf-8")
+            )
+            for name in SCHEMA_NAMES
+        }
+
+    def test_workbook_guide_is_draft_and_nonclaiming(self) -> None:
+        guide = (self.workbook_root / "ESAF-1500-workbook.md").read_text(
+            encoding="utf-8"
+        )
+        readme = (self.workbook_root / "README.md").read_text(encoding="utf-8")
+        for document in (guide, readme):
+            with self.subTest(document=document[:40]):
+                self.assertRegex(document, r"(?im)\bDraft\b")
+                self.assertRegex(document, r"(?im)certification")
+                self.assertRegex(document, r"(?im)compliance")
+                self.assertIn("ESAF-1500", document)
+                self.assertIn("ESAF-1100", document)
+
+    def test_workbook_worksheets_validate_against_esaf_1500_schemas(self) -> None:
+        for name, path in self.worksheet_files.items():
+            with self.subTest(name=name):
+                self.assertTrue(path.is_file(), msg=f"missing {path}")
+                document = json.loads(path.read_text(encoding="utf-8"))
+                validator = Draft202012Validator(
+                    self.schemas[name],
+                    format_checker=ASSESSMENT_FORMAT_CHECKER,
+                )
+                errors = list(validator.iter_errors(document))
+                self.assertEqual(
+                    errors,
+                    [],
+                    msg="; ".join(error.message for error in errors),
+                )
+                if name != "evidence-record":
+                    self.assertEqual(document.get("status"), "draft")
+
+    def test_workbook_deepen_vignette_and_filled_trio_exist(self) -> None:
+        vignette = self.workbook_root / "engagement-vignette.example.md"
+        example_root = self.workbook_root / "examples"
+        filled = {
+            "evidence-record": example_root
+            / "engagement-evidence-record.example.json",
+            "assessment-result": example_root
+            / "engagement-assessment-result.example.json",
+            "maturity-assessment": example_root
+            / "engagement-maturity-assessment.example.json",
+        }
+        text = vignette.read_text(encoding="utf-8")
+        self.assertTrue(vignette.is_file())
+        self.assertRegex(text, r"(?im)\bDraft\b")
+        self.assertRegex(text, r"(?im)certification")
+        self.assertRegex(text, r"(?im)compliance")
+        self.assertIn("GOV-100", text)
+        self.assertIn("EVD-ENG-GOV100-CHARTER", text)
+        self.assertIn("ASR-ENG-GOV100", text)
+        self.assertIn("MAT-ENG-GOV100", text)
+        readme = (self.workbook_root / "README.md").read_text(encoding="utf-8")
+        self.assertIn("engagement-vignette.example.md", readme)
+        for name, path in filled.items():
+            with self.subTest(name=name):
+                self.assertTrue(path.is_file(), msg=f"missing {path}")
+                self.assertIn(path.name, text)
+                self.assertIn(path.name, readme)
+                document = json.loads(path.read_text(encoding="utf-8"))
+                validator = Draft202012Validator(
+                    self.schemas[name],
+                    format_checker=ASSESSMENT_FORMAT_CHECKER,
+                )
+                errors = list(validator.iter_errors(document))
+                self.assertEqual(
+                    errors,
+                    [],
+                    msg="; ".join(error.message for error in errors),
+                )
+                if name == "evidence-record":
+                    self.assertEqual(
+                        document.get("evidence_id"),
+                        "EVD-ENG-GOV100-CHARTER",
+                    )
+                elif name == "assessment-result":
+                    self.assertEqual(document.get("result_id"), "ASR-ENG-GOV100")
+                    self.assertEqual(document.get("status"), "draft")
+                    self.assertIn(
+                        "EVD-ENG-GOV100-CHARTER",
+                        document.get("evidence_refs", []),
+                    )
+                else:
+                    self.assertEqual(document.get("maturity_id"), "MAT-ENG-GOV100")
+                    self.assertEqual(document.get("status"), "draft")
+                    self.assertIn(
+                        "ASR-ENG-GOV100",
+                        document.get("basis_refs", []),
+                    )
+
+
+class AssessmentEvidenceCatalogStarterTests(unittest.TestCase):
+    catalog_root = ROOT / "assessment" / "evidence-catalog"
+    evidence_types = (
+        "policy",
+        "procedure",
+        "record",
+        "configuration",
+        "log",
+        "technical_test",
+        "observation",
+        "interview",
+        "metric",
+        "contract",
+        "external_assurance",
+        "other",
+    )
+
+    def test_evidence_catalog_is_draft_and_bound_to_esaf_1500(self) -> None:
+        catalog = (self.catalog_root / "ESAF-1500-evidence-catalog.md").read_text(
+            encoding="utf-8"
+        )
+        readme = (self.catalog_root / "README.md").read_text(encoding="utf-8")
+        for document in (catalog, readme):
+            with self.subTest(document=document[:40]):
+                self.assertRegex(document, r"(?im)\bDraft\b")
+                self.assertRegex(document, r"(?im)certification")
+                self.assertRegex(document, r"(?im)compliance")
+                self.assertIn("ESAF-1500", document)
+        for evidence_type in self.evidence_types:
+            with self.subTest(evidence_type=evidence_type):
+                self.assertIn(f"`{evidence_type}`", catalog)
+        for attribute in QUALITY_ATTRIBUTES:
+            with self.subTest(attribute=attribute):
+                self.assertIn(attribute, catalog)
+        self.assertNotRegex(catalog, r"(?m)^\| `[^`]+` \|.*shall ")
+
+    def test_evidence_catalog_deepen_notes_and_filled_examples_exist(self) -> None:
+        catalog = (self.catalog_root / "ESAF-1500-evidence-catalog.md").read_text(
+            encoding="utf-8"
+        )
+        readme = (self.catalog_root / "README.md").read_text(encoding="utf-8")
+        example_root = self.catalog_root / "examples"
+        filled = {
+            "policy": example_root / "catalog-policy.example.json",
+            "interview": example_root / "catalog-interview.example.json",
+            "technical_test": example_root / "catalog-technical-test.example.json",
+        }
+        self.assertRegex(catalog, r"(?im)Draft deepen")
+        self.assertRegex(readme, r"(?im)Draft deepen")
+        self.assertIn("#125", readme)
+        self.assertIn("Good-enough", catalog)
+        self.assertIn("Common failure", catalog)
+        for evidence_type in self.evidence_types:
+            with self.subTest(notes_for=evidence_type):
+                self.assertRegex(
+                    catalog,
+                    rf"(?m)^### `{re.escape(evidence_type)}`$",
+                )
+                self.assertIn(f"`{evidence_type}`", catalog)
+        schema = json.loads(
+            (SCHEMA_ROOT / "evidence-record.schema.json").read_text(encoding="utf-8")
+        )
+        validator = Draft202012Validator(
+            schema, format_checker=ASSESSMENT_FORMAT_CHECKER
+        )
+        notice = (
+            "Fictional non-authoritative example; no organization, ESAF control, "
+            "profile, or external framework has been assessed."
+        )
+        for evidence_type, path in filled.items():
+            with self.subTest(example=path.name):
+                self.assertTrue(path.is_file(), msg=f"missing {path}")
+                self.assertIn(path.name, catalog)
+                self.assertIn(path.name, readme)
+                document = json.loads(path.read_text(encoding="utf-8"))
+                errors = list(validator.iter_errors(document))
+                self.assertEqual(
+                    errors,
+                    [],
+                    msg="; ".join(error.message for error in errors),
+                )
+                self.assertEqual(document.get("evidence_type"), evidence_type)
+                self.assertEqual(document.get("example_notice"), notice)
+                self.assertTrue(
+                    str(document.get("evidence_id", "")).startswith("EVD-CAT-")
+                )
+
+
+class AssessmentAuditChecklistStarterTests(unittest.TestCase):
+    checklist_root = ROOT / "assessment" / "audit-checklist"
+    determinations = (
+        "satisfied",
+        "partially_satisfied",
+        "not_satisfied",
+        "not_applicable",
+        "not_assessed",
+    )
+    methods = ("Examine", "Interview", "Test", "Observe")
+
+    def test_audit_checklist_is_draft_and_bound_to_result_contract(self) -> None:
+        checklist = (
+            self.checklist_root / "ESAF-1500-audit-checklist.md"
+        ).read_text(encoding="utf-8")
+        readme = (self.checklist_root / "README.md").read_text(encoding="utf-8")
+        for document in (checklist, readme):
+            with self.subTest(document=document[:40]):
+                self.assertRegex(document, r"(?im)\bDraft\b")
+                self.assertRegex(document, r"(?im)certification")
+                self.assertRegex(document, r"(?im)compliance")
+                self.assertIn("ESAF-1500", document)
+        for heading in (
+            "Sampling intent",
+            "Procedure references",
+            "Evidence pointers",
+            "Determination capture",
+            "Limitation notes",
+        ):
+            with self.subTest(heading=heading):
+                self.assertIn(heading, checklist)
+        for determination in self.determinations:
+            with self.subTest(determination=determination):
+                self.assertIn(f"`{determination}`", checklist)
+        for method in self.methods:
+            with self.subTest(method=method):
+                self.assertIn(f"`{method}`", checklist)
+
+    def test_audit_checklist_deepen_sampling_vignette_exists(self) -> None:
+        checklist = (
+            self.checklist_root / "ESAF-1500-audit-checklist.md"
+        ).read_text(encoding="utf-8")
+        readme = (self.checklist_root / "README.md").read_text(encoding="utf-8")
+        vignette_path = self.checklist_root / "sampling-vignette.example.md"
+        example_root = self.checklist_root / "examples"
+        filled_results = (
+            example_root / "sampling-gov100-assessment-result.example.json",
+            example_root / "sampling-sys220-assessment-result.example.json",
+        )
+        self.assertTrue(vignette_path.is_file(), msg=f"missing {vignette_path}")
+        vignette = vignette_path.read_text(encoding="utf-8")
+        for document in (checklist, readme, vignette):
+            with self.subTest(document=document[:40]):
+                self.assertRegex(document, r"(?im)\bDraft deepen\b")
+                self.assertRegex(document, r"(?im)certification")
+                self.assertRegex(document, r"(?im)compliance")
+        self.assertIn("#126", readme)
+        self.assertIn("sampling-vignette.example.md", readme)
+        self.assertIn("sampling-vignette.example.md", checklist)
+        for heading in (
+            "Sampling intent",
+            "Procedure references",
+            "Evidence pointers",
+            "Determination capture",
+            "Limitation notes",
+        ):
+            with self.subTest(vignette_heading=heading):
+                self.assertIn(heading, vignette)
+        for control_id in ("GOV-100", "SYS-220"):
+            with self.subTest(control_id=control_id):
+                self.assertIn(control_id, vignette)
+        for determination in ("partially_satisfied", "satisfied"):
+            with self.subTest(determination=determination):
+                self.assertIn(f"`{determination}`", vignette)
+        for method in ("Examine", "Interview", "Test"):
+            with self.subTest(method=method):
+                self.assertIn(f"`{method}`", vignette)
+        schema = json.loads(
+            (SCHEMA_ROOT / "assessment-result.schema.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        validator = Draft202012Validator(
+            schema, format_checker=ASSESSMENT_FORMAT_CHECKER
+        )
+        notice = (
+            "Fictional non-authoritative example; no organization, ESAF control, "
+            "profile, or external framework has been assessed."
+        )
+        for path in filled_results:
+            with self.subTest(example=path.name):
+                self.assertTrue(path.is_file(), msg=f"missing {path}")
+                self.assertIn(path.name, vignette)
+                self.assertIn(path.name, readme)
+                document = json.loads(path.read_text(encoding="utf-8"))
+                errors = list(validator.iter_errors(document))
+                self.assertEqual(
+                    errors,
+                    [],
+                    msg="; ".join(error.message for error in errors),
+                )
+                self.assertEqual(document.get("example_notice"), notice)
+                self.assertEqual(document.get("status"), "draft")
+                self.assertIn(
+                    document.get("determination"),
+                    self.determinations,
+                )
+                self.assertTrue(
+                    str(document.get("result_id", "")).startswith("ASR-SAMP-")
+                )
+
+
 if __name__ == "__main__":
     unittest.main()
