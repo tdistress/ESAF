@@ -66,6 +66,15 @@ EXPECTED_TRACEABILITY_IDS = {
     "I94-B2",
     "I94-B3",
 }
+EXPECTED_REFRESH_TRACEABILITY_IDS = {
+    "I128-D1",
+    "I128-D2",
+    "I128-D3",
+    "I128-A1",
+    "I128-A2",
+    "I128-B1",
+    "I128-B2",
+}
 
 
 class NistAiRmfSourceReadinessTests(unittest.TestCase):
@@ -88,6 +97,8 @@ class NistAiRmfSourceReadinessTests(unittest.TestCase):
         self.assertFalse(oracle["access"]["protected"])
         self.assertEqual(oracle["publication"]["document_reference"], "NIST.AI.100-1")
         self.assertEqual(oracle["publication"]["version"], "1.0")
+        retrieved = oracle["discovery"]["retrieved_at_utc"]
+        self.assertRegex(retrieved, r"^2026-09-06T\d{2}:\d{2}:\d{2}Z$")
 
     def test_inventory_matches_oracle_digest_and_count(self) -> None:
         inventory = json.loads(INVENTORY.read_text(encoding="utf-8"))
@@ -119,13 +130,19 @@ class NistAiRmfSourceReadinessTests(unittest.TestCase):
         landing = LANDING.read_text(encoding="utf-8")
         trace = TRACEABILITY.read_text(encoding="utf-8")
         self.assertIn("**Status:** Readiness HOLD", landing)
+        self.assertIn("refreshed evidenced", landing)
+        self.assertIn("Issue #128", landing)
         self.assertIn("NIST AI RMF mapping artifacts: `0`", landing)
         self.assertIn("3 mapping sets, 404", landing)
         catalog = json.loads(CROSSWALK_CATALOG.read_text(encoding="utf-8"))
         self.assertEqual(catalog["counts"]["mapping_sets"], 3)
         self.assertEqual(catalog["counts"]["provisions"], 404)
-        found = set(re.findall(r"`(I94-[A-Z0-9]+)`", trace))
-        self.assertTrue(EXPECTED_TRACEABILITY_IDS.issubset(found))
+        found_94 = set(re.findall(r"`(I94-[A-Z0-9]+)`", trace))
+        found_128 = set(re.findall(r"`(I128-[A-Z0-9]+)`", trace))
+        self.assertTrue(EXPECTED_TRACEABILITY_IDS.issubset(found_94))
+        self.assertTrue(EXPECTED_REFRESH_TRACEABILITY_IDS.issubset(found_128))
+        self.assertIn("Issue #128", trace)
+        self.assertIn("refreshed evidenced", trace)
         self.assertIn("Do not close Issue #55", trace)
 
     def test_ci_and_tools_wire_renderer_check(self) -> None:

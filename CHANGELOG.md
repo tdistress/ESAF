@@ -9,6 +9,12 @@ is a tagged Working Draft.
 
 ## Unreleased
 
+### Changed
+
+- Refreshed the NIST AI RMF readiness package as an evidenced `HOLD` for
+  Issue #128: re-verified public PDF identity, restated blocker
+  `NIST-AI-RMF-READINESS-B001`, and kept mapping artifact counts at zero.
+
 ### Added
 
 - Deepened the Draft governance template pack with one filled fictional
