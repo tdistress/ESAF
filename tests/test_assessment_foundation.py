@@ -570,6 +570,57 @@ class AssessmentEvidenceCatalogStarterTests(unittest.TestCase):
                 self.assertIn(attribute, catalog)
         self.assertNotRegex(catalog, r"(?m)^\| `[^`]+` \|.*shall ")
 
+    def test_evidence_catalog_deepen_notes_and_filled_examples_exist(self) -> None:
+        catalog = (self.catalog_root / "ESAF-1500-evidence-catalog.md").read_text(
+            encoding="utf-8"
+        )
+        readme = (self.catalog_root / "README.md").read_text(encoding="utf-8")
+        example_root = self.catalog_root / "examples"
+        filled = {
+            "policy": example_root / "catalog-policy.example.json",
+            "interview": example_root / "catalog-interview.example.json",
+            "technical_test": example_root / "catalog-technical-test.example.json",
+        }
+        self.assertRegex(catalog, r"(?im)Draft deepen")
+        self.assertRegex(readme, r"(?im)Draft deepen")
+        self.assertIn("#125", readme)
+        self.assertIn("Good-enough", catalog)
+        self.assertIn("Common failure", catalog)
+        for evidence_type in self.evidence_types:
+            with self.subTest(notes_for=evidence_type):
+                self.assertRegex(
+                    catalog,
+                    rf"(?m)^### `{re.escape(evidence_type)}`$",
+                )
+                self.assertIn(f"`{evidence_type}`", catalog)
+        schema = json.loads(
+            (SCHEMA_ROOT / "evidence-record.schema.json").read_text(encoding="utf-8")
+        )
+        validator = Draft202012Validator(
+            schema, format_checker=ASSESSMENT_FORMAT_CHECKER
+        )
+        notice = (
+            "Fictional non-authoritative example; no organization, ESAF control, "
+            "profile, or external framework has been assessed."
+        )
+        for evidence_type, path in filled.items():
+            with self.subTest(example=path.name):
+                self.assertTrue(path.is_file(), msg=f"missing {path}")
+                self.assertIn(path.name, catalog)
+                self.assertIn(path.name, readme)
+                document = json.loads(path.read_text(encoding="utf-8"))
+                errors = list(validator.iter_errors(document))
+                self.assertEqual(
+                    errors,
+                    [],
+                    msg="; ".join(error.message for error in errors),
+                )
+                self.assertEqual(document.get("evidence_type"), evidence_type)
+                self.assertEqual(document.get("example_notice"), notice)
+                self.assertTrue(
+                    str(document.get("evidence_id", "")).startswith("EVD-CAT-")
+                )
+
 
 class AssessmentAuditChecklistStarterTests(unittest.TestCase):
     checklist_root = ROOT / "assessment" / "audit-checklist"

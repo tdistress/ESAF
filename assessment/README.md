@@ -18,9 +18,10 @@ contracts, fictional examples, and Draft operator toolkit starters.
   vignette with a filled worksheet trio bound to ESAF-1500 and ESAF-1100
   assessment procedures. Completing worksheets does not establish
   certification, compliance, equivalence, endorsement, or assurance.
-- [Draft evidence catalog starter](evidence-catalog/README.md) indexes ESAF-1500
-  evidence types, shared contract fields, and quality attributes for reuse by
-  operators, profiles, and crosswalks.
+- [Draft evidence catalog deepen](evidence-catalog/README.md) indexes ESAF-1500
+  evidence types, shared contract fields, quality attributes, per-type
+  good-enough versus common-failure notes, and a small fictional filled
+  evidence set for reuse by operators, profiles, and crosswalks.
 - [Draft audit checklist starter](audit-checklist/README.md) supports control or
   capability sampling against the shared ESAF-1500 assessment-result contract.
 
