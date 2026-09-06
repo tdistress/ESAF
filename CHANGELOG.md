@@ -11,6 +11,10 @@ is a tagged Working Draft.
 
 ### Added
 
+- Deepened the Draft ESAF-1500 assessment workbook with a fictional GOV-100
+  engagement vignette and a filled worksheet trio under
+  `assessment/workbook/`.
+
 - Added non-normative worksheet and worked-example packs for ESAF-1300,
   ESAF-1400, and ESAF-1700 under
   [`examples/esaf-1300/`](examples/esaf-1300/),

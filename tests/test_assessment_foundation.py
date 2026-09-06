@@ -475,6 +475,64 @@ class AssessmentWorkbookStarterTests(unittest.TestCase):
                 if name != "evidence-record":
                     self.assertEqual(document.get("status"), "draft")
 
+    def test_workbook_deepen_vignette_and_filled_trio_exist(self) -> None:
+        vignette = self.workbook_root / "engagement-vignette.example.md"
+        example_root = self.workbook_root / "examples"
+        filled = {
+            "evidence-record": example_root
+            / "engagement-evidence-record.example.json",
+            "assessment-result": example_root
+            / "engagement-assessment-result.example.json",
+            "maturity-assessment": example_root
+            / "engagement-maturity-assessment.example.json",
+        }
+        text = vignette.read_text(encoding="utf-8")
+        self.assertTrue(vignette.is_file())
+        self.assertRegex(text, r"(?im)\bDraft\b")
+        self.assertRegex(text, r"(?im)certification")
+        self.assertRegex(text, r"(?im)compliance")
+        self.assertIn("GOV-100", text)
+        self.assertIn("EVD-ENG-GOV100-CHARTER", text)
+        self.assertIn("ASR-ENG-GOV100", text)
+        self.assertIn("MAT-ENG-GOV100", text)
+        readme = (self.workbook_root / "README.md").read_text(encoding="utf-8")
+        self.assertIn("engagement-vignette.example.md", readme)
+        for name, path in filled.items():
+            with self.subTest(name=name):
+                self.assertTrue(path.is_file(), msg=f"missing {path}")
+                self.assertIn(path.name, text)
+                self.assertIn(path.name, readme)
+                document = json.loads(path.read_text(encoding="utf-8"))
+                validator = Draft202012Validator(
+                    self.schemas[name],
+                    format_checker=ASSESSMENT_FORMAT_CHECKER,
+                )
+                errors = list(validator.iter_errors(document))
+                self.assertEqual(
+                    errors,
+                    [],
+                    msg="; ".join(error.message for error in errors),
+                )
+                if name == "evidence-record":
+                    self.assertEqual(
+                        document.get("evidence_id"),
+                        "EVD-ENG-GOV100-CHARTER",
+                    )
+                elif name == "assessment-result":
+                    self.assertEqual(document.get("result_id"), "ASR-ENG-GOV100")
+                    self.assertEqual(document.get("status"), "draft")
+                    self.assertIn(
+                        "EVD-ENG-GOV100-CHARTER",
+                        document.get("evidence_refs", []),
+                    )
+                else:
+                    self.assertEqual(document.get("maturity_id"), "MAT-ENG-GOV100")
+                    self.assertEqual(document.get("status"), "draft")
+                    self.assertIn(
+                        "ASR-ENG-GOV100",
+                        document.get("basis_refs", []),
+                    )
+
 
 class AssessmentEvidenceCatalogStarterTests(unittest.TestCase):
     catalog_root = ROOT / "assessment" / "evidence-catalog"
