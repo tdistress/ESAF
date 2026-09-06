@@ -52,7 +52,9 @@ equivalence, endorsement, assurance, or production readiness.
 | Assessment result | `ASR-ENG-GOV100` | `draft` | [engagement-assessment-result.example.json](examples/engagement-assessment-result.example.json) |
 | Maturity assessment | `MAT-ENG-GOV100` | `draft` | [engagement-maturity-assessment.example.json](examples/engagement-maturity-assessment.example.json) |
 
-Blank reusable stubs remain under [`worksheets/`](worksheets/).
+Blank reusable stubs remain under
+[`worksheets/evidence-record.worksheet.json`](worksheets/evidence-record.worksheet.json)
+and siblings.
 
 ## Reader checks
 

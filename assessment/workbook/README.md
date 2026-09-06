@@ -39,8 +39,10 @@ procedures. It does not replace [ESAF-1500](../ESAF-1500.md).
 
 See [engagement-vignette.example.md](engagement-vignette.example.md) for one
 fictional GOV-100 walkthrough with a filled worksheet trio under
-[`examples/`](examples/). Blank stubs under [`worksheets/`](worksheets/) remain
-the reusable starting point.
+[`examples/engagement-evidence-record.example.json`](examples/engagement-evidence-record.example.json)
+and siblings. Blank stubs such as
+[`worksheets/evidence-record.worksheet.json`](worksheets/evidence-record.worksheet.json)
+remain the reusable starting point.
 
 ## Nonclaims
 
