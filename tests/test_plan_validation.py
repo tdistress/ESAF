@@ -47,6 +47,7 @@ EXPECTED_PUBLICATION_CATALOG = (
     "nist-ai-rmf-mapping-go-no-go",
     "v09-rc1-release-gates",
     "v010-draft-release-gates",
+    "v011-draft-release-gates",
 )
 EXPECTED_COMMAND_ARGV = {
     "preflight": ("git", "diff", "--check", "{base}", "{candidate}"),
@@ -70,6 +71,7 @@ EXPECTED_COMMAND_ARGV = {
     "nist-ai-rmf-mapping-go-no-go": ("python", "tools/render_nist_ai_rmf_mapping_go_no_go.py", "--check"),
     "v09-rc1-release-gates": ("python", "tools/v09_rc1_release_gates.py", "--check", "--baseline-ref", "{base}"),
     "v010-draft-release-gates": ("python", "tools/v010_draft_release_gates.py", "--check", "--baseline-ref", "{base}"),
+    "v011-draft-release-gates": ("python", "tools/v011_draft_release_gates.py", "--check", "--baseline-ref", "{base}"),
 }
 FORBIDDEN_GENERIC_COMMAND_IDS = (
     "qualified-review",
