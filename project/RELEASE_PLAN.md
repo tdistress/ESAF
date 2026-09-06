@@ -10,6 +10,35 @@ Each release shall complete the following gates:
 6. Changelog and version metadata updated.
 7. Release approved under `GOVERNANCE.md`.
 
+## 0.11-draft publication
+
+Publication gates are Ready except post-merge, which remains Open. Working Draft
+surfaces identify `0.11-draft` for the exact metadata-only closure candidate.
+Publication remains conditional on the remote annotated `v0.11-draft` tag
+resolving to the exact validated merged commit. The tag has not been created.
+Issue [#129](https://github.com/tdistress/ESAF/issues/129) tracks the
+publication gates.
+
+Publication is limited to the repository Working Draft. All controls,
+architecture patterns, the pilot profile, mapping sets, and mapping records
+remain Draft; their lifecycle records remain unchanged. Prerequisite
+dispositions remain Phase 2 timing `DEFER`, ESAF-1300/1400/1700 Working
+Drafts, NIST AI RMF `HOLD`, and the Phase 6 Draft toolkit deepen packs. Issues 55
+and 60 remain open. This candidate does not establish certification,
+compliance, equivalence, endorsement, assurance, or artifact lifecycle
+approval.
+
+| Gate | Current state | Final evidence |
+|---|---|---|
+| Scope and milestone approval | Ready | https://github.com/tdistress/ESAF/pull/136 |
+| Normative and technical review | Ready | https://github.com/tdistress/ESAF/blob/6119baee091f019cb4a9067a74c418174f2b88ae/docs/superpowers/reviews/2026-09-06-v011-draft-technical-review.md |
+| Editorial and terminology review | Ready | https://github.com/tdistress/ESAF/blob/6119baee091f019cb4a9067a74c418174f2b88ae/docs/superpowers/reviews/2026-09-06-v011-draft-editorial-review.md |
+| Cross-reference and rendering review | Ready | https://github.com/tdistress/ESAF/pull/136 |
+| Standards mapping review | Ready | https://github.com/tdistress/ESAF/pull/136 |
+| Release metadata synchronization | Ready | https://github.com/tdistress/ESAF/pull/136 |
+| Governance approval | Ready | https://github.com/tdistress/ESAF/blob/6119baee091f019cb4a9067a74c418174f2b88ae/docs/superpowers/reviews/2026-09-06-v011-draft-governance-review.md |
+| Post-merge validation | Open | pending merge to `main` |
+
 ## 0.10-draft publication
 
 Publication gates are Closed. The `v0.10-draft` Working Draft was published
