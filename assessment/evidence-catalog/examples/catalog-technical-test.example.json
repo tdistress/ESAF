@@ -1,0 +1,92 @@
+{
+  "$schema": "../schema/evidence-record.schema.json",
+  "schema_version": "0.1.0",
+  "evidence_id": "EVD-CAT-TECHTEST-GATEWAY-ALLOWLIST",
+  "title": "Fictional technical test of model-gateway allowlist enforcement",
+  "description": "Fictional Test output used to illustrate a catalog `technical_test` evidence record for a sampled gateway safeguard.",
+  "evidence_type": "technical_test",
+  "source": {
+    "identity": "Fictional Contour control-test harness",
+    "locator": "example://contour/tests/gateway-allowlist/run-2026-08-20"
+  },
+  "custodian": {
+    "name": "Sam Okonkwo",
+    "role": "Control tester",
+    "organization": "Fictional Contour Assurance LLP"
+  },
+  "collected_at": "2026-08-20T15:45:00Z",
+  "collection_method": "Executed the fictional Test script and retained stdout, expected results, and environment metadata.",
+  "scope": {
+    "description": "Fictional production-like model gateway allowlist enforcement for blocked model identifiers."
+  },
+  "period": {
+    "point_in_time": "2026-08-20T15:30:00Z"
+  },
+  "population": {
+    "description": "Five fictional blocked model identifiers and three allowed identifiers configured on the gateway.",
+    "sample": "All five blocked identifiers and one allowed control identifier.",
+    "selection_rationale": "The catalog example needs a small reproducible Test sample."
+  },
+  "quality": {
+    "relevance": {
+      "rating": "adequate",
+      "rationale": "The Test exercises the fictional allowlist safeguard under examination."
+    },
+    "reliability": {
+      "rating": "adequate",
+      "rationale": "Method, expected results, and observed outcomes are retained with the run metadata."
+    },
+    "completeness": {
+      "rating": "adequate",
+      "rationale": "All sampled identifiers and the control case are present in the retained output."
+    },
+    "timeliness": {
+      "rating": "adequate",
+      "rationale": "The Test ran during the fictional assessment fieldwork window."
+    },
+    "attribution": {
+      "rating": "adequate",
+      "rationale": "Tester identity, harness identity, and environment label are recorded."
+    },
+    "integrity": {
+      "rating": "limited",
+      "rationale": "The fictional digest illustrates verification without asserting real assurance."
+    },
+    "traceability": {
+      "rating": "adequate",
+      "rationale": "The example links the Test to a fictional procedure and assessment result."
+    },
+    "sufficiency": "limited",
+    "evaluated_by": {
+      "name": "Avery Chen",
+      "role": "Independent assessor",
+      "organization": "Fictional Contour Assurance LLP"
+    },
+    "evaluated_at": "2026-08-20T16:15:00Z",
+    "sufficiency_rationale": "One harness run is limited evidence and needs configuration and change-record corroboration in a real engagement."
+  },
+  "integrity": {
+    "digest_algorithm": "sha-256",
+    "digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+  },
+  "limitations": [
+    "This fictional catalog example does not demonstrate an actual technical testing program.",
+    "The harness environment is labeled production-like and is not claimed to be the live production plane."
+  ],
+  "retention": {
+    "authority": "Fictional Contour assessment retention schedule",
+    "end_condition": "Retain until the fictional assessment archive period ends."
+  },
+  "traceability": {
+    "requirement_refs": [
+      "SYS-220"
+    ],
+    "procedure_refs": [
+      "SYS-220-T1"
+    ],
+    "result_refs": [
+      "ASR-CAT-TECHTEST-DEMO"
+    ]
+  },
+  "example_notice": "Fictional non-authoritative example; no organization, ESAF control, profile, or external framework has been assessed."
+}
