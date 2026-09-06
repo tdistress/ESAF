@@ -11,6 +11,8 @@ is a tagged Working Draft.
 
 ### Changed
 
+- Added the v0.11-draft publication evidence-candidate gates, readiness
+  record, and Issue #129 validator wiring without advancing VERSION.md.
 - Refreshed the NIST AI RMF readiness package as an evidenced `HOLD` for
   Issue #128: re-verified public PDF identity, restated blocker
   `NIST-AI-RMF-READINESS-B001`, and kept mapping artifact counts at zero.

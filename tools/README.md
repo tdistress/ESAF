@@ -222,6 +222,25 @@ contain its recorded disposition marker. `--baseline-ref` is ignored for
 `project/RELEASE_PLAN.md`, and the readiness record). The `published`
 transition still requires previous-phase ancestry and identity preservation,
 but may update companion tests and validators after the annotated tag exists.
+Validate the current v0.10-draft readiness record without changing files:
+
+```shell
+python tools/v010_draft_release_gates.py --check
+```
+
+Validate the current v0.11-draft readiness record without changing files:
+
+```shell
+python tools/v011_draft_release_gates.py --check
+```
+
+For `closure_candidate` and `published` transitions, also pass the previous
+phase baseline:
+
+```shell
+python tools/v011_draft_release_gates.py --check --baseline-ref <baseline-sha>
+```
+
 `tools/release_gates.py` and `tools/v05_beta_release_gates.py` remain frozen
 historical validators.
 
