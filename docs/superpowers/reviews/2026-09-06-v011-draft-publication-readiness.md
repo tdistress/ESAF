@@ -1,13 +1,14 @@
 ---
 release: 0.11-draft
-phase: evidence_candidate
+phase: closure_candidate
 tag: v0.11-draft
 issue: 129
 repository_scope: complete_git_tracked_repository
 publication:
   date: null
   condition: remote_annotated_tag_matches_exact_validated_commit
-  evidence: []
+  evidence:
+    - https://github.com/tdistress/ESAF/issues/129
   tag_object: null
   tagged_commit: null
   issue_evidence_url: null
@@ -43,15 +44,15 @@ scope:
   pci_dss_disposition: HOLD
   nist_ai_rmf_disposition: HOLD
 gates:
-  scope: {state: open, evidence: []}
-  technical: {state: open, evidence: []}
-  editorial: {state: open, evidence: []}
-  terminology: {state: open, evidence: []}
-  cross_reference_rendering: {state: open, evidence: []}
-  standards_mapping: {state: open, evidence: []}
-  profile_scope: {state: open, evidence: []}
-  release_metadata: {state: open, evidence: []}
-  governance: {state: open, evidence: []}
+  scope: {state: ready, evidence: [https://github.com/tdistress/ESAF/pull/136]}
+  technical: {state: ready, evidence: [https://github.com/tdistress/ESAF/blob/6119baee091f019cb4a9067a74c418174f2b88ae/docs/superpowers/reviews/2026-09-06-v011-draft-technical-review.md]}
+  editorial: {state: ready, evidence: [https://github.com/tdistress/ESAF/blob/6119baee091f019cb4a9067a74c418174f2b88ae/docs/superpowers/reviews/2026-09-06-v011-draft-editorial-review.md]}
+  terminology: {state: ready, evidence: [https://github.com/tdistress/ESAF/blob/6119baee091f019cb4a9067a74c418174f2b88ae/docs/superpowers/reviews/2026-09-06-v011-draft-editorial-review.md]}
+  cross_reference_rendering: {state: ready, evidence: [https://github.com/tdistress/ESAF/pull/136]}
+  standards_mapping: {state: ready, evidence: [https://github.com/tdistress/ESAF/pull/136]}
+  profile_scope: {state: ready, evidence: [https://github.com/tdistress/ESAF/pull/136]}
+  release_metadata: {state: ready, evidence: [https://github.com/tdistress/ESAF/pull/136]}
+  governance: {state: ready, evidence: [https://github.com/tdistress/ESAF/blob/6119baee091f019cb4a9067a74c418174f2b88ae/docs/superpowers/reviews/2026-09-06-v011-draft-governance-review.md]}
   post_merge: {state: open, evidence: []}
 ---
 
@@ -59,7 +60,7 @@ gates:
 
 ## Scope
 
-This evidence-candidate record covers the complete Git-tracked repository. Its
+This closure-candidate record covers the complete Git-tracked repository. Its
 derived inventory contains 91 controls in 16 families, 7 architecture patterns,
 3 mapping sets, and 404 mapping provisions. The mappings contain 81
 relationship legs and 325 negative dispositions.
@@ -88,20 +89,19 @@ The Phase 6 Draft deepen packs required for `v0.11-draft` are present at:
 - `assessment/audit-checklist/README.md`
 - `templates/README.md`
 
-Issues 55 and 60 may remain open; this publication does not require their
+Issues 55 and 60 may remain open; this candidate does not require their
 closure.
 
 ## Lifecycle boundary
 
-The currently published ESAF version remains `0.10-draft` until a later
-closure-candidate and annotated-tag sequence advances Working Draft surfaces to
-`0.11-draft`. This evidence-candidate record does not create tag `v0.11-draft`,
-does not change `VERSION.md`, and does not advance any Draft artifact lifecycle
-state.
+The current ESAF version is `0.11-draft`. The non-post-merge v0.11 gates are
+`ready`, the post-merge gate is `open`, and the `v0.11-draft` tag has not been
+created. The `0.11-draft` release status is Working Draft. This closure
+candidate does not approve publication.
 
 ## Nonclaims
 
-This evidence-candidate Working Draft package does not claim certification,
+This closure-candidate Working Draft package does not claim certification,
 compliance, equivalence, endorsement, assurance, or production readiness. It
 does not close Issue 55 or Issue 60, and it does not clear the PCI DSS or
 HITRUST blockers. While NIST AI RMF readiness remains `HOLD`, this package
@@ -112,6 +112,5 @@ does not authorize NIST AI RMF mapping authorship.
 No annotated tag or post-merge publication evidence exists yet for
 `v0.11-draft`. Issue [#129](https://github.com/tdistress/ESAF/issues/129)
 tracks the publication gates. Exact-SHA technical, editorial, and governance
-reviews for this evidence candidate will be recorded under
-`docs/superpowers/reviews/` with the `2026-09-06-v011-draft-` prefix after the
-evidence-candidate SHA is known.
+reviews for the evidence candidate are recorded under
+`docs/superpowers/reviews/` with the `2026-09-06-v011-draft-` prefix.
