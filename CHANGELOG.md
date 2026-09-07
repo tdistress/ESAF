@@ -5,19 +5,25 @@ All notable changes to ESAF are documented in this file.
 Versions 0.2-alpha and 0.3-alpha remain unreleased working-draft stages.
 Version 0.4-alpha is a tagged Working Draft. Version 0.5-beta is a tagged
 Working Draft. Version 0.9-rc1 is a tagged Working Draft. Version 0.10-draft
-is a tagged Working Draft. Version 0.11-draft is a tagged Working Draft.
+is a tagged Working Draft. Version 0.11-draft is a tagged Working Draft. Version 0.12-draft is a tagged
+Working Draft.
 
-## 0.12-draft - Unreleased
+## 0.12-draft - 2026-09-07
 
 ### Changed
 
-- Advanced Working Draft status surfaces to `0.12-draft` for the exact
-  metadata-only closure candidate. Publication remains conditional on the
-  remote annotated `v0.12-draft` tag resolving to the exact validated merged
-  commit. The tag has not been created, and the post-merge gate remains open.
+- Published the `v0.12-draft` Working Draft through the annotated `v0.12-draft`
+  tag. Prerequisite dispositions remain Phase 2 timing `DEFER`,
+  ESAF-1300/1400/1700 Working Drafts, NIST AI RMF `HOLD`, ISO/IEC 42001
+  `HOLD`, and the ESAF-1000/1100 Working Draft deepen packs. Issues 55 and 60
+  remain open.
+- Clarified that publication does not establish certification, compliance,
+  equivalence, endorsement, assurance, legal sufficiency, implementation
+  assessment, production readiness, or replacement of qualified professional
+  judgment.
 - Added the v0.12-draft publication evidence-candidate gates, readiness
   record, and Issue #146 validator wiring without advancing VERSION.md before
-  this closure candidate.
+  the closure candidate.
 - Recorded ISO/IEC 42001:2023 public-source readiness as an evidenced `HOLD`
   for Issue #143: bibliographic pin without PDF bytes, rights HOLD, no
   inventory, and mapping artifact counts at zero.
@@ -26,7 +32,9 @@ is a tagged Working Draft. Version 0.11-draft is a tagged Working Draft.
 - Deepened the ESAF-1100 Working Draft to `0.3.1` with ESAF-1500 vocabulary
   alignment and no new controls or identifiers.
 - Recorded independent technical, editorial, and governance reviews of the
-  exact evidence candidate under the `2026-09-07-v012-draft-` review prefix.
+  exact evidence candidate and the immutable published readiness record,
+  including the annotated tag object, tagged commit, UTC publication date,
+  and issue 146 evidence locators.
 - Carried forward the seven Draft architecture patterns in the current
   Working Draft: ARC-P100, Enterprise AI platform and gateway; ARC-P110,
   Enterprise copilot; ARC-P120, Retrieval-augmented generation; ARC-P130,

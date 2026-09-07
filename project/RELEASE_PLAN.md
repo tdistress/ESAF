@@ -12,32 +12,33 @@ Each release shall complete the following gates:
 
 ## 0.12-draft publication
 
-Publication gates are Ready except post-merge, which remains Open. Working Draft
-surfaces identify `0.12-draft` for the exact metadata-only closure candidate.
-Publication remains conditional on the remote annotated `v0.12-draft` tag
-resolving to the exact validated merged commit. The tag has not been created.
-Issue [#146](https://github.com/tdistress/ESAF/issues/146) tracks the
-publication gates.
+Publication gates are Closed. The `v0.12-draft` Working Draft was published
+through annotated tag `v0.12-draft` on 2026-09-07. The tag object is
+`3c11c7a0261314ce9519a4e3f4cad9357a3fcbe6` and its peeled commit is
+`6546f2cacbbfaa89c7828991768e623b42a8081d`. Issue
+[#146](https://github.com/tdistress/ESAF/issues/146) tracks the publication
+gates. Post-merge validation evidence is
+https://github.com/tdistress/ESAF/actions/runs/34094275390.
 
 Publication is limited to the repository Working Draft. All controls,
 architecture patterns, the pilot profile, mapping sets, and mapping records
 remain Draft; their lifecycle records remain unchanged. Prerequisite
 dispositions remain Phase 2 timing `DEFER`, ESAF-1300/1400/1700 Working
 Drafts, NIST AI RMF `HOLD`, ISO/IEC 42001 `HOLD`, and the ESAF-1000/1100
-Working Draft deepen packs. Issues 55 and 60 remain open. This candidate does
+Working Draft deepen packs. Issues 55 and 60 remain open. Publication does
 not establish certification, compliance, equivalence, endorsement, assurance,
 or artifact lifecycle approval.
 
 | Gate | Current state | Final evidence |
 |---|---|---|
-| Scope and milestone approval | Ready | https://github.com/tdistress/ESAF/pull/152 |
-| Normative and technical review | Ready | https://github.com/tdistress/ESAF/blob/669c7b33bc91f959696f812f0cd1aa057dfc1b59/docs/superpowers/reviews/2026-09-07-v012-draft-technical-review.md |
-| Editorial and terminology review | Ready | https://github.com/tdistress/ESAF/blob/669c7b33bc91f959696f812f0cd1aa057dfc1b59/docs/superpowers/reviews/2026-09-07-v012-draft-editorial-review.md |
-| Cross-reference and rendering review | Ready | https://github.com/tdistress/ESAF/pull/152 |
-| Standards mapping review | Ready | https://github.com/tdistress/ESAF/pull/152 |
-| Release metadata synchronization | Ready | https://github.com/tdistress/ESAF/pull/152 |
-| Governance approval | Ready | https://github.com/tdistress/ESAF/blob/669c7b33bc91f959696f812f0cd1aa057dfc1b59/docs/superpowers/reviews/2026-09-07-v012-draft-governance-review.md |
-| Post-merge validation | Open | pending merge to `main` |
+| Scope and milestone approval | Closed | https://github.com/tdistress/ESAF/issues/146 |
+| Normative and technical review | Closed | https://github.com/tdistress/ESAF/issues/146 |
+| Editorial and terminology review | Closed | https://github.com/tdistress/ESAF/issues/146 |
+| Cross-reference and rendering review | Closed | https://github.com/tdistress/ESAF/issues/146 |
+| Standards mapping review | Closed | https://github.com/tdistress/ESAF/issues/146 |
+| Release metadata synchronization | Closed | https://github.com/tdistress/ESAF/issues/146 |
+| Governance approval | Closed | https://github.com/tdistress/ESAF/issues/146 |
+| Post-merge validation | Closed | https://github.com/tdistress/ESAF/actions/runs/34094275390 |
 
 ## 0.11-draft publication
 
