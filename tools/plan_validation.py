@@ -173,6 +173,7 @@ COMMAND_CATALOG = (
     ValidationCommand("v09-rc1-release-gates", ("python", "tools/v09_rc1_release_gates.py", "--check", "--baseline-ref", "{base}"), "publication", "candidate freeze"),
     ValidationCommand("v010-draft-release-gates", ("python", "tools/v010_draft_release_gates.py", "--check", "--baseline-ref", "{base}"), "publication", "candidate freeze"),
     ValidationCommand("v011-draft-release-gates", ("python", "tools/v011_draft_release_gates.py", "--check", "--baseline-ref", "{base}"), "publication", "candidate freeze"),
+    ValidationCommand("v012-draft-release-gates", ("python", "tools/v012_draft_release_gates.py", "--check", "--baseline-ref", "{base}"), "publication", "candidate freeze"),
 )
 
 ROUTING_RULES = (
@@ -198,6 +199,7 @@ PUBLICATION_COMMAND_IDS = (
     "iso-iec-42001-mapping-go-no-go", "nist-ai-rmf-mapping-go-no-go",
     "pci-dss-mapping-go-no-go",
     "v09-rc1-release-gates", "v010-draft-release-gates", "v011-draft-release-gates",
+    "v012-draft-release-gates",
 )
 PROOF_COMMAND_IDS = ("qualified-review-equivalence",)
 REVIEWED_POLICY = ValidationPolicy(COMMAND_CATALOG, ROUTING_RULES)
