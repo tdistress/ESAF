@@ -6,6 +6,7 @@ Priority mappings include NIST AI RMF, ISO/IEC 42001, PCI DSS, HITRUST CSF, UK C
 
 Current readiness packages:
 
+- [ISO/IEC 42001](iso-iec-42001.md) — readiness `HOLD` (protected source and rights)
 - [NIST AI RMF](nist-ai-rmf.md) — readiness `HOLD` (mapper/reviewer naming)
 - [PCI DSS](pci-dss.md) — readiness `HOLD` (protected source and rights)
 
