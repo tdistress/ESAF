@@ -2,9 +2,11 @@
 
 ESAF-1200 defines vendor-neutral architecture methods and reusable patterns for implementing the requirements of ESAF-1000 and the controls of ESAF-1100.
 
+The normative method document [`ESAF-1200.md`](ESAF-1200.md) is Version **0.4.1**, Status **Working Draft**.
+
 ## Foundation
 
-- [`ESAF-1200.md`](ESAF-1200.md) defines the normative architecture method.
+- [`ESAF-1200.md`](ESAF-1200.md) defines the normative architecture method (Working Draft 0.4.1).
 - [`PRINCIPLES.md`](PRINCIPLES.md) defines durable architecture principles.
 - [`TRUST_ZONES.md`](TRUST_ZONES.md) defines logical trust zones and boundary-crossing requirements.
 - [`PATTERN_SELECTION.md`](PATTERN_SELECTION.md) defines pattern selection and tailoring.
