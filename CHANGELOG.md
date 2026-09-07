@@ -8,6 +8,35 @@ Working Draft. Version 0.9-rc1 is a tagged Working Draft. Version 0.10-draft
 is a tagged Working Draft. Version 0.11-draft is a tagged Working Draft. Version 0.12-draft is a tagged
 Working Draft.
 
+## 0.13-draft - Unreleased
+
+### Changed
+
+- Advanced Working Draft status surfaces to `0.13-draft` for the exact
+  metadata-only closure candidate. Publication remains conditional on the
+  remote annotated `v0.13-draft` tag resolving to the exact validated merged
+  commit. The tag has not been created, and the post-merge gate remains open.
+- Added the v0.13-draft publication evidence-candidate gates, readiness
+  record, and Issue #161 validator wiring without advancing VERSION.md before
+  this closure candidate.
+- Recorded NIST CSF 2.0 public-source readiness as an evidenced `HOLD` for
+  Issue #159: pinned NIST.CSWP.29 identity, rights PASS, 106-subcategory
+  inventory, and mapping artifact counts at zero.
+- Deepened the ESAF-1200 Working Draft to `0.4.1` with companion and foundation
+  cross-links while preserving the seven Draft architecture patterns.
+- Recorded independent technical, editorial, and governance reviews of the
+  exact evidence candidate under the `2026-09-07-v013-draft-` review prefix.
+- Carried forward the seven Draft architecture patterns in the current
+  Working Draft: ARC-P100, Enterprise AI platform and gateway; ARC-P110,
+  Enterprise copilot; ARC-P120, Retrieval-augmented generation; ARC-P130,
+  Agentic and multi-agent AI; ARC-P140, Private model deployment; ARC-P150,
+  AI integration services; and ARC-P160, AI observability.
+- Carried forward the Draft Cyber Essentials v3.3 mapping snapshot.
+- Carried forward the Draft Cyber Essentials Plus v3.2 `esaf_to_external`
+  mapping snapshot.
+- Carried forward the Draft Cyber Essentials Plus v3.2 `external_to_esaf`
+  mapping snapshot.
+
 ## 0.12-draft - 2026-09-07
 
 ### Changed
