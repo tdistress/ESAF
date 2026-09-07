@@ -146,6 +146,7 @@ and require the generated review to match without rewriting it:
 
 ```shell
 python tools/render_nist_ai_rmf_mapping_go_no_go.py --check
+python tools/render_nist_csf_mapping_go_no_go.py --check
 ```
 
 The current decision is `HOLD` because named mapper and independent reviewers

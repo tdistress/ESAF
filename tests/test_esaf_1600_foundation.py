@@ -36,6 +36,7 @@ README_LINK_TARGETS = {
     "../tools/README.md",
     "iso-iec-42001.md",
     "nist-ai-rmf.md",
+    "nist-csf.md",
     "pci-dss.md",
 }
 ESAF_1600_DECISIONS = (
@@ -155,6 +156,26 @@ class Esaf1600FoundationTests(unittest.TestCase):
             r"(?im)^## Approved mappings$|"
             r"^\| External provision \| ESAF control \|$|"
             r"NIST AI RMF .+ maps directly",
+        )
+
+    def assert_nist_csf_hold_landing_page(self, text: str) -> None:
+        normalized = normalize_markdown_contract(text)
+        statuses = re.findall(
+            r"(?m)^\*\*Status:\*\*\s*(\S.*?)\s*$",
+            normalized,
+        )
+        self.assertEqual(statuses, ["Readiness HOLD"])
+        self.assertNotRegex(
+            normalized,
+            r"(?im)^\*\*Status:\*\*\s*(?:Approved|Reviewed|Published)\s*$",
+        )
+        self.assertIn("[ESAF-1600](ESAF-1600.md)", normalized)
+        self.assertIn("NIST CSF mapping artifacts: `0`", normalized)
+        self.assertNotRegex(
+            normalized,
+            r"(?im)^## Approved mappings$|"
+            r"^\| External provision \| ESAF control \|$|"
+            r"NIST CSF .+ maps directly",
         )
 
     def test_required_foundation_files_exist(self) -> None:
@@ -382,6 +403,8 @@ class Esaf1600FoundationTests(unittest.TestCase):
         self.assert_pci_hold_landing_page(pci)
         nist = (ROOT / "crosswalks/nist-ai-rmf.md").read_text(encoding="utf-8")
         self.assert_nist_ai_rmf_hold_landing_page(nist)
+        nist_csf = (ROOT / "crosswalks/nist-csf.md").read_text(encoding="utf-8")
+        self.assert_nist_csf_hold_landing_page(nist_csf)
         hitrust = (ROOT / "crosswalks/hitrust-csf.md").read_text(encoding="utf-8")
         self.assert_planned_landing_page("hitrust-csf.md", hitrust)
 
@@ -520,6 +543,7 @@ class Esaf1600FoundationTests(unittest.TestCase):
             "tools/validate_profiles.py",
             "tools/render_pci_dss_mapping_go_no_go.py",
             "tools/render_nist_ai_rmf_mapping_go_no_go.py",
+            "tools/render_nist_csf_mapping_go_no_go.py",
             "tools/render_iso_iec_42001_mapping_go_no_go.py",
             "requirements-dev.txt",
         ]
@@ -579,6 +603,12 @@ class Esaf1600FoundationTests(unittest.TestCase):
         self.assertEqual(nist_readiness, {
             "name": "Validate NIST AI RMF readiness review",
             "run": "python tools/render_nist_ai_rmf_mapping_go_no_go.py --check",
+        })
+
+        nist_csf_readiness = unique_step("Validate NIST CSF readiness review")
+        self.assertEqual(nist_csf_readiness, {
+            "name": "Validate NIST CSF readiness review",
+            "run": "python tools/render_nist_csf_mapping_go_no_go.py --check",
         })
 
         iso_readiness = unique_step("Validate ISO/IEC 42001 readiness review")
