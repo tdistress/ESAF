@@ -72,6 +72,8 @@ These instructions preserve durable project conventions for future Codex develop
 - Use subagents whenever they add useful parallelism or independent review. Codex does not need separate approval to dispatch them for in-scope work.
 - Do not extend this authorization to other repositories, accounts, publishing destinations, permissions, credentials, or materially broader project scope.
 - When the owner asks to pause, leave the repository in a clean, recoverable state and stop new milestone work.
+- Never add commit or pull-request attribution trailers or notations for Cursor, Cursor Agent, Cursorbot, or similar tooling. Forbidden examples include `Co-authored-by:` lines for Cursor or the session user, `Made-with: Cursor` / `Made with Cursor`, and any “Submitted by Cursorbot” / `cursor[bot]` submission notes in commit messages, PR titles, PR bodies, or review comments.
+- Before the first commit in a Cloud Agent session, run `bash scripts/cloud-agent-disable-attribution.sh` when that script is present so the managed co-author hook stays neutralized for the session.
 
 ## Durable implementation lessons
 
