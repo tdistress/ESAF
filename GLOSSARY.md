@@ -1,21 +1,21 @@
 # ESAF Glossary
 
-**Status:** Working Draft  
-**Version:** 0.1-alpha  
+**Status:** Working Draft
+**Version:** 0.1.1
 
 ---
 
 ## AI Capability
 
-A business function that uses Artificial Intelligence to produce an organizational outcome.
+A business or operational function that uses AI to produce or materially influence an outcome.
 
 ## AI System
 
-The complete collection of software, models, data, infrastructure, identities, workflows, integrations, and governance required to deliver an AI capability.
+The complete collection of models, data, software, infrastructure, identities, integrations, workflows, people, processes, and governance required to deliver an AI capability.
 
 ## AI Asset
 
-Any component that supports an AI System, including models, datasets, prompts, vector stores, agents, APIs, plugins, tools, and knowledge bases.
+An identifiable component supporting an AI system, including a model, dataset, prompt, embedding, vector store, agent, tool, API, plugin, knowledge source, or runtime environment.
 
 ## AI Bill of Materials (AIBOM)
 
