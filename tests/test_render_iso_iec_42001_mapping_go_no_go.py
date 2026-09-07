@@ -70,7 +70,7 @@ QUESTION = (
     "recorded independently, without implying ISO/IEC 42001 compliance, "
     "assessment, equivalence, certification, authorization, or endorsement?"
 )
-RIGHTS_COMMIT = "a7a5c890f41fdda6c846a79ed57020314ee979e8"
+RIGHTS_COMMIT = "8245a0513979a8e4d4dc28a4f22daa028710bee1"
 
 
 class IsoIec42001MappingGoNoGoTests(unittest.TestCase):
