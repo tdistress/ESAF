@@ -97,11 +97,16 @@ These initiatives are required for `v0.12-draft` and shall be tracked in GitHub
 Issues under milestone `v0.12-draft`. Deferred mapping assurance and HITRUST
 readiness remain tracked separately and do not stop later engineering work.
 
-- Sync post-v0.11 tracker hygiene
-- Complete ISO/IEC 42001:2023 public-source readiness and mapping go/no-go
-- Deepen ESAF-1000 Enterprise Standard Working Draft
-- Deepen ESAF-1100 Control Catalog architecture Working Draft
-- Close the v0.12-draft publication gates
+- [Issue 142](https://github.com/tdistress/ESAF/issues/142): Sync post-v0.11
+  tracker hygiene
+- [Issue 143](https://github.com/tdistress/ESAF/issues/143): Complete ISO/IEC
+  42001:2023 public-source readiness and mapping go/no-go
+- [Issue 144](https://github.com/tdistress/ESAF/issues/144): Deepen ESAF-1000
+  Enterprise Standard Working Draft
+- [Issue 145](https://github.com/tdistress/ESAF/issues/145): Deepen ESAF-1100
+  Control Catalog architecture Working Draft
+- [Issue 146](https://github.com/tdistress/ESAF/issues/146): Close the
+  v0.12-draft publication gates
 
 ## Completed workstreams
 
