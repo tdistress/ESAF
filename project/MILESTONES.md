@@ -338,3 +338,98 @@
   lifecycle state without their own evidence;
 - a certification or accreditation scheme; or
 - redesigning `v1.0`.
+
+## v0.12-draft
+
+### Entry state
+
+- `v0.11-draft` is published and its publication evidence is closed.
+- ESAF-1300, ESAF-1400, and ESAF-1700 remain at least at Working Draft `0.2.0`
+  depth with discoverable example packs.
+- ESAF-1500 foundation schemas, examples, and the Phase 6 Draft toolkit packs
+  (starters plus `v0.11-draft` deepen) remain Draft and authoritative for
+  shared assessment semantics.
+- NIST AI RMF readiness remains evidenced `HOLD`; NIST mapping artifact count
+  remains `0`.
+- No ISO/IEC 42001 readiness package or mapping artifacts exist yet.
+- Issues `#55` and `#60` may remain open after hygiene; they are not
+  `v0.12-draft` blockers.
+- ESAF-1000, ESAF-1100, ESAF-1200, ESAF-1600 method artifacts, the UK pilot
+  profile, and the three UK mapping snapshots remain Draft.
+
+### Required workstreams
+
+1. **Tracker hygiene.** ESAF shall reopen Issue `#55` if qualified UK mapping
+   review remains outstanding, close or explicitly annotate Issues `#123`–`#129`
+   as historical completed `v0.11-draft` work, and align backlog and GitHub
+   milestone state with published truth. This workstream does not change
+   normative content.
+2. **ISO/IEC 42001:2023 public-source readiness.** ESAF shall pin the
+   applicable official ISO/IEC 42001:2023 source identity, establish
+   publication-rights and provision-inventory boundaries, assess mapper and
+   qualified-review availability, produce a mechanical readiness matrix, and
+   record a `GO` / `HOLD` / `NO_GO` decision. The default acceptable exit is
+   an evidenced `HOLD` that restates blockers, owners, reconsideration
+   triggers, re-entry tests, and nonclaims. A matrix-derived `GO` is allowed
+   only when every readiness gate clears, including named mapper and
+   independent reviewer evidence. While the decision remains `HOLD` or
+   `NO_GO`, ESAF shall not create ISO/IEC 42001 mapping relationships,
+   negative dispositions, snapshots, lifecycle events, registry entries, or
+   catalog increments.
+3. **ESAF-1000 normative deepen.** ESAF shall complete a bounded Working Draft
+   editorial pass on `framework/ESAF-1000.md`: synchronize cross-links to
+   current ESAF-1300 / 1400 / 1500 / 1700 and toolkit surfaces, align
+   terminology with the glossary and companions, bump revision history, and
+   preserve the three pillars and lifecycle model unchanged. No new normative
+   pillars, lifecycle stages, or parallel management-system requirements.
+4. **ESAF-1100 normative deepen.** ESAF shall complete a bounded Working Draft
+   method/catalog-architecture pass on `controls/ESAF-1100.md`: align
+   assessment, evidence, and baseline wording with ESAF-1500 shared
+   contracts, improve cross-links, and bump revision history. No new control
+   families, objectives, base controls, or enhancements.
+5. **Release closure.** ESAF shall complete ordinary release gates on the exact
+   `v0.12-draft` candidate, publish annotated tag `v0.12-draft`, and synchronize
+   Working Draft status surfaces.
+
+### Exit criteria
+
+`v0.12-draft` is complete only when:
+
+- tracker hygiene is complete: Issues `#123`–`#129` are closed or explicitly
+  annotated as historical, and Issue `#55` is open if and only if qualified UK
+  review remains outstanding;
+- ISO/IEC 42001 readiness is recorded as evidenced `GO`, `HOLD`, or `NO_GO`;
+  if `HOLD` or `NO_GO`, ISO/IEC 42001 mapping artifact count remains `0` and
+  generated crosswalk catalog counts are unchanged by that workstream;
+- ESAF-1000 and ESAF-1100 each have a bounded deepen with revision-history
+  evidence, remain Draft, and do not invent parallel assessment semantics or
+  new control identifiers;
+- generated catalogs and affected traceability records are current;
+- the full test suite, control, architecture, assessment, profile, crosswalk,
+  link, release, working-tree, and applicable Mermaid-rendering gates pass on
+  the exact candidate;
+- Critical and Important review findings are resolved;
+- the exact candidate receives technical, editorial, and governance approval
+  appropriate to its contents; and
+- annotated tag `v0.12-draft` is published and Working Draft surfaces are
+  synchronized.
+
+### Non-goals
+
+`v0.12-draft` does not require:
+
+- closing Issue `#55` via owner-risk acceptance or completing the six qualified
+  UK mapping role dispositions;
+- licensed HITRUST CSF access or substantive HITRUST mapping;
+- clearing the PCI DSS `HOLD` without its recorded reconsideration triggers;
+- clearing the NIST AI RMF `HOLD` when named mapper and independent reviewers
+  remain unavailable;
+- authoring ISO/IEC 42001 mapping records, snapshots, or catalog entries under
+  a non-`GO` readiness decision;
+- a second industry or jurisdiction profile;
+- another Phase 6 toolkit deepen or a complete assessment library;
+- all roadmap crosswalks or all planned profiles;
+- advancing Draft controls, architectures, mappings, or profiles to an approved
+  lifecycle state without their own evidence;
+- a certification or accreditation scheme; or
+- redesigning `v1.0`.
