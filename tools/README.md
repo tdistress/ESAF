@@ -255,6 +255,19 @@ phase baseline:
 python tools/v011_draft_release_gates.py --check --baseline-ref <baseline-sha>
 ```
 
+Validate the current v0.12-draft readiness record without changing files:
+
+```shell
+python tools/v012_draft_release_gates.py --check
+```
+
+For `closure_candidate` and `published` transitions, also pass the previous
+phase baseline:
+
+```shell
+python tools/v012_draft_release_gates.py --check --baseline-ref <baseline-sha>
+```
+
 `tools/release_gates.py` and `tools/v05_beta_release_gates.py` remain frozen
 historical validators.
 

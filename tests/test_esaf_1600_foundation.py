@@ -505,7 +505,10 @@ class Esaf1600FoundationTests(unittest.TestCase):
             "tests/test_v010_draft_release_gates.py",
             "tools/v011_draft_release_gates.py",
             "tests/test_v011_draft_release_gates.py",
+            "tools/v012_draft_release_gates.py",
+            "tests/test_v012_draft_release_gates.py",
             "docs/superpowers/reviews/2026-09-05-v010-draft-publication-readiness.md",
+            "docs/superpowers/reviews/2026-09-07-v012-draft-publication-readiness.md",
             "tools/mermaid-render-config.json",
             "tools/mermaid-puppeteer-ci.json",
             "tools/mermaid_inventory.py",
@@ -782,6 +785,40 @@ class Esaf1600FoundationTests(unittest.TestCase):
             ),
         })
 
+        v012_draft_pr = unique_step(
+            "Validate v0.12-draft release record on pull request"
+        )
+        self.assertEqual(v012_draft_pr, {
+            "name": "Validate v0.12-draft release record on pull request",
+            "if": "github.event_name == 'pull_request'",
+            "run": (
+                "python tools/v012_draft_release_gates.py --check "
+                '--baseline-ref "${{ github.event.pull_request.base.sha }}"'
+            ),
+        })
+        v012_draft_push = unique_step(
+            "Validate v0.12-draft release record on protected-branch push"
+        )
+        self.assertEqual(v012_draft_push, {
+            "name": "Validate v0.12-draft release record on protected-branch push",
+            "if": "github.event_name == 'push'",
+            "run": (
+                "python tools/v012_draft_release_gates.py --check "
+                '--baseline-ref "${{ github.event.before }}"'
+            ),
+        })
+        v012_draft_dispatch = unique_step(
+            "Validate v0.12-draft release record on workflow dispatch"
+        )
+        self.assertEqual(v012_draft_dispatch, {
+            "name": "Validate v0.12-draft release record on workflow dispatch",
+            "if": "github.event_name == 'workflow_dispatch'",
+            "run": (
+                "python tools/v012_draft_release_gates.py --check "
+                '--baseline-ref "HEAD^"'
+            ),
+        })
+
         release_gate_runs = [
             (step["run"], step.get("if", ""))
             for step in steps
@@ -862,6 +899,21 @@ class Esaf1600FoundationTests(unittest.TestCase):
                 ),
                 (
                     "python tools/v011_draft_release_gates.py --check "
+                    '--baseline-ref "HEAD^"',
+                    "github.event_name == 'workflow_dispatch'",
+                ),
+                (
+                    "python tools/v012_draft_release_gates.py --check "
+                    '--baseline-ref "${{ github.event.pull_request.base.sha }}"',
+                    "github.event_name == 'pull_request'",
+                ),
+                (
+                    "python tools/v012_draft_release_gates.py --check "
+                    '--baseline-ref "${{ github.event.before }}"',
+                    "github.event_name == 'push'",
+                ),
+                (
+                    "python tools/v012_draft_release_gates.py --check "
                     '--baseline-ref "HEAD^"',
                     "github.event_name == 'workflow_dispatch'",
                 ),
