@@ -125,20 +125,6 @@ python tools/validate_crosswalks.py --check --baseline-ref <trusted-commit>
 
 Historical control-manifest regeneration and `--baseline-ref` comparison require full Git history. Continuous-integration and local review checkouts shall fetch complete history before running these modes; a shallow checkout is insufficient.
 
-## PCI DSS readiness validation
-
-Validate the closed PCI DSS readiness matrix, derive the GO/HOLD decision, and
-require the generated review to match without rewriting it:
-
-```shell
-python tools/render_pci_dss_mapping_go_no_go.py --check
-```
-
-The current decision is `HOLD`. This validation does not download or accept the
-protected source, create a provision inventory or mapping, or assert compliance,
-certification, equivalence, endorsement, authorization, coverage, or legal
-sufficiency.
-
 ## ISO/IEC 42001 readiness validation
 
 Validate the closed ISO/IEC 42001:2023 readiness matrix, derive the GO/HOLD
@@ -167,6 +153,20 @@ are not evidenced. Source identity, public PDF digests, publication rights,
 and the subcategory inventory are recorded. This validation does not create a
 mapping or assert NIST approval, compliance, certification, equivalence, or
 endorsement.
+
+## PCI DSS readiness validation
+
+Validate the closed PCI DSS readiness matrix, derive the GO/HOLD decision, and
+require the generated review to match without rewriting it:
+
+```shell
+python tools/render_pci_dss_mapping_go_no_go.py --check
+```
+
+The current decision is `HOLD`. This validation does not download or accept the
+protected source, create a provision inventory or mapping, or assert compliance,
+certification, equivalence, endorsement, authorization, coverage, or legal
+sufficiency.
 
 ## Architecture validation
 
