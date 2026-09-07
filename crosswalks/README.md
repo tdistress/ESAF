@@ -8,6 +8,7 @@ Current readiness packages:
 
 - [ISO/IEC 42001](iso-iec-42001.md) — readiness `HOLD` (protected source and rights)
 - [NIST AI RMF](nist-ai-rmf.md) — readiness `HOLD` (mapper/reviewer naming)
+- [NIST CSF](nist-csf.md) — readiness `HOLD` (mapper/reviewer naming)
 - [PCI DSS](pci-dss.md) — readiness `HOLD` (protected source and rights)
 
 The [ESAF-1600 standard](ESAF-1600.md) defines the authoritative method. Each mapping shall identify the exact external source version, rationale, relationship, direction, coverage, confidence, mapper, independent reviewer, and review date. These dimensions remain separate and do not assert outcome sufficiency.
