@@ -259,6 +259,77 @@ V011_READY_ISSUE_TASKS = (
     ),
 )
 
+V012_NEXT_STEPS_PLAN = (
+    "docs/superpowers/plans/2026-09-07-v012-draft-next-steps.md"
+)
+PINNED_V012_ISSUE_A_BODY_SHA256 = (
+    "5d04ae2defad3663f1696b7b5a26483d500763227bda32e34be274118e80108b"
+)
+PINNED_V012_ISSUE_B_BODY_SHA256 = (
+    "c02c68434126a00db747b2104ce11323bf725dcb2a857ce373b5006a03a18074"
+)
+PINNED_V012_ISSUE_C_BODY_SHA256 = (
+    "ff9db591de6af68c232c7df804df6ca4f93b3fc601d01ed3bff61c3a83023891"
+)
+PINNED_V012_ISSUE_D_BODY_SHA256 = (
+    "517ce55e4c6aa96f8b86671e0b5f0863c934c222d3a9fa9b47b2446c6e39d289"
+)
+PINNED_V012_ISSUE_E_BODY_SHA256 = (
+    "2cf2f92a1d56cf8a328c52df59da921170a44c6e2f96c78a849de470eb031756"
+)
+V012_READY_ISSUE_TASKS = (
+    (
+        "## Task 4: Ready-to-file Issue A - tracker hygiene",
+        "Sync post-v0.11 tracker hygiene",
+        PINNED_V012_ISSUE_A_BODY_SHA256,
+        (
+            "reopen Issue #55",
+            "Issues #123",
+            "does not change normative",
+        ),
+    ),
+    (
+        "## Task 5: Ready-to-file Issue B - ISO/IEC 42001 readiness",
+        "Complete ISO/IEC 42001:2023 public-source readiness and mapping go/no-go",
+        PINNED_V012_ISSUE_B_BODY_SHA256,
+        (
+            "ISO/IEC 42001",
+            "HOLD",
+            "mapping records",
+        ),
+    ),
+    (
+        "## Task 6: Ready-to-file Issue C - ESAF-1000 deepen",
+        "Deepen ESAF-1000 Enterprise Standard Working Draft",
+        PINNED_V012_ISSUE_C_BODY_SHA256,
+        (
+            "ESAF-1000",
+            "revision history",
+            "Draft",
+        ),
+    ),
+    (
+        "## Task 7: Ready-to-file Issue D - ESAF-1100 deepen",
+        "Deepen ESAF-1100 Control Catalog architecture Working Draft",
+        PINNED_V012_ISSUE_D_BODY_SHA256,
+        (
+            "ESAF-1100",
+            "ESAF-1500",
+            "Draft",
+        ),
+    ),
+    (
+        "## Task 8: Ready-to-file Issue E - v0.12-draft publication gates",
+        "Close the v0.12-draft publication gates",
+        PINNED_V012_ISSUE_E_BODY_SHA256,
+        (
+            "Issues #55 and #60 may remain open",
+            "Every `v0.12-draft` exit criterion",
+            "Working Draft",
+        ),
+    ),
+)
+
 V09_READY_ISSUE_TASKS = (
     (
         "## Task 4: Ready-to-file Issue A - harness closeout",
@@ -1469,7 +1540,7 @@ class ReleaseMetadataTests(unittest.TestCase):
         self.assertIn("https://github.com/tdistress/ESAF/issues/60", gated)
         self.assertTrue(contains_normalized_phrase(
             gated,
-            "does not block `v0.5-beta`, `v0.9-rc1`, `v0.10-draft`, or `v0.11-draft`.",
+            "does not block `v0.5-beta`, `v0.9-rc1`, `v0.10-draft`, `v0.11-draft`, or `v0.12-draft`.",
         ))
 
     def test_roadmap_defines_v09_rc1_delivery_sequence(self) -> None:
@@ -1691,6 +1762,95 @@ class ReleaseMetadataTests(unittest.TestCase):
     def test_planned_v011_issue_bodies_preserve_boundaries_and_digests(self) -> None:
         plan = read_repository_file(V011_NEXT_STEPS_PLAN)
         for task_heading, title, digest, required_phrases in V011_READY_ISSUE_TASKS:
+            with self.subTest(title=title):
+                self.assertIn(f"Title: `{title}`", plan)
+                body = fenced_markdown_in_task(plan, task_heading)
+                for required in required_phrases:
+                    self.assertTrue(contains_normalized_phrase(body, required))
+                self.assertEqual(digest, sha256_text(body))
+                self.assertFalse(contains_normalized_phrase(
+                    body,
+                    "closes issue 55",
+                ))
+
+    def test_v012_draft_has_bounded_workstreams_and_exit_criteria(self) -> None:
+        milestones = read_repository_file("project/MILESTONES.md")
+        section = milestone_section(milestones, "## v0.12-draft")
+        for heading in (
+            "### Entry state",
+            "### Required workstreams",
+            "### Exit criteria",
+            "### Non-goals",
+        ):
+            self.assertIn(heading, section)
+        for required in (
+            "Tracker hygiene",
+            "ISO/IEC 42001:2023 public-source readiness",
+            "ESAF-1000 normative deepen",
+            "ESAF-1100 normative deepen",
+            "Release closure",
+            "Issues `#123`–`#129`",
+            "Critical and Important",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, section)
+
+    def test_v012_draft_preserves_bounded_non_goals(self) -> None:
+        milestones = read_repository_file("project/MILESTONES.md")
+        section = milestone_section(milestones, "## v0.12-draft")
+        non_goals = section[section.index("### Non-goals"):]
+        for non_goal in (
+            "closing Issue `#55`",
+            "substantive HITRUST mapping",
+            "PCI DSS `HOLD`",
+            "NIST AI RMF `HOLD`",
+            "authoring ISO/IEC 42001 mapping records",
+            "all roadmap crosswalks",
+            "all planned profiles",
+            "redesigning `v1.0`",
+        ):
+            with self.subTest(non_goal=non_goal):
+                self.assertIn(non_goal, non_goals)
+
+    def test_backlog_records_post_v011_v012_draft_initiatives(self) -> None:
+        backlog = read_repository_file("project/BACKLOG.md")
+        queue = markdown_section(backlog, "## Post-v0.11 scheduled queue")
+        for required in (
+            "Sync post-v0.11 tracker hygiene",
+            "Complete ISO/IEC 42001:2023 public-source readiness and mapping go/no-go",
+            "Deepen ESAF-1000 Enterprise Standard Working Draft",
+            "Deepen ESAF-1100 Control Catalog architecture Working Draft",
+            "Close the v0.12-draft publication gates",
+            "do not stop later engineering work",
+        ):
+            with self.subTest(required=required):
+                self.assertTrue(contains_normalized_phrase(queue, required))
+
+    def test_roadmap_records_v012_draft_delivery_sequence(self) -> None:
+        roadmap = read_repository_file("ROADMAP.md")
+        sequence = markdown_section(
+            roadmap,
+            "## 0.12-draft delivery sequence",
+        )
+        for required in (
+            "tracker hygiene",
+            "ISO/IEC 42001",
+            "ESAF-1000",
+            "ESAF-1100",
+            "issue 55",
+            "issue 60",
+            "does not stop later engineering work",
+            "not `v0.12-draft` exit criteria",
+            "evidenced",
+            "HOLD",
+            "Phases 4, 5, and 6",
+        ):
+            with self.subTest(required=required):
+                self.assertTrue(contains_normalized_phrase(sequence, required))
+
+    def test_planned_v012_issue_bodies_preserve_boundaries_and_digests(self) -> None:
+        plan = read_repository_file(V012_NEXT_STEPS_PLAN)
+        for task_heading, title, digest, required_phrases in V012_READY_ISSUE_TASKS:
             with self.subTest(title=title):
                 self.assertIn(f"Title: `{title}`", plan)
                 body = fenced_markdown_in_task(plan, task_heading)
