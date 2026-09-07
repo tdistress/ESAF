@@ -23,9 +23,9 @@ Granularity: `finest_authorized_publishable_clause_or_control_outcome_identifier
 ## Source boundary
 
 - Source-readiness oracle: `docs/superpowers/specs/2026-09-07-iso-iec-42001-source-readiness-oracle.json`
-- Source-readiness oracle SHA-256: `f45d465a206e6203ba0d712341120218b855d85bf6098a457af17ae2f26ae9a1`
+- Source-readiness oracle SHA-256: `cb172c36272560756c5328d00bc24d791b7a308222294b298c1bd8775f95175c`
 - Publication-rights review: `docs/superpowers/reviews/2026-09-07-iso-iec-42001-publication-rights-review.md`
-- Publication-rights review commit: `a7a5c890f41fdda6c846a79ed57020314ee979e8`
+- Publication-rights review commit: `8245a0513979a8e4d4dc28a4f22daa028710bee1`
 - Publication-rights review SHA-256: `17b02d0028e996abdc4fd7c3fbfbdfa2972068684ffce237ec42d94444d3df22`
 - Positive feasibility probe available: `false`
 
