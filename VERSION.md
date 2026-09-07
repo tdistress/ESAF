@@ -6,7 +6,9 @@ Status: **Working Draft**
 
 Release Stage: **Bounded Working Draft**
 
-Publication remains conditional on the remote annotated `v0.13-draft` tag
-resolving to the exact validated merged commit. The tag has not been created.
+This Working Draft was published on 2026-09-07 through annotated tag
+`v0.13-draft` (tag object `1a220b7b62127c216d7e94bedf21686b82498b5a`),
+which resolves to validated commit
+`ea2af64bc6fc2fe377a07d70bfbda777520dde70`.
 
 Previous Release Stage: **Priority Crosswalk and Draft Profile Beta**
