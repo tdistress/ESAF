@@ -139,6 +139,20 @@ protected source, create a provision inventory or mapping, or assert compliance,
 certification, equivalence, endorsement, authorization, coverage, or legal
 sufficiency.
 
+## ISO/IEC 42001 readiness validation
+
+Validate the closed ISO/IEC 42001:2023 readiness matrix, derive the GO/HOLD
+decision, and require the generated review to match without rewriting it:
+
+```shell
+python tools/render_iso_iec_42001_mapping_go_no_go.py --check
+```
+
+The current decision is `HOLD`. This validation does not download or accept the
+protected source, create a provision inventory or mapping, or assert compliance,
+certification, equivalence, endorsement, authorization, coverage, or legal
+sufficiency.
+
 ## NIST AI RMF readiness validation
 
 Validate the closed NIST AI RMF readiness matrix, derive the GO/HOLD decision,

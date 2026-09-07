@@ -167,8 +167,9 @@ COMMAND_CATALOG = (
     ValidationCommand("qualified-review-equivalence", ("python", "tools/verify_qualified_review_hot_path_equivalence.py", "--check", "--candidate-sha", "{candidate}"), "publication", "publication proof"),
     ValidationCommand("release-gates", ("python", "tools/release_gates.py", "--check", "--baseline-ref", "{base}"), "publication", "candidate freeze"),
     ValidationCommand("release-evidence", ("python", "tools/v05_beta_release_gates.py", "--check", "--baseline-ref", "{base}"), "publication", "candidate freeze"),
-    ValidationCommand("pci-dss-mapping-go-no-go", ("python", "tools/render_pci_dss_mapping_go_no_go.py", "--check"), "publication", "candidate freeze"),
+    ValidationCommand("iso-iec-42001-mapping-go-no-go", ("python", "tools/render_iso_iec_42001_mapping_go_no_go.py", "--check"), "publication", "candidate freeze"),
     ValidationCommand("nist-ai-rmf-mapping-go-no-go", ("python", "tools/render_nist_ai_rmf_mapping_go_no_go.py", "--check"), "publication", "candidate freeze"),
+    ValidationCommand("pci-dss-mapping-go-no-go", ("python", "tools/render_pci_dss_mapping_go_no_go.py", "--check"), "publication", "candidate freeze"),
     ValidationCommand("v09-rc1-release-gates", ("python", "tools/v09_rc1_release_gates.py", "--check", "--baseline-ref", "{base}"), "publication", "candidate freeze"),
     ValidationCommand("v010-draft-release-gates", ("python", "tools/v010_draft_release_gates.py", "--check", "--baseline-ref", "{base}"), "publication", "candidate freeze"),
     ValidationCommand("v011-draft-release-gates", ("python", "tools/v011_draft_release_gates.py", "--check", "--baseline-ref", "{base}"), "publication", "candidate freeze"),
@@ -194,7 +195,8 @@ PUBLICATION_COMMAND_IDS = (
     "mapping-review-shard", "remaining-shard", "architectures", "assessment", "controls",
     "crosswalks", "profiles", "full-discovery", "mermaid-record", "links",
     "qualified-review-equivalence", "release-gates", "release-evidence",
-    "pci-dss-mapping-go-no-go", "nist-ai-rmf-mapping-go-no-go",
+    "iso-iec-42001-mapping-go-no-go", "nist-ai-rmf-mapping-go-no-go",
+    "pci-dss-mapping-go-no-go",
     "v09-rc1-release-gates", "v010-draft-release-gates", "v011-draft-release-gates",
 )
 PROOF_COMMAND_IDS = ("qualified-review-equivalence",)
