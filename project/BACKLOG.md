@@ -20,7 +20,7 @@ Cyber Essentials core and Cyber Essentials Plus remain separate mapping sets.
 - [Issue 60](https://github.com/tdistress/ESAF/issues/60) tracks HITRUST CSF
   source and review readiness only after licensed-source access, publication
   rights, and qualified-review availability are confirmed. This work does not
-  block `v0.5-beta`, `v0.9-rc1`, `v0.10-draft`, `v0.11-draft`, or `v0.12-draft`.
+  block `v0.5-beta`, `v0.9-rc1`, `v0.10-draft`, `v0.11-draft`, `v0.12-draft`, or `v0.13-draft`.
 
 ## Post-beta scheduled queue
 
@@ -107,6 +107,17 @@ readiness remain tracked separately and do not stop later engineering work.
   Control Catalog architecture Working Draft
 - [Issue 146](https://github.com/tdistress/ESAF/issues/146): Close the
   v0.12-draft publication gates
+
+## Post-v0.12 scheduled queue
+
+These initiatives are required for `v0.13-draft` and shall be tracked in GitHub
+Issues under milestone `v0.13-draft`. Deferred mapping assurance and HITRUST
+readiness remain tracked separately and do not stop later engineering work.
+
+- Sync post-v0.12 tracker hygiene
+- Complete NIST CSF 2.0 public-source readiness and mapping go/no-go
+- Deepen ESAF-1200 Reference Architecture Working Draft
+- Close the v0.13-draft publication gates
 
 ## Completed workstreams
 
