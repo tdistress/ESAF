@@ -114,10 +114,14 @@ These initiatives are required for `v0.13-draft` and shall be tracked in GitHub
 Issues under milestone `v0.13-draft`. Deferred mapping assurance and HITRUST
 readiness remain tracked separately and do not stop later engineering work.
 
-- Sync post-v0.12 tracker hygiene
-- Complete NIST CSF 2.0 public-source readiness and mapping go/no-go
-- Deepen ESAF-1200 Reference Architecture Working Draft
-- Close the v0.13-draft publication gates
+- [Issue 158](https://github.com/tdistress/ESAF/issues/158): Sync post-v0.12
+  tracker hygiene
+- [Issue 159](https://github.com/tdistress/ESAF/issues/159): Complete NIST CSF
+  2.0 public-source readiness and mapping go/no-go
+- [Issue 160](https://github.com/tdistress/ESAF/issues/160): Deepen ESAF-1200
+  Reference Architecture Working Draft
+- [Issue 161](https://github.com/tdistress/ESAF/issues/161): Close the
+  v0.13-draft publication gates
 
 ## Completed workstreams
 
