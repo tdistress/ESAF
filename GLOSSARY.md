@@ -1,7 +1,7 @@
 # ESAF Glossary
 
-**Status:** Working Draft  
-**Version:** 0.1.1  
+**Status:** Working Draft
+**Version:** 0.1.1
 
 ---
 
