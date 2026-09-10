@@ -14,7 +14,7 @@
 - Milestone identity: `v0.14-draft` (Working Draft tag name when later published)
 - Sequence: tracker hygiene → ESAF-1500 deepen → publication gates
 - Issues `#55` / `#60` are not `v0.14-draft` blockers after hygiene
-- No new readiness or crosswalk workstream
+- No new public-source readiness or crosswalk workstream
 - ESAF-1500 deepen remains Working Draft `0.1.1`; revision history; companion toolkit cross-links (workbook, evidence-catalog, audit-checklist); schemas/examples discoverability; no certification claims; no schema-breaking contract changes; no new maturity levels unless already defined
 - Do not redesign `v1.0`, open all of roadmap Phases 4–6, add a second profile, Phase 6 toolkit pack deepen, ISO 27001, or ESAF-1000/1100/1200 re-deepen
 - Digests: compute each `PINNED_V014_ISSUE_*_BODY_SHA256` from the final fenced markdown body under the matching line-anchored `^## Task N:` heading via `sha256` of that fenced body (same method as prior next-steps plans)
@@ -59,12 +59,13 @@ Add five tests on `ReleaseMetadataTests` that assert:
 
 1. `project/MILESTONES.md` contains `## v0.14-draft` with headings
    `### Entry state`, `### Required workstreams`, `### Exit criteria`,
-   `### Non-goals`, and the workstream / exit phrases listed in Task 2.
+   `### Non-goals`, and the workstream / exit phrases listed in Task 2
+   (`Tracker hygiene`, `ESAF-1500 normative deepen`, `Release closure`,
+   `Issues \`#158\`–\`#161\``, `Critical and Important`).
 2. The `### Non-goals` subsection includes: closing Issue `#55`, substantive
-   HITRUST mapping, PCI DSS `HOLD`, NIST AI RMF `HOLD`, ISO/IEC 42001 mapping
-   records under non-`GO`, authoring NIST CSF mapping records under non-`GO`,
-   a new readiness or crosswalk workstream, all roadmap crosswalks, all planned
-   profiles, redesigning `v1.0`.
+   HITRUST mapping, PCI DSS `HOLD`, NIST AI RMF `HOLD`, ISO/IEC 42001 `HOLD`,
+   NIST CSF `HOLD`, a new public-source readiness workstream, all roadmap
+   crosswalks, all planned profiles, redesigning `v1.0`.
 3. `project/BACKLOG.md` section `## Post-v0.13 scheduled queue` lists the three
    initiative titles from Task 2 and says they do not stop later engineering
    work.
@@ -86,7 +87,8 @@ Run the new tests with:
 PYTHONDONTWRITEBYTECODE=1 python -m unittest tests.test_release_metadata -k v014 -v
 ```
 
-Expected: FAIL (missing `## v0.14-draft` / queue / digests).
+Expected: FAIL (missing `## v0.14-draft` / queue / digests) when run before
+Tasks 2–3 land; after Task 2, digest pin may still fail until Task 3.
 
 - [ ] **Step 4: Commit the failing tests**
 
@@ -114,52 +116,46 @@ Append after the `v0.13-draft` section (do not rewrite closed publication truth)
 ### Entry state
 
 - `v0.13-draft` is published and its publication evidence is closed.
-- ESAF-1300, ESAF-1400, and ESAF-1700 remain at least at Working Draft `0.2.0`
-  depth with discoverable example packs.
-- ESAF-1500 remains Working Draft `0.1.0`; foundation schemas, examples, and
-  the Phase 6 Draft toolkit packs (starters plus `v0.11-draft` deepen) remain
-  Draft and authoritative for shared assessment semantics.
-- NIST AI RMF readiness remains evidenced `HOLD`; NIST AI RMF mapping artifact
-  count remains `0`.
-- ISO/IEC 42001 readiness remains evidenced `HOLD`; ISO/IEC 42001 mapping
-  artifact count remains `0`.
-- NIST CSF 2.0 readiness remains evidenced `HOLD`; NIST CSF mapping artifact
-  count remains `0`.
+- ESAF-1500 remains Working Draft `0.1.0` with schemas, examples, and Phase 6
+  Draft toolkit packs under `assessment/`.
+- ESAF-1200 remains Working Draft `0.4.1`; ESAF-1000 remains Working Draft
+  `0.2.1`; ESAF-1100 remains Working Draft `0.3.1`; ESAF-1300, ESAF-1400, and
+  ESAF-1700 remain at least at Working Draft `0.2.0` depth with discoverable
+  example packs.
+- NIST AI RMF, ISO/IEC 42001, NIST CSF 2.0, and PCI DSS readiness remain
+  evidenced `HOLD`; mapping artifact counts for HOLD schemes remain `0`.
 - Issues `#55` and `#60` may remain open after hygiene; they are not
   `v0.14-draft` blockers.
-- ESAF-1000 remains Working Draft `0.2.1`; ESAF-1100 remains Working Draft
-  `0.3.1`; ESAF-1200 remains Working Draft `0.4.1`; ESAF-1600 method artifacts,
-  the UK pilot profile, and the three UK mapping snapshots remain Draft.
 
 ### Required workstreams
 
-1. **Tracker hygiene.** ESAF shall reopen Issue `#55` if qualified UK mapping
-   review remains outstanding, close or explicitly annotate Issues `#158`–`#161`
-   as historical completed `v0.13-draft` work, and align backlog and GitHub
-   milestone state with published truth. This workstream does not change
-   normative content.
+1. **Tracker hygiene.** ESAF shall ensure Issue `#55` is open if and only if
+   qualified UK mapping review remains outstanding, close or explicitly
+   annotate Issues `#158`–`#161` as historical completed `v0.13-draft` work,
+   close GitHub milestone `v0.13-draft` when it has no open issues, open
+   GitHub milestone `v0.14-draft`, and align `project/BACKLOG.md` with
+   published truth. This workstream does not change normative content.
 2. **ESAF-1500 normative deepen.** ESAF shall complete a bounded Working Draft
-   deepen of `assessment/ESAF-1500.md` from `0.1.0` to `0.1.1`: add or update
-   revision history; synchronize companion toolkit cross-links to the
-   workbook, evidence catalog, and audit checklist; improve schemas/examples
-   discoverability; remain Working Draft; introduce no certification claims;
-   make no schema-breaking contract changes; and add no new maturity levels
-   unless already defined in the guide.
+   method and cross-link pass on `assessment/ESAF-1500.md`: synchronize
+   cross-links to schemas, examples, workbook, evidence-catalog, and audit
+   checklist surfaces; align discoverability in `assessment/README.md`; bump
+   revision history to `0.1.1`; and remain Draft. No schema-breaking contract
+   changes. No new maturity levels. No certification claims.
 3. **Release closure.** ESAF shall complete ordinary release gates on the exact
-   `v0.14-draft` candidate, publish annotated tag `v0.14-draft`, and synchronize
-   Working Draft status surfaces.
+   `v0.14-draft` candidate, publish annotated tag `v0.14-draft`, and
+   synchronize Working Draft status surfaces.
 
 ### Exit criteria
 
 `v0.14-draft` is complete only when:
 
 - tracker hygiene is complete: Issues `#158`–`#161` are closed or explicitly
-  annotated as historical, and Issue `#55` is open if and only if qualified UK
-  review remains outstanding;
-- ESAF-1500 has a bounded deepen to Working Draft `0.1.1` with revision-history
-  evidence, companion toolkit cross-links, improved schemas/examples
-  discoverability, remains Draft, and does not break schema contracts or invent
-  new maturity levels;
+  annotated as historical, GitHub milestone `v0.13-draft` is closed when empty,
+  GitHub milestone `v0.14-draft` exists, and Issue `#55` is open if and only if
+  qualified UK review remains outstanding;
+- ESAF-1500 has a bounded deepen with revision-history evidence at Working
+  Draft `0.1.1`, remains Draft, and does not break assessment schemas or invent
+  certification semantics;
 - generated catalogs and affected traceability records are current;
 - the full test suite, control, architecture, assessment, profile, crosswalk,
   link, release, working-tree, and applicable Mermaid-rendering gates pass on
@@ -167,8 +163,9 @@ Append after the `v0.13-draft` section (do not rewrite closed publication truth)
 - Critical and Important review findings are resolved;
 - the exact candidate receives technical, editorial, and governance approval
   appropriate to its contents; and
-- annotated tag `v0.14-draft` is published and Working Draft surfaces are
-  synchronized.
+- annotated tag `v0.14-draft` is published and Working Draft status surfaces
+  (`VERSION.md`, README badges, changelog, roadmap, backlog, milestones, and
+  readiness record) are synchronized.
 
 ### Non-goals
 
@@ -176,21 +173,18 @@ Append after the `v0.13-draft` section (do not rewrite closed publication truth)
 
 - closing Issue `#55` via owner-risk acceptance or completing the six qualified
   UK mapping role dispositions;
-- licensed HITRUST CSF access or substantive HITRUST mapping;
+- licensed HITRUST CSF access or substantive HITRUST mapping (Issue `#60`);
 - clearing the PCI DSS `HOLD` without its recorded reconsideration triggers;
 - clearing the NIST AI RMF `HOLD` when named mapper and independent reviewers
   remain unavailable;
-- authoring ISO/IEC 42001 mapping records, snapshots, or catalog entries under
-  a non-`GO` readiness decision;
-- authoring NIST CSF mapping records, snapshots, or catalog entries under a
-  non-`GO` readiness decision;
-- a new readiness or crosswalk workstream;
+- clearing the ISO/IEC 42001 `HOLD` or NIST CSF `HOLD` without recorded
+  reconsideration triggers and named people;
+- authoring mapping records, snapshots, or catalog entries under a non-`GO`
+  readiness decision for any HOLD scheme;
+- a new public-source readiness workstream (including ISO 27001);
 - a second industry or jurisdiction profile;
-- another Phase 6 toolkit pack deepen or a complete assessment library;
-- ISO 27001 readiness or mapping work;
 - ESAF-1000, ESAF-1100, or ESAF-1200 re-deepen;
-- schema-breaking changes to ESAF-1500 contracts or examples;
-- new maturity levels beyond those already defined in ESAF-1500;
+- schema-breaking changes to ESAF-1500 machine contracts;
 - all roadmap crosswalks or all planned profiles;
 - advancing Draft controls, architectures, mappings, or profiles to an approved
   lifecycle state without their own evidence;
@@ -226,16 +220,14 @@ Insert before `## 0.13-draft delivery sequence`:
 ```markdown
 ## 0.14-draft delivery sequence
 
-`v0.14-draft` follows tracker hygiene, then bounded ESAF-1500 Assessment Guide
-Working Draft deepen (`0.1.0` to `0.1.1`), then ordinary publication gates on
-the exact candidate. Deferred mapping assurance remains tracked through issue
-55 and does not stop later engineering work. HITRUST readiness remains
-separately gated through issue 60. Issues 55 and 60 are not `v0.14-draft` exit
-criteria. No new readiness or crosswalk workstream is required for this
-milestone. Publication does not change any control, architecture, profile,
-mapping-set, or mapping-record lifecycle state. Phases 4, 5, and 6 remain
-long-term direction except for the bounded normative deepen required by this
-milestone.
+`v0.14-draft` follows tracker hygiene, then bounded ESAF-1500 normative deepen,
+then ordinary publication gates on the exact candidate. Deferred mapping
+assurance remains tracked through issue 55 and does not stop later engineering
+work. HITRUST readiness remains separately gated through issue 60. Issues 55
+and 60 are not `v0.14-draft` exit criteria. Publication does not change any
+control, architecture, profile, mapping-set, or mapping-record lifecycle
+state. Phases 4, 5, and 6 remain long-term direction except for the bounded
+normative deepen required by this milestone.
 ```
 
 - [ ] **Step 4: Run the Task 1 tests again**
@@ -352,14 +344,18 @@ Does not depend on Issues #60 content work.
   short comment stating owner-risk acceptance did not complete qualified review.
 - Close or explicitly annotate Issues #158–#161 as historical completed
   `v0.13-draft` work, linking the published tag evidence where useful.
-- Align GitHub milestone `v0.13-draft` / `v0.14-draft` membership and
-  `project/BACKLOG.md` wording with the durable records.
+- Close GitHub milestone `v0.13-draft` when it has no open issues; open GitHub
+  milestone `v0.14-draft`.
+- Align GitHub milestone membership and `project/BACKLOG.md` wording with the
+  durable records.
 - Record the resulting open/closed matrix in the issue comments.
 
 ## Acceptance criteria
 
 - Repository policy and GitHub agree on Issue #55 open/closed state.
 - Issues #158–#161 are closed or clearly marked historical completed work.
+- GitHub milestone `v0.13-draft` is closed when empty; milestone `v0.14-draft`
+  exists.
 - `project/BACKLOG.md` deferred-assurance and post-v0.13 queue text remain
   consistent with GitHub.
 - No normative ESAF Markdown, schemas, or mappings change in this issue.
@@ -401,7 +397,8 @@ finish before publication gates.
   (`assessment/evidence-catalog/`), and audit checklist
   (`assessment/audit-checklist/`).
 - Improve discoverability of schemas under `assessment/schema/` and examples
-  under `assessment/examples/` without changing contract meaning.
+  under `assessment/examples/` from the guide and `assessment/README.md`
+  without changing contract meaning.
 - Keep status Working Draft; introduce no certification claims.
 - Make no schema-breaking contract changes to evidence-record,
   assessment-result, or maturity-assessment schemas or examples.

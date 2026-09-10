@@ -521,6 +521,11 @@
   non-`GO` readiness decision;
 - a second industry or jurisdiction profile;
 - another Phase 6 toolkit deepen or a complete assessment library;
+- ISO 27001 readiness or mapping work;
+- ESAF-1000 or ESAF-1100 re-deepen;
+- all roadmap crosswalks or all planned profiles;
+- advancing Draft controls, architectures, mappings, or profiles to an approved
+  lifecycle state without their own evidence;
 - a certification or accreditation scheme; or
 - redesigning `v1.0`.
 
