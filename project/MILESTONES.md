@@ -521,8 +521,83 @@
   non-`GO` readiness decision;
 - a second industry or jurisdiction profile;
 - another Phase 6 toolkit deepen or a complete assessment library;
-- ISO 27001 readiness or mapping work;
-- ESAF-1000 or ESAF-1100 re-deepen;
+- a certification or accreditation scheme; or
+- redesigning `v1.0`.
+
+## v0.14-draft
+
+### Entry state
+
+- `v0.13-draft` is published and its publication evidence is closed.
+- ESAF-1500 remains Working Draft `0.1.0` with schemas, examples, and Phase 6
+  Draft toolkit packs under `assessment/`.
+- ESAF-1200 remains Working Draft `0.4.1`; ESAF-1000 remains Working Draft
+  `0.2.1`; ESAF-1100 remains Working Draft `0.3.1`; ESAF-1300, ESAF-1400, and
+  ESAF-1700 remain at least at Working Draft `0.2.0` depth with discoverable
+  example packs.
+- NIST AI RMF, ISO/IEC 42001, NIST CSF 2.0, and PCI DSS readiness remain
+  evidenced `HOLD`; mapping artifact counts for HOLD schemes remain `0`.
+- Issues `#55` and `#60` may remain open after hygiene; they are not
+  `v0.14-draft` blockers.
+
+### Required workstreams
+
+1. **Tracker hygiene.** ESAF shall ensure Issue `#55` is open if and only if
+   qualified UK mapping review remains outstanding, close or explicitly
+   annotate Issues `#158`–`#161` as historical completed `v0.13-draft` work,
+   close GitHub milestone `v0.13-draft` when it has no open issues, open
+   GitHub milestone `v0.14-draft`, and align `project/BACKLOG.md` with
+   published truth. This workstream does not change normative content.
+2. **ESAF-1500 normative deepen.** ESAF shall complete a bounded Working Draft
+   method and cross-link pass on `assessment/ESAF-1500.md`: synchronize
+   cross-links to schemas, examples, workbook, evidence-catalog, and audit
+   checklist surfaces; align discoverability in `assessment/README.md`; bump
+   revision history to `0.1.1`; and remain Draft. No schema-breaking contract
+   changes. No new maturity levels. No certification claims.
+3. **Release closure.** ESAF shall complete ordinary release gates on the exact
+   `v0.14-draft` candidate, publish annotated tag `v0.14-draft`, and
+   synchronize Working Draft status surfaces.
+
+### Exit criteria
+
+`v0.14-draft` is complete only when:
+
+- tracker hygiene is complete: Issues `#158`–`#161` are closed or explicitly
+  annotated as historical, GitHub milestone `v0.13-draft` is closed when empty,
+  GitHub milestone `v0.14-draft` exists, and Issue `#55` is open if and only if
+  qualified UK review remains outstanding;
+- ESAF-1500 has a bounded deepen with revision-history evidence at Working
+  Draft `0.1.1`, remains Draft, and does not break assessment schemas or invent
+  certification semantics;
+- generated catalogs and affected traceability records are current;
+- the full test suite, control, architecture, assessment, profile, crosswalk,
+  link, release, working-tree, and applicable Mermaid-rendering gates pass on
+  the exact candidate;
+- Critical and Important review findings are resolved;
+- the exact candidate receives technical, editorial, and governance approval
+  appropriate to its contents; and
+- annotated tag `v0.14-draft` is published and Working Draft status surfaces
+  (`VERSION.md`, README badges, changelog, roadmap, backlog, milestones, and
+  readiness record) are synchronized.
+
+### Non-goals
+
+`v0.14-draft` does not require:
+
+- closing Issue `#55` via owner-risk acceptance or completing the six qualified
+  UK mapping role dispositions;
+- licensed HITRUST CSF access or substantive HITRUST mapping (Issue `#60`);
+- clearing the PCI DSS `HOLD` without its recorded reconsideration triggers;
+- clearing the NIST AI RMF `HOLD` when named mapper and independent reviewers
+  remain unavailable;
+- clearing the ISO/IEC 42001 `HOLD` or NIST CSF `HOLD` without recorded
+  reconsideration triggers and named people;
+- authoring mapping records, snapshots, or catalog entries under a non-`GO`
+  readiness decision for any HOLD scheme;
+- a new public-source readiness workstream (including ISO 27001);
+- a second industry or jurisdiction profile;
+- ESAF-1000, ESAF-1100, or ESAF-1200 re-deepen;
+- schema-breaking changes to ESAF-1500 machine contracts;
 - all roadmap crosswalks or all planned profiles;
 - advancing Draft controls, architectures, mappings, or profiles to an approved
   lifecycle state without their own evidence;
