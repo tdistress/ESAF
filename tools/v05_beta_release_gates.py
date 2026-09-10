@@ -2032,8 +2032,13 @@ def _integer(value: dict[str, Any], key: str) -> int:
 
 def _assessment_foundation(root: Path) -> bool:
     text = (root / "assessment/ESAF-1500.md").read_text(encoding="utf-8")
-    return text.startswith("# ESAF-1500 Assessment Guide\n") and "**Status:** Working Draft" in text
-
+    if not text.startswith("# ESAF-1500 Assessment Guide\n"):
+        return False
+    if "**Status:** Working Draft" in text:
+        return True
+    return bool(
+        re.search(r"(?m)^\|\s*Status\s*\|\s*Working Draft\s*\|", text)
+    )
 
 def _validate_publication(errors: list[str], phase: object, publication: object) -> None:
     if not isinstance(publication, dict):

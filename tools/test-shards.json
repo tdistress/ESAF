@@ -30,6 +30,7 @@
         "tests/test_esaf_1100_deepen.py",
         "tests/test_esaf_1200_deepen.py",
         "tests/test_esaf_1300_1400_1700_breadth.py",
+        "tests/test_esaf_1500_deepen.py",
         "tests/test_esaf_1600_foundation.py",
         "tests/test_governance_templates_starter.py",
         "tests/test_iso_iec_42001_source_readiness.py",
