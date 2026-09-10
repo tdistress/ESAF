@@ -129,9 +129,12 @@ These initiatives are required for `v0.14-draft` and shall be tracked in GitHub
 Issues under milestone `v0.14-draft`. Deferred mapping assurance and HITRUST
 readiness remain tracked separately and do not stop later engineering work.
 
-- Sync post-v0.13 tracker hygiene
-- Deepen ESAF-1500 Assessment Guide Working Draft
-- Close the v0.14-draft publication gates
+- [Issue 171](https://github.com/tdistress/ESAF/issues/171): Sync post-v0.13
+  tracker hygiene
+- [Issue 172](https://github.com/tdistress/ESAF/issues/172): Deepen ESAF-1500
+  Assessment Guide Working Draft
+- [Issue 173](https://github.com/tdistress/ESAF/issues/173): Close the
+  v0.14-draft publication gates
 
 ## Completed workstreams
 
