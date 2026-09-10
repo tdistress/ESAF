@@ -1,10 +1,12 @@
 # ESAF-1500 Assessment Guide
 
-This directory contains the normative assessment guide, its machine-readable
-contracts, fictional examples, and Draft operator toolkit starters.
+This directory contains the normative assessment guide (Working Draft `0.1.1`),
+its machine-readable contracts, fictional examples, and Draft operator toolkit
+starters.
 
-- [ESAF-1500](ESAF-1500.md) defines shared assessment methodology, evidence
-  expectations, assessment results, and maturity semantics.
+- [ESAF-1500](ESAF-1500.md) Working Draft `0.1.1` defines shared assessment
+  methodology, evidence expectations, assessment results, and maturity
+  semantics.
 - [Evidence-record schema](schema/evidence-record.schema.json),
   [assessment-result schema](schema/assessment-result.schema.json), and
   [maturity-assessment schema](schema/maturity-assessment.schema.json) define
