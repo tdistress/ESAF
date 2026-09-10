@@ -4,6 +4,17 @@
 
 **Version:** 0.13-draft
 
+## 0.14-draft delivery sequence
+
+`v0.14-draft` follows tracker hygiene, then bounded ESAF-1500 normative deepen,
+then ordinary publication gates on the exact candidate. Deferred mapping
+assurance remains tracked through issue 55 and does not stop later engineering
+work. HITRUST readiness remains separately gated through issue 60. Issues 55
+and 60 are not `v0.14-draft` exit criteria. Publication does not change any
+control, architecture, profile, mapping-set, or mapping-record lifecycle
+state. Phases 4, 5, and 6 remain long-term direction except for the bounded
+normative deepen required by this milestone.
+
 ## 0.13-draft delivery sequence
 
 The `v0.13-draft` Working Draft was published on 2026-09-07 through the

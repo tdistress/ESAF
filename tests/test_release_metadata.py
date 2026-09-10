@@ -388,6 +388,51 @@ V013_READY_ISSUE_TASKS = (
     ),
 )
 
+V014_NEXT_STEPS_PLAN = (
+    "docs/superpowers/plans/2026-09-10-v014-draft-next-steps.md"
+)
+PINNED_V014_ISSUE_A_BODY_SHA256 = (
+    "6e3bef240edb3ecce8963aa6a9af24cb565663210472b5178faa822f8d3cbb6f"
+)
+PINNED_V014_ISSUE_B_BODY_SHA256 = (
+    "1c1bbf229670ad936f61b590be1f0a355115ea80e527f922786d0e1cd395daaf"
+)
+PINNED_V014_ISSUE_C_BODY_SHA256 = (
+    "47d091dd32d0de7ad02331ce94a7837c9c15a7353090dd8faafc33cb5dccb908"
+)
+V014_READY_ISSUE_TASKS = (
+    (
+        "## Task 4: Ready-to-file Issue A - tracker hygiene",
+        "Sync post-v0.13 tracker hygiene",
+        PINNED_V014_ISSUE_A_BODY_SHA256,
+        (
+            "reopen Issue #55",
+            "Issues #158",
+            "does not change normative",
+        ),
+    ),
+    (
+        "## Task 5: Ready-to-file Issue B - ESAF-1500 deepen",
+        "Deepen ESAF-1500 Assessment Guide Working Draft",
+        PINNED_V014_ISSUE_B_BODY_SHA256,
+        (
+            "ESAF-1500",
+            "revision history",
+            "Draft",
+        ),
+    ),
+    (
+        "## Task 6: Ready-to-file Issue C - v0.14-draft publication gates",
+        "Close the v0.14-draft publication gates",
+        PINNED_V014_ISSUE_C_BODY_SHA256,
+        (
+            "Issues #55 and #60 may remain open",
+            "Every `v0.14-draft` exit criterion",
+            "Working Draft",
+        ),
+    ),
+)
+
 V09_READY_ISSUE_TASKS = (
     (
         "## Task 4: Ready-to-file Issue A - harness closeout",
@@ -1598,7 +1643,7 @@ class ReleaseMetadataTests(unittest.TestCase):
         self.assertIn("https://github.com/tdistress/ESAF/issues/60", gated)
         self.assertTrue(contains_normalized_phrase(
             gated,
-            "does not block `v0.5-beta`, `v0.9-rc1`, `v0.10-draft`, `v0.11-draft`, `v0.12-draft`, or `v0.13-draft`.",
+            "does not block `v0.5-beta`, `v0.9-rc1`, `v0.10-draft`, `v0.11-draft`, `v0.12-draft`, `v0.13-draft`, or `v0.14-draft`.",
         ))
 
     def test_roadmap_defines_v09_rc1_delivery_sequence(self) -> None:
@@ -1997,6 +2042,89 @@ class ReleaseMetadataTests(unittest.TestCase):
     def test_planned_v013_issue_bodies_preserve_boundaries_and_digests(self) -> None:
         plan = read_repository_file(V013_NEXT_STEPS_PLAN)
         for task_heading, title, digest, required_phrases in V013_READY_ISSUE_TASKS:
+            with self.subTest(title=title):
+                self.assertIn(f"Title: `{title}`", plan)
+                body = fenced_markdown_in_task(plan, task_heading)
+                for required in required_phrases:
+                    self.assertTrue(contains_normalized_phrase(body, required))
+                self.assertEqual(digest, sha256_text(body))
+                self.assertFalse(contains_normalized_phrase(
+                    body,
+                    "closes issue 55",
+                ))
+
+    def test_v014_draft_has_bounded_workstreams_and_exit_criteria(self) -> None:
+        milestones = read_repository_file("project/MILESTONES.md")
+        section = milestone_section(milestones, "## v0.14-draft")
+        for heading in (
+            "### Entry state",
+            "### Required workstreams",
+            "### Exit criteria",
+            "### Non-goals",
+        ):
+            self.assertIn(heading, section)
+        for required in (
+            "Tracker hygiene",
+            "ESAF-1500 normative deepen",
+            "Release closure",
+            "Issues `#158`–`#161`",
+            "Critical and Important",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, section)
+
+    def test_v014_draft_preserves_bounded_non_goals(self) -> None:
+        milestones = read_repository_file("project/MILESTONES.md")
+        section = milestone_section(milestones, "## v0.14-draft")
+        non_goals = section[section.index("### Non-goals"):]
+        for non_goal in (
+            "closing Issue `#55`",
+            "substantive HITRUST mapping",
+            "PCI DSS `HOLD`",
+            "NIST AI RMF `HOLD`",
+            "ISO/IEC 42001 `HOLD`",
+            "NIST CSF `HOLD`",
+            "new public-source readiness workstream",
+            "all roadmap crosswalks",
+            "all planned profiles",
+            "redesigning `v1.0`",
+        ):
+            with self.subTest(non_goal=non_goal):
+                self.assertIn(non_goal, non_goals)
+
+    def test_backlog_records_post_v013_v014_draft_initiatives(self) -> None:
+        backlog = read_repository_file("project/BACKLOG.md")
+        queue = markdown_section(backlog, "## Post-v0.13 scheduled queue")
+        for required in (
+            "Sync post-v0.13 tracker hygiene",
+            "Deepen ESAF-1500 Assessment Guide Working Draft",
+            "Close the v0.14-draft publication gates",
+            "do not stop later engineering work",
+        ):
+            with self.subTest(required=required):
+                self.assertTrue(contains_normalized_phrase(queue, required))
+
+    def test_roadmap_records_v014_draft_delivery_sequence(self) -> None:
+        roadmap = read_repository_file("ROADMAP.md")
+        sequence = markdown_section(
+            roadmap,
+            "## 0.14-draft delivery sequence",
+        )
+        for required in (
+            "tracker hygiene",
+            "ESAF-1500",
+            "issue 55",
+            "issue 60",
+            "does not stop later engineering work",
+            "not `v0.14-draft` exit criteria",
+            "Phases 4, 5, and 6",
+        ):
+            with self.subTest(required=required):
+                self.assertTrue(contains_normalized_phrase(sequence, required))
+
+    def test_planned_v014_issue_bodies_preserve_boundaries_and_digests(self) -> None:
+        plan = read_repository_file(V014_NEXT_STEPS_PLAN)
+        for task_heading, title, digest, required_phrases in V014_READY_ISSUE_TASKS:
             with self.subTest(title=title):
                 self.assertIn(f"Title: `{title}`", plan)
                 body = fenced_markdown_in_task(plan, task_heading)
