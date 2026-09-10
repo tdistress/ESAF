@@ -8,6 +8,36 @@ Working Draft. Version 0.9-rc1 is a tagged Working Draft. Version 0.10-draft
 is a tagged Working Draft. Version 0.11-draft is a tagged Working Draft. Version 0.12-draft is a tagged
 Working Draft. Version 0.13-draft is a tagged Working Draft.
 
+## 0.14-draft - Unreleased
+
+### Changed
+
+- Advanced Working Draft status surfaces to `0.14-draft` for the exact
+  metadata-only closure candidate. Publication remains conditional on the
+  remote annotated `v0.14-draft` tag resolving to the exact validated merged
+  commit. The tag has not been created, and the post-merge gate remains open.
+- Added the v0.14-draft publication evidence-candidate gates, readiness
+  record, and Issue #173 validator wiring without advancing VERSION.md before
+  this closure candidate (PR #176).
+- Deepened the ESAF-1500 Working Draft to `0.1.1` with companion and toolkit
+  cross-links while preserving the assessment foundation contract.
+- Recorded independent technical, editorial, and governance reviews of the
+  exact evidence candidate under the `2026-09-10-v014-draft-` review prefix.
+- Carried forward the seven Draft architecture patterns in the current
+  Working Draft: ARC-P100, Enterprise AI platform and gateway; ARC-P110,
+  Enterprise copilot; ARC-P120, Retrieval-augmented generation; ARC-P130,
+  Agentic and multi-agent AI; ARC-P140, Private model deployment; ARC-P150,
+  AI integration services; and ARC-P160, AI observability.
+- Carried forward the Draft Cyber Essentials v3.3 mapping snapshot.
+- Carried forward the Draft Cyber Essentials Plus v3.2 `esaf_to_external`
+  mapping snapshot.
+- Carried forward the Draft Cyber Essentials Plus v3.2 `external_to_esaf`
+  mapping snapshot.
+- Retained prerequisite dispositions: Phase 2 timing `DEFER`,
+  ESAF-1300/1400/1700 Working Drafts, NIST AI RMF `HOLD`, ISO/IEC 42001
+  `HOLD`, NIST CSF `HOLD`, and the ESAF-1500 Working Draft deepen pack.
+  Issues 55 and 60 remain open.
+
 ## 0.13-draft - 2026-09-07
 
 ### Changed

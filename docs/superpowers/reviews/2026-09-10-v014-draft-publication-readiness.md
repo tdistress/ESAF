@@ -1,13 +1,14 @@
 ---
 release: 0.14-draft
-phase: evidence_candidate
+phase: closure_candidate
 tag: v0.14-draft
 issue: 173
 repository_scope: complete_git_tracked_repository
 publication:
   date: null
   condition: remote_annotated_tag_matches_exact_validated_commit
-  evidence: []
+  evidence:
+    - https://github.com/tdistress/ESAF/issues/173
   tag_object: null
   tagged_commit: null
   issue_evidence_url: null
@@ -43,15 +44,15 @@ scope:
   iso_iec_42001_disposition: HOLD
   nist_csf_disposition: HOLD
 gates:
-  scope: {state: open, evidence: []}
-  technical: {state: open, evidence: []}
-  editorial: {state: open, evidence: []}
-  terminology: {state: open, evidence: []}
-  cross_reference_rendering: {state: open, evidence: []}
-  standards_mapping: {state: open, evidence: []}
-  profile_scope: {state: open, evidence: []}
-  release_metadata: {state: open, evidence: []}
-  governance: {state: open, evidence: []}
+  scope: {state: ready, evidence: [https://github.com/tdistress/ESAF/pull/176]}
+  technical: {state: ready, evidence: [https://github.com/tdistress/ESAF/blob/862d74b21a7ad166fc148d3a2d5e639e73d5780a/docs/superpowers/reviews/2026-09-10-v014-draft-technical-review.md]}
+  editorial: {state: ready, evidence: [https://github.com/tdistress/ESAF/blob/862d74b21a7ad166fc148d3a2d5e639e73d5780a/docs/superpowers/reviews/2026-09-10-v014-draft-editorial-review.md]}
+  terminology: {state: ready, evidence: [https://github.com/tdistress/ESAF/blob/862d74b21a7ad166fc148d3a2d5e639e73d5780a/docs/superpowers/reviews/2026-09-10-v014-draft-editorial-review.md]}
+  cross_reference_rendering: {state: ready, evidence: [https://github.com/tdistress/ESAF/pull/176]}
+  standards_mapping: {state: ready, evidence: [https://github.com/tdistress/ESAF/pull/176]}
+  profile_scope: {state: ready, evidence: [https://github.com/tdistress/ESAF/pull/176]}
+  release_metadata: {state: ready, evidence: [https://github.com/tdistress/ESAF/pull/176]}
+  governance: {state: ready, evidence: [https://github.com/tdistress/ESAF/blob/862d74b21a7ad166fc148d3a2d5e639e73d5780a/docs/superpowers/reviews/2026-09-10-v014-draft-governance-review.md]}
   post_merge: {state: open, evidence: []}
 ---
 
@@ -59,7 +60,7 @@ gates:
 
 ## Scope
 
-This evidence-candidate record covers the complete Git-tracked repository. Its
+This closure-candidate record covers the complete Git-tracked repository. Its
 derived inventory contains 91 controls in 16 families, 7 architecture patterns,
 3 mapping sets, and 404 mapping provisions. The mappings contain 81 relationship
 legs and 325 negative dispositions.
@@ -91,23 +92,22 @@ The bounded Working Draft deepen pack required for `v0.14-draft` is present at:
 
 - `assessment/ESAF-1500.md` (Working Draft `0.1.1`)
 
-Issues 55 and 60 may remain open; this publication does not require their
+Issues 55 and 60 may remain open; this candidate does not require their
 closure.
 
 ## Lifecycle boundary
 
-The current ESAF version is still `0.13-draft` until the later
-`closure_candidate` metadata sync. The `v0.14-draft` Working Draft is an
-evidence candidate and is not yet published. Publication, when completed, is
-limited to the repository Working Draft and does not change any artifact
-lifecycle state.
+The current ESAF version is `0.14-draft`. The non-post-merge v0.14 gates are
+`ready`, the post-merge gate is `open`, and the `v0.14-draft` tag has not been
+created. The `0.14-draft` release status is Working Draft. This closure
+candidate does not approve publication.
 
 This record does not advance any Draft artifact, control, architecture
 pattern, mapping set, or profile to an approved lifecycle state.
 
 ## Nonclaims
 
-This evidence-candidate Working Draft package does not claim certification,
+This closure-candidate Working Draft package does not claim certification,
 compliance, equivalence, endorsement, assurance, or production readiness. It
 does not close Issue 55 or Issue 60, and it does not clear the PCI DSS,
 HITRUST, NIST AI RMF, ISO/IEC 42001, or NIST CSF blockers. While NIST AI RMF,
@@ -116,8 +116,8 @@ authorize mapping authorship for those schemes.
 
 ## Publication evidence
 
-Publication evidence is not yet bound in the `evidence_candidate` phase.
-Annotated tag identity, tagged commit, and post-merge validation evidence
-remain unset until the published phase. Issue
-[#173](https://github.com/tdistress/ESAF/issues/173) tracks the publication
-gates.
+No annotated tag or post-merge publication evidence exists yet for
+`v0.14-draft`. Issue [#173](https://github.com/tdistress/ESAF/issues/173)
+tracks the publication gates. Exact-SHA technical, editorial, and governance
+reviews for the evidence candidate are recorded under
+`docs/superpowers/reviews/` with the `2026-09-10-v014-draft-` prefix.
