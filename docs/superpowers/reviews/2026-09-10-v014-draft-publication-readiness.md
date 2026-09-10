@@ -1,17 +1,20 @@
 ---
 release: 0.14-draft
-phase: closure_candidate
+phase: published
 tag: v0.14-draft
 issue: 173
 repository_scope: complete_git_tracked_repository
 publication:
-  date: null
+  date: "2026-09-10"
   condition: remote_annotated_tag_matches_exact_validated_commit
   evidence:
     - https://github.com/tdistress/ESAF/issues/173
-  tag_object: null
-  tagged_commit: null
-  issue_evidence_url: null
+    - https://github.com/tdistress/ESAF/actions/runs/34521088413
+    - https://github.com/tdistress/ESAF/commit/7727d6f2bcf020ddf453374c95ed37f51e6e41ff
+    - https://github.com/tdistress/ESAF/releases/tag/v0.14-draft
+  tag_object: 0e3602c82b9898e2af575fd563042df9cce27675
+  tagged_commit: 7727d6f2bcf020ddf453374c95ed37f51e6e41ff
+  issue_evidence_url: https://github.com/tdistress/ESAF/issues/173
 prerequisite_dispositions:
   phase2_timing: DEFER
   phase2_evidence: docs/superpowers/reviews/2026-08-29-phase2-hosted-timing-deferral.md
@@ -44,25 +47,25 @@ scope:
   iso_iec_42001_disposition: HOLD
   nist_csf_disposition: HOLD
 gates:
-  scope: {state: ready, evidence: [https://github.com/tdistress/ESAF/pull/176]}
-  technical: {state: ready, evidence: [https://github.com/tdistress/ESAF/blob/862d74b21a7ad166fc148d3a2d5e639e73d5780a/docs/superpowers/reviews/2026-09-10-v014-draft-technical-review.md]}
-  editorial: {state: ready, evidence: [https://github.com/tdistress/ESAF/blob/862d74b21a7ad166fc148d3a2d5e639e73d5780a/docs/superpowers/reviews/2026-09-10-v014-draft-editorial-review.md]}
-  terminology: {state: ready, evidence: [https://github.com/tdistress/ESAF/blob/862d74b21a7ad166fc148d3a2d5e639e73d5780a/docs/superpowers/reviews/2026-09-10-v014-draft-editorial-review.md]}
-  cross_reference_rendering: {state: ready, evidence: [https://github.com/tdistress/ESAF/pull/176]}
-  standards_mapping: {state: ready, evidence: [https://github.com/tdistress/ESAF/pull/176]}
-  profile_scope: {state: ready, evidence: [https://github.com/tdistress/ESAF/pull/176]}
-  release_metadata: {state: ready, evidence: [https://github.com/tdistress/ESAF/pull/176]}
-  governance: {state: ready, evidence: [https://github.com/tdistress/ESAF/blob/862d74b21a7ad166fc148d3a2d5e639e73d5780a/docs/superpowers/reviews/2026-09-10-v014-draft-governance-review.md]}
-  post_merge: {state: open, evidence: []}
+  scope: {state: closed, evidence: [https://github.com/tdistress/ESAF/issues/173]}
+  technical: {state: closed, evidence: [https://github.com/tdistress/ESAF/issues/173]}
+  editorial: {state: closed, evidence: [https://github.com/tdistress/ESAF/issues/173]}
+  terminology: {state: closed, evidence: [https://github.com/tdistress/ESAF/issues/173]}
+  cross_reference_rendering: {state: closed, evidence: [https://github.com/tdistress/ESAF/issues/173]}
+  standards_mapping: {state: closed, evidence: [https://github.com/tdistress/ESAF/issues/173]}
+  profile_scope: {state: closed, evidence: [https://github.com/tdistress/ESAF/issues/173]}
+  release_metadata: {state: closed, evidence: [https://github.com/tdistress/ESAF/issues/173]}
+  governance: {state: closed, evidence: [https://github.com/tdistress/ESAF/issues/173]}
+  post_merge: {state: closed, evidence: [https://github.com/tdistress/ESAF/actions/runs/34521088413]}
 ---
 
 # v0.14-draft publication readiness
 
 ## Scope
 
-This closure-candidate record covers the complete Git-tracked repository. Its
-derived inventory contains 91 controls in 16 families, 7 architecture patterns,
-3 mapping sets, and 404 mapping provisions. The mappings contain 81 relationship
+This published record covers the complete Git-tracked repository. Its derived
+inventory contains 91 controls in 16 families, 7 architecture patterns, 3
+mapping sets, and 404 mapping provisions. The mappings contain 81 relationship
 legs and 325 negative dispositions.
 
 The scope includes the ESAF-1500 assessment foundation and one Draft UK pilot
@@ -92,32 +95,33 @@ The bounded Working Draft deepen pack required for `v0.14-draft` is present at:
 
 - `assessment/ESAF-1500.md` (Working Draft `0.1.1`)
 
-Issues 55 and 60 may remain open; this candidate does not require their
+Issues 55 and 60 may remain open; this publication does not require their
 closure.
 
 ## Lifecycle boundary
 
-The current ESAF version is `0.14-draft`. The non-post-merge v0.14 gates are
-`ready`, the post-merge gate is `open`, and the `v0.14-draft` tag has not been
-created. The `0.14-draft` release status is Working Draft. This closure
-candidate does not approve publication.
+The current ESAF version is `0.14-draft`. The `v0.14-draft` Working Draft is
+published. Publication is limited to the repository Working Draft and does not
+change any artifact lifecycle state.
 
 This record does not advance any Draft artifact, control, architecture
 pattern, mapping set, or profile to an approved lifecycle state.
 
 ## Nonclaims
 
-This closure-candidate Working Draft package does not claim certification,
-compliance, equivalence, endorsement, assurance, or production readiness. It
-does not close Issue 55 or Issue 60, and it does not clear the PCI DSS,
-HITRUST, NIST AI RMF, ISO/IEC 42001, or NIST CSF blockers. While NIST AI RMF,
+This published Working Draft does not claim certification, compliance,
+equivalence, endorsement, assurance, or production readiness. It does not
+close Issue 55 or Issue 60, and it does not clear the PCI DSS, HITRUST,
+NIST AI RMF, ISO/IEC 42001, or NIST CSF blockers. While NIST AI RMF,
 ISO/IEC 42001, or NIST CSF readiness remains `HOLD`, this package does not
 authorize mapping authorship for those schemes.
 
 ## Publication evidence
 
-No annotated tag or post-merge publication evidence exists yet for
-`v0.14-draft`. Issue [#173](https://github.com/tdistress/ESAF/issues/173)
-tracks the publication gates. Exact-SHA technical, editorial, and governance
-reviews for the evidence candidate are recorded under
-`docs/superpowers/reviews/` with the `2026-09-10-v014-draft-` prefix.
+The annotated `v0.14-draft` tag object is
+`0e3602c82b9898e2af575fd563042df9cce27675` and peels to validated commit
+`7727d6f2bcf020ddf453374c95ed37f51e6e41ff`. Post-merge validation evidence is
+https://github.com/tdistress/ESAF/actions/runs/34521088413. Issue
+[#173](https://github.com/tdistress/ESAF/issues/173) tracks the publication
+gates. A consolidating issue comment may be added by the repository owner when
+desired; it is not required to close the published record.
