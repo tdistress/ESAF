@@ -2,7 +2,8 @@
 
 **Status:** Draft deepen
 **Issues:** [#116](https://github.com/tdistress/ESAF/issues/116) starter;
-[#125](https://github.com/tdistress/ESAF/issues/125) deepen
+[#125](https://github.com/tdistress/ESAF/issues/125) deepen;
+[#183](https://github.com/tdistress/ESAF/issues/183) second deepen
 
 This directory is a non-normative Draft catalog of ESAF-1500 evidence types,
 shared contract fields, quality attributes, per-type good-enough versus common
@@ -16,6 +17,9 @@ the shared evidence contract; it does not define a parallel evidence model.
   - [`examples/catalog-policy.example.json`](examples/catalog-policy.example.json)
   - [`examples/catalog-interview.example.json`](examples/catalog-interview.example.json)
   - [`examples/catalog-technical-test.example.json`](examples/catalog-technical-test.example.json)
+  - [`examples/catalog2-procedure.example.json`](examples/catalog2-procedure.example.json)
+  - [`examples/catalog2-log.example.json`](examples/catalog2-log.example.json)
+  - [`examples/catalog2-metric.example.json`](examples/catalog2-metric.example.json)
 - Authoritative semantics remain in [ESAF-1500](../ESAF-1500.md) and
   [`../schema/evidence-record.schema.json`](../schema/evidence-record.schema.json).
 

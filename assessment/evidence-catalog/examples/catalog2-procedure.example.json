@@ -1,0 +1,93 @@
+{
+  "$schema": "../schema/evidence-record.schema.json",
+  "schema_version": "0.1.0",
+  "evidence_id": "EVD-CAT2-RSK110-PROCEDURE",
+  "title": "Fictional RSK-110 classification operating procedure excerpt",
+  "description": "A fictional controlled procedure excerpt used to illustrate a catalog `procedure` evidence record for risk-classification examination.",
+  "evidence_type": "procedure",
+  "source": {
+    "identity": "Fictional Summit Analytics procedure library",
+    "locator": "example://summit/procedures/rsk-110-classification-v4"
+  },
+  "custodian": {
+    "name": "Riley Nguyen",
+    "role": "Enterprise risk analyst",
+    "organization": "Fictional Summit Analytics"
+  },
+  "collected_at": "2026-09-08T14:00:00Z",
+  "collection_method": "Read-only export of the approved procedure and change-control metadata.",
+  "scope": {
+    "description": "Fictional enterprise AI capability risk-classification procedure applicable to in-scope capabilities during the assessment period."
+  },
+  "period": {
+    "start": "2026-06-01T00:00:00Z",
+    "end": "2026-08-31T23:59:59Z"
+  },
+  "population": {
+    "description": "One fictional approved RSK-110 procedure version and its ownership record.",
+    "sample": "The complete fictional procedure package for version 4.0.",
+    "selection_rationale": "The catalog example needs a single authoritative procedure artifact for RSK-110."
+  },
+  "quality": {
+    "relevance": {
+      "rating": "adequate",
+      "rationale": "The procedure steps address the fictional classification obligations under examination."
+    },
+    "reliability": {
+      "rating": "adequate",
+      "rationale": "The export came from the fictional controlled procedure library with version metadata."
+    },
+    "completeness": {
+      "rating": "adequate",
+      "rationale": "The package includes controlled steps, owners, and applicability boundaries."
+    },
+    "timeliness": {
+      "rating": "adequate",
+      "rationale": "Version 4.0 was effective throughout the fictional assessment period."
+    },
+    "attribution": {
+      "rating": "adequate",
+      "rationale": "Procedure owner and approver are identified in the metadata card."
+    },
+    "integrity": {
+      "rating": "limited",
+      "rationale": "The fictional digest illustrates verification without asserting real assurance."
+    },
+    "traceability": {
+      "rating": "adequate",
+      "rationale": "The example links to RSK-110 and a fictional assessment result."
+    },
+    "sufficiency": "limited",
+    "evaluated_by": {
+      "name": "Morgan Ellis",
+      "role": "Independent assessor",
+      "organization": "Fictional Contour Assurance LLP"
+    },
+    "evaluated_at": "2026-09-08T15:00:00Z",
+    "sufficiency_rationale": "A procedure excerpt alone is limited evidence and needs corroborating classification records and logs in a real engagement."
+  },
+  "integrity": {
+    "digest_algorithm": "sha-256",
+    "digest": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+  },
+  "limitations": [
+    "This fictional catalog example does not demonstrate an actual organization's procedure control.",
+    "Operating adherence is not established by the procedure text alone."
+  ],
+  "retention": {
+    "authority": "Fictional Summit Analytics records schedule",
+    "end_condition": "Retain until the fictional assessment archive period ends."
+  },
+  "traceability": {
+    "requirement_refs": [
+      "RSK-110"
+    ],
+    "procedure_refs": [
+      "RSK-110-A1"
+    ],
+    "result_refs": [
+      "ASR-CAT2-PROCEDURE-DEMO"
+    ]
+  },
+  "example_notice": "Fictional non-authoritative example; no organization, ESAF control, profile, or external framework has been assessed."
+}

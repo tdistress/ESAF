@@ -533,6 +533,64 @@ class AssessmentWorkbookStarterTests(unittest.TestCase):
                         document.get("basis_refs", []),
                     )
 
+    def test_workbook_second_engagement_vignette_and_filled_trio_exist(self) -> None:
+        vignette = self.workbook_root / "engagement2-vignette.example.md"
+        example_root = self.workbook_root / "examples"
+        filled = {
+            "evidence-record": example_root
+            / "engagement2-evidence-record.example.json",
+            "assessment-result": example_root
+            / "engagement2-assessment-result.example.json",
+            "maturity-assessment": example_root
+            / "engagement2-maturity-assessment.example.json",
+        }
+        text = vignette.read_text(encoding="utf-8")
+        self.assertTrue(vignette.is_file())
+        self.assertRegex(text, r"(?im)\bDraft\b")
+        self.assertRegex(text, r"(?im)certification")
+        self.assertRegex(text, r"(?im)compliance")
+        self.assertIn("RSK-110", text)
+        self.assertIn("EVD-ENG2-RSK110-CLASSIFY", text)
+        self.assertIn("ASR-ENG2-RSK110", text)
+        self.assertIn("MAT-ENG2-RSK110", text)
+        readme = (self.workbook_root / "README.md").read_text(encoding="utf-8")
+        self.assertIn("engagement2-vignette.example.md", readme)
+        for name, path in filled.items():
+            with self.subTest(name=name):
+                self.assertTrue(path.is_file(), msg=f"missing {path}")
+                self.assertIn(path.name, text)
+                self.assertIn(path.name, readme)
+                document = json.loads(path.read_text(encoding="utf-8"))
+                validator = Draft202012Validator(
+                    self.schemas[name],
+                    format_checker=ASSESSMENT_FORMAT_CHECKER,
+                )
+                errors = list(validator.iter_errors(document))
+                self.assertEqual(
+                    errors,
+                    [],
+                    msg="; ".join(error.message for error in errors),
+                )
+                if name == "evidence-record":
+                    self.assertEqual(
+                        document.get("evidence_id"),
+                        "EVD-ENG2-RSK110-CLASSIFY",
+                    )
+                elif name == "assessment-result":
+                    self.assertEqual(document.get("result_id"), "ASR-ENG2-RSK110")
+                    self.assertEqual(document.get("status"), "draft")
+                    self.assertIn(
+                        "EVD-ENG2-RSK110-CLASSIFY",
+                        document.get("evidence_refs", []),
+                    )
+                else:
+                    self.assertEqual(document.get("maturity_id"), "MAT-ENG2-RSK110")
+                    self.assertEqual(document.get("status"), "draft")
+                    self.assertIn(
+                        "ASR-ENG2-RSK110",
+                        document.get("basis_refs", []),
+                    )
+
 
 class AssessmentEvidenceCatalogStarterTests(unittest.TestCase):
     catalog_root = ROOT / "assessment" / "evidence-catalog"
@@ -619,6 +677,46 @@ class AssessmentEvidenceCatalogStarterTests(unittest.TestCase):
                 self.assertEqual(document.get("example_notice"), notice)
                 self.assertTrue(
                     str(document.get("evidence_id", "")).startswith("EVD-CAT-")
+                )
+
+    def test_evidence_catalog_second_deepen_examples_exist(self) -> None:
+        catalog = (self.catalog_root / "ESAF-1500-evidence-catalog.md").read_text(
+            encoding="utf-8"
+        )
+        readme = (self.catalog_root / "README.md").read_text(encoding="utf-8")
+        example_root = self.catalog_root / "examples"
+        filled = {
+            "procedure": example_root / "catalog2-procedure.example.json",
+            "log": example_root / "catalog2-log.example.json",
+            "metric": example_root / "catalog2-metric.example.json",
+        }
+        self.assertIn("#183", readme)
+        schema = json.loads(
+            (SCHEMA_ROOT / "evidence-record.schema.json").read_text(encoding="utf-8")
+        )
+        validator = Draft202012Validator(
+            schema, format_checker=ASSESSMENT_FORMAT_CHECKER
+        )
+        notice = (
+            "Fictional non-authoritative example; no organization, ESAF control, "
+            "profile, or external framework has been assessed."
+        )
+        for evidence_type, path in filled.items():
+            with self.subTest(example=path.name):
+                self.assertTrue(path.is_file(), msg=f"missing {path}")
+                self.assertIn(path.name, catalog)
+                self.assertIn(path.name, readme)
+                document = json.loads(path.read_text(encoding="utf-8"))
+                errors = list(validator.iter_errors(document))
+                self.assertEqual(
+                    errors,
+                    [],
+                    msg="; ".join(error.message for error in errors),
+                )
+                self.assertEqual(document.get("evidence_type"), evidence_type)
+                self.assertEqual(document.get("example_notice"), notice)
+                self.assertTrue(
+                    str(document.get("evidence_id", "")).startswith("EVD-CAT2-")
                 )
 
 
@@ -731,6 +829,60 @@ class AssessmentAuditChecklistStarterTests(unittest.TestCase):
                 )
                 self.assertTrue(
                     str(document.get("result_id", "")).startswith("ASR-SAMP-")
+                )
+
+    def test_audit_checklist_second_sampling_vignette_exists(self) -> None:
+        checklist = (
+            self.checklist_root / "ESAF-1500-audit-checklist.md"
+        ).read_text(encoding="utf-8")
+        readme = (self.checklist_root / "README.md").read_text(encoding="utf-8")
+        vignette_path = self.checklist_root / "sampling2-vignette.example.md"
+        example_root = self.checklist_root / "examples"
+        filled_results = (
+            example_root / "sampling2-rsk110-assessment-result.example.json",
+            example_root / "sampling2-dat110-assessment-result.example.json",
+        )
+        self.assertTrue(vignette_path.is_file(), msg=f"missing {vignette_path}")
+        vignette = vignette_path.read_text(encoding="utf-8")
+        for document in (checklist, readme, vignette):
+            with self.subTest(document=document[:40]):
+                self.assertRegex(document, r"(?im)\bDraft deepen\b")
+                self.assertRegex(document, r"(?im)certification")
+                self.assertRegex(document, r"(?im)compliance")
+        self.assertIn("#183", readme)
+        self.assertIn("sampling2-vignette.example.md", readme)
+        self.assertIn("sampling2-vignette.example.md", checklist)
+        for control_id in ("RSK-110", "DAT-110"):
+            with self.subTest(control_id=control_id):
+                self.assertIn(control_id, vignette)
+        schema = json.loads(
+            (SCHEMA_ROOT / "assessment-result.schema.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        validator = Draft202012Validator(
+            schema, format_checker=ASSESSMENT_FORMAT_CHECKER
+        )
+        notice = (
+            "Fictional non-authoritative example; no organization, ESAF control, "
+            "profile, or external framework has been assessed."
+        )
+        for path in filled_results:
+            with self.subTest(example=path.name):
+                self.assertTrue(path.is_file(), msg=f"missing {path}")
+                self.assertIn(path.name, vignette)
+                self.assertIn(path.name, readme)
+                document = json.loads(path.read_text(encoding="utf-8"))
+                errors = list(validator.iter_errors(document))
+                self.assertEqual(
+                    errors,
+                    [],
+                    msg="; ".join(error.message for error in errors),
+                )
+                self.assertEqual(document.get("example_notice"), notice)
+                self.assertEqual(document.get("status"), "draft")
+                self.assertTrue(
+                    str(document.get("result_id", "")).startswith("ASR-SAMP2-")
                 )
 
 

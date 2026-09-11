@@ -1,0 +1,58 @@
+{
+  "$schema": "../schema/maturity-assessment.schema.json",
+  "schema_version": "0.1.0",
+  "maturity_id": "MAT-ENG2-RSK110",
+  "status": "draft",
+  "scope": "Fictional Summit Analytics RSK-110 classification practice for CAP-140 during the workbook engagement period.",
+  "exclusions": [
+    "Maturity of enterprise-wide RSK methodology outside CAP-140."
+  ],
+  "assessor": {
+    "name": "Morgan Ellis",
+    "role": "Independent assessor",
+    "organization": "Fictional Contour Assurance LLP",
+    "independence_statement": "This fictional assessor is presented only to illustrate workbook recording structure."
+  },
+  "assessed_at": "2026-09-06T18:00:00Z",
+  "level": "M1",
+  "criteria": [
+    {
+      "level": "M0",
+      "criterion_id": "M0-RSK110-BASELINE",
+      "statement": "The fictional classification current state is explicitly documented.",
+      "met": true,
+      "rationale": "The fictional classification record documents the baseline risk factors for CAP-140.",
+      "basis_refs": [
+        "EVD-ENG2-RSK110-CLASSIFY",
+        "ASR-ENG2-RSK110"
+      ]
+    },
+    {
+      "level": "M1",
+      "criterion_id": "M1-RSK110-REPEATABLE",
+      "statement": "The fictional classification practice has accountable ownership and basic repeatable operation.",
+      "met": true,
+      "rationale": "The fictional record identifies reviewers, approver, and criteria sufficient to illustrate M1 for workbook purposes.",
+      "basis_refs": [
+        "EVD-ENG2-RSK110-CLASSIFY",
+        "ASR-ENG2-RSK110"
+      ]
+    }
+  ],
+  "basis_refs": [
+    "EVD-ENG2-RSK110-CLASSIFY",
+    "ASR-ENG2-RSK110"
+  ],
+  "limitations": [
+    "This fictional draft maturity example does not assess an organization or establish any assurance outcome."
+  ],
+  "change_history": [
+    {
+      "version": "0.1.0-draft",
+      "date": "2026-09-06T18:00:00Z",
+      "author": "Morgan Ellis",
+      "description": "Created the fictional draft workbook maturity assessment for RSK-110."
+    }
+  ],
+  "example_notice": "Fictional non-authoritative example; no organization, ESAF control, profile, or external framework has been assessed."
+}

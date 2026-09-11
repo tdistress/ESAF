@@ -2,7 +2,8 @@
 
 **Status:** Draft deepen pack
 **Issues:** [#118](https://github.com/tdistress/ESAF/issues/118) starter;
-[#127](https://github.com/tdistress/ESAF/issues/127) deepen
+[#127](https://github.com/tdistress/ESAF/issues/127) deepen;
+[#183](https://github.com/tdistress/ESAF/issues/183) second deepen
 
 Reusable, non-normative governance and implementation templates for operators.
 These starters and filled fictional examples illustrate record shapes already
@@ -22,6 +23,7 @@ normative requirements.
 | Exception record example | Exception | [examples/exception-record.example.md](examples/exception-record.example.md) |
 | Decision record example | Decision | [examples/decision-record.example.md](examples/decision-record.example.md) |
 | Retirement record example | Retirement | [examples/retirement-record.example.md](examples/retirement-record.example.md) |
+| Governance thread example | Cross-template | [examples/governance-thread.example.md](examples/governance-thread.example.md) |
 
 Related publications:
 

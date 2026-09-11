@@ -1,0 +1,93 @@
+{
+  "$schema": "../schema/evidence-record.schema.json",
+  "schema_version": "0.1.0",
+  "evidence_id": "EVD-CAT2-RSK110-LOG",
+  "title": "Fictional classification change log slice for CAP-140",
+  "description": "A fictional time-bounded event log slice used to illustrate a catalog `log` evidence record supporting RSK-110 operating review.",
+  "evidence_type": "log",
+  "source": {
+    "identity": "Fictional Summit Analytics risk-register audit stream",
+    "locator": "example://summit/logs/risk-register-audit/2026-08"
+  },
+  "custodian": {
+    "name": "Riley Nguyen",
+    "role": "Enterprise risk analyst",
+    "organization": "Fictional Summit Analytics"
+  },
+  "collected_at": "2026-09-08T16:00:00Z",
+  "collection_method": "Filtered export of fictional classification change events for CAP-140 during the assessment period.",
+  "scope": {
+    "description": "Fictional risk-register audit events for CAP-140 classification changes during August 2026."
+  },
+  "period": {
+    "start": "2026-08-01T00:00:00Z",
+    "end": "2026-08-31T23:59:59Z"
+  },
+  "population": {
+    "description": "All fictional classification change events for CAP-140 in August 2026.",
+    "sample": "Complete August 2026 event slice for CAP-140.",
+    "selection_rationale": "The catalog example demonstrates a log slice tied to a named capability classification."
+  },
+  "quality": {
+    "relevance": {
+      "rating": "adequate",
+      "rationale": "Events record fictional classification updates relevant to RSK-110 review."
+    },
+    "reliability": {
+      "rating": "limited",
+      "rationale": "The example does not independently verify log source integrity."
+    },
+    "completeness": {
+      "rating": "adequate",
+      "rationale": "The export covers the stated August window without truncation."
+    },
+    "timeliness": {
+      "rating": "adequate",
+      "rationale": "Events fall within the fictional assessment period."
+    },
+    "attribution": {
+      "rating": "adequate",
+      "rationale": "Each event identifies actor, role, and source system."
+    },
+    "integrity": {
+      "rating": "limited",
+      "rationale": "The fictional digest illustrates verification without asserting real assurance."
+    },
+    "traceability": {
+      "rating": "adequate",
+      "rationale": "Events reference CAP-140 and RSK-110 procedure identifiers."
+    },
+    "sufficiency": "limited",
+    "evaluated_by": {
+      "name": "Morgan Ellis",
+      "role": "Independent assessor",
+      "organization": "Fictional Contour Assurance LLP"
+    },
+    "evaluated_at": "2026-09-08T17:00:00Z",
+    "sufficiency_rationale": "A single log slice is limited evidence and should be corroborated against classification records and metrics."
+  },
+  "integrity": {
+    "digest_algorithm": "sha-256",
+    "digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+  },
+  "limitations": [
+    "This fictional catalog example does not demonstrate an actual organization's log control.",
+    "Clock synchronization and log completeness were not independently verified."
+  ],
+  "retention": {
+    "authority": "Fictional Summit Analytics records schedule",
+    "end_condition": "Retain until the fictional assessment archive period ends."
+  },
+  "traceability": {
+    "requirement_refs": [
+      "RSK-110"
+    ],
+    "procedure_refs": [
+      "RSK-110-A3"
+    ],
+    "result_refs": [
+      "ASR-CAT2-LOG-DEMO"
+    ]
+  },
+  "example_notice": "Fictional non-authoritative example; no organization, ESAF control, profile, or external framework has been assessed."
+}

@@ -18,27 +18,30 @@ PACK_FILES = {
         "examples/esaf-1300/charter-worksheet.md",
         "examples/esaf-1300/decision-rights-matrix.example.md",
         "examples/esaf-1300/exception-workflow.example.md",
+        "examples/esaf-1300/gate-decision-record.example.md",
     ],
     "1400": [
         "examples/esaf-1400/README.md",
         "examples/esaf-1400/adoption-vignette.example.md",
         "examples/esaf-1400/capability-control-mapping.example.md",
+        "examples/esaf-1400/evidence-handoff-vignette.example.md",
     ],
     "1700": [
         "examples/esaf-1700/README.md",
         "examples/esaf-1700/entity-instances.example.md",
+        "examples/esaf-1700/assessment-record-links.example.md",
     ],
 }
 
 
 class BreadthDeepenContracts(unittest.TestCase):
-    def test_core_docs_are_version_0_2_0_working_draft(self) -> None:
+    def test_core_docs_are_version_0_3_0_working_draft(self) -> None:
         for key, path in CORE.items():
             text = path.read_text(encoding="utf-8")
             self.assertRegex(
                 text,
-                r"(?m)^(?:\|\s*Version\s*\|\s*0\.2\.0\s*\||\*\*Version:\*\*\s*0\.2\.0)",
-                msg=f"{key} missing Version 0.2.0",
+                r"(?m)^(?:\|\s*Version\s*\|\s*0\.3\.0\s*\||\*\*Version:\*\*\s*0\.3\.0)",
+                msg=f"{key} missing Version 0.3.0",
             )
             self.assertIn("Working Draft", text)
 
@@ -70,7 +73,9 @@ class BreadthDeepenContracts(unittest.TestCase):
             "examples/esaf-1300/charter-worksheet.md",
             "examples/esaf-1300/decision-rights-matrix.example.md",
             "examples/esaf-1300/exception-workflow.example.md",
-            "**Version:** 0.2.0",
+            "examples/esaf-1300/gate-decision-record.example.md",
+            "templates/examples/governance-thread.example.md",
+            "**Version:** 0.3.0",
         ):
             self.assertIn(needle, text.replace("\\", "/"))
 
@@ -91,10 +96,12 @@ class BreadthDeepenContracts(unittest.TestCase):
 
     def test_esaf_1400_has_inline_example_anchors(self) -> None:
         text = CORE["1400"].read_text(encoding="utf-8")
-        self.assertRegex(text, r"(?m)^\|\s*Version\s*\|\s*0\.2\.0\s*\|")
+        self.assertRegex(text, r"(?m)^\|\s*Version\s*\|\s*0\.3\.0\s*\|")
         for needle in (
             "examples/esaf-1400/adoption-vignette.example.md",
             "examples/esaf-1400/capability-control-mapping.example.md",
+            "examples/esaf-1400/evidence-handoff-vignette.example.md",
+            "assessment/workbook/engagement2-vignette.example.md",
         ):
             self.assertIn(needle, text.replace("\\", "/"))
 
@@ -109,11 +116,13 @@ class BreadthDeepenContracts(unittest.TestCase):
 
     def test_esaf_1700_has_inline_example_anchors(self) -> None:
         text = CORE["1700"].read_text(encoding="utf-8")
-        self.assertIn("**Version:** 0.2.0", text)
-        self.assertIn(
+        self.assertIn("**Version:** 0.3.0", text)
+        for needle in (
             "examples/esaf-1700/entity-instances.example.md",
-            text.replace("\\", "/"),
-        )
+            "examples/esaf-1700/assessment-record-links.example.md",
+            "assessment/workbook/engagement2-vignette.example.md",
+        ):
+            self.assertIn(needle, text.replace("\\", "/"))
         self.assertRegex(text, r"CAP-[A-Z0-9-]+")
         self.assertIn("EVD-", text)
 
@@ -138,10 +147,6 @@ class BreadthDeepenContracts(unittest.TestCase):
     def test_esaf_1400_remains_informative_without_local_shall(self) -> None:
         text = CORE["1400"].read_text(encoding="utf-8")
         self.assertIn("informative", text.lower())
-        # Strip fenced code and quoted parent-publication restatements that
-        # appear only inside explicit pointer sentences is unnecessary if the
-        # document keeps the established rule: no bare "shall" outside the
-        # informative-status / nonclaims section's "contains no shall".
         self.assertRegex(
             text,
             r"contains no `shall` requirements of its own",
