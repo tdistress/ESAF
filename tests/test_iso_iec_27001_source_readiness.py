@@ -139,7 +139,7 @@ EXPECTED_PUBLICATION = {
     "version": "2022",
 }
 
-RIGHTS_COMMIT = "b5c9274979a3ef0d7c65e311482739353f6ac438"
+RIGHTS_COMMIT = "160f5ae688cb7ae216cb525b9fe09866af1c76c3"
 
 
 def section(text: str, heading: str) -> str:
