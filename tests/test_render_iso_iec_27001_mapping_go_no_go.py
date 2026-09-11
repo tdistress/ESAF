@@ -70,7 +70,7 @@ QUESTION = (
     "recorded independently, without implying ISO/IEC 27001 compliance, "
     "assessment, equivalence, certification, authorization, or endorsement?"
 )
-RIGHTS_COMMIT = "b5c9274979a3ef0d7c65e311482739353f6ac438"
+RIGHTS_COMMIT = "160f5ae688cb7ae216cb525b9fe09866af1c76c3"
 
 
 class IsoIec27001MappingGoNoGoTests(unittest.TestCase):
