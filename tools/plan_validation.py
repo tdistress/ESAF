@@ -178,6 +178,7 @@ COMMAND_CATALOG = (
     ValidationCommand("v012-draft-release-gates", ("python", "tools/v012_draft_release_gates.py", "--check", "--baseline-ref", "{base}"), "publication", "candidate freeze"),
     ValidationCommand("v013-draft-release-gates", ("python", "tools/v013_draft_release_gates.py", "--check", "--baseline-ref", "{base}"), "publication", "candidate freeze"),
     ValidationCommand("v014-draft-release-gates", ("python", "tools/v014_draft_release_gates.py", "--check", "--baseline-ref", "{base}"), "publication", "candidate freeze"),
+    ValidationCommand("v015-draft-release-gates", ("python", "tools/v015_draft_release_gates.py", "--check", "--baseline-ref", "{base}"), "publication", "candidate freeze"),
 )
 
 ROUTING_RULES = (
@@ -206,6 +207,7 @@ PUBLICATION_COMMAND_IDS = (
     "v09-rc1-release-gates", "v010-draft-release-gates", "v011-draft-release-gates",
     "v012-draft-release-gates", "v013-draft-release-gates",
     "v014-draft-release-gates",
+    "v015-draft-release-gates",
 )
 PROOF_COMMAND_IDS = ("qualified-review-equivalence",)
 REVIEWED_POLICY = ValidationPolicy(COMMAND_CATALOG, ROUTING_RULES)
