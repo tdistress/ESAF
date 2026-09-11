@@ -608,3 +608,107 @@
   lifecycle state without their own evidence;
 - a certification or accreditation scheme; or
 - redesigning `v1.0`.
+## v0.15-draft
+
+### Entry state
+
+- `v0.14-draft` is published and its publication evidence is closed.
+- ESAF-1500 remains Working Draft `0.1.1` with schemas, examples, and Phase 6
+  Draft toolkit packs under `assessment/` and `templates/`.
+- ESAF-1200 remains Working Draft `0.4.1`; ESAF-1000 remains Working Draft
+  `0.2.1`; ESAF-1100 remains Working Draft `0.3.1`; ESAF-1300, ESAF-1400, and
+  ESAF-1700 remain at Working Draft `0.2.0` depth with discoverable example
+  packs.
+- NIST AI RMF, ISO/IEC 42001, NIST CSF 2.0, and PCI DSS readiness remain
+  evidenced `HOLD`; mapping artifact counts for HOLD schemes remain `0`.
+- No ISO/IEC 27001 readiness package or mapping artifacts exist yet.
+- Issues `#55` and `#60` may remain open after hygiene; they are not
+  `v0.15-draft` blockers.
+
+### Required workstreams
+
+1. **Tracker hygiene.** ESAF shall ensure Issue `#55` is open if and only if
+   qualified UK mapping review remains outstanding, close or explicitly
+   annotate Issues `#171`–`#173` as historical completed `v0.14-draft` work,
+   close GitHub milestone `v0.14-draft` when it has no open issues, open
+   GitHub milestone `v0.15-draft`, and align `project/BACKLOG.md` with
+   published truth. This workstream does not change normative content.
+2. **ISO/IEC 27001:2022 public-source readiness.** ESAF shall pin the
+   applicable official ISO/IEC 27001:2022 source identity, establish
+   publication-rights and provision-inventory boundaries, assess mapper and
+   qualified-review availability, produce a mechanical readiness matrix, and
+   record a `GO` / `HOLD` / `NO_GO` decision. The default acceptable exit is
+   an evidenced `HOLD` that restates blockers, owners, reconsideration
+   triggers, re-entry tests, and nonclaims. A matrix-derived `GO` is allowed
+   only when every readiness gate clears, including named mapper and
+   independent reviewer evidence. While the decision remains `HOLD` or
+   `NO_GO`, ESAF shall not create ISO/IEC 27001 mapping relationships,
+   negative dispositions, snapshots, lifecycle events, registry entries, or
+   catalog increments.
+3. **Phase 6 toolkit deepen.** ESAF shall complete a bounded second Working
+   Draft deepen of the assessment workbook, evidence catalog, audit checklist,
+   and governance templates beyond the `v0.11-draft` packs; remain Draft; stay
+   bound to ESAF-1500 contracts; and avoid certification claims or a complete
+   assessment library.
+4. **ESAF-1300 / ESAF-1400 / ESAF-1700 normative deepen.** ESAF shall complete
+   a bounded Working Draft deepen of `governance/ESAF-1300.md`,
+   `implementation/ESAF-1400.md`, and `data-model/ESAF-1700.md` from `0.2.0`
+   to `0.3.0`, update revision histories, extend discoverable example packs as
+   needed, keep ESAF-1400 informative, and require parent-obligation citations
+   for any clarifying `shall`/`should` in ESAF-1300 or ESAF-1700. No new
+   control identifiers, procedures, or metrics.
+5. **Release closure.** ESAF shall complete ordinary release gates on the exact
+   `v0.15-draft` candidate, publish annotated tag `v0.15-draft`, and
+   synchronize Working Draft status surfaces.
+
+### Exit criteria
+
+`v0.15-draft` is complete only when:
+
+- tracker hygiene is complete: Issues `#171`–`#173` are closed or explicitly
+  annotated as historical, GitHub milestone `v0.14-draft` is closed when empty,
+  GitHub milestone `v0.15-draft` exists, and Issue `#55` is open if and only if
+  qualified UK review remains outstanding;
+- ISO/IEC 27001 readiness is recorded as evidenced `GO`, `HOLD`, or `NO_GO`;
+  if `HOLD` or `NO_GO`, ISO/IEC 27001 mapping artifact count remains `0` and
+  generated crosswalk catalog counts are unchanged by that workstream;
+- Phase 6 toolkit packs have a bounded second deepen with Draft evidence and
+  remain bound to ESAF-1500 contracts without certification claims;
+- ESAF-1300, ESAF-1400, and ESAF-1700 each have a bounded deepen with
+  revision-history evidence at Working Draft `0.3.0`, remain Draft, and do not
+  invent new control identifiers or local ESAF-1400 `shall` statements;
+- generated catalogs and affected traceability records are current;
+- the full test suite, control, architecture, assessment, profile, crosswalk,
+  link, release, working-tree, and applicable Mermaid-rendering gates pass on
+  the exact candidate;
+- Critical and Important review findings are resolved;
+- the exact candidate receives technical, editorial, and governance approval
+  appropriate to its contents; and
+- annotated tag `v0.15-draft` is published and Working Draft status surfaces
+  (`VERSION.md`, README badges, changelog, roadmap, backlog, milestones, and
+  readiness record) are synchronized.
+
+### Non-goals
+
+`v0.15-draft` does not require:
+
+- closing Issue `#55` via owner-risk acceptance or completing the six qualified
+  UK mapping role dispositions;
+- licensed HITRUST CSF access or substantive HITRUST mapping (Issue `#60`);
+- clearing the PCI DSS `HOLD` without its recorded reconsideration triggers;
+- clearing the NIST AI RMF `HOLD` when named mapper and independent reviewers
+  remain unavailable;
+- clearing the ISO/IEC 42001 `HOLD` or NIST CSF `HOLD` without recorded
+  reconsideration triggers and named people;
+- authoring ISO/IEC 27001, ISO/IEC 42001, NIST AI RMF, NIST CSF, or PCI DSS
+  mapping records, snapshots, or catalog entries under a non-`GO` readiness
+  decision;
+- a second industry or jurisdiction profile;
+- a complete Phase 6 assessment library;
+- ESAF-1000, ESAF-1100, ESAF-1200, or ESAF-1500 re-deepen;
+- schema-breaking changes to ESAF-1500 machine contracts;
+- all roadmap crosswalks or all planned profiles;
+- advancing Draft controls, architectures, mappings, or profiles to an approved
+  lifecycle state without their own evidence;
+- a certification or accreditation scheme; or
+- redesigning `v1.0`.

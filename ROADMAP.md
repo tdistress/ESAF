@@ -4,6 +4,21 @@
 
 **Version:** 0.14-draft
 
+## 0.15-draft delivery sequence
+
+`v0.15-draft` follows tracker hygiene, then ISO/IEC 27001:2022 public-source
+readiness, then bounded Phase 6 toolkit deepen and ESAF-1300/1400/1700 deepen
+to Working Draft `0.3.0`, then ordinary publication gates on the exact
+candidate. Deferred mapping assurance remains tracked through issue 55 and does
+not stop later engineering work. HITRUST readiness remains separately gated
+through issue 60. Issues 55 and 60 are not `v0.15-draft` exit criteria.
+ISO/IEC 27001 readiness may exit as an evidenced `HOLD` when people, rights, or
+source-access gates remain blocked; while `HOLD` or `NO_GO`, no ISO/IEC 27001
+mapping records are authored. Publication does not change any control,
+architecture, profile, mapping-set, or mapping-record lifecycle state. Phases
+4, 5, and 6 remain long-term direction except for the bounded readiness and
+deepen work required by this milestone.
+
 ## 0.14-draft delivery sequence
 
 The `v0.14-draft` Working Draft was published on 2026-09-10 through the
