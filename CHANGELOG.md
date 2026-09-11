@@ -7,19 +7,25 @@ Version 0.4-alpha is a tagged Working Draft. Version 0.5-beta is a tagged
 Working Draft. Version 0.9-rc1 is a tagged Working Draft. Version 0.10-draft
 is a tagged Working Draft. Version 0.11-draft is a tagged Working Draft. Version 0.12-draft is a tagged
 Working Draft. Version 0.13-draft is a tagged Working Draft. Version 0.14-draft is a tagged
-Working Draft.
+Working Draft. Version 0.15-draft is a tagged Working Draft.
 
-## 0.15-draft - Unreleased
+## 0.15-draft - 2026-09-11
 
 ### Changed
 
-- Advanced Working Draft status surfaces to `0.15-draft` for the exact
-  metadata-only closure candidate. Publication remains conditional on the
-  remote annotated `v0.15-draft` tag resolving to the exact validated merged
-  commit. The tag has not been created, and the post-merge gate remains open.
+- Published the `v0.15-draft` Working Draft through the annotated `v0.15-draft`
+  tag. Prerequisite dispositions remain Phase 2 timing `DEFER`,
+  ESAF-1300/1400/1700 Working Draft deepen packs at `0.3.0`, Phase 6 toolkit
+  second deepen, NIST AI RMF `HOLD`, ISO/IEC 42001 `HOLD`, NIST CSF `HOLD`,
+  ISO/IEC 27001 `HOLD`, and the ESAF-1500 Working Draft carry-forward at
+  `0.1.1`. Issues 55 and 60 remain open.
+- Clarified that publication does not establish certification, compliance,
+  equivalence, endorsement, assurance, legal sufficiency, implementation
+  assessment, production readiness, or replacement of qualified professional
+  judgment.
 - Added the v0.15-draft publication evidence-candidate gates, readiness
   record, and Issue #185 validator wiring without advancing VERSION.md before
-  this closure candidate (PR #188).
+  the closure candidate (PR #188).
 - Recorded ISO/IEC 27001:2022 public-source readiness as an evidenced `HOLD`
   for Issue #182: pinned source identity, rights review, inventory, and
   mapping artifact counts at zero.
@@ -27,7 +33,9 @@ Working Draft.
   pass and deepened ESAF-1300/1400/1700 Working Drafts to `0.3.0` while
   preserving normative contracts (PR #186).
 - Recorded independent technical, editorial, and governance reviews of the
-  exact evidence candidate under the `2026-09-11-v015-draft-` review prefix.
+  exact evidence candidate and the immutable published readiness record,
+  including the annotated tag object, tagged commit, UTC publication date,
+  and issue 185 evidence locators.
 - Carried forward the seven Draft architecture patterns in the current
   Working Draft: ARC-P100, Enterprise AI platform and gateway; ARC-P110,
   Enterprise copilot; ARC-P120, Retrieval-augmented generation; ARC-P130,
@@ -38,11 +46,6 @@ Working Draft.
   mapping snapshot.
 - Carried forward the Draft Cyber Essentials Plus v3.2 `external_to_esaf`
   mapping snapshot.
-- Retained prerequisite dispositions: Phase 2 timing `DEFER`,
-  ESAF-1300/1400/1700 Working Draft deepen packs at `0.3.0`, Phase 6 toolkit
-  second deepen, NIST AI RMF `HOLD`, ISO/IEC 42001 `HOLD`, NIST CSF `HOLD`,
-  ISO/IEC 27001 `HOLD`, and the ESAF-1500 Working Draft carry-forward at
-  `0.1.1`. Issues 55 and 60 remain open.
 
 ## 0.14-draft - 2026-09-10
 
