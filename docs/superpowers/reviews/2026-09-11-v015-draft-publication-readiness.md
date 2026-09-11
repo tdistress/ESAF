@@ -1,13 +1,14 @@
 ---
 release: 0.15-draft
-phase: evidence_candidate
+phase: closure_candidate
 tag: v0.15-draft
 issue: 185
 repository_scope: complete_git_tracked_repository
 publication:
   date: null
   condition: remote_annotated_tag_matches_exact_validated_commit
-  evidence: []
+  evidence:
+    - https://github.com/tdistress/ESAF/issues/185
   tag_object: null
   tagged_commit: null
   issue_evidence_url: null
@@ -48,15 +49,15 @@ scope:
   nist_csf_disposition: HOLD
   iso_iec_27001_disposition: HOLD
 gates:
-  scope: {state: open, evidence: []}
-  technical: {state: open, evidence: []}
-  editorial: {state: open, evidence: []}
-  terminology: {state: open, evidence: []}
-  cross_reference_rendering: {state: open, evidence: []}
-  standards_mapping: {state: open, evidence: []}
-  profile_scope: {state: open, evidence: []}
-  release_metadata: {state: open, evidence: []}
-  governance: {state: open, evidence: []}
+  scope: {state: ready, evidence: [https://github.com/tdistress/ESAF/pull/188]}
+  technical: {state: ready, evidence: [https://github.com/tdistress/ESAF/blob/28f4303ab27a81e4b85a76580e5a9911a5bf9bf3/docs/superpowers/reviews/2026-09-11-v015-draft-technical-review.md]}
+  editorial: {state: ready, evidence: [https://github.com/tdistress/ESAF/blob/28f4303ab27a81e4b85a76580e5a9911a5bf9bf3/docs/superpowers/reviews/2026-09-11-v015-draft-editorial-review.md]}
+  terminology: {state: ready, evidence: [https://github.com/tdistress/ESAF/blob/28f4303ab27a81e4b85a76580e5a9911a5bf9bf3/docs/superpowers/reviews/2026-09-11-v015-draft-editorial-review.md]}
+  cross_reference_rendering: {state: ready, evidence: [https://github.com/tdistress/ESAF/pull/188]}
+  standards_mapping: {state: ready, evidence: [https://github.com/tdistress/ESAF/pull/188]}
+  profile_scope: {state: ready, evidence: [https://github.com/tdistress/ESAF/pull/188]}
+  release_metadata: {state: ready, evidence: [https://github.com/tdistress/ESAF/pull/188]}
+  governance: {state: ready, evidence: [https://github.com/tdistress/ESAF/blob/28f4303ab27a81e4b85a76580e5a9911a5bf9bf3/docs/superpowers/reviews/2026-09-11-v015-draft-governance-review.md]}
   post_merge: {state: open, evidence: []}
 ---
 
@@ -64,7 +65,7 @@ gates:
 
 ## Scope
 
-This evidence-candidate record covers the complete Git-tracked repository. Its
+This closure-candidate record covers the complete Git-tracked repository. Its
 derived inventory contains 91 controls in 16 families, 7 architecture patterns,
 3 mapping sets, and 404 mapping provisions. The mappings contain 81 relationship
 legs and 325 negative dispositions.
@@ -100,23 +101,22 @@ The bounded Phase 6 assessment toolkit second deepen required for
 
 - `assessment/workbook/README.md` (second deepen marker)
 
-Issues 55 and 60 may remain open; this publication does not require their
+Issues 55 and 60 may remain open; this candidate does not require their
 closure.
 
 ## Lifecycle boundary
 
-The current ESAF version is still `0.14-draft` until the later
-`closure_candidate` metadata sync. The `v0.15-draft` Working Draft is an
-evidence candidate and is not yet published. Publication, when completed, is
-limited to the repository Working Draft and does not change any artifact
-lifecycle state.
+The current ESAF version is `0.15-draft`. The non-post-merge v0.15 gates are
+`ready`, the post-merge gate is `open`, and the `v0.15-draft` tag has not been
+created. The `0.15-draft` release status is Working Draft. This closure
+candidate does not approve publication.
 
 This record does not advance any Draft artifact, control, architecture
 pattern, mapping set, or profile to an approved lifecycle state.
 
 ## Nonclaims
 
-This evidence-candidate Working Draft package does not claim certification,
+This closure-candidate Working Draft package does not claim certification,
 compliance, equivalence, endorsement, assurance, or production readiness. It
 does not close Issue 55 or Issue 60, and it does not clear the PCI DSS,
 HITRUST, NIST AI RMF, ISO/IEC 42001, NIST CSF, or ISO/IEC 27001 blockers.
@@ -125,8 +125,6 @@ While NIST AI RMF, ISO/IEC 42001, NIST CSF, or ISO/IEC 27001 readiness remains
 
 ## Publication evidence
 
-Publication evidence is not yet bound in the `evidence_candidate` phase.
-Annotated tag identity, tagged commit, and post-merge validation evidence
-remain unset until the published phase. Issue
-[#185](https://github.com/tdistress/ESAF/issues/185) tracks the publication
-gates.
+No annotated tag or post-merge publication evidence exists yet for
+`v0.15-draft`. Issue [#185](https://github.com/tdistress/ESAF/issues/185)
+tracks the remaining publication gates.
