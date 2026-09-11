@@ -44,6 +44,7 @@ EXPECTED_PUBLICATION_CATALOG = (
     "release-gates",
     "release-evidence",
     "iso-iec-42001-mapping-go-no-go",
+    "iso-iec-27001-mapping-go-no-go",
     "nist-ai-rmf-mapping-go-no-go",
     "nist-csf-mapping-go-no-go",
     "pci-dss-mapping-go-no-go",
@@ -73,6 +74,7 @@ EXPECTED_COMMAND_ARGV = {
     "release-gates": ("python", "tools/release_gates.py", "--check", "--baseline-ref", "{base}"),
     "release-evidence": ("python", "tools/v05_beta_release_gates.py", "--check", "--baseline-ref", "{base}"),
     "iso-iec-42001-mapping-go-no-go": ("python", "tools/render_iso_iec_42001_mapping_go_no_go.py", "--check"),
+    "iso-iec-27001-mapping-go-no-go": ("python", "tools/render_iso_iec_27001_mapping_go_no_go.py", "--check"),
     "nist-ai-rmf-mapping-go-no-go": ("python", "tools/render_nist_ai_rmf_mapping_go_no_go.py", "--check"),
     "nist-csf-mapping-go-no-go": ("python", "tools/render_nist_csf_mapping_go_no_go.py", "--check"),
     "pci-dss-mapping-go-no-go": ("python", "tools/render_pci_dss_mapping_go_no_go.py", "--check"),
@@ -369,6 +371,10 @@ class PlanValidationTests(unittest.TestCase):
         self.assertEqual(
             ("python", "tools/render_iso_iec_42001_mapping_go_no_go.py", "--check"),
             commands["iso-iec-42001-mapping-go-no-go"],
+        )
+        self.assertEqual(
+            ("python", "tools/render_iso_iec_27001_mapping_go_no_go.py", "--check"),
+            commands["iso-iec-27001-mapping-go-no-go"],
         )
         self.assertEqual(
             ("python", "tools/render_pci_dss_mapping_go_no_go.py", "--check"),

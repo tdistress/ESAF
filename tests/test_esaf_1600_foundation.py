@@ -34,6 +34,7 @@ README_LINK_TARGETS = {
     "CATALOG.md",
     "catalog.json",
     "../tools/README.md",
+    "iso-iec-27001.md",
     "iso-iec-42001.md",
     "nist-ai-rmf.md",
     "nist-csf.md",
@@ -551,6 +552,7 @@ class Esaf1600FoundationTests(unittest.TestCase):
             "tools/render_nist_ai_rmf_mapping_go_no_go.py",
             "tools/render_nist_csf_mapping_go_no_go.py",
             "tools/render_iso_iec_42001_mapping_go_no_go.py",
+            "tools/render_iso_iec_27001_mapping_go_no_go.py",
             "requirements-dev.txt",
         ]
         for event in ("pull_request", "push"):
@@ -621,6 +623,12 @@ class Esaf1600FoundationTests(unittest.TestCase):
         self.assertEqual(iso_readiness, {
             "name": "Validate ISO/IEC 42001 readiness review",
             "run": "python tools/render_iso_iec_42001_mapping_go_no_go.py --check",
+        })
+
+        iso_27001_readiness = unique_step("Validate ISO/IEC 27001 readiness review")
+        self.assertEqual(iso_27001_readiness, {
+            "name": "Validate ISO/IEC 27001 readiness review",
+            "run": "python tools/render_iso_iec_27001_mapping_go_no_go.py --check",
         })
 
         pull_request = unique_step("Validate crosswalk history on pull request")
