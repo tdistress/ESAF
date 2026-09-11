@@ -1,0 +1,93 @@
+{
+  "$schema": "../schema/evidence-record.schema.json",
+  "schema_version": "0.1.0",
+  "evidence_id": "EVD-CAT2-RSK110-METRIC",
+  "title": "Fictional in-scope capabilities with current classification metric",
+  "description": "A fictional monthly metric export used to illustrate a catalog `metric` evidence record supporting RSK-110 operating effectiveness review.",
+  "evidence_type": "metric",
+  "source": {
+    "identity": "Fictional Summit Analytics risk dashboard",
+    "locator": "example://summit/metrics/rsk-110-classification-coverage/2026-08"
+  },
+  "custodian": {
+    "name": "Riley Nguyen",
+    "role": "Enterprise risk analyst",
+    "organization": "Fictional Summit Analytics"
+  },
+  "collected_at": "2026-09-08T18:00:00Z",
+  "collection_method": "Read-only export of the fictional August 2026 classification-coverage metric definition and value.",
+  "scope": {
+    "description": "Fictional enterprise in-scope AI capabilities with a current classification during August 2026."
+  },
+  "period": {
+    "start": "2026-08-01T00:00:00Z",
+    "end": "2026-08-31T23:59:59Z"
+  },
+  "population": {
+    "description": "All fictional in-scope AI capabilities in the Summit Analytics inventory for August 2026.",
+    "sample": "Complete August 2026 inventory population.",
+    "selection_rationale": "The catalog example demonstrates the RSK-110 metric for classification coverage."
+  },
+  "quality": {
+    "relevance": {
+      "rating": "adequate",
+      "rationale": "The metric definition matches the fictional RSK-110 operating metric under review."
+    },
+    "reliability": {
+      "rating": "limited",
+      "rationale": "The example does not independently verify dashboard calculation logic."
+    },
+    "completeness": {
+      "rating": "adequate",
+      "rationale": "Definition, window, method, and observed value are all recorded."
+    },
+    "timeliness": {
+      "rating": "adequate",
+      "rationale": "The measurement window aligns with the fictional assessment period."
+    },
+    "attribution": {
+      "rating": "adequate",
+      "rationale": "Metric owner and collection method are identified."
+    },
+    "integrity": {
+      "rating": "limited",
+      "rationale": "The fictional digest illustrates verification without asserting real assurance."
+    },
+    "traceability": {
+      "rating": "adequate",
+      "rationale": "The metric links to RSK-110 and a fictional assessment result."
+    },
+    "sufficiency": "limited",
+    "evaluated_by": {
+      "name": "Morgan Ellis",
+      "role": "Independent assessor",
+      "organization": "Fictional Contour Assurance LLP"
+    },
+    "evaluated_at": "2026-09-08T19:00:00Z",
+    "sufficiency_rationale": "A single metric export is limited evidence and should be corroborated against sampled classification records."
+  },
+  "integrity": {
+    "digest_algorithm": "sha-256",
+    "digest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+  },
+  "limitations": [
+    "This fictional catalog example does not demonstrate an actual organization's metric control.",
+    "The dashboard calculation was not independently reproduced."
+  ],
+  "retention": {
+    "authority": "Fictional Summit Analytics records schedule",
+    "end_condition": "Retain until the fictional assessment archive period ends."
+  },
+  "traceability": {
+    "requirement_refs": [
+      "RSK-110"
+    ],
+    "procedure_refs": [
+      "RSK-110-A3"
+    ],
+    "result_refs": [
+      "ASR-CAT2-METRIC-DEMO"
+    ]
+  },
+  "example_notice": "Fictional non-authoritative example; no organization, ESAF control, profile, or external framework has been assessed."
+}

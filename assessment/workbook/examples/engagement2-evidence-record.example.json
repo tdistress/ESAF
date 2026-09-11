@@ -1,0 +1,93 @@
+{
+  "$schema": "../schema/evidence-record.schema.json",
+  "schema_version": "0.1.0",
+  "evidence_id": "EVD-ENG2-RSK110-CLASSIFY",
+  "title": "Fictional RSK-110 classification record for Summit Analytics CAP-140",
+  "description": "A fictional completed risk-classification record and linked procedure excerpt used in the second workbook engagement vignette to support examination of RSK-110.",
+  "evidence_type": "record",
+  "source": {
+    "identity": "Fictional Summit Analytics risk register",
+    "locator": "example://summit/risk/classifications/CAP-140-2026-08"
+  },
+  "custodian": {
+    "name": "Riley Nguyen",
+    "role": "Enterprise risk analyst",
+    "organization": "Fictional Summit Analytics"
+  },
+  "collected_at": "2026-09-05T10:00:00Z",
+  "collection_method": "Read-only export of the fictional approved classification record and procedure reference.",
+  "scope": {
+    "description": "Fictional workforce-research assistant capability CAP-140 risk classification effective during the engagement period."
+  },
+  "period": {
+    "start": "2026-06-01T00:00:00Z",
+    "end": "2026-08-31T23:59:59Z"
+  },
+  "population": {
+    "description": "One fictional approved classification record for CAP-140 and the linked RSK-110 procedure version.",
+    "sample": "The complete fictional classification package for CAP-140.",
+    "selection_rationale": "RSK-110 examination focuses on the authoritative classification artifact for the named capability."
+  },
+  "quality": {
+    "relevance": {
+      "rating": "adequate",
+      "rationale": "The record addresses the fictional RSK-110 factors under examination."
+    },
+    "reliability": {
+      "rating": "limited",
+      "rationale": "The example does not independently verify the source register."
+    },
+    "completeness": {
+      "rating": "adequate",
+      "rationale": "The package includes the classification body and approval metadata."
+    },
+    "timeliness": {
+      "rating": "adequate",
+      "rationale": "The classification was current throughout the fictional assessment period."
+    },
+    "attribution": {
+      "rating": "adequate",
+      "rationale": "Reviewers, approver, and custodian are identified."
+    },
+    "integrity": {
+      "rating": "limited",
+      "rationale": "The fictional digest illustrates verification without asserting real assurance."
+    },
+    "traceability": {
+      "rating": "adequate",
+      "rationale": "The example links to the fictional assessment result and RSK-110 procedure."
+    },
+    "sufficiency": "limited",
+    "evaluated_by": {
+      "name": "Morgan Ellis",
+      "role": "Independent assessor",
+      "organization": "Fictional Contour Assurance LLP"
+    },
+    "evaluated_at": "2026-09-05T11:00:00Z",
+    "sufficiency_rationale": "The fictional classification record is limited evidence for RSK-110 and requires corroborating log or metric evidence in a real engagement."
+  },
+  "integrity": {
+    "digest_algorithm": "sha-256",
+    "digest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "limitations": [
+    "This fictional workbook example does not demonstrate an actual organization's classification control.",
+    "Operating adherence to reclassification triggers is not proven by the record alone."
+  ],
+  "retention": {
+    "authority": "Fictional Summit Analytics records schedule",
+    "end_condition": "Retain until the fictional assessment archive period ends."
+  },
+  "traceability": {
+    "requirement_refs": [
+      "RSK-110"
+    ],
+    "procedure_refs": [
+      "RSK-110-A1"
+    ],
+    "result_refs": [
+      "ASR-ENG2-RSK110"
+    ]
+  },
+  "example_notice": "Fictional non-authoritative example; no organization, ESAF control, profile, or external framework has been assessed."
+}

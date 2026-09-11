@@ -3,7 +3,8 @@
 **Status:** Draft deepen
 **Authority:** [ESAF-1500](../ESAF-1500.md) evidence-record contract and
 [`evidence-record.schema.json`](../schema/evidence-record.schema.json).
-**Issue:** [#125](https://github.com/tdistress/ESAF/issues/125)
+**Issues:** [#125](https://github.com/tdistress/ESAF/issues/125) deepen;
+[#183](https://github.com/tdistress/ESAF/issues/183) second deepen
 
 ## Purpose
 
@@ -171,6 +172,12 @@ ESAF-1500 evidence-record schema. They are fictional and non-authoritative:
 | `policy` | [`examples/catalog-policy.example.json`](examples/catalog-policy.example.json) |
 | `interview` | [`examples/catalog-interview.example.json`](examples/catalog-interview.example.json) |
 | `technical_test` | [`examples/catalog-technical-test.example.json`](examples/catalog-technical-test.example.json) |
+| `procedure` | [`examples/catalog2-procedure.example.json`](examples/catalog2-procedure.example.json) |
+| `log` | [`examples/catalog2-log.example.json`](examples/catalog2-log.example.json) |
+| `metric` | [`examples/catalog2-metric.example.json`](examples/catalog2-metric.example.json) |
+
+Second-deepen examples use `EVD-CAT2-*` identifiers and illustrate
+`procedure`, `log`, and `metric` types not covered by the first deepen set.
 
 ## Profile and crosswalk use
 

@@ -1,0 +1,73 @@
+{
+  "$schema": "../schema/assessment-result.schema.json",
+  "schema_version": "0.1.0",
+  "result_id": "ASR-SAMP2-DAT110",
+  "status": "draft",
+  "title": "Fictional sampling result for DAT-110 data classification and handling",
+  "assessor": {
+    "name": "Morgan Ellis",
+    "role": "Independent assessor",
+    "organization": "Fictional Contour Assurance LLP",
+    "independence_statement": "This fictional assessor has no operational ownership of the assessed Summit Analytics CAP-140 capability."
+  },
+  "assessment_scope": {
+    "subject": "Fictional Summit Analytics workforce-research assistant CAP-140 data path",
+    "requirement_ids": [
+      "DAT-110"
+    ],
+    "boundary": "Prompt, response, log, and storage handling for CAP-140 during the engagement period.",
+    "exclusions": [
+      "Embedding-store and vendor-contract controls."
+    ],
+    "population": "Fictional DAT controls assigned to CAP-140.",
+    "sample": "DAT-110 only, as selected in the second Draft deepen sampling vignette."
+  },
+  "methods": [
+    {
+      "method": "Examine",
+      "procedure": "DAT-110-A1 - Examine classification and handling rules for representative AI data types.",
+      "object": "EVD-SAMP2-DAT110-HANDLING fictional handling standard and configuration export.",
+      "expected_result": "Handling rules cover prompt, response, log, and storage paths with classification metadata.",
+      "actual_work": "Examined the fictional handling standard and configuration export for CAP-140 prompt and response paths."
+    },
+    {
+      "method": "Test",
+      "procedure": "DAT-110-A2 - Trace selected data through storage, transmission, logs, and disposal.",
+      "object": "One fictional prompt/response transaction in the staging environment.",
+      "expected_result": "Classification metadata propagates through storage and logs without prohibited transfer.",
+      "actual_work": "Traced one fictional prompt/response through storage and log sinks in the staging environment."
+    }
+  ],
+  "time_boundary": {
+    "assessment_start": "2026-09-10T09:00:00Z",
+    "assessment_end": "2026-09-11T17:00:00Z",
+    "result_date": "2026-09-11T18:00:00Z"
+  },
+  "evidence_refs": [
+    "EVD-SAMP2-DAT110-HANDLING"
+  ],
+  "determination": "satisfied",
+  "determination_rationale": "The fictional handling rules cover the sampled paths and the traced transaction showed classification metadata propagated to storage and logs without prohibited transfer.",
+  "design_effectiveness": "effective",
+  "operating_effectiveness": "effective",
+  "findings": [],
+  "limitations": [
+    "This fictional Draft deepen result does not assess a real organization.",
+    "The data trace used a staging environment rather than live production."
+  ],
+  "traceability": {
+    "esaf_requirement_ids": [
+      "DAT-110"
+    ],
+    "external_or_profile_ids": []
+  },
+  "change_history": [
+    {
+      "version": "0.1.0",
+      "date": "2026-09-11T18:00:00Z",
+      "author": "Morgan Ellis",
+      "description": "Created the fictional draft sampling result for DAT-110."
+    }
+  ],
+  "example_notice": "Fictional non-authoritative example; no organization, ESAF control, profile, or external framework has been assessed."
+}

@@ -1,0 +1,90 @@
+{
+  "$schema": "../schema/assessment-result.schema.json",
+  "schema_version": "0.1.0",
+  "result_id": "ASR-ENG2-RSK110",
+  "status": "draft",
+  "title": "Fictional draft assessment of RSK-110 for Summit Analytics workbook engagement",
+  "assessor": {
+    "name": "Morgan Ellis",
+    "role": "Independent assessor",
+    "organization": "Fictional Contour Assurance LLP",
+    "independence_statement": "This fictional assessor is presented only to illustrate workbook recording structure."
+  },
+  "assessment_scope": {
+    "subject": "Fictional Summit Analytics workforce-research assistant CAP-140",
+    "requirement_ids": [
+      "RSK-110"
+    ],
+    "boundary": "Risk classification record, criteria application, and approval for CAP-140 during the engagement period.",
+    "exclusions": [
+      "Supplier-risk treatment under RSK-120 and impact-assessment depth under RSK-130."
+    ],
+    "population": "Fictional RSK-110 classification package for CAP-140.",
+    "sample": "Complete examination of the fictional classification record."
+  },
+  "methods": [
+    {
+      "method": "Examine",
+      "procedure": "RSK-110-A1 - Examine the fictional classification record for required impact, likelihood, autonomy, data sensitivity, affected parties, and obligation factors.",
+      "object": "Fictional CAP-140 classification record EVD-ENG2-RSK110-CLASSIFY.",
+      "expected_result": "Classification addresses every required factor with documented rationale and approval.",
+      "actual_work": "Examined the fictional classification sections covering impact, likelihood, autonomy, data sensitivity, affected parties, obligations, and baseline selection."
+    }
+  ],
+  "time_boundary": {
+    "assessment_start": "2026-09-03T09:00:00Z",
+    "assessment_end": "2026-09-06T17:00:00Z",
+    "result_date": "2026-09-06T17:30:00Z"
+  },
+  "evidence_refs": [
+    "EVD-ENG2-RSK110-CLASSIFY"
+  ],
+  "determination": "partially_satisfied",
+  "determination_rationale": "The fictional classification documents required factors and approval, but reclassification triggers for new audiences remain underspecified, recorded as a draft finding.",
+  "design_effectiveness": "partially_effective",
+  "operating_effectiveness": "not_assessed",
+  "findings": [
+    {
+      "finding_id": "FND-ENG2-RSK110-TRIGGER",
+      "severity": "minor",
+      "status": "open",
+      "affected_requirement_ids": [
+        "RSK-110"
+      ],
+      "statement": "The fictional classification names audience expansion as a change trigger but does not define concrete criteria for when reclassification is required.",
+      "evidence_refs": [
+        "EVD-ENG2-RSK110-CLASSIFY"
+      ],
+      "owner": {
+        "name": "Riley Nguyen",
+        "role": "Enterprise risk analyst",
+        "organization": "Fictional Summit Analytics"
+      },
+      "disposition": {
+        "action": "Pending fictional classification update to add explicit audience-expansion trigger criteria.",
+        "rationale": "Draft engagement remains open until the fictional documentation gap is addressed or accepted with residual risk."
+      },
+      "identified_at": "2026-09-05T14:00:00Z",
+      "disposition_at": "2026-09-06T16:00:00Z"
+    }
+  ],
+  "limitations": [
+    "This fictional draft result is a workbook teaching example and makes no compliance claim.",
+    "Operating effectiveness was not assessed in this workbook vignette."
+  ],
+  "traceability": {
+    "esaf_requirement_ids": [
+      "RSK-110"
+    ],
+    "external_or_profile_ids": []
+  },
+  "change_history": [
+    {
+      "version": "0.1.0-draft",
+      "date": "2026-09-06T17:30:00Z",
+      "author": "Morgan Ellis",
+      "description": "Created the fictional draft workbook engagement result for RSK-110."
+    }
+  ],
+  "example_notice": "Fictional non-authoritative example; no organization, ESAF control, profile, or external framework has been assessed."
+}

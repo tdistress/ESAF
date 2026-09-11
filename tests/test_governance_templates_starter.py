@@ -107,6 +107,25 @@ class GovernanceTemplatesStarterTests(unittest.TestCase):
                 text = document_path.read_text(encoding="utf-8")
                 self.assertIn(needle, text)
 
+    def test_template_second_deepen_governance_thread_exists(self) -> None:
+        readme = (TEMPLATE_ROOT / "README.md").read_text(encoding="utf-8")
+        thread = TEMPLATE_ROOT / "examples" / "governance-thread.example.md"
+        self.assertTrue(thread.is_file(), msg=f"missing {thread}")
+        self.assertIn("governance-thread.example.md", readme)
+        self.assertIn("#183", readme)
+        text = thread.read_text(encoding="utf-8")
+        self.assertRegex(text, r"(?im)\bDraft deepen\b")
+        self.assertRegex(text, r"(?im)fictional")
+        self.assertRegex(text, r"(?im)certification")
+        self.assertRegex(text, r"(?im)compliance")
+        self.assertIsNone(
+            SHALL_RE.search(text),
+            msg="governance-thread.example.md introduces normative shall language",
+        )
+        self.assertIn("decision-record.example.md", text)
+        self.assertIn("exception-record.example.md", text)
+        self.assertIn("engagement2-vignette.example.md", text)
+
 
 if __name__ == "__main__":
     unittest.main()

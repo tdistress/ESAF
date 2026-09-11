@@ -1,0 +1,97 @@
+{
+  "$schema": "../schema/assessment-result.schema.json",
+  "schema_version": "0.1.0",
+  "result_id": "ASR-SAMP2-RSK110",
+  "status": "draft",
+  "title": "Fictional sampling result for RSK-110 capability classification",
+  "assessor": {
+    "name": "Morgan Ellis",
+    "role": "Independent assessor",
+    "organization": "Fictional Contour Assurance LLP",
+    "independence_statement": "This fictional assessor has no operational ownership of the assessed Summit Analytics CAP-140 capability."
+  },
+  "assessment_scope": {
+    "subject": "Fictional Summit Analytics workforce-research assistant CAP-140",
+    "requirement_ids": [
+      "RSK-110"
+    ],
+    "boundary": "Risk classification record and criteria application for CAP-140 during the engagement period.",
+    "exclusions": [
+      "Supplier-risk controls and impact-assessment depth."
+    ],
+    "population": "Fictional RSK controls assigned to CAP-140.",
+    "sample": "RSK-110 only, as selected in the second Draft deepen sampling vignette."
+  },
+  "methods": [
+    {
+      "method": "Examine",
+      "procedure": "RSK-110-A1 - Examine the fictional CAP-140 classification record for required factors.",
+      "object": "EVD-SAMP2-RSK110-CLASSIFY fictional classification record.",
+      "expected_result": "Classification addresses impact, likelihood, autonomy, data sensitivity, affected parties, and obligations.",
+      "actual_work": "Examined the fictional classification body, rationale, reviewers, and approval metadata for 2026-06-01 through 2026-08-31."
+    },
+    {
+      "method": "Test",
+      "procedure": "RSK-110-A2 - Independently apply criteria to the fictional CAP-140 sample.",
+      "object": "EVD-SAMP2-RSK110-CLASSIFY fictional classification record.",
+      "expected_result": "Independent application yields a classification consistent with the recorded result.",
+      "actual_work": "Independently applied the fictional criteria to CAP-140 and compared the outcome to the recorded classification."
+    }
+  ],
+  "time_boundary": {
+    "assessment_start": "2026-09-10T09:00:00Z",
+    "assessment_end": "2026-09-11T17:00:00Z",
+    "result_date": "2026-09-11T17:30:00Z"
+  },
+  "evidence_refs": [
+    "EVD-SAMP2-RSK110-CLASSIFY"
+  ],
+  "determination": "partially_satisfied",
+  "determination_rationale": "The fictional classification is approved and addresses required factors, but audience-expansion trigger criteria remain incomplete, keeping the operating picture only partially supported.",
+  "design_effectiveness": "effective",
+  "operating_effectiveness": "partially_effective",
+  "findings": [
+    {
+      "finding_id": "FND-SAMP2-RSK110-TRIGGER",
+      "severity": "minor",
+      "status": "open",
+      "affected_requirement_ids": [
+        "RSK-110"
+      ],
+      "statement": "Fictional classification names audience expansion as a change trigger but lacks concrete reclassification criteria.",
+      "evidence_refs": [
+        "EVD-SAMP2-RSK110-CLASSIFY"
+      ],
+      "owner": {
+        "name": "Riley Nguyen",
+        "role": "Enterprise risk analyst",
+        "organization": "Fictional Summit Analytics"
+      },
+      "disposition": {
+        "action": "Update fictional classification to add explicit audience-expansion trigger criteria.",
+        "rationale": "Trigger clarity is required before any final determination."
+      },
+      "identified_at": "2026-09-11T16:00:00Z",
+      "disposition_at": "2026-09-11T16:30:00Z"
+    }
+  ],
+  "limitations": [
+    "This fictional Draft deepen result does not assess a real organization.",
+    "Independent criteria Test covered only one fictional capability."
+  ],
+  "traceability": {
+    "esaf_requirement_ids": [
+      "RSK-110"
+    ],
+    "external_or_profile_ids": []
+  },
+  "change_history": [
+    {
+      "version": "0.1.0",
+      "date": "2026-09-11T17:30:00Z",
+      "author": "Morgan Ellis",
+      "description": "Created the fictional draft sampling result for RSK-110."
+    }
+  ],
+  "example_notice": "Fictional non-authoritative example; no organization, ESAF control, profile, or external framework has been assessed."
+}
