@@ -11,6 +11,7 @@ not establish certification, compliance, or control satisfaction.
 | [charter-worksheet.md](charter-worksheet.md) | Governance charters | Blank working tables for the three charter types and minimum charter fields |
 | [decision-rights-matrix.example.md](decision-rights-matrix.example.md) | Decision rights | Fictional filled assignments showing authority, consultation, escalation, and incompatible-rights separation |
 | [exception-workflow.example.md](exception-workflow.example.md) | Exceptions | Fictional request-to-closure walkthrough with GOV-140 field coverage |
+| [gate-decision-record.example.md](gate-decision-record.example.md) | Lifecycle gates | Fictional production-readiness gate decision with ESAF-1000 §9.3 element coverage |
 
 ## Use and boundaries
 

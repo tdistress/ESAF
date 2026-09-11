@@ -9,6 +9,6 @@ conformance, or control satisfaction.
 
 | Pack | Core publication | Purpose |
 |---|---|---|
-| [esaf-1300](esaf-1300/) | [ESAF-1300](../governance/ESAF-1300.md) | Governance charter, decision-rights, and exception worksheets |
-| [esaf-1400](esaf-1400/) | [ESAF-1400](../implementation/ESAF-1400.md) | Adoption vignette and capability-to-control mapping samples |
-| [esaf-1700](esaf-1700/) | [ESAF-1700](../data-model/ESAF-1700.md) | Entity instance sketches for the canonical data model |
+| [esaf-1300](esaf-1300/) | [ESAF-1300](../governance/ESAF-1300.md) | Governance charter, decision-rights, exception, and gate-decision worksheets |
+| [esaf-1400](esaf-1400/) | [ESAF-1400](../implementation/ESAF-1400.md) | Adoption vignette, capability mapping, and evidence-handoff samples |
+| [esaf-1700](esaf-1700/) | [ESAF-1700](../data-model/ESAF-1700.md) | Entity instance and assessment-record link sketches |

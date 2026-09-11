@@ -11,6 +11,7 @@ satisfaction.
 |---|---|
 | [adoption-vignette.example.md](adoption-vignette.example.md) | 5. Filled fictional walkthrough of adoption Steps 1–9 |
 | [capability-control-mapping.example.md](capability-control-mapping.example.md) | 6. Multi-capability mapping with a stale-mapping scenario |
+| [evidence-handoff-vignette.example.md](evidence-handoff-vignette.example.md) | 9. Capture-at-source evidence handoff with draft-result limitations |
 
 ## Suggested use
 
