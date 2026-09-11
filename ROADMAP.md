@@ -2,7 +2,7 @@
 
 **Status:** Working Draft
 
-**Version:** 0.14-draft
+**Version:** 0.15-draft
 
 ## 0.15-draft delivery sequence
 
@@ -12,9 +12,9 @@ to Working Draft `0.3.0`, then ordinary publication gates on the exact
 candidate. Deferred mapping assurance remains tracked through issue 55 and does
 not stop later engineering work. HITRUST readiness remains separately gated
 through issue 60. Issues 55 and 60 are not `v0.15-draft` exit criteria.
-ISO/IEC 27001 readiness may exit as an evidenced `HOLD` when people, rights, or
-source-access gates remain blocked; while `HOLD` or `NO_GO`, no ISO/IEC 27001
-mapping records are authored. Publication does not change any control,
+ISO/IEC 27001 readiness exited as an evidenced `HOLD` because people, rights,
+or source-access gates remain blocked; while `HOLD` or `NO_GO`, no ISO/IEC
+27001 mapping records are authored. Publication does not change any control,
 architecture, profile, mapping-set, or mapping-record lifecycle state. Phases
 4, 5, and 6 remain long-term direction except for the bounded readiness and
 deepen work required by this milestone.
