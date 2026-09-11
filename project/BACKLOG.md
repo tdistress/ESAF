@@ -142,11 +142,16 @@ These initiatives are required for `v0.15-draft` and shall be tracked in GitHub
 Issues under milestone `v0.15-draft`. Deferred mapping assurance and HITRUST
 readiness remain tracked separately and do not stop later engineering work.
 
-- Sync post-v0.14 tracker hygiene
-- Complete ISO/IEC 27001:2022 public-source readiness and mapping go/no-go
-- Deepen Phase 6 assessment toolkit Draft packs
-- Deepen ESAF-1300/1400/1700 Working Drafts to 0.3.0
-- Close the v0.15-draft publication gates
+- [Issue 181](https://github.com/tdistress/ESAF/issues/181): Sync post-v0.14
+  tracker hygiene
+- [Issue 182](https://github.com/tdistress/ESAF/issues/182): Complete ISO/IEC
+  27001:2022 public-source readiness and mapping go/no-go
+- [Issue 183](https://github.com/tdistress/ESAF/issues/183): Deepen Phase 6
+  assessment toolkit Draft packs
+- [Issue 184](https://github.com/tdistress/ESAF/issues/184): Deepen
+  ESAF-1300/1400/1700 Working Drafts to 0.3.0
+- [Issue 185](https://github.com/tdistress/ESAF/issues/185): Close the
+  v0.15-draft publication gates
 
 ## Completed workstreams
 
