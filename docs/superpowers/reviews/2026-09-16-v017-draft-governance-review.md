@@ -63,6 +63,6 @@ production readiness.
 ## Limitations
 
 Closure still requires synchronized Working Draft surfaces, post-merge
-validation, and annotated-tag evidence before any published-phase claim. The
-exact candidate SHA in this draft shall be retargeted to the final
-evidence-candidate head before closure.
+validation, and annotated-tag evidence before any published-phase claim.
+Any change to the evidence-candidate head after this review requires SHA
+retarget and redispatched exact-SHA review before closure.
