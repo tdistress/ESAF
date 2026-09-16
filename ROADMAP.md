@@ -6,20 +6,22 @@
 
 ## 0.17-draft delivery sequence
 
-`v0.17-draft` follows tracker hygiene, then CIS Controls Version 8
-public-source readiness, then a bounded third Phase 6 toolkit deepen of the
-assessment workbook, evidence catalog, audit checklist, and governance
-templates, then ordinary publication gates on the exact candidate. Deferred
-mapping assurance remains tracked through issue 55 and does not stop later
-engineering work. HITRUST readiness remains separately gated through issue 60.
-Issues 55 and 60 are not `v0.17-draft` exit criteria. CIS Controls readiness
-exited as an evidenced `HOLD` because people, rights, or source-access gates
-remain blocked; while `HOLD` or `NO_GO`, no CIS Controls mapping records are
-authored. SOC 2 readiness remains Phase 4 long-term direction outside this
-milestone. Publication does not change any control, architecture, profile,
-mapping-set, or mapping-record lifecycle state. Phases 4, 5, and 6 remain
-long-term direction except for the bounded readiness and deepen work required
-by this milestone.
+The `v0.17-draft` Working Draft was published on 2026-09-16 through the
+annotated `v0.17-draft` tag at
+`6732561fa6283797bdb27d990a5399dc905dd208`. It follows tracker hygiene, then
+CIS Controls Version 8 public-source readiness, then a bounded third Phase 6
+toolkit deepen of the assessment workbook, evidence catalog, audit checklist,
+and governance templates, then ordinary publication gates on the exact
+candidate. Deferred mapping assurance remains tracked through issue 55 and
+does not stop later engineering work. HITRUST readiness remains separately
+gated through issue 60. Issues 55 and 60 are not `v0.17-draft` exit criteria.
+CIS Controls readiness exited as an evidenced `HOLD` because people, rights,
+or source-access gates remain blocked; while `HOLD` or `NO_GO`, no CIS
+Controls mapping records are authored. SOC 2 readiness remains Phase 4
+long-term direction outside this milestone. Publication does not change any
+control, architecture, profile, mapping-set, or mapping-record lifecycle
+state. Phases 4, 5, and 6 remain long-term direction except for the bounded
+readiness and deepen work required by this milestone.
 
 ## 0.16-draft delivery sequence
 
