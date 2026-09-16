@@ -26,8 +26,8 @@ publication readiness record identifies v0.17 prerequisites without
 overstating maturity or advancing `VERSION.md` beyond the still-published
 `0.16-draft` identity. The UK profile remains Draft `0.2.0`.
 
-Open Critical: 0  
-Open Important: 0  
+Open Critical: 0
+Open Important: 0
 Verdict: Approve for advancing toward `closure_candidate` after technical and
 governance reviews and full exact-SHA validation.
 

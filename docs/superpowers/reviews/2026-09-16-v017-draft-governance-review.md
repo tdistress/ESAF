@@ -45,8 +45,8 @@ Phase 6 as a third deepen, ESAF-1500 as a Working Draft carry-forward at
 explicitly allowed to remain open. SOC 2 readiness remains a recorded
 non-goal for this milestone.
 
-Open Critical: 0  
-Open Important: 0  
+Open Critical: 0
+Open Important: 0
 Verdict: Approve for advancing toward `closure_candidate` after technical and
 editorial reviews and full exact-SHA validation.
 

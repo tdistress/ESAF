@@ -41,8 +41,8 @@ relationship legs, and 325 negative dispositions. The Phase 6 third deepen
 remains Draft and does not invent certification semantics. Prior HOLD schemes
 remain unauthorized for mapping authorship.
 
-Open Critical: 0  
-Open Important: 0  
+Open Critical: 0
+Open Important: 0
 Verdict: Approve for advancing toward `closure_candidate` after editorial and
 governance reviews and full exact-SHA validation.
 
