@@ -1841,15 +1841,15 @@ class UKPilotProfile020DeepenTests(unittest.TestCase):
         self.assertIn("v0.16-draft", readme)
         self.assertIn("Draft", readme)
         for link in (
-            "../../assessment/ESAF-1500.md",
-            "../../assessment/README.md",
-            "../../assessment/workbook/README.md",
-            "../../assessment/evidence-catalog/README.md",
-            "../../assessment/audit-checklist/README.md",
-            "../../governance/ESAF-1300.md",
-            "../../implementation/ESAF-1400.md",
-            "../../data-model/ESAF-1700.md",
-            "../../templates/README.md",
+            "../../../assessment/ESAF-1500.md",
+            "../../../assessment/README.md",
+            "../../../assessment/workbook/README.md",
+            "../../../assessment/evidence-catalog/README.md",
+            "../../../assessment/audit-checklist/README.md",
+            "../../../governance/ESAF-1300.md",
+            "../../../implementation/ESAF-1400.md",
+            "../../../data-model/ESAF-1700.md",
+            "../../../templates/README.md",
         ):
             with self.subTest(link=link):
                 self.assertIn(link, readme)

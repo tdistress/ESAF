@@ -62,15 +62,15 @@ This profile reuses shared ESAF-1500 assessment semantics and points operators
 to companion manuals and Draft toolkit packs for practice. Companion material
 does not import mapping outcomes and does not change this profile's selections:
 
-- [ESAF-1500 assessment guide](../../assessment/ESAF-1500.md)
-- [Assessment toolkit index](../../assessment/README.md)
-- [Assessment workbook](../../assessment/workbook/README.md)
-- [Evidence catalog](../../assessment/evidence-catalog/README.md)
-- [Audit checklist](../../assessment/audit-checklist/README.md)
-- [ESAF-1300 governance manual](../../governance/ESAF-1300.md)
-- [ESAF-1400 implementation guide](../../implementation/ESAF-1400.md)
-- [ESAF-1700 data model](../../data-model/ESAF-1700.md)
-- [Governance templates](../../templates/README.md)
+- [ESAF-1500 assessment guide](../../../assessment/ESAF-1500.md)
+- [Assessment toolkit index](../../../assessment/README.md)
+- [Assessment workbook](../../../assessment/workbook/README.md)
+- [Evidence catalog](../../../assessment/evidence-catalog/README.md)
+- [Audit checklist](../../../assessment/audit-checklist/README.md)
+- [ESAF-1300 governance manual](../../../governance/ESAF-1300.md)
+- [ESAF-1400 implementation guide](../../../implementation/ESAF-1400.md)
+- [ESAF-1700 data model](../../../data-model/ESAF-1700.md)
+- [Governance templates](../../../templates/README.md)
 
 ## How to use the package
 
