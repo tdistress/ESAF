@@ -1,0 +1,80 @@
+{
+  "$schema": "../schema/assessment-result.schema.json",
+  "schema_version": "0.1.0",
+  "result_id": "ASR-SAMP3-MOD100",
+  "status": "draft",
+  "title": "Fictional sampling result for MOD-100 model governance and registry",
+  "assessor": {
+    "name": "Morgan Ellis",
+    "role": "Independent assessor",
+    "organization": "Fictional Contour Assurance LLP",
+    "independence_statement": "This fictional assessor has no operational ownership of the assessed Summit Analytics CAP-140 capability."
+  },
+  "assessment_scope": {
+    "subject": "Fictional Summit Analytics workforce-research assistant CAP-140 model registry entry",
+    "requirement_ids": [
+      "MOD-100"
+    ],
+    "boundary": "Model registry completeness and deployment reconciliation for CAP-140 during the engagement period.",
+    "exclusions": [
+      "Model validation depth under MOD-120 and retirement under MOD-150."
+    ],
+    "population": "Fictional MOD controls assigned to CAP-140.",
+    "sample": "MOD-100 only, as selected in the third Draft deepen sampling vignette."
+  },
+  "methods": [
+    {
+      "method": "Examine",
+      "procedure": "MOD-100-A1 - Examine completeness and approval of the fictional CAP-140 model registry record.",
+      "object": "EVD-SAMP3-MOD100-REGISTRY fictional model registry record.",
+      "expected_result": "Registry record includes unique identifier, owner, purpose, provider, version, lifecycle state, risk classification, validation status, deployment links, and review date.",
+      "actual_work": "Examined the fictional registry card for CAP-140 inference alias, including ownership, approval, and deployment links."
+    },
+    {
+      "method": "Test",
+      "procedure": "MOD-100-A2 - Reconcile deployed model identifiers with the registry.",
+      "object": "Fictional production gateway model alias and registry identifier for CAP-140.",
+      "expected_result": "Deployed model identifier matches the approved registry entry.",
+      "actual_work": "Compared the fictional gateway-resolved model hash to the registry immutable identifier and found a match."
+    },
+    {
+      "method": "Interview",
+      "procedure": "MOD-100-A3 - Interview registry ownership and update triggers.",
+      "object": "Fictional model owner for CAP-140.",
+      "expected_result": "Registry ownership and update triggers are confirmed by the accountable owner.",
+      "actual_work": "Interviewed the fictional model owner about registry ownership and update triggers after a prompt-routing change."
+    }
+  ],
+  "time_boundary": {
+    "assessment_start": "2026-09-17T09:00:00Z",
+    "assessment_end": "2026-09-18T17:00:00Z",
+    "result_date": "2026-09-18T18:00:00Z"
+  },
+  "evidence_refs": [
+    "EVD-SAMP3-MOD100-REGISTRY"
+  ],
+  "determination": "satisfied",
+  "determination_rationale": "The fictional registry record was complete and approved, the deployed identifier matched the registry, and the observed update trigger was exercised for CAP-140.",
+  "design_effectiveness": "effective",
+  "operating_effectiveness": "effective",
+  "findings": [],
+  "limitations": [
+    "This fictional Draft deepen result does not assess a real organization.",
+    "Reconciliation covered only one fictional model alias for CAP-140."
+  ],
+  "traceability": {
+    "esaf_requirement_ids": [
+      "MOD-100"
+    ],
+    "external_or_profile_ids": []
+  },
+  "change_history": [
+    {
+      "version": "0.1.0",
+      "date": "2026-09-18T18:00:00Z",
+      "author": "Morgan Ellis",
+      "description": "Created the fictional draft sampling result for MOD-100."
+    }
+  ],
+  "example_notice": "Fictional non-authoritative example; no organization, ESAF control, profile, or external framework has been assessed."
+}

@@ -1,0 +1,97 @@
+{
+  "$schema": "../schema/assessment-result.schema.json",
+  "schema_version": "0.1.0",
+  "result_id": "ASR-SAMP3-API100",
+  "status": "draft",
+  "title": "Fictional sampling result for API-100 enterprise AI gateway",
+  "assessor": {
+    "name": "Morgan Ellis",
+    "role": "Independent assessor",
+    "organization": "Fictional Contour Assurance LLP",
+    "independence_statement": "This fictional assessor has no operational ownership of the assessed Summit Analytics CAP-140 capability."
+  },
+  "assessment_scope": {
+    "subject": "Fictional Summit Analytics workforce-research assistant CAP-140",
+    "requirement_ids": [
+      "API-100"
+    ],
+    "boundary": "Production AI gateway routing, allowlist, identity propagation, and logging for CAP-140 during the engagement period.",
+    "exclusions": [
+      "Emergency restriction Test depth and vendor-contract controls."
+    ],
+    "population": "Fictional API controls assigned to CAP-140.",
+    "sample": "API-100 only, as selected in the third Draft deepen sampling vignette."
+  },
+  "methods": [
+    {
+      "method": "Examine",
+      "procedure": "API-100-A1 - Examine the fictional CAP-140 gateway configuration for required policy-enforcement capabilities.",
+      "object": "EVD-SAMP3-API100-GATEWAY fictional gateway configuration export.",
+      "expected_result": "Gateway routes CAP-140 through approved control points with identity, authorization, model routing, logging, and limits.",
+      "actual_work": "Examined the fictional routing map, allowlist, identity-propagation settings, and logging sinks for 2026-09-01 through 2026-09-15."
+    },
+    {
+      "method": "Test",
+      "procedure": "API-100-A2 - Attempt unapproved direct provider access and verify detection or prevention.",
+      "object": "Fictional staging harness for CAP-140 gateway bypass attempts.",
+      "expected_result": "Unapproved direct provider calls are blocked or detected.",
+      "actual_work": "Executed one fictional bypass attempt against a staging mirror; the call was blocked and logged."
+    }
+  ],
+  "time_boundary": {
+    "assessment_start": "2026-09-17T09:00:00Z",
+    "assessment_end": "2026-09-18T17:00:00Z",
+    "result_date": "2026-09-18T17:30:00Z"
+  },
+  "evidence_refs": [
+    "EVD-SAMP3-API100-GATEWAY"
+  ],
+  "determination": "partially_satisfied",
+  "determination_rationale": "The fictional gateway routes CAP-140 through approved control points and blocked the sampled bypass attempt, but emergency restriction exercise evidence remains incomplete in this sample.",
+  "design_effectiveness": "effective",
+  "operating_effectiveness": "partially_effective",
+  "findings": [
+    {
+      "finding_id": "FND-SAMP3-API100-EMERGENCY",
+      "severity": "minor",
+      "status": "open",
+      "affected_requirement_ids": [
+        "API-100"
+      ],
+      "statement": "Fictional gateway configuration references an emergency model-restriction switch without a recent exercise record in the sampled package.",
+      "evidence_refs": [
+        "EVD-SAMP3-API100-GATEWAY"
+      ],
+      "owner": {
+        "name": "Jordan Hale",
+        "role": "AI platform engineer",
+        "organization": "Fictional Summit Analytics"
+      },
+      "disposition": {
+        "action": "Schedule a fictional emergency-restriction exercise and attach the record before any final determination.",
+        "rationale": "Emergency restriction evidence is required before any final determination."
+      },
+      "identified_at": "2026-09-18T16:00:00Z",
+      "disposition_at": "2026-09-18T16:30:00Z"
+    }
+  ],
+  "limitations": [
+    "This fictional Draft deepen result does not assess a real organization.",
+    "Bypass Test covered only one fictional staging harness path."
+  ],
+  "traceability": {
+    "esaf_requirement_ids": [
+      "API-100"
+    ],
+    "external_or_profile_ids": []
+  },
+  "change_history": [
+    {
+      "version": "0.1.0",
+      "date": "2026-09-18T17:30:00Z",
+      "author": "Morgan Ellis",
+      "description": "Created the fictional draft sampling result for API-100."
+    }
+  ],
+  "example_notice": "Fictional non-authoritative example; no organization, ESAF control, profile, or external framework has been assessed."
+}

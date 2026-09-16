@@ -16,17 +16,17 @@ starters.
   and [fictional maturity-assessment example](examples/maturity-assessment.example.json)
   demonstrate the contracts without assessing an organization or control.
 - [Draft assessment workbook](workbook/README.md) provides operator guidance,
-  schema-conforming worksheet stubs, and one fictional worked engagement
-  vignette with a filled worksheet trio bound to ESAF-1500 and ESAF-1100
-  assessment procedures. Completing worksheets does not establish
-  certification, compliance, equivalence, endorsement, or assurance.
+  schema-conforming worksheet stubs, and fictional worked engagement vignettes
+  with filled worksheet trios bound to ESAF-1500 and ESAF-1100 assessment
+  procedures. Completing worksheets does not establish certification,
+  compliance, equivalence, endorsement, or assurance.
 - [Draft evidence catalog deepen](evidence-catalog/README.md) indexes ESAF-1500
   evidence types, shared contract fields, quality attributes, per-type
-  good-enough versus common-failure notes, and a small fictional filled
-  evidence set for reuse by operators, profiles, and crosswalks.
+  good-enough versus common-failure notes, and a growing set of fictional
+  filled evidence examples for reuse by operators, profiles, and crosswalks.
 - [Draft audit checklist deepen](audit-checklist/README.md) supports control or
   capability sampling against the shared ESAF-1500 assessment-result contract,
-  including one fictional two-control sampling vignette with Draft filled
+  including fictional two-control sampling vignettes with Draft filled
   assessment-result examples.
 
 Validate the guide, schemas, examples, references, final states, maturity

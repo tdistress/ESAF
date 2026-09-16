@@ -1,0 +1,93 @@
+{
+  "$schema": "../schema/evidence-record.schema.json",
+  "schema_version": "0.1.0",
+  "evidence_id": "EVD-CAT3-OPS110-RECORD",
+  "title": "Fictional OPS-110 change-approval record for CAP-140",
+  "description": "A fictional attributable change-approval record used to illustrate a catalog `record` evidence type for OPS-110 examination.",
+  "evidence_type": "record",
+  "source": {
+    "identity": "Fictional Summit Analytics change register",
+    "locator": "example://summit/changes/CHG-140-2026-09-01"
+  },
+  "custodian": {
+    "name": "Casey Brooks",
+    "role": "Release manager",
+    "organization": "Fictional Summit Analytics"
+  },
+  "collected_at": "2026-09-14T10:00:00Z",
+  "collection_method": "Read-only export of the fictional approved change record and approval trail.",
+  "scope": {
+    "description": "Fictional CAP-140 prompt-routing change approved during the engagement period."
+  },
+  "period": {
+    "start": "2026-09-01T00:00:00Z",
+    "end": "2026-09-14T23:59:59Z"
+  },
+  "population": {
+    "description": "One fictional approved material change record for CAP-140.",
+    "sample": "The complete fictional change package CHG-140-2026-09-01.",
+    "selection_rationale": "The catalog example needs a single attributable transactional record for OPS-110."
+  },
+  "quality": {
+    "relevance": {
+      "rating": "adequate",
+      "rationale": "The artifact bears on the fictional requirement under examination."
+    },
+    "reliability": {
+      "rating": "limited",
+      "rationale": "The example does not independently verify the originating system."
+    },
+    "completeness": {
+      "rating": "adequate",
+      "rationale": "The package includes the fields needed for the catalog illustration."
+    },
+    "timeliness": {
+      "rating": "adequate",
+      "rationale": "The artifact covers the fictional assessment period."
+    },
+    "attribution": {
+      "rating": "adequate",
+      "rationale": "Actors and custodians are identified for workbook teaching."
+    },
+    "integrity": {
+      "rating": "limited",
+      "rationale": "The fictional digest illustrates verification without asserting real assurance."
+    },
+    "traceability": {
+      "rating": "adequate",
+      "rationale": "The example links to a fictional requirement, procedure, and result."
+    },
+    "sufficiency": "limited",
+    "evaluated_by": {
+      "name": "Morgan Ellis",
+      "role": "Independent assessor",
+      "organization": "Fictional Contour Assurance LLP"
+    },
+    "evaluated_at": "2026-09-14T15:00:00Z",
+    "sufficiency_rationale": "A single fictional catalog artifact is limited evidence and needs corroboration in a real engagement."
+  },
+  "integrity": {
+    "digest_algorithm": "sha-256",
+    "digest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+  },
+  "limitations": [
+    "This fictional catalog example does not demonstrate an actual organization's change control.",
+    "Approval of a change record alone does not prove correct deployment."
+  ],
+  "retention": {
+    "authority": "Fictional Summit Analytics records schedule",
+    "end_condition": "Retain until the fictional assessment archive period ends."
+  },
+  "traceability": {
+    "requirement_refs": [
+      "OPS-110"
+    ],
+    "procedure_refs": [
+      "OPS-110-A1"
+    ],
+    "result_refs": [
+      "ASR-CAT3-RECORD-DEMO"
+    ]
+  },
+  "example_notice": "Fictional non-authoritative example; no organization, ESAF control, profile, or external framework has been assessed."
+}

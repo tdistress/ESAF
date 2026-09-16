@@ -1,0 +1,92 @@
+{
+  "$schema": "../schema/evidence-record.schema.json",
+  "schema_version": "0.1.0",
+  "evidence_id": "EVD-CAT3-OPS110-OBSERVE",
+  "title": "Fictional OPS-110 release-gate observation notes",
+  "description": "Fictional direct observation notes of a live release-gate walkthrough used to illustrate a catalog `observation` evidence type for OPS-110.",
+  "evidence_type": "observation",
+  "source": {
+    "identity": "Fictional Contour Assurance LLP observation notes",
+    "locator": "example://contour/observations/ops110-gate-2026-09-12"
+  },
+  "custodian": {
+    "name": "Morgan Ellis",
+    "role": "Independent assessor",
+    "organization": "Fictional Contour Assurance LLP"
+  },
+  "collected_at": "2026-09-12T16:30:00Z",
+  "collection_method": "Direct Observe of the fictional release-gate checklist execution for CAP-140.",
+  "scope": {
+    "description": "Fictional CAP-140 release-gate walkthrough observed on 2026-09-12."
+  },
+  "period": {
+    "point_in_time": "2026-09-12T16:00:00Z"
+  },
+  "population": {
+    "description": "One fictional live release-gate session for CAP-140.",
+    "sample": "The complete observed gate session notes.",
+    "selection_rationale": "The catalog example needs observer identity, time, and observed condition for `observation`."
+  },
+  "quality": {
+    "relevance": {
+      "rating": "adequate",
+      "rationale": "The artifact bears on the fictional requirement under examination."
+    },
+    "reliability": {
+      "rating": "limited",
+      "rationale": "The example does not independently verify the originating system."
+    },
+    "completeness": {
+      "rating": "adequate",
+      "rationale": "The package includes the fields needed for the catalog illustration."
+    },
+    "timeliness": {
+      "rating": "adequate",
+      "rationale": "The artifact covers the fictional assessment period."
+    },
+    "attribution": {
+      "rating": "adequate",
+      "rationale": "Actors and custodians are identified for workbook teaching."
+    },
+    "integrity": {
+      "rating": "limited",
+      "rationale": "The fictional digest illustrates verification without asserting real assurance."
+    },
+    "traceability": {
+      "rating": "adequate",
+      "rationale": "The example links to a fictional requirement, procedure, and result."
+    },
+    "sufficiency": "limited",
+    "evaluated_by": {
+      "name": "Morgan Ellis",
+      "role": "Independent assessor",
+      "organization": "Fictional Contour Assurance LLP"
+    },
+    "evaluated_at": "2026-09-14T15:00:00Z",
+    "sufficiency_rationale": "A single fictional catalog artifact is limited evidence and needs corroboration in a real engagement."
+  },
+  "integrity": {
+    "digest_algorithm": "sha-256",
+    "digest": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+  },
+  "limitations": [
+    "This fictional catalog example does not demonstrate an actual organization's release practice.",
+    "Observation of one gate session does not generalize to all releases."
+  ],
+  "retention": {
+    "authority": "Fictional Summit Analytics records schedule",
+    "end_condition": "Retain until the fictional assessment archive period ends."
+  },
+  "traceability": {
+    "requirement_refs": [
+      "OPS-110"
+    ],
+    "procedure_refs": [
+      "OPS-110-A1"
+    ],
+    "result_refs": [
+      "ASR-CAT3-OBSERVE-DEMO"
+    ]
+  },
+  "example_notice": "Fictional non-authoritative example; no organization, ESAF control, profile, or external framework has been assessed."
+}

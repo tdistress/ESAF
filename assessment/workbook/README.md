@@ -3,7 +3,8 @@
 **Status:** Draft deepen
 **Issues:** [#115](https://github.com/tdistress/ESAF/issues/115) starter;
 [#124](https://github.com/tdistress/ESAF/issues/124) deepen;
-[#183](https://github.com/tdistress/ESAF/issues/183) second deepen
+[#183](https://github.com/tdistress/ESAF/issues/183) second deepen;
+[#207](https://github.com/tdistress/ESAF/issues/207) third deepen
 
 This directory is a non-normative operator workbook for recording assessments
 against existing ESAF-1500 contracts and ESAF-1100 control assessment
@@ -16,6 +17,7 @@ procedures. It does not replace [ESAF-1500](../ESAF-1500.md).
 | [ESAF-1500-workbook.md](ESAF-1500-workbook.md) | Draft operator guide |
 | [engagement-vignette.example.md](engagement-vignette.example.md) | Fictional GOV-100 worked engagement narrative |
 | [engagement2-vignette.example.md](engagement2-vignette.example.md) | Fictional RSK-110 worked engagement narrative |
+| [engagement3-vignette.example.md](engagement3-vignette.example.md) | Fictional API-100 worked engagement narrative |
 | [worksheets/evidence-record.worksheet.json](worksheets/evidence-record.worksheet.json) | Blank evidence-record worksheet |
 | [worksheets/assessment-result.worksheet.json](worksheets/assessment-result.worksheet.json) | Blank assessment-result worksheet |
 | [worksheets/maturity-assessment.worksheet.json](worksheets/maturity-assessment.worksheet.json) | Blank maturity-assessment worksheet |
@@ -25,6 +27,9 @@ procedures. It does not replace [ESAF-1500](../ESAF-1500.md).
 | [examples/engagement2-evidence-record.example.json](examples/engagement2-evidence-record.example.json) | Second vignette fictional evidence record |
 | [examples/engagement2-assessment-result.example.json](examples/engagement2-assessment-result.example.json) | Second vignette fictional draft assessment result |
 | [examples/engagement2-maturity-assessment.example.json](examples/engagement2-maturity-assessment.example.json) | Second vignette fictional draft maturity assessment |
+| [examples/engagement3-evidence-record.example.json](examples/engagement3-evidence-record.example.json) | Third vignette fictional evidence record |
+| [examples/engagement3-assessment-result.example.json](examples/engagement3-assessment-result.example.json) | Third vignette fictional draft assessment result |
+| [examples/engagement3-maturity-assessment.example.json](examples/engagement3-maturity-assessment.example.json) | Third vignette fictional draft maturity assessment |
 
 ## How to use
 
@@ -40,12 +45,14 @@ procedures. It does not replace [ESAF-1500](../ESAF-1500.md).
    unit tests, or validate finalized tracked examples under
    `assessment/examples/` with `python tools/validate_assessment.py --check`.
 
-## Worked example
+## Worked examples
 
-See [engagement-vignette.example.md](engagement-vignette.example.md) for one
-fictional GOV-100 walkthrough and
+See [engagement-vignette.example.md](engagement-vignette.example.md) for a
+fictional GOV-100 walkthrough,
 [engagement2-vignette.example.md](engagement2-vignette.example.md) for a
-second fictional RSK-110 walkthrough, each with a filled worksheet trio under
+fictional RSK-110 walkthrough, and
+[engagement3-vignette.example.md](engagement3-vignette.example.md) for a
+fictional API-100 walkthrough, each with a filled worksheet trio under
 [`examples/`](examples/). Blank stubs such as
 [`worksheets/evidence-record.worksheet.json`](worksheets/evidence-record.worksheet.json)
 remain the reusable starting point.

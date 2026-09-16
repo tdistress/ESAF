@@ -1,0 +1,93 @@
+{
+  "$schema": "../schema/evidence-record.schema.json",
+  "schema_version": "0.1.0",
+  "evidence_id": "EVD-CAT3-API140-CONTRACT",
+  "title": "Fictional API-140 external model-provider processing terms excerpt",
+  "description": "A fictional provider processing-terms excerpt used to illustrate a catalog `contract` evidence type for external AI service integration review.",
+  "evidence_type": "contract",
+  "source": {
+    "identity": "Fictional Summit Analytics vendor contract library",
+    "locator": "example://summit/contracts/provider-aurora-2026"
+  },
+  "custodian": {
+    "name": "Alex Rivera",
+    "role": "Vendor risk analyst",
+    "organization": "Fictional Summit Analytics"
+  },
+  "collected_at": "2026-09-14T12:00:00Z",
+  "collection_method": "Read-only export of the fictional executed processing schedule and obligation table.",
+  "scope": {
+    "description": "Fictional external model-provider terms applicable to CAP-140 inference traffic during the engagement period."
+  },
+  "period": {
+    "start": "2026-01-01T00:00:00Z",
+    "end": "2026-12-31T23:59:59Z"
+  },
+  "population": {
+    "description": "One fictional executed provider processing schedule for Aurora LLM services.",
+    "sample": "The complete fictional obligation and data-handling schedule.",
+    "selection_rationale": "The catalog example needs parties, obligations, and effective dates for `contract`."
+  },
+  "quality": {
+    "relevance": {
+      "rating": "adequate",
+      "rationale": "The artifact bears on the fictional requirement under examination."
+    },
+    "reliability": {
+      "rating": "limited",
+      "rationale": "The example does not independently verify the originating system."
+    },
+    "completeness": {
+      "rating": "adequate",
+      "rationale": "The package includes the fields needed for the catalog illustration."
+    },
+    "timeliness": {
+      "rating": "adequate",
+      "rationale": "The artifact covers the fictional assessment period."
+    },
+    "attribution": {
+      "rating": "adequate",
+      "rationale": "Actors and custodians are identified for workbook teaching."
+    },
+    "integrity": {
+      "rating": "limited",
+      "rationale": "The fictional digest illustrates verification without asserting real assurance."
+    },
+    "traceability": {
+      "rating": "adequate",
+      "rationale": "The example links to a fictional requirement, procedure, and result."
+    },
+    "sufficiency": "limited",
+    "evaluated_by": {
+      "name": "Morgan Ellis",
+      "role": "Independent assessor",
+      "organization": "Fictional Contour Assurance LLP"
+    },
+    "evaluated_at": "2026-09-14T15:00:00Z",
+    "sufficiency_rationale": "A single fictional catalog artifact is limited evidence and needs corroboration in a real engagement."
+  },
+  "integrity": {
+    "digest_algorithm": "sha-256",
+    "digest": "1111111111111111111111111111111111111111111111111111111111111111"
+  },
+  "limitations": [
+    "This fictional catalog example does not demonstrate an actual organization's vendor control.",
+    "Contract text alone does not prove operating adherence by the provider or the organization."
+  ],
+  "retention": {
+    "authority": "Fictional Summit Analytics records schedule",
+    "end_condition": "Retain until the fictional assessment archive period ends."
+  },
+  "traceability": {
+    "requirement_refs": [
+      "API-140"
+    ],
+    "procedure_refs": [
+      "API-140-A1"
+    ],
+    "result_refs": [
+      "ASR-CAT3-CONTRACT-DEMO"
+    ]
+  },
+  "example_notice": "Fictional non-authoritative example; no organization, ESAF control, profile, or external framework has been assessed."
+}

@@ -3,11 +3,12 @@
 **Status:** Draft deepen
 **Issues:** [#117](https://github.com/tdistress/ESAF/issues/117) starter;
 [#126](https://github.com/tdistress/ESAF/issues/126) deepen;
-[#183](https://github.com/tdistress/ESAF/issues/183) second deepen
+[#183](https://github.com/tdistress/ESAF/issues/183) second deepen;
+[#207](https://github.com/tdistress/ESAF/issues/207) third deepen
 
 This directory is a non-normative Draft checklist for sampling controls or
-capabilities against the shared ESAF-1500 assessment-result contract, plus one
-fictional filled sampling vignette.
+capabilities against the shared ESAF-1500 assessment-result contract, plus
+fictional filled sampling vignettes.
 
 - [ESAF-1500 audit checklist](ESAF-1500-audit-checklist.md) covers sampling
   intent, procedure references, evidence pointers, determination capture, and
@@ -22,6 +23,11 @@ fictional filled sampling vignette.
   records:
   - [`examples/sampling2-rsk110-assessment-result.example.json`](examples/sampling2-rsk110-assessment-result.example.json)
   - [`examples/sampling2-dat110-assessment-result.example.json`](examples/sampling2-dat110-assessment-result.example.json)
+- [Sampling vignette 3 example](sampling3-vignette.example.md) deepens with a
+  fictional API-100 and MOD-100 engagement and filled Draft assessment-result
+  records:
+  - [`examples/sampling3-api100-assessment-result.example.json`](examples/sampling3-api100-assessment-result.example.json)
+  - [`examples/sampling3-mod100-assessment-result.example.json`](examples/sampling3-mod100-assessment-result.example.json)
 - Authoritative result semantics remain in [ESAF-1500](../ESAF-1500.md) and
   [`../schema/assessment-result.schema.json`](../schema/assessment-result.schema.json).
 - Control assessment procedures remain in [ESAF-1100](../../controls/ESAF-1100.md).

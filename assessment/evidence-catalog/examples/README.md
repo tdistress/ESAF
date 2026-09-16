@@ -21,4 +21,15 @@ control satisfaction.
 | [catalog2-log.example.json](catalog2-log.example.json) | Log |
 | [catalog2-metric.example.json](catalog2-metric.example.json) | Metric |
 
+## Third catalog deepen
+
+| File | Evidence type |
+|---|---|
+| [catalog3-record.example.json](catalog3-record.example.json) | Record |
+| [catalog3-configuration.example.json](catalog3-configuration.example.json) | Configuration |
+| [catalog3-observation.example.json](catalog3-observation.example.json) | Observation |
+| [catalog3-contract.example.json](catalog3-contract.example.json) | Contract |
+| [catalog3-external-assurance.example.json](catalog3-external-assurance.example.json) | External assurance |
+| [catalog3-other.example.json](catalog3-other.example.json) | Other |
+
 Names, identifiers, dates, and findings in filled examples are fictional.

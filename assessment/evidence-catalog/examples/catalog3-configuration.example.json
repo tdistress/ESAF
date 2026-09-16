@@ -1,0 +1,93 @@
+{
+  "$schema": "../schema/evidence-record.schema.json",
+  "schema_version": "0.1.0",
+  "evidence_id": "EVD-CAT3-API100-CONFIG",
+  "title": "Fictional API-100 gateway routing configuration export",
+  "description": "A fictional model-gateway routing and allowlist configuration export used to illustrate a catalog `configuration` evidence type for API-100 examination.",
+  "evidence_type": "configuration",
+  "source": {
+    "identity": "Fictional Summit Analytics AI gateway control plane",
+    "locator": "example://summit/gateway/config/2026-09-14"
+  },
+  "custodian": {
+    "name": "Jordan Hale",
+    "role": "AI platform engineer",
+    "organization": "Fictional Summit Analytics"
+  },
+  "collected_at": "2026-09-14T11:00:00Z",
+  "collection_method": "Read-only export of the fictional effective gateway routing and allowlist settings.",
+  "scope": {
+    "description": "Fictional production AI gateway configuration enforcing CAP-140 model and provider routing."
+  },
+  "period": {
+    "start": "2026-09-01T00:00:00Z",
+    "end": "2026-09-14T23:59:59Z"
+  },
+  "population": {
+    "description": "One fictional effective gateway configuration revision for CAP-140.",
+    "sample": "Complete fictional routing and allowlist export for revision 42.",
+    "selection_rationale": "The catalog example needs a system setting with an effective period for API-100."
+  },
+  "quality": {
+    "relevance": {
+      "rating": "adequate",
+      "rationale": "The artifact bears on the fictional requirement under examination."
+    },
+    "reliability": {
+      "rating": "limited",
+      "rationale": "The example does not independently verify the originating system."
+    },
+    "completeness": {
+      "rating": "adequate",
+      "rationale": "The package includes the fields needed for the catalog illustration."
+    },
+    "timeliness": {
+      "rating": "adequate",
+      "rationale": "The artifact covers the fictional assessment period."
+    },
+    "attribution": {
+      "rating": "adequate",
+      "rationale": "Actors and custodians are identified for workbook teaching."
+    },
+    "integrity": {
+      "rating": "limited",
+      "rationale": "The fictional digest illustrates verification without asserting real assurance."
+    },
+    "traceability": {
+      "rating": "adequate",
+      "rationale": "The example links to a fictional requirement, procedure, and result."
+    },
+    "sufficiency": "limited",
+    "evaluated_by": {
+      "name": "Morgan Ellis",
+      "role": "Independent assessor",
+      "organization": "Fictional Contour Assurance LLP"
+    },
+    "evaluated_at": "2026-09-14T15:00:00Z",
+    "sufficiency_rationale": "A single fictional catalog artifact is limited evidence and needs corroboration in a real engagement."
+  },
+  "integrity": {
+    "digest_algorithm": "sha-256",
+    "digest": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+  },
+  "limitations": [
+    "This fictional catalog example does not demonstrate an actual organization's gateway control.",
+    "Configuration export alone does not prove runtime enforcement without Test evidence."
+  ],
+  "retention": {
+    "authority": "Fictional Summit Analytics records schedule",
+    "end_condition": "Retain until the fictional assessment archive period ends."
+  },
+  "traceability": {
+    "requirement_refs": [
+      "API-100"
+    ],
+    "procedure_refs": [
+      "API-100-A1"
+    ],
+    "result_refs": [
+      "ASR-CAT3-CONFIG-DEMO"
+    ]
+  },
+  "example_notice": "Fictional non-authoritative example; no organization, ESAF control, profile, or external framework has been assessed."
+}

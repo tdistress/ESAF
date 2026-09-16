@@ -4,7 +4,8 @@
 **Authority:** [ESAF-1500](../ESAF-1500.md) evidence-record contract and
 [`evidence-record.schema.json`](../schema/evidence-record.schema.json).
 **Issues:** [#125](https://github.com/tdistress/ESAF/issues/125) deepen;
-[#183](https://github.com/tdistress/ESAF/issues/183) second deepen
+[#183](https://github.com/tdistress/ESAF/issues/183) second deepen;
+[#207](https://github.com/tdistress/ESAF/issues/207) third deepen
 
 ## Purpose
 
@@ -175,9 +176,18 @@ ESAF-1500 evidence-record schema. They are fictional and non-authoritative:
 | `procedure` | [`examples/catalog2-procedure.example.json`](examples/catalog2-procedure.example.json) |
 | `log` | [`examples/catalog2-log.example.json`](examples/catalog2-log.example.json) |
 | `metric` | [`examples/catalog2-metric.example.json`](examples/catalog2-metric.example.json) |
+| `record` | [`examples/catalog3-record.example.json`](examples/catalog3-record.example.json) |
+| `configuration` | [`examples/catalog3-configuration.example.json`](examples/catalog3-configuration.example.json) |
+| `observation` | [`examples/catalog3-observation.example.json`](examples/catalog3-observation.example.json) |
+| `contract` | [`examples/catalog3-contract.example.json`](examples/catalog3-contract.example.json) |
+| `external_assurance` | [`examples/catalog3-external-assurance.example.json`](examples/catalog3-external-assurance.example.json) |
+| `other` | [`examples/catalog3-other.example.json`](examples/catalog3-other.example.json) |
 
 Second-deepen examples use `EVD-CAT2-*` identifiers and illustrate
 `procedure`, `log`, and `metric` types not covered by the first deepen set.
+Third-deepen examples use `EVD-CAT3-*` identifiers and illustrate the remaining
+closed types (`record`, `configuration`, `observation`, `contract`,
+`external_assurance`, and `other`).
 
 ## Profile and crosswalk use
 

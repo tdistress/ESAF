@@ -4,7 +4,8 @@
 **Authority:** [ESAF-1500](../ESAF-1500.md) assessment-result contract;
 [ESAF-1100](../../controls/ESAF-1100.md) assessment procedures and methods.
 **Issues:** [#126](https://github.com/tdistress/ESAF/issues/126) deepen;
-[#183](https://github.com/tdistress/ESAF/issues/183) second deepen
+[#183](https://github.com/tdistress/ESAF/issues/183) second deepen;
+[#207](https://github.com/tdistress/ESAF/issues/207) third deepen
 
 ## Purpose
 
@@ -14,8 +15,10 @@ determination, effectiveness, or method names.
 
 For fictional filled two-control examples, see
 [sampling-vignette.example.md](sampling-vignette.example.md) (`GOV-100`,
-`SYS-220`) and [sampling2-vignette.example.md](sampling2-vignette.example.md)
-(`RSK-110`, `DAT-110`).
+`SYS-220`), [sampling2-vignette.example.md](sampling2-vignette.example.md)
+(`RSK-110`, `DAT-110`), and
+[sampling3-vignette.example.md](sampling3-vignette.example.md) (`API-100`,
+`MOD-100`).
 
 ## Engagement header
 

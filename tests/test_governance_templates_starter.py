@@ -126,6 +126,25 @@ class GovernanceTemplatesStarterTests(unittest.TestCase):
         self.assertIn("exception-record.example.md", text)
         self.assertIn("engagement2-vignette.example.md", text)
 
+    def test_template_third_deepen_lifecycle_thread_exists(self) -> None:
+        readme = (TEMPLATE_ROOT / "README.md").read_text(encoding="utf-8")
+        thread = TEMPLATE_ROOT / "examples" / "governance-thread3.example.md"
+        self.assertTrue(thread.is_file(), msg=f"missing {thread}")
+        self.assertIn("governance-thread3.example.md", readme)
+        self.assertIn("#207", readme)
+        text = thread.read_text(encoding="utf-8")
+        self.assertRegex(text, r"(?im)\bDraft deepen\b")
+        self.assertRegex(text, r"(?im)fictional")
+        self.assertRegex(text, r"(?im)certification")
+        self.assertRegex(text, r"(?im)compliance")
+        self.assertIsNone(
+            SHALL_RE.search(text),
+            msg="governance-thread3.example.md introduces normative shall language",
+        )
+        self.assertIn("risk-assessment.example.md", text)
+        self.assertIn("retirement-record.example.md", text)
+        self.assertIn("engagement3-vignette.example.md", text)
+
 
 if __name__ == "__main__":
     unittest.main()

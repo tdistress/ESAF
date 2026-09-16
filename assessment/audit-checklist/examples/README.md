@@ -19,4 +19,11 @@ certification, compliance, or control satisfaction.
 | [sampling2-rsk110-assessment-result.example.json](sampling2-rsk110-assessment-result.example.json) | RSK-110 |
 | [sampling2-dat110-assessment-result.example.json](sampling2-dat110-assessment-result.example.json) | DAT-110 |
 
+## Third sampling deepen
+
+| File | Control sample |
+|---|---|
+| [sampling3-api100-assessment-result.example.json](sampling3-api100-assessment-result.example.json) | API-100 |
+| [sampling3-mod100-assessment-result.example.json](sampling3-mod100-assessment-result.example.json) | MOD-100 |
+
 Names, identifiers, dates, and findings in filled examples are fictional.
