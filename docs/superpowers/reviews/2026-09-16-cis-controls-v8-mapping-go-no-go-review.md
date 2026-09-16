@@ -25,7 +25,7 @@ Granularity: `cis_controls_v8_safeguard_identifier`.
 - Source-readiness oracle: `docs/superpowers/specs/2026-09-16-cis-controls-v8-source-readiness-oracle.json`
 - Source-readiness oracle SHA-256: `82769dc7bf4b39cfe95f6ebeb8023dc70e64246b7f6b2ecc5ae61f934cd79cc1`
 - Publication-rights review: `docs/superpowers/reviews/2026-09-16-cis-controls-v8-publication-rights-review.md`
-- Publication-rights review commit: `84da951cc171fdc0940648b857ccbb54edd7759c`
+- Publication-rights review commit: `bab69c77ec57403874c8c8a2997cc9656fceed2c`
 - Publication-rights review SHA-256: `0e3aa4a8eaf69b675721a0bc070aff63309fa5eb22c0c6ad2b737786eb4f8e2f`
 - Positive feasibility probe available: `true`
 
