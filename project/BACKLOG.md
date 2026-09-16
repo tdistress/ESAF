@@ -178,10 +178,14 @@ These initiatives are required for `v0.17-draft` and shall be tracked in GitHub
 Issues under milestone `v0.17-draft`. Deferred mapping assurance and HITRUST
 readiness remain tracked separately and do not stop later engineering work.
 
-- Sync post-v0.16 tracker hygiene
-- Complete CIS Controls Version 8 public-source readiness and mapping go/no-go
-- Deepen Phase 6 assessment toolkit Draft packs (third pass)
-- Close the v0.17-draft publication gates
+- [Issue 205](https://github.com/tdistress/ESAF/issues/205): Sync post-v0.16
+  tracker hygiene
+- [Issue 206](https://github.com/tdistress/ESAF/issues/206): Complete CIS
+  Controls Version 8 public-source readiness and mapping go/no-go
+- [Issue 207](https://github.com/tdistress/ESAF/issues/207): Deepen Phase 6
+  assessment toolkit Draft packs (third pass)
+- [Issue 208](https://github.com/tdistress/ESAF/issues/208): Close the
+  v0.17-draft publication gates
 
 ## Completed workstreams
 
