@@ -505,6 +505,64 @@ V015_READY_ISSUE_TASKS = (
     ),
 )
 
+V016_NEXT_STEPS_PLAN = (
+    "docs/superpowers/plans/2026-09-16-v016-draft-next-steps.md"
+)
+PINNED_V016_ISSUE_A_BODY_SHA256 = (
+    "c5893b6e74b97a00cb8442ae1f5b880628ff97a0e4285312694048a8ec04a78d"
+)
+PINNED_V016_ISSUE_B_BODY_SHA256 = (
+    "f9f86fcb0e6585c34d22fc44922fdc3035ab49024195983a1013711418b4e66e"
+)
+PINNED_V016_ISSUE_C_BODY_SHA256 = (
+    "fa60a3ef92c57ba48dad5e1c65fed6fb667db1feab425e3d550b72f271b73dbf"
+)
+PINNED_V016_ISSUE_D_BODY_SHA256 = (
+    "cbb539392cfa83dde9951cc4c98c5f695ab7d86d37b63d74882f0e41a171f925"
+)
+V016_READY_ISSUE_TASKS = (
+    (
+        "## Task 4: Ready-to-file Issue A - tracker hygiene",
+        "Sync post-v0.15 tracker hygiene",
+        PINNED_V016_ISSUE_A_BODY_SHA256,
+        (
+            "reopen Issue #55",
+            "Issues #181",
+            "does not change normative",
+        ),
+    ),
+    (
+        "## Task 5: Ready-to-file Issue B - NIST SP 800-53 readiness",
+        "Complete NIST SP 800-53 Revision 5 public-source readiness and mapping go/no-go",
+        PINNED_V016_ISSUE_B_BODY_SHA256,
+        (
+            "NIST SP 800-53",
+            "HOLD",
+            "mapping records",
+        ),
+    ),
+    (
+        "## Task 6: Ready-to-file Issue C - UK profile deepen",
+        "Deepen United Kingdom jurisdiction profile to Draft 0.2.0",
+        PINNED_V016_ISSUE_C_BODY_SHA256,
+        (
+            "United Kingdom",
+            "0.2.0",
+            "Draft",
+        ),
+    ),
+    (
+        "## Task 7: Ready-to-file Issue D - v0.16-draft publication gates",
+        "Close the v0.16-draft publication gates",
+        PINNED_V016_ISSUE_D_BODY_SHA256,
+        (
+            "Issues #55 and #60 may remain open",
+            "Every `v0.16-draft` exit criterion",
+            "Working Draft",
+        ),
+    ),
+)
+
 V09_READY_ISSUE_TASKS = (
     (
         "## Task 4: Ready-to-file Issue A - harness closeout",
@@ -1715,7 +1773,7 @@ class ReleaseMetadataTests(unittest.TestCase):
         self.assertIn("https://github.com/tdistress/ESAF/issues/60", gated)
         self.assertTrue(contains_normalized_phrase(
             gated,
-            "does not block `v0.5-beta`, `v0.9-rc1`, `v0.10-draft`, `v0.11-draft`, `v0.12-draft`, `v0.13-draft`, `v0.14-draft`, or `v0.15-draft`.",
+            "does not block `v0.5-beta`, `v0.9-rc1`, `v0.10-draft`, `v0.11-draft`, `v0.12-draft`, `v0.13-draft`, `v0.14-draft`, `v0.15-draft`, or `v0.16-draft`.",
         ))
 
     def test_roadmap_defines_v09_rc1_delivery_sequence(self) -> None:
@@ -2287,6 +2345,95 @@ class ReleaseMetadataTests(unittest.TestCase):
     def test_planned_v015_issue_bodies_preserve_boundaries_and_digests(self) -> None:
         plan = read_repository_file(V015_NEXT_STEPS_PLAN)
         for task_heading, title, digest, required_phrases in V015_READY_ISSUE_TASKS:
+            with self.subTest(title=title):
+                self.assertIn(f"Title: `{title}`", plan)
+                body = fenced_markdown_in_task(plan, task_heading)
+                for required in required_phrases:
+                    self.assertTrue(contains_normalized_phrase(body, required))
+                self.assertEqual(digest, sha256_text(body))
+                self.assertFalse(contains_normalized_phrase(
+                    body,
+                    "closes issue 55",
+                ))
+
+    def test_v016_draft_has_bounded_workstreams_and_exit_criteria(self) -> None:
+        milestones = read_repository_file("project/MILESTONES.md")
+        section = milestone_section(milestones, "## v0.16-draft")
+        for heading in (
+            "### Entry state",
+            "### Required workstreams",
+            "### Exit criteria",
+            "### Non-goals",
+        ):
+            self.assertIn(heading, section)
+        for required in (
+            "Tracker hygiene",
+            "NIST SP 800-53",
+            "United Kingdom jurisdiction profile deepen",
+            "Release closure",
+            "Issues `#181`–`#185`",
+            "Critical and Important",
+        ):
+            with self.subTest(required=required):
+                self.assertIn(required, section)
+
+    def test_v016_draft_preserves_bounded_non_goals(self) -> None:
+        milestones = read_repository_file("project/MILESTONES.md")
+        section = milestone_section(milestones, "## v0.16-draft")
+        non_goals = section[section.index("### Non-goals"):]
+        for non_goal in (
+            "closing Issue `#55`",
+            "substantive HITRUST mapping",
+            "PCI DSS `HOLD`",
+            "NIST AI RMF `HOLD`",
+            "ISO/IEC 42001 `HOLD`",
+            "NIST CSF `HOLD`",
+            "ISO/IEC 27001 `HOLD`",
+            "SOC 2 or CIS Controls readiness",
+            "third Phase 6 toolkit deepen",
+            "second industry or jurisdiction profile",
+            "all roadmap crosswalks",
+            "all planned profiles",
+            "redesigning `v1.0`",
+        ):
+            with self.subTest(non_goal=non_goal):
+                self.assertIn(non_goal, non_goals)
+
+    def test_backlog_records_post_v015_v016_draft_initiatives(self) -> None:
+        backlog = read_repository_file("project/BACKLOG.md")
+        queue = markdown_section(backlog, "## Post-v0.15 scheduled queue")
+        for required in (
+            "Sync post-v0.15 tracker hygiene",
+            "Complete NIST SP 800-53 Revision 5 public-source readiness and mapping go/no-go",
+            "Deepen United Kingdom jurisdiction profile to Draft 0.2.0",
+            "Close the v0.16-draft publication gates",
+            "do not stop later engineering work",
+        ):
+            with self.subTest(required=required):
+                self.assertTrue(contains_normalized_phrase(queue, required))
+
+    def test_roadmap_records_v016_draft_delivery_sequence(self) -> None:
+        roadmap = read_repository_file("ROADMAP.md")
+        sequence = markdown_section(
+            roadmap,
+            "## 0.16-draft delivery sequence",
+        )
+        for required in (
+            "tracker hygiene",
+            "NIST SP 800-53",
+            "United Kingdom",
+            "issue 55",
+            "issue 60",
+            "not `v0.16-draft` exit criteria",
+            "HOLD",
+            "Phases 4, 5, and 6",
+        ):
+            with self.subTest(required=required):
+                self.assertTrue(contains_normalized_phrase(sequence, required))
+
+    def test_planned_v016_issue_bodies_preserve_boundaries_and_digests(self) -> None:
+        plan = read_repository_file(V016_NEXT_STEPS_PLAN)
+        for task_heading, title, digest, required_phrases in V016_READY_ISSUE_TASKS:
             with self.subTest(title=title):
                 self.assertIn(f"Title: `{title}`", plan)
                 body = fenced_markdown_in_task(plan, task_heading)
