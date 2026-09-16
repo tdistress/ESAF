@@ -159,10 +159,14 @@ These initiatives are required for `v0.16-draft` and shall be tracked in GitHub
 Issues under milestone `v0.16-draft`. Deferred mapping assurance and HITRUST
 readiness remain tracked separately and do not stop later engineering work.
 
-- Sync post-v0.15 tracker hygiene
-- Complete NIST SP 800-53 Revision 5 public-source readiness and mapping go/no-go
-- Deepen United Kingdom jurisdiction profile to Draft 0.2.0
-- Close the v0.16-draft publication gates
+- [Issue 193](https://github.com/tdistress/ESAF/issues/193): Sync post-v0.15
+  tracker hygiene
+- [Issue 194](https://github.com/tdistress/ESAF/issues/194): Complete NIST SP
+  800-53 Revision 5 public-source readiness and mapping go/no-go
+- [Issue 195](https://github.com/tdistress/ESAF/issues/195): Deepen United
+  Kingdom jurisdiction profile to Draft 0.2.0
+- [Issue 196](https://github.com/tdistress/ESAF/issues/196): Close the
+  v0.16-draft publication gates
 
 ## Completed workstreams
 
