@@ -165,11 +165,13 @@ python tools/render_nist_sp_800_53_mapping_go_no_go.py --check
 python tools/render_cis_controls_v8_mapping_go_no_go.py --check
 ```
 
-The current decision is `HOLD` because named mapper and independent reviewers
-are not evidenced. Source identity, public PDF digests, publication rights,
-and the subcategory / control inventories are recorded. This validation does
-not create a mapping or assert NIST approval, compliance, certification,
-equivalence, or endorsement.
+The NIST AI RMF / NIST CSF / NIST SP 800-53 decisions are `HOLD` because named
+mapper and independent reviewers are not evidenced. The CIS Controls Version 8
+decision is `HOLD` because publication rights (CC BY-NC-ND derivative-mapping
+prohibition) and named mapper/reviewers are blocked. Source identity and
+inventories are recorded; CIS PDF/Excel package bytes are not committed. This
+validation does not create a mapping or assert NIST or CIS approval, compliance,
+certification, equivalence, or endorsement.
 
 ## PCI DSS readiness validation
 
