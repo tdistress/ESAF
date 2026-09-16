@@ -1,0 +1,93 @@
+{
+  "$schema": "../schema/evidence-record.schema.json",
+  "schema_version": "0.1.0",
+  "evidence_id": "EVD-CAT3-MOD100-OTHER-AIBOM",
+  "title": "Fictional model AIBOM excerpt for CAP-140",
+  "description": "A fictional software bill of materials excerpt for a model package used to illustrate a catalog `other` evidence type when no closed type fits the artifact class.",
+  "evidence_type": "other",
+  "other_type_description": "Model software bill of materials (AIBOM) excerpt",
+  "source": {
+    "identity": "Fictional Summit Analytics model packaging store",
+    "locator": "example://summit/aibom/cap-140-2026-09"
+  },
+  "custodian": {
+    "name": "Sam Ortiz",
+    "role": "Model owner",
+    "organization": "Fictional Summit Analytics"
+  },
+  "collected_at": "2026-09-14T14:00:00Z",
+  "collection_method": "Read-only export of the fictional AIBOM package for the CAP-140 model alias.",
+  "scope": {
+    "description": "Fictional AIBOM covering model components, licenses, and hashes for CAP-140 inference alias."
+  },
+  "period": {
+    "point_in_time": "2026-09-14T00:00:00Z"
+  },
+  "population": {
+    "description": "One fictional AIBOM package for the CAP-140 model alias.",
+    "sample": "The complete fictional AIBOM excerpt.",
+    "selection_rationale": "The catalog example needs an artifact class that does not fit a closed evidence type."
+  },
+  "quality": {
+    "relevance": {
+      "rating": "adequate",
+      "rationale": "The artifact bears on the fictional requirement under examination."
+    },
+    "reliability": {
+      "rating": "limited",
+      "rationale": "The example does not independently verify the originating system."
+    },
+    "completeness": {
+      "rating": "adequate",
+      "rationale": "The package includes the fields needed for the catalog illustration."
+    },
+    "timeliness": {
+      "rating": "adequate",
+      "rationale": "The artifact covers the fictional assessment period."
+    },
+    "attribution": {
+      "rating": "adequate",
+      "rationale": "Actors and custodians are identified for workbook teaching."
+    },
+    "integrity": {
+      "rating": "limited",
+      "rationale": "The fictional digest illustrates verification without asserting real assurance."
+    },
+    "traceability": {
+      "rating": "adequate",
+      "rationale": "The example links to a fictional requirement, procedure, and result."
+    },
+    "sufficiency": "limited",
+    "evaluated_by": {
+      "name": "Morgan Ellis",
+      "role": "Independent assessor",
+      "organization": "Fictional Contour Assurance LLP"
+    },
+    "evaluated_at": "2026-09-14T15:00:00Z",
+    "sufficiency_rationale": "A single fictional catalog artifact is limited evidence and needs corroboration in a real engagement."
+  },
+  "integrity": {
+    "digest_algorithm": "sha-256",
+    "digest": "3333333333333333333333333333333333333333333333333333333333333333"
+  },
+  "limitations": [
+    "This fictional catalog example does not demonstrate an actual organization's model inventory control.",
+    "`other` remains rare; ordinary policies, logs, and records must use closed types."
+  ],
+  "retention": {
+    "authority": "Fictional Summit Analytics records schedule",
+    "end_condition": "Retain until the fictional assessment archive period ends."
+  },
+  "traceability": {
+    "requirement_refs": [
+      "MOD-100"
+    ],
+    "procedure_refs": [
+      "MOD-100-A1"
+    ],
+    "result_refs": [
+      "ASR-CAT3-OTHER-DEMO"
+    ]
+  },
+  "example_notice": "Fictional non-authoritative example; no organization, ESAF control, profile, or external framework has been assessed."
+}

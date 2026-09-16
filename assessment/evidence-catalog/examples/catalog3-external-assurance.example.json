@@ -1,0 +1,93 @@
+{
+  "$schema": "../schema/evidence-record.schema.json",
+  "schema_version": "0.1.0",
+  "evidence_id": "EVD-CAT3-AUD100-EXTASSURE",
+  "title": "Fictional external assurance report excerpt for AI gateway controls",
+  "description": "A fictional independent assurance report excerpt used only to illustrate a catalog `external_assurance` evidence type within its stated fictional scope.",
+  "evidence_type": "external_assurance",
+  "source": {
+    "identity": "Fictional Contour Assurance LLP Type 2 report library",
+    "locator": "example://contour/assurance/summit-gateway-2026"
+  },
+  "custodian": {
+    "name": "Priya Shah",
+    "role": "Assurance liaison",
+    "organization": "Fictional Summit Analytics"
+  },
+  "collected_at": "2026-09-14T13:00:00Z",
+  "collection_method": "Read-only intake of the fictional report excerpt and scope page.",
+  "scope": {
+    "description": "Fictional independent report covering Summit Analytics AI gateway control objectives for 2026-01-01 through 2026-06-30."
+  },
+  "period": {
+    "start": "2026-01-01T00:00:00Z",
+    "end": "2026-06-30T23:59:59Z"
+  },
+  "population": {
+    "description": "One fictional independent report excerpt and scope statement.",
+    "sample": "The complete fictional scope page and control-objective summary.",
+    "selection_rationale": "The catalog example needs issuer, scope, and assurance period for `external_assurance`."
+  },
+  "quality": {
+    "relevance": {
+      "rating": "adequate",
+      "rationale": "The artifact bears on the fictional requirement under examination."
+    },
+    "reliability": {
+      "rating": "limited",
+      "rationale": "The example does not independently verify the originating system."
+    },
+    "completeness": {
+      "rating": "adequate",
+      "rationale": "The package includes the fields needed for the catalog illustration."
+    },
+    "timeliness": {
+      "rating": "adequate",
+      "rationale": "The artifact covers the fictional assessment period."
+    },
+    "attribution": {
+      "rating": "adequate",
+      "rationale": "Actors and custodians are identified for workbook teaching."
+    },
+    "integrity": {
+      "rating": "limited",
+      "rationale": "The fictional digest illustrates verification without asserting real assurance."
+    },
+    "traceability": {
+      "rating": "adequate",
+      "rationale": "The example links to a fictional requirement, procedure, and result."
+    },
+    "sufficiency": "limited",
+    "evaluated_by": {
+      "name": "Morgan Ellis",
+      "role": "Independent assessor",
+      "organization": "Fictional Contour Assurance LLP"
+    },
+    "evaluated_at": "2026-09-14T15:00:00Z",
+    "sufficiency_rationale": "An external report excerpt is limited evidence and cannot replace engagement-specific Examine or Test work."
+  },
+  "integrity": {
+    "digest_algorithm": "sha-256",
+    "digest": "2222222222222222222222222222222222222222222222222222222222222222"
+  },
+  "limitations": [
+    "This fictional catalog example does not establish certification, compliance, equivalence, endorsement, or assurance for any organization or control.",
+    "External report excerpts may be reused only within their stated fictional scope and period."
+  ],
+  "retention": {
+    "authority": "Fictional Summit Analytics records schedule",
+    "end_condition": "Retain until the fictional assessment archive period ends."
+  },
+  "traceability": {
+    "requirement_refs": [
+      "AUD-100"
+    ],
+    "procedure_refs": [
+      "AUD-100-A1"
+    ],
+    "result_refs": [
+      "ASR-CAT3-EXTASSURE-DEMO"
+    ]
+  },
+  "example_notice": "Fictional non-authoritative example; no organization, ESAF control, profile, or external framework has been assessed."
+}

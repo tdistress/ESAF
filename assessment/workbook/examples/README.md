@@ -21,4 +21,12 @@ satisfaction.
 | [engagement2-assessment-result.example.json](engagement2-assessment-result.example.json) | Second-vignette fictional draft assessment result |
 | [engagement2-maturity-assessment.example.json](engagement2-maturity-assessment.example.json) | Second-vignette fictional draft maturity assessment |
 
+## Third engagement deepen
+
+| File | Role |
+|---|---|
+| [engagement3-evidence-record.example.json](engagement3-evidence-record.example.json) | Third-vignette fictional evidence record |
+| [engagement3-assessment-result.example.json](engagement3-assessment-result.example.json) | Third-vignette fictional draft assessment result |
+| [engagement3-maturity-assessment.example.json](engagement3-maturity-assessment.example.json) | Third-vignette fictional draft maturity assessment |
+
 Names, identifiers, dates, and findings in filled examples are fictional.

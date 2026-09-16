@@ -4,7 +4,9 @@
 **Authority:** [ESAF-1500](../ESAF-1500.md) for shared evidence, result, and
 maturity semantics; [ESAF-1100](../../controls/ESAF-1100.md) for control
 requirements and assessment procedures.
-**Worked example:** [engagement-vignette.example.md](engagement-vignette.example.md)
+**Worked examples:** [engagement-vignette.example.md](engagement-vignette.example.md);
+[engagement2-vignette.example.md](engagement2-vignette.example.md);
+[engagement3-vignette.example.md](engagement3-vignette.example.md)
 
 ## 1. Engagement scope (fill in)
 

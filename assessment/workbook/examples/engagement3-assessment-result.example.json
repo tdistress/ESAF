@@ -1,0 +1,90 @@
+{
+  "$schema": "../schema/assessment-result.schema.json",
+  "schema_version": "0.1.0",
+  "result_id": "ASR-ENG3-API100",
+  "status": "draft",
+  "title": "Fictional draft assessment of API-100 for Summit Analytics workbook engagement",
+  "assessor": {
+    "name": "Morgan Ellis",
+    "role": "Independent assessor",
+    "organization": "Fictional Contour Assurance LLP",
+    "independence_statement": "This fictional assessor is presented only to illustrate workbook recording structure."
+  },
+  "assessment_scope": {
+    "subject": "Fictional Summit Analytics workforce-research assistant CAP-140",
+    "requirement_ids": [
+      "API-100"
+    ],
+    "boundary": "Production AI gateway routing, allowlist, identity propagation, and logging for CAP-140 during the engagement period.",
+    "exclusions": [
+      "Emergency restriction Test under API-100-A3 and external-provider contract depth under API-140."
+    ],
+    "population": "Fictional API-100 gateway configuration package for CAP-140.",
+    "sample": "Complete examination of the fictional gateway configuration export."
+  },
+  "methods": [
+    {
+      "method": "Examine",
+      "procedure": "API-100-A1 - Examine the fictional gateway configuration for required policy-enforcement capabilities and approved routing.",
+      "object": "Fictional CAP-140 gateway configuration EVD-ENG3-API100-GATEWAY.",
+      "expected_result": "Gateway routes CAP-140 traffic through approved control points with identity, authorization, model routing, logging, and limits.",
+      "actual_work": "Examined the fictional routing map, allowlist, identity-propagation settings, logging sinks, and rate-limit policy for CAP-140."
+    }
+  ],
+  "time_boundary": {
+    "assessment_start": "2026-09-15T09:00:00Z",
+    "assessment_end": "2026-09-16T17:00:00Z",
+    "result_date": "2026-09-16T17:30:00Z"
+  },
+  "evidence_refs": [
+    "EVD-ENG3-API100-GATEWAY"
+  ],
+  "determination": "partially_satisfied",
+  "determination_rationale": "The fictional gateway routes CAP-140 through approved control points with identity and logging, but emergency restriction runbooks referenced by the allowlist lack an executable Test harness in this sample, recorded as a draft finding.",
+  "design_effectiveness": "partially_effective",
+  "operating_effectiveness": "not_assessed",
+  "findings": [
+    {
+      "finding_id": "FND-ENG3-API100-EMERGENCY",
+      "severity": "minor",
+      "status": "open",
+      "affected_requirement_ids": [
+        "API-100"
+      ],
+      "statement": "The fictional gateway configuration references an emergency model-restriction switch, but the workbook sample does not include an executable Test harness or recent exercise evidence.",
+      "evidence_refs": [
+        "EVD-ENG3-API100-GATEWAY"
+      ],
+      "owner": {
+        "name": "Jordan Hale",
+        "role": "AI platform engineer",
+        "organization": "Fictional Summit Analytics"
+      },
+      "disposition": {
+        "action": "Pending fictional addition of an emergency-restriction Test harness and exercise record before any final determination.",
+        "rationale": "Draft engagement remains open until the fictional emergency-restriction gap is addressed or accepted with residual risk."
+      },
+      "identified_at": "2026-09-15T15:00:00Z",
+      "disposition_at": "2026-09-16T16:00:00Z"
+    }
+  ],
+  "limitations": [
+    "This fictional draft result is a workbook teaching example and makes no compliance claim.",
+    "Operating effectiveness and bypass Tests were not assessed in this workbook vignette."
+  ],
+  "traceability": {
+    "esaf_requirement_ids": [
+      "API-100"
+    ],
+    "external_or_profile_ids": []
+  },
+  "change_history": [
+    {
+      "version": "0.1.0-draft",
+      "date": "2026-09-16T17:30:00Z",
+      "author": "Morgan Ellis",
+      "description": "Created the fictional draft workbook engagement result for API-100."
+    }
+  ],
+  "example_notice": "Fictional non-authoritative example; no organization, ESAF control, profile, or external framework has been assessed."
+}
