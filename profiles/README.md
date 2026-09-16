@@ -8,7 +8,11 @@ control meanings.
 
 | Profile | Version | Status |
 |---|---|---|
-| [United Kingdom jurisdiction profile](uk/0.1.0/README.md) | 0.1.0 | Draft |
+| [United Kingdom jurisdiction profile](uk/0.2.0/README.md) | 0.2.0 | Draft |
+| [United Kingdom jurisdiction profile (historical)](uk/0.1.0/README.md) | 0.1.0 | Draft |
+
+The current Draft package is `uk/0.2.0`. Historical `uk/0.1.0` package truth is
+retained under ESAF-1800 versioning and shall not be silently rewritten.
 
 ## Shared assessment semantics
 
