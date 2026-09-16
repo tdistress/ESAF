@@ -75,7 +75,8 @@ PROFILE_PROPOSITION_BOUNDARY = re.compile(
     r"\b(?:even\s+though|while|whereas|though)\b|[\r\n]",
     PROPOSITION_BOUNDARY.flags,
 )
-UK_PILOT_PROFILE_ID = "uk--jurisdiction-profile--0.1.0"
+UK_PILOT_PROFILE_DOMAIN = "uk"
+UK_PILOT_PROFILE_NAME = "jurisdiction-profile"
 UK_PILOT_REGISTRY_PATHS = {
     (
         "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3"
@@ -103,6 +104,20 @@ UK_PILOT_REGISTRY_PATHS = {
     ),
 }
 UK_PILOT_MAPPING_REFERENCES = frozenset(UK_PILOT_REGISTRY_PATHS)
+
+
+def is_uk_jurisdiction_pilot_profile(profile_id: object) -> bool:
+    """Return True for any versioned UK jurisdiction pilot profile identity."""
+    if not isinstance(profile_id, str):
+        return False
+    match = PROFILE_IDENTIFIER.fullmatch(profile_id)
+    return (
+        match is not None
+        and match.group("domain") == UK_PILOT_PROFILE_DOMAIN
+        and match.group("name") == UK_PILOT_PROFILE_NAME
+    )
+
+
 MAPPING_LIFECYCLE_STATES = ("approved", "published", "deprecated", "retired")
 EXTERNAL_IMPORT_FIELDS = frozenset(
     {
@@ -2274,7 +2289,7 @@ def semantic_diagnostics(
                 f"{NON_IMPORT_STATEMENT!r}"
             )
 
-    if expected_profile_id == UK_PILOT_PROFILE_ID:
+    if is_uk_jurisdiction_pilot_profile(expected_profile_id):
         for identifier in sorted(
             set(reference_ids) - UK_PILOT_MAPPING_REFERENCES
         ):

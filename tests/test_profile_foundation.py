@@ -23,6 +23,8 @@ WORKFLOW = ROOT / ".github" / "workflows" / "catalog-validation.yml"
 SCHEMA_ROOT = ROOT / "profiles" / "schema"
 UK_PROFILE_ROOT = ROOT / "profiles" / "uk" / "0.1.0"
 UK_PROFILE_SOURCE = UK_PROFILE_ROOT / "PROFILE.md"
+UK_PROFILE_020_ROOT = ROOT / "profiles" / "uk" / "0.2.0"
+UK_PROFILE_020_SOURCE = UK_PROFILE_020_ROOT / "PROFILE.md"
 SCHEMA_NAMES = (
     "profile",
     "control-selections",
@@ -50,6 +52,7 @@ SELECTION_STATUSES = (
     "not_selected",
 )
 UK_PROFILE_ID = "uk--jurisdiction-profile--0.1.0"
+UK_PROFILE_020_ID = "uk--jurisdiction-profile--0.2.0"
 UK_COMPONENTS = {
     "source": "PROFILE.md",
     "readme": "README.md",
@@ -623,11 +626,16 @@ class ProfileSchemaTests(unittest.TestCase):
 
 
 class ProfileRepositoryIntegrationTests(unittest.TestCase):
-    def test_repository_contains_exactly_one_draft_pilot_package(self) -> None:
+    def test_repository_contains_only_uk_jurisdiction_pilot_packages(self) -> None:
         self.assertEqual(
             validate_profiles.discover_profile_packages(ROOT),
-            (UK_PROFILE_ROOT,),
+            (UK_PROFILE_ROOT, UK_PROFILE_020_ROOT),
         )
+        domains = {
+            path.parent.name
+            for path in validate_profiles.discover_profile_packages(ROOT)
+        }
+        self.assertEqual(domains, {"uk"})
 
     def read(self, relative: str) -> str:
         return (ROOT / relative).read_text(encoding="utf-8")
@@ -636,15 +644,16 @@ class ProfileRepositoryIntegrationTests(unittest.TestCase):
         expected_links = {
             "README.md": (
                 "profiles/ESAF-1800.md",
-                "profiles/uk/0.1.0/README.md",
+                "profiles/uk/0.2.0/README.md",
             ),
             "framework/ESAF-1000.md": (
                 "../profiles/ESAF-1800.md",
-                "../profiles/uk/0.1.0/README.md",
+                "../profiles/uk/0.2.0/README.md",
             ),
             "profiles/README.md": (
                 "ESAF-1800.md",
                 "uk/0.1.0/README.md",
+                "uk/0.2.0/README.md",
             ),
         }
         for path, links in expected_links.items():
@@ -1714,6 +1723,198 @@ class UKPilotProfileTests(unittest.TestCase):
 
     def test_published_pilot_passes_profile_validation(self) -> None:
         self.assertEqual(validate_profiles.validate(ROOT), [])
+
+
+class UKPilotProfile020DeepenTests(unittest.TestCase):
+    """Bounded Draft deepen invariants for profiles/uk/0.2.0 (Issue #195)."""
+
+    def load(self, filename: str) -> dict[str, object]:
+        path = UK_PROFILE_020_ROOT / filename
+        self.assertTrue(path.is_file(), f"missing UK 0.2.0 artifact {filename}")
+        return json.loads(path.read_text(encoding="utf-8"))
+
+    def test_package_reports_draft_0_2_0_with_v016_target_and_history(
+        self,
+    ) -> None:
+        manifest = self.load("profile.json")
+        self.assertEqual(manifest["profile_id"], UK_PROFILE_020_ID)
+        self.assertEqual(manifest["profile_version"], "0.2.0")
+        self.assertEqual(manifest["status"], "draft")
+        self.assertEqual(manifest["target_esaf_release"], "v0.16-draft")
+        self.assertEqual(manifest["components"], UK_COMPONENTS)
+        history = manifest["change_history"]
+        self.assertEqual(
+            [entry["version"] for entry in history],
+            ["0.1.0", "0.2.0"],
+        )
+        deepen = history[1]["description"]
+        for phrase in (
+            "Bounded Draft deepen",
+            "v0.16-draft",
+            "evidence-expectation",
+            "companion",
+            "mapping identity",
+        ):
+            with self.subTest(phrase=phrase):
+                self.assertIn(phrase, deepen)
+
+    def test_markdown_source_contains_every_authoritative_record(self) -> None:
+        source = UK_PROFILE_020_SOURCE.read_text(encoding="utf-8")
+        for filename in (
+            "profile.json",
+            "control-selections.json",
+            "risk-overlays.json",
+            "evidence-expectations.json",
+            "external-references.json",
+        ):
+            with self.subTest(filename=filename):
+                self.assertIn(f"## {filename}\n\n```json\n", source)
+
+    def test_control_catalog_pin_matches_authoritative_catalog(self) -> None:
+        profile = self.load("profile.json")
+        catalog_path = ROOT / profile["control_catalog"]["path"]
+        self.assertEqual(
+            profile["control_catalog"]["sha256"],
+            hashlib.sha256(catalog_path.read_bytes()).hexdigest(),
+        )
+        catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
+        records = {
+            record["id"]: record
+            for record in profile["control_catalog"]["records"]
+        }
+        self.assertEqual(
+            records.keys(), {record["id"] for record in catalog["controls"]}
+        )
+        for catalog_record in catalog["controls"]:
+            record = records[catalog_record["id"]]
+            self.assertEqual(record["version"], catalog_record["version"])
+            self.assertEqual(record["status"], catalog_record["status"])
+            self.assertEqual(record["path"], catalog_record["path"])
+            self.assertEqual(
+                record["record_sha256"],
+                hashlib.sha256(
+                    (ROOT / "controls" / record["path"]).read_bytes()
+                ).hexdigest(),
+            )
+
+    def test_selections_remain_additive_relative_to_0_1_0_statuses(
+        self,
+    ) -> None:
+        prior = {
+            record["control_id"]: record["status"]
+            for record in json.loads(
+                (UK_PROFILE_ROOT / "control-selections.json").read_text(
+                    encoding="utf-8"
+                )
+            )["selections"]
+        }
+        current = {
+            record["control_id"]: record["status"]
+            for record in self.load("control-selections.json")["selections"]
+        }
+        self.assertEqual(current, prior)
+
+    def test_external_references_remain_lifecycle_only_uk_pins(self) -> None:
+        references = self.load("external-references.json")["external_references"]
+        self.assertEqual(
+            tuple(reference["mapping_set_id"] for reference in references),
+            UK_MAPPING_IDS,
+        )
+        for reference in references:
+            with self.subTest(mapping=reference["mapping_set_id"]):
+                self.assertEqual(reference["expected_status"], "draft")
+                self.assertEqual(
+                    reference["reference_use"], "lifecycle_reference_only"
+                )
+                self.assertIs(reference["qualified_review_required"], True)
+                self.assertEqual(
+                    reference["non_import_statement"],
+                    "Relationships, external outcomes, and evidence are not "
+                    "imported.",
+                )
+
+    def test_readme_deepens_companion_cross_links_and_applicability(
+        self,
+    ) -> None:
+        readme = (UK_PROFILE_020_ROOT / "README.md").read_text(encoding="utf-8")
+        self.assertIn("uk--jurisdiction-profile--0.2.0", readme)
+        self.assertIn("v0.16-draft", readme)
+        self.assertIn("Draft", readme)
+        for link in (
+            "../../assessment/ESAF-1500.md",
+            "../../assessment/README.md",
+            "../../assessment/workbook/README.md",
+            "../../assessment/evidence-catalog/README.md",
+            "../../assessment/audit-checklist/README.md",
+            "../../governance/ESAF-1300.md",
+            "../../implementation/ESAF-1400.md",
+            "../../data-model/ESAF-1700.md",
+            "../../templates/README.md",
+        ):
+            with self.subTest(link=link):
+                self.assertIn(link, readme)
+        normalized = re.sub(r"\s+", " ", readme).lower()
+        self.assertIn("applicability condition", normalized)
+        self.assertIn(
+            "all seven esaf-1500 evidence-quality attributes",
+            normalized,
+        )
+        for claim in (
+            "establishes compliance",
+            "establishes certification",
+            "establishes equivalence",
+        ):
+            with self.subTest(claim=claim):
+                self.assertNotIn(claim, normalized)
+
+    def test_evidence_expectations_retain_seven_attribute_emphasis_contract(
+        self,
+    ) -> None:
+        required_statement = (
+            "All seven ESAF-1500 evidence-quality attributes remain required; "
+            "the listed attributes are profile-specific emphases."
+        )
+        deepen_marker = (
+            "Operators may consult ESAF-1500 toolkit packs for evidence-type "
+            "and quality evaluation practice; those packs do not replace this "
+            "profile's expectations or ESAF-1500 attribute meanings."
+        )
+        for expectation in self.load("evidence-expectations.json")[
+            "expectations"
+        ]:
+            with self.subTest(expectation=expectation["expectation_id"]):
+                strengthening = expectation["strengthening"]
+                self.assertIn(required_statement, strengthening)
+                self.assertIn(deepen_marker, strengthening)
+                self.assertLessEqual(
+                    set(expectation["quality_attributes"]),
+                    ESAF_1500_QUALITY_ATTRIBUTES,
+                )
+
+    def test_component_identity_matches_0_2_0_everywhere(self) -> None:
+        for filename in (
+            "profile.json",
+            "control-selections.json",
+            "risk-overlays.json",
+            "evidence-expectations.json",
+            "external-references.json",
+        ):
+            document = self.load(filename)
+            with self.subTest(filename=filename):
+                self.assertEqual(document["profile_id"], UK_PROFILE_020_ID)
+                self.assertEqual(document["profile_version"], "0.2.0")
+
+    def test_historical_0_1_0_package_truth_is_retained(self) -> None:
+        prior = json.loads(
+            (UK_PROFILE_ROOT / "profile.json").read_text(encoding="utf-8")
+        )
+        self.assertEqual(prior["profile_id"], UK_PROFILE_ID)
+        self.assertEqual(prior["profile_version"], "0.1.0")
+        self.assertEqual(prior["target_esaf_release"], "v0.5-beta")
+        self.assertEqual(
+            [entry["version"] for entry in prior["change_history"]],
+            ["0.1.0"],
+        )
 
 
 if __name__ == "__main__":

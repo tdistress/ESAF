@@ -50,7 +50,7 @@ ESAF-1700 are available in [`examples/esaf-1300/`](examples/esaf-1300/),
 workbook starter is available in
 [`assessment/workbook/`](assessment/workbook/).
 
-The current profile package is the [Draft United Kingdom jurisdiction pilot](profiles/uk/0.1.0/README.md).
+The current profile package is the [Draft United Kingdom jurisdiction pilot](profiles/uk/0.2.0/README.md).
 
 ## Standards alignment
 
