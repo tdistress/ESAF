@@ -1,0 +1,80 @@
+{
+  "schema_version": "1.0.0",
+  "access": {
+    "browser_behavior": "direct_download_without_interstitial",
+    "direct_http_behavior": "returns_pdf_bytes",
+    "license_accepted": false,
+    "protected": false
+  },
+  "boundary": {
+    "normative": {
+      "artifact": "NIST SP 800-53 Rev. 5 English PDF (NIST.SP.800-53r5)",
+      "availability": "available",
+      "url": "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-53r5.pdf"
+    },
+    "supporting": [
+      {
+        "role": "publication_landing",
+        "url": "https://csrc.nist.gov/pubs/sp/800/53/r5/upd1/final"
+      },
+      {
+        "role": "doi",
+        "url": "https://doi.org/10.6028/NIST.SP.800-53r5"
+      },
+      {
+        "role": "oscal_catalog_inventory_source",
+        "url": "https://raw.githubusercontent.com/usnistgov/oscal-content/main/nist.gov/SP800-53/rev5/json/NIST_SP-800-53_rev5_catalog.json",
+        "version": "5.2.0",
+        "sha256": "01f37cf90ea99d92242c936cbfbdebcc338eef1f71454e2acac36cc56e9bc062"
+      },
+      {
+        "role": "release_5_2_0_changes_summary_pdf",
+        "url": "https://csrc.nist.gov/files/projects/Risk-Management/800-53%20Comment%20Site/SP800-53-r5.2.0-changes.pdf",
+        "sha256": "bc4e626745fa4cf48a1bb6d09f552aa4f7a4b945b459119407d08f2e97a89a86"
+      }
+    ]
+  },
+  "dates": {
+    "artifact_publication": {
+      "date": "2020-12-10",
+      "precision": "day",
+      "label": "September 2020 (includes updates as of Dec. 10, 2020); current-final history date 2020-12-10"
+    },
+    "doi": "https://doi.org/10.6028/NIST.SP.800-53r5"
+  },
+  "discovery": {
+    "landing_url": "https://csrc.nist.gov/pubs/sp/800/53/r5/upd1/final",
+    "pdf_url": "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-53r5.pdf",
+    "retrieved_at_utc": "2026-09-16T19:43:00Z",
+    "sha256_scope": "official_public_pdf_bytes"
+  },
+  "nonclaims": [
+    "No NIST SP 800-53 mapping relationship, negative disposition, snapshot, lifecycle record, registry record, or generated catalog entry exists.",
+    "No NIST approval, endorsement, certification, assessment, equivalence, compliance, or assurance is claimed.",
+    "Official PDF and OSCAL catalog bytes were retrieved for digest verification and inventory derivation only and are not committed to the repository."
+  ],
+  "publication": {
+    "document_reference": "NIST.SP.800-53r5",
+    "format": "PDF",
+    "language": "English",
+    "publication_family": "NIST Special Publication (SP) 800-53",
+    "publisher": "National Institute of Standards and Technology",
+    "title": "Security and Privacy Controls for Information Systems and Organizations",
+    "version": "Rev. 5 (with updates; OSCAL catalog Release 5.2.0)"
+  },
+  "rights_review": {
+    "path": "docs/superpowers/reviews/2026-09-16-nist-sp-800-53-publication-rights-review.md"
+  },
+  "source_artifact": {
+    "byte_length": 6073678,
+    "filename": "NIST.SP.800-53r5.pdf",
+    "final_url": "https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-53r5.pdf",
+    "inventory_digest": "bba55bf6a5a3390f349237c1eabf0a851bfc7e7a9914be1ba1eded19aa36067b",
+    "inventory_granularity": "nist_sp_800_53_rev5_control_or_enhancement_identifier",
+    "inventory_ids_path": "docs/superpowers/specs/2026-09-16-nist-sp-800-53-rev5-control-inventory.json",
+    "page_count": 492,
+    "provision_count": 1196,
+    "sha256": "fc63bcd61715d0181dd8e85998b1e6201ae3515fc6626102101cab1841e11ec6",
+    "state": "available"
+  }
+}
