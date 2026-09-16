@@ -1,0 +1,204 @@
+{
+  "schema_version": "1.0.0",
+  "review_identifier": "cis-controls--v8--esaf-0.17-draft--mapping-readiness--0.1.0",
+  "recorded_decision": "HOLD",
+  "source_oracle": {
+    "path": "docs/superpowers/specs/2026-09-16-cis-controls-v8-source-readiness-oracle.json",
+    "sha256": "82769dc7bf4b39cfe95f6ebeb8023dc70e64246b7f6b2ecc5ae61f934cd79cc1"
+  },
+  "rights_review": {
+    "path": "docs/superpowers/reviews/2026-09-16-cis-controls-v8-publication-rights-review.md",
+    "commit": "84da951cc171fdc0940648b857ccbb54edd7759c",
+    "sha256": "0e3aa4a8eaf69b675721a0bc070aff63309fa5eb22c0c6ad2b737786eb4f8e2f"
+  },
+  "mapping_contract": {
+    "direction": "esaf_to_external",
+    "excluded_direction": "external_to_esaf",
+    "scope": "complete_publication",
+    "granularity": "cis_controls_v8_safeguard_identifier",
+    "directional_question": "Does exact normative ESAF control requirement text directly support, partially support, or establish a prerequisite for the outcome required by one authorized, publishable CIS Controls Version 8 Safeguard identifier, with each relationship's conditions, expected evidence, and known gaps recorded independently, without implying CIS Controls compliance, assessment, equivalence, certification, authorization, or endorsement?",
+    "positive_feasibility_probe": true
+  },
+  "review_findings": {
+    "open_critical": 0,
+    "open_important": 0
+  },
+  "gates": [
+    {
+      "gate": "source_identity_and_drift",
+      "status": "PASS",
+      "rationale": "Pinned CIS Controls Version 8 (v8) publisher, title, landing URL, free registration download URL, and public Navigator inventory source; Version 8.1 recorded as adjacent unpinned iterative update.",
+      "evidence_references": [
+        "docs/superpowers/specs/2026-09-16-cis-controls-v8-source-readiness-oracle.json#publication",
+        "docs/superpowers/specs/2026-09-16-cis-controls-v8-source-readiness-oracle.json#discovery",
+        "docs/superpowers/specs/2026-09-16-cis-controls-v8-source-readiness-design.md#edition-pin"
+      ],
+      "blocker_ids": []
+    },
+    {
+      "gate": "authorized_source_artifact",
+      "status": "PASS",
+      "rationale": "Official public Navigator lists Safeguard identifiers without a paywall; the PDF/Excel package is freely obtainable after registration. Package bytes and PDF digests were not retrieved or committed; inventory digests are recorded from the public Navigator.",
+      "evidence_references": [
+        "docs/superpowers/specs/2026-09-16-cis-controls-v8-source-readiness-oracle.json#access",
+        "docs/superpowers/specs/2026-09-16-cis-controls-v8-source-readiness-oracle.json#source_artifact"
+      ],
+      "blocker_ids": []
+    },
+    {
+      "gate": "publication_rights",
+      "status": "BLOCKED",
+      "rationale": "Independent rights review records HOLD under CC BY-NC-ND 4.0: identifiers, titles, structural inventory, and official links are permitted with attribution; paraphrases and derivative mapping analysis are prohibited without CIS commercial-use approval.",
+      "evidence_references": [
+        "docs/superpowers/reviews/2026-09-16-cis-controls-v8-publication-rights-review.md#final-decision",
+        "docs/superpowers/reviews/2026-09-16-cis-controls-v8-publication-rights-review.md#esaf-1600-mapping-field-class-partition"
+      ],
+      "blocker_ids": [
+        "CIS-CONTROLS-V8-READINESS-B001"
+      ]
+    },
+    {
+      "gate": "provision_inventory",
+      "status": "PASS",
+      "rationale": "A complete 153-identifier CIS Controls Version 8 Safeguard inventory is published with a canonical digest derived from the official public CIS Controls Navigator v8.",
+      "evidence_references": [
+        "docs/superpowers/specs/2026-09-16-cis-controls-v8-safeguard-inventory.json",
+        "docs/superpowers/specs/2026-09-16-cis-controls-v8-source-readiness-oracle.json#source_artifact"
+      ],
+      "blocker_ids": []
+    },
+    {
+      "gate": "semantic_and_normative_feasibility",
+      "status": "PASS",
+      "rationale": "Public CIS Controls Version 8 Safeguard outcomes can be compared with exact ESAF normative text; a positive directional feasibility probe is recorded in the design without creating mapping artifacts. Publication of analysis remains rights-blocked.",
+      "evidence_references": [
+        "docs/superpowers/specs/2026-09-16-cis-controls-v8-source-readiness-design.md#positive-feasibility-probe",
+        "docs/superpowers/specs/2026-09-16-cis-controls-v8-source-readiness-design.md#exact-proposed-mapping-contract"
+      ],
+      "blocker_ids": []
+    },
+    {
+      "gate": "esaf_1600_and_schema_fit",
+      "status": "PASS",
+      "rationale": "Existing ESAF-1600 direction, relationship, negative-disposition, rights, evidence, and lifecycle controls can represent a future CIS Controls mapping without a parallel schema.",
+      "evidence_references": [
+        "docs/superpowers/specs/2026-09-16-cis-controls-v8-source-readiness-design.md#exact-proposed-mapping-contract",
+        "crosswalks/schema/mapping-set.schema.json",
+        "crosswalks/schema/mapping-record.schema.json"
+      ],
+      "blocker_ids": []
+    },
+    {
+      "gate": "mapper_and_reviewer_readiness",
+      "status": "BLOCKED",
+      "rationale": "Named qualified mapper and independent exact-candidate reviewers are not evidenced.",
+      "evidence_references": [
+        "docs/superpowers/specs/2026-09-16-cis-controls-v8-source-readiness-design.md#mapper-and-qualified-review-contract"
+      ],
+      "blocker_ids": [
+        "CIS-CONTROLS-V8-READINESS-B002"
+      ]
+    },
+    {
+      "gate": "overclaiming_controls",
+      "status": "PASS",
+      "rationale": "HOLD boundary, explicit nonclaims, exact directional question, rights prohibition on derivative analysis, and future independent security review requirements can be enforced mechanically.",
+      "evidence_references": [
+        "docs/superpowers/specs/2026-09-16-cis-controls-v8-source-readiness-design.md#hold-boundary-and-reconsideration",
+        "docs/superpowers/reviews/2026-09-16-cis-controls-v8-publication-rights-review.md#decision-boundaries"
+      ],
+      "blocker_ids": []
+    }
+  ],
+  "blockers": [
+    {
+      "blocker_id": "CIS-CONTROLS-V8-READINESS-B001",
+      "category": "publication_permission",
+      "gate": "publication_rights",
+      "missing_evidence": "Case-specific written CIS commercial-use and derivative-distribution permission, or an equivalent affirmative rights regime, covering ESAF paraphrases and derivative mapping analysis across the repository, website, generated publications, project license, and downstream redistribution model.",
+      "owner": "ESAF Project Maintainer and CIS permissions contact",
+      "reconsideration_trigger": "CIS grants written permission covering the complete proposed publication use, or publishes rights that affirmatively permit distributed derivative mapping analysis under ESAF's model.",
+      "reentry_test": "An independent rights reviewer verifies the executed permission against every proposed field class and publication channel and records an attributable PASS disposition that includes derivative_mapping_analysis."
+    },
+    {
+      "blocker_id": "CIS-CONTROLS-V8-READINESS-B002",
+      "category": "qualified_people",
+      "gate": "mapper_and_reviewer_readiness",
+      "missing_evidence": "Named qualified people for the mapper, CIS Controls Version 8 subject-matter, ESAF specification and mapping, publication-rights, security and overclaiming, and owner-authorized approval roles, with independence and attributable exact-SHA review evidence.",
+      "owner": "ESAF Project Maintainer and review coordinator",
+      "reconsideration_trigger": "Qualified named people accept the closed role, independence, access-attestation, exact-candidate, and findings-disposition contract.",
+      "reentry_test": "The readiness evidence names every required person, verifies qualifications and independence, and proves attributable exact-SHA inventory/specification and security/overclaiming reviews with no open Critical or Important findings."
+    }
+  ],
+  "reviewer_contract": {
+    "mapper": {
+      "named_person_required": true,
+      "self_review_prohibited": true,
+      "authorized_source_access_required": true,
+      "experience_required": [
+        "CIS Controls Version 8",
+        "ESAF-1600"
+      ]
+    },
+    "reviewers": [
+      {
+        "role": "cis_controls_subject_matter",
+        "independent_from_mapper": true,
+        "authorized_source_access_required": true,
+        "qualification": "owner-approved CIS Controls Version 8 subject-matter reviewer"
+      },
+      {
+        "role": "esaf_specification_and_mapping",
+        "independent_from_mapper": true,
+        "authorized_source_access_required": true,
+        "qualification": "independent ESAF specification and mapping reviewer"
+      },
+      {
+        "role": "publication_rights",
+        "independent_from_mapper": true,
+        "authorized_source_access_required": true,
+        "qualification": "independent publication-rights reviewer"
+      },
+      {
+        "role": "security_and_overclaiming",
+        "independent_from_mapper": true,
+        "authorized_source_access_required": true,
+        "qualification": "independent security and overclaiming reviewer"
+      }
+    ],
+    "review_record_requirements": [
+      "identity",
+      "role",
+      "qualification_or_relevant_experience",
+      "authorized_source_access_attestation",
+      "attributable_attestation",
+      "review_date",
+      "exact_candidate_sha",
+      "artifact_digests",
+      "findings",
+      "findings_disposition"
+    ],
+    "separate_exact_candidate_reviews": [
+      "inventory_and_specification",
+      "security_and_overclaiming"
+    ],
+    "candidate_change_requires_redispatch": true,
+    "dual_role_requires_owner_approval": true,
+    "approver": "An approver authorized by the ESAF project owner"
+  },
+  "reconsideration_sequence": [
+    "Obtain CIS commercial-use and derivative-distribution permission covering ESAF paraphrases and mapping analysis, then refresh the publication-rights review to PASS for derivative_mapping_analysis.",
+    "Name the qualified mapper, independent reviewers, review coordinator, and owner-authorized approver with required access attestations.",
+    "Complete attributable exact-SHA inventory/specification and security/overclaiming reviews with no open Critical or Important findings.",
+    "Optionally retrieve official CIS Controls Version 8 PDF package digests without committing package bytes, refresh source identity if CIS revises the publication, and derive GO only if every gate passes with no blockers."
+  ],
+  "nonclaims": [
+    "No CIS Controls mapping relationship, negative disposition, snapshot, lifecycle record, registry record, or generated catalog entry exists.",
+    "No CIS approval, endorsement, certification, assessment, equivalence, compliance, or assurance is claimed.",
+    "No coverage statistic or percentage is calculated.",
+    "No decision is made for the excluded external_to_esaf direction.",
+    "This HOLD does not close Issues #55 or #60.",
+    "CIS Controls PDF and Excel package bytes were not retrieved or committed to the repository.",
+    "This package pins CIS Controls Version 8 (v8) and does not claim identity with CIS Controls Version 8.1."
+  ]
+}
