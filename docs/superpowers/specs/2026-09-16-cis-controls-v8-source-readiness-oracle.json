@@ -1,0 +1,94 @@
+{
+  "schema_version": "1.0.0",
+  "access": {
+    "browser_behavior": "registration_form_before_pdf_package_download",
+    "direct_http_behavior": "does_not_return_pdf_bytes_without_registration",
+    "license_accepted": false,
+    "privacy_notice_acknowledged": false,
+    "protected": false
+  },
+  "boundary": {
+    "normative": {
+      "artifact": "CIS Controls Version 8 English PDF/Excel package (registration download)",
+      "availability": "available_via_free_registration",
+      "url": "https://learn.cisecurity.org/cis-controls-download-v8"
+    },
+    "supporting": [
+      {
+        "role": "publication_landing",
+        "url": "https://www.cisecurity.org/controls/v8"
+      },
+      {
+        "role": "public_navigator_inventory_source",
+        "url": "https://www.cisecurity.org/controls/cis-controls-navigator/v8"
+      },
+      {
+        "role": "public_controls_list",
+        "url": "https://www.cisecurity.org/controls/cis-controls-list"
+      },
+      {
+        "role": "implementation_groups_count_confirmation",
+        "url": "https://www.cisecurity.org/controls/implementation-groups",
+        "notes": "Public CIS page states a total of 153 Safeguards in CIS Controls v8 and v8.1."
+      },
+      {
+        "role": "license_clarification",
+        "url": "https://cas.docs.cisecurity.org/en/latest/source/terms-of-use/"
+      },
+      {
+        "role": "cc_by_nc_nd_4_0_legal_code",
+        "url": "https://creativecommons.org/licenses/by-nc-nd/4.0/legalcode"
+      },
+      {
+        "role": "adjacent_edition_discovery_not_pinned",
+        "url": "https://www.cisecurity.org/controls/v8-1",
+        "notes": "CIS Controls Version 8.1 is an iterative update to v8; this oracle pins v8."
+      }
+    ]
+  },
+  "dates": {
+    "artifact_publication": {
+      "date": null,
+      "precision": "unclaimed_without_retrieved_pdf_metadata",
+      "label": "CIS Controls Version 8 (v8); day-precision PDF publication date not claimed without retrieved package metadata"
+    }
+  },
+  "discovery": {
+    "landing_url": "https://www.cisecurity.org/controls/v8",
+    "download_url": "https://learn.cisecurity.org/cis-controls-download-v8",
+    "navigator_url": "https://www.cisecurity.org/controls/cis-controls-navigator/v8",
+    "retrieved_at_utc": "2026-09-16T21:40:00Z",
+    "sha256_scope": "safeguard_identifier_inventory_digest_not_cis_pdf_package_bytes"
+  },
+  "nonclaims": [
+    "No CIS Controls mapping relationship, negative disposition, snapshot, lifecycle record, registry record, or generated catalog entry exists.",
+    "No CIS approval, endorsement, certification, assessment, equivalence, compliance, or assurance is claimed.",
+    "CIS Controls PDF and Excel package bytes were not retrieved or committed to the repository.",
+    "This package pins CIS Controls Version 8 (v8) and does not claim identity with CIS Controls Version 8.1."
+  ],
+  "publication": {
+    "document_reference": "CIS Controls Version 8",
+    "format": "PDF and Excel package (download); public HTML Navigator for inventory",
+    "language": "English",
+    "publication_family": "CIS Critical Security Controls (CIS Controls)",
+    "publisher": "Center for Internet Security, Inc. (CIS)",
+    "title": "CIS Critical Security Controls Version 8",
+    "version": "8 (v8)"
+  },
+  "rights_review": {
+    "path": "docs/superpowers/reviews/2026-09-16-cis-controls-v8-publication-rights-review.md"
+  },
+  "source_artifact": {
+    "byte_length": null,
+    "filename": null,
+    "final_url": "https://learn.cisecurity.org/cis-controls-download-v8",
+    "inventory_digest": "1a48eb400f3276e4cc6438cf832bf2bdea112512ac8d3c98eea7353df228aad1",
+    "inventory_granularity": "cis_controls_v8_safeguard_identifier",
+    "inventory_ids_path": "docs/superpowers/specs/2026-09-16-cis-controls-v8-safeguard-inventory.json",
+    "inventory_source_url": "https://www.cisecurity.org/controls/cis-controls-navigator/v8",
+    "page_count": null,
+    "provision_count": 153,
+    "sha256": null,
+    "state": "package_available_via_registration_pdf_bytes_not_retrieved"
+  }
+}
