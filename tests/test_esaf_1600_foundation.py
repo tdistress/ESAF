@@ -40,6 +40,7 @@ README_LINK_TARGETS = {
     "nist-csf.md",
     "nist-sp-800-53.md",
     "pci-dss.md",
+    "cis-controls.md",
 }
 ESAF_1600_DECISIONS = (
     "Provision Markdown is the authoritative crosswalk source.",
@@ -178,6 +179,27 @@ class Esaf1600FoundationTests(unittest.TestCase):
             r"(?im)^## Approved mappings$|"
             r"^\| External provision \| ESAF control \|$|"
             r"NIST CSF .+ maps directly",
+        )
+
+
+    def assert_cis_controls_hold_landing_page(self, text: str) -> None:
+        normalized = normalize_markdown_contract(text)
+        statuses = re.findall(
+            r"(?m)^\*\*Status:\*\*\s*(\S.*?)\s*$",
+            normalized,
+        )
+        self.assertEqual(statuses, ["Readiness HOLD"])
+        self.assertNotRegex(
+            normalized,
+            r"(?im)^\*\*Status:\*\*\s*(?:Approved|Reviewed|Published)\s*$",
+        )
+        self.assertIn("[ESAF-1600](ESAF-1600.md)", normalized)
+        self.assertIn("CIS Controls mapping artifacts: `0`", normalized)
+        self.assertNotRegex(
+            normalized,
+            r"(?im)^## Approved mappings$|"
+            r"^\| External provision \| ESAF control \|$|"
+            r"CIS Controls .+ maps directly",
         )
 
     def assert_nist_sp_800_53_hold_landing_page(self, text: str) -> None:
@@ -429,6 +451,8 @@ class Esaf1600FoundationTests(unittest.TestCase):
         self.assert_nist_csf_hold_landing_page(nist_csf)
         nist_sp_800_53 = (ROOT / "crosswalks/nist-sp-800-53.md").read_text(encoding="utf-8")
         self.assert_nist_sp_800_53_hold_landing_page(nist_sp_800_53)
+        cis_controls = (ROOT / "crosswalks/cis-controls.md").read_text(encoding="utf-8")
+        self.assert_cis_controls_hold_landing_page(cis_controls)
         hitrust = (ROOT / "crosswalks/hitrust-csf.md").read_text(encoding="utf-8")
         self.assert_planned_landing_page("hitrust-csf.md", hitrust)
 

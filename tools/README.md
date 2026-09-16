@@ -162,6 +162,7 @@ and require the generated review to match without rewriting it:
 python tools/render_nist_ai_rmf_mapping_go_no_go.py --check
 python tools/render_nist_csf_mapping_go_no_go.py --check
 python tools/render_nist_sp_800_53_mapping_go_no_go.py --check
+python tools/render_cis_controls_v8_mapping_go_no_go.py --check
 ```
 
 The current decision is `HOLD` because named mapper and independent reviewers

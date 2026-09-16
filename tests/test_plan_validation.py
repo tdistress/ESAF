@@ -48,6 +48,7 @@ EXPECTED_PUBLICATION_CATALOG = (
     "nist-ai-rmf-mapping-go-no-go",
     "nist-csf-mapping-go-no-go",
     "nist-sp-800-53-mapping-go-no-go",
+    "cis-controls-v8-mapping-go-no-go",
     "pci-dss-mapping-go-no-go",
     "v09-rc1-release-gates",
     "v010-draft-release-gates",
@@ -81,6 +82,7 @@ EXPECTED_COMMAND_ARGV = {
     "nist-ai-rmf-mapping-go-no-go": ("python", "tools/render_nist_ai_rmf_mapping_go_no_go.py", "--check"),
     "nist-csf-mapping-go-no-go": ("python", "tools/render_nist_csf_mapping_go_no_go.py", "--check"),
     "nist-sp-800-53-mapping-go-no-go": ("python", "tools/render_nist_sp_800_53_mapping_go_no_go.py", "--check"),
+    "cis-controls-v8-mapping-go-no-go": ("python", "tools/render_cis_controls_v8_mapping_go_no_go.py", "--check"),
     "pci-dss-mapping-go-no-go": ("python", "tools/render_pci_dss_mapping_go_no_go.py", "--check"),
     "v09-rc1-release-gates": ("python", "tools/v09_rc1_release_gates.py", "--check", "--baseline-ref", "{base}"),
     "v010-draft-release-gates": ("python", "tools/v010_draft_release_gates.py", "--check", "--baseline-ref", "{base}"),
@@ -397,6 +399,10 @@ class PlanValidationTests(unittest.TestCase):
         self.assertEqual(
             ("python", "tools/render_nist_sp_800_53_mapping_go_no_go.py", "--check"),
             commands["nist-sp-800-53-mapping-go-no-go"],
+        )
+        self.assertEqual(
+            ("python", "tools/render_cis_controls_v8_mapping_go_no_go.py", "--check"),
+            commands["cis-controls-v8-mapping-go-no-go"],
         )
         self.assertEqual(
             ("python", "tools/mermaid_inventory.py", "--check-record", "docs/superpowers/reviews/2026-07-27-v05-beta-mermaid-rendering.md"),
