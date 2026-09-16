@@ -554,6 +554,7 @@ class Esaf1600FoundationTests(unittest.TestCase):
             "tools/render_pci_dss_mapping_go_no_go.py",
             "tools/render_nist_ai_rmf_mapping_go_no_go.py",
             "tools/render_nist_csf_mapping_go_no_go.py",
+            "tools/render_nist_sp_800_53_mapping_go_no_go.py",
             "tools/render_iso_iec_42001_mapping_go_no_go.py",
             "tools/render_iso_iec_27001_mapping_go_no_go.py",
             "requirements-dev.txt",
@@ -620,6 +621,12 @@ class Esaf1600FoundationTests(unittest.TestCase):
         self.assertEqual(nist_csf_readiness, {
             "name": "Validate NIST CSF readiness review",
             "run": "python tools/render_nist_csf_mapping_go_no_go.py --check",
+        })
+
+        nist_sp_800_53_readiness = unique_step("Validate NIST SP 800-53 readiness review")
+        self.assertEqual(nist_sp_800_53_readiness, {
+            "name": "Validate NIST SP 800-53 readiness review",
+            "run": "python tools/render_nist_sp_800_53_mapping_go_no_go.py --check",
         })
 
         iso_readiness = unique_step("Validate ISO/IEC 42001 readiness review")

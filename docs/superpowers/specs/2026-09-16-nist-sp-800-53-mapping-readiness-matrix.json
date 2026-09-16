@@ -1,0 +1,191 @@
+{
+  "schema_version": "1.0.0",
+  "review_identifier": "nist--sp-800-53--rev5--esaf-0.16-draft--mapping-readiness--0.1.0",
+  "recorded_decision": "HOLD",
+  "source_oracle": {
+    "path": "docs/superpowers/specs/2026-09-16-nist-sp-800-53-source-readiness-oracle.json",
+    "sha256": "0b9f0f8fad53c28be8379c02a71441f62748bb291ef70d7086a4f6fe80faf495"
+  },
+  "rights_review": {
+    "path": "docs/superpowers/reviews/2026-09-16-nist-sp-800-53-publication-rights-review.md",
+    "commit": "09a4b193bd266c33f0699439d953784cf8086c62",
+    "sha256": "23f4eb393d0169105d19108ee2ed3575e6570def24d64db53168f420a565031f"
+  },
+  "mapping_contract": {
+    "direction": "esaf_to_external",
+    "excluded_direction": "external_to_esaf",
+    "scope": "complete_publication",
+    "granularity": "nist_sp_800_53_rev5_control_or_enhancement_identifier",
+    "directional_question": "Does exact normative ESAF control requirement text directly support, partially support, or establish a prerequisite for the outcome required by one authorized, publishable NIST SP 800-53 Revision 5 control or control-enhancement identifier, with each relationship's conditions, expected evidence, and known gaps recorded independently, without implying NIST SP 800-53 compliance, assessment, equivalence, certification, authorization, or endorsement?",
+    "positive_feasibility_probe": true
+  },
+  "review_findings": {
+    "open_critical": 0,
+    "open_important": 0
+  },
+  "gates": [
+    {
+      "gate": "source_identity_and_drift",
+      "status": "PASS",
+      "rationale": "Pinned NIST.SP.800-53r5 / SP 800-53 Rev. 5 public PDF identity, DOI, landing URL, publication date, byte length, SHA-256, and page count, plus OSCAL catalog 5.2.0 inventory digest.",
+      "evidence_references": [
+        "docs/superpowers/specs/2026-09-16-nist-sp-800-53-source-readiness-oracle.json#publication",
+        "docs/superpowers/specs/2026-09-16-nist-sp-800-53-source-readiness-oracle.json#discovery",
+        "docs/superpowers/specs/2026-09-16-nist-sp-800-53-source-readiness-oracle.json#source_artifact"
+      ],
+      "blocker_ids": []
+    },
+    {
+      "gate": "authorized_source_artifact",
+      "status": "PASS",
+      "rationale": "The official English SP 800-53 Rev. 5 PDF and public OSCAL catalog are available without a protected interstitial; digests and page count are recorded without committing PDF or OSCAL bytes.",
+      "evidence_references": [
+        "docs/superpowers/specs/2026-09-16-nist-sp-800-53-source-readiness-oracle.json#access",
+        "docs/superpowers/specs/2026-09-16-nist-sp-800-53-source-readiness-oracle.json#source_artifact"
+      ],
+      "blocker_ids": []
+    },
+    {
+      "gate": "publication_rights",
+      "status": "PASS",
+      "rationale": "Independent rights review records PASS for all six ESAF-1600 mapping field classes under U.S. government work and NIST technical-series practice.",
+      "evidence_references": [
+        "docs/superpowers/reviews/2026-09-16-nist-sp-800-53-publication-rights-review.md#final-decision",
+        "docs/superpowers/reviews/2026-09-16-nist-sp-800-53-publication-rights-review.md#esaf-1600-mapping-field-class-partition"
+      ],
+      "blocker_ids": []
+    },
+    {
+      "gate": "provision_inventory",
+      "status": "PASS",
+      "rationale": "A complete 1196-identifier control and enhancement inventory is published with a canonical digest derived from the official NIST OSCAL SP 800-53 Rev 5.2.0 catalog.",
+      "evidence_references": [
+        "docs/superpowers/specs/2026-09-16-nist-sp-800-53-rev5-control-inventory.json",
+        "docs/superpowers/specs/2026-09-16-nist-sp-800-53-source-readiness-oracle.json#source_artifact"
+      ],
+      "blocker_ids": []
+    },
+    {
+      "gate": "semantic_and_normative_feasibility",
+      "status": "PASS",
+      "rationale": "Public control and enhancement outcomes can be compared with exact ESAF normative text; a positive directional feasibility probe is recorded in the design without creating mapping artifacts.",
+      "evidence_references": [
+        "docs/superpowers/specs/2026-09-16-nist-sp-800-53-source-readiness-design.md#positive-feasibility-probe",
+        "docs/superpowers/specs/2026-09-16-nist-sp-800-53-source-readiness-design.md#exact-proposed-mapping-contract"
+      ],
+      "blocker_ids": []
+    },
+    {
+      "gate": "esaf_1600_and_schema_fit",
+      "status": "PASS",
+      "rationale": "Existing ESAF-1600 direction, relationship, negative-disposition, rights, evidence, and lifecycle controls can represent a future NIST SP 800-53 mapping without a parallel schema.",
+      "evidence_references": [
+        "docs/superpowers/specs/2026-09-16-nist-sp-800-53-source-readiness-design.md#exact-proposed-mapping-contract",
+        "crosswalks/schema/mapping-set.schema.json",
+        "crosswalks/schema/mapping-record.schema.json"
+      ],
+      "blocker_ids": []
+    },
+    {
+      "gate": "mapper_and_reviewer_readiness",
+      "status": "BLOCKED",
+      "rationale": "Named qualified mapper and independent exact-candidate reviewers are not evidenced.",
+      "evidence_references": [
+        "docs/superpowers/specs/2026-09-16-nist-sp-800-53-source-readiness-design.md#mapper-and-qualified-review-contract"
+      ],
+      "blocker_ids": [
+        "NIST-SP-800-53-READINESS-B001"
+      ]
+    },
+    {
+      "gate": "overclaiming_controls",
+      "status": "PASS",
+      "rationale": "HOLD boundary, explicit nonclaims, exact directional question, and future independent security review requirements can be enforced mechanically.",
+      "evidence_references": [
+        "docs/superpowers/specs/2026-09-16-nist-sp-800-53-source-readiness-design.md#hold-boundary-and-reconsideration",
+        "docs/superpowers/reviews/2026-09-16-nist-sp-800-53-publication-rights-review.md#decision-boundaries"
+      ],
+      "blocker_ids": []
+    }
+  ],
+  "blockers": [
+    {
+      "blocker_id": "NIST-SP-800-53-READINESS-B001",
+      "category": "qualified_people",
+      "gate": "mapper_and_reviewer_readiness",
+      "missing_evidence": "Named qualified people for the mapper, NIST SP 800-53 subject-matter, ESAF specification and mapping, publication-rights, security and overclaiming, and owner-authorized approval roles, with independence and attributable exact-SHA review evidence.",
+      "owner": "ESAF Project Maintainer and review coordinator",
+      "reconsideration_trigger": "Qualified named people accept the closed role, independence, access-attestation, exact-candidate, and findings-disposition contract.",
+      "reentry_test": "The readiness evidence names every required person, verifies qualifications and independence, and proves attributable exact-SHA inventory/specification and security/overclaiming reviews with no open Critical or Important findings."
+    }
+  ],
+  "reviewer_contract": {
+    "mapper": {
+      "named_person_required": true,
+      "self_review_prohibited": true,
+      "authorized_source_access_required": true,
+      "experience_required": [
+        "NIST SP 800-53 Rev. 5",
+        "ESAF-1600"
+      ]
+    },
+    "reviewers": [
+      {
+        "role": "nist_sp_800_53_subject_matter",
+        "independent_from_mapper": true,
+        "authorized_source_access_required": true,
+        "qualification": "owner-approved NIST SP 800-53 subject-matter reviewer"
+      },
+      {
+        "role": "esaf_specification_and_mapping",
+        "independent_from_mapper": true,
+        "authorized_source_access_required": true,
+        "qualification": "independent ESAF specification and mapping reviewer"
+      },
+      {
+        "role": "publication_rights",
+        "independent_from_mapper": true,
+        "authorized_source_access_required": true,
+        "qualification": "independent publication-rights reviewer"
+      },
+      {
+        "role": "security_and_overclaiming",
+        "independent_from_mapper": true,
+        "authorized_source_access_required": true,
+        "qualification": "independent security and overclaiming reviewer"
+      }
+    ],
+    "review_record_requirements": [
+      "identity",
+      "role",
+      "qualification_or_relevant_experience",
+      "authorized_source_access_attestation",
+      "attributable_attestation",
+      "review_date",
+      "exact_candidate_sha",
+      "artifact_digests",
+      "findings",
+      "findings_disposition"
+    ],
+    "separate_exact_candidate_reviews": [
+      "inventory_and_specification",
+      "security_and_overclaiming"
+    ],
+    "candidate_change_requires_redispatch": true,
+    "dual_role_requires_owner_approval": true,
+    "approver": "An approver authorized by the ESAF project owner"
+  },
+  "reconsideration_sequence": [
+    "Name the qualified mapper, independent reviewers, review coordinator, and owner-authorized approver with required access attestations.",
+    "Complete attributable exact-SHA inventory/specification and security/overclaiming reviews with no open Critical or Important findings.",
+    "Refresh source identity and rights evidence if NIST revises the publication, and derive GO only if every gate passes with no blockers."
+  ],
+  "nonclaims": [
+    "No NIST SP 800-53 mapping relationship, negative disposition, snapshot, lifecycle record, registry record, or generated catalog entry exists.",
+    "No NIST approval, endorsement, certification, assessment, equivalence, compliance, or assurance is claimed.",
+    "No coverage statistic or percentage is calculated.",
+    "No decision is made for the excluded external_to_esaf direction.",
+    "This HOLD does not close Issues #55 or #60.",
+    "Official PDF and OSCAL catalog bytes were retrieved for digest verification and inventory derivation only and are not committed to the repository."
+  ]
+}

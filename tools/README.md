@@ -161,13 +161,14 @@ and require the generated review to match without rewriting it:
 ```shell
 python tools/render_nist_ai_rmf_mapping_go_no_go.py --check
 python tools/render_nist_csf_mapping_go_no_go.py --check
+python tools/render_nist_sp_800_53_mapping_go_no_go.py --check
 ```
 
 The current decision is `HOLD` because named mapper and independent reviewers
 are not evidenced. Source identity, public PDF digests, publication rights,
-and the subcategory inventory are recorded. This validation does not create a
-mapping or assert NIST approval, compliance, certification, equivalence, or
-endorsement.
+and the subcategory / control inventories are recorded. This validation does
+not create a mapping or assert NIST approval, compliance, certification,
+equivalence, or endorsement.
 
 ## PCI DSS readiness validation
 

@@ -71,6 +71,7 @@ on:
       - "tools/render_pci_dss_mapping_go_no_go.py"
       - "tools/render_nist_ai_rmf_mapping_go_no_go.py"
       - "tools/render_nist_csf_mapping_go_no_go.py"
+      - "tools/render_nist_sp_800_53_mapping_go_no_go.py"
       - "tools/render_iso_iec_42001_mapping_go_no_go.py"
       - "tools/render_iso_iec_27001_mapping_go_no_go.py"
       - "requirements-dev.txt"
@@ -145,6 +146,7 @@ on:
       - "tools/render_pci_dss_mapping_go_no_go.py"
       - "tools/render_nist_ai_rmf_mapping_go_no_go.py"
       - "tools/render_nist_csf_mapping_go_no_go.py"
+      - "tools/render_nist_sp_800_53_mapping_go_no_go.py"
       - "tools/render_iso_iec_42001_mapping_go_no_go.py"
       - "tools/render_iso_iec_27001_mapping_go_no_go.py"
       - "requirements-dev.txt"
@@ -230,6 +232,8 @@ jobs:
         run: python tools/render_nist_ai_rmf_mapping_go_no_go.py --check
       - name: Validate NIST CSF readiness review
         run: python tools/render_nist_csf_mapping_go_no_go.py --check
+      - name: Validate NIST SP 800-53 readiness review
+        run: python tools/render_nist_sp_800_53_mapping_go_no_go.py --check
       - name: Validate ISO/IEC 42001 readiness review
         run: python tools/render_iso_iec_42001_mapping_go_no_go.py --check
       - name: Validate ISO/IEC 27001 readiness review
