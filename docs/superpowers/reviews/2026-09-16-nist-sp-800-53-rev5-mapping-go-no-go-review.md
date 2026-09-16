@@ -25,7 +25,7 @@ Granularity: `nist_sp_800_53_rev5_control_or_enhancement_identifier`.
 - Source-readiness oracle: `docs/superpowers/specs/2026-09-16-nist-sp-800-53-source-readiness-oracle.json`
 - Source-readiness oracle SHA-256: `0b9f0f8fad53c28be8379c02a71441f62748bb291ef70d7086a4f6fe80faf495`
 - Publication-rights review: `docs/superpowers/reviews/2026-09-16-nist-sp-800-53-publication-rights-review.md`
-- Publication-rights review commit: `09a4b193bd266c33f0699439d953784cf8086c62`
+- Publication-rights review commit: `c25399222e8f9e5f3e84a48f0335cf5eb144b545`
 - Publication-rights review SHA-256: `23f4eb393d0169105d19108ee2ed3575e6570def24d64db53168f420a565031f`
 - Positive feasibility probe available: `true`
 
