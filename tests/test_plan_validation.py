@@ -56,6 +56,7 @@ EXPECTED_PUBLICATION_CATALOG = (
     "v013-draft-release-gates",
     "v014-draft-release-gates",
     "v015-draft-release-gates",
+    "v016-draft-release-gates",
 )
 EXPECTED_COMMAND_ARGV = {
     "preflight": ("git", "diff", "--check", "{base}", "{candidate}"),
@@ -88,6 +89,7 @@ EXPECTED_COMMAND_ARGV = {
     "v013-draft-release-gates": ("python", "tools/v013_draft_release_gates.py", "--check", "--baseline-ref", "{base}"),
     "v014-draft-release-gates": ("python", "tools/v014_draft_release_gates.py", "--check", "--baseline-ref", "{base}"),
     "v015-draft-release-gates": ("python", "tools/v015_draft_release_gates.py", "--check", "--baseline-ref", "{base}"),
+    "v016-draft-release-gates": ("python", "tools/v016_draft_release_gates.py", "--check", "--baseline-ref", "{base}"),
 }
 FORBIDDEN_GENERIC_COMMAND_IDS = (
     "qualified-review",
