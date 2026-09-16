@@ -4,8 +4,8 @@
 
 - Reviewer: `Codex ESAF Governance Publication Reviewer`
 - Review date: 2026-09-16
-- Exact candidate SHA: `40646efdeada24675ac9e198c53b84cffd113784`
-- Exact candidate branch: `cursor/v017-evidence-candidate-0e44`
+- Exact candidate SHA: `f4de0bfd5846971b3da396c1723e9f262c1129af`
+- Exact candidate branch: `main` (merge of PR #212)
 - Scope: Issue #208 evidence-candidate boundaries, milestone non-goals,
   retained readiness `HOLD` boundaries, CIS Controls Version 8 readiness
   package non-expansion, Phase 6 third deepen non-expansion relative to
