@@ -6,18 +6,21 @@
 
 ## 0.16-draft delivery sequence
 
-`v0.16-draft` follows tracker hygiene, then NIST SP 800-53 Revision 5
-public-source readiness, then a bounded United Kingdom jurisdiction profile
-deepen from Draft `0.1.0` to Draft `0.2.0`, then ordinary publication gates on
-the exact candidate. Deferred mapping assurance remains tracked through issue
-55 and does not stop later engineering work. HITRUST readiness remains
-separately gated through issue 60. Issues 55 and 60 are not `v0.16-draft` exit
-criteria. NIST SP 800-53 readiness exited as an evidenced `HOLD` because
-people, rights, or source-access gates remain blocked; while `HOLD` or
-`NO_GO`, no NIST SP 800-53 mapping records are authored. Publication does not
-change any control, architecture, profile, mapping-set, or mapping-record
-lifecycle state. Phases 4, 5, and 6 remain long-term direction except for the
-bounded readiness and deepen work required by this milestone.
+The `v0.16-draft` Working Draft was published on 2026-09-16 through the
+annotated `v0.16-draft` tag at
+`b6a7547662720a0ea643f4a7766a75ff73af9a15`. It follows tracker hygiene, then
+NIST SP 800-53 Revision 5 public-source readiness, then a bounded United
+Kingdom jurisdiction profile deepen from Draft `0.1.0` to Draft `0.2.0`, then
+ordinary publication gates on the exact candidate. Deferred mapping assurance
+remains tracked through issue 55 and does not stop later engineering work.
+HITRUST readiness remains separately gated through issue 60. Issues 55 and 60
+are not `v0.16-draft` exit criteria. NIST SP 800-53 readiness exited as an
+evidenced `HOLD` because people, rights, or source-access gates remain blocked;
+while `HOLD` or `NO_GO`, no NIST SP 800-53 mapping records are authored.
+Publication does not change any control, architecture, profile, mapping-set,
+or mapping-record lifecycle state. Phases 4, 5, and 6 remain long-term
+direction except for the bounded readiness and deepen work required by this
+milestone.
 
 ## 0.15-draft delivery sequence
 
