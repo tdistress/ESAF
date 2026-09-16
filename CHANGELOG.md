@@ -10,6 +10,43 @@ Working Draft. Version 0.13-draft is a tagged Working Draft. Version 0.14-draft 
 Working Draft. Version 0.15-draft is a tagged Working Draft. Version 0.16-draft is a tagged
 Working Draft.
 
+## 0.17-draft - Unreleased
+
+### Changed
+
+- Advanced Working Draft status surfaces to `0.17-draft` for the exact
+  metadata-only closure candidate. Publication remains conditional on the
+  remote annotated `v0.17-draft` tag resolving to the exact validated merged
+  commit. The tag has not been created, and the post-merge gate remains open.
+- Added the v0.17-draft publication evidence-candidate gates, readiness
+  record, and Issue #208 validator wiring without advancing VERSION.md before
+  this closure candidate (PR #212).
+- Recorded CIS Controls Version 8 public-source readiness as an evidenced
+  `HOLD` for Issue #206: pinned source identity, rights review, control
+  inventory, and mapping artifact counts at zero (PR #211).
+- Deepened the Phase 6 assessment toolkit Draft packs with a third deepen
+  pass across the assessment workbook, evidence catalog, audit checklist, and
+  governance templates while preserving ESAF-1500 contracts (PR #210).
+- Recorded independent technical, editorial, and governance reviews of the
+  exact evidence candidate under the `2026-09-16-v017-draft-` review prefix
+  (PR #213).
+- Carried forward the seven Draft architecture patterns in the current
+  Working Draft: ARC-P100, Enterprise AI platform and gateway; ARC-P110,
+  Enterprise copilot; ARC-P120, Retrieval-augmented generation; ARC-P130,
+  Agentic and multi-agent AI; ARC-P140, Private model deployment; ARC-P150,
+  AI integration services; and ARC-P160, AI observability.
+- Carried forward the Draft Cyber Essentials v3.3 mapping snapshot.
+- Carried forward the Draft Cyber Essentials Plus v3.2 `esaf_to_external`
+  mapping snapshot.
+- Carried forward the Draft Cyber Essentials Plus v3.2 `external_to_esaf`
+  mapping snapshot.
+- Retained prerequisite dispositions: Phase 2 timing `DEFER`,
+  ESAF-1300/1400/1700 Working Draft deepen packs at `0.3.0`, Phase 6 toolkit
+  third deepen, NIST AI RMF `HOLD`, ISO/IEC 42001 `HOLD`, NIST CSF `HOLD`,
+  ISO/IEC 27001 `HOLD`, NIST SP 800-53 `HOLD`, CIS Controls `HOLD`, the
+  ESAF-1500 Working Draft carry-forward at `0.1.1`, and the UK jurisdiction
+  profile deepen at Draft `0.2.0`. Issues 55 and 60 remain open.
+
 ## 0.16-draft - 2026-09-16
 
 ### Changed
