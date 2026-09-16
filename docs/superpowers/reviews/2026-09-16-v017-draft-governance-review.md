@@ -4,7 +4,7 @@
 
 - Reviewer: `Codex ESAF Governance Publication Reviewer`
 - Review date: 2026-09-16
-- Exact candidate SHA: `PENDING_EVIDENCE_CANDIDATE_HEAD`
+- Exact candidate SHA: `40646efdeada24675ac9e198c53b84cffd113784`
 - Exact candidate branch: `cursor/v017-evidence-candidate-0e44`
 - Scope: Issue #208 evidence-candidate boundaries, milestone non-goals,
   retained readiness `HOLD` boundaries, CIS Controls Version 8 readiness
