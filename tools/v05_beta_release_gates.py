@@ -290,43 +290,24 @@ TAG_STATE_KEYS = {
     "response_sha256",
 }
 TAG_RESOURCE = "repos/tdistress/ESAF/git/ref/tags/v0.5-beta"
-EVIDENCE_SCOPE_INVENTORY = (
-    "This evidence candidate covers the complete Git-tracked repository. Its "
-    "derived inventory contains 91 controls in 16 families, 7 architecture "
-    "patterns, 3 mapping sets, and 404 mapping provisions. The mappings "
-    "contain 81 relationship legs and 325 negative dispositions."
-)
-CLOSURE_SCOPE_INVENTORY = (
-    "This closure candidate covers the complete Git-tracked repository. Its "
-    "derived inventory contains 91 controls in 16 families, 7 architecture "
-    "patterns, 3 mapping sets, and 404 mapping provisions. The mappings "
-    "contain 81 relationship legs and 325 negative dispositions."
-)
-PUBLISHED_SCOPE_INVENTORY = (
-    "This published record covers the complete Git-tracked repository. Its "
-    "derived inventory contains 91 controls in 16 families, 7 architecture "
-    "patterns, 3 mapping sets, and 404 mapping provisions. The mappings "
-    "contain 81 relationship legs and 325 negative dispositions."
-)
+_CARDINAL_WORDS = {
+    1: "one",
+    2: "two",
+    3: "three",
+    4: "four",
+    5: "five",
+    6: "six",
+    7: "seven",
+    8: "eight",
+    9: "nine",
+    10: "ten",
+}
 READINESS_SCOPE_BOUNDARY = (
     "The scope includes the ESAF-1500 assessment foundation and one Draft UK "
     "pilot profile under the reusable profile contract. The PCI DSS readiness "
     "record has the approved `HOLD` disposition. That disposition does not "
     "establish a PCI DSS mapping, assessment, certification, compliance, "
     "equivalence, endorsement, or legal conclusion."
-)
-READINESS_DRAFT_BOUNDARY = (
-    "All controls, architecture patterns, the pilot profile, mapping sets, and "
-    "mapping records remain Draft. The three mapping lifecycle records have "
-    "empty event arrays. This release work does not add reviewer metadata, "
-    "approval metadata, or lifecycle events to those artifacts."
-)
-READINESS_MAPPING_BASIS = (
-    "The release design permits one uniform mapping basis for all three "
-    "mapping sets. Qualified approval requires a validated six-role Draft "
-    "campaign bound to the exact closure candidate. Owner-risk acceptance "
-    "requires a separate, authenticated repository-owner decision created "
-    "after that exact candidate exists. No such v0.5 decision is recorded here."
 )
 READINESS_MAPPING_NONCLAIMS = (
     "Issue 55 remains open for qualified review. Owner-risk acceptance, if "
@@ -353,12 +334,6 @@ PUBLISHED_LIFECYCLE_BOUNDARY = (
     "The current ESAF version is `0.5-beta`. The `v0.5-beta` Working Draft is "
     "published. Publication is limited to the repository Working Draft and "
     "does not change any artifact lifecycle state."
-)
-PUBLISHED_DRAFT_BOUNDARY = (
-    "All controls, architecture patterns, the pilot profile, mapping sets, and "
-    "mapping records remain Draft. The three mapping lifecycle records have "
-    "empty event arrays. This publication does not add reviewer metadata, "
-    "approval metadata, or lifecycle events to those artifacts."
 )
 PUBLISHED_MAPPING_BASIS = (
     "This published Working Draft uses the owner-risk-acceptance mapping basis "
@@ -405,43 +380,150 @@ READINESS_BODY_SHARED_SCOPE_TAIL = (
     ("paragraph", READINESS_SCOPE_BOUNDARY),
     ("heading", "## Lifecycle boundary"),
 )
-READINESS_BODY_SHARED_MIDDLE = (
-    ("paragraph", READINESS_DRAFT_BOUNDARY),
-    ("heading", "## Mapping assurance"),
-    ("paragraph", READINESS_MAPPING_BASIS),
-    ("paragraph", READINESS_MAPPING_NONCLAIMS),
-    ("heading", "## Conditional publication"),
-)
-READINESS_BODY_BLOCKS_BY_PHASE = {
-    "evidence_candidate": (
-        *READINESS_BODY_SHARED_PREFIX,
-        ("paragraph", EVIDENCE_SCOPE_INVENTORY),
-        *READINESS_BODY_SHARED_SCOPE_TAIL,
-        ("paragraph", EVIDENCE_LIFECYCLE_BOUNDARY),
-        *READINESS_BODY_SHARED_MIDDLE,
-        ("paragraph", EVIDENCE_PUBLICATION_BOUNDARY),
-    ),
-    "closure_candidate": (
-        *READINESS_BODY_SHARED_PREFIX,
-        ("paragraph", CLOSURE_SCOPE_INVENTORY),
-        *READINESS_BODY_SHARED_SCOPE_TAIL,
-        ("paragraph", CLOSURE_LIFECYCLE_BOUNDARY),
-        *READINESS_BODY_SHARED_MIDDLE,
-        ("paragraph", CLOSURE_PUBLICATION_BOUNDARY),
-    ),
-    "published": (
-        *READINESS_BODY_SHARED_PREFIX,
-        ("paragraph", PUBLISHED_SCOPE_INVENTORY),
-        *READINESS_BODY_SHARED_SCOPE_TAIL,
-        ("paragraph", PUBLISHED_LIFECYCLE_BOUNDARY),
-        ("paragraph", PUBLISHED_DRAFT_BOUNDARY),
-        ("heading", "## Mapping assurance"),
-        ("paragraph", PUBLISHED_MAPPING_BASIS),
-        ("paragraph", PUBLISHED_MAPPING_NONCLAIMS),
-        ("heading", "## Publication evidence"),
-        ("paragraph", PUBLISHED_EVIDENCE_BOUNDARY),
-    ),
-}
+
+
+def _cardinal_word(count: int) -> str:
+    try:
+        return _CARDINAL_WORDS[count]
+    except KeyError as exc:
+        raise ValueError(f"unsupported mapping-set count {count}") from exc
+
+
+def _scope_inventory_paragraph(lead: str, scope: dict[str, object]) -> str:
+    return (
+        f"{lead} covers the complete Git-tracked repository. Its "
+        f"derived inventory contains {scope['controls']} controls in "
+        f"{scope['control_families']} families, "
+        f"{scope['architecture_patterns']} architecture "
+        f"patterns, {scope['mapping_sets']} mapping sets, and "
+        f"{scope['mapping_provisions']} mapping provisions. The mappings "
+        f"contain {scope['relationship_legs']} relationship legs and "
+        f"{scope['negative_dispositions']} negative dispositions."
+    )
+
+
+def _draft_boundary_paragraph(mapping_set_count: int, *, published: bool) -> str:
+    word = _cardinal_word(mapping_set_count)
+    action = (
+        "This publication does not add reviewer metadata, "
+        "approval metadata, or lifecycle events to those artifacts."
+        if published
+        else (
+            "This release work does not add reviewer metadata, "
+            "approval metadata, or lifecycle events to those artifacts."
+        )
+    )
+    return (
+        "All controls, architecture patterns, the pilot profile, mapping sets, "
+        "and mapping records remain Draft. The "
+        f"{word} mapping lifecycle records have empty event arrays. {action}"
+    )
+
+
+def _readiness_mapping_basis(mapping_set_count: int) -> str:
+    word = _cardinal_word(mapping_set_count)
+    return (
+        "The release design permits one uniform mapping basis for all "
+        f"{word} mapping sets. Qualified approval requires a validated "
+        "six-role Draft campaign bound to the exact closure candidate. "
+        "Owner-risk acceptance requires a separate, authenticated "
+        "repository-owner decision created after that exact candidate "
+        "exists. No such v0.5 decision is recorded here."
+    )
+
+
+def _mapping_set_count(record: dict[str, object]) -> int | None:
+    mapping_sets = record.get("mapping_sets")
+    if isinstance(mapping_sets, list) and all(
+        isinstance(item, str) for item in mapping_sets
+    ):
+        return len(mapping_sets)
+    scope = record.get("scope")
+    if isinstance(scope, dict):
+        count = scope.get("mapping_sets")
+        if isinstance(count, int):
+            return count
+    return None
+
+
+def readiness_body_blocks_for_record(
+    record: dict[str, object],
+) -> tuple[tuple[str, str], ...] | None:
+    """Build the exact controlled body sequence for a readiness record."""
+    phase = record.get("phase")
+    scope = record.get("scope")
+    if not isinstance(scope, dict):
+        return None
+    required_scope_keys = (
+        "controls",
+        "control_families",
+        "architecture_patterns",
+        "mapping_sets",
+        "mapping_provisions",
+        "relationship_legs",
+        "negative_dispositions",
+    )
+    if any(key not in scope for key in required_scope_keys):
+        return None
+    mapping_set_count = _mapping_set_count(record)
+    if mapping_set_count is None:
+        return None
+    try:
+        draft_boundary = _draft_boundary_paragraph(
+            mapping_set_count, published=phase == "published"
+        )
+        mapping_basis = _readiness_mapping_basis(mapping_set_count)
+    except ValueError:
+        return None
+    if phase == "evidence_candidate":
+        return (
+            *READINESS_BODY_SHARED_PREFIX,
+            (
+                "paragraph",
+                _scope_inventory_paragraph("This evidence candidate", scope),
+            ),
+            *READINESS_BODY_SHARED_SCOPE_TAIL,
+            ("paragraph", EVIDENCE_LIFECYCLE_BOUNDARY),
+            ("paragraph", draft_boundary),
+            ("heading", "## Mapping assurance"),
+            ("paragraph", mapping_basis),
+            ("paragraph", READINESS_MAPPING_NONCLAIMS),
+            ("heading", "## Conditional publication"),
+            ("paragraph", EVIDENCE_PUBLICATION_BOUNDARY),
+        )
+    if phase == "closure_candidate":
+        return (
+            *READINESS_BODY_SHARED_PREFIX,
+            (
+                "paragraph",
+                _scope_inventory_paragraph("This closure candidate", scope),
+            ),
+            *READINESS_BODY_SHARED_SCOPE_TAIL,
+            ("paragraph", CLOSURE_LIFECYCLE_BOUNDARY),
+            ("paragraph", draft_boundary),
+            ("heading", "## Mapping assurance"),
+            ("paragraph", mapping_basis),
+            ("paragraph", READINESS_MAPPING_NONCLAIMS),
+            ("heading", "## Conditional publication"),
+            ("paragraph", CLOSURE_PUBLICATION_BOUNDARY),
+        )
+    if phase == "published":
+        return (
+            *READINESS_BODY_SHARED_PREFIX,
+            (
+                "paragraph",
+                _scope_inventory_paragraph("This published record", scope),
+            ),
+            *READINESS_BODY_SHARED_SCOPE_TAIL,
+            ("paragraph", PUBLISHED_LIFECYCLE_BOUNDARY),
+            ("paragraph", draft_boundary),
+            ("heading", "## Mapping assurance"),
+            ("paragraph", PUBLISHED_MAPPING_BASIS),
+            ("paragraph", PUBLISHED_MAPPING_NONCLAIMS),
+            ("heading", "## Publication evidence"),
+            ("paragraph", PUBLISHED_EVIDENCE_BOUNDARY),
+        )
+    return None
 OPTIONAL_NEGATED_DISCUSSION_BLOCK = (
     "paragraph",
     "This record does not say the mappings are approved.",
@@ -592,7 +674,7 @@ def validate_readiness_body(
 ) -> list[str]:
     """Require the exact phase-specific controlled Markdown block sequence."""
     phase = record.get("phase")
-    expected = READINESS_BODY_BLOCKS_BY_PHASE.get(phase)
+    expected = readiness_body_blocks_for_record(record)
     if expected is None:
         return [
             "readiness body controlled prose block contract does not define "
@@ -1633,13 +1715,21 @@ def _validate_owner_risk(
 ) -> None:
     if schema != OWNER_DECISION_SCHEMA:
         errors.append("owner-risk evidence shall use esaf-v05-owner-decision-v1")
-    if not isinstance(value, list):
-        errors.append("owner-risk evidence shall contain exactly three decisions")
-        return
-    if len(value) != 3 or not all(isinstance(item, dict) for item in value):
-        errors.append("owner-risk evidence shall contain exactly three decisions")
-    decisions = [item for item in value if isinstance(item, dict)]
     expected_ids = _mapping_set_ids(record)
+    expected_decision_count = len(expected_ids)
+    expected_missing_role_count = expected_decision_count * len(MISSING_ROLES)
+    if not isinstance(value, list):
+        errors.append(
+            "owner-risk evidence shall contain exactly one decision per mapping set"
+        )
+        return
+    if len(value) != expected_decision_count or not all(
+        isinstance(item, dict) for item in value
+    ):
+        errors.append(
+            "owner-risk evidence shall contain exactly one decision per mapping set"
+        )
+    decisions = [item for item in value if isinstance(item, dict)]
     observed_ids = [item.get("mapping_set_id") for item in decisions]
     if (
         len(observed_ids) != len(expected_ids)
@@ -1684,12 +1774,12 @@ def _validate_owner_risk(
             }
         if (
             not isinstance(roles, list)
-            or len(roles) != 6
-            or len(observed_roles) != 6
+            or len(roles) != expected_missing_role_count
+            or len(observed_roles) != expected_missing_role_count
             or observed_roles != expected_roles
         ):
             errors.append(
-                "owner-risk decision shall contain exactly six missing roles"
+                "owner-risk decision shall enumerate every deferred missing role"
             )
         source = decision.get("source")
         sources.append(source)

@@ -1,0 +1,3193 @@
+{
+  "schema_version": "1.0.0",
+  "mapping_set_id": "nist--ai-rmf--1.0--esaf-0.17-draft--0.1.0",
+  "direction": "esaf_to_external",
+  "outcomes": {
+    "GOVERN-1.1": "Legal and regulatory requirements involving AI are understood, managed, and documented.",
+    "GOVERN-1.2": "The characteristics of trustworthy AI are integrated into organizational policies, processes, procedures, and practices.",
+    "GOVERN-1.3": "Processes, procedures, and practices are in place to determine the needed level of risk management activities based on the organization's risk tolerance.",
+    "GOVERN-1.4": "The risk management process and its outcomes are established through transparent policies, procedures, and other controls based on organizational risk priorities.",
+    "GOVERN-1.5": "Ongoing monitoring and periodic review of the risk management process and its outcomes are planned and organizational roles and responsibilities clearly defined, including determining the frequency of periodic review.",
+    "GOVERN-1.6": "Mechanisms are in place to inventory AI systems and are resourced according to organizational risk priorities.",
+    "GOVERN-1.7": "Processes and procedures are in place for decommissioning and phasing out AI systems safely and in a manner that reduces risks.",
+    "GOVERN-2.1": "Roles and responsibilities and lines of communication related to mapping, measuring, and managing AI risks are documented and are clear to individuals and teams throughout the organization.",
+    "GOVERN-2.2": "The organization's personnel and partners receive AI risk management training to enable them to perform their duties and responsibilities consistent with related policies, procedures, and agreements.",
+    "GOVERN-2.3": "Executive leadership of the organization takes responsibility for decisions about risks associated with AI system development and deployment.",
+    "GOVERN-3.1": "Decision-making related to mapping, measuring, and managing AI risks throughout the lifecycle is informed by a diverse team (e.g., diversity of demographics, disciplines, experience, expertise, and backgrounds).",
+    "GOVERN-3.2": "Policies and procedures are in place to define and differentiate roles and responsibilities for human-AI configurations and oversight of AI systems.",
+    "GOVERN-4.1": "Organizational policies and practices are in place to foster a critical thinking and safety-first mindset in the design, development, deployment, and uses of AI systems to minimize potential negative impacts.",
+    "GOVERN-4.2": "Organizational teams document the risks and potential impacts of the AI technology they design, develop, deploy, evaluate, and use, and they communicate about the impacts more broadly.",
+    "GOVERN-4.3": "Organizational practices are in place to enable AI testing, identification of unexpected system functionality and behavior, and to enable how and when AI system performance can be overridden, for example by humans.",
+    "GOVERN-5.1": "Organizational policies and practices are in place to collect, consider, prioritize, and integrate feedback from those external to the team that developed or deployed AI systems regarding the potential individual and societal impacts related to AI risks.",
+    "GOVERN-5.2": "Mechanisms are established to enable the team that developed or deployed AI systems to review and incorporate feedback about the potential individual and societal impacts related to AI risks.",
+    "GOVERN-6.1": "Policies and procedures are in place that address AI risks associated with third-party entities, including risks of using third-party AI systems or data.",
+    "GOVERN-6.2": "Contingency processes are in place to handle failures or incidents related to third-party data or AI systems deemed to be high-risk.",
+    "MANAGE-1.1": "A determination is made as to whether the AI system achieves its intended purposes and stated objectives and whether its development or deployment should proceed.",
+    "MANAGE-1.2": "Treatment of documented AI risks is prioritized based on impact, likelihood, and available resources or methods.",
+    "MANAGE-1.3": "Responses to the AI risks deemed high priority, as identified by the MAP function, are developed, planned, and documented, including strategies to maximize AI benefits and minimize negative impacts.",
+    "MANAGE-1.4": "Negative residual risks (defined as the sum of all remaining risks to which the organization or user is exposed after AI risk treatment methods have been implemented) are documented, monitored, and managed.",
+    "MANAGE-2.1": "Resources required to manage AI risks are taken into account \u2013 along with viable alternatives \u2013 when making AI system go/no-go decisions.",
+    "MANAGE-2.2": "Mechanisms are in place and applied to sustain the value of deployed AI systems.",
+    "MANAGE-2.3": "Procedures are followed to respond to and recover from a previously unknown risk when it is identified.",
+    "MANAGE-2.4": "Mechanisms are in place and applied, and responsibilities are assigned and understood, to supersede, disengage, or deactivate AI systems that demonstrate performance or outcomes that are inconsistent with intended use.",
+    "MANAGE-3.1": "AI risks and benefits from third-party resources are regularly monitored, and risk controls are applied and documented.",
+    "MANAGE-3.2": "Pre-trained models which are used for development are monitored as part of AI system regular monitoring and maintenance.",
+    "MANAGE-4.1": "Post-deployment AI system monitoring plans are implemented, including consideration of AI system updates and user feedback.",
+    "MANAGE-4.2": "Measurable activities for continual improvements are integrated into AI system updates and include regular engagement with interested parties, including relevant AI actors.",
+    "MANAGE-4.3": "Incidents and errors are communicated to relevant AI actors, including affected communities, users, and others who may experience impacts from system failures or limitations. Processes for tracking, responding to, and recovering from incidents and errors are followed and documented.",
+    "MAP-1.1": "Intended purposes, potentially beneficial uses, context-specific laws, norms and expectations, and prospective settings in which AI systems will be deployed are understood and documented.",
+    "MAP-1.2": "Interdisciplinary AI actors, competencies, skills, and capacities for establishing context reflect demographic diversity and broad domain expertise are identified and documented.",
+    "MAP-1.3": "The organization's mission and relevant goals for AI technology are understood and documented.",
+    "MAP-1.4": "The business value or context of business use has been clearly defined or \u2013 in the case of assessing existing AI systems \u2013 re-evaluated.",
+    "MAP-1.5": "Organizational risk tolerances are determined and documented.",
+    "MAP-1.6": "System requirements (e.g., \"the system shall respect the privacy of its users\") are elicited from and understood by relevant AI actors. Design decisions take socio-technical implications into account to address AI risks.",
+    "MAP-2.1": "The specific tasks and methods used to implement the AI capabilities that each component of the AI system will provide are defined.",
+    "MAP-2.2": "Information about the AI system's knowledge limits and how system output may be utilized and overseen by humans is documented. Assumptions and information about AI system limitations and knowledge bounds are identified and used to inform the AI system's development and deployment.",
+    "MAP-2.3": "Scientific integrity and TEVV considerations are identified and documented, including those related to experimental design, data collection and selection (e.g., availability, representativeness, suitability), system trustworthiness, and bias detection and mitigation.",
+    "MAP-3.1": "Potential benefits of intended AI system functionality and performance are examined and documented.",
+    "MAP-3.2": "Potential costs, including non-monetary costs, which result from expected or realized AI errors or system functionality and trustworthiness \u2013 as connected to organizational risk tolerance \u2013 are examined and documented.",
+    "MAP-3.3": "Targeted application scope is specified and documented based on the system's capability, established context, and AI system categorization.",
+    "MAP-3.4": "Processes for operator and practitioner proficiency with AI system forms of performance and trustworthiness \u2013 and relevant technical and non-technical standards and certifications \u2013 are defined, assessed, and documented.",
+    "MAP-3.5": "Processes for human oversight are defined, assessed, and documented, including the people who will be responsible for overseeing AI systems once they are deployed and in use.",
+    "MAP-4.1": "Approaches for mapping AI technology and legal risks of its components \u2013 including the use of third-party AI technologies \u2013 are in place, followed, and documented, as are risks of infringement of a third party's intellectual property or other rights.",
+    "MAP-4.2": "Internal risk controls for components of the AI system, including third-party AI technologies, are identified and documented.",
+    "MAP-5.1": "Likelihood and magnitude of each identified impact (both potentially beneficial and harmful) based on expected use, past uses of AI systems in similar contexts, public incident reports, feedback from those external to the team that developed or deployed the AI system, or other data are identified and documented.",
+    "MAP-5.2": "Practices and personnel for supporting regular engagement with potentially impacted communities of practice and relevant AI actors are in place, followed, and documented, and are integrated into AI system design and development.",
+    "MEASURE-1.1": "Approaches and metrics for measurement of AI risks enumerated during the MAP function are identified for the AI system, including residual risks that may remain after risk treatment.",
+    "MEASURE-1.2": "Approaches for assessing AI systems for trustworthiness characteristics and risk management impacts from using AI systems are identified and evaluated for effectiveness within a specific context.",
+    "MEASURE-1.3": "Internal expertise who did not serve as front-line developers for the task or system and/or independent external evaluators are available to assist in evaluating AI trustworthiness and AI risk management impacts.",
+    "MEASURE-2.1": "Test sets, metrics, and details about the tools used during TEVV are documented.",
+    "MEASURE-2.10": "Privacy risk of the AI system \u2013 as identified in the MAP function \u2013 is examined and documented.",
+    "MEASURE-2.11": "Fairness and bias \u2013 as identified in the MAP function \u2013 are evaluated and results are documented.",
+    "MEASURE-2.12": "Environmental impact and sustainability of AI model training and management activities \u2013 as identified in the MAP function \u2013 are assessed and documented.",
+    "MEASURE-2.13": "Effectiveness of the employed TEVV metrics and processes \u2013 as identified in the MAP function \u2013 in measuring risk inputs and outcomes is evaluated, and results are documented.",
+    "MEASURE-2.2": "Evaluations involving human subjects meet applicable requirements (including human subject protection) and are representative of the relevant population.",
+    "MEASURE-2.3": "AI system performance or assurance criteria are measured qualitatively or quantitatively and demonstrated for conditions similar to deployment setting(s).",
+    "MEASURE-2.4": "The functionality and behavior of the AI system and its components \u2013 as identified in the MAP function \u2013 are monitored when in production.",
+    "MEASURE-2.5": "The AI system to be deployed is demonstrated to be valid and reliable.",
+    "MEASURE-2.6": "The AI system is evaluated regularly for safety risks \u2013 as identified in the MAP function.",
+    "MEASURE-2.7": "AI system security and resilience \u2013 as identified in the MAP function \u2013 are evaluated and documented.",
+    "MEASURE-2.8": "Risks associated with transparency and accountability \u2013 as identified in the MAP function \u2013 are examined and documented.",
+    "MEASURE-2.9": "The AI model is explained, validated, and documented, and AI system output is interpreted within its context \u2013 as identified in the MAP function \u2013 and to inform and improve related risk management decisions.",
+    "MEASURE-3.1": "Approaches, personnel, and documentation are in place to regularly identify and track existing, unanticipated, and emergent AI risks based on the intended application, deployment environment, and other contextual factors.",
+    "MEASURE-3.2": "Risk tracking approaches are considered for identifying and monitoring existing, emergent, and previously unidentified AI risks.",
+    "MEASURE-3.3": "Feedback processes for end users and impacted communities to report problems and appeal system outcomes are established and integrated into AI system evaluation and monitoring.",
+    "MEASURE-4.1": "Measurement approaches for identifying AI system performance improvements as well as identifying existing and emergent risks are connected to AI system deployment and incident response processes.",
+    "MEASURE-4.2": "Measurement results regarding AI system trustworthiness in deployment setting(s) and a new approach are consulted and inform AI risk management approaches.",
+    "MEASURE-4.3": "Measurable performance improvements or declines based on the results of consultations with affected communities and AI actors, including affected and end users, and AI risk management decisions, are documented and applied."
+  },
+  "records": {
+    "GOVERN-1.1": {
+      "disposition": "mapped",
+      "summary": "Legal and regulatory requirements involving AI are understood, managed, and documented.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory GOVERN-1.1",
+      "relationships": [
+        {
+          "esaf_control_id": "CMP-100",
+          "relationship": "partially_supports",
+          "coverage": "substantial",
+          "confidence": "high",
+          "rationale": "CMP-100 requires the organization to identify, interpret, record, assign, implement, monitor, and update legal, regulatory, contractual, policy, ethical, and sector obligations applicable to each AI capability and the enterprise AI management system.",
+          "conditions": [
+            "The AI RMF subcategory is evaluated for legal and regulatory obligation management covered by CMP-100."
+          ],
+          "expected_evidence": [
+            "Obligation register covering legal and regulatory AI requirements with owners and monitoring status."
+          ],
+          "known_gaps": [
+            "CMP-100 does not by itself require every AI-related legal topic to be framed as an AI RMF GOVERN process artifact."
+          ]
+        },
+        {
+          "esaf_control_id": "CMP-110",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "CMP-110 requires creation, protection, retention, disclosure, and submission of AI records, notices, registrations, reports, and evidence according to applicable requirements, supporting documentation of managed legal obligations.",
+          "conditions": [
+            "Applicable obligations require retained records, notices, or filings."
+          ],
+          "expected_evidence": [
+            "Retained AI compliance records and submission evidence tied to identified obligations."
+          ],
+          "known_gaps": [
+            "CMP-110 does not itself identify or interpret the legal requirements."
+          ]
+        }
+      ]
+    },
+    "GOVERN-1.2": {
+      "disposition": "mapped",
+      "summary": "Trustworthy-AI characteristics are integrated into organizational policies, processes, procedures, and practices.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory GOVERN-1.2",
+      "relationships": [
+        {
+          "esaf_control_id": "GOV-110",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "GOV-110 requires an approved enterprise AI policy that defines scope, principles, acceptable and prohibited use, lifecycle obligations, accountability, risk expectations, exception handling, enforcement, and review requirements.",
+          "conditions": [
+            "Enterprise AI policy principles are treated as the organization's expression of trustworthy-AI characteristics."
+          ],
+          "expected_evidence": [
+            "Approved enterprise AI policy stating principles and lifecycle obligations."
+          ],
+          "known_gaps": [
+            "GOV-110 does not enumerate NIST trustworthy-AI characteristics or require their explicit integration into every process and practice."
+          ]
+        },
+        {
+          "esaf_control_id": "GOV-100",
+          "relationship": "prerequisite",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "GOV-100 requires executive leadership to establish enterprise authority with documented accountability and decision rights for governing in-scope AI capabilities, which is a prerequisite for policy-governed integration of trustworthy-AI expectations.",
+          "conditions": [
+            "An enterprise AI governance authority exists and owns policy approval."
+          ],
+          "expected_evidence": [
+            "Governance-authority charter showing policy and principle decision rights."
+          ],
+          "known_gaps": [
+            "GOV-100 alone does not integrate trustworthy-AI characteristics into operational practices."
+          ]
+        }
+      ]
+    },
+    "GOVERN-1.3": {
+      "disposition": "mapped",
+      "summary": "Processes determine the needed level of AI risk-management activity based on organizational risk tolerance.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory GOVERN-1.3",
+      "relationships": [
+        {
+          "esaf_control_id": "RSK-100",
+          "relationship": "partially_supports",
+          "coverage": "substantial",
+          "confidence": "high",
+          "rationale": "RSK-100 requires an approved AI risk methodology defining scope, risk dimensions, rating criteria, inherent and residual risk, treatment, acceptance, monitoring, reassessment, and escalation.",
+          "conditions": [
+            "The methodology's rating and acceptance criteria are used to scale risk-management activity."
+          ],
+          "expected_evidence": [
+            "Approved AI risk methodology documenting how risk level drives treatment and oversight intensity."
+          ],
+          "known_gaps": [
+            "RSK-100 does not use the NIST phrase 'risk tolerance' as a named artifact."
+          ]
+        },
+        {
+          "esaf_control_id": "RSK-110",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "RSK-110 requires classification of each in-scope AI capability before approved use using documented impact, likelihood, uncertainty, autonomy, data sensitivity, affected parties, and related criteria.",
+          "conditions": [
+            "Capability classification is used to determine proportionate risk-management activities."
+          ],
+          "expected_evidence": [
+            "Capability risk-classification records linked to required control intensity."
+          ],
+          "known_gaps": [
+            "RSK-110 classifies capabilities; it does not alone set enterprise risk-tolerance statements."
+          ]
+        }
+      ]
+    },
+    "GOVERN-1.4": {
+      "disposition": "mapped",
+      "summary": "The AI risk-management process and outcomes are established through transparent policies and controls based on organizational risk priorities.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory GOVERN-1.4",
+      "relationships": [
+        {
+          "esaf_control_id": "RSK-100",
+          "relationship": "partially_supports",
+          "coverage": "substantial",
+          "confidence": "high",
+          "rationale": "RSK-100 requires consistent application of an approved AI risk methodology covering treatment, acceptance, monitoring, reassessment, and escalation.",
+          "conditions": [
+            "The approved methodology is published as organizational policy or controlled procedure."
+          ],
+          "expected_evidence": [
+            "Approved AI risk methodology and evidence of consistent application."
+          ],
+          "known_gaps": [
+            "Transparency to external stakeholders is not expressly required by RSK-100."
+          ]
+        },
+        {
+          "esaf_control_id": "GOV-110",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "GOV-110 requires enterprise AI policy that defines risk expectations, accountability, enforcement, and review requirements.",
+          "conditions": [
+            "Enterprise AI policy includes risk expectations aligned to organizational priorities."
+          ],
+          "expected_evidence": [
+            "Approved enterprise AI policy sections on risk expectations and review."
+          ],
+          "known_gaps": [
+            "GOV-110 does not specify the detailed risk-management process outcomes."
+          ]
+        }
+      ]
+    },
+    "GOVERN-1.5": {
+      "disposition": "mapped",
+      "summary": "Ongoing monitoring and periodic review of the AI risk-management process are planned, with roles and review frequency defined.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory GOVERN-1.5",
+      "relationships": [
+        {
+          "esaf_control_id": "RSK-100",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "RSK-100 requires the AI risk methodology to include monitoring, reassessment, and escalation.",
+          "conditions": [
+            "Monitoring and reassessment cadence is defined in the approved methodology."
+          ],
+          "expected_evidence": [
+            "Methodology clauses defining monitoring and reassessment frequency and escalation paths."
+          ],
+          "known_gaps": [
+            "RSK-100 does not alone assign all organizational roles for periodic review of the process itself."
+          ]
+        },
+        {
+          "esaf_control_id": "AUD-140",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "AUD-140 requires executive leadership to review the AI management system at planned intervals using current information on risk, control effectiveness, assessments, and improvement needs and to record decisions.",
+          "conditions": [
+            "Management review includes the AI risk-management process and outcomes."
+          ],
+          "expected_evidence": [
+            "Management-review records showing planned interval, risk inputs, and decisions."
+          ],
+          "known_gaps": [
+            "AUD-140 is enterprise management review, not a dedicated RMF-process audit schedule."
+          ]
+        },
+        {
+          "esaf_control_id": "GOV-100",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "GOV-100 requires documented accountability, membership, decision rights, escalation paths, and meeting cadence for the enterprise AI governance authority.",
+          "conditions": [
+            "Governance authority owns periodic review of AI risk management."
+          ],
+          "expected_evidence": [
+            "Governance charter defining meeting cadence and risk-review decision rights."
+          ],
+          "known_gaps": [
+            "GOV-100 does not prescribe risk-methodology monitoring metrics."
+          ]
+        }
+      ]
+    },
+    "GOVERN-1.6": {
+      "disposition": "mapped",
+      "summary": "Mechanisms inventory AI systems and are resourced according to organizational risk priorities.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory GOVERN-1.6",
+      "relationships": [
+        {
+          "esaf_control_id": "GOV-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "GOV-120 requires review of the enterprise AI portfolio at an organization-defined frequency using current information on ownership, lifecycle state, value, risk, incidents, exceptions, obligations, dependencies, concentration, cost, and retirement.",
+          "conditions": [
+            "Portfolio review is treated as the inventory and prioritization mechanism for AI systems/capabilities."
+          ],
+          "expected_evidence": [
+            "Current AI portfolio inventory with ownership, lifecycle state, and risk fields."
+          ],
+          "known_gaps": [
+            "GOV-120 reviews the portfolio; it does not expressly require a continuously maintained system inventory independent of review cadence."
+          ]
+        },
+        {
+          "esaf_control_id": "MOD-100",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "MOD-100 requires registration of every material model with identifier, owner, purpose, lifecycle state, risk classification, and deployment relationships before approved use.",
+          "conditions": [
+            "Material models used by inventoried AI systems are registered."
+          ],
+          "expected_evidence": [
+            "Model registry entries linked to deploying capabilities."
+          ],
+          "known_gaps": [
+            "MOD-100 inventories models, not complete AI systems or non-model AI capabilities."
+          ]
+        },
+        {
+          "esaf_control_id": "STR-130",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "STR-130 requires identification, approval, and periodic review of people, competencies, funding, platforms, assurance, and supplier resources required to achieve AI objectives and maintain controls.",
+          "conditions": [
+            "Resource planning is aligned to portfolio risk priorities."
+          ],
+          "expected_evidence": [
+            "Approved AI resource plan tied to high-priority capabilities."
+          ],
+          "known_gaps": [
+            "STR-130 does not itself create the AI system inventory."
+          ]
+        }
+      ]
+    },
+    "GOVERN-1.7": {
+      "disposition": "mapped",
+      "summary": "Processes decommission and phase out AI systems safely in a manner that reduces risks.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory GOVERN-1.7",
+      "relationships": [
+        {
+          "esaf_control_id": "OPS-150",
+          "relationship": "partially_supports",
+          "coverage": "substantial",
+          "confidence": "high",
+          "rationale": "OPS-150 requires retiring an AI capability through an approved process addressing users, dependencies, access, models, data, agents, interfaces, suppliers, contracts, records, communications, continuity, and verification of decommissioning.",
+          "conditions": [
+            "The AI system being phased out is an in-scope AI capability under OPS-150."
+          ],
+          "expected_evidence": [
+            "Approved capability-retirement record with decommissioning verification."
+          ],
+          "known_gaps": [
+            "OPS-150 is capability retirement; it does not use NIST 'phase out' phrasing for every AI system form."
+          ]
+        },
+        {
+          "esaf_control_id": "MOD-150",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "MOD-150 requires authorized model retirement that removes deployment and access, preserves required evidence, disposes of artifacts and data, updates dependencies, and verifies prohibited use cannot continue.",
+          "conditions": [
+            "Material models supporting the decommissioned system are retired or detached under MOD-150."
+          ],
+          "expected_evidence": [
+            "Model-retirement records showing access removal and dependency updates."
+          ],
+          "known_gaps": [
+            "MOD-150 alone does not retire the broader AI system or service."
+          ]
+        }
+      ]
+    },
+    "GOVERN-2.1": {
+      "disposition": "mapped",
+      "summary": "Roles, responsibilities, and communication lines for mapping, measuring, and managing AI risks are documented and clear.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory GOVERN-2.1",
+      "relationships": [
+        {
+          "esaf_control_id": "GOV-100",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "GOV-100 requires documented accountability, membership, decision rights, escalation paths, and meeting cadence for governing in-scope AI capabilities.",
+          "conditions": [
+            "Governance authority decision rights cover AI risk mapping, measurement, and management oversight."
+          ],
+          "expected_evidence": [
+            "Governance charter with accountability and escalation paths."
+          ],
+          "known_gaps": [
+            "GOV-100 does not enumerate NIST MAP/MEASURE/MANAGE role matrices."
+          ]
+        },
+        {
+          "esaf_control_id": "GOV-130",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "GOV-130 requires assignment of accountable business and technical/service owners with documented authority for purpose, outcomes, risk, resources, operation, material change, and retirement.",
+          "conditions": [
+            "Capability owners are accountable for risk outcomes within their scope."
+          ],
+          "expected_evidence": [
+            "Capability ownership records documenting risk authority."
+          ],
+          "known_gaps": [
+            "GOV-130 does not document enterprise communication lines for all AI risk actors."
+          ]
+        }
+      ]
+    },
+    "GOVERN-2.2": {
+      "disposition": "mapped",
+      "summary": "Personnel and partners receive AI risk-management training enabling duties consistent with related policies and agreements.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory GOVERN-2.2",
+      "relationships": [
+        {
+          "esaf_control_id": "EDU-110",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "EDU-110 requires defining, assessing, maintaining, and evidencing AI competency requirements for roles that design, develop, validate, approve, operate, monitor, secure, govern, audit, or materially use AI capabilities.",
+          "conditions": [
+            "Role competency requirements include AI risk-management duties for in-scope personnel."
+          ],
+          "expected_evidence": [
+            "Role competency matrices and completion evidence for AI risk-related roles."
+          ],
+          "known_gaps": [
+            "EDU-110 addresses personnel roles; it does not expressly require partner/third-party AI risk training."
+          ]
+        },
+        {
+          "esaf_control_id": "EDU-140",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "EDU-140 requires role-specific education for executives, governing authorities, accountable owners, risk acceptors, reviewers, and auditors on AI strategy, duties, risk, evidence, limitations, incidents, obligations, and decision rights.",
+          "conditions": [
+            "Executive and risk-acceptor education is in scope for the subcategory's leadership duties."
+          ],
+          "expected_evidence": [
+            "Executive/governance education records covering AI risk duties."
+          ],
+          "known_gaps": [
+            "EDU-140 does not train all personnel or partners."
+          ]
+        },
+        {
+          "esaf_control_id": "EDU-100",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "EDU-100 requires baseline AI literacy covering capabilities, limitations, accountability, safe use, data protection, verification, bias, escalation, and applicable policy for personnel whose work can affect or be affected by AI.",
+          "conditions": [
+            "Baseline literacy is provided to personnel in AI-affected roles."
+          ],
+          "expected_evidence": [
+            "AI literacy curriculum and completion records."
+          ],
+          "known_gaps": [
+            "EDU-100 is baseline literacy, not specialized AI risk-management training for all risk roles."
+          ]
+        }
+      ]
+    },
+    "GOVERN-2.3": {
+      "disposition": "mapped",
+      "summary": "Executive leadership takes responsibility for decisions about risks associated with AI system development and deployment.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory GOVERN-2.3",
+      "relationships": [
+        {
+          "esaf_control_id": "GOV-100",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "GOV-100 requires executive leadership to establish and maintain enterprise authority with documented accountability and decision rights for governing in-scope AI capabilities.",
+          "conditions": [
+            "Executive-established authority includes decisions about AI development and deployment risk."
+          ],
+          "expected_evidence": [
+            "Governance authority charter issued by executive leadership."
+          ],
+          "known_gaps": [
+            "GOV-100 establishes authority structure; individual risk-acceptance decisions may be delegated under other controls."
+          ]
+        },
+        {
+          "esaf_control_id": "RSK-120",
+          "relationship": "partially_supports",
+          "coverage": "substantial",
+          "confidence": "high",
+          "rationale": "RSK-120 requires documented treatment of identified AI risks and acceptance of residual risk from an authority commensurate with the risk before production authorization or continued operation.",
+          "conditions": [
+            "Residual-risk acceptance for development/deployment decisions uses a commensurate authority, including executive acceptance where risk requires it."
+          ],
+          "expected_evidence": [
+            "Residual-risk acceptance records identifying accepting authority."
+          ],
+          "known_gaps": [
+            "RSK-120 does not require executives to accept every AI risk personally."
+          ]
+        },
+        {
+          "esaf_control_id": "AUD-140",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "AUD-140 requires executive leadership to review the AI management system at planned intervals using risk and related information and to record resulting decisions.",
+          "conditions": [
+            "Management review decisions include AI development/deployment risk posture."
+          ],
+          "expected_evidence": [
+            "Executive management-review minutes with risk decisions."
+          ],
+          "known_gaps": [
+            "AUD-140 is periodic review, not day-to-day deployment authorization."
+          ]
+        }
+      ]
+    },
+    "GOVERN-3.1": {
+      "disposition": "no_direct_mapping",
+      "summary": "Decision-making related to mapping, measuring, and managing AI risks is informed by a demographically and disciplinarily diverse team.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory GOVERN-3.1",
+      "relationships": [],
+      "negative_rationale": "Missing outcome: no ESAF control expressly requires AI risk decision-making to be informed by a team diverse in demographics, disciplines, experience, expertise, and backgrounds. GOV-100 requires governance membership and decision rights but does not require demographic or interdisciplinary diversity composition."
+    },
+    "GOVERN-3.2": {
+      "disposition": "mapped",
+      "summary": "Policies and procedures define and differentiate roles and responsibilities for human-AI configurations and oversight of AI systems.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory GOVERN-3.2",
+      "relationships": [
+        {
+          "esaf_control_id": "AGT-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "AGT-120 requires risk-proportionate human approval, supervision, intervention, challenge, and appeal for agent decisions and actions, including conditions that prohibit autonomous execution.",
+          "conditions": [
+            "The AI system uses agents or autonomous action paths subject to AGT-120."
+          ],
+          "expected_evidence": [
+            "Documented human-oversight procedures and autonomy prohibition conditions for agents."
+          ],
+          "known_gaps": [
+            "AGT-120 applies to agents; it does not cover every non-agent human-AI configuration."
+          ]
+        },
+        {
+          "esaf_control_id": "APP-100",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "APP-100 requires AI application design using documented trust boundaries, failure modes, human-oversight points, and risk-proportionate validation criteria.",
+          "conditions": [
+            "The AI system is delivered as an AI application with documented human-oversight points."
+          ],
+          "expected_evidence": [
+            "Design records showing human-oversight points and trust boundaries."
+          ],
+          "known_gaps": [
+            "APP-100 requires design documentation of oversight points but not a complete role/responsibility policy for all human-AI configurations."
+          ]
+        },
+        {
+          "esaf_control_id": "GOV-130",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "GOV-130 assigns accountable business and technical owners with authority for operation and risk of each AI capability.",
+          "conditions": [
+            "Capability owners are accountable for oversight configuration decisions."
+          ],
+          "expected_evidence": [
+            "Ownership records assigning operational and risk authority."
+          ],
+          "known_gaps": [
+            "GOV-130 does not differentiate human versus AI role configurations in detail."
+          ]
+        }
+      ]
+    },
+    "GOVERN-4.1": {
+      "disposition": "no_direct_mapping",
+      "summary": "Organizational policies and practices foster a critical-thinking and safety-first mindset across AI design, development, deployment, and use.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory GOVERN-4.1",
+      "relationships": [],
+      "negative_rationale": "Missing outcome: no ESAF control expressly requires fostering a critical-thinking and safety-first mindset as an organizational practice outcome. GOV-110 requires policy principles and EDU-100 requires baseline safe-use literacy, but neither states the mindset-culture outcome."
+    },
+    "GOVERN-4.2": {
+      "disposition": "mapped",
+      "summary": "Teams document AI risks and potential impacts and communicate about those impacts more broadly.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory GOVERN-4.2",
+      "relationships": [
+        {
+          "esaf_control_id": "RSK-130",
+          "relationship": "partially_supports",
+          "coverage": "substantial",
+          "confidence": "high",
+          "rationale": "RSK-130 requires assessment of reasonably foreseeable beneficial and adverse impacts of E2 through E4 AI capabilities on the organization, individuals, affected groups, society, and the environment where relevant, documenting evidence, uncertainty, stakeholder input, mitigations, and unresolved impacts before authorization.",
+          "conditions": [
+            "The AI system is classified E2, E3, or E4 so RSK-130 applies."
+          ],
+          "expected_evidence": [
+            "Completed AI impact assessment with documented impacts and stakeholder input."
+          ],
+          "known_gaps": [
+            "RSK-130 does not apply to E1 capabilities and does not require broad external communication beyond documented stakeholder input."
+          ]
+        },
+        {
+          "esaf_control_id": "RSK-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "RSK-120 requires documenting, approving, implementing, and monitoring treatments for identified AI risks and accepting residual risk before production authorization or continued operation.",
+          "conditions": [
+            "Identified risks and treatments are documented for the capability."
+          ],
+          "expected_evidence": [
+            "Risk-treatment and residual-risk acceptance records."
+          ],
+          "known_gaps": [
+            "RSK-120 does not require communicating impacts more broadly outside risk-acceptance channels."
+          ]
+        },
+        {
+          "esaf_control_id": "CMP-110",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "low",
+          "rationale": "CMP-110 requires creating and disclosing AI records, notices, and reports according to applicable audience and accessibility requirements when obligations require communication.",
+          "conditions": [
+            "Applicable obligations require impact-related notices or reports."
+          ],
+          "expected_evidence": [
+            "Submitted or published AI notices/reports required by obligations."
+          ],
+          "known_gaps": [
+            "CMP-110 is obligation-driven disclosure, not a general impact-communication practice."
+          ]
+        }
+      ]
+    },
+    "GOVERN-4.3": {
+      "disposition": "mapped",
+      "summary": "Practices enable AI testing, identification of unexpected functionality and behavior, and human override of AI system performance when needed.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory GOVERN-4.3",
+      "relationships": [
+        {
+          "esaf_control_id": "MOD-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "MOD-120 requires validating each model against approved criteria for intended performance, limitations, safety, security, robustness, fairness, privacy, explainability, resilience, and operating conditions before authorization and after material change.",
+          "conditions": [
+            "Model validation is used to detect unexpected or out-of-limit behavior before authorization."
+          ],
+          "expected_evidence": [
+            "Model validation records covering performance, limitations, and safety criteria."
+          ],
+          "known_gaps": [
+            "MOD-120 does not expressly require runtime human override mechanisms."
+          ]
+        },
+        {
+          "esaf_control_id": "AGT-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "AGT-120 requires human approval, supervision, intervention, challenge, and appeal, including conditions that prohibit autonomous execution.",
+          "conditions": [
+            "The system includes agent or autonomous paths where override/intervention applies."
+          ],
+          "expected_evidence": [
+            "Oversight procedures defining intervention and prohibition-of-autonomy conditions."
+          ],
+          "known_gaps": [
+            "AGT-120 is agent-scoped and does not cover all AI system override paths."
+          ]
+        },
+        {
+          "esaf_control_id": "APP-100",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "APP-100 requires design documentation of threat and misuse cases, failure modes, human-oversight points, and risk-proportionate validation criteria.",
+          "conditions": [
+            "Application design includes oversight and validation against unexpected behavior."
+          ],
+          "expected_evidence": [
+            "Design documentation listing failure modes and human-oversight points."
+          ],
+          "known_gaps": [
+            "APP-100 is design-time; it does not alone operate production override controls."
+          ]
+        }
+      ]
+    },
+    "GOVERN-5.1": {
+      "disposition": "mapped",
+      "summary": "Policies and practices collect, consider, prioritize, and integrate feedback from parties external to the developing/deploying team on individual and societal AI impacts.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory GOVERN-5.1",
+      "relationships": [
+        {
+          "esaf_control_id": "RSK-130",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "RSK-130 requires documenting stakeholder input among impact-assessment evidence for E2 through E4 capabilities before authorization.",
+          "conditions": [
+            "The capability is E2\u2013E4 and impact assessment includes external stakeholder input on individual or societal impacts."
+          ],
+          "expected_evidence": [
+            "Impact assessment records showing external stakeholder input considered before authorization."
+          ],
+          "known_gaps": [
+            "RSK-130 does not establish a standing organizational policy to continuously collect, prioritize, and integrate external feedback beyond pre-authorization assessment."
+          ]
+        }
+      ]
+    },
+    "GOVERN-5.2": {
+      "disposition": "mapped",
+      "summary": "Mechanisms enable the developing/deploying team to review and incorporate feedback about potential individual and societal AI impacts.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory GOVERN-5.2",
+      "relationships": [
+        {
+          "esaf_control_id": "RSK-130",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "RSK-130 requires documenting stakeholder input, mitigations, and unresolved impacts before authorization, which provides a mechanism to review and incorporate impact feedback for E2\u2013E4 capabilities.",
+          "conditions": [
+            "Impact feedback is captured within RSK-130 assessments for E2\u2013E4 capabilities."
+          ],
+          "expected_evidence": [
+            "Impact assessment showing feedback reviewed and mitigations or unresolved impacts recorded."
+          ],
+          "known_gaps": [
+            "RSK-130 does not require ongoing post-deployment feedback incorporation mechanisms for the developing team."
+          ]
+        },
+        {
+          "esaf_control_id": "AUD-140",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "low",
+          "rationale": "AUD-140 requires executive review using current information including improvement needs and recording resulting decisions, which may incorporate escalated impact feedback.",
+          "conditions": [
+            "Impact feedback is escalated into management-review inputs."
+          ],
+          "expected_evidence": [
+            "Management-review inputs and decisions referencing impact feedback."
+          ],
+          "known_gaps": [
+            "AUD-140 is leadership review, not a team-level feedback incorporation mechanism."
+          ]
+        }
+      ]
+    },
+    "GOVERN-6.1": {
+      "disposition": "mapped",
+      "summary": "Policies and procedures address AI risks associated with third-party entities, including third-party AI systems or data.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory GOVERN-6.1",
+      "relationships": [
+        {
+          "esaf_control_id": "CMP-120",
+          "relationship": "partially_supports",
+          "coverage": "substantial",
+          "confidence": "high",
+          "rationale": "CMP-120 requires establishing, contractually assigning, verifying, monitoring, and enforcing third-party AI obligations for security, privacy, data use, intellectual property, transparency, change, incidents, assurance, continuity, subcontractors, and exit.",
+          "conditions": [
+            "Third-party AI systems or data providers are in scope for CMP-120."
+          ],
+          "expected_evidence": [
+            "Third-party AI obligation schedules, contracts, and monitoring evidence."
+          ],
+          "known_gaps": [
+            "CMP-120 focuses on obligation assignment and enforcement, not a full third-party AI risk taxonomy."
+          ]
+        },
+        {
+          "esaf_control_id": "API-140",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "API-140 requires defining and enforcing security, privacy, data use, retention, training, residency, availability, change, incident, assurance, continuity, and exit requirements for external AI service integrations.",
+          "conditions": [
+            "Third-party AI is consumed via external AI service integration."
+          ],
+          "expected_evidence": [
+            "External AI service integration requirements and enforcement evidence."
+          ],
+          "known_gaps": [
+            "API-140 addresses integrated external AI services, not every third-party data source."
+          ]
+        },
+        {
+          "esaf_control_id": "ARC-140",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "ARC-140 requires documenting, approving, validating, and monitoring responsibility boundaries and inherited controls among capability owners, shared platforms, model providers, cloud services, data owners, tool providers, and other suppliers.",
+          "conditions": [
+            "Shared-responsibility boundaries with third parties are relevant to the AI system."
+          ],
+          "expected_evidence": [
+            "Approved shared-responsibility documentation for suppliers and providers."
+          ],
+          "known_gaps": [
+            "ARC-140 does not alone create third-party risk policies."
+          ]
+        }
+      ]
+    },
+    "GOVERN-6.2": {
+      "disposition": "mapped",
+      "summary": "Contingency processes handle failures or incidents related to third-party data or AI systems deemed high-risk.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory GOVERN-6.2",
+      "relationships": [
+        {
+          "esaf_control_id": "OPS-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "OPS-120 requires preparing for, identifying, triaging, containing, investigating, recovering from, communicating, reporting, and learning from AI incidents using procedures integrated with enterprise incident management.",
+          "conditions": [
+            "Incidents involving third-party data or AI systems are handled under OPS-120."
+          ],
+          "expected_evidence": [
+            "AI incident procedures and records covering third-party supplier or data failures."
+          ],
+          "known_gaps": [
+            "OPS-120 does not uniquely define high-risk third-party contingency playbooks."
+          ]
+        },
+        {
+          "esaf_control_id": "OPS-130",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "OPS-130 requires risk-proportionate continuity, fallback, safe-state, recovery, dependency, data-restoration, and provider-failure arrangements for AI capabilities.",
+          "conditions": [
+            "High-risk third-party AI or data dependencies have continuity/provider-failure arrangements."
+          ],
+          "expected_evidence": [
+            "Continuity and provider-failure plans for high-risk third-party dependencies."
+          ],
+          "known_gaps": [
+            "OPS-130 is continuity/recovery, not the full incident-management response."
+          ]
+        },
+        {
+          "esaf_control_id": "API-140",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "API-140 requires enforcing incident, assurance, continuity, and exit requirements for external AI service integrations.",
+          "conditions": [
+            "The high-risk third party is an external AI service integration."
+          ],
+          "expected_evidence": [
+            "External AI service continuity/incident/exit requirements and test evidence."
+          ],
+          "known_gaps": [
+            "API-140 does not cover non-integrated third-party data sources."
+          ]
+        }
+      ]
+    },
+    "MANAGE-1.1": {
+      "disposition": "mapped",
+      "summary": "A determination is made whether the AI system achieves intended purposes and objectives and whether development or deployment should proceed.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory MANAGE-1.1",
+      "relationships": [
+        {
+          "esaf_control_id": "RSK-120",
+          "relationship": "partially_supports",
+          "coverage": "substantial",
+          "confidence": "high",
+          "rationale": "RSK-120 requires residual-risk acceptance from a commensurate authority before production authorization or continued operation.",
+          "conditions": [
+            "Go/no-go for deployment is expressed through residual-risk acceptance before production authorization."
+          ],
+          "expected_evidence": [
+            "Production authorization / residual-risk acceptance decision record."
+          ],
+          "known_gaps": [
+            "RSK-120 accepts residual risk; it does not alone evaluate achievement of intended purposes."
+          ]
+        },
+        {
+          "esaf_control_id": "STR-110",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "STR-110 requires defining and periodically evaluating intended outcomes and continuation criteria for production AI capabilities.",
+          "conditions": [
+            "Continuation/go criteria include whether intended outcomes are being achieved."
+          ],
+          "expected_evidence": [
+            "Value-realization evaluation against continuation criteria."
+          ],
+          "known_gaps": [
+            "STR-110 applies to production capabilities and continuation, not all early development go/no-go gates."
+          ]
+        },
+        {
+          "esaf_control_id": "GOV-120",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "GOV-120 requires portfolio review using value, risk, and related information at defined frequency.",
+          "conditions": [
+            "Portfolio oversight includes proceed/continue decisions for capabilities."
+          ],
+          "expected_evidence": [
+            "Portfolio review records with proceed/continue/retire decisions."
+          ],
+          "known_gaps": [
+            "GOV-120 is periodic portfolio review, not system-specific development gate determination."
+          ]
+        }
+      ]
+    },
+    "MANAGE-1.2": {
+      "disposition": "mapped",
+      "summary": "Treatment of documented AI risks is prioritized based on impact, likelihood, and available resources or methods.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory MANAGE-1.2",
+      "relationships": [
+        {
+          "esaf_control_id": "RSK-120",
+          "relationship": "partially_supports",
+          "coverage": "substantial",
+          "confidence": "high",
+          "rationale": "RSK-120 requires documenting, approving, implementing, and monitoring treatments for identified AI risks.",
+          "conditions": [
+            "Documented AI risks have approved treatments."
+          ],
+          "expected_evidence": [
+            "Risk-treatment plans with approval and implementation status."
+          ],
+          "known_gaps": [
+            "RSK-120 does not expressly require prioritization formulas using resources/methods availability."
+          ]
+        },
+        {
+          "esaf_control_id": "RSK-100",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "RSK-100 requires rating criteria, treatment, acceptance, and escalation within an approved methodology.",
+          "conditions": [
+            "Prioritization uses methodology rating criteria for impact and likelihood."
+          ],
+          "expected_evidence": [
+            "Methodology rating criteria and prioritized treatment queue."
+          ],
+          "known_gaps": [
+            "RSK-100 may not explicitly incorporate resource availability into prioritization."
+          ]
+        },
+        {
+          "esaf_control_id": "STR-130",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "STR-130 requires identifying and approving resources required to maintain controls throughout the lifecycle.",
+          "conditions": [
+            "Available resources constrain feasible treatments."
+          ],
+          "expected_evidence": [
+            "Approved resource plans covering risk-treatment capacity."
+          ],
+          "known_gaps": [
+            "STR-130 plans resources; it does not prioritize individual risk treatments."
+          ]
+        }
+      ]
+    },
+    "MANAGE-1.3": {
+      "disposition": "mapped",
+      "summary": "Responses to high-priority AI risks are developed, planned, and documented, including strategies to maximize benefits and minimize negative impacts.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory MANAGE-1.3",
+      "relationships": [
+        {
+          "esaf_control_id": "RSK-120",
+          "relationship": "partially_supports",
+          "coverage": "substantial",
+          "confidence": "high",
+          "rationale": "RSK-120 requires documenting, approving, implementing, and monitoring treatments for identified AI risks before production authorization or continued operation.",
+          "conditions": [
+            "High-priority risks have documented treatments."
+          ],
+          "expected_evidence": [
+            "Approved treatment plans for high-priority AI risks."
+          ],
+          "known_gaps": [
+            "RSK-120 focuses on risk treatment and residual acceptance, not expressly on maximizing AI benefits."
+          ]
+        },
+        {
+          "esaf_control_id": "RSK-130",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "RSK-130 requires documenting mitigations and unresolved impacts for beneficial and adverse impacts of E2\u2013E4 capabilities before authorization.",
+          "conditions": [
+            "The capability is E2\u2013E4 and impact mitigations address high-priority negative impacts."
+          ],
+          "expected_evidence": [
+            "Impact assessment mitigations for high-priority adverse impacts."
+          ],
+          "known_gaps": [
+            "RSK-130 is pre-authorization impact assessment, not ongoing high-priority risk-response planning for all risks."
+          ]
+        }
+      ]
+    },
+    "MANAGE-1.4": {
+      "disposition": "mapped",
+      "summary": "Negative residual risks after AI risk treatment are documented, monitored, and managed.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory MANAGE-1.4",
+      "relationships": [
+        {
+          "esaf_control_id": "RSK-120",
+          "relationship": "partially_supports",
+          "coverage": "substantial",
+          "confidence": "high",
+          "rationale": "RSK-120 requires documenting and monitoring treatments and obtaining acceptance of residual risk from a commensurate authority before production authorization or continued operation.",
+          "conditions": [
+            "Residual risks are accepted and monitored after treatment."
+          ],
+          "expected_evidence": [
+            "Residual-risk acceptance records and monitoring of accepted residuals."
+          ],
+          "known_gaps": [
+            "RSK-120 accepts residual risk; continuous management may also rely on RSK-100 monitoring."
+          ]
+        },
+        {
+          "esaf_control_id": "RSK-100",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "RSK-100 requires residual risk, monitoring, reassessment, and escalation within the approved methodology.",
+          "conditions": [
+            "Residual risks remain under methodology monitoring and reassessment."
+          ],
+          "expected_evidence": [
+            "Risk methodology and register entries for residual risks with monitoring status."
+          ],
+          "known_gaps": [
+            "RSK-100 defines methodology; operational residual-risk handling is evidenced via treatments and monitoring records."
+          ]
+        }
+      ]
+    },
+    "MANAGE-2.1": {
+      "disposition": "mapped",
+      "summary": "Resources required to manage AI risks\u2014and viable alternatives\u2014are considered when making AI system go/no-go decisions.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory MANAGE-2.1",
+      "relationships": [
+        {
+          "esaf_control_id": "STR-130",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "STR-130 requires identifying, approving, and periodically reviewing people, competencies, funding, data, platforms, assurance, operational capacity, and supplier resources required to achieve AI objectives and maintain controls.",
+          "conditions": [
+            "Go/no-go decisions consider whether required risk-management resources are approved."
+          ],
+          "expected_evidence": [
+            "Approved resource plans tied to capability authorization decisions."
+          ],
+          "known_gaps": [
+            "STR-130 does not expressly require documenting viable alternatives in go/no-go records."
+          ]
+        },
+        {
+          "esaf_control_id": "RSK-120",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "RSK-120 requires residual-risk acceptance before production authorization or continued operation.",
+          "conditions": [
+            "Authorization considers whether treatments and residual risk are acceptable given available methods/resources."
+          ],
+          "expected_evidence": [
+            "Authorization records referencing treatment feasibility and residual risk."
+          ],
+          "known_gaps": [
+            "RSK-120 does not require an alternatives analysis for resource-constrained go/no-go decisions."
+          ]
+        }
+      ]
+    },
+    "MANAGE-2.2": {
+      "disposition": "mapped",
+      "summary": "Mechanisms are in place and applied to sustain the value of deployed AI systems.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory MANAGE-2.2",
+      "relationships": [
+        {
+          "esaf_control_id": "STR-110",
+          "relationship": "partially_supports",
+          "coverage": "substantial",
+          "confidence": "high",
+          "rationale": "STR-110 requires periodically evaluating intended outcomes, costs, material adverse effects, and continuation criteria for each production AI capability.",
+          "conditions": [
+            "The AI system is a production capability under STR-110."
+          ],
+          "expected_evidence": [
+            "Periodic value-realization evaluations and continuation decisions."
+          ],
+          "known_gaps": [
+            "STR-110 evaluates value; operational sustainment depends on OPS controls."
+          ]
+        },
+        {
+          "esaf_control_id": "OPS-100",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "OPS-100 requires assigning a service owner and approved objectives for availability, performance, quality, support, security, recovery, cost, monitoring, escalation, and maintenance.",
+          "conditions": [
+            "Service objectives sustain operational value of the deployed AI system."
+          ],
+          "expected_evidence": [
+            "Service ownership and approved operational objectives."
+          ],
+          "known_gaps": [
+            "OPS-100 sets operational objectives; it does not measure business value realization."
+          ]
+        },
+        {
+          "esaf_control_id": "OPS-140",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "OPS-140 requires monitoring and managing AI availability, latency, throughput, quality, capacity, utilization, demand, cost, and dependency performance against approved objectives.",
+          "conditions": [
+            "Operational performance management sustains deployed-system value."
+          ],
+          "expected_evidence": [
+            "Performance/capacity management records against objectives."
+          ],
+          "known_gaps": [
+            "OPS-140 is operational performance, not full value sustainment including business outcomes."
+          ]
+        }
+      ]
+    },
+    "MANAGE-2.3": {
+      "disposition": "mapped",
+      "summary": "Procedures are followed to respond to and recover from a previously unknown risk when it is identified.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory MANAGE-2.3",
+      "relationships": [
+        {
+          "esaf_control_id": "OPS-120",
+          "relationship": "partially_supports",
+          "coverage": "substantial",
+          "confidence": "high",
+          "rationale": "OPS-120 requires preparing for, identifying, triaging, containing, investigating, eradicating, recovering from, communicating, reporting, and learning from AI incidents.",
+          "conditions": [
+            "Previously unknown risks that manifest as AI incidents are handled under OPS-120."
+          ],
+          "expected_evidence": [
+            "AI incident records showing response and recovery for newly identified risk events."
+          ],
+          "known_gaps": [
+            "OPS-120 covers incidents; not every newly identified risk is an incident."
+          ]
+        },
+        {
+          "esaf_control_id": "RSK-100",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "RSK-100 requires escalation and reassessment within the AI risk methodology when risk information changes.",
+          "conditions": [
+            "Newly identified risks are entered into methodology-driven reassessment and escalation."
+          ],
+          "expected_evidence": [
+            "Risk register updates and escalation records for newly identified risks."
+          ],
+          "known_gaps": [
+            "RSK-100 does not itself perform operational recovery."
+          ]
+        },
+        {
+          "esaf_control_id": "RSK-140",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "RSK-140 requires reassessment, revalidation, and reauthorization before material changes that could alter purpose, performance, or control effectiveness.",
+          "conditions": [
+            "Response to a newly identified risk requires material change to the capability."
+          ],
+          "expected_evidence": [
+            "Material-change risk review triggered by newly identified risk."
+          ],
+          "known_gaps": [
+            "RSK-140 is change-triggered reauthorization, not general unknown-risk recovery procedures."
+          ]
+        }
+      ]
+    },
+    "MANAGE-2.4": {
+      "disposition": "mapped",
+      "summary": "Mechanisms exist to supersede, disengage, or deactivate AI systems with performance or outcomes inconsistent with intended use, with assigned and understood responsibilities.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory MANAGE-2.4",
+      "relationships": [
+        {
+          "esaf_control_id": "AGT-150",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "AGT-150 requires providing, protecting, monitoring, and testing mechanisms to pause, restrict, isolate, terminate, roll back, recover, and safely resume agent operation according to defined triggers and authority.",
+          "conditions": [
+            "The system includes agents that can be paused/terminated when outcomes are inconsistent with intended use."
+          ],
+          "expected_evidence": [
+            "Agent intervention mechanisms, triggers, authority, and test evidence."
+          ],
+          "known_gaps": [
+            "AGT-150 is agent-scoped and does not deactivate all AI system types."
+          ]
+        },
+        {
+          "esaf_control_id": "OPS-150",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "OPS-150 requires an approved retirement process addressing users, dependencies, access, models, data, agents, interfaces, suppliers, contracts, records, communications, continuity, and decommissioning verification.",
+          "conditions": [
+            "Deactivation/retirement is used when performance remains inconsistent with intended use."
+          ],
+          "expected_evidence": [
+            "Approved capability retirement/decommissioning records with named owners."
+          ],
+          "known_gaps": [
+            "OPS-150 is full retirement, not temporary disengage/supersede mechanisms."
+          ]
+        },
+        {
+          "esaf_control_id": "ARC-130",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "ARC-130 requires designing safe state, fallback, reversibility, recovery, and tested resumption for foreseeable failures.",
+          "conditions": [
+            "Safe-state/fallback design supports disengage behavior when outcomes are inconsistent."
+          ],
+          "expected_evidence": [
+            "Resilience design and test evidence for safe-state/fallback."
+          ],
+          "known_gaps": [
+            "ARC-130 is design/resilience, not assigned operational deactivation responsibility alone."
+          ]
+        },
+        {
+          "esaf_control_id": "GOV-130",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "GOV-130 assigns accountable owners with authority for operation, material change, and retirement.",
+          "conditions": [
+            "Accountable owners hold deactivation/retirement decision authority."
+          ],
+          "expected_evidence": [
+            "Ownership records documenting retirement/operation authority."
+          ],
+          "known_gaps": [
+            "GOV-130 assigns accountability but does not implement technical deactivation mechanisms."
+          ]
+        }
+      ]
+    },
+    "MANAGE-3.1": {
+      "disposition": "mapped",
+      "summary": "AI risks and benefits from third-party resources are regularly monitored, and risk controls are applied and documented.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory MANAGE-3.1",
+      "relationships": [
+        {
+          "esaf_control_id": "CMP-120",
+          "relationship": "partially_supports",
+          "coverage": "substantial",
+          "confidence": "high",
+          "rationale": "CMP-120 requires verifying, monitoring, and enforcing third-party AI obligations for security, privacy, data use, intellectual property, transparency, change, incidents, assurance, continuity, subcontractors, and exit.",
+          "conditions": [
+            "Third-party resources providing AI systems or data are under CMP-120."
+          ],
+          "expected_evidence": [
+            "Third-party monitoring and enforcement evidence for AI suppliers."
+          ],
+          "known_gaps": [
+            "CMP-120 monitors obligations/controls; it does not expressly monitor third-party benefits."
+          ]
+        },
+        {
+          "esaf_control_id": "API-140",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "API-140 requires enforcing change, incident, assurance, continuity, and related requirements for external AI service integrations.",
+          "conditions": [
+            "Third-party AI is consumed via external service integration."
+          ],
+          "expected_evidence": [
+            "External AI service monitoring and assurance evidence."
+          ],
+          "known_gaps": [
+            "API-140 covers integrated external AI services, not all third-party resources."
+          ]
+        },
+        {
+          "esaf_control_id": "ARC-140",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "ARC-140 requires monitoring responsibility boundaries and inherited controls among suppliers and providers.",
+          "conditions": [
+            "Inherited third-party controls are monitored."
+          ],
+          "expected_evidence": [
+            "Shared-responsibility monitoring records."
+          ],
+          "known_gaps": [
+            "ARC-140 does not monitor third-party benefits."
+          ]
+        }
+      ]
+    },
+    "MANAGE-3.2": {
+      "disposition": "mapped",
+      "summary": "Pre-trained models used for development are monitored as part of regular AI system monitoring and maintenance.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory MANAGE-3.2",
+      "relationships": [
+        {
+          "esaf_control_id": "MOD-100",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "MOD-100 requires registering every material model with owner, lifecycle state, validation status, deployment relationships, and review date before approved use.",
+          "conditions": [
+            "Pre-trained models used in development are material models under MOD-100."
+          ],
+          "expected_evidence": [
+            "Model registry entries for pre-trained models with review dates and lifecycle state."
+          ],
+          "known_gaps": [
+            "MOD-100 registers models; continuous runtime monitoring relies on MON/OPS controls."
+          ]
+        },
+        {
+          "esaf_control_id": "MOD-110",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "MOD-110 requires verifying provenance, source, licensing, integrity, dependencies, known limitations, and supplier terms before approved use.",
+          "conditions": [
+            "Pre-trained model supply-chain attributes are established before use."
+          ],
+          "expected_evidence": [
+            "Provenance/supply-chain verification records for pre-trained models."
+          ],
+          "known_gaps": [
+            "MOD-110 is pre-use verification, not continuous monitoring."
+          ]
+        },
+        {
+          "esaf_control_id": "MON-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "MON-120 requires monitoring production AI behavior including performance and emerging limitations against baselines.",
+          "conditions": [
+            "Deployed systems using pre-trained models are monitored in production."
+          ],
+          "expected_evidence": [
+            "Production monitoring covering models in deployment relationships."
+          ],
+          "known_gaps": [
+            "MON-120 monitors production behavior; development-only pre-trained models may not be production-monitored."
+          ]
+        },
+        {
+          "esaf_control_id": "MOD-130",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "MOD-130 requires uniquely versioning, authorizing, testing, deploying, monitoring, and supporting rollback for model and provider-version changes.",
+          "conditions": [
+            "Provider version changes to pre-trained models are monitored and controlled."
+          ],
+          "expected_evidence": [
+            "Model change/version records including provider-version monitoring."
+          ],
+          "known_gaps": [
+            "MOD-130 focuses on change control rather than continuous benefit/risk monitoring of third-party pre-trained models."
+          ]
+        }
+      ]
+    },
+    "MANAGE-4.1": {
+      "disposition": "mapped",
+      "summary": "Post-deployment AI system monitoring plans are implemented, including consideration of AI system updates and user feedback.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory MANAGE-4.1",
+      "relationships": [
+        {
+          "esaf_control_id": "MON-120",
+          "relationship": "partially_supports",
+          "coverage": "substantial",
+          "confidence": "high",
+          "rationale": "MON-120 requires monitoring production AI behavior against approved baselines and thresholds.",
+          "conditions": [
+            "A post-deployment monitoring plan implements MON-120 for the system."
+          ],
+          "expected_evidence": [
+            "Production monitoring plan and baseline configuration."
+          ],
+          "known_gaps": [
+            "MON-120 does not expressly require incorporating user feedback into the monitoring plan."
+          ]
+        },
+        {
+          "esaf_control_id": "OPS-100",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "OPS-100 requires approved objectives for monitoring, maintenance, support, and escalation for each production AI capability.",
+          "conditions": [
+            "Service objectives include post-deployment monitoring and maintenance."
+          ],
+          "expected_evidence": [
+            "Service objectives documenting monitoring and maintenance expectations."
+          ],
+          "known_gaps": [
+            "OPS-100 does not specify user-feedback integration mechanisms."
+          ]
+        },
+        {
+          "esaf_control_id": "OPS-110",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "OPS-110 requires controlled assessment, testing, approval, deployment, verification, and rollback for AI capability changes.",
+          "conditions": [
+            "Post-deployment updates are handled under change/release management connected to monitoring."
+          ],
+          "expected_evidence": [
+            "Change records for post-deployment updates with verification."
+          ],
+          "known_gaps": [
+            "OPS-110 manages updates but does not define the monitoring plan or user feedback loops."
+          ]
+        }
+      ]
+    },
+    "MANAGE-4.2": {
+      "disposition": "mapped",
+      "summary": "Measurable continual-improvement activities are integrated into AI system updates and include regular engagement with interested parties.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory MANAGE-4.2",
+      "relationships": [
+        {
+          "esaf_control_id": "AUD-140",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "AUD-140 requires executive review using improvement needs and recording resulting decisions at planned intervals.",
+          "conditions": [
+            "Improvement decisions from management review feed AI system updates."
+          ],
+          "expected_evidence": [
+            "Management-review decisions and resulting improvement actions."
+          ],
+          "known_gaps": [
+            "AUD-140 does not expressly require regular engagement with external interested parties or communities."
+          ]
+        },
+        {
+          "esaf_control_id": "OPS-110",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "OPS-110 requires controlled deployment of changes to AI capabilities according to impact and risk.",
+          "conditions": [
+            "Continual-improvement changes are implemented through controlled updates."
+          ],
+          "expected_evidence": [
+            "Change records implementing improvement actions."
+          ],
+          "known_gaps": [
+            "OPS-110 does not define continual-improvement measurement or interested-party engagement."
+          ]
+        },
+        {
+          "esaf_control_id": "STR-110",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "low",
+          "rationale": "STR-110 requires periodic evaluation of intended outcomes, costs, adverse effects, and continuation criteria.",
+          "conditions": [
+            "Periodic value evaluation identifies improvement or continuation actions."
+          ],
+          "expected_evidence": [
+            "Periodic evaluation records leading to update actions."
+          ],
+          "known_gaps": [
+            "STR-110 does not require engagement with interested parties as part of continual improvement."
+          ]
+        }
+      ]
+    },
+    "MANAGE-4.3": {
+      "disposition": "mapped",
+      "summary": "Incidents and errors are communicated to relevant AI actors, including affected communities and users, and processes for tracking, responding, and recovering are followed and documented.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory MANAGE-4.3",
+      "relationships": [
+        {
+          "esaf_control_id": "OPS-120",
+          "relationship": "partially_supports",
+          "coverage": "substantial",
+          "confidence": "high",
+          "rationale": "OPS-120 requires preparing for, identifying, triaging, containing, investigating, eradicating, recovering from, communicating, reporting, and learning from AI incidents using criteria and procedures integrated with enterprise incident management.",
+          "conditions": [
+            "AI incidents and material errors are handled under OPS-120."
+          ],
+          "expected_evidence": [
+            "AI incident records showing communication, response, recovery, and learning."
+          ],
+          "known_gaps": [
+            "OPS-120 requires communication and reporting but does not expressly require notifying affected communities in all cases."
+          ]
+        },
+        {
+          "esaf_control_id": "CMP-110",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "CMP-110 requires creating and disclosing AI records, notices, and reports according to applicable audience and timing requirements.",
+          "conditions": [
+            "Applicable obligations require incident or error notices to defined audiences."
+          ],
+          "expected_evidence": [
+            "Obligation-driven incident/error notices and submission evidence."
+          ],
+          "known_gaps": [
+            "CMP-110 is obligation-driven disclosure, not a universal affected-community communication process."
+          ]
+        }
+      ]
+    },
+    "MAP-1.1": {
+      "disposition": "mapped",
+      "summary": "Intended purposes, beneficial uses, context-specific laws and norms, and prospective deployment settings are understood and documented.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory MAP-1.1",
+      "relationships": [
+        {
+          "esaf_control_id": "GOV-130",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "GOV-130 requires accountable owners with documented authority for purpose and outcomes of each in-scope AI capability.",
+          "conditions": [
+            "The AI system is an in-scope capability with assigned owners."
+          ],
+          "expected_evidence": [
+            "Capability ownership record documenting approved purpose and outcomes."
+          ],
+          "known_gaps": [
+            "GOV-130 does not require documenting beneficial uses, norms, or prospective deployment settings beyond purpose and outcomes."
+          ]
+        },
+        {
+          "esaf_control_id": "DAT-100",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "DAT-100 requires documenting and approving permitted purpose, users, processing, sharing, retention, and prohibited uses for data consumed or generated by an AI capability.",
+          "conditions": [
+            "Data-purpose documentation is used as part of intended-purpose context."
+          ],
+          "expected_evidence": [
+            "Approved AI data-purpose records."
+          ],
+          "known_gaps": [
+            "DAT-100 covers data purpose, not full socio-legal deployment context."
+          ]
+        },
+        {
+          "esaf_control_id": "CMP-100",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "CMP-100 requires identifying, interpreting, recording, and implementing legal, regulatory, contractual, policy, ethical, and sector obligations applicable to each AI capability.",
+          "conditions": [
+            "Context-specific legal and regulatory expectations are treated as CMP-100 obligations."
+          ],
+          "expected_evidence": [
+            "Obligation records applicable to the capability's deployment context."
+          ],
+          "known_gaps": [
+            "CMP-100 does not document prospective settings or beneficial uses."
+          ]
+        },
+        {
+          "esaf_control_id": "RSK-130",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "RSK-130 requires assessing beneficial and adverse impacts for E2\u2013E4 capabilities and documenting evidence before authorization.",
+          "conditions": [
+            "The capability is E2\u2013E4 and impact assessment documents intended beneficial uses and settings."
+          ],
+          "expected_evidence": [
+            "Impact assessment describing intended beneficial functionality and context."
+          ],
+          "known_gaps": [
+            "RSK-130 does not apply to E1 and is impact-focused rather than a full purpose/context dossier."
+          ]
+        }
+      ]
+    },
+    "MAP-1.2": {
+      "disposition": "no_direct_mapping",
+      "summary": "Interdisciplinary AI actors, competencies, skills, and capacities reflecting demographic diversity and broad domain expertise are identified and documented.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory MAP-1.2",
+      "relationships": [],
+      "negative_rationale": "Missing outcome: no ESAF control expressly requires identifying and documenting demographic diversity of AI actors. EDU-110 requires role-based AI competency but does not require demographic diversity composition or interdisciplinary team documentation as a MAP outcome."
+    },
+    "MAP-1.3": {
+      "disposition": "mapped",
+      "summary": "The organization's mission and relevant goals for AI technology are understood and documented.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory MAP-1.3",
+      "relationships": [
+        {
+          "esaf_control_id": "STR-100",
+          "relationship": "partially_supports",
+          "coverage": "substantial",
+          "confidence": "high",
+          "rationale": "STR-100 requires approved AI objectives and investment priorities that trace to organizational strategy, stakeholder requirements, risk appetite, measurable outcomes, and an accountable executive sponsor.",
+          "conditions": [
+            "Approved AI objectives are treated as the documented mission-aligned AI goals."
+          ],
+          "expected_evidence": [
+            "Approved AI strategy/objectives tracing to organizational strategy with executive sponsor."
+          ],
+          "known_gaps": [
+            "STR-100 does not use the NIST term 'mission' and may not document every subunit mission statement."
+          ]
+        }
+      ]
+    },
+    "MAP-1.4": {
+      "disposition": "mapped",
+      "summary": "Business value or context of business use is clearly defined or re-evaluated for existing AI systems.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory MAP-1.4",
+      "relationships": [
+        {
+          "esaf_control_id": "STR-110",
+          "relationship": "partially_supports",
+          "coverage": "substantial",
+          "confidence": "high",
+          "rationale": "STR-110 requires the accountable business owner to define, measure, and periodically evaluate each production AI capability's intended outcomes, costs, material adverse effects, and continuation criteria using approved measures established before production authorization.",
+          "conditions": [
+            "The AI system is a production capability under STR-110, or is being re-evaluated for continuation."
+          ],
+          "expected_evidence": [
+            "Value-realization measures and periodic evaluation records for intended outcomes and continuation."
+          ],
+          "known_gaps": [
+            "STR-110 applies to production capabilities; pre-production business-case definition may rely on adjacent controls."
+          ]
+        },
+        {
+          "esaf_control_id": "GOV-130",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "GOV-130 requires documented owner authority for purpose and outcomes of each in-scope AI capability.",
+          "conditions": [
+            "Business-use context is captured in the capability purpose/outcomes statement."
+          ],
+          "expected_evidence": [
+            "Capability ownership record stating purpose and outcomes."
+          ],
+          "known_gaps": [
+            "GOV-130 does not require periodic business-value re-evaluation metrics."
+          ]
+        }
+      ]
+    },
+    "MAP-1.5": {
+      "disposition": "mapped",
+      "summary": "Organizational risk tolerances are determined and documented.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory MAP-1.5",
+      "relationships": [
+        {
+          "esaf_control_id": "RSK-100",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "RSK-100 requires an approved AI risk methodology defining rating criteria, residual risk, treatment, acceptance, monitoring, reassessment, and escalation.",
+          "conditions": [
+            "Acceptance and rating criteria in the methodology are treated as the organization's documented AI risk tolerance expression."
+          ],
+          "expected_evidence": [
+            "Approved AI risk methodology sections on acceptance thresholds and escalation."
+          ],
+          "known_gaps": [
+            "RSK-100 does not expressly name or require a standalone 'risk tolerance' statement."
+          ]
+        },
+        {
+          "esaf_control_id": "STR-100",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "STR-100 requires AI objectives and investment priorities that trace to organizational strategy and risk appetite.",
+          "conditions": [
+            "Documented risk appetite in AI strategy is used as risk-tolerance input."
+          ],
+          "expected_evidence": [
+            "Approved AI strategy referencing risk appetite."
+          ],
+          "known_gaps": [
+            "STR-100 risk appetite is strategic and may not specify operational AI risk-tolerance thresholds."
+          ]
+        }
+      ]
+    },
+    "MAP-1.6": {
+      "disposition": "mapped",
+      "summary": "System requirements are elicited from relevant AI actors, and design decisions account for socio-technical implications to address AI risks.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory MAP-1.6",
+      "relationships": [
+        {
+          "esaf_control_id": "APP-100",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "APP-100 requires designing each AI application using documented trust boundaries, data and control flows, threat and misuse cases, security requirements, failure modes, human-oversight points, and risk-proportionate validation criteria.",
+          "conditions": [
+            "The AI system is delivered as an AI application subject to APP-100 design requirements."
+          ],
+          "expected_evidence": [
+            "Design documentation covering trust boundaries, misuse cases, oversight points, and validation criteria."
+          ],
+          "known_gaps": [
+            "APP-100 does not expressly require eliciting requirements from all relevant AI actors or documenting socio-technical implications as a named analysis."
+          ]
+        },
+        {
+          "esaf_control_id": "RSK-130",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "RSK-130 requires assessing impacts on individuals, affected groups, and society for E2\u2013E4 capabilities before authorization.",
+          "conditions": [
+            "The capability is E2\u2013E4 and socio-technical implications are captured in impact assessment."
+          ],
+          "expected_evidence": [
+            "Impact assessment documenting affected parties and societal implications."
+          ],
+          "known_gaps": [
+            "RSK-130 is authorization-time impact assessment, not full requirements elicitation."
+          ]
+        }
+      ]
+    },
+    "MAP-2.1": {
+      "disposition": "mapped",
+      "summary": "Specific tasks and methods used to implement AI capabilities that each system component will provide are defined.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory MAP-2.1",
+      "relationships": [
+        {
+          "esaf_control_id": "ARC-110",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "ARC-110 requires documenting and maintaining AI components, actors, identities, data and control flows, trust levels, entry and exit points, external dependencies, administrative paths, and enforcement boundaries.",
+          "conditions": [
+            "Component roles within the AI system are documented under ARC-110 architecture views."
+          ],
+          "expected_evidence": [
+            "Current AI component and data/control-flow documentation."
+          ],
+          "known_gaps": [
+            "ARC-110 documents components and flows but does not expressly require defining tasks and methods each component uses to implement AI capabilities."
+          ]
+        },
+        {
+          "esaf_control_id": "APP-100",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "low",
+          "rationale": "APP-100 requires documented data and control flows, trust boundaries, and validation criteria for AI application design.",
+          "conditions": [
+            "Application design documents component responsibilities relevant to AI capability delivery."
+          ],
+          "expected_evidence": [
+            "AI application design records describing component responsibilities."
+          ],
+          "known_gaps": [
+            "APP-100 does not require a complete task/method specification per AI component."
+          ]
+        }
+      ]
+    },
+    "MAP-2.2": {
+      "disposition": "mapped",
+      "summary": "AI system knowledge limits, human utilization and oversight of outputs, and assumptions about limitations are documented and used to inform development and deployment.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory MAP-2.2",
+      "relationships": [
+        {
+          "esaf_control_id": "MOD-110",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "MOD-110 requires establishing and verifying known limitations, provenance, usage rights, and related attributes for each model before approved use.",
+          "conditions": [
+            "Material models have documented known limitations used in development/deployment decisions."
+          ],
+          "expected_evidence": [
+            "Model provenance records including known limitations."
+          ],
+          "known_gaps": [
+            "MOD-110 covers model limitations, not full system knowledge-bound documentation or human oversight procedures."
+          ]
+        },
+        {
+          "esaf_control_id": "MOD-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "MOD-120 requires validation against criteria for intended performance, limitations, explainability, and operating conditions before authorization and after material change.",
+          "conditions": [
+            "Validation results documenting limitations inform authorization and deployment."
+          ],
+          "expected_evidence": [
+            "Model validation records covering limitations and operating conditions."
+          ],
+          "known_gaps": [
+            "MOD-120 does not alone define how humans utilize and oversee outputs in operations."
+          ]
+        },
+        {
+          "esaf_control_id": "AGT-120",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "AGT-120 requires human approval, supervision, intervention, challenge, and appeal for agent decisions and actions.",
+          "conditions": [
+            "Human oversight of agent outputs/actions is in scope."
+          ],
+          "expected_evidence": [
+            "Agent oversight procedures defining supervision and intervention."
+          ],
+          "known_gaps": [
+            "AGT-120 is agent-scoped and does not document model knowledge limits."
+          ]
+        }
+      ]
+    },
+    "MAP-2.3": {
+      "disposition": "mapped",
+      "summary": "Scientific integrity and TEVV considerations\u2014including experimental design, data collection and selection, trustworthiness, and bias\u2014are identified and documented.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory MAP-2.3",
+      "relationships": [
+        {
+          "esaf_control_id": "DAT-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "DAT-120 requires defining, validating, and monitoring risk-proportionate criteria for accuracy, completeness, timeliness, relevance, representativeness, consistency, and fitness of data used by an AI capability.",
+          "conditions": [
+            "Data selection and suitability criteria are documented for the AI system."
+          ],
+          "expected_evidence": [
+            "Data quality/suitability criteria and validation evidence."
+          ],
+          "known_gaps": [
+            "DAT-120 does not require experimental-design documentation or full TEVV scientific-integrity controls."
+          ]
+        },
+        {
+          "esaf_control_id": "MOD-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "MOD-120 requires validation against criteria including fairness, safety, security, robustness, privacy, explainability, and operating conditions.",
+          "conditions": [
+            "Trustworthiness and bias-related validation criteria are identified before authorization."
+          ],
+          "expected_evidence": [
+            "Model validation plan and results covering fairness and related trustworthiness criteria."
+          ],
+          "known_gaps": [
+            "MOD-120 does not expressly require documenting experimental design or TEVV toolchains as scientific-integrity artifacts."
+          ]
+        },
+        {
+          "esaf_control_id": "STR-120",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "low",
+          "rationale": "STR-120 requires authorizing AI experiments through a documented, time-bounded process with hypothesis, boundary, monitoring, and closure or lifecycle promotion.",
+          "conditions": [
+            "Experimental or evaluative work is conducted under STR-120."
+          ],
+          "expected_evidence": [
+            "Experiment authorization records defining hypothesis and boundary."
+          ],
+          "known_gaps": [
+            "STR-120 governs experiments; it does not establish full TEVV scientific-integrity requirements."
+          ]
+        }
+      ]
+    },
+    "MAP-3.1": {
+      "disposition": "mapped",
+      "summary": "Potential benefits of intended AI system functionality and performance are examined and documented.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory MAP-3.1",
+      "relationships": [
+        {
+          "esaf_control_id": "RSK-130",
+          "relationship": "partially_supports",
+          "coverage": "substantial",
+          "confidence": "high",
+          "rationale": "RSK-130 requires assessing reasonably foreseeable beneficial and adverse impacts of E2\u2013E4 AI capabilities and documenting evidence before authorization.",
+          "conditions": [
+            "The capability is E2\u2013E4."
+          ],
+          "expected_evidence": [
+            "Impact assessment documenting beneficial impacts of intended functionality."
+          ],
+          "known_gaps": [
+            "RSK-130 does not apply to E1 capabilities."
+          ]
+        },
+        {
+          "esaf_control_id": "STR-110",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "STR-110 requires defining and periodically evaluating intended outcomes of each production AI capability using approved measures.",
+          "conditions": [
+            "Intended beneficial outcomes are defined as STR-110 measures for production capabilities."
+          ],
+          "expected_evidence": [
+            "Approved intended-outcome measures for the capability."
+          ],
+          "known_gaps": [
+            "STR-110 focuses on value realization for production systems, not all pre-production benefit examinations."
+          ]
+        }
+      ]
+    },
+    "MAP-3.2": {
+      "disposition": "mapped",
+      "summary": "Potential costs, including non-monetary costs from AI errors or trustworthiness shortfalls, are examined and documented relative to risk tolerance.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory MAP-3.2",
+      "relationships": [
+        {
+          "esaf_control_id": "RSK-130",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "RSK-130 requires assessing adverse impacts and documenting uncertainty, mitigations, and unresolved impacts before authorization for E2\u2013E4 capabilities.",
+          "conditions": [
+            "Adverse impact examination includes non-monetary harms relevant to errors or trustworthiness."
+          ],
+          "expected_evidence": [
+            "Impact assessment documenting adverse impacts and unresolved impacts."
+          ],
+          "known_gaps": [
+            "RSK-130 does not expressly require a cost ledger of monetary and non-monetary error costs."
+          ]
+        },
+        {
+          "esaf_control_id": "STR-110",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "STR-110 requires evaluating costs and material adverse effects alongside intended outcomes and continuation criteria.",
+          "conditions": [
+            "Production capability evaluation includes costs and material adverse effects."
+          ],
+          "expected_evidence": [
+            "Value-realization evaluation records covering costs and adverse effects."
+          ],
+          "known_gaps": [
+            "STR-110 does not explicitly tie cost examination to organizational risk-tolerance thresholds."
+          ]
+        }
+      ]
+    },
+    "MAP-3.3": {
+      "disposition": "mapped",
+      "summary": "Targeted application scope is specified and documented based on system capability, established context, and AI system categorization.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory MAP-3.3",
+      "relationships": [
+        {
+          "esaf_control_id": "RSK-110",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "RSK-110 requires classifying each in-scope AI capability before approved use using documented criteria including impact, autonomy, data sensitivity, affected parties, external exposure, and criticality.",
+          "conditions": [
+            "Capability classification informs approved application scope."
+          ],
+          "expected_evidence": [
+            "Capability risk-classification record used before approved use."
+          ],
+          "known_gaps": [
+            "RSK-110 classifies risk; it does not alone specify functional application-scope boundaries."
+          ]
+        },
+        {
+          "esaf_control_id": "GOV-130",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "GOV-130 requires documented owner authority for purpose and outcomes of each AI capability.",
+          "conditions": [
+            "Approved purpose is used as the documented application-scope baseline."
+          ],
+          "expected_evidence": [
+            "Capability purpose statement approved by accountable owners."
+          ],
+          "known_gaps": [
+            "GOV-130 does not require scope specification from categorization taxonomies beyond purpose/outcomes."
+          ]
+        },
+        {
+          "esaf_control_id": "MOD-100",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "MOD-100 requires registering approved purpose, risk classification, and deployment relationships before approved model use.",
+          "conditions": [
+            "Material models declare approved purpose and deployment relationships within scope."
+          ],
+          "expected_evidence": [
+            "Model registry entries with approved purpose and deployment relationships."
+          ],
+          "known_gaps": [
+            "MOD-100 scopes models, not the full AI system application boundary."
+          ]
+        }
+      ]
+    },
+    "MAP-3.4": {
+      "disposition": "mapped",
+      "summary": "Processes for operator and practitioner proficiency with AI system performance and trustworthiness\u2014and relevant standards or certifications\u2014are defined, assessed, and documented.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory MAP-3.4",
+      "relationships": [
+        {
+          "esaf_control_id": "EDU-110",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "EDU-110 requires defining, assessing, maintaining, and evidencing AI competency requirements for roles that design, develop, validate, approve, operate, monitor, secure, govern, audit, or materially use AI capabilities.",
+          "conditions": [
+            "Operator/practitioner roles for the AI system have defined competency requirements under EDU-110."
+          ],
+          "expected_evidence": [
+            "Role competency definitions and assessment evidence for operators/practitioners."
+          ],
+          "known_gaps": [
+            "EDU-110 does not expressly require proficiency against AI system-specific trustworthiness forms of performance or external standards/certifications."
+          ]
+        }
+      ]
+    },
+    "MAP-3.5": {
+      "disposition": "mapped",
+      "summary": "Processes for human oversight are defined, assessed, and documented, including people responsible for overseeing deployed AI systems.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory MAP-3.5",
+      "relationships": [
+        {
+          "esaf_control_id": "AGT-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "AGT-120 requires defining and implementing risk-proportionate human approval, supervision, intervention, challenge, and appeal for agent decisions and actions.",
+          "conditions": [
+            "The system includes agent/autonomous paths requiring human oversight."
+          ],
+          "expected_evidence": [
+            "Documented oversight procedures identifying responsible supervisors and intervention conditions."
+          ],
+          "known_gaps": [
+            "AGT-120 is agent-scoped; non-agent oversight may need adjacent controls."
+          ]
+        },
+        {
+          "esaf_control_id": "APP-100",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "APP-100 requires documented human-oversight points in AI application design.",
+          "conditions": [
+            "AI application design identifies oversight points and responsible roles."
+          ],
+          "expected_evidence": [
+            "Design documentation listing human-oversight points."
+          ],
+          "known_gaps": [
+            "APP-100 is design-time and does not alone assess ongoing oversight effectiveness."
+          ]
+        },
+        {
+          "esaf_control_id": "GOV-130",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "GOV-130 assigns accountable owners with authority for operation and risk of each AI capability.",
+          "conditions": [
+            "Accountable owners are identified as responsible for oversight accountability."
+          ],
+          "expected_evidence": [
+            "Ownership records assigning operational authority."
+          ],
+          "known_gaps": [
+            "GOV-130 does not define detailed human-oversight operating procedures."
+          ]
+        }
+      ]
+    },
+    "MAP-4.1": {
+      "disposition": "mapped",
+      "summary": "Approaches for mapping AI technology and legal risks of components\u2014including third-party AI and intellectual-property or other rights infringement\u2014are in place, followed, and documented.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory MAP-4.1",
+      "relationships": [
+        {
+          "esaf_control_id": "CMP-140",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "CMP-140 requires identifying, approving, complying with, and retaining evidence of intellectual-property ownership, license, attribution, usage, distribution, training, output, indemnity, and restriction requirements for AI data, models, code, prompts, tools, and generated content.",
+          "conditions": [
+            "IP and licensing risks of AI components are in scope."
+          ],
+          "expected_evidence": [
+            "IP/licensing approval and evidence records for AI components."
+          ],
+          "known_gaps": [
+            "CMP-140 addresses IP/licensing obligations, not all technology risk mapping methods."
+          ]
+        },
+        {
+          "esaf_control_id": "CMP-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "CMP-120 requires establishing and monitoring third-party AI obligations including intellectual property, security, privacy, and related domains.",
+          "conditions": [
+            "Third-party AI technologies are used as components."
+          ],
+          "expected_evidence": [
+            "Third-party AI obligation and monitoring records."
+          ],
+          "known_gaps": [
+            "CMP-120 is obligation-centric rather than a full technology-risk mapping method."
+          ]
+        },
+        {
+          "esaf_control_id": "RSK-100",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "RSK-100 requires consistent application of an AI risk methodology covering scope, dimensions, rating, treatment, and reassessment.",
+          "conditions": [
+            "Component and legal risks are assessed using the approved methodology."
+          ],
+          "expected_evidence": [
+            "Risk assessments covering AI technology components and legal risk dimensions."
+          ],
+          "known_gaps": [
+            "RSK-100 does not expressly require IP-infringement risk mapping as a distinct approach."
+          ]
+        }
+      ]
+    },
+    "MAP-4.2": {
+      "disposition": "mapped",
+      "summary": "Internal risk controls for AI system components, including third-party AI technologies, are identified and documented.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory MAP-4.2",
+      "relationships": [
+        {
+          "esaf_control_id": "RSK-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "RSK-120 requires documenting, approving, implementing, and monitoring treatments for identified AI risks.",
+          "conditions": [
+            "Treatments include controls applicable to AI system components."
+          ],
+          "expected_evidence": [
+            "Documented risk treatments mapped to component risks."
+          ],
+          "known_gaps": [
+            "RSK-120 does not require a component-level control inventory distinct from risk treatments."
+          ]
+        },
+        {
+          "esaf_control_id": "ARC-140",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "ARC-140 requires documenting and monitoring responsibility boundaries and inherited controls among providers and suppliers.",
+          "conditions": [
+            "Third-party AI technologies contribute inherited controls under shared responsibility."
+          ],
+          "expected_evidence": [
+            "Shared-responsibility and inherited-control documentation."
+          ],
+          "known_gaps": [
+            "ARC-140 documents inherited/shared controls, not all internal component controls."
+          ]
+        },
+        {
+          "esaf_control_id": "CMP-120",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "CMP-120 requires verifying and monitoring third-party AI obligations and related controls.",
+          "conditions": [
+            "Third-party AI technologies are covered by CMP-120 verification."
+          ],
+          "expected_evidence": [
+            "Third-party verification/monitoring evidence for AI suppliers."
+          ],
+          "known_gaps": [
+            "CMP-120 does not inventory internal non-third-party component controls."
+          ]
+        }
+      ]
+    },
+    "MAP-5.1": {
+      "disposition": "mapped",
+      "summary": "Likelihood and magnitude of each identified impact\u2014beneficial and harmful\u2014are identified and documented using expected use, similar contexts, incidents, feedback, or other data.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory MAP-5.1",
+      "relationships": [
+        {
+          "esaf_control_id": "RSK-100",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "RSK-100 requires an AI risk methodology defining rating criteria for inherent and residual risk based on evidence.",
+          "conditions": [
+            "Impact likelihood and magnitude are rated using the approved methodology."
+          ],
+          "expected_evidence": [
+            "Risk ratings with documented likelihood/impact criteria and evidence sources."
+          ],
+          "known_gaps": [
+            "RSK-100 defines methodology; individual impact enumeration may also rely on RSK-130."
+          ]
+        },
+        {
+          "esaf_control_id": "RSK-130",
+          "relationship": "partially_supports",
+          "coverage": "substantial",
+          "confidence": "high",
+          "rationale": "RSK-130 requires assessing beneficial and adverse impacts for E2\u2013E4 capabilities and documenting evidence, uncertainty, stakeholder input, mitigations, and unresolved impacts.",
+          "conditions": [
+            "The capability is E2\u2013E4."
+          ],
+          "expected_evidence": [
+            "Impact assessment enumerating beneficial and adverse impacts with supporting evidence."
+          ],
+          "known_gaps": [
+            "RSK-130 does not expressly require quantitative likelihood and magnitude for every impact."
+          ]
+        },
+        {
+          "esaf_control_id": "RSK-110",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "RSK-110 requires classification using documented criteria for impact and likelihood among other factors before approved use.",
+          "conditions": [
+            "Capability classification reflects impact and likelihood judgment."
+          ],
+          "expected_evidence": [
+            "Capability classification worksheet documenting impact and likelihood criteria."
+          ],
+          "known_gaps": [
+            "RSK-110 classifies the capability overall, not each identified impact."
+          ]
+        }
+      ]
+    },
+    "MAP-5.2": {
+      "disposition": "no_direct_mapping",
+      "summary": "Practices and personnel for regular engagement with potentially impacted communities of practice and relevant AI actors are in place, followed, documented, and integrated into AI system design and development.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory MAP-5.2",
+      "relationships": [],
+      "negative_rationale": "Missing outcome: no ESAF control expressly requires regular engagement with potentially impacted communities of practice integrated into AI system design and development. RSK-130 requires stakeholder input before authorization for E2\u2013E4 capabilities but does not establish ongoing community-of-practice engagement practices in design."
+    },
+    "MEASURE-1.1": {
+      "disposition": "mapped",
+      "summary": "Approaches and metrics for measuring AI risks enumerated during MAP\u2014including residual risks after treatment\u2014are identified.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory MEASURE-1.1",
+      "relationships": [
+        {
+          "esaf_control_id": "RSK-100",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "RSK-100 requires an AI risk methodology defining rating criteria, residual risk, monitoring, reassessment, and escalation.",
+          "conditions": [
+            "Residual-risk measurement approaches are defined in the approved methodology."
+          ],
+          "expected_evidence": [
+            "Approved methodology describing residual-risk rating and monitoring measures."
+          ],
+          "known_gaps": [
+            "RSK-100 does not require metrics specifically enumerated against each MAP-identified risk artifact."
+          ]
+        },
+        {
+          "esaf_control_id": "MON-120",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "MON-120 requires monitoring production AI behavior for performance, quality, drift, safety, fairness, reliability, policy, uncertainty, and emerging limitations against approved baselines and thresholds.",
+          "conditions": [
+            "Production monitoring metrics are used as risk-measurement approaches for deployed systems."
+          ],
+          "expected_evidence": [
+            "Approved monitoring baselines/thresholds and measurement results."
+          ],
+          "known_gaps": [
+            "MON-120 measures runtime behavior, not all residual risks identified in MAP."
+          ]
+        }
+      ]
+    },
+    "MEASURE-1.2": {
+      "disposition": "mapped",
+      "summary": "Approaches for assessing AI trustworthiness characteristics and risk-management impacts are identified and evaluated for effectiveness in context.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory MEASURE-1.2",
+      "relationships": [
+        {
+          "esaf_control_id": "MOD-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "MOD-120 requires validation against approved, risk-proportionate criteria for intended performance, limitations, safety, security, robustness, fairness, privacy, explainability, resilience, and operating conditions.",
+          "conditions": [
+            "Trustworthiness assessment approaches are expressed as MOD-120 validation criteria."
+          ],
+          "expected_evidence": [
+            "Approved model validation criteria and results."
+          ],
+          "known_gaps": [
+            "MOD-120 does not expressly require evaluating the effectiveness of the assessment approaches themselves over time."
+          ]
+        },
+        {
+          "esaf_control_id": "AUD-100",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "AUD-100 requires a risk-based assessment program defining scope, criteria, frequency, methods, and follow-up for assessing the AI management system, capabilities, and controls.",
+          "conditions": [
+            "Assessment program methods evaluate trustworthiness-related controls or impacts in context."
+          ],
+          "expected_evidence": [
+            "Assessment program plan defining methods and criteria."
+          ],
+          "known_gaps": [
+            "AUD-100 assesses management system/controls; it may not assess every trustworthiness characteristic of each model."
+          ]
+        }
+      ]
+    },
+    "MEASURE-1.3": {
+      "disposition": "mapped",
+      "summary": "Internal expertise independent of front-line developers and/or independent external evaluators are available to assist in evaluating AI trustworthiness and risk-management impacts.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory MEASURE-1.3",
+      "relationships": [
+        {
+          "esaf_control_id": "AUD-110",
+          "relationship": "partially_supports",
+          "coverage": "substantial",
+          "confidence": "high",
+          "rationale": "AUD-110 requires assigning AI assessments to personnel with documented competence and independence proportionate to the subject, method, complexity, and risk being evaluated.",
+          "conditions": [
+            "AI trustworthiness or risk-management impact evaluations are performed as AI assessments under AUD-110."
+          ],
+          "expected_evidence": [
+            "Assessor competence and independence records for AI assessments."
+          ],
+          "known_gaps": [
+            "AUD-110 covers assessment assignments; it does not require standing external evaluators for every system."
+          ]
+        },
+        {
+          "esaf_control_id": "AUD-100",
+          "relationship": "prerequisite",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "AUD-100 requires a risk-based AI assessment program defining responsibilities and independence expectations, establishing the program context in which independent evaluators operate.",
+          "conditions": [
+            "An AI assessment program exists under which independent evaluators are assigned."
+          ],
+          "expected_evidence": [
+            "Assessment program documentation defining independence responsibilities."
+          ],
+          "known_gaps": [
+            "AUD-100 alone does not staff independent evaluators."
+          ]
+        }
+      ]
+    },
+    "MEASURE-2.1": {
+      "disposition": "no_direct_mapping",
+      "summary": "Test sets, metrics, and details about tools used during TEVV are documented.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory MEASURE-2.1",
+      "relationships": [],
+      "negative_rationale": "Missing outcome: no ESAF control expressly requires documenting test sets, metrics, and details about tools used during TEVV. MOD-120 requires validation against approved criteria and AUD-120 requires retaining assessment evidence, but neither requires a TEVV test-set/tool documentation outcome."
+    },
+    "MEASURE-2.10": {
+      "disposition": "mapped",
+      "summary": "Privacy risk of the AI system identified during MAP is examined and documented.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory MEASURE-2.10",
+      "relationships": [
+        {
+          "esaf_control_id": "DAT-140",
+          "relationship": "partially_supports",
+          "coverage": "substantial",
+          "confidence": "high",
+          "rationale": "DAT-140 requires identifying and implementing privacy requirements for personal data processed by AI, including minimization, transparency, lawful basis, purpose limitation, retention, security, individual rights, automated-decision obligations, and cross-border transfer where applicable.",
+          "conditions": [
+            "The AI system processes personal data subject to DAT-140."
+          ],
+          "expected_evidence": [
+            "Privacy requirements analysis and implementation evidence for the AI capability."
+          ],
+          "known_gaps": [
+            "DAT-140 implements privacy requirements; it may not produce a standalone privacy-risk measurement report in AI RMF terms."
+          ]
+        },
+        {
+          "esaf_control_id": "MOD-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "MOD-120 requires validation against privacy criteria before authorization and after material change.",
+          "conditions": [
+            "Privacy is included in approved model validation criteria."
+          ],
+          "expected_evidence": [
+            "Model validation results covering privacy criteria."
+          ],
+          "known_gaps": [
+            "MOD-120 privacy validation is model-scoped, not a full system privacy-risk examination."
+          ]
+        }
+      ]
+    },
+    "MEASURE-2.11": {
+      "disposition": "mapped",
+      "summary": "Fairness and bias identified during MAP are evaluated and results are documented.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory MEASURE-2.11",
+      "relationships": [
+        {
+          "esaf_control_id": "MOD-120",
+          "relationship": "partially_supports",
+          "coverage": "substantial",
+          "confidence": "high",
+          "rationale": "MOD-120 requires validation against fairness criteria before authorization and after material change.",
+          "conditions": [
+            "Fairness/bias evaluation is included in approved validation criteria."
+          ],
+          "expected_evidence": [
+            "Model validation results documenting fairness evaluation."
+          ],
+          "known_gaps": [
+            "MOD-120 does not prescribe specific bias metrics or demographic parity tests."
+          ]
+        },
+        {
+          "esaf_control_id": "MON-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "MON-120 requires monitoring production AI behavior for fairness against approved baselines and thresholds.",
+          "conditions": [
+            "The system is in production and fairness monitoring is configured."
+          ],
+          "expected_evidence": [
+            "Fairness monitoring baselines and resulting alerts/investigations."
+          ],
+          "known_gaps": [
+            "MON-120 monitors drift against baselines; it may not perform comprehensive bias audits."
+          ]
+        },
+        {
+          "esaf_control_id": "DAT-120",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "DAT-120 requires monitoring representativeness and fitness of data used by an AI capability.",
+          "conditions": [
+            "Data representativeness issues relevant to bias are monitored."
+          ],
+          "expected_evidence": [
+            "Data suitability monitoring evidence for representativeness."
+          ],
+          "known_gaps": [
+            "DAT-120 is data fitness, not a complete fairness evaluation of system outcomes."
+          ]
+        }
+      ]
+    },
+    "MEASURE-2.12": {
+      "disposition": "no_direct_mapping",
+      "summary": "Environmental impact and sustainability of AI model training and management activities are assessed and documented.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory MEASURE-2.12",
+      "relationships": [],
+      "negative_rationale": "Missing outcome: no ESAF control expressly requires assessing and documenting environmental impact and sustainability of AI model training and management activities. RSK-130 may consider environmental impacts where relevant for E2\u2013E4 authorization but does not require sustainability assessment of training and model-management activities."
+    },
+    "MEASURE-2.13": {
+      "disposition": "mapped",
+      "summary": "Effectiveness of employed TEVV metrics and processes in measuring risk inputs and outcomes is evaluated and documented.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory MEASURE-2.13",
+      "relationships": [
+        {
+          "esaf_control_id": "AUD-140",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "AUD-140 requires executive review of the AI management system using current information on control effectiveness, assessments, and improvement needs, with recorded decisions.",
+          "conditions": [
+            "Management review includes effectiveness of AI assessment/measurement controls used for risk inputs and outcomes."
+          ],
+          "expected_evidence": [
+            "Management-review records addressing assessment/control effectiveness and improvements."
+          ],
+          "known_gaps": [
+            "AUD-140 does not expressly evaluate TEVV metrics and processes as a named effectiveness review."
+          ]
+        },
+        {
+          "esaf_control_id": "AUD-100",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "low",
+          "rationale": "AUD-100 requires a risk-based assessment program defining methods, criteria, frequency, and follow-up for assessing AI capabilities and controls.",
+          "conditions": [
+            "Assessment program methods are periodically adjusted based on follow-up findings."
+          ],
+          "expected_evidence": [
+            "Assessment program plans and follow-up records."
+          ],
+          "known_gaps": [
+            "AUD-100 establishes the program; it does not require meta-evaluation of TEVV metric effectiveness."
+          ]
+        }
+      ]
+    },
+    "MEASURE-2.2": {
+      "disposition": "no_direct_mapping",
+      "summary": "Evaluations involving human subjects meet applicable human-subject protection requirements and are representative of the relevant population.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory MEASURE-2.2",
+      "relationships": [],
+      "negative_rationale": "Missing outcome: no ESAF control expressly requires human-subject protection for evaluations involving human subjects. DAT-120 addresses data representativeness for AI data fitness but does not establish human-subjects research protections."
+    },
+    "MEASURE-2.3": {
+      "disposition": "mapped",
+      "summary": "AI system performance or assurance criteria are measured and demonstrated for conditions similar to deployment settings.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory MEASURE-2.3",
+      "relationships": [
+        {
+          "esaf_control_id": "MOD-120",
+          "relationship": "partially_supports",
+          "coverage": "substantial",
+          "confidence": "high",
+          "rationale": "MOD-120 requires validating each model against approved criteria for intended performance and operating conditions before authorization and after material change.",
+          "conditions": [
+            "Validation includes operating conditions representative of deployment settings."
+          ],
+          "expected_evidence": [
+            "Model validation results demonstrating performance under stated operating conditions."
+          ],
+          "known_gaps": [
+            "MOD-120 does not expressly require production-identical environment demonstration for every criterion."
+          ]
+        },
+        {
+          "esaf_control_id": "APP-140",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "APP-140 requires controlled testing practices for AI application code, prompts, workflows, configurations, and AI-generated artifacts.",
+          "conditions": [
+            "Application-level assurance testing supplements model validation for deployment-like conditions."
+          ],
+          "expected_evidence": [
+            "AI application test records for release/assurance criteria."
+          ],
+          "known_gaps": [
+            "APP-140 is software assurance testing, not full system trustworthiness measurement in production settings."
+          ]
+        }
+      ]
+    },
+    "MEASURE-2.4": {
+      "disposition": "mapped",
+      "summary": "Functionality and behavior of the AI system and its components are monitored when in production.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory MEASURE-2.4",
+      "relationships": [
+        {
+          "esaf_control_id": "MON-120",
+          "relationship": "partially_supports",
+          "coverage": "substantial",
+          "confidence": "high",
+          "rationale": "MON-120 requires monitoring production AI behavior for performance, quality, data and concept drift, safety, fairness, reliability, policy, uncertainty, and emerging limitations against approved baselines and thresholds.",
+          "conditions": [
+            "The AI system is in production."
+          ],
+          "expected_evidence": [
+            "Production monitoring dashboards/alerts against approved baselines."
+          ],
+          "known_gaps": [
+            "MON-120 may not monitor every MAP-identified component equally."
+          ]
+        },
+        {
+          "esaf_control_id": "MON-100",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "MON-100 requires collecting attributable, protected, risk-proportionate telemetry sufficient to monitor AI identity, input, context, retrieval, model, output, tool, action, configuration, performance, cost, and policy events.",
+          "conditions": [
+            "Telemetry collection supports production functionality/behavior monitoring."
+          ],
+          "expected_evidence": [
+            "Telemetry configuration covering model/output/performance events."
+          ],
+          "known_gaps": [
+            "MON-100 collects telemetry; analysis and threshold response are covered by adjacent monitoring controls."
+          ]
+        }
+      ]
+    },
+    "MEASURE-2.5": {
+      "disposition": "mapped",
+      "summary": "The AI system to be deployed is demonstrated to be valid and reliable.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory MEASURE-2.5",
+      "relationships": [
+        {
+          "esaf_control_id": "MOD-120",
+          "relationship": "partially_supports",
+          "coverage": "substantial",
+          "confidence": "high",
+          "rationale": "MOD-120 requires validating each model against approved criteria for intended performance, limitations, safety, security, robustness, and operating conditions before authorization.",
+          "conditions": [
+            "Deployment authorization depends on successful MOD-120 validation."
+          ],
+          "expected_evidence": [
+            "Model validation and authorization records demonstrating intended performance and robustness."
+          ],
+          "known_gaps": [
+            "MOD-120 validates models; full system validity/reliability may require additional application/service evidence."
+          ]
+        },
+        {
+          "esaf_control_id": "RSK-120",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "RSK-120 requires residual-risk acceptance from a commensurate authority before production authorization.",
+          "conditions": [
+            "Production authorization includes acceptance that residual validity/reliability risk is acceptable."
+          ],
+          "expected_evidence": [
+            "Production authorization with residual-risk acceptance."
+          ],
+          "known_gaps": [
+            "RSK-120 accepts residual risk; it does not itself demonstrate validity and reliability."
+          ]
+        }
+      ]
+    },
+    "MEASURE-2.6": {
+      "disposition": "mapped",
+      "summary": "The AI system is evaluated regularly for safety risks identified during MAP.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory MEASURE-2.6",
+      "relationships": [
+        {
+          "esaf_control_id": "MON-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "MON-120 requires monitoring production AI behavior for safety against approved baselines and thresholds.",
+          "conditions": [
+            "Safety risks identified for the system are reflected in monitoring baselines."
+          ],
+          "expected_evidence": [
+            "Safety monitoring baselines and alert/investigation records."
+          ],
+          "known_gaps": [
+            "MON-120 is continuous monitoring, not a complete periodic safety evaluation program for all MAP safety risks."
+          ]
+        },
+        {
+          "esaf_control_id": "MOD-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "MOD-120 requires safety validation before authorization and after material change.",
+          "conditions": [
+            "Safety revalidation occurs after material changes under MOD-120."
+          ],
+          "expected_evidence": [
+            "Safety validation results at authorization and after material change."
+          ],
+          "known_gaps": [
+            "MOD-120 does not require regular safety evaluation on a fixed calendar independent of material change."
+          ]
+        },
+        {
+          "esaf_control_id": "RSK-140",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "RSK-140 requires reassessment, revalidation, and reauthorization before material changes that could alter performance or control effectiveness.",
+          "conditions": [
+            "Material changes trigger safety-related reassessment."
+          ],
+          "expected_evidence": [
+            "Material-change risk review records."
+          ],
+          "known_gaps": [
+            "RSK-140 is change-triggered, not periodic safety evaluation alone."
+          ]
+        }
+      ]
+    },
+    "MEASURE-2.7": {
+      "disposition": "mapped",
+      "summary": "AI system security and resilience identified during MAP are evaluated and documented.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory MEASURE-2.7",
+      "relationships": [
+        {
+          "esaf_control_id": "MOD-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "MOD-120 requires validation against security and resilience criteria before authorization and after material change.",
+          "conditions": [
+            "Security and resilience are included in approved validation criteria."
+          ],
+          "expected_evidence": [
+            "Model validation records covering security and resilience criteria."
+          ],
+          "known_gaps": [
+            "MOD-120 is model-scoped and may not evaluate full system security/resilience."
+          ]
+        },
+        {
+          "esaf_control_id": "APP-100",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "APP-100 requires design using documented threat and misuse cases, security requirements, and failure modes.",
+          "conditions": [
+            "Security requirements and failure modes are documented in application design."
+          ],
+          "expected_evidence": [
+            "AI application threat/misuse and security-requirement design records."
+          ],
+          "known_gaps": [
+            "APP-100 is design documentation, not ongoing security/resilience evaluation."
+          ]
+        },
+        {
+          "esaf_control_id": "ARC-130",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "ARC-130 requires designing AI capabilities for foreseeable component, model, data, provider, network, capacity, quality, and control failures using isolation, graceful degradation, safe state, fallback, reversibility, recovery, and tested resumption.",
+          "conditions": [
+            "Resilience design and tested resumption evidence are used for resilience evaluation."
+          ],
+          "expected_evidence": [
+            "Resilience design and test evidence for failure modes."
+          ],
+          "known_gaps": [
+            "ARC-130 is architecture/design resilience, not a complete security evaluation."
+          ]
+        },
+        {
+          "esaf_control_id": "MON-110",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "MON-110 requires detecting and investigating risk-relevant AI security events.",
+          "conditions": [
+            "Security evaluation includes detection of security events in operation."
+          ],
+          "expected_evidence": [
+            "Security detection use cases and investigation records."
+          ],
+          "known_gaps": [
+            "MON-110 detects events; it does not perform comprehensive resilience evaluation."
+          ]
+        }
+      ]
+    },
+    "MEASURE-2.8": {
+      "disposition": "mapped",
+      "summary": "Risks associated with transparency and accountability identified during MAP are examined and documented.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory MEASURE-2.8",
+      "relationships": [
+        {
+          "esaf_control_id": "MOD-120",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "MOD-120 requires validation against explainability criteria among approved trustworthiness criteria.",
+          "conditions": [
+            "Explainability validation is treated as partial examination of transparency-related risk."
+          ],
+          "expected_evidence": [
+            "Model validation records covering explainability."
+          ],
+          "known_gaps": [
+            "MOD-120 explainability does not expressly examine accountability risks or broader transparency risk."
+          ]
+        },
+        {
+          "esaf_control_id": "GOV-130",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "GOV-130 requires assignment of accountable owners with documented authority for purpose, outcomes, risk, operation, and retirement.",
+          "conditions": [
+            "Documented accountability ownership is examined as part of accountability risk context."
+          ],
+          "expected_evidence": [
+            "Capability ownership records establishing accountability."
+          ],
+          "known_gaps": [
+            "GOV-130 assigns accountability; it does not examine transparency/accountability risks as a measurement activity."
+          ]
+        },
+        {
+          "esaf_control_id": "MON-150",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "low",
+          "rationale": "MON-150 requires preserving protected attributable audit trails for material AI access, approvals, configuration, model and data changes, policy decisions, privileged activity, agent actions, incidents, and governance decisions.",
+          "conditions": [
+            "Audit trails are used as evidence supporting accountability examination."
+          ],
+          "expected_evidence": [
+            "Preserved AI audit trails for material decisions and actions."
+          ],
+          "known_gaps": [
+            "MON-150 preserves trails; it does not itself examine transparency and accountability risks."
+          ]
+        }
+      ]
+    },
+    "MEASURE-2.9": {
+      "disposition": "mapped",
+      "summary": "The AI model is explained, validated, and documented, and AI system output is interpreted within its context to inform risk-management decisions.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory MEASURE-2.9",
+      "relationships": [
+        {
+          "esaf_control_id": "MOD-120",
+          "relationship": "partially_supports",
+          "coverage": "substantial",
+          "confidence": "high",
+          "rationale": "MOD-120 requires validation against explainability and intended-performance criteria and documentation of validation before authorization and after material change.",
+          "conditions": [
+            "Explainability and validation results are available for risk-management decisions."
+          ],
+          "expected_evidence": [
+            "Model validation documentation covering explainability and performance."
+          ],
+          "known_gaps": [
+            "MOD-120 does not require operational interpretation of every system output in context."
+          ]
+        },
+        {
+          "esaf_control_id": "APP-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "APP-120 requires validating, constraining, encoding, labeling, and authorizing AI output before presentation, execution, persistence, or downstream use according to content, destination, intended action, uncertainty, and impact.",
+          "conditions": [
+            "Output handling considers uncertainty and impact before use."
+          ],
+          "expected_evidence": [
+            "Output validation/labeling controls and authorization rules."
+          ],
+          "known_gaps": [
+            "APP-120 governs safe output consumption, not model explanation documentation."
+          ]
+        },
+        {
+          "esaf_control_id": "DAT-160",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "low",
+          "rationale": "DAT-160 requires classifying, validating, and labeling AI outputs according to content, source data, intended use, reliability, and downstream impact.",
+          "conditions": [
+            "Output labeling/reliability metadata supports contextual interpretation."
+          ],
+          "expected_evidence": [
+            "Output classification and reliability labeling records."
+          ],
+          "known_gaps": [
+            "DAT-160 does not explain the model or validate it."
+          ]
+        }
+      ]
+    },
+    "MEASURE-3.1": {
+      "disposition": "mapped",
+      "summary": "Approaches, personnel, and documentation regularly identify and track existing, unanticipated, and emergent AI risks based on application, deployment environment, and context.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory MEASURE-3.1",
+      "relationships": [
+        {
+          "esaf_control_id": "MON-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "MON-120 requires monitoring for emerging limitations against approved baselines and thresholds in production.",
+          "conditions": [
+            "Production monitoring is used to identify emergent behavioral risks."
+          ],
+          "expected_evidence": [
+            "Monitoring baselines and records of emerging-limitation detections."
+          ],
+          "known_gaps": [
+            "MON-120 does not alone assign personnel or full risk-tracking documentation for all unanticipated risks."
+          ]
+        },
+        {
+          "esaf_control_id": "RSK-100",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "RSK-100 requires monitoring, reassessment, and escalation within the approved AI risk methodology.",
+          "conditions": [
+            "Risk methodology defines how newly identified risks are tracked and escalated."
+          ],
+          "expected_evidence": [
+            "Methodology clauses and risk-register entries for newly identified risks."
+          ],
+          "known_gaps": [
+            "RSK-100 is methodological; operational detection depends on monitoring controls."
+          ]
+        },
+        {
+          "esaf_control_id": "MON-140",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "MON-140 requires assigned ownership, triage, investigation, escalation, and documentation for AI security, behavior, operational, and compliance alerts.",
+          "conditions": [
+            "Alert response personnel track and escalate emergent risk indications."
+          ],
+          "expected_evidence": [
+            "Alert ownership and escalation records."
+          ],
+          "known_gaps": [
+            "MON-140 handles alerts; it does not identify all emergent risks outside alerting."
+          ]
+        }
+      ]
+    },
+    "MEASURE-3.2": {
+      "disposition": "mapped",
+      "summary": "Risk-tracking approaches identify and monitor existing, emergent, and previously unidentified AI risks.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory MEASURE-3.2",
+      "relationships": [
+        {
+          "esaf_control_id": "RSK-100",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "RSK-100 requires monitoring, reassessment, and escalation as part of consistent AI risk methodology application.",
+          "conditions": [
+            "Tracking of existing and newly identified risks follows the approved methodology."
+          ],
+          "expected_evidence": [
+            "Risk register/reassessment records showing monitoring of known and newly identified risks."
+          ],
+          "known_gaps": [
+            "RSK-100 does not prescribe a specific emergent-risk sensing method beyond methodology requirements."
+          ]
+        },
+        {
+          "esaf_control_id": "MON-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "MON-120 requires monitoring for emerging limitations and related behavioral risk signals in production.",
+          "conditions": [
+            "Behavioral monitoring contributes to identification of previously unidentified risks."
+          ],
+          "expected_evidence": [
+            "Monitoring evidence of emergent limitation detection."
+          ],
+          "known_gaps": [
+            "MON-120 is production behavior monitoring, not a complete enterprise risk-tracking system."
+          ]
+        }
+      ]
+    },
+    "MEASURE-3.3": {
+      "disposition": "mapped",
+      "summary": "Feedback processes for end users and impacted communities to report problems and appeal system outcomes are established and integrated into AI evaluation and monitoring.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory MEASURE-3.3",
+      "relationships": [
+        {
+          "esaf_control_id": "AGT-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "AGT-120 requires risk-proportionate human challenge and appeal for agent decisions and actions.",
+          "conditions": [
+            "The system uses agents whose outcomes are subject to challenge/appeal under AGT-120."
+          ],
+          "expected_evidence": [
+            "Agent appeal/challenge procedures and records."
+          ],
+          "known_gaps": [
+            "AGT-120 provides agent appeal, not general end-user/community feedback channels for all AI systems."
+          ]
+        },
+        {
+          "esaf_control_id": "OPS-120",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "OPS-120 requires identifying, communicating, reporting, and learning from AI incidents.",
+          "conditions": [
+            "User-reported problems that meet incident criteria are handled under OPS-120."
+          ],
+          "expected_evidence": [
+            "AI incident intake and learning records from reported problems."
+          ],
+          "known_gaps": [
+            "OPS-120 is incident management, not a dedicated community feedback and appeal process integrated into evaluation."
+          ]
+        }
+      ]
+    },
+    "MEASURE-4.1": {
+      "disposition": "mapped",
+      "summary": "Measurement approaches for performance improvements and emergent risks are connected to AI system deployment and incident-response processes.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory MEASURE-4.1",
+      "relationships": [
+        {
+          "esaf_control_id": "OPS-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "OPS-120 requires AI incident procedures integrated with enterprise incident management, including identification, response, recovery, and learning.",
+          "conditions": [
+            "Measurement-derived risk signals can trigger or inform AI incident response."
+          ],
+          "expected_evidence": [
+            "Incident procedures showing intake from monitoring/measurement signals."
+          ],
+          "known_gaps": [
+            "OPS-120 does not define the measurement approaches themselves."
+          ]
+        },
+        {
+          "esaf_control_id": "OPS-110",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "OPS-110 requires classifying, assessing, testing, approving, deploying, verifying, and supporting rollback for AI capability changes according to impact and material-change triggers.",
+          "conditions": [
+            "Deployment/change processes receive measurement inputs affecting release decisions."
+          ],
+          "expected_evidence": [
+            "Change records referencing measurement or monitoring results."
+          ],
+          "known_gaps": [
+            "OPS-110 is change/release management, not measurement design."
+          ]
+        },
+        {
+          "esaf_control_id": "MON-140",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "MON-140 requires triage, escalation, and containment for AI behavior and operational alerts.",
+          "conditions": [
+            "Measurement thresholds generate alerts routed into response processes."
+          ],
+          "expected_evidence": [
+            "Alert response runbooks linking measurements to escalation/containment."
+          ],
+          "known_gaps": [
+            "MON-140 covers alert response, not deployment authorization gates."
+          ]
+        }
+      ]
+    },
+    "MEASURE-4.2": {
+      "disposition": "mapped",
+      "summary": "Measurement results regarding AI system trustworthiness in deployment settings inform AI risk-management approaches.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory MEASURE-4.2",
+      "relationships": [
+        {
+          "esaf_control_id": "RSK-100",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "RSK-100 requires monitoring, reassessment, and escalation using evidence within the AI risk methodology.",
+          "conditions": [
+            "Deployment measurement results are used as evidence for reassessment."
+          ],
+          "expected_evidence": [
+            "Reassessment records citing production measurement/monitoring evidence."
+          ],
+          "known_gaps": [
+            "RSK-100 does not specify trustworthiness measurement methods for deployment settings."
+          ]
+        },
+        {
+          "esaf_control_id": "MON-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "MON-120 requires monitoring production behavior for performance, safety, fairness, reliability, and related trustworthiness signals against baselines.",
+          "conditions": [
+            "Production monitoring results are available as trustworthiness measurement inputs."
+          ],
+          "expected_evidence": [
+            "Production monitoring reports used in risk reviews."
+          ],
+          "known_gaps": [
+            "MON-120 produces monitoring results; incorporation into risk management depends on RSK/AUD processes."
+          ]
+        },
+        {
+          "esaf_control_id": "AUD-140",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "AUD-140 requires executive review using current risk, control-effectiveness, and assessment information with recorded decisions.",
+          "conditions": [
+            "Trustworthiness measurement results are included in management-review inputs."
+          ],
+          "expected_evidence": [
+            "Management-review packs citing deployment trustworthiness measurements."
+          ],
+          "known_gaps": [
+            "AUD-140 is periodic leadership review, not continuous risk-method updates."
+          ]
+        }
+      ]
+    },
+    "MEASURE-4.3": {
+      "disposition": "no_direct_mapping",
+      "summary": "Measurable performance improvements or declines based on consultations with affected communities and AI actors are documented and applied to AI risk-management decisions.",
+      "locator": "NIST AI RMF 1.0 Core, subcategory MEASURE-4.3",
+      "relationships": [],
+      "negative_rationale": "Missing outcome: no ESAF control expressly requires documenting and applying measurable performance changes based on consultations with affected communities and end users. STR-110 evaluates outcomes and AUD-140 records improvement decisions, but neither requires community consultation as the basis for those performance measures."
+    }
+  }
+}

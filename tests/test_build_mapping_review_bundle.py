@@ -2522,6 +2522,11 @@ class ReviewedCandidateAssemblyTests(unittest.TestCase):
             capture_output=True,
             text=True,
         )
+        # CI checks out the detached pull/*/merge ref. A plain clone of that
+        # workspace can leave HEAD detached without refs/heads that contain
+        # PR-only pinned mapping commits; create a local branch at HEAD so
+        # crosswalk pin reachability (--contains against refs/heads) stays valid.
+        _git(cls.base_repository, "checkout", "-B", "reviewed-candidate-fixture")
         _git(cls.base_repository, "config", "user.name", "ESAF Test")
         _git(cls.base_repository, "config", "user.email", "esaf-test@example.invalid")
         fixture = cls("runTest")

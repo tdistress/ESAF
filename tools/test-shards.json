@@ -40,6 +40,7 @@
         "tests/test_mapping_review_protocol.py",
         "tests/test_mermaid_inventory.py",
         "tests/test_nist_ai_rmf_source_readiness.py",
+        "tests/test_nist_ai_rmf_v10_crosswalk.py",
         "tests/test_nist_csf_source_readiness.py",
         "tests/test_nist_sp_800_53_source_readiness.py",
         "tests/test_owner_risk_evidence.py",

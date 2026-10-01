@@ -239,7 +239,7 @@
   UK mapping role dispositions;
 - licensed HITRUST CSF access or substantive HITRUST mapping;
 - clearing the PCI DSS `HOLD` without its recorded reconsideration triggers;
-- clearing the NIST AI RMF `HOLD` or authoring NIST mapping records;
+- clearing the NIST AI RMF `GO` or authoring NIST mapping records;
 - all roadmap crosswalks or all planned profiles;
 - advancing Draft controls, architectures, mappings, or profiles to an approved
   lifecycle state without their own evidence;
@@ -255,7 +255,7 @@
   depth with discoverable example packs.
 - ESAF-1500 foundation schemas, examples, and the four Phase 6 Draft starters
   remain Draft and authoritative for shared assessment semantics.
-- NIST AI RMF readiness remains evidenced `HOLD`; mapping artifact count remains
+- NIST AI RMF readiness remains evidenced `GO`; mapping artifact count remains
   `0`.
 - Issues `#55` and `#60` may remain open after hygiene; they are not
   `v0.11-draft` blockers.
@@ -328,7 +328,7 @@
   UK mapping role dispositions;
 - licensed HITRUST CSF access or substantive HITRUST mapping;
 - clearing the PCI DSS `HOLD` without its recorded reconsideration triggers;
-- clearing the NIST AI RMF `HOLD` when named mapper and independent reviewers
+- clearing the NIST AI RMF `GO` when named mapper and independent reviewers
   remain unavailable;
 - authoring NIST AI RMF mapping records, snapshots, or catalog entries;
 - a complete Phase 6 workbook, evidence library, audit-checklist library, or
@@ -349,7 +349,7 @@
 - ESAF-1500 foundation schemas, examples, and the Phase 6 Draft toolkit packs
   (starters plus `v0.11-draft` deepen) remain Draft and authoritative for
   shared assessment semantics.
-- NIST AI RMF readiness remains evidenced `HOLD`; NIST mapping artifact count
+- NIST AI RMF readiness remains evidenced `GO`; NIST mapping artifact count
   remains `0`.
 - No ISO/IEC 42001 readiness package or mapping artifacts exist yet.
 - Issues `#55` and `#60` may remain open after hygiene; they are not
@@ -422,7 +422,7 @@
   UK mapping role dispositions;
 - licensed HITRUST CSF access or substantive HITRUST mapping;
 - clearing the PCI DSS `HOLD` without its recorded reconsideration triggers;
-- clearing the NIST AI RMF `HOLD` when named mapper and independent reviewers
+- clearing the NIST AI RMF `GO` when named mapper and independent reviewers
   remain unavailable;
 - authoring ISO/IEC 42001 mapping records, snapshots, or catalog entries under
   a non-`GO` readiness decision;
@@ -444,7 +444,7 @@
 - ESAF-1500 foundation schemas, examples, and the Phase 6 Draft toolkit packs
   (starters plus `v0.11-draft` deepen) remain Draft and authoritative for
   shared assessment semantics.
-- NIST AI RMF readiness remains evidenced `HOLD`; NIST AI RMF mapping artifact
+- NIST AI RMF readiness remains evidenced `GO`; NIST AI RMF mapping artifact
   count remains `0`.
 - ISO/IEC 42001 readiness remains evidenced `HOLD`; ISO/IEC 42001 mapping
   artifact count remains `0`.
@@ -513,7 +513,7 @@
   UK mapping role dispositions;
 - licensed HITRUST CSF access or substantive HITRUST mapping;
 - clearing the PCI DSS `HOLD` without its recorded reconsideration triggers;
-- clearing the NIST AI RMF `HOLD` when named mapper and independent reviewers
+- clearing the NIST AI RMF `GO` when named mapper and independent reviewers
   remain unavailable;
 - authoring ISO/IEC 42001 mapping records, snapshots, or catalog entries under
   a non-`GO` readiness decision;
@@ -593,7 +593,7 @@
   UK mapping role dispositions;
 - licensed HITRUST CSF access or substantive HITRUST mapping (Issue `#60`);
 - clearing the PCI DSS `HOLD` without its recorded reconsideration triggers;
-- clearing the NIST AI RMF `HOLD` when named mapper and independent reviewers
+- clearing the NIST AI RMF `GO` when named mapper and independent reviewers
   remain unavailable;
 - clearing the ISO/IEC 42001 `HOLD` or NIST CSF `HOLD` without recorded
   reconsideration triggers and named people;
@@ -696,7 +696,7 @@
   UK mapping role dispositions;
 - licensed HITRUST CSF access or substantive HITRUST mapping (Issue `#60`);
 - clearing the PCI DSS `HOLD` without its recorded reconsideration triggers;
-- clearing the NIST AI RMF `HOLD` when named mapper and independent reviewers
+- clearing the NIST AI RMF `GO` when named mapper and independent reviewers
   remain unavailable;
 - clearing the ISO/IEC 42001 `HOLD` or NIST CSF `HOLD` without recorded
   reconsideration triggers and named people;
@@ -796,7 +796,7 @@
   UK mapping role dispositions;
 - licensed HITRUST CSF access or substantive HITRUST mapping (Issue `#60`);
 - clearing the PCI DSS `HOLD` without its recorded reconsideration triggers;
-- clearing the NIST AI RMF `HOLD` when named mapper and independent reviewers
+- clearing the NIST AI RMF `GO` when named mapper and independent reviewers
   remain unavailable;
 - clearing the ISO/IEC 42001 `HOLD`, NIST CSF `HOLD`, or ISO/IEC 27001 `HOLD`
   without recorded reconsideration triggers and named people;
@@ -897,7 +897,7 @@
   UK mapping role dispositions;
 - licensed HITRUST CSF access or substantive HITRUST mapping (Issue `#60`);
 - clearing the PCI DSS `HOLD` without its recorded reconsideration triggers;
-- clearing the NIST AI RMF `HOLD` when named mapper and independent reviewers
+- clearing the NIST AI RMF `GO` when named mapper and independent reviewers
   remain unavailable;
 - clearing the ISO/IEC 42001 `HOLD`, NIST CSF `HOLD`, ISO/IEC 27001 `HOLD`, or
   NIST SP 800-53 `HOLD` without recorded reconsideration triggers and named

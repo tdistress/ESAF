@@ -526,6 +526,17 @@ class ReleaseGateTests(unittest.TestCase):
         record = load_front_matter(RECORD)
         self.assertEqual(validate_record(ROOT, record), [])
         self.assertEqual(len(record["mapping_sets"]), 3)
+        catalog = json.loads(
+            (ROOT / "crosswalks/catalog.json").read_text(encoding="utf-8")
+        )
+        catalog_ids = {
+            item["metadata"]["mapping_set_id"] for item in catalog["mapping_sets"]
+        }
+        self.assertTrue(set(EXPECTED_MAPPING_SETS).issubset(catalog_ids))
+        self.assertGreaterEqual(len(catalog_ids), len(EXPECTED_MAPPING_SETS))
+        self.assertTrue(
+            all(item["metadata"]["status"] == "draft" for item in catalog["mapping_sets"])
+        )
 
     def test_taggable_phase_rejects_missing_or_wrong_sha_approval(self) -> None:
         record = closure_record()
