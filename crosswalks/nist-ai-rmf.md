@@ -1,18 +1,23 @@
 # NIST AI RMF Crosswalk
 
-**Status:** Readiness HOLD
+**Status:** Readiness GO
 
-This package is a refreshed evidenced `HOLD` for Issue #128 after
-`v0.10-draft`. Named mapper and independent reviewer evidence remains
-unavailable, so the readiness decision stays `HOLD`.
+This package records matrix-derived `GO` after the 2026-10-01 owner-risk
+people-gate disposition named mapper `esaf-project-owner` and deferred
+independent qualified review for Draft-only mapping authorship. Source
+identity, publication rights, inventory, and related readiness gates remain
+PASS.
 
-The mechanically derived readiness decision is `HOLD`. No substantive NIST AI
-RMF mapping is approved or present. NIST AI RMF mapping artifacts: `0`. The
-generated crosswalk catalog remains unchanged at 3 mapping sets, 404
-provisions, 81 relationships, and 325 negative dispositions.
+A Draft `esaf_to_external` mapping set for all 72 AI RMF Core subcategory
+identifiers is authorized under ESAF-1600. Mapping artifacts remain Draft.
+Qualified review remains deferred. This status does not assert NIST AI RMF
+compliance, NIST approval, certification, equivalence, endorsement,
+authorization, coverage, or legal sufficiency.
 
 ## Decision evidence
 
+- [Owner-risk people-gate disposition](../docs/superpowers/reviews/2026-10-01-nist-ai-rmf-owner-risk-people-gate-disposition.md)
+- [Owner-risk Draft mapping design](../docs/superpowers/specs/2026-10-01-nist-ai-rmf-owner-risk-draft-mapping-design.md)
 - [Public source-readiness oracle](../docs/superpowers/specs/2026-08-29-nist-ai-rmf-source-readiness-oracle.json)
 - [Subcategory inventory](../docs/superpowers/specs/2026-08-29-nist-ai-rmf-1.0-subcategory-inventory.json)
 - [Publication-rights review](../docs/superpowers/reviews/2026-08-29-nist-ai-rmf-publication-rights-review.md)
@@ -21,24 +26,14 @@ provisions, 81 relationships, and 325 negative dispositions.
 - [Issue #128 / Issue #94 traceability](../docs/superpowers/reviews/2026-08-29-nist-ai-rmf-1.0-mapping-go-no-go-traceability.md)
 - [ESAF qualified mapping review protocol](reviews/QUALIFIED_REVIEW_PROTOCOL.md)
 
-## Blocking conditions
+## Draft mapping snapshot
 
-Named qualified mapper and independent exact-candidate reviewers are not
-evidenced. Source identity, public PDF digests, publication rights (`PASS`),
-the 72-subcategory inventory, semantic feasibility, ESAF-1600 schema fit, and
-overclaiming controls are recorded as passing gates. The accountable owner is
-the ESAF Project Maintainer together with the review coordinator named in the
-matrix.
+Authoritative Draft snapshot (populated in the mapping commit):
 
-Reconsideration requires naming the qualified mapper and independent reviewers,
-attributable exact-SHA inventory/specification and security/overclaiming
-reviews with no open Critical or Important findings, and a matrix that derives
-`GO`.
+- Mapping-set ID: `nist--ai-rmf--1.0--esaf-0.17-draft--0.1.0`
+- Path: `mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/`
+- Registry: `registry/nist--ai-rmf--1.0--esaf-0.17-draft--0.1.0.md`
 
-Future mapping work shall follow [ESAF-1600](ESAF-1600.md). A later readiness
-GO would authorize a separate Draft mapping candidate; it would not itself
-complete that mapping scope or close issue 94.
-
-This status does not assert NIST AI RMF compliance, NIST approval,
-certification, equivalence, endorsement, authorization, coverage, or legal
-sufficiency.
+Future lifecycle advance beyond Draft shall follow [ESAF-1600](ESAF-1600.md)
+with mapper-distinct qualified review. Owner-risk GO does not complete that
+review or close Issues #55 or #60.

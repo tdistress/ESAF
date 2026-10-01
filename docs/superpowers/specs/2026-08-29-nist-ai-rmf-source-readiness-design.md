@@ -2,8 +2,9 @@
 
 **Date:** 2026-08-29
 **Issue:** [#94](https://github.com/tdistress/ESAF/issues/94)
-**Disposition target:** mechanical `HOLD` until named mapper and independent
-reviewers are evidenced
+**Disposition target:** mechanical `GO` after the 2026-10-01 owner-risk
+people-gate disposition for Draft-only mapping authorship; independent
+qualified reviewers remain deferred
 
 ## Exact proposed mapping contract
 
@@ -44,15 +45,17 @@ not create a mapping-set, registry, or catalog entry while the matrix is HOLD.
 
 ## Mapper and qualified-review contract
 
-A future GO requires a named mapper experienced in NIST AI RMF 1.0 and
-ESAF-1600, plus independent reviewers for: `nist_ai_rmf_subject_matter`,
+Draft-only GO under owner risk names mapper `esaf-project-owner` and defers
+independent reviewers for: `nist_ai_rmf_subject_matter`,
 `esaf_specification_and_mapping`, `publication_rights`, and
-`security_and_overclaiming`. Self-review is prohibited. Inventory/specification
-and security/overclaiming reviews must be separate exact-SHA reviews.
+`security_and_overclaiming`. Self-review remains prohibited for any advance to
+`reviewed` or `approved`. Inventory/specification and security/overclaiming
+reviews must be separate exact-SHA reviews before those lifecycle states.
 
-## HOLD boundary and reconsideration
+## GO boundary and reconsideration
 
-Overall `HOLD` while `mapper_and_reviewer_readiness` remains BLOCKED. No
-substantive mapping records may be created. Reconsideration requires naming
-qualified people, attributable exact-SHA reviews with no open Critical or
-Important findings, and a matrix that derives `GO`.
+Overall `GO` authorizes a separate Draft mapping candidate under ESAF-1600.
+Owner-risk people-gate clearance does not complete qualified review and does
+not advance Draft artifacts. Lifecycle advance beyond Draft requires naming
+independent reviewers, attributable exact-SHA reviews with no open Critical or
+Important findings, and continued matrix `GO`.
