@@ -1974,11 +1974,13 @@ def _validate_owner_comment(
     ):
         raise ValueError("owner decision release disposition is invalid")
     owner_mapping_ids = value.get("mapping_set_ids")
+    expected_count = len(mapping_ids)
+    expected_role_count = expected_count * len(MISSING_ROLES)
     if (
         not isinstance(owner_mapping_ids, list)
-        or len(owner_mapping_ids) != 3
+        or len(owner_mapping_ids) != expected_count
         or not all(isinstance(item, str) for item in owner_mapping_ids)
-        or len(set(owner_mapping_ids)) != 3
+        or len(set(owner_mapping_ids)) != expected_count
         or set(owner_mapping_ids) != set(mapping_ids)
     ):
         raise ValueError("owner decision mapping sets are invalid")
@@ -1990,7 +1992,7 @@ def _validate_owner_comment(
     roles = value.get("missing_qualified_roles")
     if (
         not isinstance(roles, list)
-        or len(roles) != 6
+        or len(roles) != expected_role_count
         or any(
             not isinstance(item, dict)
             or set(item) != {"mapping_set_id", "role"}
@@ -2154,9 +2156,9 @@ def _tracked_mapping_set_ids(root: Path) -> list[str]:
         raise ValueError("tracked mapping-set inventory cannot be read") from exc
     if (
         not isinstance(identifiers, list)
-        or len(identifiers) != 3
-        or len(set(identifiers)) != 3
-        or not all(isinstance(item, str) for item in identifiers)
+        or not identifiers
+        or len(set(identifiers)) != len(identifiers)
+        or not all(isinstance(item, str) and item for item in identifiers)
     ):
         raise ValueError("tracked mapping-set inventory is invalid")
     return identifiers

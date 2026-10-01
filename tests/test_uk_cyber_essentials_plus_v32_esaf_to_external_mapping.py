@@ -482,8 +482,8 @@ class CyberEssentialsPlusEsafToExternalMappingTests(unittest.TestCase):
         self.assertEqual(entry["lifecycle"]["events"], [])
         self.assertEqual(catalog["counts"]["mapping_sets"], 4)
         self.assertEqual(catalog["counts"]["provisions"], 476)
-        self.assertEqual(catalog["counts"]["relationships"], 81)
-        self.assertEqual(catalog["counts"]["negative_dispositions"], 325)
+        self.assertEqual(catalog["counts"]["relationships"], 244)
+        self.assertEqual(catalog["counts"]["negative_dispositions"], 333)
         catalog_md = (ROOT / "crosswalks/CATALOG.md").read_text(encoding="utf-8")
         self.assertIn(MAPPING_SET_ID, catalog_md)
 
