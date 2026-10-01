@@ -4,8 +4,8 @@
 
 The mechanically derived readiness decision is `HOLD`. No substantive CIS
 Controls mapping is approved or present. CIS Controls mapping artifacts: `0`.
-The generated crosswalk catalog remains unchanged at 3 mapping sets, 404
-provisions, 81 relationships, and 325 negative dispositions.
+The generated crosswalk catalog now measures 4 mapping sets, 476 provisions,
+244 relationships, and 333 negative dispositions.
 
 ## Decision evidence
 

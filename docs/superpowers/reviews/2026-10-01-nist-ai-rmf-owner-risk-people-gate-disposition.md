@@ -1,8 +1,8 @@
 # NIST AI RMF 1.0 owner-risk people-gate disposition
 
-**Date:** 2026-10-01  
-**Decision type:** `owner_risk_acceptance`  
-**Applies to:** NIST AI RMF 1.0 mapping readiness people gate only  
+**Date:** 2026-10-01
+**Decision type:** `owner_risk_acceptance`
+**Applies to:** NIST AI RMF 1.0 mapping readiness people gate only
 **Lifecycle limitation:** Draft mapping authorship only
 
 ## Owner decision

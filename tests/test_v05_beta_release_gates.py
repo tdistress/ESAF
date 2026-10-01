@@ -50,8 +50,8 @@ EXPECTED_SCOPE = {
     "control_families": 16,
     "architecture_patterns": 7,
     "mapping_sets": 4,
-    "mapping_provisions": 404,
-    "relationship_legs": 81,
+    "mapping_provisions": 476,
+    "relationship_legs": 244,
     "negative_dispositions": 333,
     "assessment_foundation": True,
     "draft_profiles": 1,
@@ -86,8 +86,8 @@ EVIDENCE_READINESS_BODY = """# v0.5-beta publication readiness
 
 This evidence candidate covers the complete Git-tracked repository. Its
 derived inventory contains 91 controls in 16 families, 7 architecture
-patterns, 3 mapping sets, and 404 mapping provisions. The mappings contain 81
-relationship legs and 325 negative dispositions.
+patterns, 4 mapping sets, and 476 mapping provisions. The mappings contain 244
+relationship legs and 333 negative dispositions.
 
 The scope includes the ESAF-1500 assessment foundation and one Draft UK pilot
 profile under the reusable profile contract. The PCI DSS readiness record has
@@ -102,13 +102,13 @@ closure candidate exists, and the `v0.5-beta` tag has not been created. This
 record does not approve publication.
 
 All controls, architecture patterns, the pilot profile, mapping sets, and
-mapping records remain Draft. The three mapping lifecycle records have empty
+mapping records remain Draft. The four mapping lifecycle records have empty
 event arrays. This release work does not add reviewer metadata, approval
 metadata, or lifecycle events to those artifacts.
 
 ## Mapping assurance
 
-The release design permits one uniform mapping basis for all three mapping
+The release design permits one uniform mapping basis for all four mapping
 sets. Qualified approval requires a validated six-role Draft campaign bound
 to the exact closure candidate. Owner-risk acceptance requires a separate,
 authenticated repository-owner decision created after that exact candidate
@@ -137,9 +137,9 @@ CLOSURE_READINESS_BODY = """# v0.5-beta publication readiness
 ## Scope
 
 This closure candidate covers the complete Git-tracked repository. Its derived
-inventory contains 91 controls in 16 families, 7 architecture patterns, 3
-mapping sets, and 404 mapping provisions. The mappings contain 81 relationship
-legs and 325 negative dispositions.
+inventory contains 91 controls in 16 families, 7 architecture patterns, 4
+mapping sets, and 476 mapping provisions. The mappings contain 244 relationship
+legs and 333 negative dispositions.
 
 The scope includes the ESAF-1500 assessment foundation and one Draft UK pilot
 profile under the reusable profile contract. The PCI DSS readiness record has
@@ -155,13 +155,13 @@ the post-merge gate is open, and the `v0.5-beta` tag has not been created. The
 approve publication.
 
 All controls, architecture patterns, the pilot profile, mapping sets, and
-mapping records remain Draft. The three mapping lifecycle records have empty
+mapping records remain Draft. The four mapping lifecycle records have empty
 event arrays. This release work does not add reviewer metadata, approval
 metadata, or lifecycle events to those artifacts.
 
 ## Mapping assurance
 
-The release design permits one uniform mapping basis for all three mapping
+The release design permits one uniform mapping basis for all four mapping
 sets. Qualified approval requires a validated six-role Draft campaign bound
 to the exact closure candidate. Owner-risk acceptance requires a separate,
 authenticated repository-owner decision created after that exact candidate
@@ -195,9 +195,9 @@ PUBLISHED_READINESS_BODY = """# v0.5-beta publication readiness
 ## Scope
 
 This published record covers the complete Git-tracked repository. Its derived
-inventory contains 91 controls in 16 families, 7 architecture patterns, 3
-mapping sets, and 404 mapping provisions. The mappings contain 81 relationship
-legs and 325 negative dispositions.
+inventory contains 91 controls in 16 families, 7 architecture patterns, 4
+mapping sets, and 476 mapping provisions. The mappings contain 244 relationship
+legs and 333 negative dispositions.
 
 The scope includes the ESAF-1500 assessment foundation and one Draft UK pilot
 profile under the reusable profile contract. The PCI DSS readiness record has
@@ -212,7 +212,7 @@ published. Publication is limited to the repository Working Draft and does not
 change any artifact lifecycle state.
 
 All controls, architecture patterns, the pilot profile, mapping sets, and
-mapping records remain Draft. The three mapping lifecycle records have empty
+mapping records remain Draft. The four mapping lifecycle records have empty
 event arrays. This publication does not add reviewer metadata, approval
 metadata, or lifecycle events to those artifacts.
 
@@ -242,6 +242,7 @@ MAPPING_SETS = [
     "uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0",
     "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
     "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
+    "nist--ai-rmf--1.0--esaf-0.17-draft--0.1.0",
 ]
 CLOSURE_SHA = "c" * 40
 CLOSURE_BASE = "b" * 40
@@ -1952,13 +1953,13 @@ class V05ExternalEvidenceTests(unittest.TestCase):
             ),
             (
                 lambda value: value["mapping_decisions"].pop(),
-                "owner-risk evidence shall contain exactly three decisions",
+                "owner-risk evidence shall contain exactly one decision per mapping set",
             ),
             (
                 lambda value: value["mapping_decisions"].append(
                     deepcopy(value["mapping_decisions"][0])
                 ),
-                "owner-risk evidence shall contain exactly three decisions",
+                "owner-risk evidence shall contain exactly one decision per mapping set",
             ),
             (
                 lambda value: value["mapping_decisions"][1]["source"].__setitem__(
@@ -1987,13 +1988,13 @@ class V05ExternalEvidenceTests(unittest.TestCase):
         cases = (
             (
                 lambda decision: decision["missing_qualified_roles"].pop(),
-                "owner-risk decision shall contain exactly six missing roles",
+                "owner-risk decision shall enumerate every deferred missing role",
             ),
             (
                 lambda decision: decision["missing_qualified_roles"].append(
                     deepcopy(decision["missing_qualified_roles"][0])
                 ),
-                "owner-risk decision shall contain exactly six missing roles",
+                "owner-risk decision shall enumerate every deferred missing role",
             ),
             (
                 lambda decision: decision.__setitem__("accountable_owner", "other"),
@@ -2725,7 +2726,7 @@ class V05ReleaseRecordTests(unittest.TestCase):
             (ROOT / "crosswalks/catalog.json").read_text(encoding="utf-8")
         )
         mapping_sets = catalog["mapping_sets"]
-        self.assertEqual(3, len(mapping_sets))
+        self.assertEqual(4, len(mapping_sets))
         self.assertEqual(set(MAPPING_SETS), {
             item["metadata"]["mapping_set_id"]
             for item in mapping_sets
@@ -2750,7 +2751,7 @@ class V05ReleaseRecordTests(unittest.TestCase):
                     self.assertNotIn("reviewer", record)
                     self.assertNotIn("approver", record)
                     self.assertNotIn("approval", record)
-        self.assertEqual(404, provision_count)
+        self.assertEqual(476, provision_count)
 
     def test_v04_published_validator_remains_green(self) -> None:
         historical = load_v04_front_matter(V04_RECORD)

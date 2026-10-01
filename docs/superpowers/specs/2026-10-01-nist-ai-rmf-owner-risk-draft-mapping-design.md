@@ -1,7 +1,7 @@
 # NIST AI RMF 1.0 owner-risk Draft mapping design
 
-**Date:** 2026-10-01  
-**Approach:** Owner-risk Draft path (Approach 1)  
+**Date:** 2026-10-01
+**Approach:** Owner-risk Draft path (Approach 1)
 **Owner authorization:** Repository owner directed that independent
 qualified reviewers are not required for this item, selected Approach 1,
 and authorized commit, push, and merge.

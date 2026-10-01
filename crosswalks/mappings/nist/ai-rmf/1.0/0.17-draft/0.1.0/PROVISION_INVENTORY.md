@@ -82,4 +82,3 @@ provision_ids:
 # NIST AI RMF 1.0 provision inventory
 
 Complete-publication inventory of 72 Core subcategory identifiers.
-

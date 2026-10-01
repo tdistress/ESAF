@@ -16,15 +16,16 @@ mapping_sets:
   - uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0
   - uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0
   - uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0
+  - nist--ai-rmf--1.0--esaf-0.17-draft--0.1.0
 mapping_decision_basis: owner_risk_acceptance
 scope:
   controls: 91
   control_families: 16
   architecture_patterns: 7
-  mapping_sets: 3
-  mapping_provisions: 404
-  relationship_legs: 81
-  negative_dispositions: 325
+  mapping_sets: 4
+  mapping_provisions: 476
+  relationship_legs: 244
+  negative_dispositions: 333
   assessment_foundation: true
   draft_profiles: 1
   pci_dss_disposition: HOLD
@@ -46,8 +47,8 @@ gates:
 ## Scope
 
 This published record covers the complete Git-tracked repository. Its derived
-inventory contains 91 controls in 16 families, 7 architecture patterns, 3
-mapping sets, and 476 mapping provisions. The mappings contain 81 relationship
+inventory contains 91 controls in 16 families, 7 architecture patterns, 4
+mapping sets, and 476 mapping provisions. The mappings contain 244 relationship
 legs and 333 negative dispositions.
 
 The scope includes the ESAF-1500 assessment foundation and one Draft UK pilot
@@ -63,7 +64,7 @@ published. Publication is limited to the repository Working Draft and does not
 change any artifact lifecycle state.
 
 All controls, architecture patterns, the pilot profile, mapping sets, and
-mapping records remain Draft. The three mapping lifecycle records have empty
+mapping records remain Draft. The four mapping lifecycle records have empty
 event arrays. This publication does not add reviewer metadata, approval
 metadata, or lifecycle events to those artifacts.
 

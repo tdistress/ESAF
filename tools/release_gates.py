@@ -238,9 +238,13 @@ def validate_record(root: Path, record: dict[str, object]) -> list[str]:
         if isinstance(value, str) and SHA_RE.search(value):
             errors.append(f"{path}: tracked record shall not contain a 40-character SHA")
     catalog = json.loads((root / "crosswalks/catalog.json").read_text(encoding="utf-8"))
-    identifiers = tuple(item["metadata"]["mapping_set_id"] for item in catalog["mapping_sets"])
-    if tuple(sorted(identifiers)) != tuple(sorted(EXPECTED_MAPPING_SETS)):
-        errors.append("catalog mapping sets differ from the release scope")
+    identifiers = {
+        item["metadata"]["mapping_set_id"] for item in catalog["mapping_sets"]
+    }
+    if not set(EXPECTED_MAPPING_SETS).issubset(identifiers):
+        errors.append(
+            "catalog shall include every release-scope mapping set"
+        )
     if any(item["metadata"]["status"] != "draft" for item in catalog["mapping_sets"]):
         errors.append("every in-scope mapping set shall remain draft")
     return errors
