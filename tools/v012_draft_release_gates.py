@@ -91,7 +91,7 @@ PREREQUISITE_SPECS = (
     ("esaf_1300", "working_draft", "esaf_1300_path", ("Working Draft",)),
     ("esaf_1400", "working_draft", "esaf_1400_path", ("Working Draft",)),
     ("esaf_1700", "working_draft", "esaf_1700_path", ("Working Draft",)),
-    ("nist_ai_rmf", "HOLD", "nist_ai_rmf_path", ("Readiness HOLD", "`HOLD`")),
+    ("nist_ai_rmf", "GO", "nist_ai_rmf_path", ("Readiness GO", "`GO`")),
     (
         "iso_iec_42001",
         "HOLD",

@@ -12,6 +12,7 @@
 
 | Mapping set | Source version | ESAF release | Editorial status | Lifecycle state |
 |---|---|---|---|---|
+| [nist--ai-rmf--1.0--esaf-0.17-draft--0.1.0](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/README.md) | 1.0 | 0.17-draft | draft |  |
 | [uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/README.md) | 3.2 | 0.4-alpha | draft |  |
 | [uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/README.md) | 3.2 | 0.4-alpha | draft |  |
 | [uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0](mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/README.md) | 3.3 | 0.4-alpha | draft |  |
@@ -24,10 +25,82 @@
 
 ## Coverage and gaps
 
-Mapping sets: 3; provisions: 404; directional relationships: 81; negative dispositions: 325.
+Mapping sets: 4; provisions: 476; directional relationships: 244; negative dispositions: 333.
 
 | Provision record | Disposition | Relationships |
 |---|---|---:|
+| [airmf-govern-1-1](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-govern-1-1.md) | mapped | 2 |
+| [airmf-govern-1-2](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-govern-1-2.md) | mapped | 2 |
+| [airmf-govern-1-3](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-govern-1-3.md) | mapped | 2 |
+| [airmf-govern-1-4](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-govern-1-4.md) | mapped | 2 |
+| [airmf-govern-1-5](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-govern-1-5.md) | mapped | 3 |
+| [airmf-govern-1-6](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-govern-1-6.md) | mapped | 3 |
+| [airmf-govern-1-7](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-govern-1-7.md) | mapped | 2 |
+| [airmf-govern-2-1](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-govern-2-1.md) | mapped | 2 |
+| [airmf-govern-2-2](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-govern-2-2.md) | mapped | 3 |
+| [airmf-govern-2-3](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-govern-2-3.md) | mapped | 3 |
+| [airmf-govern-3-1](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-govern-3-1.md) | no_direct_mapping | 0 |
+| [airmf-govern-3-2](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-govern-3-2.md) | mapped | 3 |
+| [airmf-govern-4-1](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-govern-4-1.md) | no_direct_mapping | 0 |
+| [airmf-govern-4-2](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-govern-4-2.md) | mapped | 3 |
+| [airmf-govern-4-3](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-govern-4-3.md) | mapped | 3 |
+| [airmf-govern-5-1](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-govern-5-1.md) | mapped | 1 |
+| [airmf-govern-5-2](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-govern-5-2.md) | mapped | 2 |
+| [airmf-govern-6-1](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-govern-6-1.md) | mapped | 3 |
+| [airmf-govern-6-2](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-govern-6-2.md) | mapped | 3 |
+| [airmf-manage-1-1](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-manage-1-1.md) | mapped | 3 |
+| [airmf-manage-1-2](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-manage-1-2.md) | mapped | 3 |
+| [airmf-manage-1-3](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-manage-1-3.md) | mapped | 2 |
+| [airmf-manage-1-4](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-manage-1-4.md) | mapped | 2 |
+| [airmf-manage-2-1](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-manage-2-1.md) | mapped | 2 |
+| [airmf-manage-2-2](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-manage-2-2.md) | mapped | 3 |
+| [airmf-manage-2-3](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-manage-2-3.md) | mapped | 3 |
+| [airmf-manage-2-4](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-manage-2-4.md) | mapped | 4 |
+| [airmf-manage-3-1](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-manage-3-1.md) | mapped | 3 |
+| [airmf-manage-3-2](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-manage-3-2.md) | mapped | 4 |
+| [airmf-manage-4-1](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-manage-4-1.md) | mapped | 3 |
+| [airmf-manage-4-2](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-manage-4-2.md) | mapped | 3 |
+| [airmf-manage-4-3](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-manage-4-3.md) | mapped | 2 |
+| [airmf-map-1-1](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-map-1-1.md) | mapped | 4 |
+| [airmf-map-1-2](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-map-1-2.md) | no_direct_mapping | 0 |
+| [airmf-map-1-3](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-map-1-3.md) | mapped | 1 |
+| [airmf-map-1-4](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-map-1-4.md) | mapped | 2 |
+| [airmf-map-1-5](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-map-1-5.md) | mapped | 2 |
+| [airmf-map-1-6](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-map-1-6.md) | mapped | 2 |
+| [airmf-map-2-1](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-map-2-1.md) | mapped | 2 |
+| [airmf-map-2-2](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-map-2-2.md) | mapped | 3 |
+| [airmf-map-2-3](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-map-2-3.md) | mapped | 3 |
+| [airmf-map-3-1](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-map-3-1.md) | mapped | 2 |
+| [airmf-map-3-2](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-map-3-2.md) | mapped | 2 |
+| [airmf-map-3-3](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-map-3-3.md) | mapped | 3 |
+| [airmf-map-3-4](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-map-3-4.md) | mapped | 1 |
+| [airmf-map-3-5](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-map-3-5.md) | mapped | 3 |
+| [airmf-map-4-1](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-map-4-1.md) | mapped | 3 |
+| [airmf-map-4-2](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-map-4-2.md) | mapped | 3 |
+| [airmf-map-5-1](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-map-5-1.md) | mapped | 3 |
+| [airmf-map-5-2](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-map-5-2.md) | no_direct_mapping | 0 |
+| [airmf-measure-1-1](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-measure-1-1.md) | mapped | 2 |
+| [airmf-measure-1-2](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-measure-1-2.md) | mapped | 2 |
+| [airmf-measure-1-3](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-measure-1-3.md) | mapped | 2 |
+| [airmf-measure-2-1](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-measure-2-1.md) | no_direct_mapping | 0 |
+| [airmf-measure-2-2](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-measure-2-2.md) | no_direct_mapping | 0 |
+| [airmf-measure-2-3](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-measure-2-3.md) | mapped | 2 |
+| [airmf-measure-2-4](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-measure-2-4.md) | mapped | 2 |
+| [airmf-measure-2-5](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-measure-2-5.md) | mapped | 2 |
+| [airmf-measure-2-6](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-measure-2-6.md) | mapped | 3 |
+| [airmf-measure-2-7](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-measure-2-7.md) | mapped | 4 |
+| [airmf-measure-2-8](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-measure-2-8.md) | mapped | 3 |
+| [airmf-measure-2-9](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-measure-2-9.md) | mapped | 3 |
+| [airmf-measure-2-10](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-measure-2-10.md) | mapped | 2 |
+| [airmf-measure-2-11](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-measure-2-11.md) | mapped | 3 |
+| [airmf-measure-2-12](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-measure-2-12.md) | no_direct_mapping | 0 |
+| [airmf-measure-2-13](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-measure-2-13.md) | mapped | 2 |
+| [airmf-measure-3-1](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-measure-3-1.md) | mapped | 3 |
+| [airmf-measure-3-2](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-measure-3-2.md) | mapped | 2 |
+| [airmf-measure-3-3](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-measure-3-3.md) | mapped | 2 |
+| [airmf-measure-4-1](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-measure-4-1.md) | mapped | 3 |
+| [airmf-measure-4-2](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-measure-4-2.md) | mapped | 3 |
+| [airmf-measure-4-3](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-measure-4-3.md) | no_direct_mapping | 0 |
 | [cepts32-a-001](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-a-001.md) | no_direct_mapping | 0 |
 | [cepts32-a-002](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-a-002.md) | no_direct_mapping | 0 |
 | [cepts32-a-003](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-a-003.md) | no_direct_mapping | 0 |

@@ -141,10 +141,10 @@ EXPECTED_KIND_COUNTS = {
     "evidence_retention": 2,
 }
 EXPECTED_CATALOG_COUNTS = {
-    "mapping_sets": 3,
-    "provisions": 404,
-    "relationships": 81,
-    "negative_dispositions": 325,
+    "mapping_sets": 4,
+    "provisions": 476,
+    "relationships": 244,
+    "negative_dispositions": 333,
 }
 GENERIC_NEGATIVE_RATIONALES = {
     "missing outcome: no direct mapping.",

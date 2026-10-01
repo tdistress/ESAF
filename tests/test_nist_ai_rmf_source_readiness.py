@@ -113,36 +113,32 @@ class NistAiRmfSourceReadinessTests(unittest.TestCase):
         self.assertIn("GOVERN-1.1", inventory["identifiers"])
         self.assertIn("MEASURE-2.13", inventory["identifiers"])
 
-    def test_matrix_derives_hold_with_only_mapper_blocker(self) -> None:
+    def test_matrix_derives_go_with_people_gate_pass(self) -> None:
         matrix = json.loads(MATRIX.read_text(encoding="utf-8"))
-        self.assertEqual(matrix["recorded_decision"], "HOLD")
+        self.assertEqual(matrix["recorded_decision"], "GO")
         statuses = {gate["gate"]: gate["status"] for gate in matrix["gates"]}
-        self.assertEqual(statuses["mapper_and_reviewer_readiness"], "BLOCKED")
+        self.assertEqual(statuses["mapper_and_reviewer_readiness"], "PASS")
         for gate, status in statuses.items():
-            if gate != "mapper_and_reviewer_readiness":
-                self.assertEqual(status, "PASS", gate)
-        self.assertEqual(
-            [blocker["blocker_id"] for blocker in matrix["blockers"]],
-            ["NIST-AI-RMF-READINESS-B001"],
-        )
+            self.assertEqual(status, "PASS", gate)
+        self.assertEqual(matrix["blockers"], [])
 
-    def test_landing_and_traceability_preserve_hold_and_catalog(self) -> None:
+    def test_landing_and_traceability_record_go_and_catalog(self) -> None:
         landing = LANDING.read_text(encoding="utf-8")
         trace = TRACEABILITY.read_text(encoding="utf-8")
-        self.assertIn("**Status:** Readiness HOLD", landing)
-        self.assertIn("refreshed evidenced", landing)
+        self.assertIn("**Status:** Readiness GO", landing)
+        self.assertIn("owner-risk", landing)
         self.assertIn("Issue #128", landing)
-        self.assertIn("NIST AI RMF mapping artifacts: `0`", landing)
-        self.assertIn("3 mapping sets, 404", landing)
+        self.assertIn("nist--ai-rmf--1.0--esaf-0.17-draft--0.1.0", landing)
+        self.assertIn("4 mapping sets, 476", landing)
         catalog = json.loads(CROSSWALK_CATALOG.read_text(encoding="utf-8"))
-        self.assertEqual(catalog["counts"]["mapping_sets"], 3)
-        self.assertEqual(catalog["counts"]["provisions"], 404)
+        self.assertEqual(catalog["counts"]["mapping_sets"], 4)
+        self.assertEqual(catalog["counts"]["provisions"], 476)
         found_94 = set(re.findall(r"`(I94-[A-Z0-9]+)`", trace))
         found_128 = set(re.findall(r"`(I128-[A-Z0-9]+)`", trace))
         self.assertTrue(EXPECTED_TRACEABILITY_IDS.issubset(found_94))
         self.assertTrue(EXPECTED_REFRESH_TRACEABILITY_IDS.issubset(found_128))
         self.assertIn("Issue #128", trace)
-        self.assertIn("refreshed evidenced", trace)
+        self.assertIn("Readiness GO", trace)
         self.assertIn("Do not close Issue #55", trace)
 
     def test_ci_and_tools_wire_renderer_check(self) -> None:
@@ -155,15 +151,29 @@ class NistAiRmfSourceReadinessTests(unittest.TestCase):
         tools_readme = (ROOT / "tools" / "README.md").read_text(encoding="utf-8")
         self.assertIn("render_nist_ai_rmf_mapping_go_no_go.py --check", tools_readme)
 
-    def test_no_nist_mapping_artifacts_under_mappings(self) -> None:
-        mappings = ROOT / "crosswalks" / "mappings"
-        if mappings.is_dir():
-            offenders = [
-                path
-                for path in mappings.rglob("*")
-                if path.is_file() and "nist" in path.name.lower()
-            ]
-            self.assertEqual(offenders, [])
+    def test_nist_draft_mapping_snapshot_exists(self) -> None:
+        snapshot = (
+            ROOT
+            / "crosswalks"
+            / "mappings"
+            / "nist"
+            / "ai-rmf"
+            / "1.0"
+            / "0.17-draft"
+            / "0.1.0"
+        )
+        self.assertTrue((snapshot / "README.md").is_file())
+        self.assertTrue((snapshot / "PROVISION_INVENTORY.md").is_file())
+        self.assertTrue((snapshot / "ESAF_CONTROL_MANIFEST.json").is_file())
+        records = list(snapshot.glob("airmf-*.md"))
+        self.assertEqual(len(records), 72)
+        registry = (
+            ROOT
+            / "crosswalks"
+            / "registry"
+            / "nist--ai-rmf--1.0--esaf-0.17-draft--0.1.0.md"
+        )
+        self.assertTrue(registry.is_file())
 
 
 if __name__ == "__main__":

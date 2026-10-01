@@ -47,8 +47,8 @@ gates:
 
 This published record covers the complete Git-tracked repository. Its derived
 inventory contains 91 controls in 16 families, 7 architecture patterns, 3
-mapping sets, and 404 mapping provisions. The mappings contain 81 relationship
-legs and 325 negative dispositions.
+mapping sets, and 476 mapping provisions. The mappings contain 81 relationship
+legs and 333 negative dispositions.
 
 The scope includes the ESAF-1500 assessment foundation and one Draft UK pilot
 profile under the reusable profile contract. The PCI DSS readiness record has

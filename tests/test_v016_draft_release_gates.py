@@ -228,11 +228,11 @@ class V016DraftReleaseGatesTests(unittest.TestCase):
 
     def test_rejects_prerequisite_disposition_value_drift(self) -> None:
         drifted = deepcopy(self.record)
-        drifted["prerequisite_dispositions"]["nist_ai_rmf"] = "GO"
+        drifted["prerequisite_dispositions"]["nist_ai_rmf"] = "HOLD"
         errors = validate_record(ROOT, drifted)
         self.assertTrue(
             any(
-                "prerequisite_dispositions.nist_ai_rmf shall equal 'HOLD'" in error
+                "prerequisite_dispositions.nist_ai_rmf shall equal 'GO'" in error
                 for error in errors
             )
         )
@@ -283,7 +283,7 @@ class V016DraftReleaseGatesTests(unittest.TestCase):
             ("assessment_foundation", False),
             ("draft_profiles", 0),
             ("pci_dss_disposition", "GO"),
-            ("nist_ai_rmf_disposition", "GO"),
+            ("nist_ai_rmf_disposition", "HOLD"),
             ("iso_iec_42001_disposition", "GO"),
             ("nist_csf_disposition", "GO"),
             ("iso_iec_27001_disposition", "GO"),

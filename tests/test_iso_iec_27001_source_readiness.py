@@ -442,10 +442,10 @@ class IsoIec27001ReadinessPublicationTests(unittest.TestCase):
                 "negative_dispositions": counts["negative_dispositions"],
             },
             {
-                "mapping_sets": 3,
-                "provisions": 404,
-                "relationships": 81,
-                "negative_dispositions": 325,
+                "mapping_sets": 4,
+                "provisions": 476,
+                "relationships": 244,
+                "negative_dispositions": 333,
             },
         )
         self.assertIn("| Mapping sets | 3 | 3 |", text)

@@ -8,16 +8,20 @@ independent qualified review for Draft-only mapping authorship. Source
 identity, publication rights, inventory, and related readiness gates remain
 PASS.
 
-A Draft `esaf_to_external` mapping set for all 72 AI RMF Core subcategory
-identifiers is authorized under ESAF-1600. Mapping artifacts remain Draft.
-Qualified review remains deferred. This status does not assert NIST AI RMF
-compliance, NIST approval, certification, equivalence, endorsement,
-authorization, coverage, or legal sufficiency.
+A Draft `esaf_to_external` mapping set covers all 72 AI RMF Core subcategory
+identifiers. Mapping artifacts remain Draft. Qualified review remains deferred.
+This status does not assert NIST AI RMF compliance, NIST approval,
+certification, equivalence, endorsement, authorization, coverage, or legal
+sufficiency.
+
+Generated crosswalk catalog measures after this snapshot: 4 mapping sets, 476
+provisions, 244 relationships, and 333 negative dispositions.
 
 ## Decision evidence
 
 - [Owner-risk people-gate disposition](../docs/superpowers/reviews/2026-10-01-nist-ai-rmf-owner-risk-people-gate-disposition.md)
 - [Owner-risk Draft mapping design](../docs/superpowers/specs/2026-10-01-nist-ai-rmf-owner-risk-draft-mapping-design.md)
+- [Draft mapping oracle](../docs/superpowers/specs/2026-10-01-nist-ai-rmf-1.0-draft-mapping-oracle.json)
 - [Public source-readiness oracle](../docs/superpowers/specs/2026-08-29-nist-ai-rmf-source-readiness-oracle.json)
 - [Subcategory inventory](../docs/superpowers/specs/2026-08-29-nist-ai-rmf-1.0-subcategory-inventory.json)
 - [Publication-rights review](../docs/superpowers/reviews/2026-08-29-nist-ai-rmf-publication-rights-review.md)
@@ -28,11 +32,9 @@ authorization, coverage, or legal sufficiency.
 
 ## Draft mapping snapshot
 
-Authoritative Draft snapshot (populated in the mapping commit):
-
 - Mapping-set ID: `nist--ai-rmf--1.0--esaf-0.17-draft--0.1.0`
-- Path: `mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/`
-- Registry: `registry/nist--ai-rmf--1.0--esaf-0.17-draft--0.1.0.md`
+- Path: [`mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/`](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/)
+- Registry: [`registry/nist--ai-rmf--1.0--esaf-0.17-draft--0.1.0.md`](registry/nist--ai-rmf--1.0--esaf-0.17-draft--0.1.0.md)
 
 Future lifecycle advance beyond Draft shall follow [ESAF-1600](ESAF-1600.md)
 with mapper-distinct qualified review. Owner-risk GO does not complete that

@@ -24,20 +24,20 @@ prerequisite_dispositions:
   esaf_1400_path: implementation/ESAF-1400.md
   esaf_1700: working_draft
   esaf_1700_path: data-model/ESAF-1700.md
-  nist_ai_rmf: HOLD
+  nist_ai_rmf: GO
   nist_ai_rmf_path: crosswalks/nist-ai-rmf.md
 scope:
   controls: 91
   control_families: 16
   architecture_patterns: 7
-  mapping_sets: 3
-  mapping_provisions: 404
-  relationship_legs: 81
-  negative_dispositions: 325
+  mapping_sets: 4
+  mapping_provisions: 476
+  relationship_legs: 244
+  negative_dispositions: 333
   assessment_foundation: true
   draft_profiles: 1
   pci_dss_disposition: HOLD
-  nist_ai_rmf_disposition: HOLD
+  nist_ai_rmf_disposition: GO
 gates:
   scope: {state: closed, evidence: [https://github.com/tdistress/ESAF/issues/95]}
   technical: {state: closed, evidence: [https://github.com/tdistress/ESAF/issues/95]}
@@ -57,8 +57,8 @@ gates:
 
 This published record covers the complete Git-tracked repository. Its derived
 inventory contains 91 controls in 16 families, 7 architecture patterns, 3
-mapping sets, and 404 mapping provisions. The mappings contain 81 relationship
-legs and 325 negative dispositions.
+mapping sets, and 476 mapping provisions. The mappings contain 81 relationship
+legs and 333 negative dispositions.
 
 The scope includes the ESAF-1500 assessment foundation and one Draft UK pilot
 profile under the reusable profile contract. The PCI DSS readiness record has

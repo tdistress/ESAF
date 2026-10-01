@@ -294,19 +294,19 @@ EVIDENCE_SCOPE_INVENTORY = (
     "This evidence candidate covers the complete Git-tracked repository. Its "
     "derived inventory contains 91 controls in 16 families, 7 architecture "
     "patterns, 3 mapping sets, and 404 mapping provisions. The mappings "
-    "contain 81 relationship legs and 325 negative dispositions."
+    "contain 244 relationship legs and 333 negative dispositions."
 )
 CLOSURE_SCOPE_INVENTORY = (
     "This closure candidate covers the complete Git-tracked repository. Its "
     "derived inventory contains 91 controls in 16 families, 7 architecture "
     "patterns, 3 mapping sets, and 404 mapping provisions. The mappings "
-    "contain 81 relationship legs and 325 negative dispositions."
+    "contain 244 relationship legs and 333 negative dispositions."
 )
 PUBLISHED_SCOPE_INVENTORY = (
     "This published record covers the complete Git-tracked repository. Its "
     "derived inventory contains 91 controls in 16 families, 7 architecture "
     "patterns, 3 mapping sets, and 404 mapping provisions. The mappings "
-    "contain 81 relationship legs and 325 negative dispositions."
+    "contain 244 relationship legs and 333 negative dispositions."
 )
 READINESS_SCOPE_BOUNDARY = (
     "The scope includes the ESAF-1500 assessment foundation and one Draft UK "

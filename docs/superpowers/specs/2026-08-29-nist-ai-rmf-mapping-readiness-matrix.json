@@ -94,13 +94,12 @@
     "scope": "complete_publication"
   },
   "nonclaims": [
-    "No NIST AI RMF mapping relationship, negative disposition, snapshot, lifecycle record, registry record, or generated catalog entry exists.",
-    "No NIST approval, endorsement, certification, assessment, equivalence, compliance, or assurance is claimed.",
-    "No coverage statistic or percentage is calculated.",
+    "Owner-risk people-gate clearance authorizes Draft mapping authorship only and does not complete qualified review.",
+    "Draft NIST AI RMF mapping artifacts remain Draft and do not assert NIST approval, endorsement, certification, assessment, equivalence, compliance, or assurance.",
+    "No coverage statistic or percentage is calculated as a compliance claim.",
     "No decision is made for the excluded external_to_esaf direction.",
-    "This HOLD does not close Issues #55 or #60.",
-    "Official PDF bytes were retrieved for digest verification only and are not committed to the repository.",
-    "Owner-risk people-gate clearance authorizes Draft mapping authorship only and does not complete qualified review."
+    "This GO does not close Issues #55 or #60.",
+    "Official PDF bytes were retrieved for digest verification only and are not committed to the repository."
   ],
   "reconsideration_sequence": [
     "Retain Draft lifecycle until named independent reviewers complete exact-SHA inventory/specification and security/overclaiming reviews with no open Critical or Important findings.",
