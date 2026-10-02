@@ -27,7 +27,7 @@ def matrix(statuses=None, blockers=None, positive=True, findings=None):
         "nonclaims": ["No compliance claim"], "reconsideration_sequence": ["Reassess evidence"],
         "recorded_decision": "GO", "review_findings": findings or {"open_critical": 0, "open_important": 0},
         "review_identifier": "review-1", "reviewer_contract": {"fixture": True}, "rights_review": {"commit": "a"*40, "path": "docs/superpowers/reviews/2026-10-02-soc2-aicpa-tsc-publication-rights-review.md", "sha256": "b"*64},
-        "schema_version": "1.0.0", "source_oracle": {"path": "oracle.json", "sha256": "c"*64},
+        "schema_version": "1.0.0", "source_oracle": {"path": "docs/superpowers/specs/2026-10-02-soc2-aicpa-tsc-source-readiness-oracle.json", "sha256": "2de8f16cb962a8f5edd3c4e77d6745360ba44cc5d33106a45cad0d46c5a8ac4f"},
     }
 
 
@@ -38,8 +38,13 @@ def blocker(identifier, gate, remediation):
 
 
 class Soc2ReadinessTests(unittest.TestCase):
-    def test_go_requires_every_gate_probe_and_no_open_findings(self):
-        self.assertEqual(derive_decision(matrix(), verify_source_digest=False), "GO")
+    def test_go_is_rejected_without_affirmative_source_rights_and_inventory_evidence(self):
+        # The matrix can claim every gate passed, but it cannot override the
+        # pinned source oracle and rights review's actual HOLD state.
+        with self.assertRaisesRegex(ValueError, "source artifact retrieval"):
+            derive_decision(matrix(), verify_source_digest=False)
+
+    def test_go_still_requires_positive_probe_and_no_open_findings(self):
         m = matrix(positive=False)
         m["recorded_decision"] = "HOLD"
         with self.assertRaises(ValueError):

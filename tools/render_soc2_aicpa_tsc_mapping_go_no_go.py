@@ -63,6 +63,11 @@ def validate_matrix(matrix, *, verify_source_digest=True):
         path = _repo_path(source["path"], "source_oracle.path")
         if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != source["sha256"]:
             raise ValueError("source oracle is absent or its digest is stale")
+    source_path = _repo_path(source["path"], "source_oracle.path")
+    try:
+        source_oracle = json.loads(source_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise ValueError("source oracle cannot be read as JSON") from exc
     rights = _exact(matrix["rights_review"], {"commit", "path", "sha256"}, "rights_review")
     if rights["path"] != RIGHTS_REVIEW_PATH:
         raise ValueError("rights_review.path must be the canonical publication-rights review")
@@ -155,6 +160,28 @@ def validate_matrix(matrix, *, verify_source_digest=True):
         git("merge-base", "--is-ancestor", rights["commit"], "HEAD")
         if hashlib.sha256(blob).hexdigest() != rights["sha256"] or rights_path.read_bytes() != blob:
             raise ValueError("rights review digest or live bytes drift")
+        rights_text = blob.decode("utf-8")
+    else:
+        rights_path = _repo_path(rights["path"], "rights_review.path")
+        rights_text = rights_path.read_text(encoding="utf-8")
+    # A matrix is not itself evidence of source access or publication rights.
+    # Prevent a hand-edited set of PASS statuses from authorizing GO while the
+    # independently pinned source and rights records still say HOLD.
+    if matrix["recorded_decision"] == "GO":
+        artifact = source_oracle.get("source_artifact", {})
+        access = source_oracle.get("access", {})
+        inventory = source_oracle.get("inventory", {})
+        boundary = source_oracle.get("boundary", {})
+        if (artifact.get("state") != "retrieved" or not access.get("source_bytes_retrieved")
+                or not isinstance(artifact.get("sha256"), str) or not SHA.fullmatch(artifact["sha256"])
+                or not isinstance(artifact.get("byte_length"), int) or artifact["byte_length"] <= 0):
+            raise ValueError("GO requires affirmative, digest-bound source artifact retrieval evidence")
+        if not inventory.get("created") or not isinstance(inventory.get("inventory_sha256"), str) or not SHA.fullmatch(inventory["inventory_sha256"]):
+            raise ValueError("GO requires a digest-bound, authorized provision inventory")
+        if not (boundary.get("document_specific_notice_inspected") or boundary.get("written_aicpa_permission_for_esaf_evidenced")):
+            raise ValueError("GO requires affirmative document-specific rights or written permission evidence")
+        if not re.search(r"\*\*Disposition:\*\*\s*`PASS`", rights_text):
+            raise ValueError("GO requires the pinned independent rights review to record PASS")
     return None
 
 
