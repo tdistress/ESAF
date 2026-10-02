@@ -51,7 +51,16 @@ snapshots, lifecycle events, registry entries, or catalog increments.
 Reconsideration requires named qualified people and attributable exact-SHA
 reviews with no open Critical or Important findings.
 
+## Owner-risk Draft amendment (2026-10-02)
+
+Under the 2026-10-02 owner-risk people-gate disposition and Draft mapping
+design, `mapper_and_reviewer_readiness` is PASS with named mapper
+`esaf-project-owner` and deferred independent qualified review. Matrix
+`recorded_decision` is GO for Draft-only authorship. Owner-risk acceptance
+does not complete qualified review and does not authorize reviewed or
+approved lifecycle states.
+
 ## Validation and presentation
 
-Renderer `--check` must pass. Catalog counts remain 3 / 404 / 81 / 325. Landing
-status shall be exactly `**Status:** Readiness HOLD` when HOLD is derived.
+Renderer `--check` must pass. Catalog counts follow the live crosswalk catalog. Landing
+status shall be exactly `**Status:** Readiness GO` when matrix-derived GO is recorded under owner-risk Draft clearance.

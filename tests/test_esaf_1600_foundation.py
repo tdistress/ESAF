@@ -162,19 +162,20 @@ class Esaf1600FoundationTests(unittest.TestCase):
             r"NIST AI RMF .+ maps directly",
         )
 
-    def assert_nist_csf_hold_landing_page(self, text: str) -> None:
+    def assert_nist_csf_go_landing_page(self, text: str) -> None:
         normalized = normalize_markdown_contract(text)
         statuses = re.findall(
             r"(?m)^\*\*Status:\*\*\s*(\S.*?)\s*$",
             normalized,
         )
-        self.assertEqual(statuses, ["Readiness HOLD"])
+        self.assertEqual(statuses, ["Readiness GO"])
         self.assertNotRegex(
             normalized,
             r"(?im)^\*\*Status:\*\*\s*(?:Approved|Reviewed|Published)\s*$",
         )
         self.assertIn("[ESAF-1600](ESAF-1600.md)", normalized)
-        self.assertIn("NIST CSF mapping artifacts: `0`", normalized)
+        self.assertIn("nist--csf--2.0--esaf-0.17-draft--0.1.0", normalized)
+        self.assertIn("Draft", normalized)
         self.assertNotRegex(
             normalized,
             r"(?im)^## Approved mappings$|"
@@ -449,7 +450,7 @@ class Esaf1600FoundationTests(unittest.TestCase):
         nist = (ROOT / "crosswalks/nist-ai-rmf.md").read_text(encoding="utf-8")
         self.assert_nist_ai_rmf_go_landing_page(nist)
         nist_csf = (ROOT / "crosswalks/nist-csf.md").read_text(encoding="utf-8")
-        self.assert_nist_csf_hold_landing_page(nist_csf)
+        self.assert_nist_csf_go_landing_page(nist_csf)
         nist_sp_800_53 = (ROOT / "crosswalks/nist-sp-800-53.md").read_text(encoding="utf-8")
         self.assert_nist_sp_800_53_hold_landing_page(nist_sp_800_53)
         cis_controls = (ROOT / "crosswalks/cis-controls.md").read_text(encoding="utf-8")

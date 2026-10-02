@@ -569,14 +569,25 @@ def render(matrix: dict[str, object]) -> str:
         lines.append(f"{index}. {item}")
     lines.extend(["", "## Nonclaims", ""])
     lines.extend(f"- {item}" for item in matrix["nonclaims"])
+    if decision == "GO":
+        final = (
+            f"`{decision}`. Owner-risk people-gate clearance authorizes Draft "
+            "mapping authorship only; independent qualified review remains deferred "
+            "and Draft artifacts do not advance to reviewed or approved under this "
+            "decision alone."
+        )
+    else:
+        final = (
+            f"`{decision}`. The blocked gates and their complete blocker records "
+            "control re-entry. No mapping artifact may be created while this decision "
+            "remains HOLD."
+        )
     lines.extend(
         [
             "",
             "## Final decision",
             "",
-            f"`{decision}`. The blocked gates and their complete blocker records "
-            "control re-entry. No mapping artifact may be created while this decision "
-            "remains HOLD.",
+            final,
             "",
         ]
     )
