@@ -1,7 +1,11 @@
 from __future__ import annotations
 
 import copy
+import json
+import tempfile
 import unittest
+from pathlib import Path
+from unittest.mock import patch
 
 from tools.render_soc2_aicpa_tsc_mapping_go_no_go import derive_decision, validate_matrix
 
@@ -43,6 +47,23 @@ class Soc2ReadinessTests(unittest.TestCase):
         # pinned source oracle and rights review's actual HOLD state.
         with self.assertRaisesRegex(ValueError, "source artifact retrieval"):
             derive_decision(matrix(), verify_source_digest=False)
+
+    def test_go_requires_supported_feasibility_and_exact_candidate_attestations(self):
+        with tempfile.TemporaryDirectory() as directory:
+            oracle_path = Path(directory) / "oracle.json"
+            rights_path = Path(directory) / "rights.md"
+            oracle_path.write_text(json.dumps({
+                "source_artifact": {"state": "retrieved", "sha256": "a" * 64, "byte_length": 12},
+                "access": {"source_bytes_retrieved": True},
+                "inventory": {"created": True, "inventory_sha256": "b" * 64},
+                "boundary": {"document_specific_notice_inspected": True},
+            }), encoding="utf-8")
+            rights_path.write_text("**Disposition:** `PASS`\n", encoding="utf-8")
+            source_ref = matrix()["source_oracle"]["path"]
+            resolver = lambda value, _label: oracle_path if value == source_ref else rights_path
+            with patch("tools.render_soc2_aicpa_tsc_mapping_go_no_go._repo_path", side_effect=resolver):
+                with self.assertRaisesRegex(ValueError, "GO is disabled in schema 1.0.0"):
+                    derive_decision(matrix(), verify_source_digest=False)
 
     def test_go_still_requires_positive_probe_and_no_open_findings(self):
         m = matrix(positive=False)

@@ -182,6 +182,7 @@ def validate_matrix(matrix, *, verify_source_digest=True):
             raise ValueError("GO requires affirmative document-specific rights or written permission evidence")
         if not re.search(r"\*\*Disposition:\*\*\s*`PASS`", rights_text):
             raise ValueError("GO requires the pinned independent rights review to record PASS")
+        raise ValueError("GO is disabled in schema 1.0.0 until digest-bound feasibility and exact-candidate reviewer attestations are supported")
     return None
 
 

@@ -69,9 +69,14 @@ The closed matrix shall evaluate these ordered gates:
 
 Each gate is `PASS` or `BLOCKED` and cites evidence. Each blocked gate has at
 least one blocker with an owner, missing evidence, reconsideration trigger,
-and deterministic re-entry test. The renderer derives `GO` only when every
-gate passes, blockers are empty, a positive feasibility probe is evidenced,
-and no Critical or Important findings remain. Otherwise it derives `HOLD`
+and deterministic re-entry test. Schema 1.0.0 cannot emit `GO`: its boolean
+feasibility flag and reviewer requirements do not encode digest-bound probe
+evidence or exact-candidate reviewer attestations. The renderer shall reject
+an otherwise all-PASS matrix until a reviewed schema adds and validates those
+machine-readable evidence records, along with affirmative source and rights
+evidence. Once supported, `GO` may be derived only when every gate passes,
+blockers are empty, the feasibility probe is evidenced, and no Critical or
+Important findings remain. Otherwise it derives `HOLD`
 when at least one complete blocker remains and every blocked gate has a
 credible reconsideration trigger and re-entry test. It derives `NO_GO` when
 evidence establishes that at least one required gate is conclusively
@@ -100,8 +105,9 @@ document-specific terms; an independent rights reviewer to approve every
 proposed field class and publication channel, including written permission
 where needed; a complete reconciled inventory at an authorized granularity;
 a positive ESAF normative-feasibility probe; named qualified mapper and
-independent exact-candidate reviewers; and a refreshed matrix with no open
-Critical or Important findings. A later `GO` only authorizes a separate
+independent exact-candidate reviewers; and a refreshed matrix with digest-bound
+feasibility and exact-candidate reviewer attestations and no open Critical or
+Important findings. A later `GO` only authorizes a separate
 mapping candidate and does not itself approve a mapping.
 
 ## Deliverables
