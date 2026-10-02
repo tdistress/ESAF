@@ -41,6 +41,7 @@ README_LINK_TARGETS = {
     "nist-sp-800-53.md",
     "pci-dss.md",
     "cis-controls.md",
+    "soc-2.md",
 }
 ESAF_1600_DECISIONS = (
     "Provision Markdown is the authoritative crosswalk source.",
@@ -613,6 +614,7 @@ class Esaf1600FoundationTests(unittest.TestCase):
             "tools/render_cis_controls_v8_mapping_go_no_go.py",
             "tools/render_iso_iec_42001_mapping_go_no_go.py",
             "tools/render_iso_iec_27001_mapping_go_no_go.py",
+            "tools/render_soc2_aicpa_tsc_mapping_go_no_go.py",
             "requirements-dev.txt",
         ]
         for event in ("pull_request", "push"):
