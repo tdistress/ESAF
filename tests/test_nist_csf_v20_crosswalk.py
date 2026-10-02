@@ -2,6 +2,8 @@ import json
 import unittest
 from pathlib import Path
 
+from tools.crosswalks.manifest import build_control_manifest
+
 ROOT = Path(__file__).resolve().parents[1]
 SNAPSHOT = ROOT / "crosswalks/mappings/nist/csf/2.0/0.17-draft/0.1.0"
 REGISTRY = ROOT / "crosswalks/registry/nist--csf--2.0--esaf-0.17-draft--0.1.0.md"
@@ -19,6 +21,15 @@ class NistCsfV20CrosswalkTests(unittest.TestCase):
         self.assertEqual(len(records), 106)
         self.assertTrue(REGISTRY.is_file())
         self.assertIn("events: []", REGISTRY.read_text(encoding="utf-8"))
+
+    def test_control_manifest_pins_a_reachable_release_commit(self) -> None:
+        manifest = json.loads(
+            (SNAPSHOT / "ESAF_CONTROL_MANIFEST.json").read_text(encoding="utf-8")
+        )
+        generated = build_control_manifest(
+            ROOT, manifest["source_commit_sha"], "0.17-draft", None
+        )
+        self.assertEqual(generated, manifest)
 
     def test_catalog_includes_nist_csf_set(self) -> None:
         catalog = json.loads((ROOT / "crosswalks/catalog.json").read_text(encoding="utf-8"))
