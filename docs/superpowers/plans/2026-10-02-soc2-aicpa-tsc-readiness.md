@@ -22,14 +22,14 @@
 ## Task 1: Pin rights evidence and source oracle
 
 - [ ] Record reviewed official AICPA source URLs, source title/edition and dates, access state, and limits of observed evidence. Do not retrieve restricted source bytes, scrape, or include criterion text.
-- [ ] Write and independently review the rights review first. Partition identifiers, titles, structural inventory, paraphrases, derivative mapping analysis, and official links; distinguish minimal source metadata from mapping field classes; do not infer a PDF-specific license from the website terms.
+- [ ] Write and independently review the rights review first. Partition identifiers, titles, structural inventory, paraphrases, derivative mapping analysis, and official links; distinguish minimal source metadata from mapping field classes; do not infer a PDF-specific license from the website terms. A later re-entry reviewer must verify every proposed metadata and mapping field class, publication channel, and written permission.
 - [ ] Commit the rights review before authoring the source oracle or matrix.
 - [ ] Add the source oracle with retrieval date, source identity, access behavior, rights references, and explicit nulls for unobtained bytes, digest, counts, and inventory.
 
 ## Task 2: Add the mechanically derived HOLD decision
 
-- [ ] Write tests first for a valid HOLD matrix, blocked-gate coverage, fail-closed rights boundary, no mapping artifacts, and deterministic rendering.
-- [ ] Implement the renderer from the PCI DSS/CIS patterns with strict key/status/reference validation and `--check` support.
+- [ ] Write tests first for a valid HOLD matrix, blocked-gate coverage, fail-closed rights boundary, no mapping artifacts, and deterministic rendering. Cover all eight ordered gates; GO conditions; HOLD requiring reconsiderable blockers; NO_GO requiring a terminal blocker; and rejection of a HOLD with a terminal blocker or a NO_GO without one.
+- [ ] Implement the renderer from the PCI DSS/CIS patterns with strict key/status/reference validation, terminal-blocker exclusivity, design-conformant GO/HOLD/NO_GO derivation, and `--check` support.
 - [ ] Add a matrix with blockers for source artifact, rights, inventory, semantic probe, and named qualified people; preserve PASS only for schema fit and enforceable overclaiming controls.
 - [ ] Generate the decision review and traceability report for Issue #219.
 - [ ] Add the crosswalk landing page with decision, zero artifact counts, blockers, reconsideration triggers, and nonclaims.
@@ -45,7 +45,7 @@
 
 - [ ] Run the planner against `origin/main` and follow its publication route.
 - [ ] Run focused tests, full unittest discovery, all affected validators, Mermaid record validation, qualified-review equivalence, and whole-branch `git diff --check` as required by repository policy.
-- [ ] Have independent specification/inventory and security/overclaiming reviewers review the exact candidate SHA; redispatch after any change.
+- [ ] Have independent rights, specification/inventory, and security/overclaiming reviewers review the exact candidate SHA; rights review shall verify every proposed metadata and mapping field class, publication channel, and any written permission. Redispatch all reviews after any candidate change.
 - [ ] Verify clean worktree, no `__pycache__`, no mapping snapshots, no registry entries, and no crosswalk catalog delta.
 
 ## Task 5: Publish and close the issue
