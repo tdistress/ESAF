@@ -51,7 +51,7 @@ EXPECTED_SCOPE = {
     "architecture_patterns": 7,
     "mapping_sets": 5,
     "mapping_provisions": 582,
-    "relationship_legs": 244,
+    "relationship_legs": 406,
     "negative_dispositions": 343,
     "assessment_foundation": True,
     "draft_profiles": 1,
@@ -226,10 +226,10 @@ approve mappings or change artifact lifecycle state.
 
 Issue 55 remains open for qualified review. Owner-risk acceptance does not
 complete qualified review or approve the mappings. It does not establish
-qualified mapping approval, artifact lifecycle approval, certification,
-compliance, equivalence, endorsement, external scheme approval, production
-readiness, assurance, implementation assessment, legal sufficiency, or
-replacement of qualified professional judgment.
+qualified mapping approval, artifact lifecycle approval,
+certification, compliance, equivalence, endorsement, external scheme approval,
+production readiness, assurance, implementation assessment, legal
+sufficiency, or replacement of qualified professional judgment.
 
 ## Publication evidence
 
