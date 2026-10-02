@@ -13,7 +13,7 @@ source_version:
 esaf_release:
   id: 0.17-draft
   label: ESAF 0.17-draft
-  source_commit_sha: 2ae3b6616f50a150aa0959acb58b2d9da48fda6a
+  source_commit_sha: 6732561fa6283797bdb27d990a5399dc905dd208
   control_catalog_sha256: 70bbd955a65969d2843b60220ad0aad2850f36ec6d189ecd32c40431b848b398
   control_manifest_path: ESAF_CONTROL_MANIFEST.json
 mapping_set_version: 0.1.0
@@ -77,4 +77,4 @@ Prominent gaps retained as negatives include enterprise hardware inventories, ph
 
 ## Draft lifecycle
 
-The ESAF baseline is pinned to commit `2ae3b6616f50a150aa0959acb58b2d9da48fda6a`. All provision records and relationship legs remain draft. Owner-risk readiness GO does not constitute qualified NIST CSF review or lifecycle approval. This mapping set has no schema reviewer or approver and an empty lifecycle event array pending qualified human review.
+The ESAF baseline is pinned to commit `6732561fa6283797bdb27d990a5399dc905dd208`. All provision records and relationship legs remain draft. Owner-risk readiness GO does not constitute qualified NIST CSF review or lifecycle approval. This mapping set has no schema reviewer or approver and an empty lifecycle event array pending qualified human review.

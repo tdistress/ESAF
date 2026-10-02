@@ -48,7 +48,7 @@
 - Regenerate: `crosswalks/catalog.json`, `crosswalks/CATALOG.md`
 - Create: `tests/test_nist_csf_v20_crosswalk.py` + shard registration
 
-- [ ] Pin `source_commit_sha` to the Task 1 commit
+- [ ] Pin `source_commit_sha` to a reachable mainline commit for the declared ESAF release (prefer its published release commit); do not pin an intermediate PR commit that the repository's merge strategy may discard
 - [ ] Build manifest via `tools.crosswalks.manifest.build_control_manifest`
 - [ ] Generate 106 records from the curated oracle; validate with `validate_crosswalks.py`
 - [ ] Add focused snapshot tests
