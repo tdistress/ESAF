@@ -22,9 +22,13 @@ Cyber Essentials core and Cyber Essentials Plus remain separate mapping sets.
   rights, and qualified-review availability are confirmed. This work does not
   block `v0.5-beta`, `v0.9-rc1`, `v0.10-draft`, `v0.11-draft`, `v0.12-draft`, `v0.13-draft`, `v0.14-draft`, `v0.15-draft`, `v0.16-draft`, or `v0.17-draft`.
 
-- SOC 2 (AICPA TSC) public-source readiness remains separately gated follow-on
-  work after `v0.17-draft` selects CIS Controls Version 8 as the Approach C
-  readiness scheme. This work does not block `v0.17-draft`.
+- [Issue 219](https://github.com/tdistress/ESAF/issues/219) tracks SOC 2 (AICPA
+  Trust Services Criteria) source and publication readiness as separate
+  follow-on work after `v0.17-draft`. The readiness candidate records `HOLD`:
+  the document-specific notice, public derivative-analysis permission,
+  publishable inventory boundary, positive feasibility probe, and qualified
+  mapping/review personnel are not evidenced. No SOC 2 mapping artifacts are
+  authorized under this decision.
 
 ## Post-beta scheduled queue
 

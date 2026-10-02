@@ -1,0 +1,83 @@
+{
+  "schema_version": "1.0.0",
+  "observed_date_utc": "2026-10-02",
+  "publication": {
+    "publisher": "Association of International Certified Professional Accountants (AICPA & CIMA)",
+    "publication_family": "SOC 2 - SOC for Service Organizations: Trust Services Criteria",
+    "document_title": "2017 Trust Services Criteria (With Revised Points of Focus – 2022)",
+    "edition": "2017",
+    "revised_points_of_focus": "2022",
+    "resource_page_date": "2023-09-30",
+    "official_url": "https://www.aicpa-cima.com/resources/download/2017-trust-services-criteria-with-revised-points-of-focus-2022",
+    "format": "PDF",
+    "trust_service_categories": [
+      "Security",
+      "Availability",
+      "Processing Integrity",
+      "Confidentiality",
+      "Privacy"
+    ],
+    "currentness": "not_asserted",
+    "identity_basis": "Official AICPA resource-page metadata observed on the retrieval date; no claim is made that this is the latest or currently effective AICPA publication."
+  },
+  "scope": {
+    "candidate_source": "The 2017 Trust Services Criteria with Revised Points of Focus – 2022 only.",
+    "proposed_mapping_direction": "esaf_to_external",
+    "excluded_direction": "external_to_esaf",
+    "excluded_materials": [
+      "2018 SOC 2 Description Criteria and its implementation guidance",
+      "AICPA SOC 2 practitioner guides",
+      "attestation standards",
+      "illustrative reports and other SOC materials"
+    ],
+    "scope_change_requires_new_design": true
+  },
+  "access": {
+    "official_resource_page_accessible": true,
+    "resource_access_label": "FREE ACCOUNT ACCESS",
+    "account_required": "free_account",
+    "account_used": false,
+    "download_attempted": false,
+    "source_bytes_retrieved": false,
+    "retrieval_method": "Official AICPA resource page reviewed; no account or download flow used.",
+    "source_drift": "The page identified the candidate publication. Latest-version status and future drift are not asserted; recheck the publisher page before any future mapping candidate."
+  },
+  "source_artifact": {
+    "official_filename": "Trust-services-criteria.pdf",
+    "media_type": "application/pdf",
+    "state": "not_retrieved",
+    "byte_length": null,
+    "sha256": null,
+    "page_count": null,
+    "criterion_count": null,
+    "inventory_sha256": null
+  },
+  "inventory": {
+    "created": false,
+    "criterion_count": null,
+    "inventory_sha256": null,
+    "source_derived_identifiers_or_text_published": false,
+    "reason": "The exact document-specific notice and authorized inventory/publication boundary have not been verified."
+  },
+  "rights_review": {
+    "path": "docs/superpowers/reviews/2026-10-02-soc2-aicpa-tsc-publication-rights-review.md",
+    "commit": "358fb4d8823c7050c2543b5589d4f36fec6f2c9a",
+    "sha256": "f2227b9a247053d22b53824f5437e71ee3b18bc96bf27f426d4d04f23fa7e50e",
+    "disposition": "HOLD"
+  },
+  "boundary": {
+    "website_terms_version_observed": "4",
+    "document_specific_notice_inspected": false,
+    "written_aicpa_permission_for_esaf_evidenced": false,
+    "bulk_or_systematic_source_extraction_performed": false,
+    "criteria_text_reproduced": false,
+    "source_artifact_bytes_committed": false
+  },
+  "nonclaims": [
+    "The candidate source identity does not assert that this is the latest or currently effective AICPA edition.",
+    "A free-account access path does not establish permission to publish criteria content or derivative mapping analysis.",
+    "No SOC 2 criterion inventory or count is asserted.",
+    "No SOC 2 mapping record, relationship, negative disposition, snapshot, lifecycle record, registry record, or catalog entry exists.",
+    "No AICPA approval, authorization, validation, endorsement, certification, SOC 2 compliance, equivalence, assurance, or legal sufficiency is claimed."
+  ]
+}

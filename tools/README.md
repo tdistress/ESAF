@@ -187,6 +187,24 @@ protected source, create a provision inventory or mapping, or assert compliance,
 certification, equivalence, endorsement, authorization, coverage, or legal
 sufficiency.
 
+## SOC 2 Trust Services Criteria readiness validation
+
+Validate the closed AICPA Trust Services Criteria readiness matrix, derive the
+GO/HOLD/NO_GO decision, and require the generated review to match without
+rewriting it:
+
+```shell
+python tools/render_soc2_aicpa_tsc_mapping_go_no_go.py --check
+```
+
+The current decision is `HOLD`. The candidate source is the 2017 Trust Services
+Criteria with Revised Points of Focus – 2022; latest-version status is not
+asserted. The exact PDF and its document-specific notice have not been
+reviewed, and public derivative-analysis permission is not evidenced. This
+validation does not create a criterion inventory or mapping, and does not
+assert AICPA approval, SOC 2 compliance, certification, equivalence,
+endorsement, authorization, assurance, coverage, or legal sufficiency.
+
 ## Architecture validation
 
 Validate the ESAF-1200 foundation, pattern registry, pattern metadata and structure, links, control references, placeholders, and text encoding:

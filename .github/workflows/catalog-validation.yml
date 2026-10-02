@@ -81,6 +81,7 @@ on:
       - "tools/render_cis_controls_v8_mapping_go_no_go.py"
       - "tools/render_iso_iec_42001_mapping_go_no_go.py"
       - "tools/render_iso_iec_27001_mapping_go_no_go.py"
+      - "tools/render_soc2_aicpa_tsc_mapping_go_no_go.py"
       - "requirements-dev.txt"
   push:
     branches: [main]
@@ -163,6 +164,7 @@ on:
       - "tools/render_cis_controls_v8_mapping_go_no_go.py"
       - "tools/render_iso_iec_42001_mapping_go_no_go.py"
       - "tools/render_iso_iec_27001_mapping_go_no_go.py"
+      - "tools/render_soc2_aicpa_tsc_mapping_go_no_go.py"
       - "requirements-dev.txt"
   workflow_dispatch:
 
@@ -254,6 +256,8 @@ jobs:
         run: python tools/render_iso_iec_42001_mapping_go_no_go.py --check
       - name: Validate ISO/IEC 27001 readiness review
         run: python tools/render_iso_iec_27001_mapping_go_no_go.py --check
+      - name: Validate SOC 2 AICPA Trust Services Criteria readiness review
+        run: python tools/render_soc2_aicpa_tsc_mapping_go_no_go.py --check
       - name: Validate crosswalk history on pull request
         if: github.event_name == 'pull_request'
         run: python tools/validate_crosswalks.py --check --baseline-ref "${{ github.event.pull_request.base.sha }}"
