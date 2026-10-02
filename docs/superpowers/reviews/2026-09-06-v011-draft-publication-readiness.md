@@ -38,10 +38,10 @@ scope:
   controls: 91
   control_families: 16
   architecture_patterns: 7
-  mapping_sets: 4
-  mapping_provisions: 476
-  relationship_legs: 244
-  negative_dispositions: 333
+  mapping_sets: 5
+  mapping_provisions: 582
+  relationship_legs: 406
+  negative_dispositions: 343
   assessment_foundation: true
   draft_profiles: 1
   pci_dss_disposition: HOLD
@@ -64,9 +64,9 @@ gates:
 ## Scope
 
 This published record covers the complete Git-tracked repository. Its derived
-inventory contains 91 controls in 16 families, 7 architecture patterns, 4
-mapping sets, and 476 mapping provisions. The mappings contain 244 relationship
-legs and 333 negative dispositions.
+inventory contains 91 controls in 16 families, 7 architecture patterns, 5
+mapping sets, and 582 mapping provisions. The mappings contain 406 relationship
+legs and 343 negative dispositions.
 
 The scope includes the ESAF-1500 assessment foundation, the Draft Phase 6
 assessment-toolkit deepen packs, and one Draft UK pilot profile under the
@@ -83,7 +83,7 @@ Harness Phase 2 hosted-timing reconsideration is `DEFER`, recorded in
 ESAF-1300, ESAF-1400, and ESAF-1700 are linked as Working Drafts at
 `governance/ESAF-1300.md`, `implementation/ESAF-1400.md`, and
 `data-model/ESAF-1700.md`. The NIST AI RMF crosswalk readiness decision is
-`HOLD`, recorded at `crosswalks/nist-ai-rmf.md`.
+`GO`, recorded at `crosswalks/nist-ai-rmf.md`.
 
 The Phase 6 Draft deepen packs required for `v0.11-draft` are present at:
 

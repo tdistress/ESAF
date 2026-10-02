@@ -53,12 +53,14 @@ class RenderNistCsfMappingGoNoGoTests(unittest.TestCase):
         )
         self.assertEqual(result.returncode, 0, result.stderr)
 
-    def test_rendered_review_is_hold(self) -> None:
+    def test_rendered_review_is_go(self) -> None:
         text = REVIEW.read_text(encoding="utf-8")
-        self.assertIn("**Decision:** `HOLD`", text)
-        self.assertIn("`NIST-CSF-READINESS-B001`", text)
+        self.assertIn("**Decision:** `GO`", text)
         self.assertIn("`mapper_and_reviewer_readiness`", text)
-        self.assertIn("`BLOCKED`", text)
+        self.assertIn("`PASS`", text)
+        self.assertIn("owner-risk", text)
+        self.assertNotIn("`NIST-CSF-READINESS-B001`", text)
+        self.assertNotIn("`BLOCKED`", text)
 
     def test_source_oracle_digest_is_current(self) -> None:
         self.assertEqual(

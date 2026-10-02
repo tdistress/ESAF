@@ -105,30 +105,28 @@ class NistCsfSourceReadinessTests(unittest.TestCase):
         self.assertIn("GV.OC-01", inventory["identifiers"])
         self.assertIn("RC.RP-01", inventory["identifiers"])
 
-    def test_matrix_derives_hold_with_only_mapper_blocker(self) -> None:
+    def test_matrix_derives_go_with_people_gate_pass(self) -> None:
         matrix = json.loads(MATRIX.read_text(encoding="utf-8"))
-        self.assertEqual(matrix["recorded_decision"], "HOLD")
+        self.assertEqual(matrix["recorded_decision"], "GO")
         statuses = {gate["gate"]: gate["status"] for gate in matrix["gates"]}
-        self.assertEqual(statuses["mapper_and_reviewer_readiness"], "BLOCKED")
+        self.assertEqual(statuses["mapper_and_reviewer_readiness"], "PASS")
         for gate, status in statuses.items():
-            if gate != "mapper_and_reviewer_readiness":
-                self.assertEqual(status, "PASS", gate)
-        self.assertEqual(
-            [blocker["blocker_id"] for blocker in matrix["blockers"]],
-            ["NIST-CSF-READINESS-B001"],
-        )
+            self.assertEqual(status, "PASS", gate)
+        self.assertEqual(matrix["blockers"], [])
 
-    def test_landing_and_traceability_preserve_hold_and_catalog(self) -> None:
+    def test_landing_and_traceability_record_go_and_catalog(self) -> None:
         landing = LANDING.read_text(encoding="utf-8")
         trace = TRACEABILITY.read_text(encoding="utf-8")
-        self.assertIn("**Status:** Readiness HOLD", landing)
-        self.assertIn("NIST CSF mapping artifacts: `0`", landing)
-        self.assertIn("4 mapping sets, 476", landing)
+        self.assertIn("**Status:** Readiness GO", landing)
+        self.assertIn("owner-risk", landing)
+        self.assertIn("nist--csf--2.0--esaf-0.17-draft--0.1.0", landing)
+        self.assertIn("5 mapping sets, 582", landing)
         catalog = json.loads(CROSSWALK_CATALOG.read_text(encoding="utf-8"))
-        self.assertEqual(catalog["counts"]["mapping_sets"], 4)
-        self.assertEqual(catalog["counts"]["provisions"], 476)
+        self.assertEqual(catalog["counts"]["mapping_sets"], 5)
+        self.assertEqual(catalog["counts"]["provisions"], 582)
         found = set(re.findall(r"`(I159-[A-Z0-9]+)`", trace))
         self.assertTrue(EXPECTED_TRACEABILITY_IDS.issubset(found))
+        self.assertIn("Readiness GO", trace)
         self.assertIn("Do not close Issue #55", trace)
 
     def test_ci_and_tools_wire_renderer_check(self) -> None:
@@ -141,21 +139,30 @@ class NistCsfSourceReadinessTests(unittest.TestCase):
         tools_readme = (ROOT / "tools" / "README.md").read_text(encoding="utf-8")
         self.assertIn("render_nist_csf_mapping_go_no_go.py --check", tools_readme)
 
-    def test_no_nist_csf_mapping_artifacts_under_mappings(self) -> None:
-        mappings = ROOT / "crosswalks" / "mappings"
-        if mappings.is_dir():
-            offenders = [
-                path
-                for path in mappings.rglob("*")
-                if path.is_file() and "csf" in path.name.lower() and "hitrust" not in str(path).lower()
-            ]
-            # also catch nist-csf path segments
-            offenders += [
-                path
-                for path in mappings.rglob("*")
-                if path.is_file() and "nist-csf" in str(path).lower()
-            ]
-            self.assertEqual(offenders, [])
+    def test_nist_draft_mapping_snapshot_exists(self) -> None:
+        snapshot = (
+            ROOT
+            / "crosswalks"
+            / "mappings"
+            / "nist"
+            / "csf"
+            / "2.0"
+            / "0.17-draft"
+            / "0.1.0"
+        )
+        self.assertTrue((snapshot / "README.md").is_file())
+        self.assertTrue((snapshot / "PROVISION_INVENTORY.md").is_file())
+        self.assertTrue((snapshot / "ESAF_CONTROL_MANIFEST.json").is_file())
+        records = list(snapshot.glob("csf-*.md"))
+        self.assertEqual(len(records), 106)
+        registry = (
+            ROOT
+            / "crosswalks"
+            / "registry"
+            / "nist--csf--2.0--esaf-0.17-draft--0.1.0.md"
+        )
+        self.assertTrue(registry.is_file())
+
 
 
 if __name__ == "__main__":

@@ -28,7 +28,7 @@ prerequisite_dispositions:
   nist_ai_rmf_path: crosswalks/nist-ai-rmf.md
   iso_iec_42001: HOLD
   iso_iec_42001_path: crosswalks/iso-iec-42001.md
-  nist_csf: HOLD
+  nist_csf: GO
   nist_csf_path: crosswalks/nist-csf.md
   iso_iec_27001: HOLD
   iso_iec_27001_path: crosswalks/iso-iec-27001.md
@@ -42,16 +42,16 @@ scope:
   controls: 91
   control_families: 16
   architecture_patterns: 7
-  mapping_sets: 4
-  mapping_provisions: 476
-  relationship_legs: 244
-  negative_dispositions: 333
+  mapping_sets: 5
+  mapping_provisions: 582
+  relationship_legs: 406
+  negative_dispositions: 343
   assessment_foundation: true
   draft_profiles: 1
   pci_dss_disposition: HOLD
   nist_ai_rmf_disposition: GO
   iso_iec_42001_disposition: HOLD
-  nist_csf_disposition: HOLD
+  nist_csf_disposition: GO
   iso_iec_27001_disposition: HOLD
   nist_sp_800_53_disposition: HOLD
 gates:
@@ -72,16 +72,16 @@ gates:
 ## Scope
 
 This published record covers the complete Git-tracked repository. Its derived
-inventory contains 91 controls in 16 families, 7 architecture patterns, 4
-mapping sets, and 476 mapping provisions. The mappings contain 244 relationship
-legs and 333 negative dispositions.
+inventory contains 91 controls in 16 families, 7 architecture patterns, 5
+mapping sets, and 582 mapping provisions. The mappings contain 406 relationship
+legs and 343 negative dispositions.
 
 The scope includes the ESAF-1500 assessment foundation and one Draft UK pilot
 profile (Draft `0.2.0`) under the reusable profile contract. The PCI DSS
 readiness record has the approved `HOLD` disposition, the NIST AI RMF readiness
 record has the approved `GO` disposition, the ISO/IEC 42001 readiness record
 has the approved `HOLD` disposition, the NIST CSF 2.0 readiness record has the
-approved `HOLD` disposition, the ISO/IEC 27001:2022 readiness record has the
+approved `GO` disposition, the ISO/IEC 27001:2022 readiness record has the
 approved `HOLD` disposition, and the NIST SP 800-53 Revision 5 readiness record
 has the approved `HOLD` disposition. None of those dispositions establish a
 mapping, assessment, certification, compliance, equivalence, endorsement, or
@@ -97,9 +97,9 @@ Working Draft `0.3.0` in `governance/ESAF-1300.md`,
 remains a Working Draft carry-forward at `assessment/ESAF-1500.md` (Working
 Draft `0.1.1`) from the `v0.14-draft` deepen; it is not the milestone deepen
 target for `v0.16-draft`. The NIST AI RMF crosswalk readiness decision is
-`HOLD`, recorded at `crosswalks/nist-ai-rmf.md`. The ISO/IEC 42001 crosswalk
+`GO`, recorded at `crosswalks/nist-ai-rmf.md`. The ISO/IEC 42001 crosswalk
 readiness decision is `HOLD`, recorded at `crosswalks/iso-iec-42001.md`. The
-NIST CSF 2.0 crosswalk readiness decision is `HOLD`, recorded at
+NIST CSF 2.0 crosswalk readiness decision is `GO`, recorded at
 `crosswalks/nist-csf.md`. The ISO/IEC 27001:2022 crosswalk readiness decision
 is `HOLD`, recorded at `crosswalks/iso-iec-27001.md`. The NIST SP 800-53
 Revision 5 crosswalk readiness decision is `HOLD`, recorded at

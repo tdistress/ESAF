@@ -1,0 +1,3449 @@
+{
+  "schema_version": "1.0.0",
+  "mapping_set_id": "nist--csf--2.0--esaf-0.17-draft--0.1.0",
+  "direction": "esaf_to_external",
+  "outcomes": {
+    "DE.AE-02": "Potentially adverse events are analyzed to better understand associated activities",
+    "DE.AE-03": "Information is correlated from multiple sources",
+    "DE.AE-04": "The estimated impact and scope of adverse events are understood",
+    "DE.AE-06": "Information on adverse events is provided to authorized staff and tools",
+    "DE.AE-07": "Cyber threat intelligence and other contextual information are integrated into the analysis",
+    "DE.AE-08": "Incidents are declared when adverse events meet the defined incident criteria RESPOND (RS): Actions regarding a detected cybersecurity incident are taken • Incident Management (RS.MA): Responses to detected cybersecurity incidents are managed",
+    "DE.CM-01": "Networks and network services are monitored to find potentially adverse events",
+    "DE.CM-02": "The physical environment is monitored to find potentially adverse events",
+    "DE.CM-03": "Personnel activity and technology usage are monitored to find potentially adverse events",
+    "DE.CM-06": "External service provider activities and services are monitored to find potentially adverse events",
+    "DE.CM-09": "Computing hardware and software, runtime environments, and their data are monitored to find potentially adverse events • Adverse Event Analysis (DE.AE): Anomalies, indicators of compromise, and other potentially adverse events are analyzed to characterize the events and detect cybersecurity incidents",
+    "GV.OC-01": "The organizational mission is understood and informs cybersecurity risk management",
+    "GV.OC-02": "Internal and external stakeholders are understood, and their needs and expectations regarding cybersecurity risk management are understood and considered",
+    "GV.OC-03": "Legal, regulatory, and contractual requirements regarding cybersecurity — including privacy and civil liberties obligations — are understood and managed",
+    "GV.OC-04": "Critical objectives, capabilities, and services that external stakeholders depend on or expect from the organization are understood and communicated",
+    "GV.OC-05": "Outcomes, capabilities, and services that the organization depends on are understood and communicated • Risk Management Strategy (GV.RM): The organization's priorities, constraints, risk tolerance and appetite statements, and assumptions are established, communicated, and used to support operational risk decisions",
+    "GV.OV-01": "Cybersecurity risk management strategy outcomes are reviewed to inform and adjust strategy and direction",
+    "GV.OV-02": "The cybersecurity risk management strategy is reviewed and adjusted to ensure coverage of organizational requirements and risks",
+    "GV.OV-03": "Organizational cybersecurity risk management performance is evaluated and reviewed for adjustments needed • Cybersecurity Supply Chain Risk Management (GV.SC): Cyber supply chain risk management processes are identified, established, managed, monitored, and improved by organizational stakeholders",
+    "GV.PO-01": "Policy for managing cybersecurity risks is established based on organizational context, cybersecurity strategy, and priorities and is communicated and enforced",
+    "GV.PO-02": "Policy for managing cybersecurity risks is reviewed, updated, communicated, and enforced to reflect changes in requirements, threats, technology, and organizational mission • Oversight (GV.OV): Results of organization-wide cybersecurity risk management activities and performance are used to inform, improve, and adjust the risk management strategy",
+    "GV.RM-01": "Risk management objectives are established and agreed to by organizational stakeholders",
+    "GV.RM-02": "Risk appetite and risk tolerance statements are established, communicated, and maintained",
+    "GV.RM-03": "Cybersecurity risk management activities and outcomes are included in enterprise risk management processes",
+    "GV.RM-04": "Strategic direction that describes appropriate risk response options is established and communicated",
+    "GV.RM-05": "Lines of communication across the organization are established for cybersecurity risks, including risks from suppliers and other third parties",
+    "GV.RM-06": "A standardized method for calculating, documenting, categorizing, and prioritizing cybersecurity risks is established and communicated",
+    "GV.RM-07": "Strategic opportunities (i.e., positive risks) are characterized and are included in organizational cybersecurity risk discussions • Roles, Responsibilities, and Authorities (GV.RR): Cybersecurity roles, responsibilities, and authorities to foster accountability, performance assessment, and continuous improvement are established and communicated",
+    "GV.RR-01": "Organizational leadership is responsible and accountable for cybersecurity risk and fosters a culture that is risk-aware, ethical, and continually improving",
+    "GV.RR-02": "Roles, responsibilities, and authorities related to cybersecurity risk management are established, communicated, understood, and enforced",
+    "GV.RR-03": "Adequate resources are allocated commensurate with the cybersecurity risk strategy, roles, responsibilities, and policies",
+    "GV.RR-04": "Cybersecurity is included in human resources practices • Policy (GV.PO): Organizational cybersecurity policy is established, communicated, and enforced",
+    "GV.SC-01": "A cybersecurity supply chain risk management program, strategy, objectives, policies, and processes are established and agreed to by organizational stakeholders",
+    "GV.SC-02": "Cybersecurity roles and responsibilities for suppliers, customers, and partners are established, communicated, and coordinated internally and externally",
+    "GV.SC-03": "Cybersecurity supply chain risk management is integrated into cybersecurity and enterprise risk management, risk assessment, and improvement processes",
+    "GV.SC-04": "Suppliers are known and prioritized by criticality",
+    "GV.SC-05": "Requirements to address cybersecurity risks in supply chains are established, prioritized, and integrated into contracts and other types of agreements with suppliers and other relevant third parties",
+    "GV.SC-06": "Planning and due diligence are performed to reduce risks before entering into formal supplier or other third-party relationships",
+    "GV.SC-07": "The risks posed by a supplier, their products and services, and other third parties are understood, recorded, prioritized, assessed, responded to, and monitored over the course of the relationship",
+    "GV.SC-08": "Relevant suppliers and other third parties are included in incident planning, response, and recovery activities",
+    "GV.SC-09": "Supply chain security practices are integrated into cybersecurity and enterprise risk management programs, and their performance is monitored throughout the technology product and service life cycle",
+    "GV.SC-10": "Cybersecurity supply chain risk management plans include provisions for activities that occur after the conclusion of a partnership or service agreement IDENTIFY (ID): The organization's current cybersecurity risks are understood • Asset Management (ID.AM): Assets (e.g., data, hardware, software, systems, facilities, services, people) that enable the organization to achieve business purposes are identified and managed consistent with their relative importance to organizational objectives and the organization's risk strategy",
+    "ID.AM-01": "Inventories of hardware managed by the organization are maintained",
+    "ID.AM-02": "Inventories of software, services, and systems managed by the organization are maintained",
+    "ID.AM-03": "Representations of the organization's authorized network communication and internal and external network data flows are maintained",
+    "ID.AM-04": "Inventories of services provided by suppliers are maintained",
+    "ID.AM-05": "Assets are prioritized based on classification, criticality, resources, and impact on the mission",
+    "ID.AM-07": "Inventories of data and corresponding metadata for designated data types are maintained",
+    "ID.AM-08": "Systems, hardware, software, services, and data are managed throughout their life cycles • Risk Assessment (ID.RA): The cybersecurity risk to the organization, assets, and individuals is understood by the organization",
+    "ID.IM-01": "Improvements are identified from evaluations",
+    "ID.IM-02": "Improvements are identified from security tests and exercises, including those done in coordination with suppliers and relevant third parties",
+    "ID.IM-03": "Improvements are identified from execution of operational processes, procedures, and activities",
+    "ID.IM-04": "Incident response plans and other cybersecurity plans that affect operations are established, communicated, maintained, and improved PROTECT (PR): Safeguards to manage the organization's cybersecurity risks are used • Identity Management, Authentication, and Access Control (PR.AA): Access to physical and logical assets is limited to authorized users, services, and hardware and managed commensurate with the assessed risk of unauthorized access",
+    "ID.RA-01": "Vulnerabilities in assets are identified, validated, and recorded",
+    "ID.RA-02": "Cyber threat intelligence is received from information sharing forums and sources",
+    "ID.RA-03": "Internal and external threats to the organization are identified and recorded",
+    "ID.RA-04": "Potential impacts and likelihoods of threats exploiting vulnerabilities are identified and recorded",
+    "ID.RA-05": "Threats, vulnerabilities, likelihoods, and impacts are used to understand inherent risk and inform risk response prioritization",
+    "ID.RA-06": "Risk responses are chosen, prioritized, planned, tracked, and communicated",
+    "ID.RA-07": "Changes and exceptions are managed, assessed for risk impact, recorded, and tracked",
+    "ID.RA-08": "Processes for receiving, analyzing, and responding to vulnerability disclosures are established",
+    "ID.RA-09": "The authenticity and integrity of hardware and software are assessed prior to acquisition and use",
+    "ID.RA-10": "Critical suppliers are assessed prior to acquisition • Improvement (ID.IM): Improvements to organizational cybersecurity risk management processes, procedures and activities are identified across all CSF Functions",
+    "PR.AA-01": "Identities and credentials for authorized users, services, and hardware are managed by the organization",
+    "PR.AA-02": "Identities are proofed and bound to credentials based on the context of interactions",
+    "PR.AA-03": "Users, services, and hardware are authenticated",
+    "PR.AA-04": "Identity assertions are protected, conveyed, and verified",
+    "PR.AA-05": "Access permissions, entitlements, and authorizations are defined in a policy, managed, enforced, and reviewed, and incorporate the principles of least privilege and separation of duties",
+    "PR.AA-06": "Physical access to assets is managed, monitored, and enforced commensurate with risk • Awareness and Training (PR.AT): The organization's personnel are provided with cybersecurity awareness and training so that they can perform their cybersecurity-related tasks",
+    "PR.AT-01": "Personnel are provided with awareness and training so that they possess the knowledge and skills to perform general tasks with cybersecurity risks in mind",
+    "PR.AT-02": "Individuals in specialized roles are provided with awareness and training so that they possess the knowledge and skills to perform relevant tasks with cybersecurity risks in mind • Data Security (PR.DS): Data are managed consistent with the organization's risk strategy to protect the confidentiality, integrity, and availability of information",
+    "PR.DS-01": "The confidentiality, integrity, and availability of data-at-rest are protected",
+    "PR.DS-02": "The confidentiality, integrity, and availability of data-in-transit are protected",
+    "PR.DS-10": "The confidentiality, integrity, and availability of data-in-use are protected",
+    "PR.DS-11": "Backups of data are created, protected, maintained, and tested • Platform Security (PR.PS): The hardware, software (e.g., firmware, operating systems, applications), and services of physical and virtual platforms are managed consistent with the organization's risk strategy to protect their confidentiality, integrity, and availability",
+    "PR.IR-01": "Networks and environments are protected from unauthorized logical access and usage",
+    "PR.IR-02": "The organization's technology assets are protected from environmental threats",
+    "PR.IR-03": "Mechanisms are implemented to achieve resilience requirements in normal and adverse situations",
+    "PR.IR-04": "Adequate resource capacity to ensure availability is maintained DETECT (DE): Possible cybersecurity attacks and compromises are found and analyzed • Continuous Monitoring (DE.CM): Assets are monitored to find anomalies, indicators of compromise, and other potentially adverse events",
+    "PR.PS-01": "Configuration management practices are established and applied",
+    "PR.PS-02": "Software is maintained, replaced, and removed commensurate with risk",
+    "PR.PS-03": "Hardware is maintained, replaced, and removed commensurate with risk",
+    "PR.PS-04": "Log records are generated and made available for continuous monitoring",
+    "PR.PS-05": "Installation and execution of unauthorized software are prevented",
+    "PR.PS-06": "Secure software development practices are integrated, and their performance is monitored throughout the software development life cycle • Technology Infrastructure Resilience (PR.IR): Security architectures are managed with the organization's risk strategy to protect asset confidentiality, integrity, and availability, and organizational resilience",
+    "RC.CO-03": "Recovery activities and progress in restoring operational capabilities are communicated to designated internal and external stakeholders",
+    "RC.CO-04": "Public updates on incident recovery are shared using approved methods and messaging",
+    "RC.RP-01": "The recovery portion of the incident response plan is executed once initiated from the incident response process",
+    "RC.RP-02": "Recovery actions are selected, scoped, prioritized, and performed",
+    "RC.RP-03": "The integrity of backups and other restoration assets is verified before using them for restoration",
+    "RC.RP-04": "Critical mission functions and cybersecurity risk management are considered to establish post-incident operational norms",
+    "RC.RP-05": "The integrity of restored assets is verified, systems and services are restored, and normal operating status is confirmed",
+    "RC.RP-06": "The end of incident recovery is declared based on criteria, and incident- related documentation is completed • Incident Recovery Communication (RC.CO): Restoration activities are coordinated with internal and external parties",
+    "RS.AN-03": "Analysis is performed to establish what has taken place during an incident and the root cause of the incident",
+    "RS.AN-06": "Actions performed during an investigation are recorded, and the records' integrity and provenance are preserved",
+    "RS.AN-07": "Incident data and metadata are collected, and their integrity and provenance are preserved",
+    "RS.AN-08": "An incident's magnitude is estimated and validated • Incident Response Reporting and Communication (RS.CO): Response activities are coordinated with internal and external stakeholders as required by laws, regulations, or policies",
+    "RS.CO-02": "Internal and external stakeholders are notified of incidents",
+    "RS.CO-03": "Information is shared with designated internal and external stakeholders • Incident Mitigation (RS.MI): Activities are performed to prevent expansion of an event and mitigate its effects",
+    "RS.MA-01": "The incident response plan is executed in coordination with relevant third parties once an incident is declared",
+    "RS.MA-02": "Incident reports are triaged and validated",
+    "RS.MA-03": "Incidents are categorized and prioritized",
+    "RS.MA-04": "Incidents are escalated or elevated as needed",
+    "RS.MA-05": "The criteria for initiating incident recovery are applied • Incident Analysis (RS.AN): Investigations are conducted to ensure effective response and support forensics and recovery activities",
+    "RS.MI-01": "Incidents are contained",
+    "RS.MI-02": "Incidents are eradicated RECOVER (RC): Assets and operations affected by a cybersecurity incident are restored • Incident Recovery Plan Execution (RC.RP): Restoration activities are performed to ensure operational availability of systems and services affected by cybersecurity incidents"
+  },
+  "records": {
+    "DE.AE-02": {
+      "disposition": "mapped",
+      "summary": "Potentially adverse events are analyzed to better understand associated activities",
+      "relationships": [
+        {
+          "esaf_control_id": "MON-110",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "MON-110 requires detecting and investigating AI security events to better understand associated activities.",
+          "conditions": [
+            "Potentially adverse AI events are analyzed to understand associated activities."
+          ],
+          "expected_evidence": [
+            "Investigation records analyzing adverse AI security events."
+          ],
+          "known_gaps": [
+            "MON-110 analysis is AI-security focused, not enterprise-wide adverse-event analysis."
+          ]
+        },
+        {
+          "esaf_control_id": "MON-140",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "MON-140 requires owning, prioritizing, triaging, escalating, and containing AI security, behavior, ops, and compliance alerts.",
+          "conditions": [
+            "Triage analysis of adverse AI events improves understanding of associated activities."
+          ],
+          "expected_evidence": [
+            "Triage and escalation records for AI alerts."
+          ],
+          "known_gaps": [
+            "MON-140 is triage/containment oriented rather than deep forensic analysis alone."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory DE.AE-02"
+    },
+    "DE.AE-03": {
+      "disposition": "mapped",
+      "summary": "Information is correlated from multiple sources",
+      "relationships": [
+        {
+          "esaf_control_id": "MON-110",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "MON-110 requires investigating AI security events using available telemetry sources.",
+          "conditions": [
+            "Information from multiple AI telemetry sources is correlated during investigation of adverse events."
+          ],
+          "expected_evidence": [
+            "Investigation records showing multi-source correlation for AI events."
+          ],
+          "known_gaps": [
+            "MON-110 does not require a general SIEM correlation platform for all enterprise sources."
+          ]
+        },
+        {
+          "esaf_control_id": "MON-100",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "MON-100 requires multi-facet telemetry (identity, input, model, output, tool, config, policy) enabling correlation.",
+          "conditions": [
+            "Multiple AI telemetry facets are available to correlate for adverse-event analysis."
+          ],
+          "expected_evidence": [
+            "Multi-facet AI telemetry available to investigators."
+          ],
+          "known_gaps": [
+            "MON-100 collects telemetry but does not itself perform correlation."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory DE.AE-03"
+    },
+    "DE.AE-04": {
+      "disposition": "mapped",
+      "summary": "The estimated impact and scope of adverse events are understood",
+      "relationships": [
+        {
+          "esaf_control_id": "MON-140",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "MON-140 requires prioritizing and triaging AI alerts, which includes understanding estimated impact and scope.",
+          "conditions": [
+            "Estimated impact and scope of adverse AI events are understood during triage."
+          ],
+          "expected_evidence": [
+            "Triage records documenting estimated impact/scope of AI adverse events."
+          ],
+          "known_gaps": [
+            "MON-140 does not estimate impact/scope for all enterprise adverse events."
+          ]
+        },
+        {
+          "esaf_control_id": "OPS-120",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "OPS-120 requires AI incident management including assessment of incidents once declared.",
+          "conditions": [
+            "Impact and scope are understood when adverse AI events become incidents."
+          ],
+          "expected_evidence": [
+            "Incident assessment records documenting impact/scope."
+          ],
+          "known_gaps": [
+            "OPS-120 applies after incident criteria are met."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory DE.AE-04"
+    },
+    "DE.AE-06": {
+      "disposition": "mapped",
+      "summary": "Information on adverse events is provided to authorized staff and tools",
+      "relationships": [
+        {
+          "esaf_control_id": "MON-140",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "MON-140 requires escalating AI alerts to authorized staff and enabling response tooling paths.",
+          "conditions": [
+            "Information on adverse AI events is provided to authorized staff and tools through alert ownership and escalation."
+          ],
+          "expected_evidence": [
+            "Escalation records and tool integrations for AI alerts."
+          ],
+          "known_gaps": [
+            "MON-140 does not distribute adverse-event information enterprise-wide outside AI alert channels."
+          ]
+        },
+        {
+          "esaf_control_id": "OPS-120",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "OPS-120 requires communicating AI incident information to relevant stakeholders within incident management.",
+          "conditions": [
+            "Incident-level adverse-event information is provided to authorized staff."
+          ],
+          "expected_evidence": [
+            "Incident communication records."
+          ],
+          "known_gaps": [
+            "OPS-120 is incident-centric."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory DE.AE-06"
+    },
+    "DE.AE-07": {
+      "disposition": "no_direct_mapping",
+      "summary": "Cyber threat intelligence and other contextual information are integrated into the analysis",
+      "relationships": [],
+      "negative_rationale": "Missing outcome: no ESAF control expressly requires integrating cyber threat intelligence and other contextual information into adverse-event analysis. MON-110 investigates AI security events from internal telemetry but does not require CTI integration.",
+      "locator": "NIST CSF 2.0, subcategory DE.AE-07"
+    },
+    "DE.AE-08": {
+      "disposition": "mapped",
+      "summary": "Incidents are declared when adverse events meet the defined incident criteria RESPOND (RS): Actions regarding a detected cybersecurity incident are taken • Incident Management (RS.MA): Responses to detected cybersecurity incidents are managed",
+      "relationships": [
+        {
+          "esaf_control_id": "OPS-120",
+          "relationship": "partially_supports",
+          "coverage": "substantial",
+          "confidence": "high",
+          "rationale": "OPS-120 requires preparing for and running AI incident lifecycle including declaration when adverse events meet defined incident criteria, integrated with enterprise incident management.",
+          "conditions": [
+            "Incidents are declared when adverse AI events meet defined incident criteria."
+          ],
+          "expected_evidence": [
+            "Incident declaration criteria and declaration records for AI events."
+          ],
+          "known_gaps": [
+            "OPS-120 does not define incident criteria for all enterprise cybersecurity events outside AI."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory DE.AE-08"
+    },
+    "DE.CM-01": {
+      "disposition": "mapped",
+      "summary": "Networks and network services are monitored to find potentially adverse events",
+      "relationships": [
+        {
+          "esaf_control_id": "MON-100",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "MON-100 requires collecting attributable telemetry for AI including network-relevant identity, input, tool, and policy events where applicable.",
+          "conditions": [
+            "Networks and network services supporting AI are monitored via AI telemetry to find potentially adverse events."
+          ],
+          "expected_evidence": [
+            "AI telemetry covering network-relevant AI access and tool events."
+          ],
+          "known_gaps": [
+            "MON-100 does not provide general enterprise network IDS/monitoring outside AI telemetry scope."
+          ]
+        },
+        {
+          "esaf_control_id": "MON-110",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "MON-110 requires detecting and investigating AI security events including unauthorized access and abuse.",
+          "conditions": [
+            "Potentially adverse network-related AI security events are detected."
+          ],
+          "expected_evidence": [
+            "Detection rules and investigation records for AI security events with network indicators."
+          ],
+          "known_gaps": [
+            "MON-110 is AI security-event detection, not full network service monitoring."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory DE.CM-01"
+    },
+    "DE.CM-02": {
+      "disposition": "no_direct_mapping",
+      "summary": "The physical environment is monitored to find potentially adverse events",
+      "relationships": [],
+      "negative_rationale": "Missing outcome: no ESAF control expressly requires monitoring the physical environment to find potentially adverse events.",
+      "locator": "NIST CSF 2.0, subcategory DE.CM-02"
+    },
+    "DE.CM-03": {
+      "disposition": "mapped",
+      "summary": "Personnel activity and technology usage are monitored to find potentially adverse events",
+      "relationships": [
+        {
+          "esaf_control_id": "MON-100",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "MON-100 requires telemetry for identity, input, model, output, tool, config, and policy events enabling monitoring of personnel activity and technology usage for AI.",
+          "conditions": [
+            "Personnel activity and technology usage related to AI are monitored to find potentially adverse events."
+          ],
+          "expected_evidence": [
+            "AI telemetry and monitoring views covering user/service activity."
+          ],
+          "known_gaps": [
+            "MON-100 does not monitor all enterprise personnel activity and technology usage outside AI."
+          ]
+        },
+        {
+          "esaf_control_id": "MON-110",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "MON-110 requires detecting AI security events such as unauthorized access, prompt/context attacks, exposure, and abuse.",
+          "conditions": [
+            "Adverse personnel/technology-usage events affecting AI security are detected."
+          ],
+          "expected_evidence": [
+            "Detection and investigation records for AI security events."
+          ],
+          "known_gaps": [
+            "MON-110 does not cover general insider-threat monitoring outside AI."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory DE.CM-03"
+    },
+    "DE.CM-06": {
+      "disposition": "mapped",
+      "summary": "External service provider activities and services are monitored to find potentially adverse events",
+      "relationships": [
+        {
+          "esaf_control_id": "CMP-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "CMP-120 requires monitoring third-party AI security, privacy, incident, and exit duties.",
+          "conditions": [
+            "External AI service provider activities and services are monitored to find potentially adverse events."
+          ],
+          "expected_evidence": [
+            "Third-party AI monitoring records and adverse-event findings."
+          ],
+          "known_gaps": [
+            "CMP-120 does not monitor all external service providers enterprise-wide."
+          ]
+        },
+        {
+          "esaf_control_id": "MON-110",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "MON-110 requires detecting AI security events that may originate from or involve external providers.",
+          "conditions": [
+            "Adverse events involving external AI providers are detected when visible in AI telemetry."
+          ],
+          "expected_evidence": [
+            "Detection records implicating external AI provider activity."
+          ],
+          "known_gaps": [
+            "MON-110 depends on telemetry visibility into provider activity."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory DE.CM-06"
+    },
+    "DE.CM-09": {
+      "disposition": "mapped",
+      "summary": "Computing hardware and software, runtime environments, and their data are monitored to find potentially adverse events • Adverse Event Analysis (DE.AE): Anomalies, indicators of compromise, and other potentially adverse events are analyzed to characterize the events and detect cybersecurity incidents",
+      "relationships": [
+        {
+          "esaf_control_id": "MON-100",
+          "relationship": "partially_supports",
+          "coverage": "substantial",
+          "confidence": "high",
+          "rationale": "MON-100 requires collecting telemetry for AI compute-relevant identity, input, model, output, tool, config, and policy events.",
+          "conditions": [
+            "Computing hardware and software, runtime environments, and their data for AI are monitored to find potentially adverse events via AI telemetry."
+          ],
+          "expected_evidence": [
+            "AI telemetry configurations covering runtimes, models, and data-path events."
+          ],
+          "known_gaps": [
+            "MON-100 does not monitor all enterprise compute/hardware/software outside AI."
+          ]
+        },
+        {
+          "esaf_control_id": "MON-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "MON-120 requires monitoring AI behavior and drift for in-scope production AI capabilities.",
+          "conditions": [
+            "Runtime behavior of AI software/environments is monitored for adverse conditions."
+          ],
+          "expected_evidence": [
+            "Behavior/drift monitoring configurations and alerts."
+          ],
+          "known_gaps": [
+            "MON-120 is behavior/drift focused rather than full host/hardware monitoring."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory DE.CM-09"
+    },
+    "GV.OC-01": {
+      "disposition": "mapped",
+      "summary": "The organizational mission is understood and informs cybersecurity risk management",
+      "relationships": [
+        {
+          "esaf_control_id": "STR-100",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "STR-100 requires approved AI objectives and investment priorities that trace to organizational strategy, stakeholder requirements, risk appetite, measurable outcomes, and an accountable executive sponsor.",
+          "conditions": [
+            "Organizational mission informing cybersecurity risk management is treated through documented AI strategy objectives that trace to organizational strategy."
+          ],
+          "expected_evidence": [
+            "Approved AI strategy/objectives tracing to organizational strategy with executive sponsor."
+          ],
+          "known_gaps": [
+            "STR-100 covers AI strategy alignment and does not establish an enterprise-wide cybersecurity mission statement outside AI scope."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory GV.OC-01"
+    },
+    "GV.OC-02": {
+      "disposition": "mapped",
+      "summary": "Internal and external stakeholders are understood, and their needs and expectations regarding cybersecurity risk management are understood and considered",
+      "relationships": [
+        {
+          "esaf_control_id": "STR-100",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "STR-100 requires AI objectives that trace to stakeholder requirements as part of organizational strategy alignment.",
+          "conditions": [
+            "Stakeholder needs regarding cybersecurity risk management for AI are captured in strategy and stakeholder-requirement traces."
+          ],
+          "expected_evidence": [
+            "Stakeholder-requirement traces in approved AI strategy documentation."
+          ],
+          "known_gaps": [
+            "STR-100 does not inventory all internal and external cybersecurity stakeholders enterprise-wide."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory GV.OC-02"
+    },
+    "GV.OC-03": {
+      "disposition": "mapped",
+      "summary": "Legal, regulatory, and contractual requirements regarding cybersecurity — including privacy and civil liberties obligations — are understood and managed",
+      "relationships": [
+        {
+          "esaf_control_id": "CMP-100",
+          "relationship": "partially_supports",
+          "coverage": "substantial",
+          "confidence": "high",
+          "rationale": "CMP-100 requires the organization to identify, interpret, record, assign, implement, monitor, and update legal, regulatory, contractual, policy, ethical, and sector obligations applicable to each AI capability and the enterprise AI management system.",
+          "conditions": [
+            "Cybersecurity, privacy, and civil-liberties obligations applicable to in-scope AI are treated as CMP-100 obligations."
+          ],
+          "expected_evidence": [
+            "Obligation register covering legal, regulatory, contractual, and privacy obligations with owners and status."
+          ],
+          "known_gaps": [
+            "CMP-100 is AI-scoped and does not by itself establish the full enterprise cybersecurity legal register outside AI."
+          ]
+        },
+        {
+          "esaf_control_id": "DAT-140",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "DAT-140 requires implementing privacy requirements including minimization, individual rights, transfers, and automated-decision duties for AI data.",
+          "conditions": [
+            "Privacy and civil-liberties obligations for AI data processing are in scope."
+          ],
+          "expected_evidence": [
+            "Privacy requirement implementations and rights-handling records for AI data."
+          ],
+          "known_gaps": [
+            "DAT-140 does not cover non-privacy cybersecurity legal obligations."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory GV.OC-03"
+    },
+    "GV.OC-04": {
+      "disposition": "mapped",
+      "summary": "Critical objectives, capabilities, and services that external stakeholders depend on or expect from the organization are understood and communicated",
+      "relationships": [
+        {
+          "esaf_control_id": "GOV-130",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "GOV-130 requires accountable business and technical/service owners with documented authority for purpose and outcomes of each in-scope AI capability.",
+          "conditions": [
+            "Critical objectives and services that external stakeholders depend on are reflected in documented AI capability purposes and outcomes where AI provides those services."
+          ],
+          "expected_evidence": [
+            "Capability ownership records stating purpose and outcomes for stakeholder-facing AI services."
+          ],
+          "known_gaps": [
+            "GOV-130 does not maintain an enterprise catalog of all critical services independent of AI capabilities."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory GV.OC-04"
+    },
+    "GV.OC-05": {
+      "disposition": "mapped",
+      "summary": "Outcomes, capabilities, and services that the organization depends on are understood and communicated • Risk Management Strategy (GV.RM): The organization's priorities, constraints, risk tolerance and appetite statements, and assumptions are established, communicated, and used to support operational risk decisions",
+      "relationships": [
+        {
+          "esaf_control_id": "ARC-140",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "ARC-140 requires documenting, validating, and monitoring shared-responsibility boundaries with platforms, providers, and suppliers supporting AI capabilities.",
+          "conditions": [
+            "Dependencies on external outcomes, capabilities, and services for AI are recorded in shared-responsibility and dependency documentation."
+          ],
+          "expected_evidence": [
+            "Shared-responsibility boundary documents and dependency inventories for AI platforms and suppliers."
+          ],
+          "known_gaps": [
+            "ARC-140 does not inventory every organizational dependency outside AI delivery."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory GV.OC-05"
+    },
+    "GV.OV-01": {
+      "disposition": "mapped",
+      "summary": "Cybersecurity risk management strategy outcomes are reviewed to inform and adjust strategy and direction",
+      "relationships": [
+        {
+          "esaf_control_id": "AUD-140",
+          "relationship": "partially_supports",
+          "coverage": "substantial",
+          "confidence": "high",
+          "rationale": "AUD-140 requires executive review of the AI management system covering risk, incidents, controls, suppliers, and improvement on a defined cadence.",
+          "conditions": [
+            "Cybersecurity risk management strategy outcomes for AI are reviewed to inform and adjust strategy and direction."
+          ],
+          "expected_evidence": [
+            "Management-review agenda, minutes, and resulting strategy adjustments."
+          ],
+          "known_gaps": [
+            "AUD-140 is AI management-system review and does not oversee the full enterprise cybersecurity strategy."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory GV.OV-01"
+    },
+    "GV.OV-02": {
+      "disposition": "mapped",
+      "summary": "The cybersecurity risk management strategy is reviewed and adjusted to ensure coverage of organizational requirements and risks",
+      "relationships": [
+        {
+          "esaf_control_id": "AUD-140",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "AUD-140 requires executive review that can identify coverage gaps against organizational requirements and risks for AI.",
+          "conditions": [
+            "AI cybersecurity risk management strategy is reviewed and adjusted for coverage of organizational requirements and risks within AI scope."
+          ],
+          "expected_evidence": [
+            "Management-review findings and strategy adjustment records."
+          ],
+          "known_gaps": [
+            "AUD-140 does not review enterprise cybersecurity strategy outside AI."
+          ]
+        },
+        {
+          "esaf_control_id": "GOV-120",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "GOV-120 requires periodic AI portfolio review of ownership, risk, incidents, dependencies, cost, and retirement.",
+          "conditions": [
+            "Portfolio review informs whether AI risk-management coverage remains adequate."
+          ],
+          "expected_evidence": [
+            "Portfolio review records and resulting adjustments."
+          ],
+          "known_gaps": [
+            "GOV-120 is portfolio oversight, not a full strategy coverage audit."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory GV.OV-02"
+    },
+    "GV.OV-03": {
+      "disposition": "mapped",
+      "summary": "Organizational cybersecurity risk management performance is evaluated and reviewed for adjustments needed • Cybersecurity Supply Chain Risk Management (GV.SC): Cyber supply chain risk management processes are identified, established, managed, monitored, and improved by organizational stakeholders",
+      "relationships": [
+        {
+          "esaf_control_id": "AUD-140",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "AUD-140 requires evaluating AI management-system performance including risk and controls for adjustments needed.",
+          "conditions": [
+            "Organizational AI cybersecurity risk management performance is evaluated and reviewed for adjustments."
+          ],
+          "expected_evidence": [
+            "Performance metrics or assurance reports in management review and resulting actions."
+          ],
+          "known_gaps": [
+            "AUD-140 does not define enterprise cybersecurity performance KPIs outside AI."
+          ]
+        },
+        {
+          "esaf_control_id": "AUD-100",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "AUD-100 requires a risk-based assessment program for the AI management system, capabilities, and controls.",
+          "conditions": [
+            "Assessment results inform evaluation of AI cybersecurity risk management performance."
+          ],
+          "expected_evidence": [
+            "Assessment program plans and reports."
+          ],
+          "known_gaps": [
+            "AUD-100 does not itself set strategy performance targets."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory GV.OV-03"
+    },
+    "GV.PO-01": {
+      "disposition": "mapped",
+      "summary": "Policy for managing cybersecurity risks is established based on organizational context, cybersecurity strategy, and priorities and is communicated and enforced",
+      "relationships": [
+        {
+          "esaf_control_id": "GOV-110",
+          "relationship": "partially_supports",
+          "coverage": "substantial",
+          "confidence": "high",
+          "rationale": "GOV-110 requires an approved enterprise AI policy set defining mandatory requirements for governing, protecting, and utilizing in-scope AI capabilities, including scope, acceptable use, lifecycle, risk, exceptions, and enforcement.",
+          "conditions": [
+            "Policy for managing AI cybersecurity risks is established from organizational context, strategy, and priorities and communicated as part of the AI policy set."
+          ],
+          "expected_evidence": [
+            "Approved AI policy set, acknowledgements, and communication records."
+          ],
+          "known_gaps": [
+            "GOV-110 is AI policy and does not establish the full enterprise cybersecurity policy suite."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory GV.PO-01"
+    },
+    "GV.PO-02": {
+      "disposition": "mapped",
+      "summary": "Policy for managing cybersecurity risks is reviewed, updated, communicated, and enforced to reflect changes in requirements, threats, technology, and organizational mission • Oversight (GV.OV): Results of organization-wide cybersecurity risk management activities and performance are used to inform, improve, and adjust the risk management strategy",
+      "relationships": [
+        {
+          "esaf_control_id": "GOV-110",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "GOV-110 requires maintaining an approved enterprise AI policy set with enforcement and exception handling.",
+          "conditions": [
+            "AI cybersecurity risk policy is reviewed, updated, communicated, and enforced to reflect changes in requirements, threats, technology, and mission."
+          ],
+          "expected_evidence": [
+            "Policy revision history, communications, and enforcement/exception records."
+          ],
+          "known_gaps": [
+            "GOV-110 does not cover non-AI cybersecurity policy maintenance."
+          ]
+        },
+        {
+          "esaf_control_id": "GOV-140",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "GOV-140 requires authorizing time-bounded exceptions with risk, compensating measures, monitoring, and expiry.",
+          "conditions": [
+            "Policy exceptions for AI cybersecurity requirements are managed under GOV-140."
+          ],
+          "expected_evidence": [
+            "Exception records with compensating measures and expiry."
+          ],
+          "known_gaps": [
+            "GOV-140 does not itself perform periodic policy content review."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory GV.PO-02"
+    },
+    "GV.RM-01": {
+      "disposition": "mapped",
+      "summary": "Risk management objectives are established and agreed to by organizational stakeholders",
+      "relationships": [
+        {
+          "esaf_control_id": "RSK-100",
+          "relationship": "partially_supports",
+          "coverage": "substantial",
+          "confidence": "high",
+          "rationale": "RSK-100 requires an approved AI risk methodology defining scope, dimensions, rating criteria, treatment, acceptance, monitoring, reassessment, and escalation.",
+          "conditions": [
+            "Risk management objectives for AI cybersecurity-relevant risk are established through the approved methodology and agreed by stakeholders who approve it."
+          ],
+          "expected_evidence": [
+            "Approved AI risk methodology and approval records."
+          ],
+          "known_gaps": [
+            "RSK-100 is AI risk methodology and does not establish the full enterprise cybersecurity risk-management objective set."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory GV.RM-01"
+    },
+    "GV.RM-02": {
+      "disposition": "mapped",
+      "summary": "Risk appetite and risk tolerance statements are established, communicated, and maintained",
+      "relationships": [
+        {
+          "esaf_control_id": "RSK-100",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "RSK-100 requires rating criteria, residual risk, acceptance, and escalation in the approved AI risk methodology.",
+          "conditions": [
+            "Acceptance thresholds and rating criteria are treated as the AI expression of risk appetite and tolerance."
+          ],
+          "expected_evidence": [
+            "Approved methodology sections on acceptance thresholds and escalation."
+          ],
+          "known_gaps": [
+            "RSK-100 does not expressly require standalone enterprise risk-appetite and risk-tolerance statements for all cybersecurity domains."
+          ]
+        },
+        {
+          "esaf_control_id": "STR-100",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "STR-100 requires AI objectives and priorities that trace to organizational strategy and risk appetite.",
+          "conditions": [
+            "Documented risk appetite in AI strategy is communicated and maintained as an input to risk decisions."
+          ],
+          "expected_evidence": [
+            "Approved AI strategy referencing risk appetite."
+          ],
+          "known_gaps": [
+            "STR-100 risk appetite is strategic and may not specify operational cybersecurity tolerance thresholds."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory GV.RM-02"
+    },
+    "GV.RM-03": {
+      "disposition": "mapped",
+      "summary": "Cybersecurity risk management activities and outcomes are included in enterprise risk management processes",
+      "relationships": [
+        {
+          "esaf_control_id": "RSK-100",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "RSK-100 requires AI risk methodology application including treatment, acceptance, monitoring, and escalation that can feed enterprise risk processes.",
+          "conditions": [
+            "AI cybersecurity risk activities and outcomes are included in enterprise risk management where the organization integrates AI risk into ERM."
+          ],
+          "expected_evidence": [
+            "AI risk assessments and escalation records linked to enterprise risk reporting."
+          ],
+          "known_gaps": [
+            "RSK-100 does not mandate that enterprise ERM include cybersecurity risk management as a named process."
+          ]
+        },
+        {
+          "esaf_control_id": "AUD-140",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "AUD-140 requires executive review of the AI management system including risk, incidents, controls, suppliers, and improvement.",
+          "conditions": [
+            "Executive review outputs inform enterprise risk discussions for AI cybersecurity risk."
+          ],
+          "expected_evidence": [
+            "Management-review packs including AI risk outcomes."
+          ],
+          "known_gaps": [
+            "AUD-140 is AI management-system review, not a full ERM integration control."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory GV.RM-03"
+    },
+    "GV.RM-04": {
+      "disposition": "mapped",
+      "summary": "Strategic direction that describes appropriate risk response options is established and communicated",
+      "relationships": [
+        {
+          "esaf_control_id": "RSK-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "RSK-120 requires documenting, approving, and implementing risk treatments and accepting residual risk before production or continued operations.",
+          "conditions": [
+            "Strategic direction for appropriate AI risk response options is established through approved treatment and acceptance decisions."
+          ],
+          "expected_evidence": [
+            "Risk treatment plans, acceptance records, and decision communications."
+          ],
+          "known_gaps": [
+            "RSK-120 does not publish an enterprise-wide cybersecurity risk-response strategy outside AI capabilities."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory GV.RM-04"
+    },
+    "GV.RM-05": {
+      "disposition": "mapped",
+      "summary": "Lines of communication across the organization are established for cybersecurity risks, including risks from suppliers and other third parties",
+      "relationships": [
+        {
+          "esaf_control_id": "GOV-100",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "GOV-100 requires enterprise AI governance authority with accountability, decision rights, escalation, and cadence.",
+          "conditions": [
+            "Lines of communication for AI cybersecurity risks, including supplier-related risks, use governance escalation paths."
+          ],
+          "expected_evidence": [
+            "Governance charter, escalation paths, and communication records."
+          ],
+          "known_gaps": [
+            "GOV-100 does not establish all enterprise cybersecurity risk communication channels outside AI governance."
+          ]
+        },
+        {
+          "esaf_control_id": "CMP-120",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "CMP-120 requires contractual assignment, verification, monitoring, and enforcement of third-party AI security, privacy, incident, and exit duties.",
+          "conditions": [
+            "Supplier and third-party AI cybersecurity risks are communicated through third-party management channels."
+          ],
+          "expected_evidence": [
+            "Third-party risk communications and monitoring records."
+          ],
+          "known_gaps": [
+            "CMP-120 is third-party AI compliance focused rather than a general risk-communication program."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory GV.RM-05"
+    },
+    "GV.RM-06": {
+      "disposition": "mapped",
+      "summary": "A standardized method for calculating, documenting, categorizing, and prioritizing cybersecurity risks is established and communicated",
+      "relationships": [
+        {
+          "esaf_control_id": "RSK-100",
+          "relationship": "partially_supports",
+          "coverage": "substantial",
+          "confidence": "high",
+          "rationale": "RSK-100 requires a standardized approved methodology for calculating, documenting, categorizing, and prioritizing AI risks.",
+          "conditions": [
+            "The approved AI risk methodology is the standardized method for AI cybersecurity-relevant risk calculation, documentation, categorization, and prioritization."
+          ],
+          "expected_evidence": [
+            "Approved methodology, rating scales, and completed assessments using the method."
+          ],
+          "known_gaps": [
+            "RSK-100 does not establish the enterprise-wide cybersecurity risk calculation method outside AI."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory GV.RM-06"
+    },
+    "GV.RM-07": {
+      "disposition": "no_direct_mapping",
+      "summary": "Strategic opportunities (i.e., positive risks) are characterized and are included in organizational cybersecurity risk discussions • Roles, Responsibilities, and Authorities (GV.RR): Cybersecurity roles, responsibilities, and authorities to foster accountability, performance assessment, and continuous improvement are established and communicated",
+      "relationships": [],
+      "negative_rationale": "Missing outcome: no ESAF control expressly requires characterizing strategic opportunities (positive risks) and including them in organizational cybersecurity risk discussions. RSK-100 and RSK-130 address adverse and beneficial impacts for AI authorization but do not require positive-risk opportunity characterization as a cybersecurity risk-discussion practice.",
+      "locator": "NIST CSF 2.0, subcategory GV.RM-07"
+    },
+    "GV.RR-01": {
+      "disposition": "mapped",
+      "summary": "Organizational leadership is responsible and accountable for cybersecurity risk and fosters a culture that is risk-aware, ethical, and continually improving",
+      "relationships": [
+        {
+          "esaf_control_id": "GOV-100",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "GOV-100 requires executive leadership to establish and maintain enterprise AI governance authority with accountability for governing in-scope AI capabilities.",
+          "conditions": [
+            "Organizational leadership accountability for AI cybersecurity-relevant risk is exercised through the governance authority."
+          ],
+          "expected_evidence": [
+            "Governance charter, executive membership, and decision records."
+          ],
+          "known_gaps": [
+            "GOV-100 does not by itself foster an enterprise-wide cybersecurity culture outside AI governance."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory GV.RR-01"
+    },
+    "GV.RR-02": {
+      "disposition": "mapped",
+      "summary": "Roles, responsibilities, and authorities related to cybersecurity risk management are established, communicated, understood, and enforced",
+      "relationships": [
+        {
+          "esaf_control_id": "GOV-100",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "GOV-100 requires documented accountability, membership, decision rights, and escalation paths for AI governance.",
+          "conditions": [
+            "Roles, responsibilities, and authorities for AI cybersecurity risk management are established and communicated through the governance charter."
+          ],
+          "expected_evidence": [
+            "Governance charter, role definitions, and escalation paths."
+          ],
+          "known_gaps": [
+            "GOV-100 does not define all enterprise cybersecurity roles outside AI."
+          ]
+        },
+        {
+          "esaf_control_id": "GOV-130",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "GOV-130 requires assigning accountable business and technical/service owners per AI capability.",
+          "conditions": [
+            "Capability-level cybersecurity risk roles are assigned to named owners."
+          ],
+          "expected_evidence": [
+            "Capability ownership records with accountable owners."
+          ],
+          "known_gaps": [
+            "GOV-130 is capability-owner focused, not a full RACI for all cybersecurity functions."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory GV.RR-02"
+    },
+    "GV.RR-03": {
+      "disposition": "mapped",
+      "summary": "Adequate resources are allocated commensurate with the cybersecurity risk strategy, roles, responsibilities, and policies",
+      "relationships": [
+        {
+          "esaf_control_id": "STR-130",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "STR-130 requires identifying, approving, and reviewing people, funding, data, platforms, assurance, and supplier resources for AI initiatives.",
+          "conditions": [
+            "Resources allocated to AI cybersecurity risk management are commensurate with strategy, roles, and policies as approved under STR-130."
+          ],
+          "expected_evidence": [
+            "Resource plans and approvals for AI initiatives including assurance and security resources."
+          ],
+          "known_gaps": [
+            "STR-130 does not allocate enterprise-wide cybersecurity resources outside AI initiatives."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory GV.RR-03"
+    },
+    "GV.RR-04": {
+      "disposition": "no_direct_mapping",
+      "summary": "Cybersecurity is included in human resources practices • Policy (GV.PO): Organizational cybersecurity policy is established, communicated, and enforced",
+      "relationships": [],
+      "negative_rationale": "Missing outcome: no ESAF control expressly requires including cybersecurity in human resources practices such as hiring, onboarding, or personnel screening. EDU controls require AI literacy and role competency but do not establish HR cybersecurity practices.",
+      "locator": "NIST CSF 2.0, subcategory GV.RR-04"
+    },
+    "GV.SC-01": {
+      "disposition": "mapped",
+      "summary": "A cybersecurity supply chain risk management program, strategy, objectives, policies, and processes are established and agreed to by organizational stakeholders",
+      "relationships": [
+        {
+          "esaf_control_id": "CMP-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "CMP-120 requires contractual assignment, verification, monitoring, and enforcement of third-party AI security, privacy, incident, and exit duties.",
+          "conditions": [
+            "A cybersecurity supply chain risk management approach for AI suppliers is established through third-party AI compliance and security requirements agreed by organizational stakeholders."
+          ],
+          "expected_evidence": [
+            "Third-party AI security/privacy requirements, contracts, and program documentation."
+          ],
+          "known_gaps": [
+            "CMP-120 does not establish a full enterprise C-SCRM program beyond AI suppliers and integrations."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory GV.SC-01"
+    },
+    "GV.SC-02": {
+      "disposition": "mapped",
+      "summary": "Cybersecurity roles and responsibilities for suppliers, customers, and partners are established, communicated, and coordinated internally and externally",
+      "relationships": [
+        {
+          "esaf_control_id": "CMP-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "CMP-120 requires establishing and coordinating third-party AI security, privacy, incident, and exit duties in contracts and monitoring.",
+          "conditions": [
+            "Cybersecurity roles and responsibilities for AI suppliers and partners are established, communicated, and coordinated."
+          ],
+          "expected_evidence": [
+            "Contractual role clauses and coordination records with AI suppliers/partners."
+          ],
+          "known_gaps": [
+            "CMP-120 does not define customer-facing cybersecurity roles outside AI supplier relationships."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory GV.SC-02"
+    },
+    "GV.SC-03": {
+      "disposition": "mapped",
+      "summary": "Cybersecurity supply chain risk management is integrated into cybersecurity and enterprise risk management, risk assessment, and improvement processes",
+      "relationships": [
+        {
+          "esaf_control_id": "CMP-120",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "CMP-120 requires monitoring and enforcing third-party AI duties as part of ongoing compliance management.",
+          "conditions": [
+            "AI supply chain cybersecurity risk management is integrated into AI risk and improvement processes."
+          ],
+          "expected_evidence": [
+            "Third-party monitoring results linked to AI risk and improvement records."
+          ],
+          "known_gaps": [
+            "CMP-120 does not integrate C-SCRM into full enterprise ERM outside AI."
+          ]
+        },
+        {
+          "esaf_control_id": "RSK-100",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "RSK-100 requires AI risk methodology covering assessment and treatment that can include supplier-related AI risks.",
+          "conditions": [
+            "Supplier-related AI cybersecurity risks are assessed under the AI risk methodology."
+          ],
+          "expected_evidence": [
+            "Risk assessments including third-party AI risk."
+          ],
+          "known_gaps": [
+            "RSK-100 does not define a separate C-SCRM integration program."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory GV.SC-03"
+    },
+    "GV.SC-04": {
+      "disposition": "mapped",
+      "summary": "Suppliers are known and prioritized by criticality",
+      "relationships": [
+        {
+          "esaf_control_id": "API-140",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "API-140 requires enforcing security, privacy, data-use, continuity, and exit requirements per external AI integration.",
+          "conditions": [
+            "External AI suppliers and integrations are known and can be prioritized by criticality for in-scope AI."
+          ],
+          "expected_evidence": [
+            "External AI integration inventory with criticality or risk classification."
+          ],
+          "known_gaps": [
+            "API-140 does not maintain an enterprise supplier inventory outside AI integrations."
+          ]
+        },
+        {
+          "esaf_control_id": "MOD-110",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "MOD-110 requires verifying model provenance, source, licensing, integrity, dependencies, and supplier terms before use.",
+          "conditions": [
+            "Model suppliers are known before acquisition and use."
+          ],
+          "expected_evidence": [
+            "Model provenance and supplier-term records."
+          ],
+          "known_gaps": [
+            "MOD-110 covers model suppliers, not all organizational suppliers."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory GV.SC-04"
+    },
+    "GV.SC-05": {
+      "disposition": "mapped",
+      "summary": "Requirements to address cybersecurity risks in supply chains are established, prioritized, and integrated into contracts and other types of agreements with suppliers and other relevant third parties",
+      "relationships": [
+        {
+          "esaf_control_id": "CMP-120",
+          "relationship": "partially_supports",
+          "coverage": "substantial",
+          "confidence": "high",
+          "rationale": "CMP-120 requires establishing, prioritizing, and integrating cybersecurity and related requirements into contracts and other agreements with AI third parties.",
+          "conditions": [
+            "Requirements to address cybersecurity risks in AI supply chains are established and integrated into contracts."
+          ],
+          "expected_evidence": [
+            "Contract templates and executed agreements with AI security/privacy/incident/exit clauses."
+          ],
+          "known_gaps": [
+            "CMP-120 is AI third-party focused and does not cover all enterprise supply-chain contract types."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory GV.SC-05"
+    },
+    "GV.SC-06": {
+      "disposition": "mapped",
+      "summary": "Planning and due diligence are performed to reduce risks before entering into formal supplier or other third-party relationships",
+      "relationships": [
+        {
+          "esaf_control_id": "CMP-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "CMP-120 requires due diligence through verification of third-party AI duties before and during relationships.",
+          "conditions": [
+            "Planning and due diligence are performed to reduce AI supplier risks before formal relationships."
+          ],
+          "expected_evidence": [
+            "Due-diligence assessments and onboarding records for AI suppliers."
+          ],
+          "known_gaps": [
+            "CMP-120 does not define enterprise procurement due diligence outside AI."
+          ]
+        },
+        {
+          "esaf_control_id": "MOD-110",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "MOD-110 requires assessing authenticity, integrity, licensing, and supplier terms before model use.",
+          "conditions": [
+            "Pre-use assessment of model suppliers reduces acquisition risk."
+          ],
+          "expected_evidence": [
+            "Pre-use model supply-chain assessment records."
+          ],
+          "known_gaps": [
+            "MOD-110 applies to models, not all third-party relationship types."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory GV.SC-06"
+    },
+    "GV.SC-07": {
+      "disposition": "mapped",
+      "summary": "The risks posed by a supplier, their products and services, and other third parties are understood, recorded, prioritized, assessed, responded to, and monitored over the course of the relationship",
+      "relationships": [
+        {
+          "esaf_control_id": "CMP-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "CMP-120 requires understanding, recording, prioritizing, assessing, responding to, and monitoring risks from AI suppliers and their products/services.",
+          "conditions": [
+            "Risks posed by AI suppliers and other third parties supporting AI are understood, recorded, prioritized, assessed, and responded to over the relationship."
+          ],
+          "expected_evidence": [
+            "Third-party AI risk records, assessments, responses, and monitoring evidence."
+          ],
+          "known_gaps": [
+            "CMP-120 does not manage all non-AI supplier risks enterprise-wide."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory GV.SC-07"
+    },
+    "GV.SC-08": {
+      "disposition": "mapped",
+      "summary": "Relevant suppliers and other third parties are included in incident planning, response, and recovery activities",
+      "relationships": [
+        {
+          "esaf_control_id": "OPS-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "OPS-120 requires preparing for and running AI incident lifecycle integrated with enterprise incident management, including third-party-affecting incidents.",
+          "conditions": [
+            "Relevant AI suppliers and third parties are included in incident planning, response, and recovery activities for in-scope AI."
+          ],
+          "expected_evidence": [
+            "Incident plans naming third parties, joint response records, and recovery coordination evidence."
+          ],
+          "known_gaps": [
+            "OPS-120 does not include all enterprise suppliers in cyber incident planning outside AI."
+          ]
+        },
+        {
+          "esaf_control_id": "CMP-120",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "CMP-120 requires contractual incident duties for AI third parties.",
+          "conditions": [
+            "Incident roles for AI suppliers are established in contracts and exercised when needed."
+          ],
+          "expected_evidence": [
+            "Contractual incident clauses and exercise/activation records."
+          ],
+          "known_gaps": [
+            "CMP-120 does not itself run joint incident response."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory GV.SC-08"
+    },
+    "GV.SC-09": {
+      "disposition": "mapped",
+      "summary": "Supply chain security practices are integrated into cybersecurity and enterprise risk management programs, and their performance is monitored throughout the technology product and service life cycle",
+      "relationships": [
+        {
+          "esaf_control_id": "CMP-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "CMP-120 requires monitoring performance of third-party AI security and related duties.",
+          "conditions": [
+            "Supply chain security practices for AI are integrated into AI risk management and their performance is monitored."
+          ],
+          "expected_evidence": [
+            "Third-party monitoring metrics and performance reviews for AI suppliers."
+          ],
+          "known_gaps": [
+            "CMP-120 does not integrate supply-chain security into full enterprise ERM outside AI."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory GV.SC-09"
+    },
+    "GV.SC-10": {
+      "disposition": "mapped",
+      "summary": "Cybersecurity supply chain risk management plans include provisions for activities that occur after the conclusion of a partnership or service agreement IDENTIFY (ID): The organization's current cybersecurity risks are understood • Asset Management (ID.AM): Assets (e.g., data, hardware, software, systems, facilities, services, people) that enable the organization to achieve business purposes are identified and managed consistent with their relative importance to organizational objectives and the organization's risk strategy",
+      "relationships": [
+        {
+          "esaf_control_id": "CMP-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "CMP-120 requires exit duties in AI third-party agreements.",
+          "conditions": [
+            "AI supply chain risk management plans include provisions for activities after partnership or service conclusion."
+          ],
+          "expected_evidence": [
+            "Exit/transition clauses and post-termination activity records for AI suppliers."
+          ],
+          "known_gaps": [
+            "CMP-120 does not define post-relationship activities for all enterprise suppliers."
+          ]
+        },
+        {
+          "esaf_control_id": "API-150",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "API-150 requires documenting and testing interfaces and exit criteria to replace or isolate material AI providers.",
+          "conditions": [
+            "Exit criteria and replacement planning exist for material AI providers."
+          ],
+          "expected_evidence": [
+            "Exit criteria documentation and isolation/replacement test records."
+          ],
+          "known_gaps": [
+            "API-150 is integration-exit focused, not a full post-partnership C-SCRM plan."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory GV.SC-10"
+    },
+    "ID.AM-01": {
+      "disposition": "no_direct_mapping",
+      "summary": "Inventories of hardware managed by the organization are maintained",
+      "relationships": [],
+      "negative_rationale": "Missing outcome: no ESAF control expressly requires maintaining inventories of hardware managed by the organization. IAM-100 and ARC-110 inventory AI-related identities and components, not enterprise hardware asset inventories.",
+      "locator": "NIST CSF 2.0, subcategory ID.AM-01"
+    },
+    "ID.AM-02": {
+      "disposition": "mapped",
+      "summary": "Inventories of software, services, and systems managed by the organization are maintained",
+      "relationships": [
+        {
+          "esaf_control_id": "GOV-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "GOV-120 requires portfolio oversight that maintains an inventory of in-scope AI capabilities with owners, risk classification, and lifecycle state.",
+          "conditions": [
+            "Inventories of AI software, services, and systems managed by the organization are maintained through the AI portfolio."
+          ],
+          "expected_evidence": [
+            "AI portfolio inventory with owners, risk classification, and lifecycle state."
+          ],
+          "known_gaps": [
+            "GOV-120 does not inventory non-AI enterprise software, services, and systems."
+          ]
+        },
+        {
+          "esaf_control_id": "MOD-100",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "MOD-100 requires registering every material model with identity, owner, purpose, version, risk, validation, and deployment before use.",
+          "conditions": [
+            "Material models used as software/services are inventoried in the model register."
+          ],
+          "expected_evidence": [
+            "Model registry entries for material models."
+          ],
+          "known_gaps": [
+            "MOD-100 covers models, not all enterprise software."
+          ]
+        },
+        {
+          "esaf_control_id": "API-120",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "API-120 requires inventorying tools and plugins an AI can invoke.",
+          "conditions": [
+            "AI-invocable tools/plugins are inventoried as software/services in scope."
+          ],
+          "expected_evidence": [
+            "Approved tool/plugin inventory for AI systems."
+          ],
+          "known_gaps": [
+            "API-120 does not inventory general enterprise software."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory ID.AM-02"
+    },
+    "ID.AM-03": {
+      "disposition": "mapped",
+      "summary": "Representations of the organization's authorized network communication and internal and external network data flows are maintained",
+      "relationships": [
+        {
+          "esaf_control_id": "ARC-110",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "ARC-110 requires documenting AI components, actors, identities, data and control flows, trust levels, dependencies, and boundaries.",
+          "conditions": [
+            "Representations of authorized network communication and internal/external data flows for AI systems are maintained in architecture documentation."
+          ],
+          "expected_evidence": [
+            "AI architecture diagrams documenting data and control flows and trust boundaries."
+          ],
+          "known_gaps": [
+            "ARC-110 does not maintain enterprise-wide network flow representations outside AI systems."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory ID.AM-03"
+    },
+    "ID.AM-04": {
+      "disposition": "mapped",
+      "summary": "Inventories of services provided by suppliers are maintained",
+      "relationships": [
+        {
+          "esaf_control_id": "API-140",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "API-140 requires managing external AI integrations with security, privacy, continuity, and exit requirements.",
+          "conditions": [
+            "Inventories of AI services provided by suppliers are maintained for in-scope integrations."
+          ],
+          "expected_evidence": [
+            "External AI integration inventory."
+          ],
+          "known_gaps": [
+            "API-140 does not inventory all supplier services enterprise-wide."
+          ]
+        },
+        {
+          "esaf_control_id": "ARC-140",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "ARC-140 requires documenting shared-responsibility boundaries with platforms, providers, and suppliers.",
+          "conditions": [
+            "Supplier-provided AI platform/services are recorded in shared-responsibility documentation."
+          ],
+          "expected_evidence": [
+            "Shared-responsibility records naming supplier services."
+          ],
+          "known_gaps": [
+            "ARC-140 is boundary documentation, not a complete supplier-service CMDB."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory ID.AM-04"
+    },
+    "ID.AM-05": {
+      "disposition": "mapped",
+      "summary": "Assets are prioritized based on classification, criticality, resources, and impact on the mission",
+      "relationships": [
+        {
+          "esaf_control_id": "RSK-110",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "RSK-110 requires classifying each AI capability before use based on impact, autonomy, data, exposure, criticality, and related factors.",
+          "conditions": [
+            "AI assets are prioritized based on classification, criticality, resources, and mission impact through risk classification."
+          ],
+          "expected_evidence": [
+            "AI capability risk classifications and prioritization records."
+          ],
+          "known_gaps": [
+            "RSK-110 classifies AI capabilities, not all enterprise assets."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory ID.AM-05"
+    },
+    "ID.AM-07": {
+      "disposition": "mapped",
+      "summary": "Inventories of data and corresponding metadata for designated data types are maintained",
+      "relationships": [
+        {
+          "esaf_control_id": "DAT-100",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "DAT-100 requires approving owner, authority, purpose, users, sharing, retention, and prohibited uses for AI data.",
+          "conditions": [
+            "Inventories of designated AI data types and corresponding metadata are maintained through data-purpose and ownership records."
+          ],
+          "expected_evidence": [
+            "Approved AI data-purpose and ownership records for designated data types."
+          ],
+          "known_gaps": [
+            "DAT-100 does not maintain enterprise data inventories outside AI."
+          ]
+        },
+        {
+          "esaf_control_id": "DAT-130",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "DAT-130 requires maintaining provenance and lineage for material AI data end-to-end.",
+          "conditions": [
+            "Metadata for material AI data types includes provenance/lineage."
+          ],
+          "expected_evidence": [
+            "Provenance and lineage records for material AI data."
+          ],
+          "known_gaps": [
+            "DAT-130 covers material AI data, not all designated enterprise data types."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory ID.AM-07"
+    },
+    "ID.AM-08": {
+      "disposition": "mapped",
+      "summary": "Systems, hardware, software, services, and data are managed throughout their life cycles • Risk Assessment (ID.RA): The cybersecurity risk to the organization, assets, and individuals is understood by the organization",
+      "relationships": [
+        {
+          "esaf_control_id": "GOV-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "GOV-120 requires lifecycle-state oversight including retirement for AI capabilities.",
+          "conditions": [
+            "AI systems, services, and related assets are managed throughout their life cycles via portfolio oversight."
+          ],
+          "expected_evidence": [
+            "Portfolio lifecycle-state records and retirement decisions."
+          ],
+          "known_gaps": [
+            "GOV-120 does not lifecycle-manage non-AI hardware/software enterprise-wide."
+          ]
+        },
+        {
+          "esaf_control_id": "ARC-150",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "ARC-150 requires governing adoption, currency, deprecation, and retirement of AI technologies and architecture components.",
+          "conditions": [
+            "AI technologies and architecture components are managed across adoption through retirement."
+          ],
+          "expected_evidence": [
+            "Technology adoption/deprecation/retirement records for AI components."
+          ],
+          "known_gaps": [
+            "ARC-150 is AI technology/architecture focused."
+          ]
+        },
+        {
+          "esaf_control_id": "OPS-150",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "OPS-150 requires controlled retirement of AI capabilities including data, model, access, and residual-risk handling.",
+          "conditions": [
+            "End-of-life management for AI capabilities is controlled."
+          ],
+          "expected_evidence": [
+            "Retirement plans and execution records."
+          ],
+          "known_gaps": [
+            "OPS-150 covers retirement, not the full earlier lifecycle phases alone."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory ID.AM-08"
+    },
+    "ID.IM-01": {
+      "disposition": "mapped",
+      "summary": "Improvements are identified from evaluations",
+      "relationships": [
+        {
+          "esaf_control_id": "AUD-130",
+          "relationship": "partially_supports",
+          "coverage": "substantial",
+          "confidence": "high",
+          "rationale": "AUD-130 requires documenting, classifying, remediating, retesting, and closing assessment findings by risk.",
+          "conditions": [
+            "Improvements are identified from AI evaluations and assessment findings."
+          ],
+          "expected_evidence": [
+            "Finding registers, remediation plans, and closure evidence."
+          ],
+          "known_gaps": [
+            "AUD-130 covers AI assessment findings, not all enterprise evaluation sources."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory ID.IM-01"
+    },
+    "ID.IM-02": {
+      "disposition": "mapped",
+      "summary": "Improvements are identified from security tests and exercises, including those done in coordination with suppliers and relevant third parties",
+      "relationships": [
+        {
+          "esaf_control_id": "AUD-100",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "AUD-100 requires a risk-based assessment program for AI management system, capabilities, and controls.",
+          "conditions": [
+            "Improvements are identified from security tests and exercises within the AI assessment program, including those coordinated with suppliers when in scope."
+          ],
+          "expected_evidence": [
+            "Assessment/test reports and resulting improvement actions."
+          ],
+          "known_gaps": [
+            "AUD-100 does not mandate enterprise-wide red-team exercises beyond AI assessment scope."
+          ]
+        },
+        {
+          "esaf_control_id": "OPS-130",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "OPS-130 requires defining, implementing, and testing continuity, fallback, safe-state, recovery, and provider-failure arrangements for AI.",
+          "conditions": [
+            "Improvements are identified from continuity and recovery tests involving AI providers when executed."
+          ],
+          "expected_evidence": [
+            "Continuity/recovery test results and improvement actions."
+          ],
+          "known_gaps": [
+            "OPS-130 testing is continuity-focused, not a full security exercise program."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory ID.IM-02"
+    },
+    "ID.IM-03": {
+      "disposition": "mapped",
+      "summary": "Improvements are identified from execution of operational processes, procedures, and activities",
+      "relationships": [
+        {
+          "esaf_control_id": "AUD-140",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "AUD-140 requires management review including incidents, controls, and improvement for the AI management system.",
+          "conditions": [
+            "Improvements are identified from execution of AI operational processes, procedures, and activities as reviewed by management."
+          ],
+          "expected_evidence": [
+            "Management-review actions arising from operational performance and incidents."
+          ],
+          "known_gaps": [
+            "AUD-140 does not capture every operational lesson outside management review inputs."
+          ]
+        },
+        {
+          "esaf_control_id": "OPS-120",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "OPS-120 requires AI incident lifecycle including post-incident learning integrated with enterprise incident management.",
+          "conditions": [
+            "Improvements are identified from AI incident operational execution."
+          ],
+          "expected_evidence": [
+            "Post-incident review actions."
+          ],
+          "known_gaps": [
+            "OPS-120 is incident-centric rather than all operational processes."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory ID.IM-03"
+    },
+    "ID.IM-04": {
+      "disposition": "mapped",
+      "summary": "Incident response plans and other cybersecurity plans that affect operations are established, communicated, maintained, and improved PROTECT (PR): Safeguards to manage the organization's cybersecurity risks are used • Identity Management, Authentication, and Access Control (PR.AA): Access to physical and logical assets is limited to authorized users, services, and hardware and managed commensurate with the assessed risk of unauthorized access",
+      "relationships": [
+        {
+          "esaf_control_id": "OPS-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "OPS-120 requires preparing for and running AI incident response integrated with enterprise incident management.",
+          "conditions": [
+            "Incident response plans affecting AI operations are established, communicated, maintained, and improved."
+          ],
+          "expected_evidence": [
+            "AI incident response plans, communications, and improvement records."
+          ],
+          "known_gaps": [
+            "OPS-120 does not establish all enterprise cybersecurity plans outside AI incident management."
+          ]
+        },
+        {
+          "esaf_control_id": "OPS-130",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "OPS-130 requires continuity and recovery arrangements for AI that are maintained and tested.",
+          "conditions": [
+            "Recovery and continuity plans affecting AI operations are established and maintained."
+          ],
+          "expected_evidence": [
+            "Continuity/recovery plans and maintenance records for AI."
+          ],
+          "known_gaps": [
+            "OPS-130 does not cover every cybersecurity plan type beyond continuity/recovery."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory ID.IM-04"
+    },
+    "ID.RA-01": {
+      "disposition": "mapped",
+      "summary": "Vulnerabilities in assets are identified, validated, and recorded",
+      "relationships": [
+        {
+          "esaf_control_id": "INF-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "INF-120 requires identifying, assessing, prioritizing, remediating, or accepting vulnerabilities in AI infrastructure and dependencies.",
+          "conditions": [
+            "Vulnerabilities in AI-related assets are identified, validated, and recorded."
+          ],
+          "expected_evidence": [
+            "Vulnerability findings, validation notes, and tracking records for AI infra/dependencies."
+          ],
+          "known_gaps": [
+            "INF-120 does not cover vulnerability management for all enterprise assets outside AI infrastructure."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory ID.RA-01"
+    },
+    "ID.RA-02": {
+      "disposition": "no_direct_mapping",
+      "summary": "Cyber threat intelligence is received from information sharing forums and sources",
+      "relationships": [],
+      "negative_rationale": "Missing outcome: no ESAF control expressly requires receiving cyber threat intelligence from information sharing forums and sources. MON-110 detects AI security events but does not require CTI feed subscription or forum participation.",
+      "locator": "NIST CSF 2.0, subcategory ID.RA-02"
+    },
+    "ID.RA-03": {
+      "disposition": "mapped",
+      "summary": "Internal and external threats to the organization are identified and recorded",
+      "relationships": [
+        {
+          "esaf_control_id": "APP-100",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "APP-100 requires designing AI applications with documented threat and misuse cases.",
+          "conditions": [
+            "Internal and external threats to AI applications are identified and recorded in design threat models."
+          ],
+          "expected_evidence": [
+            "Threat and misuse-case documentation for AI applications."
+          ],
+          "known_gaps": [
+            "APP-100 does not identify all organizational threats outside AI applications."
+          ]
+        },
+        {
+          "esaf_control_id": "RSK-100",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "RSK-100 requires AI risk methodology that includes identifying threats as part of assessment.",
+          "conditions": [
+            "Threat identification is recorded in AI risk assessments."
+          ],
+          "expected_evidence": [
+            "AI risk assessments documenting identified threats."
+          ],
+          "known_gaps": [
+            "RSK-100 does not create an enterprise threat catalog."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory ID.RA-03"
+    },
+    "ID.RA-04": {
+      "disposition": "mapped",
+      "summary": "Potential impacts and likelihoods of threats exploiting vulnerabilities are identified and recorded",
+      "relationships": [
+        {
+          "esaf_control_id": "RSK-100",
+          "relationship": "partially_supports",
+          "coverage": "substantial",
+          "confidence": "high",
+          "rationale": "RSK-100 requires rating criteria including likelihood and impact dimensions for inherent and residual AI risk.",
+          "conditions": [
+            "Potential impacts and likelihoods of threats exploiting vulnerabilities are identified and recorded in AI risk assessments."
+          ],
+          "expected_evidence": [
+            "Completed AI risk assessments with likelihood and impact ratings."
+          ],
+          "known_gaps": [
+            "RSK-100 applies to AI risk, not all enterprise threat-vuln pairs."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory ID.RA-04"
+    },
+    "ID.RA-05": {
+      "disposition": "mapped",
+      "summary": "Threats, vulnerabilities, likelihoods, and impacts are used to understand inherent risk and inform risk response prioritization",
+      "relationships": [
+        {
+          "esaf_control_id": "RSK-100",
+          "relationship": "partially_supports",
+          "coverage": "substantial",
+          "confidence": "high",
+          "rationale": "RSK-100 requires using methodology outputs to understand inherent risk and inform risk response prioritization.",
+          "conditions": [
+            "Threats, vulnerabilities, likelihoods, and impacts are used to understand inherent AI risk and prioritize responses."
+          ],
+          "expected_evidence": [
+            "Inherent-risk ratings and prioritization records from AI assessments."
+          ],
+          "known_gaps": [
+            "RSK-100 does not compute inherent risk for non-AI enterprise assets."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory ID.RA-05"
+    },
+    "ID.RA-06": {
+      "disposition": "mapped",
+      "summary": "Risk responses are chosen, prioritized, planned, tracked, and communicated",
+      "relationships": [
+        {
+          "esaf_control_id": "RSK-120",
+          "relationship": "partially_supports",
+          "coverage": "substantial",
+          "confidence": "high",
+          "rationale": "RSK-120 requires choosing, prioritizing, planning, tracking, and communicating AI risk responses including treatment and acceptance.",
+          "conditions": [
+            "AI risk responses are chosen, prioritized, planned, tracked, and communicated."
+          ],
+          "expected_evidence": [
+            "Risk treatment plans, acceptance records, and tracking status."
+          ],
+          "known_gaps": [
+            "RSK-120 does not manage risk responses for non-AI enterprise risks."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory ID.RA-06"
+    },
+    "ID.RA-07": {
+      "disposition": "mapped",
+      "summary": "Changes and exceptions are managed, assessed for risk impact, recorded, and tracked",
+      "relationships": [
+        {
+          "esaf_control_id": "RSK-140",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "RSK-140 requires defining material-change triggers and reassessing, revalidating, and reauthorizing before material change.",
+          "conditions": [
+            "Changes and exceptions affecting AI risk are managed, assessed for risk impact, recorded, and tracked."
+          ],
+          "expected_evidence": [
+            "Material-change reviews, reassessment records, and related exception links."
+          ],
+          "known_gaps": [
+            "RSK-140 is material-change focused for AI and does not manage all enterprise change tickets."
+          ]
+        },
+        {
+          "esaf_control_id": "GOV-140",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "GOV-140 requires authorizing time-bounded exceptions with risk, compensating measures, monitoring, and expiry.",
+          "conditions": [
+            "Exceptions are assessed for risk impact and tracked to expiry."
+          ],
+          "expected_evidence": [
+            "Exception authorizations with risk and compensating measures."
+          ],
+          "known_gaps": [
+            "GOV-140 does not assess routine non-exception changes."
+          ]
+        },
+        {
+          "esaf_control_id": "OPS-110",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "OPS-110 requires classifying, assessing, testing, approving, deploying, verifying, and rolling back AI changes by impact.",
+          "conditions": [
+            "AI operational changes are assessed for risk impact before deployment."
+          ],
+          "expected_evidence": [
+            "Change records with impact classification and approvals."
+          ],
+          "known_gaps": [
+            "OPS-110 is AI change management, not enterprise CAB for all changes."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory ID.RA-07"
+    },
+    "ID.RA-08": {
+      "disposition": "mapped",
+      "summary": "Processes for receiving, analyzing, and responding to vulnerability disclosures are established",
+      "relationships": [
+        {
+          "esaf_control_id": "INF-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "INF-120 requires identifying, assessing, prioritizing, remediating, or accepting vulnerabilities in AI infrastructure and dependencies.",
+          "conditions": [
+            "Processes for receiving, analyzing, and responding to vulnerability disclosures affecting AI infrastructure and dependencies are established as part of vulnerability management."
+          ],
+          "expected_evidence": [
+            "Vulnerability disclosure intake, analysis, and response records for AI infra/dependencies."
+          ],
+          "known_gaps": [
+            "INF-120 does not establish an organization-wide vulnerability disclosure program for all products/services."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory ID.RA-08"
+    },
+    "ID.RA-09": {
+      "disposition": "mapped",
+      "summary": "The authenticity and integrity of hardware and software are assessed prior to acquisition and use",
+      "relationships": [
+        {
+          "esaf_control_id": "MOD-110",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "MOD-110 requires verifying model provenance, source, licensing, integrity, dependencies, and supplier terms before use.",
+          "conditions": [
+            "Authenticity and integrity of models (software) are assessed prior to acquisition and use."
+          ],
+          "expected_evidence": [
+            "Model provenance, integrity verification, and supplier-term records."
+          ],
+          "known_gaps": [
+            "MOD-110 does not assess authenticity/integrity of general enterprise hardware or non-model software."
+          ]
+        },
+        {
+          "esaf_control_id": "APP-140",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "APP-140 requires secure development including dependency and build controls for AI application artifacts.",
+          "conditions": [
+            "Integrity of AI application software dependencies is assessed in the secure development lifecycle."
+          ],
+          "expected_evidence": [
+            "Dependency review and build integrity evidence for AI apps."
+          ],
+          "known_gaps": [
+            "APP-140 does not cover hardware authenticity assessment."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory ID.RA-09"
+    },
+    "ID.RA-10": {
+      "disposition": "mapped",
+      "summary": "Critical suppliers are assessed prior to acquisition • Improvement (ID.IM): Improvements to organizational cybersecurity risk management processes, procedures and activities are identified across all CSF Functions",
+      "relationships": [
+        {
+          "esaf_control_id": "CMP-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "CMP-120 requires due diligence and verification of third-party AI security duties before and during relationships.",
+          "conditions": [
+            "Critical AI suppliers are assessed prior to acquisition."
+          ],
+          "expected_evidence": [
+            "Pre-acquisition third-party AI due-diligence assessments."
+          ],
+          "known_gaps": [
+            "CMP-120 does not assess all critical enterprise suppliers outside AI."
+          ]
+        },
+        {
+          "esaf_control_id": "MOD-110",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "MOD-110 requires assessing model suppliers before use.",
+          "conditions": [
+            "Critical model suppliers are assessed prior to acquisition and use."
+          ],
+          "expected_evidence": [
+            "Pre-use model supplier assessments."
+          ],
+          "known_gaps": [
+            "MOD-110 covers model suppliers only."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory ID.RA-10"
+    },
+    "PR.AA-01": {
+      "disposition": "mapped",
+      "summary": "Identities and credentials for authorized users, services, and hardware are managed by the organization",
+      "relationships": [
+        {
+          "esaf_control_id": "IAM-100",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "IAM-100 requires uniquely identifying, inventorying, owning, and lifecycle-managing human, service, workload, API, and agent identities with AI access.",
+          "conditions": [
+            "Identities and credentials for authorized users, services, and AI-related workloads with AI access are managed by the organization."
+          ],
+          "expected_evidence": [
+            "Identity inventory, ownership, and lifecycle records for AI-access identities."
+          ],
+          "known_gaps": [
+            "IAM-100 does not manage identities for all enterprise hardware and non-AI systems."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory PR.AA-01"
+    },
+    "PR.AA-02": {
+      "disposition": "mapped",
+      "summary": "Identities are proofed and bound to credentials based on the context of interactions",
+      "relationships": [
+        {
+          "esaf_control_id": "IAM-110",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "IAM-110 requires authenticating before access to non-public AI assets with strength proportionate to risk.",
+          "conditions": [
+            "Identity proofing and credential binding for AI access follows risk-proportionate authentication context."
+          ],
+          "expected_evidence": [
+            "Authentication policy and enrollment records for AI-access identities."
+          ],
+          "known_gaps": [
+            "IAM-110 does not expressly require formal identity proofing workflows for all identity types enterprise-wide."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory PR.AA-02"
+    },
+    "PR.AA-03": {
+      "disposition": "mapped",
+      "summary": "Users, services, and hardware are authenticated",
+      "relationships": [
+        {
+          "esaf_control_id": "IAM-110",
+          "relationship": "partially_supports",
+          "coverage": "substantial",
+          "confidence": "high",
+          "rationale": "IAM-110 requires authenticating users and services before access to non-public AI assets.",
+          "conditions": [
+            "Users, services, and workloads accessing AI assets are authenticated."
+          ],
+          "expected_evidence": [
+            "Authentication configurations and access logs for AI assets."
+          ],
+          "known_gaps": [
+            "IAM-110 does not authenticate access to all non-AI enterprise hardware/services."
+          ]
+        },
+        {
+          "esaf_control_id": "API-110",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "API-110 requires authenticating AI-related APIs.",
+          "conditions": [
+            "AI-related API clients and services are authenticated."
+          ],
+          "expected_evidence": [
+            "API authentication configurations and logs."
+          ],
+          "known_gaps": [
+            "API-110 covers AI-related APIs only."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory PR.AA-03"
+    },
+    "PR.AA-04": {
+      "disposition": "mapped",
+      "summary": "Identity assertions are protected, conveyed, and verified",
+      "relationships": [
+        {
+          "esaf_control_id": "IAM-110",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "IAM-110 requires authentication strength proportionate to risk for access to non-public AI assets.",
+          "conditions": [
+            "Identity assertions used for AI access are protected, conveyed, and verified as part of authentication."
+          ],
+          "expected_evidence": [
+            "Authentication protocol configurations and assertion verification evidence for AI access."
+          ],
+          "known_gaps": [
+            "IAM-110 does not specify federation assertion protections for all enterprise identity systems."
+          ]
+        },
+        {
+          "esaf_control_id": "API-110",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "API-110 requires authenticating, authorizing, and protecting AI-related APIs.",
+          "conditions": [
+            "API identity assertions for AI integrations are protected and verified."
+          ],
+          "expected_evidence": [
+            "API authN configurations for AI-related APIs."
+          ],
+          "known_gaps": [
+            "API-110 is API-scoped rather than a general identity-assertion control."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory PR.AA-04"
+    },
+    "PR.AA-05": {
+      "disposition": "mapped",
+      "summary": "Access permissions, entitlements, and authorizations are defined in a policy, managed, enforced, and reviewed, and incorporate the principles of least privilege and separation of duties",
+      "relationships": [
+        {
+          "esaf_control_id": "IAM-120",
+          "relationship": "partially_supports",
+          "coverage": "substantial",
+          "confidence": "high",
+          "rationale": "IAM-120 requires authorizing AI assets and actions by purpose, role, attributes, context, and least privilege.",
+          "conditions": [
+            "Access permissions, entitlements, and authorizations for AI are defined in policy, managed, enforced, and reviewed with least privilege."
+          ],
+          "expected_evidence": [
+            "Authorization policies, entitlement reviews, and enforcement evidence for AI access."
+          ],
+          "known_gaps": [
+            "IAM-120 does not manage entitlements for all non-AI enterprise systems."
+          ]
+        },
+        {
+          "esaf_control_id": "IAM-150",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "IAM-150 requires reviewing AI access at risk-defined frequency and revoking or adjusting on role/scope/need change.",
+          "conditions": [
+            "AI access authorizations are reviewed and adjusted."
+          ],
+          "expected_evidence": [
+            "Access review records and revocation evidence."
+          ],
+          "known_gaps": [
+            "IAM-150 is AI-access review, not enterprise-wide IAM review."
+          ]
+        },
+        {
+          "esaf_control_id": "IAM-130",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "IAM-130 requires restricting, separately authenticating, time-bounding, monitoring, and reviewing privileged AI-changing access.",
+          "conditions": [
+            "Privileged entitlements for AI-changing access incorporate least privilege and review."
+          ],
+          "expected_evidence": [
+            "Privileged access records and reviews for AI."
+          ],
+          "known_gaps": [
+            "IAM-130 covers privileged AI-changing access only."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory PR.AA-05"
+    },
+    "PR.AA-06": {
+      "disposition": "no_direct_mapping",
+      "summary": "Physical access to assets is managed, monitored, and enforced commensurate with risk • Awareness and Training (PR.AT): The organization's personnel are provided with cybersecurity awareness and training so that they can perform their cybersecurity-related tasks",
+      "relationships": [],
+      "negative_rationale": "Missing outcome: no ESAF control expressly requires managing, monitoring, and enforcing physical access to assets. ESAF IAM and INF controls address logical access and hosting controls, not physical facility access.",
+      "locator": "NIST CSF 2.0, subcategory PR.AA-06"
+    },
+    "PR.AT-01": {
+      "disposition": "mapped",
+      "summary": "Personnel are provided with awareness and training so that they possess the knowledge and skills to perform general tasks with cybersecurity risks in mind",
+      "relationships": [
+        {
+          "esaf_control_id": "EDU-100",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "EDU-100 requires providing and refreshing baseline AI literacy covering limits, safe use, data protection, escalation, and policy.",
+          "conditions": [
+            "Personnel are provided awareness and training so they can perform general AI-related tasks with cybersecurity risk implications."
+          ],
+          "expected_evidence": [
+            "Baseline AI literacy curricula and completion records."
+          ],
+          "known_gaps": [
+            "EDU-100 is AI literacy and does not provide enterprise-wide general cybersecurity awareness for all personnel roles."
+          ]
+        },
+        {
+          "esaf_control_id": "EDU-120",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "EDU-120 requires educating users on approved services, acceptable use, data boundaries, verification, and incident reporting.",
+          "conditions": [
+            "Users receive awareness enabling cybersecurity-relevant safe use of AI services."
+          ],
+          "expected_evidence": [
+            "User education materials and completion evidence."
+          ],
+          "known_gaps": [
+            "EDU-120 does not replace organization-wide cyber awareness training."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory PR.AT-01"
+    },
+    "PR.AT-02": {
+      "disposition": "mapped",
+      "summary": "Individuals in specialized roles are provided with awareness and training so that they possess the knowledge and skills to perform relevant tasks with cybersecurity risks in mind • Data Security (PR.DS): Data are managed consistent with the organization's risk strategy to protect the confidentiality, integrity, and availability of information",
+      "relationships": [
+        {
+          "esaf_control_id": "EDU-110",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "EDU-110 requires defining, assessing, and evidencing role-based AI competency for design through audit and use roles.",
+          "conditions": [
+            "Individuals in specialized AI roles receive awareness and training for relevant cybersecurity risk management tasks."
+          ],
+          "expected_evidence": [
+            "Role-based curricula, competency assessments, and completion records."
+          ],
+          "known_gaps": [
+            "EDU-110 does not train all specialized enterprise cybersecurity roles outside AI."
+          ]
+        },
+        {
+          "esaf_control_id": "EDU-130",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "EDU-130 requires current secure AI engineering training for builders and operators of AI systems.",
+          "conditions": [
+            "Specialized engineering/operator roles receive secure AI training relevant to cybersecurity."
+          ],
+          "expected_evidence": [
+            "Secure AI engineering training records."
+          ],
+          "known_gaps": [
+            "EDU-130 is AI engineering focused."
+          ]
+        },
+        {
+          "esaf_control_id": "EDU-140",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "EDU-140 requires educating executives, owners, acceptors, and auditors on AI duties, risk, evidence, and decision rights.",
+          "conditions": [
+            "Specialized governance and assurance roles receive AI risk and cybersecurity-relevant duty training."
+          ],
+          "expected_evidence": [
+            "Executive/owner/auditor education records."
+          ],
+          "known_gaps": [
+            "EDU-140 does not cover all specialized cyber roles (e.g., SOC analysts) outside AI duties."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory PR.AT-02"
+    },
+    "PR.DS-01": {
+      "disposition": "mapped",
+      "summary": "The confidentiality, integrity, and availability of data-at-rest are protected",
+      "relationships": [
+        {
+          "esaf_control_id": "DAT-110",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "DAT-110 requires classifying AI data and enforcing handling across collection through disposal.",
+          "conditions": [
+            "Confidentiality, integrity, and availability protections for AI data-at-rest follow classification and handling rules."
+          ],
+          "expected_evidence": [
+            "Data classification and handling evidence for AI data-at-rest."
+          ],
+          "known_gaps": [
+            "DAT-110 does not protect all enterprise data-at-rest outside AI."
+          ]
+        },
+        {
+          "esaf_control_id": "INF-140",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "INF-140 requires using approved cryptography and key management for AI data, models, credentials, paths, and backups.",
+          "conditions": [
+            "Cryptographic protection is applied to AI data-at-rest as required by classification and policy."
+          ],
+          "expected_evidence": [
+            "Crypto configurations and key-management evidence for AI data-at-rest."
+          ],
+          "known_gaps": [
+            "INF-140 is AI-scoped cryptographic control."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory PR.DS-01"
+    },
+    "PR.DS-02": {
+      "disposition": "mapped",
+      "summary": "The confidentiality, integrity, and availability of data-in-transit are protected",
+      "relationships": [
+        {
+          "esaf_control_id": "INF-140",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "INF-140 requires approved cryptography for AI data paths including transit protections where applicable.",
+          "conditions": [
+            "Confidentiality, integrity, and availability of AI data-in-transit are protected using approved cryptography."
+          ],
+          "expected_evidence": [
+            "Transit encryption configurations for AI data paths."
+          ],
+          "known_gaps": [
+            "INF-140 does not protect all enterprise data-in-transit outside AI paths."
+          ]
+        },
+        {
+          "esaf_control_id": "API-110",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "API-110 requires encrypting AI-related APIs among other API security controls.",
+          "conditions": [
+            "AI-related API data-in-transit is protected."
+          ],
+          "expected_evidence": [
+            "API TLS/encryption configurations for AI APIs."
+          ],
+          "known_gaps": [
+            "API-110 covers AI-related APIs only."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory PR.DS-02"
+    },
+    "PR.DS-10": {
+      "disposition": "mapped",
+      "summary": "The confidentiality, integrity, and availability of data-in-use are protected",
+      "relationships": [
+        {
+          "esaf_control_id": "DAT-110",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "DAT-110 requires enforcing classified handling for AI data throughout processing, including data-in-use contexts.",
+          "conditions": [
+            "Confidentiality, integrity, and availability protections apply to AI data-in-use per handling rules."
+          ],
+          "expected_evidence": [
+            "Handling controls and runtime protection evidence for AI data-in-use."
+          ],
+          "known_gaps": [
+            "DAT-110 does not specify memory-encryption or TEE requirements for all enterprise data-in-use."
+          ]
+        },
+        {
+          "esaf_control_id": "APP-130",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "APP-130 requires isolating user/tenant/session/memory so identities get only authorized context and state.",
+          "conditions": [
+            "Data-in-use isolation protects confidentiality of AI session/memory state."
+          ],
+          "expected_evidence": [
+            "Isolation design and test evidence for AI applications."
+          ],
+          "known_gaps": [
+            "APP-130 is AI application isolation, not general OS data-in-use protection."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory PR.DS-10"
+    },
+    "PR.DS-11": {
+      "disposition": "mapped",
+      "summary": "Backups of data are created, protected, maintained, and tested • Platform Security (PR.PS): The hardware, software (e.g., firmware, operating systems, applications), and services of physical and virtual platforms are managed consistent with the organization's risk strategy to protect their confidentiality, integrity, and availability",
+      "relationships": [
+        {
+          "esaf_control_id": "INF-140",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "INF-140 requires approved cryptography and key management for AI backups among other protected assets.",
+          "conditions": [
+            "Backups of AI data are protected using approved cryptographic and key-management controls."
+          ],
+          "expected_evidence": [
+            "Backup encryption and key-management evidence for AI data."
+          ],
+          "known_gaps": [
+            "INF-140 does not itself require creating, maintaining, and testing backups."
+          ]
+        },
+        {
+          "esaf_control_id": "OPS-130",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "OPS-130 requires continuity and recovery arrangements for AI including restoration capabilities.",
+          "conditions": [
+            "Backup/restore capabilities supporting AI recovery are created, maintained, and tested as part of continuity arrangements."
+          ],
+          "expected_evidence": [
+            "Continuity plans, backup/restore test records for AI services."
+          ],
+          "known_gaps": [
+            "OPS-130 does not prescribe enterprise backup schedules for all data types."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory PR.DS-11"
+    },
+    "PR.IR-01": {
+      "disposition": "mapped",
+      "summary": "Networks and environments are protected from unauthorized logical access and usage",
+      "relationships": [
+        {
+          "esaf_control_id": "INF-110",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "INF-110 requires hardening AI networks among other infrastructure components via approved baselines.",
+          "conditions": [
+            "Networks and environments hosting AI are protected from unauthorized logical access and usage via hardening baselines."
+          ],
+          "expected_evidence": [
+            "Network hardening baselines and access-control evidence for AI environments."
+          ],
+          "known_gaps": [
+            "INF-110 does not protect all enterprise networks outside AI hosting."
+          ]
+        },
+        {
+          "esaf_control_id": "API-100",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "API-100 requires routing production AI access through policy enforcement including identity, authorization, logging, limits, and kill capability.",
+          "conditions": [
+            "Logical access to production AI is constrained through a policy enforcement point."
+          ],
+          "expected_evidence": [
+            "Policy-enforcement gateway configurations for production AI access."
+          ],
+          "known_gaps": [
+            "API-100 does not segment or protect all enterprise network environments."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory PR.IR-01"
+    },
+    "PR.IR-02": {
+      "disposition": "no_direct_mapping",
+      "summary": "The organization's technology assets are protected from environmental threats",
+      "relationships": [],
+      "negative_rationale": "Missing outcome: no ESAF control expressly requires protecting technology assets from environmental threats such as fire, flood, or temperature. INF-100 addresses approved hosting for risk/classification/jurisdiction but does not require environmental threat protections.",
+      "locator": "NIST CSF 2.0, subcategory PR.IR-02"
+    },
+    "PR.IR-03": {
+      "disposition": "mapped",
+      "summary": "Mechanisms are implemented to achieve resilience requirements in normal and adverse situations",
+      "relationships": [
+        {
+          "esaf_control_id": "ARC-130",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "ARC-130 requires designing for foreseeable failures with isolation, degradation, safe state, fallback, and recovery.",
+          "conditions": [
+            "Mechanisms are implemented to achieve resilience requirements for AI in normal and adverse situations."
+          ],
+          "expected_evidence": [
+            "Resilience design documentation and test evidence for AI systems."
+          ],
+          "known_gaps": [
+            "ARC-130 is AI architecture resilience, not enterprise facility/tech resilience broadly."
+          ]
+        },
+        {
+          "esaf_control_id": "OPS-130",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "OPS-130 requires continuity, fallback, safe-state, recovery, and provider-failure arrangements for AI.",
+          "conditions": [
+            "Operational resilience mechanisms for AI are implemented and tested."
+          ],
+          "expected_evidence": [
+            "Continuity/fallback/recovery arrangements and tests for AI."
+          ],
+          "known_gaps": [
+            "OPS-130 does not implement resilience for all enterprise technology assets."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory PR.IR-03"
+    },
+    "PR.IR-04": {
+      "disposition": "mapped",
+      "summary": "Adequate resource capacity to ensure availability is maintained DETECT (DE): Possible cybersecurity attacks and compromises are found and analyzed • Continuous Monitoring (DE.CM): Assets are monitored to find anomalies, indicators of compromise, and other potentially adverse events",
+      "relationships": [
+        {
+          "esaf_control_id": "INF-150",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "INF-150 requires enforcing capacity, quota, isolation, and shutdown to prevent exhaustion and harmful contention for AI infrastructure.",
+          "conditions": [
+            "Adequate resource capacity to ensure AI availability is maintained through capacity and quota controls."
+          ],
+          "expected_evidence": [
+            "Capacity/quota configurations and availability evidence for AI infrastructure."
+          ],
+          "known_gaps": [
+            "INF-150 does not manage capacity for all enterprise services outside AI."
+          ]
+        },
+        {
+          "esaf_control_id": "OPS-100",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "OPS-100 requires service owner and objectives for availability, security, recovery, monitoring, and escalation for AI services.",
+          "conditions": [
+            "Availability objectives drive capacity management for AI services."
+          ],
+          "expected_evidence": [
+            "Service objectives and capacity-related operating records for AI."
+          ],
+          "known_gaps": [
+            "OPS-100 does not itself provision capacity."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory PR.IR-04"
+    },
+    "PR.PS-01": {
+      "disposition": "mapped",
+      "summary": "Configuration management practices are established and applied",
+      "relationships": [
+        {
+          "esaf_control_id": "INF-110",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "INF-110 requires hardening AI compute, hosts, containers, networks, storage, runtimes, and management via approved baselines.",
+          "conditions": [
+            "Configuration management practices are established and applied to AI infrastructure."
+          ],
+          "expected_evidence": [
+            "Hardening baselines and compliance evidence for AI infrastructure."
+          ],
+          "known_gaps": [
+            "INF-110 does not establish enterprise configuration management for all non-AI assets."
+          ]
+        },
+        {
+          "esaf_control_id": "INF-130",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "INF-130 requires managing AI infrastructure as versioned, reviewed, tested, and approved configuration with rollback/recovery.",
+          "conditions": [
+            "AI infrastructure configuration is version-controlled and approved."
+          ],
+          "expected_evidence": [
+            "Versioned infra-as-code or config records with review/approval."
+          ],
+          "known_gaps": [
+            "INF-130 is AI infrastructure focused."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory PR.PS-01"
+    },
+    "PR.PS-02": {
+      "disposition": "mapped",
+      "summary": "Software is maintained, replaced, and removed commensurate with risk",
+      "relationships": [
+        {
+          "esaf_control_id": "ARC-150",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "ARC-150 requires governing adoption, currency, deprecation, and retirement of AI technologies and architecture components.",
+          "conditions": [
+            "AI software technologies are maintained, replaced, and removed commensurate with risk."
+          ],
+          "expected_evidence": [
+            "Technology currency and deprecation/retirement records for AI software components."
+          ],
+          "known_gaps": [
+            "ARC-150 does not maintain all enterprise software outside AI technologies."
+          ]
+        },
+        {
+          "esaf_control_id": "APP-140",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "APP-140 requires secure development including dependency, build, release, and vulnerability practices for AI app artifacts.",
+          "conditions": [
+            "AI application software is maintained through secure development and release practices commensurate with risk."
+          ],
+          "expected_evidence": [
+            "Release and dependency maintenance records for AI apps."
+          ],
+          "known_gaps": [
+            "APP-140 covers AI application artifacts, not all enterprise software."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory PR.PS-02"
+    },
+    "PR.PS-03": {
+      "disposition": "no_direct_mapping",
+      "summary": "Hardware is maintained, replaced, and removed commensurate with risk",
+      "relationships": [],
+      "negative_rationale": "Missing outcome: no ESAF control expressly requires maintaining, replacing, and removing hardware commensurate with risk. INF controls harden and operate AI hosting environments but do not establish enterprise hardware maintenance programs.",
+      "locator": "NIST CSF 2.0, subcategory PR.PS-03"
+    },
+    "PR.PS-04": {
+      "disposition": "mapped",
+      "summary": "Log records are generated and made available for continuous monitoring",
+      "relationships": [
+        {
+          "esaf_control_id": "MON-100",
+          "relationship": "partially_supports",
+          "coverage": "substantial",
+          "confidence": "high",
+          "rationale": "MON-100 requires collecting attributable, protected telemetry for identity, input, model, output, tool, config, and policy events for AI.",
+          "conditions": [
+            "Log records are generated and made available for continuous monitoring of AI systems."
+          ],
+          "expected_evidence": [
+            "Telemetry/logging configurations and protected log availability for AI."
+          ],
+          "known_gaps": [
+            "MON-100 does not generate logs for all enterprise systems outside AI."
+          ]
+        },
+        {
+          "esaf_control_id": "MON-150",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "MON-150 requires preserving protected audit trails for access, config, model/data changes, privilege, agents, and incidents.",
+          "conditions": [
+            "Audit log records for AI are generated and preserved for monitoring and investigation."
+          ],
+          "expected_evidence": [
+            "Protected audit-trail evidence for AI events."
+          ],
+          "known_gaps": [
+            "MON-150 is AI audit-trail focused."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory PR.PS-04"
+    },
+    "PR.PS-05": {
+      "disposition": "mapped",
+      "summary": "Installation and execution of unauthorized software are prevented",
+      "relationships": [
+        {
+          "esaf_control_id": "API-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "API-120 requires inventorying, approving, authenticating, authorizing, constraining, monitoring, and retiring every tool/plugin an AI can invoke.",
+          "conditions": [
+            "Installation and execution of unauthorized AI tools/plugins are prevented through approval and enforcement."
+          ],
+          "expected_evidence": [
+            "Approved tool/plugin allowlists and enforcement evidence."
+          ],
+          "known_gaps": [
+            "API-120 does not prevent unauthorized software installation on all enterprise endpoints."
+          ]
+        },
+        {
+          "esaf_control_id": "INF-110",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "low",
+          "rationale": "INF-110 requires hardening baselines for AI compute and runtimes that can constrain unauthorized software execution in AI environments.",
+          "conditions": [
+            "Hardening baselines for AI hosts/runtimes prevent unauthorized software where configured."
+          ],
+          "expected_evidence": [
+            "Hardening baseline settings restricting unauthorized execution in AI environments."
+          ],
+          "known_gaps": [
+            "INF-110 does not establish enterprise application-control for all endpoints."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory PR.PS-05"
+    },
+    "PR.PS-06": {
+      "disposition": "mapped",
+      "summary": "Secure software development practices are integrated, and their performance is monitored throughout the software development life cycle • Technology Infrastructure Resilience (PR.IR): Security architectures are managed with the organization's risk strategy to protect asset confidentiality, integrity, and availability, and organizational resilience",
+      "relationships": [
+        {
+          "esaf_control_id": "APP-140",
+          "relationship": "partially_supports",
+          "coverage": "substantial",
+          "confidence": "high",
+          "rationale": "APP-140 requires applying secure development, review, test, dependency, build, release, vulnerability, and change practices to AI application artifacts and monitoring their performance through the lifecycle.",
+          "conditions": [
+            "Secure software development practices are integrated and monitored for AI applications."
+          ],
+          "expected_evidence": [
+            "Secure SDLC evidence, reviews, tests, and monitoring for AI app development."
+          ],
+          "known_gaps": [
+            "APP-140 covers AI application development, not all enterprise software development."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory PR.PS-06"
+    },
+    "RC.CO-03": {
+      "disposition": "mapped",
+      "summary": "Recovery activities and progress in restoring operational capabilities are communicated to designated internal and external stakeholders",
+      "relationships": [
+        {
+          "esaf_control_id": "OPS-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "OPS-120 requires communicating recovery activities and progress to designated internal and external stakeholders for AI incidents.",
+          "conditions": [
+            "Recovery activities and progress restoring AI operational capabilities are communicated to designated stakeholders."
+          ],
+          "expected_evidence": [
+            "Recovery progress communications for AI incidents."
+          ],
+          "known_gaps": [
+            "OPS-120 communication is AI-incident stakeholder scoped."
+          ]
+        },
+        {
+          "esaf_control_id": "OPS-130",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "OPS-130 recovery arrangements include stakeholder communication expectations for AI continuity events.",
+          "conditions": [
+            "AI recovery progress is communicated per continuity/recovery plans."
+          ],
+          "expected_evidence": [
+            "Continuity recovery communications for AI."
+          ],
+          "known_gaps": [
+            "OPS-130 may not cover all public/external stakeholder channels."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory RC.CO-03"
+    },
+    "RC.CO-04": {
+      "disposition": "no_direct_mapping",
+      "summary": "Public updates on incident recovery are shared using approved methods and messaging",
+      "relationships": [],
+      "negative_rationale": "Missing outcome: no ESAF control expressly requires sharing public updates on incident recovery using approved methods and messaging. OPS-120 requires stakeholder notification for AI incidents but does not require public communications methods or messaging approval.",
+      "locator": "NIST CSF 2.0, subcategory RC.CO-04"
+    },
+    "RC.RP-01": {
+      "disposition": "mapped",
+      "summary": "The recovery portion of the incident response plan is executed once initiated from the incident response process",
+      "relationships": [
+        {
+          "esaf_control_id": "OPS-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "OPS-120 requires executing recovery as part of the AI incident response plan once initiated from the incident response process.",
+          "conditions": [
+            "The recovery portion of the AI incident response plan is executed once initiated."
+          ],
+          "expected_evidence": [
+            "Recovery execution records linked to AI incidents."
+          ],
+          "known_gaps": [
+            "OPS-120 recovery is AI-incident scoped."
+          ]
+        },
+        {
+          "esaf_control_id": "OPS-130",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "OPS-130 requires implementing recovery arrangements for AI services.",
+          "conditions": [
+            "AI recovery arrangements are executed when recovery is initiated."
+          ],
+          "expected_evidence": [
+            "Recovery runbook execution records for AI."
+          ],
+          "known_gaps": [
+            "OPS-130 may also support non-incident continuity recovery."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory RC.RP-01"
+    },
+    "RC.RP-02": {
+      "disposition": "mapped",
+      "summary": "Recovery actions are selected, scoped, prioritized, and performed",
+      "relationships": [
+        {
+          "esaf_control_id": "OPS-130",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "OPS-130 requires selecting, scoping, prioritizing, and performing recovery actions for AI continuity and provider-failure scenarios.",
+          "conditions": [
+            "Recovery actions for AI are selected, scoped, prioritized, and performed."
+          ],
+          "expected_evidence": [
+            "Recovery action plans and execution evidence for AI."
+          ],
+          "known_gaps": [
+            "OPS-130 does not manage recovery actions for all enterprise assets outside AI."
+          ]
+        },
+        {
+          "esaf_control_id": "OPS-120",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "OPS-120 requires performing recovery actions within AI incident recovery.",
+          "conditions": [
+            "Incident-driven recovery actions for AI are performed."
+          ],
+          "expected_evidence": [
+            "Incident recovery action records."
+          ],
+          "known_gaps": [
+            "OPS-120 is incident-linked recovery."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory RC.RP-02"
+    },
+    "RC.RP-03": {
+      "disposition": "mapped",
+      "summary": "The integrity of backups and other restoration assets is verified before using them for restoration",
+      "relationships": [
+        {
+          "esaf_control_id": "OPS-130",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "OPS-130 requires recovery arrangements that include verifying integrity of restoration assets before use where applicable to AI services.",
+          "conditions": [
+            "Integrity of backups and other restoration assets for AI is verified before using them for restoration."
+          ],
+          "expected_evidence": [
+            "Backup/restoration integrity verification records for AI."
+          ],
+          "known_gaps": [
+            "OPS-130 does not verify integrity of all enterprise backups outside AI recovery arrangements."
+          ]
+        },
+        {
+          "esaf_control_id": "INF-140",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "INF-140 requires cryptographic protection for AI backups supporting integrity verification.",
+          "conditions": [
+            "Cryptographic controls support integrity verification of AI restoration assets."
+          ],
+          "expected_evidence": [
+            "Crypto/key evidence for AI backup integrity."
+          ],
+          "known_gaps": [
+            "INF-140 provides protection mechanisms but not the recovery verification procedure alone."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory RC.RP-03"
+    },
+    "RC.RP-04": {
+      "disposition": "mapped",
+      "summary": "Critical mission functions and cybersecurity risk management are considered to establish post-incident operational norms",
+      "relationships": [
+        {
+          "esaf_control_id": "OPS-130",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "OPS-130 requires considering critical mission functions when establishing post-incident operational norms for AI recovery.",
+          "conditions": [
+            "Critical mission functions and AI cybersecurity risk management are considered to establish post-incident operational norms for AI."
+          ],
+          "expected_evidence": [
+            "Post-incident operating norms and recovery objectives for AI services."
+          ],
+          "known_gaps": [
+            "OPS-130 does not set post-incident norms for all enterprise functions outside AI."
+          ]
+        },
+        {
+          "esaf_control_id": "OPS-100",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "OPS-100 requires availability, security, and recovery objectives for AI services that inform post-incident norms.",
+          "conditions": [
+            "Service objectives inform post-incident operational norms for AI."
+          ],
+          "expected_evidence": [
+            "Service objective records used in recovery planning."
+          ],
+          "known_gaps": [
+            "OPS-100 does not itself declare post-incident norms."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory RC.RP-04"
+    },
+    "RC.RP-05": {
+      "disposition": "mapped",
+      "summary": "The integrity of restored assets is verified, systems and services are restored, and normal operating status is confirmed",
+      "relationships": [
+        {
+          "esaf_control_id": "OPS-130",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "OPS-130 requires verifying restored AI assets, restoring systems and services, and confirming normal operating status.",
+          "conditions": [
+            "Integrity of restored AI assets is verified, systems and services are restored, and normal operating status is confirmed."
+          ],
+          "expected_evidence": [
+            "Restoration verification and service-restoration confirmation records for AI."
+          ],
+          "known_gaps": [
+            "OPS-130 restoration is AI-service scoped."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory RC.RP-05"
+    },
+    "RC.RP-06": {
+      "disposition": "mapped",
+      "summary": "The end of incident recovery is declared based on criteria, and incident- related documentation is completed • Incident Recovery Communication (RC.CO): Restoration activities are coordinated with internal and external parties",
+      "relationships": [
+        {
+          "esaf_control_id": "OPS-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "OPS-120 requires declaring the end of AI incident recovery based on criteria and completing incident-related documentation.",
+          "conditions": [
+            "The end of AI incident recovery is declared based on criteria, and incident-related documentation is completed."
+          ],
+          "expected_evidence": [
+            "Recovery-closure criteria application and completed incident documentation."
+          ],
+          "known_gaps": [
+            "OPS-120 closure is AI-incident scoped."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory RC.RP-06"
+    },
+    "RS.AN-03": {
+      "disposition": "mapped",
+      "summary": "Analysis is performed to establish what has taken place during an incident and the root cause of the incident",
+      "relationships": [
+        {
+          "esaf_control_id": "OPS-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "OPS-120 requires analysis within AI incident management to establish what took place and root cause.",
+          "conditions": [
+            "Analysis establishes what took place during an AI incident and the root cause."
+          ],
+          "expected_evidence": [
+            "Incident analysis and root-cause records."
+          ],
+          "known_gaps": [
+            "OPS-120 analysis is AI-incident scoped."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory RS.AN-03"
+    },
+    "RS.AN-06": {
+      "disposition": "mapped",
+      "summary": "Actions performed during an investigation are recorded, and the records' integrity and provenance are preserved",
+      "relationships": [
+        {
+          "esaf_control_id": "MON-150",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "MON-150 requires preserving protected audit trails for AI access, config, changes, privilege, agents, and incidents.",
+          "conditions": [
+            "Actions performed during an AI investigation are recorded with integrity and provenance preserved via protected audit trails."
+          ],
+          "expected_evidence": [
+            "Protected investigation/audit-trail records for AI incidents."
+          ],
+          "known_gaps": [
+            "MON-150 preserves trails but does not alone define investigative action logging procedures."
+          ]
+        },
+        {
+          "esaf_control_id": "OPS-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "OPS-120 requires documenting AI incident response actions.",
+          "conditions": [
+            "Investigative and response actions during AI incidents are recorded."
+          ],
+          "expected_evidence": [
+            "Incident action logs."
+          ],
+          "known_gaps": [
+            "OPS-120 does not specify cryptographic provenance for all investigation records."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory RS.AN-06"
+    },
+    "RS.AN-07": {
+      "disposition": "mapped",
+      "summary": "Incident data and metadata are collected, and their integrity and provenance are preserved",
+      "relationships": [
+        {
+          "esaf_control_id": "MON-150",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "MON-150 requires preserving protected audit trails including integrity for AI incident-related data.",
+          "conditions": [
+            "AI incident data and metadata are collected and their integrity and provenance are preserved."
+          ],
+          "expected_evidence": [
+            "Protected incident data/metadata with integrity controls."
+          ],
+          "known_gaps": [
+            "MON-150 does not collect all enterprise incident forensic artifacts outside AI."
+          ]
+        },
+        {
+          "esaf_control_id": "AGT-140",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "AGT-140 requires recording attributable agent instructions, tools, approvals, actions, and outcomes for investigation.",
+          "conditions": [
+            "Agent-related incident data is collected with attribution for investigation."
+          ],
+          "expected_evidence": [
+            "Agent action records used in investigations."
+          ],
+          "known_gaps": [
+            "AGT-140 covers agents only."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory RS.AN-07"
+    },
+    "RS.AN-08": {
+      "disposition": "mapped",
+      "summary": "An incident's magnitude is estimated and validated • Incident Response Reporting and Communication (RS.CO): Response activities are coordinated with internal and external stakeholders as required by laws, regulations, or policies",
+      "relationships": [
+        {
+          "esaf_control_id": "OPS-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "OPS-120 requires estimating and validating AI incident magnitude as part of incident assessment.",
+          "conditions": [
+            "An AI incident's magnitude is estimated and validated."
+          ],
+          "expected_evidence": [
+            "Incident magnitude estimation and validation records."
+          ],
+          "known_gaps": [
+            "OPS-120 does not estimate magnitude for all enterprise incidents outside AI."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory RS.AN-08"
+    },
+    "RS.CO-02": {
+      "disposition": "mapped",
+      "summary": "Internal and external stakeholders are notified of incidents",
+      "relationships": [
+        {
+          "esaf_control_id": "OPS-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "OPS-120 requires notifying internal and external stakeholders of AI incidents as part of incident management.",
+          "conditions": [
+            "Internal and external stakeholders are notified of AI incidents."
+          ],
+          "expected_evidence": [
+            "Incident notification records to designated stakeholders."
+          ],
+          "known_gaps": [
+            "OPS-120 notification scope is AI-incident stakeholders, not all enterprise notification matrices."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory RS.CO-02"
+    },
+    "RS.CO-03": {
+      "disposition": "mapped",
+      "summary": "Information is shared with designated internal and external stakeholders • Incident Mitigation (RS.MI): Activities are performed to prevent expansion of an event and mitigate its effects",
+      "relationships": [
+        {
+          "esaf_control_id": "OPS-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "OPS-120 requires sharing information with designated internal and external stakeholders during AI incident response.",
+          "conditions": [
+            "Information is shared with designated internal and external stakeholders for AI incidents."
+          ],
+          "expected_evidence": [
+            "Incident information-sharing records."
+          ],
+          "known_gaps": [
+            "OPS-120 does not define sharing for all enterprise incident types outside AI."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory RS.CO-03"
+    },
+    "RS.MA-01": {
+      "disposition": "mapped",
+      "summary": "The incident response plan is executed in coordination with relevant third parties once an incident is declared",
+      "relationships": [
+        {
+          "esaf_control_id": "OPS-120",
+          "relationship": "partially_supports",
+          "coverage": "substantial",
+          "confidence": "high",
+          "rationale": "OPS-120 requires executing the AI incident response plan in coordination with relevant third parties once an incident is declared.",
+          "conditions": [
+            "The AI incident response plan is executed in coordination with relevant third parties once an incident is declared."
+          ],
+          "expected_evidence": [
+            "Executed incident response records naming third-party coordination."
+          ],
+          "known_gaps": [
+            "OPS-120 coordination is AI-incident scoped."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory RS.MA-01"
+    },
+    "RS.MA-02": {
+      "disposition": "mapped",
+      "summary": "Incident reports are triaged and validated",
+      "relationships": [
+        {
+          "esaf_control_id": "MON-140",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "MON-140 requires triaging AI alerts before escalation and containment.",
+          "conditions": [
+            "Incident reports/alerts for AI are triaged and validated."
+          ],
+          "expected_evidence": [
+            "Triage and validation records for AI incident reports/alerts."
+          ],
+          "known_gaps": [
+            "MON-140 triage precedes full incident declaration in many cases."
+          ]
+        },
+        {
+          "esaf_control_id": "OPS-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "OPS-120 requires AI incident management including validation of incident reports.",
+          "conditions": [
+            "AI incident reports are triaged and validated within the incident process."
+          ],
+          "expected_evidence": [
+            "Incident triage/validation records."
+          ],
+          "known_gaps": [
+            "OPS-120 does not triage all enterprise incident reports outside AI."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory RS.MA-02"
+    },
+    "RS.MA-03": {
+      "disposition": "mapped",
+      "summary": "Incidents are categorized and prioritized",
+      "relationships": [
+        {
+          "esaf_control_id": "OPS-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "OPS-120 requires categorizing and prioritizing AI incidents as part of incident management.",
+          "conditions": [
+            "AI incidents are categorized and prioritized."
+          ],
+          "expected_evidence": [
+            "Incident category and priority fields in incident records."
+          ],
+          "known_gaps": [
+            "OPS-120 does not categorize all enterprise incidents outside AI."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory RS.MA-03"
+    },
+    "RS.MA-04": {
+      "disposition": "mapped",
+      "summary": "Incidents are escalated or elevated as needed",
+      "relationships": [
+        {
+          "esaf_control_id": "OPS-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "OPS-120 requires escalating AI incidents as needed within integrated enterprise incident management.",
+          "conditions": [
+            "AI incidents are escalated or elevated as needed."
+          ],
+          "expected_evidence": [
+            "Escalation records for AI incidents."
+          ],
+          "known_gaps": [
+            "OPS-120 escalation is AI-incident scoped."
+          ]
+        },
+        {
+          "esaf_control_id": "MON-140",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "MON-140 requires escalating AI alerts as needed.",
+          "conditions": [
+            "Pre-incident AI alerts are escalated when triage requires elevation."
+          ],
+          "expected_evidence": [
+            "Alert escalation records."
+          ],
+          "known_gaps": [
+            "MON-140 is alert escalation, not full incident elevation governance."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory RS.MA-04"
+    },
+    "RS.MA-05": {
+      "disposition": "mapped",
+      "summary": "The criteria for initiating incident recovery are applied • Incident Analysis (RS.AN): Investigations are conducted to ensure effective response and support forensics and recovery activities",
+      "relationships": [
+        {
+          "esaf_control_id": "OPS-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "medium",
+          "rationale": "OPS-120 requires applying criteria for transitioning AI incidents into recovery as part of the incident lifecycle.",
+          "conditions": [
+            "Criteria for initiating incident recovery are applied for AI incidents."
+          ],
+          "expected_evidence": [
+            "Incident records showing recovery-initiation criteria application."
+          ],
+          "known_gaps": [
+            "OPS-120 does not define recovery criteria for all enterprise incident types outside AI."
+          ]
+        },
+        {
+          "esaf_control_id": "OPS-130",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "OPS-130 requires recovery arrangements that are initiated when recovery criteria are met.",
+          "conditions": [
+            "AI recovery arrangements are initiated according to defined criteria."
+          ],
+          "expected_evidence": [
+            "Recovery initiation records for AI services."
+          ],
+          "known_gaps": [
+            "OPS-130 focuses on continuity/recovery arrangements rather than incident-process criteria alone."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory RS.MA-05"
+    },
+    "RS.MI-01": {
+      "disposition": "mapped",
+      "summary": "Incidents are contained",
+      "relationships": [
+        {
+          "esaf_control_id": "OPS-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "OPS-120 requires containing AI incidents as part of the incident lifecycle.",
+          "conditions": [
+            "AI incidents are contained."
+          ],
+          "expected_evidence": [
+            "Containment actions and evidence in incident records."
+          ],
+          "known_gaps": [
+            "OPS-120 containment is AI-incident scoped."
+          ]
+        },
+        {
+          "esaf_control_id": "AGT-150",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "AGT-150 requires pause, restrict, isolate, and terminate capabilities for agents.",
+          "conditions": [
+            "Agent-related incidents can be contained via pause/restrict/isolate/terminate."
+          ],
+          "expected_evidence": [
+            "Agent containment action records."
+          ],
+          "known_gaps": [
+            "AGT-150 covers agents only."
+          ]
+        },
+        {
+          "esaf_control_id": "MON-140",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "MON-140 requires containing AI security, behavior, ops, and compliance alerts when appropriate.",
+          "conditions": [
+            "Containment begins at alert handling for AI adverse events."
+          ],
+          "expected_evidence": [
+            "Containment actions on AI alerts."
+          ],
+          "known_gaps": [
+            "MON-140 containment is alert-level and may precede formal incident containment."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory RS.MI-01"
+    },
+    "RS.MI-02": {
+      "disposition": "mapped",
+      "summary": "Incidents are eradicated RECOVER (RC): Assets and operations affected by a cybersecurity incident are restored • Incident Recovery Plan Execution (RC.RP): Restoration activities are performed to ensure operational availability of systems and services affected by cybersecurity incidents",
+      "relationships": [
+        {
+          "esaf_control_id": "OPS-120",
+          "relationship": "partially_supports",
+          "coverage": "partial",
+          "confidence": "high",
+          "rationale": "OPS-120 requires eradicating AI incidents as part of the incident lifecycle.",
+          "conditions": [
+            "AI incidents are eradicated."
+          ],
+          "expected_evidence": [
+            "Eradication actions and evidence in incident records."
+          ],
+          "known_gaps": [
+            "OPS-120 eradication is AI-incident scoped."
+          ]
+        },
+        {
+          "esaf_control_id": "AUD-130",
+          "relationship": "partially_supports",
+          "coverage": "narrow",
+          "confidence": "medium",
+          "rationale": "AUD-130 requires remediating and closing findings by risk, which can include eradication follow-through after incidents.",
+          "conditions": [
+            "Eradication-related corrective actions are tracked to closure when captured as findings."
+          ],
+          "expected_evidence": [
+            "Finding remediation and closure evidence tied to incident eradication."
+          ],
+          "known_gaps": [
+            "AUD-130 is finding remediation, not real-time incident eradication."
+          ]
+        }
+      ],
+      "locator": "NIST CSF 2.0, subcategory RS.MI-02"
+    }
+  }
+}

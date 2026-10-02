@@ -100,9 +100,9 @@ PREREQUISITE_SPECS = (
     ),
     (
         "nist_csf",
-        "HOLD",
+        "GO",
         "nist_csf_path",
-        ("Readiness HOLD", "`HOLD`"),
+        ("Readiness GO", "`GO`"),
     ),
     (
         "esaf_1500",

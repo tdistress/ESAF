@@ -4,8 +4,8 @@
 
 The mechanically derived readiness decision is `HOLD`. No substantive PCI DSS
 mapping is approved or present. PCI DSS mapping artifacts: `0`. The generated
-crosswalk catalog now measures 4 mapping sets, 476 provisions, 244
-relationships, and 333 negative dispositions.
+crosswalk catalog now measures 5 mapping sets, 582 provisions, 406
+relationships, and 343 negative dispositions.
 
 ## Decision evidence
 

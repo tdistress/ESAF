@@ -233,6 +233,15 @@ class V013DraftReleaseGatesTests(unittest.TestCase):
                 for error in errors
             )
         )
+        drifted_csf = deepcopy(self.record)
+        drifted_csf["prerequisite_dispositions"]["nist_csf"] = "HOLD"
+        errors_csf = validate_record(ROOT, drifted_csf)
+        self.assertTrue(
+            any(
+                "prerequisite_dispositions.nist_csf shall equal 'GO'" in error
+                for error in errors_csf
+            )
+        )
         drifted_iso = deepcopy(self.record)
         drifted_iso["prerequisite_dispositions"]["iso_iec_42001"] = "GO"
         errors_iso = validate_record(ROOT, drifted_iso)
@@ -272,7 +281,7 @@ class V013DraftReleaseGatesTests(unittest.TestCase):
             ("pci_dss_disposition", "GO"),
             ("nist_ai_rmf_disposition", "HOLD"),
             ("iso_iec_42001_disposition", "GO"),
-            ("nist_csf_disposition", "GO"),
+            ("nist_csf_disposition", "HOLD"),
         ):
             with self.subTest(field=field):
                 record = deepcopy(self.record)
