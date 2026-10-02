@@ -102,13 +102,13 @@ closure candidate exists, and the `v0.5-beta` tag has not been created. This
 record does not approve publication.
 
 All controls, architecture patterns, the pilot profile, mapping sets, and
-mapping records remain Draft. The four mapping lifecycle records have empty
+mapping records remain Draft. The five mapping lifecycle records have empty
 event arrays. This release work does not add reviewer metadata, approval
 metadata, or lifecycle events to those artifacts.
 
 ## Mapping assurance
 
-The release design permits one uniform mapping basis for all four mapping
+The release design permits one uniform mapping basis for all five mapping
 sets. Qualified approval requires a validated six-role Draft campaign bound
 to the exact closure candidate. Owner-risk acceptance requires a separate,
 authenticated repository-owner decision created after that exact candidate
@@ -155,13 +155,13 @@ the post-merge gate is open, and the `v0.5-beta` tag has not been created. The
 approve publication.
 
 All controls, architecture patterns, the pilot profile, mapping sets, and
-mapping records remain Draft. The four mapping lifecycle records have empty
+mapping records remain Draft. The five mapping lifecycle records have empty
 event arrays. This release work does not add reviewer metadata, approval
 metadata, or lifecycle events to those artifacts.
 
 ## Mapping assurance
 
-The release design permits one uniform mapping basis for all four mapping
+The release design permits one uniform mapping basis for all five mapping
 sets. Qualified approval requires a validated six-role Draft campaign bound
 to the exact closure candidate. Owner-risk acceptance requires a separate,
 authenticated repository-owner decision created after that exact candidate
@@ -212,7 +212,7 @@ published. Publication is limited to the repository Working Draft and does not
 change any artifact lifecycle state.
 
 All controls, architecture patterns, the pilot profile, mapping sets, and
-mapping records remain Draft. The four mapping lifecycle records have empty
+mapping records remain Draft. The five mapping lifecycle records have empty
 event arrays. This publication does not add reviewer metadata, approval
 metadata, or lifecycle events to those artifacts.
 
@@ -243,6 +243,7 @@ MAPPING_SETS = [
     "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0",
     "uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0",
     "nist--ai-rmf--1.0--esaf-0.17-draft--0.1.0",
+    "nist--csf--2.0--esaf-0.17-draft--0.1.0",
 ]
 CLOSURE_SHA = "c" * 40
 CLOSURE_BASE = "b" * 40
@@ -2726,7 +2727,7 @@ class V05ReleaseRecordTests(unittest.TestCase):
             (ROOT / "crosswalks/catalog.json").read_text(encoding="utf-8")
         )
         mapping_sets = catalog["mapping_sets"]
-        self.assertEqual(4, len(mapping_sets))
+        self.assertEqual(5, len(mapping_sets))
         self.assertEqual(set(MAPPING_SETS), {
             item["metadata"]["mapping_set_id"]
             for item in mapping_sets

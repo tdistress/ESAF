@@ -17,6 +17,7 @@ mapping_sets:
   - uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0
   - uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0
   - nist--ai-rmf--1.0--esaf-0.17-draft--0.1.0
+  - nist--csf--2.0--esaf-0.17-draft--0.1.0
 mapping_decision_basis: owner_risk_acceptance
 scope:
   controls: 91
@@ -64,7 +65,7 @@ published. Publication is limited to the repository Working Draft and does not
 change any artifact lifecycle state.
 
 All controls, architecture patterns, the pilot profile, mapping sets, and
-mapping records remain Draft. The four mapping lifecycle records have empty
+mapping records remain Draft. The five mapping lifecycle records have empty
 event arrays. This publication does not add reviewer metadata, approval
 metadata, or lifecycle events to those artifacts.
 
