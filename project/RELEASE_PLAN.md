@@ -25,7 +25,7 @@ architecture patterns, the pilot profile, mapping sets, and mapping records
 remain Draft; their lifecycle records remain unchanged. Prerequisite
 dispositions remain Phase 2 timing `DEFER`, ESAF-1300/1400/1700 Working Draft
 deepen packs at `0.3.0`, Phase 6 toolkit third deepen, NIST AI RMF `GO`,
-ISO/IEC 42001 `HOLD`, NIST CSF `HOLD`, ISO/IEC 27001 `HOLD`, NIST SP 800-53
+ISO/IEC 42001 `HOLD`, NIST CSF `GO`, ISO/IEC 27001 `HOLD`, NIST SP 800-53
 `HOLD`, CIS Controls `HOLD`, the ESAF-1500 Working Draft carry-forward at
 `0.1.1`, and the UK jurisdiction profile deepen at Draft `0.2.0`. Issues 55
 and 60 remain open. Publication does not establish certification, compliance,
@@ -57,7 +57,7 @@ architecture patterns, the pilot profile, mapping sets, and mapping records
 remain Draft; their lifecycle records remain unchanged. Prerequisite
 dispositions remain Phase 2 timing `DEFER`, ESAF-1300/1400/1700 Working Draft
 deepen packs at `0.3.0`, Phase 6 toolkit second deepen, NIST AI RMF `GO`,
-ISO/IEC 42001 `HOLD`, NIST CSF `HOLD`, ISO/IEC 27001 `HOLD`, NIST SP 800-53
+ISO/IEC 42001 `HOLD`, NIST CSF `GO`, ISO/IEC 27001 `HOLD`, NIST SP 800-53
 `HOLD`, the ESAF-1500 Working Draft carry-forward at `0.1.1`, and the UK
 jurisdiction profile deepen at Draft `0.2.0`. Issues 55 and 60 remain open.
 Publication does not establish certification, compliance, equivalence,
@@ -89,7 +89,7 @@ architecture patterns, the pilot profile, mapping sets, and mapping records
 remain Draft; their lifecycle records remain unchanged. Prerequisite
 dispositions remain Phase 2 timing `DEFER`, ESAF-1300/1400/1700 Working Draft
 deepen packs at `0.3.0`, Phase 6 toolkit second deepen, NIST AI RMF `GO`,
-ISO/IEC 42001 `HOLD`, NIST CSF `HOLD`, ISO/IEC 27001 `HOLD`, and the ESAF-1500
+ISO/IEC 42001 `HOLD`, NIST CSF `GO`, ISO/IEC 27001 `HOLD`, and the ESAF-1500
 Working Draft carry-forward at `0.1.1`. Issues 55 and 60 remain open.
 Publication does not establish certification, compliance, equivalence,
 endorsement, assurance, or artifact lifecycle approval.
@@ -119,7 +119,7 @@ Publication is limited to the repository Working Draft. All controls,
 architecture patterns, the pilot profile, mapping sets, and mapping records
 remain Draft; their lifecycle records remain unchanged. Prerequisite
 dispositions remain Phase 2 timing `DEFER`, ESAF-1300/1400/1700 Working
-Drafts, NIST AI RMF `GO`, ISO/IEC 42001 `HOLD`, NIST CSF `HOLD`, and the
+Drafts, NIST AI RMF `GO`, ISO/IEC 42001 `HOLD`, NIST CSF `GO`, and the
 ESAF-1500 Working Draft deepen pack. Issues 55 and 60 remain open. Publication
 does not establish certification, compliance, equivalence, endorsement,
 assurance, or artifact lifecycle approval.
@@ -149,7 +149,7 @@ Publication is limited to the repository Working Draft. All controls,
 architecture patterns, the pilot profile, mapping sets, and mapping records
 remain Draft; their lifecycle records remain unchanged. Prerequisite
 dispositions remain Phase 2 timing `DEFER`, ESAF-1300/1400/1700 Working
-Drafts, NIST AI RMF `GO`, ISO/IEC 42001 `HOLD`, NIST CSF `HOLD`, and the
+Drafts, NIST AI RMF `GO`, ISO/IEC 42001 `HOLD`, NIST CSF `GO`, and the
 ESAF-1200 Working Draft deepen pack. Issues 55 and 60 remain open. Publication
 does not establish certification, compliance, equivalence, endorsement,
 assurance, or artifact lifecycle approval.

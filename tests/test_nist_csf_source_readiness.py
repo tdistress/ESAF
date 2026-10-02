@@ -120,10 +120,10 @@ class NistCsfSourceReadinessTests(unittest.TestCase):
         self.assertIn("**Status:** Readiness GO", landing)
         self.assertIn("owner-risk", landing)
         self.assertIn("nist--csf--2.0--esaf-0.17-draft--0.1.0", landing)
-        self.assertIn("4 mapping sets, 476", landing)
+        self.assertIn("5 mapping sets, 582", landing)
         catalog = json.loads(CROSSWALK_CATALOG.read_text(encoding="utf-8"))
-        self.assertEqual(catalog["counts"]["mapping_sets"], 4)
-        self.assertEqual(catalog["counts"]["provisions"], 476)
+        self.assertEqual(catalog["counts"]["mapping_sets"], 5)
+        self.assertEqual(catalog["counts"]["provisions"], 582)
         found = set(re.findall(r"`(I159-[A-Z0-9]+)`", trace))
         self.assertTrue(EXPECTED_TRACEABILITY_IDS.issubset(found))
         self.assertIn("Readiness GO", trace)
@@ -139,21 +139,30 @@ class NistCsfSourceReadinessTests(unittest.TestCase):
         tools_readme = (ROOT / "tools" / "README.md").read_text(encoding="utf-8")
         self.assertIn("render_nist_csf_mapping_go_no_go.py --check", tools_readme)
 
-    def test_no_nist_csf_mapping_artifacts_under_mappings(self) -> None:
-        mappings = ROOT / "crosswalks" / "mappings"
-        if mappings.is_dir():
-            offenders = [
-                path
-                for path in mappings.rglob("*")
-                if path.is_file() and "csf" in path.name.lower() and "hitrust" not in str(path).lower()
-            ]
-            # also catch nist-csf path segments
-            offenders += [
-                path
-                for path in mappings.rglob("*")
-                if path.is_file() and "nist-csf" in str(path).lower()
-            ]
-            self.assertEqual(offenders, [])
+    def test_nist_draft_mapping_snapshot_exists(self) -> None:
+        snapshot = (
+            ROOT
+            / "crosswalks"
+            / "mappings"
+            / "nist"
+            / "csf"
+            / "2.0"
+            / "0.17-draft"
+            / "0.1.0"
+        )
+        self.assertTrue((snapshot / "README.md").is_file())
+        self.assertTrue((snapshot / "PROVISION_INVENTORY.md").is_file())
+        self.assertTrue((snapshot / "ESAF_CONTROL_MANIFEST.json").is_file())
+        records = list(snapshot.glob("csf-*.md"))
+        self.assertEqual(len(records), 106)
+        registry = (
+            ROOT
+            / "crosswalks"
+            / "registry"
+            / "nist--csf--2.0--esaf-0.17-draft--0.1.0.md"
+        )
+        self.assertTrue(registry.is_file())
+
 
 
 if __name__ == "__main__":

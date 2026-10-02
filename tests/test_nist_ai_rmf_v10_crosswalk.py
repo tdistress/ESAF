@@ -22,8 +22,8 @@ class NistAiRmfV10CrosswalkTests(unittest.TestCase):
 
     def test_catalog_includes_nist_set(self) -> None:
         catalog = json.loads((ROOT / "crosswalks/catalog.json").read_text(encoding="utf-8"))
-        self.assertEqual(catalog["counts"]["mapping_sets"], 4)
-        self.assertEqual(catalog["counts"]["provisions"], 476)
+        self.assertEqual(catalog["counts"]["mapping_sets"], 5)
+        self.assertEqual(catalog["counts"]["provisions"], 582)
         self.assertIn("nist", catalog["counts"]["by_authority"])
 
 

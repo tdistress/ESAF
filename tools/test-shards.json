@@ -42,6 +42,7 @@
         "tests/test_nist_ai_rmf_source_readiness.py",
         "tests/test_nist_ai_rmf_v10_crosswalk.py",
         "tests/test_nist_csf_source_readiness.py",
+        "tests/test_nist_csf_v20_crosswalk.py",
         "tests/test_nist_sp_800_53_source_readiness.py",
         "tests/test_owner_risk_evidence.py",
         "tests/test_pci_dss_source_readiness.py",

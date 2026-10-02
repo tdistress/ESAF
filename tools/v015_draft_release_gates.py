@@ -115,9 +115,9 @@ PREREQUISITE_SPECS = (
     ),
     (
         "nist_csf",
-        "HOLD",
+        "GO",
         "nist_csf_path",
-        ("Readiness HOLD", "`HOLD`"),
+        ("Readiness GO", "`GO`"),
     ),
     (
         "iso_iec_27001",

@@ -13,6 +13,7 @@
 | Mapping set | Source version | ESAF release | Editorial status | Lifecycle state |
 |---|---|---|---|---|
 | [nist--ai-rmf--1.0--esaf-0.17-draft--0.1.0](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/README.md) | 1.0 | 0.17-draft | draft |  |
+| [nist--csf--2.0--esaf-0.17-draft--0.1.0](mappings/nist/csf/2.0/0.17-draft/0.1.0/README.md) | 2.0 | 0.17-draft | draft |  |
 | [uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.1.0](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/README.md) | 3.2 | 0.4-alpha | draft |  |
 | [uk-ncsc--cyber-essentials-plus-test-specification--3.2--esaf-0.4-alpha--0.2.0](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.2.0/README.md) | 3.2 | 0.4-alpha | draft |  |
 | [uk-ncsc--cyber-essentials-requirements-for-it-infrastructure--3.3--esaf-0.4-alpha--0.1.0](mappings/uk-ncsc/cyber-essentials-requirements-for-it-infrastructure/3.3/0.4-alpha/0.1.0/README.md) | 3.3 | 0.4-alpha | draft |  |
@@ -25,7 +26,7 @@
 
 ## Coverage and gaps
 
-Mapping sets: 4; provisions: 476; directional relationships: 244; negative dispositions: 333.
+Mapping sets: 5; provisions: 582; directional relationships: 406; negative dispositions: 343.
 
 | Provision record | Disposition | Relationships |
 |---|---|---:|
@@ -101,6 +102,112 @@ Mapping sets: 4; provisions: 476; directional relationships: 244; negative dispo
 | [airmf-measure-4-1](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-measure-4-1.md) | mapped | 3 |
 | [airmf-measure-4-2](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-measure-4-2.md) | mapped | 3 |
 | [airmf-measure-4-3](mappings/nist/ai-rmf/1.0/0.17-draft/0.1.0/airmf-measure-4-3.md) | no_direct_mapping | 0 |
+| [csf-de-ae-02](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-de-ae-02.md) | mapped | 2 |
+| [csf-de-ae-03](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-de-ae-03.md) | mapped | 2 |
+| [csf-de-ae-04](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-de-ae-04.md) | mapped | 2 |
+| [csf-de-ae-06](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-de-ae-06.md) | mapped | 2 |
+| [csf-de-ae-07](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-de-ae-07.md) | no_direct_mapping | 0 |
+| [csf-de-ae-08](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-de-ae-08.md) | mapped | 1 |
+| [csf-de-cm-01](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-de-cm-01.md) | mapped | 2 |
+| [csf-de-cm-02](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-de-cm-02.md) | no_direct_mapping | 0 |
+| [csf-de-cm-03](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-de-cm-03.md) | mapped | 2 |
+| [csf-de-cm-06](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-de-cm-06.md) | mapped | 2 |
+| [csf-de-cm-09](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-de-cm-09.md) | mapped | 2 |
+| [csf-gv-oc-01](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-gv-oc-01.md) | mapped | 1 |
+| [csf-gv-oc-02](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-gv-oc-02.md) | mapped | 1 |
+| [csf-gv-oc-03](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-gv-oc-03.md) | mapped | 2 |
+| [csf-gv-oc-04](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-gv-oc-04.md) | mapped | 1 |
+| [csf-gv-oc-05](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-gv-oc-05.md) | mapped | 1 |
+| [csf-gv-ov-01](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-gv-ov-01.md) | mapped | 1 |
+| [csf-gv-ov-02](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-gv-ov-02.md) | mapped | 2 |
+| [csf-gv-ov-03](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-gv-ov-03.md) | mapped | 2 |
+| [csf-gv-po-01](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-gv-po-01.md) | mapped | 1 |
+| [csf-gv-po-02](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-gv-po-02.md) | mapped | 2 |
+| [csf-gv-rm-01](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-gv-rm-01.md) | mapped | 1 |
+| [csf-gv-rm-02](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-gv-rm-02.md) | mapped | 2 |
+| [csf-gv-rm-03](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-gv-rm-03.md) | mapped | 2 |
+| [csf-gv-rm-04](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-gv-rm-04.md) | mapped | 1 |
+| [csf-gv-rm-05](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-gv-rm-05.md) | mapped | 2 |
+| [csf-gv-rm-06](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-gv-rm-06.md) | mapped | 1 |
+| [csf-gv-rm-07](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-gv-rm-07.md) | no_direct_mapping | 0 |
+| [csf-gv-rr-01](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-gv-rr-01.md) | mapped | 1 |
+| [csf-gv-rr-02](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-gv-rr-02.md) | mapped | 2 |
+| [csf-gv-rr-03](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-gv-rr-03.md) | mapped | 1 |
+| [csf-gv-rr-04](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-gv-rr-04.md) | no_direct_mapping | 0 |
+| [csf-gv-sc-01](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-gv-sc-01.md) | mapped | 1 |
+| [csf-gv-sc-02](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-gv-sc-02.md) | mapped | 1 |
+| [csf-gv-sc-03](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-gv-sc-03.md) | mapped | 2 |
+| [csf-gv-sc-04](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-gv-sc-04.md) | mapped | 2 |
+| [csf-gv-sc-05](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-gv-sc-05.md) | mapped | 1 |
+| [csf-gv-sc-06](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-gv-sc-06.md) | mapped | 2 |
+| [csf-gv-sc-07](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-gv-sc-07.md) | mapped | 1 |
+| [csf-gv-sc-08](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-gv-sc-08.md) | mapped | 2 |
+| [csf-gv-sc-09](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-gv-sc-09.md) | mapped | 1 |
+| [csf-gv-sc-10](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-gv-sc-10.md) | mapped | 2 |
+| [csf-id-am-01](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-id-am-01.md) | no_direct_mapping | 0 |
+| [csf-id-am-02](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-id-am-02.md) | mapped | 3 |
+| [csf-id-am-03](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-id-am-03.md) | mapped | 1 |
+| [csf-id-am-04](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-id-am-04.md) | mapped | 2 |
+| [csf-id-am-05](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-id-am-05.md) | mapped | 1 |
+| [csf-id-am-07](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-id-am-07.md) | mapped | 2 |
+| [csf-id-am-08](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-id-am-08.md) | mapped | 3 |
+| [csf-id-im-01](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-id-im-01.md) | mapped | 1 |
+| [csf-id-im-02](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-id-im-02.md) | mapped | 2 |
+| [csf-id-im-03](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-id-im-03.md) | mapped | 2 |
+| [csf-id-im-04](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-id-im-04.md) | mapped | 2 |
+| [csf-id-ra-01](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-id-ra-01.md) | mapped | 1 |
+| [csf-id-ra-02](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-id-ra-02.md) | no_direct_mapping | 0 |
+| [csf-id-ra-03](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-id-ra-03.md) | mapped | 2 |
+| [csf-id-ra-04](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-id-ra-04.md) | mapped | 1 |
+| [csf-id-ra-05](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-id-ra-05.md) | mapped | 1 |
+| [csf-id-ra-06](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-id-ra-06.md) | mapped | 1 |
+| [csf-id-ra-07](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-id-ra-07.md) | mapped | 3 |
+| [csf-id-ra-08](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-id-ra-08.md) | mapped | 1 |
+| [csf-id-ra-09](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-id-ra-09.md) | mapped | 2 |
+| [csf-id-ra-10](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-id-ra-10.md) | mapped | 2 |
+| [csf-pr-aa-01](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-pr-aa-01.md) | mapped | 1 |
+| [csf-pr-aa-02](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-pr-aa-02.md) | mapped | 1 |
+| [csf-pr-aa-03](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-pr-aa-03.md) | mapped | 2 |
+| [csf-pr-aa-04](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-pr-aa-04.md) | mapped | 2 |
+| [csf-pr-aa-05](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-pr-aa-05.md) | mapped | 3 |
+| [csf-pr-aa-06](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-pr-aa-06.md) | no_direct_mapping | 0 |
+| [csf-pr-at-01](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-pr-at-01.md) | mapped | 2 |
+| [csf-pr-at-02](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-pr-at-02.md) | mapped | 3 |
+| [csf-pr-ds-01](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-pr-ds-01.md) | mapped | 2 |
+| [csf-pr-ds-02](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-pr-ds-02.md) | mapped | 2 |
+| [csf-pr-ds-10](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-pr-ds-10.md) | mapped | 2 |
+| [csf-pr-ds-11](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-pr-ds-11.md) | mapped | 2 |
+| [csf-pr-ir-01](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-pr-ir-01.md) | mapped | 2 |
+| [csf-pr-ir-02](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-pr-ir-02.md) | no_direct_mapping | 0 |
+| [csf-pr-ir-03](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-pr-ir-03.md) | mapped | 2 |
+| [csf-pr-ir-04](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-pr-ir-04.md) | mapped | 2 |
+| [csf-pr-ps-01](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-pr-ps-01.md) | mapped | 2 |
+| [csf-pr-ps-02](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-pr-ps-02.md) | mapped | 2 |
+| [csf-pr-ps-03](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-pr-ps-03.md) | no_direct_mapping | 0 |
+| [csf-pr-ps-04](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-pr-ps-04.md) | mapped | 2 |
+| [csf-pr-ps-05](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-pr-ps-05.md) | mapped | 2 |
+| [csf-pr-ps-06](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-pr-ps-06.md) | mapped | 1 |
+| [csf-rc-co-03](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-rc-co-03.md) | mapped | 2 |
+| [csf-rc-co-04](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-rc-co-04.md) | no_direct_mapping | 0 |
+| [csf-rc-rp-01](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-rc-rp-01.md) | mapped | 2 |
+| [csf-rc-rp-02](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-rc-rp-02.md) | mapped | 2 |
+| [csf-rc-rp-03](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-rc-rp-03.md) | mapped | 2 |
+| [csf-rc-rp-04](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-rc-rp-04.md) | mapped | 2 |
+| [csf-rc-rp-05](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-rc-rp-05.md) | mapped | 1 |
+| [csf-rc-rp-06](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-rc-rp-06.md) | mapped | 1 |
+| [csf-rs-an-03](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-rs-an-03.md) | mapped | 1 |
+| [csf-rs-an-06](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-rs-an-06.md) | mapped | 2 |
+| [csf-rs-an-07](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-rs-an-07.md) | mapped | 2 |
+| [csf-rs-an-08](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-rs-an-08.md) | mapped | 1 |
+| [csf-rs-co-02](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-rs-co-02.md) | mapped | 1 |
+| [csf-rs-co-03](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-rs-co-03.md) | mapped | 1 |
+| [csf-rs-ma-01](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-rs-ma-01.md) | mapped | 1 |
+| [csf-rs-ma-02](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-rs-ma-02.md) | mapped | 2 |
+| [csf-rs-ma-03](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-rs-ma-03.md) | mapped | 1 |
+| [csf-rs-ma-04](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-rs-ma-04.md) | mapped | 2 |
+| [csf-rs-ma-05](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-rs-ma-05.md) | mapped | 2 |
+| [csf-rs-mi-01](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-rs-mi-01.md) | mapped | 3 |
+| [csf-rs-mi-02](mappings/nist/csf/2.0/0.17-draft/0.1.0/csf-rs-mi-02.md) | mapped | 2 |
 | [cepts32-a-001](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-a-001.md) | no_direct_mapping | 0 |
 | [cepts32-a-002](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-a-002.md) | no_direct_mapping | 0 |
 | [cepts32-a-003](mappings/uk-ncsc/cyber-essentials-plus-test-specification/3.2/0.4-alpha/0.1.0/cepts32-a-003.md) | no_direct_mapping | 0 |

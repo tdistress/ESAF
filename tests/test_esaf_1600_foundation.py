@@ -343,8 +343,8 @@ class Esaf1600FoundationTests(unittest.TestCase):
 
     def test_templates_are_outside_authoritative_mapping_discovery(self) -> None:
         result = validate(ROOT)
-        self.assertEqual(len(result.mapping_sets), 4)
-        self.assertEqual(len(result.lifecycle_records), 4)
+        self.assertEqual(len(result.mapping_sets), 5)
+        self.assertEqual(len(result.lifecycle_records), 5)
         self.assertTrue(all("TEMPLATE" not in item["path"] for item in result.mapping_sets))
         self.assertTrue(all("TEMPLATE" not in item["path"] for item in result.lifecycle_records))
 

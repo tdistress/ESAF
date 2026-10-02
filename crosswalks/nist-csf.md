@@ -8,19 +8,20 @@ independent qualified review for Draft-only mapping authorship. Source
 identity, publication rights, inventory, and related readiness gates remain
 PASS.
 
-A Draft `esaf_to_external` mapping set for all 106 CSF 2.0 subcategory
-identifiers is authorized under ESAF-1600. Mapping artifacts remain Draft.
-Qualified review remains deferred. This status does not assert NIST CSF
-compliance, NIST approval, certification, equivalence, endorsement,
-authorization, coverage, or legal sufficiency.
+A Draft `esaf_to_external` mapping set covers all 106 CSF 2.0 subcategory
+identifiers. Mapping artifacts remain Draft. Qualified review remains deferred.
+This status does not assert NIST CSF compliance, NIST approval,
+certification, equivalence, endorsement, authorization, coverage, or legal
+sufficiency.
 
-Generated crosswalk catalog measures: 4 mapping sets, 476 provisions, 244
-relationships, and 333 negative dispositions.
+Generated crosswalk catalog measures after this snapshot: 5 mapping sets, 582
+provisions, 406 relationships, and 343 negative dispositions.
 
 ## Decision evidence
 
 - [Owner-risk people-gate disposition](../docs/superpowers/reviews/2026-10-02-nist-csf-owner-risk-people-gate-disposition.md)
 - [Owner-risk Draft mapping design](../docs/superpowers/specs/2026-10-02-nist-csf-owner-risk-draft-mapping-design.md)
+- [Draft mapping oracle](../docs/superpowers/specs/2026-10-02-nist-csf-2.0-draft-mapping-oracle.json)
 - [Public source-readiness oracle](../docs/superpowers/specs/2026-09-07-nist-csf-source-readiness-oracle.json)
 - [Subcategory inventory](../docs/superpowers/specs/2026-09-07-nist-csf-2.0-subcategory-inventory.json)
 - [Publication-rights review](../docs/superpowers/reviews/2026-09-07-nist-csf-publication-rights-review.md)
@@ -31,11 +32,9 @@ relationships, and 333 negative dispositions.
 
 ## Draft mapping snapshot
 
-Authoritative Draft snapshot (populated in the mapping commit):
-
 - Mapping-set ID: `nist--csf--2.0--esaf-0.17-draft--0.1.0`
-- Path: `mappings/nist/csf/2.0/0.17-draft/0.1.0/`
-- Registry: `registry/nist--csf--2.0--esaf-0.17-draft--0.1.0.md`
+- Path: [`mappings/nist/csf/2.0/0.17-draft/0.1.0/`](mappings/nist/csf/2.0/0.17-draft/0.1.0/)
+- Registry: [`registry/nist--csf--2.0--esaf-0.17-draft--0.1.0.md`](registry/nist--csf--2.0--esaf-0.17-draft--0.1.0.md)
 
 Future lifecycle advance beyond Draft shall follow [ESAF-1600](ESAF-1600.md)
 with mapper-distinct qualified review. Owner-risk GO does not complete that

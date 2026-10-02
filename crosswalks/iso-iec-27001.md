@@ -4,8 +4,8 @@
 
 The mechanically derived readiness decision is `HOLD`. No substantive ISO/IEC
 27001 mapping is approved or present. ISO/IEC 27001 mapping artifacts: `0`. The
-generated crosswalk catalog now measures 4 mapping sets, 476 provisions, 244
-relationships, and 333 negative dispositions.
+generated crosswalk catalog now measures 5 mapping sets, 582 provisions, 406
+relationships, and 343 negative dispositions.
 
 ## Decision evidence
 

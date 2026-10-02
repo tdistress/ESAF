@@ -49,10 +49,10 @@ EXPECTED_SCOPE = {
     "controls": 91,
     "control_families": 16,
     "architecture_patterns": 7,
-    "mapping_sets": 4,
-    "mapping_provisions": 476,
+    "mapping_sets": 5,
+    "mapping_provisions": 582,
     "relationship_legs": 244,
-    "negative_dispositions": 333,
+    "negative_dispositions": 343,
     "assessment_foundation": True,
     "draft_profiles": 1,
     "pci_dss_disposition": "HOLD",
@@ -86,8 +86,8 @@ EVIDENCE_READINESS_BODY = """# v0.5-beta publication readiness
 
 This evidence candidate covers the complete Git-tracked repository. Its
 derived inventory contains 91 controls in 16 families, 7 architecture
-patterns, 4 mapping sets, and 476 mapping provisions. The mappings contain 244
-relationship legs and 333 negative dispositions.
+patterns, 5 mapping sets, and 582 mapping provisions. The mappings contain 406
+relationship legs and 343 negative dispositions.
 
 The scope includes the ESAF-1500 assessment foundation and one Draft UK pilot
 profile under the reusable profile contract. The PCI DSS readiness record has
@@ -137,9 +137,9 @@ CLOSURE_READINESS_BODY = """# v0.5-beta publication readiness
 ## Scope
 
 This closure candidate covers the complete Git-tracked repository. Its derived
-inventory contains 91 controls in 16 families, 7 architecture patterns, 4
-mapping sets, and 476 mapping provisions. The mappings contain 244 relationship
-legs and 333 negative dispositions.
+inventory contains 91 controls in 16 families, 7 architecture patterns, 5
+mapping sets, and 582 mapping provisions. The mappings contain 406 relationship
+legs and 343 negative dispositions.
 
 The scope includes the ESAF-1500 assessment foundation and one Draft UK pilot
 profile under the reusable profile contract. The PCI DSS readiness record has
@@ -195,9 +195,9 @@ PUBLISHED_READINESS_BODY = """# v0.5-beta publication readiness
 ## Scope
 
 This published record covers the complete Git-tracked repository. Its derived
-inventory contains 91 controls in 16 families, 7 architecture patterns, 4
-mapping sets, and 476 mapping provisions. The mappings contain 244 relationship
-legs and 333 negative dispositions.
+inventory contains 91 controls in 16 families, 7 architecture patterns, 5
+mapping sets, and 582 mapping provisions. The mappings contain 406 relationship
+legs and 343 negative dispositions.
 
 The scope includes the ESAF-1500 assessment foundation and one Draft UK pilot
 profile under the reusable profile contract. The PCI DSS readiness record has
@@ -2751,7 +2751,7 @@ class V05ReleaseRecordTests(unittest.TestCase):
                     self.assertNotIn("reviewer", record)
                     self.assertNotIn("approver", record)
                     self.assertNotIn("approval", record)
-        self.assertEqual(476, provision_count)
+        self.assertEqual(582, provision_count)
 
     def test_v04_published_validator_remains_green(self) -> None:
         historical = load_v04_front_matter(V04_RECORD)

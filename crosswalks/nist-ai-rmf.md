@@ -14,8 +14,8 @@ This status does not assert NIST AI RMF compliance, NIST approval,
 certification, equivalence, endorsement, authorization, coverage, or legal
 sufficiency.
 
-Generated crosswalk catalog measures after this snapshot: 4 mapping sets, 476
-provisions, 244 relationships, and 333 negative dispositions.
+Generated crosswalk catalog measures after this snapshot: 5 mapping sets, 582
+provisions, 406 relationships, and 343 negative dispositions.
 
 ## Decision evidence
 
