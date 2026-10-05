@@ -303,6 +303,18 @@ class Soc2EvidenceManifestContractTests(unittest.TestCase):
                 del bad["review"]["attestations"][0][key]
                 with self.assertRaises(ValueError):
                     self.validate_manifest(bad)
+        inadequate_values = (
+            ("qualification", "   "),
+            ("authorized_source_access", False),
+            ("independence", False),
+            ("conflict_disposition", "unresolved"),
+        )
+        for key, value in inadequate_values:
+            with self.subTest(key=key, value=value):
+                bad = copy.deepcopy(self.fixture.manifest)
+                bad["review"]["attestations"][0][key] = value
+                with self.assertRaises(ValueError):
+                    self.validate_manifest(bad)
 
     def test_invalid_review_date_or_disposition_fails(self):
         for key, value in (("review_date", "not-a-date"), ("disposition", "MAYBE")):
