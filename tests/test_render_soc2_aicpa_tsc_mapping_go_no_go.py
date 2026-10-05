@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import copy
 import hashlib
+import io
 import json
 import posixpath
 import tempfile
 import unittest
+from contextlib import redirect_stderr
 from pathlib import Path
 from unittest.mock import patch
 
@@ -213,6 +215,42 @@ class Soc2EvidenceManifestContractTests(unittest.TestCase):
             repository_root=self.fixture.root,
             mapper_identity="mapper-1",
         )
+
+    def run_cli(self, matrix_value):
+        matrix_path = self.fixture.root / "matrix.json"
+        matrix_path.write_text(json.dumps(matrix_value), encoding="utf-8")
+        error = io.StringIO()
+        with redirect_stderr(error):
+            status = renderer.main(["--matrix", str(matrix_path), "--output", str(self.fixture.root / "out.md")])
+        return status, error.getvalue()
+
+    def assert_cli_validation_error(self, matrix_value, message):
+        status, error = self.run_cli(matrix_value)
+        self.assertEqual(status, 2)
+        self.assertTrue(error.startswith("error:"), error)
+        self.assertNotIn("Traceback", error)
+        self.assertIn(message, error)
+
+    def test_cli_reports_wrong_type_manifest_category_without_traceback(self):
+        self.fixture.manifest["evidence_inputs"][0]["category"] = ["source"]
+        self.fixture.write_manifest()
+        self.fixture.matrix["mapping_contract"]["evidence_manifest"]["sha256"] = _sha256(self.fixture.manifest_path)
+        self.assert_cli_validation_error(self.fixture.matrix, "category allowlist")
+
+    def test_cli_reports_wrong_type_reviewer_role_without_traceback(self):
+        self.fixture.manifest["review"]["attestations"][0]["role"] = ["inventory_and_specification"]
+        self.fixture.write_manifest()
+        self.fixture.matrix["mapping_contract"]["evidence_manifest"]["sha256"] = _sha256(self.fixture.manifest_path)
+        self.assert_cli_validation_error(self.fixture.matrix, "reviewer roles")
+
+    def test_cli_reports_wrong_type_manifest_reference_without_traceback(self):
+        self.fixture.matrix["mapping_contract"]["evidence_manifest"]["path"] = ["evidence/manifest.json"]
+        self.assert_cli_validation_error(self.fixture.matrix, "evidence manifest path")
+
+    def test_cli_reports_wrong_type_gate_collection_without_traceback(self):
+        self.fixture = SyntheticManifestFixture(self.temp.name, positive=False)
+        self.fixture.matrix["gates"] = {"gate": "semantic_and_normative_feasibility"}
+        self.assert_cli_validation_error(self.fixture.matrix, "gate")
 
     def test_complete_not_evidenced_manifest_is_valid_and_keeps_hold(self):
         fixture = SyntheticManifestFixture(self.temp.name, positive=False)
