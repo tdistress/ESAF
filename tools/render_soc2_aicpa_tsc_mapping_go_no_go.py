@@ -235,6 +235,13 @@ def _normalized_input_path(value, root, category):
         resolved.relative_to(root.resolve())
     except ValueError as exc:
         raise ValueError("evidence input path escapes repository root") from exc
+    category_root = root / category
+    if category_root.is_symlink():
+        raise ValueError("evidence input category root cannot be a symlink")
+    try:
+        resolved.relative_to(category_root.resolve())
+    except ValueError as exc:
+        raise ValueError("evidence input target escapes its category allowlist") from exc
     if not resolved.is_file():
         raise ValueError("evidence input path is absent or not a file")
     return normalized, resolved
@@ -354,6 +361,8 @@ def validate_manifest(manifest, matrix, *, repository_root=ROOT, mapper_identity
 
 def derive_decision(matrix, *, manifest=None, repository_root=ROOT, verify_source_digest=True):
     contract = matrix.get("mapping_contract") if isinstance(matrix, dict) else None
+    if not isinstance(contract, dict) or "evidence_manifest" not in contract:
+        raise ValueError("matrix must pin an evidence manifest before deriving a decision")
     if manifest is None and isinstance(contract, dict) and "evidence_manifest" in contract:
         ref = _exact(contract["evidence_manifest"], {"path", "sha256"}, "evidence_manifest")
         if ref["path"] != MANIFEST_PATH and not (ROOT.resolve() != CODE_ROOT.resolve() and ref["path"] == "evidence/manifest.json"):

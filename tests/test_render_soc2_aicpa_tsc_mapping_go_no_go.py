@@ -48,7 +48,7 @@ class Soc2ReadinessTests(unittest.TestCase):
     def test_go_is_rejected_without_affirmative_source_rights_and_inventory_evidence(self):
         # The matrix can claim every gate passed, but it cannot override the
         # pinned source oracle and rights review's actual HOLD state.
-        with self.assertRaisesRegex(ValueError, "source artifact retrieval"):
+        with self.assertRaisesRegex(ValueError, "evidence manifest"):
             derive_decision(matrix(), verify_source_digest=False)
 
     def test_go_requires_supported_feasibility_and_exact_candidate_attestations(self):
@@ -65,7 +65,7 @@ class Soc2ReadinessTests(unittest.TestCase):
             source_ref = matrix()["source_oracle"]["path"]
             resolver = lambda value, _label: oracle_path if value == source_ref else rights_path
             with patch("tools.render_soc2_aicpa_tsc_mapping_go_no_go._repo_path", side_effect=resolver):
-                with self.assertRaisesRegex(ValueError, "GO is disabled in schema 1.0.0"):
+                with self.assertRaisesRegex(ValueError, "evidence manifest"):
                     derive_decision(matrix(), verify_source_digest=False)
 
     def test_go_still_requires_positive_probe_and_no_open_findings(self):
@@ -258,6 +258,15 @@ class Soc2EvidenceManifestContractTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "category allowlist"):
             self.validate_manifest(bad)
 
+    def test_symlink_cannot_alias_another_input_category(self):
+        alias = self.fixture.root / "source/inventory-alias.json"
+        alias.symlink_to(self.fixture.root / "inventory/inventory.json")
+        bad = copy.deepcopy(self.fixture.manifest)
+        bad["evidence_inputs"][0]["path"] = "source/inventory-alias.json"
+        bad["evidence_inputs"][0]["sha256"] = _sha256(alias)
+        with self.assertRaisesRegex(ValueError, "category|allowlist"):
+            self.validate_manifest(bad)
+
     def test_stale_matrix_pinned_manifest_digest_fails(self):
         self.fixture.matrix["mapping_contract"]["evidence_manifest"]["sha256"] = "0" * 64
         with self.assertRaisesRegex(ValueError, "manifest.*digest|digest.*manifest"):
@@ -407,6 +416,13 @@ class Soc2EvidenceManifestContractTests(unittest.TestCase):
             renderer.derive_decision(no_go, manifest=self.fixture.manifest,
                                      repository_root=self.fixture.root, verify_source_digest=False)
 
+    def test_high_level_derivation_requires_manifest_pin_even_for_hold(self):
+        fixture = SyntheticManifestFixture(self.temp.name, positive=False)
+        fixture.matrix["mapping_contract"].pop("evidence_manifest")
+        with self.assertRaisesRegex(ValueError, "evidence manifest"):
+            renderer.derive_decision(fixture.matrix, repository_root=fixture.root,
+                                     verify_source_digest=False)
+
     def test_all_positive_case_requires_every_independent_prerequisite(self):
         fixture = SyntheticManifestFixture(self.temp.name, ready_sources=True)
         self.assertEqual(renderer.derive_decision(fixture.matrix, manifest=fixture.manifest,
@@ -420,7 +436,8 @@ class Soc2ReadinessBlockerRuleTests(unittest.TestCase):
         b = blocker("B1", gate, "reconsiderable")
         m = matrix({**{g: "PASS" for g in GATES}, gate: "BLOCKED"}, [b])
         m["recorded_decision"] = "HOLD"
-        self.assertEqual(derive_decision(m, verify_source_digest=False), "HOLD")
+        validate_matrix(m, verify_source_digest=False)
+        self.assertEqual(m["recorded_decision"], "HOLD")
         m["blockers"][0]["remediation"] = "terminal"
         with self.assertRaisesRegex(ValueError, "NO_GO"):
             validate_matrix(m, verify_source_digest=False)
@@ -430,7 +447,8 @@ class Soc2ReadinessBlockerRuleTests(unittest.TestCase):
         b = blocker("B1", gate, "terminal")
         m = matrix({**{g: "PASS" for g in GATES}, gate: "BLOCKED"}, [b])
         m["recorded_decision"] = "NO_GO"
-        self.assertEqual(derive_decision(m, verify_source_digest=False), "NO_GO")
+        validate_matrix(m, verify_source_digest=False)
+        self.assertEqual(m["recorded_decision"], "NO_GO")
         m["blockers"][0]["remediation"] = "reconsiderable"
         with self.assertRaises(ValueError):
             validate_matrix(m, verify_source_digest=False)
