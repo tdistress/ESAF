@@ -70,6 +70,7 @@ class Soc2AicpaTscSourceReadinessTests(unittest.TestCase):
         manifest = json.loads(manifest_bytes)
         self.assertEqual(manifest["feasibility"]["status"], "not_evidenced")
         self.assertEqual(manifest["review"]["status"], "not_completed")
+        self.assertEqual(manifest["review"]["participants"], [])
         self.assertIn("no case-specific permission for\nESAF is evidenced", rights)
 
     def test_public_status_has_zero_mapping_artifacts_and_no_catalog_registration(self):

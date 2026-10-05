@@ -81,11 +81,12 @@ def _sha256(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def _subject_digest(feasibility, inputs):
-    """Canonical digest: UTF-8 JSON, sorted keys, compact separators, no reviews."""
+def _subject_digest(feasibility, inputs, participants=None):
+    """Canonical digest of feasibility, inputs, and participants, excluding attestations."""
     pairs = [{"path": posixpath.normpath(item["path"]), "sha256": item["sha256"]} for item in inputs]
     pairs.sort(key=lambda item: item["path"])
-    subject = {"feasibility": feasibility, "inputs": pairs}
+    roster = sorted(participants or [], key=lambda participant: participant["role"])
+    subject = {"feasibility": feasibility, "inputs": pairs, "participants": roster}
     encoded = json.dumps(subject, sort_keys=True, separators=(",", ":")).encode("utf-8")
     return hashlib.sha256(encoded).hexdigest()
 
@@ -127,10 +128,22 @@ class SyntheticManifestFixture:
                 "status": "complete" if positive else "not_completed",
                 "rationale": "Two independent synthetic reviews completed." if positive else "No qualified reviewers are evidenced.",
                 "blocker_ids": [] if positive else ["SOC2-TSC-READINESS-B005"],
+                "participants": [],
                 "attestations": [],
             },
         }
         if positive:
+            self.manifest["review"]["participants"] = [self._participant(role, identity) for role, identity in (
+                ("mapper", "mapper-1"),
+                ("aicpa_tsc_subject_matter", "reviewer-aicpa"),
+                ("esaf_specification_and_mapping", "reviewer-spec"),
+                ("publication_rights", "reviewer-rights"),
+                ("security_and_overclaiming", "reviewer-security"),
+                ("owner_authorized_approver", "approver-1"),
+            )]
+            self.manifest["evidence_subject_sha256"] = _subject_digest(
+                self.feasibility, self.inputs, self.manifest["review"]["participants"]
+            )
             self.manifest["review"]["attestations"] = [self._attestation(role, identity) for role, identity in (
                 ("inventory_and_specification", "reviewer-spec"),
                 ("security_and_overclaiming", "reviewer-security"),
@@ -151,6 +164,38 @@ class SyntheticManifestFixture:
         rights_path.write_text("**Disposition:** `PASS`\n" if ready_sources else "**Disposition:** `HOLD`\n", encoding="utf-8")
         self.matrix["source_oracle"] = {"path": oracle_path.relative_to(self.root).as_posix(), "sha256": _sha256(oracle_path)}
         self.matrix["rights_review"]["sha256"] = _sha256(rights_path)
+
+    def _participant(self, role, identity):
+        qualification_reference = self._reference("qualifications", role)
+        access_reference = self._reference("source-access", role)
+        approval_reference = (self._reference("owner-approvals", role)
+                              if role in {"aicpa_tsc_subject_matter", "owner_authorized_approver"} else None)
+        return {
+            "identity": identity,
+            "role": role,
+            "qualification": {
+                "mapper": ["2017 Trust Services Criteria with Revised Points of Focus – 2022", "ESAF-1600"],
+                "aicpa_tsc_subject_matter": ["Owner-approved Trust Services Criteria subject-matter reviewer"],
+                "esaf_specification_and_mapping": ["Independent ESAF specification and mapping reviewer"],
+                "publication_rights": ["Independent publication-rights reviewer"],
+                "security_and_overclaiming": ["Independent security and overclaiming reviewer"],
+                "owner_authorized_approver": ["An approver authorized by the ESAF project owner"],
+            }[role],
+            "qualification_evidence": [qualification_reference],
+            "authorized_source_access": True,
+            "source_access_evidence": [access_reference],
+            "independent_from_mapper": role != "mapper",
+            "owner_approved": role in {"aicpa_tsc_subject_matter", "owner_authorized_approver"},
+            "owner_approval_reference": approval_reference,
+            "conflict_disposition": "none",
+        }
+
+    def _reference(self, category, role):
+        relative = f"participant-evidence/{category}/{role}.json"
+        path = self.root / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps({"synthetic": True, "category": category, "role": role}), encoding="utf-8")
+        return {"path": relative, "sha256": _sha256(path)}
 
     def _attestation(self, role, identity):
         return {
@@ -203,7 +248,7 @@ class Soc2EvidenceManifestContractTests(unittest.TestCase):
         matrix_candidate = copy.deepcopy(matrix_value or self.fixture.matrix)
         if manifest is not None:
             if refresh_subject:
-                subject = _subject_digest(candidate["feasibility"], candidate["evidence_inputs"])
+                subject = _subject_digest(candidate["feasibility"], candidate["evidence_inputs"], candidate["review"]["participants"])
                 candidate["evidence_subject_sha256"] = subject
                 for attestation in candidate["review"]["attestations"]:
                     attestation["evidence_subject_sha256"] = subject
@@ -363,6 +408,156 @@ class Soc2EvidenceManifestContractTests(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     self.validate_manifest(bad)
 
+    def test_complete_review_requires_every_b005_participant_role(self):
+        required = {
+            "mapper", "aicpa_tsc_subject_matter", "esaf_specification_and_mapping",
+            "publication_rights", "security_and_overclaiming", "owner_authorized_approver",
+        }
+        for participants in (
+            [],
+            self.fixture.manifest["review"]["participants"][:-1],
+            self.fixture.manifest["review"]["participants"] * 2,
+        ):
+            with self.subTest(count=len(participants)):
+                bad = copy.deepcopy(self.fixture.manifest)
+                bad["review"]["participants"] = participants
+                bad["evidence_subject_sha256"] = _subject_digest(
+                    bad["feasibility"], bad["evidence_inputs"], participants
+                )
+                for attestation in bad["review"]["attestations"]:
+                    attestation["evidence_subject_sha256"] = bad["evidence_subject_sha256"]
+                with self.assertRaisesRegex(ValueError, "participant|role"):
+                    self.validate_manifest(bad)
+        self.assertEqual(
+            {p["role"] for p in self.fixture.manifest["review"]["participants"]}, required
+        )
+
+    def test_b005_participants_require_qualification_access_independence_and_approval(self):
+        mutations = (
+            ("qualification", []),
+            ("authorized_source_access", False),
+            ("independent_from_mapper", False),
+            ("owner_approved", False),
+            ("conflict_disposition", "unresolved"),
+        )
+        for key, value in mutations:
+            bad = copy.deepcopy(self.fixture.manifest)
+            participant = next(p for p in bad["review"]["participants"] if p["role"] == "aicpa_tsc_subject_matter")
+            participant[key] = value
+            bad["evidence_subject_sha256"] = _subject_digest(
+                bad["feasibility"], bad["evidence_inputs"], bad["review"]["participants"]
+            )
+            for attestation in bad["review"]["attestations"]:
+                attestation["evidence_subject_sha256"] = bad["evidence_subject_sha256"]
+            with self.subTest(key=key), self.assertRaises(ValueError):
+                self.validate_manifest(bad)
+
+    def test_b005_roles_require_role_specific_qualification_and_evidence_references(self):
+        bad_qualification = copy.deepcopy(self.fixture.manifest)
+        participant = next(p for p in bad_qualification["review"]["participants"] if p["role"] == "aicpa_tsc_subject_matter")
+        participant["qualification"] = ["Qualified synthetic role evidence"]
+        bad_qualification["evidence_subject_sha256"] = _subject_digest(
+            bad_qualification["feasibility"], bad_qualification["evidence_inputs"], bad_qualification["review"]["participants"]
+        )
+        for attestation in bad_qualification["review"]["attestations"]:
+            attestation["evidence_subject_sha256"] = bad_qualification["evidence_subject_sha256"]
+        with self.assertRaisesRegex(ValueError, "qualification|role"):
+            self.validate_manifest(bad_qualification)
+
+        for role, field in (("publication_rights", "qualification_evidence"),
+                            ("security_and_overclaiming", "source_access_evidence"),
+                            ("owner_authorized_approver", "owner_approval_reference")):
+            bad = copy.deepcopy(self.fixture.manifest)
+            participant = next(p for p in bad["review"]["participants"] if p["role"] == role)
+            participant[field] = [] if field != "owner_approval_reference" else None
+            bad["evidence_subject_sha256"] = _subject_digest(
+                bad["feasibility"], bad["evidence_inputs"], bad["review"]["participants"]
+            )
+            for attestation in bad["review"]["attestations"]:
+                attestation["evidence_subject_sha256"] = bad["evidence_subject_sha256"]
+            with self.subTest(role=role, field=field), self.assertRaisesRegex(ValueError, "evidence|approval|reference"):
+                self.validate_manifest(bad)
+
+    def test_participant_evidence_references_are_attributable_and_digest_checked(self):
+        bad = copy.deepcopy(self.fixture.manifest)
+        participant = next(p for p in bad["review"]["participants"] if p["role"] == "publication_rights")
+        participant["qualification_evidence"] = [{"uri": "symbolic:qualification", "sha256": "a" * 64}]
+        bad["evidence_subject_sha256"] = _subject_digest(
+            bad["feasibility"], bad["evidence_inputs"], bad["review"]["participants"]
+        )
+        for attestation in bad["review"]["attestations"]:
+            attestation["evidence_subject_sha256"] = bad["evidence_subject_sha256"]
+        with self.assertRaisesRegex(ValueError, "HTTPS"):
+            self.validate_manifest(bad)
+
+        for uri in ("http://evidence.example.invalid/record", "https://user:pass@evidence.example.invalid/record",
+                    "https://evidence.example.invalid/record?token=secret"):
+            bad = copy.deepcopy(self.fixture.manifest)
+            participant = next(p for p in bad["review"]["participants"] if p["role"] == "publication_rights")
+            participant["qualification_evidence"] = [{"uri": uri, "sha256": "a" * 64}]
+            bad["evidence_subject_sha256"] = _subject_digest(
+                bad["feasibility"], bad["evidence_inputs"], bad["review"]["participants"]
+            )
+            for attestation in bad["review"]["attestations"]:
+                attestation["evidence_subject_sha256"] = bad["evidence_subject_sha256"]
+            with self.subTest(uri=uri), self.assertRaisesRegex(ValueError, "HTTPS"):
+                self.validate_manifest(bad)
+
+        remote_reference = copy.deepcopy(self.fixture.manifest)
+        participant = next(p for p in remote_reference["review"]["participants"] if p["role"] == "publication_rights")
+        participant["qualification_evidence"] = [{
+            "uri": "https://evidence.example.invalid/reviewer-qualification",
+            "sha256": "a" * 64,
+        }]
+        remote_reference["evidence_subject_sha256"] = _subject_digest(
+            remote_reference["feasibility"], remote_reference["evidence_inputs"], remote_reference["review"]["participants"]
+        )
+        for attestation in remote_reference["review"]["attestations"]:
+            attestation["evidence_subject_sha256"] = remote_reference["evidence_subject_sha256"]
+        self.assertEqual(self.validate_manifest(remote_reference), "positive")
+
+        bad = copy.deepcopy(self.fixture.manifest)
+        participant = next(p for p in bad["review"]["participants"] if p["role"] == "publication_rights")
+        reference = participant["qualification_evidence"][0]
+        (self.fixture.root / reference["path"]).write_text("changed", encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "stale|digest"):
+            self.validate_manifest(bad)
+
+    def test_mapper_requires_both_b005_experience_areas(self):
+        bad = copy.deepcopy(self.fixture.manifest)
+        mapper = next(p for p in bad["review"]["participants"] if p["role"] == "mapper")
+        mapper["qualification"] = ["ESAF-1600"]
+        bad["evidence_subject_sha256"] = _subject_digest(
+            bad["feasibility"], bad["evidence_inputs"], bad["review"]["participants"]
+        )
+        for attestation in bad["review"]["attestations"]:
+            attestation["evidence_subject_sha256"] = bad["evidence_subject_sha256"]
+        with self.assertRaisesRegex(ValueError, "mapper|experience|qualification"):
+            self.validate_manifest(bad)
+
+    def test_exact_candidate_reviews_must_match_the_rostered_people(self):
+        bad = copy.deepcopy(self.fixture.manifest)
+        bad["review"]["attestations"][0]["identity"] = "unrostered-reviewer"
+        with self.assertRaisesRegex(ValueError, "participant|roster|identity"):
+            self.validate_manifest(bad)
+
+    def test_matrix_mapper_identity_must_match_b005_mapper_participant(self):
+        matrix = copy.deepcopy(self.fixture.matrix)
+        matrix["mapping_contract"]["mapper_identity"] = "different-mapper"
+        with self.assertRaisesRegex(ValueError, "mapper_identity|mapper participant"):
+            self.validate_manifest(matrix_value=matrix)
+
+    def test_not_completed_review_requires_empty_participant_roster(self):
+        fixture = SyntheticManifestFixture(self.temp.name, positive=False)
+        fixture.manifest["review"]["participants"] = [
+            fixture._participant("mapper", "mapper-1")
+        ]
+        with self.assertRaisesRegex(ValueError, "participant|not_completed|empty"):
+            renderer.validate_manifest(
+                fixture.manifest, fixture.matrix, repository_root=fixture.root,
+                mapper_identity="mapper-1",
+            )
+
     def test_same_reviewer_identity_across_roles_fails(self):
         bad = copy.deepcopy(self.fixture.manifest)
         bad["review"]["attestations"][1]["identity"] = bad["review"]["attestations"][0]["identity"]
@@ -420,6 +615,12 @@ class Soc2EvidenceManifestContractTests(unittest.TestCase):
         bad = copy.deepcopy(self.fixture.manifest)
         bad["review"]["attestations"][0]["evidence_subject_sha256"] = "0" * 64
         with self.assertRaisesRegex(ValueError, "subject|attestation|digest"):
+            self.validate_manifest(bad, refresh_subject=False)
+
+    def test_participant_roster_change_invalidates_review_subject(self):
+        bad = copy.deepcopy(self.fixture.manifest)
+        bad["review"]["participants"][0]["qualification"] = ["changed after review"]
+        with self.assertRaisesRegex(ValueError, "subject digest is stale"):
             self.validate_manifest(bad, refresh_subject=False)
 
     def test_open_critical_or_important_findings_fail(self):

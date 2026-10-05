@@ -9,6 +9,7 @@ import subprocess
 import sys
 from datetime import date
 from pathlib import Path
+from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
 CODE_ROOT = ROOT
@@ -24,10 +25,21 @@ EVIDENCE_CONTRACT_KEYS = {"direction", "excluded_direction", "directional_questi
 MANIFEST_PATH = "docs/superpowers/specs/2026-10-05-soc2-aicpa-tsc-evidence-manifest.json"
 MANIFEST_KEYS = {"schema_version", "feasibility", "evidence_inputs", "evidence_subject_sha256", "review"}
 FEASIBILITY_KEYS = {"blocker_ids", "method", "rationale", "scope", "status"}
-REVIEW_KEYS = {"attestations", "blocker_ids", "rationale", "status"}
+REVIEW_KEYS = {"attestations", "blocker_ids", "participants", "rationale", "status"}
 ATTESTATION_KEYS = {"identity", "role", "qualification", "authorized_source_access", "independence", "conflict_disposition", "review_date", "disposition", "evidence_subject_sha256", "findings"}
+PARTICIPANT_KEYS = {"identity", "role", "qualification", "qualification_evidence", "authorized_source_access", "source_access_evidence", "independent_from_mapper", "owner_approved", "owner_approval_reference", "conflict_disposition"}
 INPUT_KEYS = {"category", "path", "sha256"}
 REVIEWER_ROLES = {"inventory_and_specification", "security_and_overclaiming"}
+PARTICIPANT_ROLES = {"mapper", "aicpa_tsc_subject_matter", "esaf_specification_and_mapping", "publication_rights", "security_and_overclaiming", "owner_authorized_approver"}
+ROLE_QUALIFICATIONS = {
+    "mapper": {"2017 Trust Services Criteria with Revised Points of Focus – 2022", "ESAF-1600"},
+    "aicpa_tsc_subject_matter": {"Owner-approved Trust Services Criteria subject-matter reviewer"},
+    "esaf_specification_and_mapping": {"Independent ESAF specification and mapping reviewer"},
+    "publication_rights": {"Independent publication-rights reviewer"},
+    "security_and_overclaiming": {"Independent security and overclaiming reviewer"},
+    "owner_authorized_approver": {"An approver authorized by the ESAF project owner"},
+}
+MAPPER_EXPERIENCE = ROLE_QUALIFICATIONS["mapper"]
 INPUT_CATEGORIES = {"source", "inventory", "probe"}
 CONFLICT_DISPOSITIONS = {"none", "resolved", "mitigated"}
 SUBJECT_PATHS = {"matrix.json", DEFAULT_MATRIX.as_posix(), MANIFEST_PATH, DEFAULT_OUTPUT.relative_to(ROOT).as_posix()}
@@ -62,6 +74,43 @@ def _evidence(value, label):
     path = value.split("#", 1)[0]
     if not path or not _repo_path(path, label).is_file():
         raise ValueError(f"{label} does not identify an existing repository file")
+
+
+def _participant_evidence_reference(value, label, repository_root):
+    if not isinstance(value, dict) or set(value) not in ({"path", "sha256"}, {"uri", "sha256"}):
+        raise ValueError(f"{label} must be a digest-pinned repository path or HTTPS URI")
+    digest = value["sha256"]
+    if not isinstance(digest, str) or not SHA.fullmatch(digest):
+        raise ValueError(f"{label} SHA-256 is invalid")
+    if "uri" in value:
+        uri = value["uri"]
+        if not isinstance(uri, str):
+            raise ValueError(f"{label} URI must be a nonempty HTTPS address")
+        parsed = urlsplit(uri)
+        if (parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password or
+                parsed.query or not uri.strip() or any(character.isspace() for character in uri)):
+            raise ValueError(f"{label} URI must be HTTPS without credentials or query parameters")
+        return
+    raw_path = value["path"]
+    if (not isinstance(raw_path, str) or not raw_path or raw_path.startswith("/") or "\\" in raw_path or
+            any(part in {"", ".", ".."} for part in raw_path.split("/"))):
+        raise ValueError(f"{label} path must be repository-relative POSIX")
+    normalized = posixpath.normpath(raw_path)
+    if not normalized.startswith("participant-evidence/") or normalized in SUBJECT_PATHS:
+        raise ValueError(f"{label} path is outside the participant-evidence allowlist")
+    root = Path(repository_root).resolve()
+    path = root
+    for component in normalized.split("/"):
+        path = path / component
+        if path.is_symlink():
+            raise ValueError(f"{label} path cannot contain symlinks")
+    resolved = path.resolve()
+    try:
+        resolved.relative_to(root)
+    except ValueError as exc:
+        raise ValueError(f"{label} path escapes the repository") from exc
+    if not resolved.is_file() or hashlib.sha256(resolved.read_bytes()).hexdigest() != digest:
+        raise ValueError(f"{label} evidence file is absent or its digest is stale")
 
 
 def validate_matrix(matrix, *, verify_source_digest=True):
@@ -218,10 +267,11 @@ def validate_matrix(matrix, *, verify_source_digest=True):
     return None
 
 
-def _subject_digest(feasibility, inputs):
+def _subject_digest(feasibility, inputs, participants):
     pairs = [{"path": posixpath.normpath(item["path"]), "sha256": item["sha256"]} for item in inputs]
     pairs.sort(key=lambda item: item["path"])
-    payload = json.dumps({"feasibility": feasibility, "inputs": pairs}, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    roster = sorted(participants, key=lambda participant: participant["role"])
+    payload = json.dumps({"feasibility": feasibility, "inputs": pairs, "participants": roster}, sort_keys=True, separators=(",", ":")).encode("utf-8")
     return hashlib.sha256(payload).hexdigest()
 
 
@@ -312,16 +362,67 @@ def validate_manifest(manifest, matrix, *, repository_root=ROOT, mapper_identity
             raise ValueError("positive feasibility requires evidence inputs")
     if review["status"] == "not_completed":
         _strings(review["blocker_ids"], "review.blocker_ids")
-        if not isinstance(review["attestations"], list) or review["attestations"]:
-            raise ValueError("not_completed review requires empty attestations and nonempty blockers")
+        if (not isinstance(review["attestations"], list) or review["attestations"] or
+                not isinstance(review["participants"], list) or review["participants"]):
+            raise ValueError("not_completed review requires empty attestations and participant roster with nonempty blockers")
     else:
         _strings(review["blocker_ids"], "review.blocker_ids", empty=True)
-        if not isinstance(review["attestations"], list) or len(review["attestations"]) != 2:
-            raise ValueError("complete review requires two distinct reviewer roles")
-    digest = _subject_digest(feasibility, inputs)
+        if (not isinstance(review["attestations"], list) or len(review["attestations"]) != 2 or
+                not isinstance(review["participants"], list) or len(review["participants"]) != len(PARTICIPANT_ROLES)):
+            raise ValueError("complete review requires two reviewer attestations and the complete B005 participant roster")
+    digest = _subject_digest(feasibility, inputs, review["participants"])
     if not isinstance(manifest["evidence_subject_sha256"], str) or manifest["evidence_subject_sha256"] != digest:
         raise ValueError("evidence subject digest is stale")
     if review["status"] == "complete":
+        participants, participant_ids = {}, set()
+        for raw in review["participants"]:
+            participant = _exact(raw, PARTICIPANT_KEYS, "review participant")
+            role = participant["role"]
+            if not isinstance(role, str) or role not in PARTICIPANT_ROLES or role in participants:
+                raise ValueError("B005 participant roles must be distinct and complete")
+            for field in ("identity",):
+                if not isinstance(participant[field], str) or not participant[field].strip():
+                    raise ValueError(f"participant {field} must be nonempty")
+            qualifications = set(_strings(participant["qualification"], "participant qualification"))
+            if qualifications != ROLE_QUALIFICATIONS[role]:
+                raise ValueError(f"participant qualification does not match the B005 {role} role")
+            for field in ("qualification_evidence", "source_access_evidence"):
+                references = participant[field]
+                if not isinstance(references, list) or not references:
+                    raise ValueError(f"participant {field} must be a nonempty list of evidence references")
+                canonical_references = [json.dumps(reference, sort_keys=True) for reference in references]
+                if len(canonical_references) != len(set(canonical_references)):
+                    raise ValueError(f"participant {field} evidence references must be unique")
+                for reference in references:
+                    _participant_evidence_reference(reference, f"participant {field}", repository_root)
+            identity = participant["identity"].strip().casefold()
+            if identity in participant_ids:
+                raise ValueError("B005 participants must be distinct people")
+            participant_ids.add(identity)
+            if participant["authorized_source_access"] is not True:
+                raise ValueError("every B005 participant requires authorized source access")
+            if participant["independent_from_mapper"] is not (role != "mapper"):
+                raise ValueError("B005 reviewer and approver roles must be independent from the mapper")
+            if participant["owner_approved"] is not (role in {"aicpa_tsc_subject_matter", "owner_authorized_approver"}):
+                raise ValueError("AICPA subject-matter reviewer and owner-authorized approver require owner approval")
+            if role in {"aicpa_tsc_subject_matter", "owner_authorized_approver"}:
+                reference = participant["owner_approval_reference"]
+                if reference is None:
+                    raise ValueError("owner-approved B005 roles require an owner approval evidence reference")
+                _participant_evidence_reference(reference, "participant owner_approval_reference", repository_root)
+            elif participant["owner_approval_reference"] is not None:
+                raise ValueError("owner_approval_reference is only allowed for owner-approved B005 roles")
+            if not isinstance(participant["conflict_disposition"], str) or participant["conflict_disposition"] not in CONFLICT_DISPOSITIONS:
+                raise ValueError("participant conflict disposition must be an allowed resolved state")
+            participants[role] = participant
+        if set(participants) != PARTICIPANT_ROLES:
+            raise ValueError("complete review requires all six B005 participant roles")
+        if participants["mapper"]["identity"].strip().casefold() != contract["mapper_identity"].strip().casefold():
+            raise ValueError("matrix mapper_identity must match the named B005 mapper participant")
+        expected_attestation_people = {
+            "inventory_and_specification": "esaf_specification_and_mapping",
+            "security_and_overclaiming": "security_and_overclaiming",
+        }
         roles, identities = set(), set()
         for raw in review["attestations"]:
             att = _exact(raw, ATTESTATION_KEYS, "attestation")
@@ -334,6 +435,9 @@ def validate_manifest(manifest, matrix, *, repository_root=ROOT, mapper_identity
             identity = att["identity"].strip().casefold()
             if identity in identities or (mapper_identity and identity == mapper_identity.strip().casefold()):
                 raise ValueError("reviewer identity must be distinct and independent from mapper")
+            roster_role = expected_attestation_people.get(att["role"])
+            if roster_role is None or participants[roster_role]["identity"].strip().casefold() != identity:
+                raise ValueError("exact-subject review identity must match its B005 participant roster role")
             identities.add(identity)
             if att["authorized_source_access"] is not True or att["independence"] is not True:
                 raise ValueError("reviewer access and independence must be affirmative")

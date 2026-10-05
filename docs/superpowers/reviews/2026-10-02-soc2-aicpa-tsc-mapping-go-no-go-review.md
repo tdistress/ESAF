@@ -9,10 +9,10 @@ The decision is mechanically derived from the closed readiness matrix.
 ## Evidence manifest
 
 - Manifest: `docs/superpowers/specs/2026-10-05-soc2-aicpa-tsc-evidence-manifest.json`
-- Pinned SHA-256: `3905803dcff73fdfcf809b9cbb70f89052e4e52fead003d3299c6d9144b72b4f`
+- Pinned SHA-256: `a761cdcc368bba34d5e74d22a55bad2ce82993f6b67bf66bba29ee795d3a24c0`
 - Feasibility: `not_evidenced`
 - Review: `not_completed`
-- Evidence subject SHA-256: `d8964f714e0bf922a8b53adc5c87a076a7920f8d32a5305e60e91c1db1ab3ecc`
+- Evidence subject SHA-256: `efdaae7a3252cba3eba73119e973f19c76e69ae474d7d35e32811852ab5214b3`
 
 ## Directional question
 

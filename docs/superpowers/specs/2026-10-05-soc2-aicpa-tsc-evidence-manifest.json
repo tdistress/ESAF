@@ -10,13 +10,14 @@
     "status": "not_evidenced"
   },
   "evidence_inputs": [],
-  "evidence_subject_sha256": "d8964f714e0bf922a8b53adc5c87a076a7920f8d32a5305e60e91c1db1ab3ecc",
+  "evidence_subject_sha256": "efdaae7a3252cba3eba73119e973f19c76e69ae474d7d35e32811852ab5214b3",
   "review": {
     "attestations": [],
     "blocker_ids": [
       "SOC2-TSC-READINESS-B005"
     ],
     "rationale": "Independent review was not completed because reviewer readiness remains blocked at B005.",
-    "status": "not_completed"
+    "status": "not_completed",
+    "participants": []
   }
 }
