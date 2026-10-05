@@ -487,7 +487,7 @@ class Soc2EvidenceManifestContractTests(unittest.TestCase):
         )
         for attestation in bad["review"]["attestations"]:
             attestation["evidence_subject_sha256"] = bad["evidence_subject_sha256"]
-        with self.assertRaisesRegex(ValueError, "HTTPS"):
+        with self.assertRaisesRegex(ValueError, "repository path"):
             self.validate_manifest(bad)
 
         for uri in ("http://evidence.example.invalid/record", "https://user:pass@evidence.example.invalid/record",
@@ -500,7 +500,7 @@ class Soc2EvidenceManifestContractTests(unittest.TestCase):
             )
             for attestation in bad["review"]["attestations"]:
                 attestation["evidence_subject_sha256"] = bad["evidence_subject_sha256"]
-            with self.subTest(uri=uri), self.assertRaisesRegex(ValueError, "HTTPS"):
+            with self.subTest(uri=uri), self.assertRaisesRegex(ValueError, "repository path"):
                 self.validate_manifest(bad)
 
         remote_reference = copy.deepcopy(self.fixture.manifest)
@@ -514,7 +514,8 @@ class Soc2EvidenceManifestContractTests(unittest.TestCase):
         )
         for attestation in remote_reference["review"]["attestations"]:
             attestation["evidence_subject_sha256"] = remote_reference["evidence_subject_sha256"]
-        self.assertEqual(self.validate_manifest(remote_reference), "positive")
+        with self.assertRaisesRegex(ValueError, "repository path"):
+            self.validate_manifest(remote_reference)
 
         bad = copy.deepcopy(self.fixture.manifest)
         participant = next(p for p in bad["review"]["participants"] if p["role"] == "publication_rights")
@@ -557,6 +558,24 @@ class Soc2EvidenceManifestContractTests(unittest.TestCase):
                 fixture.manifest, fixture.matrix, repository_root=fixture.root,
                 mapper_identity="mapper-1",
             )
+
+    def test_malformed_participant_objects_are_reported_without_cli_traceback(self):
+        malformed = []
+        string_roster = copy.deepcopy(self.fixture.manifest)
+        string_roster["review"]["participants"][0] = "not-an-object"
+        malformed.append(string_roster)
+        missing_role = copy.deepcopy(self.fixture.manifest)
+        del missing_role["review"]["participants"][0]["role"]
+        malformed.append(missing_role)
+        for candidate in malformed:
+            with self.subTest(participant=candidate["review"]["participants"][0]):
+                self.fixture.manifest_path.write_text(json.dumps(candidate), encoding="utf-8")
+                matrix = copy.deepcopy(self.fixture.matrix)
+                matrix["mapping_contract"]["evidence_manifest"]["sha256"] = _sha256(self.fixture.manifest_path)
+                status, error = self.run_cli(matrix)
+                self.assertEqual(status, 2)
+                self.assertIn("participant", error)
+                self.assertNotIn("Traceback", error)
 
     def test_same_reviewer_identity_across_roles_fails(self):
         bad = copy.deepcopy(self.fixture.manifest)

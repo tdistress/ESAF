@@ -40,9 +40,9 @@ the SOC 2 renderer's existing closed-matrix convention. It contains:
   owner-authorized approver. Each role records its prescribed qualification,
   qualification evidence reference, authorized source access and its evidence
   reference, independence from the mapper where applicable, and conflict
-  disposition. References are repository artifacts with verified SHA-256
-  digests or HTTPS URIs with declared SHA-256 digests for exact-candidate
-  review; symbolic placeholders are invalid. The AICPA subject-matter reviewer
+  disposition. References are repository artifacts whose SHA-256 digests the
+  renderer verifies; remote and symbolic references cannot satisfy the
+  machine-checked roster. The AICPA subject-matter reviewer
   and approver also require owner-approval references. Roles must be held by
   distinct people; the mapper
   identity must match the matrix assignment. The mapper's qualification must

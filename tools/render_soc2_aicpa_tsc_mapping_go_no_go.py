@@ -9,7 +9,6 @@ import subprocess
 import sys
 from datetime import date
 from pathlib import Path
-from urllib.parse import urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
 CODE_ROOT = ROOT
@@ -77,20 +76,11 @@ def _evidence(value, label):
 
 
 def _participant_evidence_reference(value, label, repository_root):
-    if not isinstance(value, dict) or set(value) not in ({"path", "sha256"}, {"uri", "sha256"}):
-        raise ValueError(f"{label} must be a digest-pinned repository path or HTTPS URI")
+    if not isinstance(value, dict) or set(value) != {"path", "sha256"}:
+        raise ValueError(f"{label} must be a digest-pinned repository path")
     digest = value["sha256"]
     if not isinstance(digest, str) or not SHA.fullmatch(digest):
         raise ValueError(f"{label} SHA-256 is invalid")
-    if "uri" in value:
-        uri = value["uri"]
-        if not isinstance(uri, str):
-            raise ValueError(f"{label} URI must be a nonempty HTTPS address")
-        parsed = urlsplit(uri)
-        if (parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password or
-                parsed.query or not uri.strip() or any(character.isspace() for character in uri)):
-            raise ValueError(f"{label} URI must be HTTPS without credentials or query parameters")
-        return
     raw_path = value["path"]
     if (not isinstance(raw_path, str) or not raw_path or raw_path.startswith("/") or "\\" in raw_path or
             any(part in {"", ".", ".."} for part in raw_path.split("/"))):
@@ -370,6 +360,10 @@ def validate_manifest(manifest, matrix, *, repository_root=ROOT, mapper_identity
         if (not isinstance(review["attestations"], list) or len(review["attestations"]) != 2 or
                 not isinstance(review["participants"], list) or len(review["participants"]) != len(PARTICIPANT_ROLES)):
             raise ValueError("complete review requires two reviewer attestations and the complete B005 participant roster")
+        for raw in review["participants"]:
+            participant = _exact(raw, PARTICIPANT_KEYS, "review participant")
+            if not isinstance(participant["role"], str):
+                raise ValueError("review participant role must be a string")
     digest = _subject_digest(feasibility, inputs, review["participants"])
     if not isinstance(manifest["evidence_subject_sha256"], str) or manifest["evidence_subject_sha256"] != digest:
         raise ValueError("evidence subject digest is stale")

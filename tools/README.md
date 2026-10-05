@@ -200,10 +200,10 @@ python tools/render_soc2_aicpa_tsc_mapping_go_no_go.py --check
 The matrix pins a versioned evidence manifest by SHA-256. A complete reviewer
 record requires all six B005 people roles and separate inventory/specification
 and security/overclaiming attestations bound to the evidence subject. The
-roles carry prescribed qualifications and references for qualification,
-source access, and required owner approval. The manifest digest records those
-declarations; publication review must still verify the referenced evidence on
-the exact Git candidate. The live feasibility and review states remain
+roles carry prescribed qualifications and references to repository evidence
+for qualification, source access, and required owner approval. The renderer
+verifies each referenced file digest; publication review must still verify the
+evidence on the exact Git candidate. The live feasibility and review states remain
 `not_evidenced` and `not_completed`, so the current decision is `HOLD`.
 The candidate source is the 2017 Trust Services
 Criteria with Revised Points of Focus – 2022; latest-version status is not
