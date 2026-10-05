@@ -1,6 +1,6 @@
 # SOC 2 mapping evidence contract design
 
-**Status:** Approved for specification review  
+**Status:** Approved for specification review
 **Date:** 2026-10-05
 
 ## Purpose
