@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 import unittest
@@ -52,7 +53,24 @@ class Soc2AicpaTscSourceReadinessTests(unittest.TestCase):
         self.assertIn("not been verified", rights)
         self.assertIn("derivative_mapping_analysis", rights)
         self.assertIn("statutory exception", rights)
-        self.assertFalse(matrix["mapping_contract"]["positive_feasibility_probe"])
+        contract = matrix["mapping_contract"]
+        self.assertNotIn("positive_feasibility_probe", contract)
+
+        evidence_manifest = contract["evidence_manifest"]
+        manifest_path = ROOT / evidence_manifest["path"]
+        manifest_bytes = manifest_path.read_bytes()
+        self.assertEqual(
+            evidence_manifest["path"],
+            "docs/superpowers/specs/2026-10-05-soc2-aicpa-tsc-evidence-manifest.json",
+        )
+        self.assertEqual(
+            evidence_manifest["sha256"],
+            hashlib.sha256(manifest_bytes).hexdigest(),
+        )
+        manifest = json.loads(manifest_bytes)
+        self.assertEqual(manifest["feasibility"]["status"], "not_evidenced")
+        self.assertEqual(manifest["review"]["status"], "not_completed")
+        self.assertIn("no case-specific permission for\nESAF is evidenced", rights)
 
     def test_public_status_has_zero_mapping_artifacts_and_no_catalog_registration(self):
         landing = LANDING.read_text(encoding="utf-8")
