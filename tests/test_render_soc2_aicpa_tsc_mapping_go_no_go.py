@@ -144,7 +144,7 @@ class SyntheticManifestFixture:
                                            "access": {"source_bytes_retrieved": ready_sources},
                                            "inventory": ({"created": True, "inventory_sha256": "b" * 64} if ready_sources else {"created": False}),
                                            "boundary": {"document_specific_notice_inspected": ready_sources}}), encoding="utf-8")
-        rights_path = self.root / "docs/superpowers/reviews/2026-10-02-soc2-aica-tsc-publication-rights-review.md"
+        rights_path = self.root / "docs/superpowers/reviews/2026-10-02-soc2-aicpa-tsc-publication-rights-review.md"
         rights_path.parent.mkdir(parents=True, exist_ok=True)
         rights_path.write_text("**Disposition:** `PASS`\n" if ready_sources else "**Disposition:** `HOLD`\n", encoding="utf-8")
         self.matrix["source_oracle"] = {"path": oracle_path.relative_to(self.root).as_posix(), "sha256": _sha256(oracle_path)}
@@ -232,6 +232,8 @@ class Soc2EvidenceManifestContractTests(unittest.TestCase):
         self.assertEqual(renderer.derive_decision(
             fixture.matrix, manifest=fixture.manifest, repository_root=fixture.root,
             verify_source_digest=False), "HOLD")
+        self.assertEqual(renderer.derive_decision(
+            fixture.matrix, repository_root=fixture.root, verify_source_digest=False), "HOLD")
 
     def test_positive_manifest_digest_and_two_distinct_roles_validate(self):
         result = self.validate_manifest()
@@ -249,6 +251,17 @@ class Soc2EvidenceManifestContractTests(unittest.TestCase):
         self.fixture.matrix["mapping_contract"]["evidence_manifest"]["sha256"] = "0" * 64
         with self.assertRaisesRegex(ValueError, "manifest.*digest|digest.*manifest"):
             self.validate_manifest()
+
+    def test_manifest_schema_is_closed_and_input_object_is_pinned(self):
+        bad = copy.deepcopy(self.fixture.manifest)
+        bad["unexpected"] = True
+        with self.assertRaisesRegex(ValueError, "exactly"):
+            self.validate_manifest(bad)
+        unpinned = copy.deepcopy(self.fixture.manifest)
+        unpinned["review"]["rationale"] = "Different object than the pinned bytes."
+        with self.assertRaisesRegex(ValueError, "object differs|manifest.*digest"):
+            renderer.validate_manifest(unpinned, self.fixture.matrix,
+                                       repository_root=self.fixture.root, mapper_identity="mapper-1")
 
     def test_malformed_digest_fails(self):
         bad = copy.deepcopy(self.fixture.manifest)
@@ -361,13 +374,17 @@ class Soc2EvidenceManifestContractTests(unittest.TestCase):
                                      repository_root=fixture.root, verify_source_digest=False)
 
     def test_hold_and_no_go_blocker_rules_remain_in_force(self):
+        self.fixture = SyntheticManifestFixture(self.temp.name, positive=False)
         hold = copy.deepcopy(self.fixture.matrix)
         self.assertEqual(renderer.derive_decision(hold, manifest=self.fixture.manifest,
                          repository_root=self.fixture.root, verify_source_digest=False), "HOLD")
         no_go = copy.deepcopy(hold)
         no_go["recorded_decision"] = "NO_GO"
         no_go["blockers"][0]["remediation"] = "terminal"
-        with self.assertRaisesRegex(ValueError, "NO_GO|terminal|manifest"):
+        self.assertEqual(renderer.derive_decision(no_go, manifest=self.fixture.manifest,
+                         repository_root=self.fixture.root, verify_source_digest=False), "NO_GO")
+        no_go["blockers"][0]["remediation"] = "reconsiderable"
+        with self.assertRaisesRegex(ValueError, "NO_GO|recorded_decision"):
             renderer.derive_decision(no_go, manifest=self.fixture.manifest,
                                      repository_root=self.fixture.root, verify_source_digest=False)
 

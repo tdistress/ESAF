@@ -3,12 +3,15 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import posixpath
 import re
 import subprocess
 import sys
+from datetime import date
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+CODE_ROOT = ROOT
 DEFAULT_MATRIX = ROOT / "docs/superpowers/specs/2026-10-02-soc2-aicpa-tsc-mapping-readiness-matrix.json"
 DEFAULT_OUTPUT = ROOT / "docs/superpowers/reviews/2026-10-02-soc2-aicpa-tsc-mapping-go-no-go-review.md"
 RIGHTS_REVIEW_PATH = "docs/superpowers/reviews/2026-10-02-soc2-aicpa-tsc-publication-rights-review.md"
@@ -17,6 +20,16 @@ TOP_KEYS = {"blockers", "gates", "mapping_contract", "nonclaims", "reconsiderati
 GATE_KEYS = {"blocker_ids", "evidence_references", "gate", "rationale", "status"}
 BLOCKER_KEYS = {"blocker_id", "category", "gate", "missing_evidence", "owner", "reconsideration_trigger", "reentry_test", "remediation"}
 CONTRACT_KEYS = {"direction", "excluded_direction", "directional_question", "granularity", "positive_feasibility_probe", "scope"}
+EVIDENCE_CONTRACT_KEYS = {"direction", "excluded_direction", "directional_question", "granularity", "evidence_manifest", "mapper_identity", "scope"}
+MANIFEST_PATH = "docs/superpowers/specs/2026-10-05-soc2-aicpa-tsc-evidence-manifest.json"
+MANIFEST_KEYS = {"schema_version", "feasibility", "evidence_inputs", "evidence_subject_sha256", "review"}
+FEASIBILITY_KEYS = {"blocker_ids", "method", "rationale", "scope", "status"}
+REVIEW_KEYS = {"attestations", "blocker_ids", "rationale", "status"}
+ATTESTATION_KEYS = {"identity", "role", "qualification", "authorized_source_access", "independence", "conflict_disposition", "review_date", "disposition", "evidence_subject_sha256", "findings"}
+INPUT_KEYS = {"category", "path", "sha256"}
+REVIEWER_ROLES = {"inventory_and_specification", "security_and_overclaiming"}
+INPUT_CATEGORIES = {"source", "inventory", "probe"}
+SUBJECT_PATHS = {"matrix.json", DEFAULT_MATRIX.as_posix(), MANIFEST_PATH, DEFAULT_OUTPUT.relative_to(ROOT).as_posix()}
 SHA = re.compile(r"^[0-9a-f]{64}$")
 COMMIT = re.compile(r"^[0-9a-f]{40}$")
 
@@ -73,14 +86,24 @@ def validate_matrix(matrix, *, verify_source_digest=True):
         raise ValueError("rights_review.path must be the canonical publication-rights review")
     if not isinstance(rights["commit"], str) or not COMMIT.fullmatch(rights["commit"]) or not isinstance(rights["sha256"], str) or not SHA.fullmatch(rights["sha256"]):
         raise ValueError("rights review commit or SHA-256 is invalid")
-    contract = _exact(matrix["mapping_contract"], CONTRACT_KEYS, "mapping_contract")
+    contract = matrix["mapping_contract"]
+    if isinstance(contract, dict) and "evidence_manifest" in contract:
+        contract = _exact(contract, EVIDENCE_CONTRACT_KEYS, "mapping_contract")
+    else:
+        contract = _exact(contract, CONTRACT_KEYS, "mapping_contract")
     if contract["direction"] != "esaf_to_external" or contract["excluded_direction"] != "external_to_esaf" or contract["scope"] != "complete_publication":
         raise ValueError("mapping direction or scope is invalid")
     for field in ("directional_question", "granularity"):
         if not isinstance(contract[field], str) or not contract[field].strip():
             raise ValueError(f"mapping_contract.{field} must be nonempty")
-    if not isinstance(contract["positive_feasibility_probe"], bool):
+    if "positive_feasibility_probe" in contract and not isinstance(contract["positive_feasibility_probe"], bool):
         raise ValueError("positive_feasibility_probe must be boolean")
+    if "evidence_manifest" in contract:
+        ref = _exact(contract["evidence_manifest"], {"path", "sha256"}, "evidence_manifest")
+        if (ref["path"] != MANIFEST_PATH and not (ROOT.resolve() != CODE_ROOT.resolve() and ref["path"] == "evidence/manifest.json")) or not isinstance(ref["sha256"], str) or not SHA.fullmatch(ref["sha256"]):
+            raise ValueError("evidence manifest path or SHA-256 is invalid")
+        if not isinstance(contract["mapper_identity"], str) or not contract["mapper_identity"].strip():
+            raise ValueError("mapper_identity must be nonempty")
     findings = _exact(matrix["review_findings"], {"open_critical", "open_important"}, "review_findings")
     if any(not isinstance(n, int) or isinstance(n, bool) or n < 0 for n in findings.values()):
         raise ValueError("review findings must be nonnegative integers")
@@ -130,7 +153,7 @@ def validate_matrix(matrix, *, verify_source_digest=True):
     if blocked and any(not g["blocker_ids"] for g in blocked):
         raise ValueError("every blocked gate requires complete blocker coverage")
     if not blocked:
-        derived = "GO" if not blockers and contract["positive_feasibility_probe"] and not findings["open_critical"] and not findings["open_important"] else None
+        derived = "GO" if not blockers and contract.get("positive_feasibility_probe", True) and not findings["open_critical"] and not findings["open_important"] else None
     elif terminal:
         derived = "NO_GO"
     elif all(b["remediation"] == "reconsiderable" for b in blockers):
@@ -161,7 +184,7 @@ def validate_matrix(matrix, *, verify_source_digest=True):
         if hashlib.sha256(blob).hexdigest() != rights["sha256"] or rights_path.read_bytes() != blob:
             raise ValueError("rights review digest or live bytes drift")
         rights_text = blob.decode("utf-8")
-    else:
+    elif matrix["recorded_decision"] == "GO":
         rights_path = _repo_path(rights["path"], "rights_review.path")
         rights_text = rights_path.read_text(encoding="utf-8")
     # A matrix is not itself evidence of source access or publication rights.
@@ -182,11 +205,165 @@ def validate_matrix(matrix, *, verify_source_digest=True):
             raise ValueError("GO requires affirmative document-specific rights or written permission evidence")
         if not re.search(r"\*\*Disposition:\*\*\s*`PASS`", rights_text):
             raise ValueError("GO requires the pinned independent rights review to record PASS")
-        raise ValueError("GO is disabled in schema 1.0.0 until digest-bound feasibility and exact-candidate reviewer attestations are supported")
+        if "evidence_manifest" not in contract:
+            raise ValueError("GO is disabled in schema 1.0.0 until digest-bound feasibility and exact-candidate reviewer attestations are supported")
     return None
 
 
-def derive_decision(matrix, *, verify_source_digest=True):
+def _subject_digest(feasibility, inputs):
+    pairs = [{"path": posixpath.normpath(item["path"]), "sha256": item["sha256"]} for item in inputs]
+    pairs.sort(key=lambda item: item["path"])
+    payload = json.dumps({"feasibility": feasibility, "inputs": pairs}, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
+
+
+def _normalized_input_path(value, root, category):
+    if not isinstance(value, str) or not value or "\\" in value or value.startswith("/"):
+        raise ValueError("evidence input path must be repository-relative POSIX")
+    parts = value.split("/")
+    if any(part in {"", ".", ".."} for part in parts):
+        raise ValueError("evidence input path contains unsafe components")
+    normalized = posixpath.normpath(value)
+    if normalized in SUBJECT_PATHS or normalized.endswith(("mapping-readiness-matrix.json", "evidence-manifest.json", "mapping-go-no-go-review.md")):
+        raise ValueError("forbidden evidence input dependency path")
+    allowed = {"source": ("inputs/", "source/", "evidence/source/"), "inventory": ("inputs/", "inventory/", "evidence/inventory/"), "probe": ("inputs/", "probe/", "evidence/probe/")}
+    if category not in INPUT_CATEGORIES or not normalized.startswith(allowed[category]):
+        raise ValueError("evidence input path is outside its category allowlist")
+    resolved = (root / normalized).resolve()
+    try:
+        resolved.relative_to(root.resolve())
+    except ValueError as exc:
+        raise ValueError("evidence input path escapes repository root") from exc
+    if not resolved.is_file():
+        raise ValueError("evidence input path is absent or not a file")
+    return normalized, resolved
+
+
+def validate_manifest(manifest, matrix, *, repository_root=ROOT, mapper_identity=None):
+    _exact(manifest, MANIFEST_KEYS, "manifest")
+    if manifest["schema_version"] != "1.0.0":
+        raise ValueError("unsupported manifest schema_version")
+    feasibility = _exact(manifest["feasibility"], FEASIBILITY_KEYS, "feasibility")
+    review = _exact(manifest["review"], REVIEW_KEYS, "review")
+    if feasibility["status"] not in {"not_evidenced", "positive"} or review["status"] not in {"not_completed", "complete"}:
+        raise ValueError("unsupported feasibility or review status")
+    if (feasibility["status"], review["status"]) not in {("not_evidenced", "not_completed"), ("positive", "complete")}:
+        raise ValueError("feasibility and review states must be paired consistently")
+    for label, obj in (("feasibility", feasibility), ("review", review)):
+        for field in (("method", "rationale", "scope") if label == "feasibility" else ("rationale",)):
+            if not isinstance(obj[field], str) or not obj[field].strip():
+                raise ValueError(f"{label}.{field} must be nonempty")
+    inputs = manifest["evidence_inputs"]
+    if not isinstance(inputs, list):
+        raise ValueError("evidence_inputs must be a list")
+    normalized_inputs = []
+    seen = set()
+    for item in inputs:
+        item = _exact(item, INPUT_KEYS, "evidence input")
+        if not isinstance(item["sha256"], str) or not SHA.fullmatch(item["sha256"]):
+            raise ValueError("evidence input SHA-256 digest is invalid")
+        raw_path = item["path"]
+        if isinstance(raw_path, str) and posixpath.normpath(raw_path) in seen:
+            raise ValueError("duplicate normalized evidence input path")
+        normalized, path = _normalized_input_path(item["path"], Path(repository_root), item["category"])
+        if normalized in seen:
+            raise ValueError("duplicate normalized evidence input path")
+        seen.add(normalized)
+        if hashlib.sha256(path.read_bytes()).hexdigest() != item["sha256"]:
+            raise ValueError("evidence input digest is stale")
+        normalized_inputs.append({"category": item["category"], "path": normalized, "sha256": item["sha256"]})
+    if feasibility["status"] == "not_evidenced":
+        _strings(feasibility["blocker_ids"], "feasibility.blocker_ids")
+        if inputs:
+            raise ValueError("not_evidenced feasibility requires empty inputs and nonempty blockers")
+    else:
+        _strings(feasibility["blocker_ids"], "feasibility.blocker_ids", empty=True)
+        if not inputs:
+            raise ValueError("positive feasibility requires evidence inputs")
+    if review["status"] == "not_completed":
+        _strings(review["blocker_ids"], "review.blocker_ids")
+        if not isinstance(review["attestations"], list) or review["attestations"]:
+            raise ValueError("not_completed review requires empty attestations and nonempty blockers")
+    else:
+        _strings(review["blocker_ids"], "review.blocker_ids", empty=True)
+        if not isinstance(review["attestations"], list) or len(review["attestations"]) != 2:
+            raise ValueError("complete review requires two distinct reviewer roles")
+    digest = _subject_digest(feasibility, inputs)
+    if not isinstance(manifest["evidence_subject_sha256"], str) or manifest["evidence_subject_sha256"] != digest:
+        raise ValueError("evidence subject digest is stale")
+    if review["status"] == "complete":
+        roles, identities = set(), set()
+        for raw in review["attestations"]:
+            att = _exact(raw, ATTESTATION_KEYS, "attestation")
+            if att["role"] not in REVIEWER_ROLES or att["role"] in roles:
+                raise ValueError("reviewer roles must be distinct and complete")
+            roles.add(att["role"])
+            for field in ("identity", "qualification"):
+                if not isinstance(att[field], str) or not att[field].strip():
+                    raise ValueError(f"attestation {field} must be nonempty")
+            identity = att["identity"].strip().casefold()
+            if identity in identities or (mapper_identity and identity == mapper_identity.strip().casefold()):
+                raise ValueError("reviewer identity must be distinct and independent from mapper")
+            identities.add(identity)
+            if att["authorized_source_access"] is not True or att["independence"] is not True:
+                raise ValueError("reviewer access and independence must be affirmative")
+            if not isinstance(att["conflict_disposition"], str) or not att["conflict_disposition"].strip() or att["conflict_disposition"].casefold() in {"unresolved", "unknown"}:
+                raise ValueError("reviewer conflict disposition must be explicit and resolved")
+            try:
+                date.fromisoformat(att["review_date"])
+            except (TypeError, ValueError) as exc:
+                raise ValueError("review_date must be a valid ISO date") from exc
+            if att["disposition"] not in {"PASS", "PASS_WITH_NOTES"} or att["evidence_subject_sha256"] != digest:
+                raise ValueError("reviewer disposition or subject digest is invalid")
+            findings = _exact(att["findings"], {"open_critical", "open_important"}, "attestation findings")
+            if any(type(v) is not int or v < 0 for v in findings.values()) or findings["open_critical"] or findings["open_important"]:
+                raise ValueError("open Critical or Important reviewer findings prevent completion")
+        if roles != REVIEWER_ROLES:
+            raise ValueError("required reviewer roles are incomplete")
+    if "evidence_manifest" not in matrix["mapping_contract"]:
+        raise ValueError("matrix must pin an evidence manifest")
+    ref = matrix["mapping_contract"]["evidence_manifest"]
+    manifest_path = (Path(repository_root) / ref["path"]).resolve()
+    try:
+        manifest_path.relative_to(Path(repository_root).resolve())
+    except ValueError as exc:
+        raise ValueError("manifest path escapes repository") from exc
+    if not manifest_path.is_file() or hashlib.sha256(manifest_path.read_bytes()).hexdigest() != ref["sha256"]:
+        raise ValueError("matrix-pinned manifest digest is stale")
+    try:
+        pinned_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise ValueError("matrix-pinned manifest cannot be read as JSON") from exc
+    if pinned_manifest != manifest:
+        raise ValueError("manifest object differs from matrix-pinned manifest bytes")
+    # State and blocker IDs are derived from evidence, never matrix labels.
+    gates = {g["gate"]: g for g in matrix["gates"]}
+    if feasibility["status"] == "not_evidenced":
+        if gates["semantic_and_normative_feasibility"]["status"] != "BLOCKED" or set(feasibility["blocker_ids"]) != set(gates["semantic_and_normative_feasibility"]["blocker_ids"]):
+            raise ValueError("feasibility blockers must exactly cover the blocked matrix gate")
+    elif gates["semantic_and_normative_feasibility"]["status"] != "PASS":
+        raise ValueError("positive feasibility requires its matrix gate to pass")
+    if review["status"] == "not_completed":
+        if gates["mapper_and_reviewer_readiness"]["status"] != "BLOCKED" or set(review["blocker_ids"]) != set(gates["mapper_and_reviewer_readiness"]["blocker_ids"]):
+            raise ValueError("review blockers must exactly cover the blocked matrix gate")
+    elif gates["mapper_and_reviewer_readiness"]["status"] != "PASS":
+        raise ValueError("complete reviews require the matrix reviewer gate to pass")
+    return feasibility["status"]
+
+
+def derive_decision(matrix, *, manifest=None, repository_root=ROOT, verify_source_digest=True):
+    contract = matrix.get("mapping_contract") if isinstance(matrix, dict) else None
+    if manifest is None and isinstance(contract, dict) and "evidence_manifest" in contract:
+        ref = _exact(contract["evidence_manifest"], {"path", "sha256"}, "evidence_manifest")
+        if ref["path"] != MANIFEST_PATH and not (ROOT.resolve() != CODE_ROOT.resolve() and ref["path"] == "evidence/manifest.json"):
+            raise ValueError("evidence manifest path is not canonical")
+        manifest_path = Path(repository_root) / ref["path"]
+        try:
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+            raise ValueError("matrix-pinned manifest cannot be read as JSON") from exc
+    if manifest is not None:
+        validate_manifest(manifest, matrix, repository_root=repository_root, mapper_identity=matrix["mapping_contract"].get("mapper_identity"))
     validate_matrix(matrix, verify_source_digest=verify_source_digest)
     return matrix["recorded_decision"]
 
