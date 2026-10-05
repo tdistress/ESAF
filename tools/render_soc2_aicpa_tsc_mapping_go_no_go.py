@@ -230,16 +230,21 @@ def _normalized_input_path(value, root, category):
     allowed = {"source": ("source/",), "inventory": ("inventory/",), "probe": ("probe/",)}
     if category not in INPUT_CATEGORIES or not normalized.startswith(allowed[category]):
         raise ValueError("evidence input path is outside its category allowlist")
-    resolved = (root / normalized).resolve()
-    try:
-        resolved.relative_to(root.resolve())
-    except ValueError as exc:
-        raise ValueError("evidence input path escapes repository root") from exc
     category_root = root / category
     if category_root.is_symlink():
         raise ValueError("evidence input category root cannot be a symlink")
     try:
-        resolved.relative_to(category_root.resolve())
+        resolved = (root / normalized).resolve()
+        repository_root = root.resolve()
+        resolved_category_root = category_root.resolve()
+    except (OSError, RuntimeError) as exc:
+        raise ValueError("evidence input path contains an invalid symlink") from exc
+    try:
+        resolved.relative_to(repository_root)
+    except ValueError as exc:
+        raise ValueError("evidence input path escapes repository root") from exc
+    try:
+        resolved.relative_to(resolved_category_root)
     except ValueError as exc:
         raise ValueError("evidence input target escapes its category allowlist") from exc
     if not resolved.is_file():

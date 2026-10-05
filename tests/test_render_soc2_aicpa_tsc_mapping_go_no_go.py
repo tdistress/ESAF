@@ -267,6 +267,14 @@ class Soc2EvidenceManifestContractTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "category|allowlist"):
             self.validate_manifest(bad)
 
+    def test_cyclic_evidence_symlink_is_a_validation_error(self):
+        cycle = self.fixture.root / "source/cycle.json"
+        cycle.symlink_to(cycle.name)
+        bad = copy.deepcopy(self.fixture.manifest)
+        bad["evidence_inputs"][0]["path"] = "source/cycle.json"
+        with self.assertRaisesRegex(ValueError, "symlink|path"):
+            self.validate_manifest(bad)
+
     def test_stale_matrix_pinned_manifest_digest_fails(self):
         self.fixture.matrix["mapping_contract"]["evidence_manifest"]["sha256"] = "0" * 64
         with self.assertRaisesRegex(ValueError, "manifest.*digest|digest.*manifest"):
