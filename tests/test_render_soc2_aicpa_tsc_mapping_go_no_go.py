@@ -477,6 +477,18 @@ class Soc2EvidenceManifestContractTests(unittest.TestCase):
 
 class Soc2ReadinessBlockerRuleTests(unittest.TestCase):
 
+    def test_live_render_includes_pinned_unevidenced_manifest_summary(self):
+        live = json.loads(renderer.DEFAULT_MATRIX.read_text(encoding="utf-8"))
+        rendered = renderer.render(live)
+        ref = live["mapping_contract"]["evidence_manifest"]
+        manifest = json.loads((renderer.ROOT / ref["path"]).read_text(encoding="utf-8"))
+        self.assertIn(f"Manifest: `{ref['path']}`", rendered)
+        self.assertIn(f"Pinned SHA-256: `{ref['sha256']}`", rendered)
+        self.assertIn("Feasibility: `not_evidenced`", rendered)
+        self.assertIn("Review: `not_completed`", rendered)
+        self.assertIn(f"Evidence subject SHA-256: `{manifest['evidence_subject_sha256']}`", rendered)
+        self.assertEqual(renderer.derive_decision(live), "HOLD")
+
     def test_hold_requires_reconsiderable_blocker_covering_each_blocked_gate(self):
         gate = GATES[1]
         b = blocker("B1", gate, "reconsiderable")

@@ -412,7 +412,10 @@ def _cell(value):
 
 def render(matrix):
     decision = derive_decision(matrix, repository_root=ROOT)
-    lines = ["# SOC 2 AICPA TSC mapping readiness decision", "", f"**Decision:** `{decision}`", "", f"**Review identifier:** `{matrix['review_identifier']}`", "", "The decision is mechanically derived from the closed readiness matrix.", "", "## Directional question", "", f"> {matrix['mapping_contract']['directional_question']}", "", "## Gate results", "", "| Gate | Status | Rationale | Evidence |", "|---|---|---|---|"]
+    ref = matrix["mapping_contract"]["evidence_manifest"]
+    manifest_path = ROOT / ref["path"]
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    lines = ["# SOC 2 AICPA TSC mapping readiness decision", "", f"**Decision:** `{decision}`", "", f"**Review identifier:** `{matrix['review_identifier']}`", "", "The decision is mechanically derived from the closed readiness matrix.", "", "## Evidence manifest", "", f"- Manifest: `{ref['path']}`", f"- Pinned SHA-256: `{ref['sha256']}`", f"- Feasibility: `{manifest['feasibility']['status']}`", f"- Review: `{manifest['review']['status']}`", f"- Evidence subject SHA-256: `{manifest['evidence_subject_sha256']}`", "", "## Directional question", "", f"> {matrix['mapping_contract']['directional_question']}", "", "## Gate results", "", "| Gate | Status | Rationale | Evidence |", "|---|---|---|---|"]
     for gate in matrix["gates"]:
         lines.append(f"| `{gate['gate']}` | `{gate['status']}` | {_cell(gate['rationale'])} | {_cell('; '.join(gate['evidence_references']))} |")
     lines.extend(["", "## Blockers", "", "| Blocker | Category | Gate | Owner | Missing evidence | Remediation | Trigger | Re-entry test |", "|---|---|---|---|---|---|---|---|"])
