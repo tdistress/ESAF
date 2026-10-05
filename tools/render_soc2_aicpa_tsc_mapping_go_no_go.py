@@ -305,6 +305,11 @@ def validate_manifest(manifest, matrix, *, repository_root=ROOT, mapper_identity
     if (not isinstance(matrix["gates"], list) or
             [gate.get("gate") if isinstance(gate, dict) else None for gate in matrix["gates"]] != list(GATES)):
         raise ValueError("matrix gate collection has an invalid shape or order")
+    for raw in matrix["gates"]:
+        gate = _exact(raw, GATE_KEYS, f"gate {raw['gate']}")
+        if not isinstance(gate["status"], str) or gate["status"] not in {"PASS", "BLOCKED"}:
+            raise ValueError(f"invalid gate status for {gate['gate']}")
+        _strings(gate["blocker_ids"], f"{gate['gate']}.blocker_ids", empty=gate["status"] == "PASS")
     if not isinstance(matrix["mapping_contract"], dict):
         raise ValueError("matrix.mapping_contract must be an object")
     contract = _exact(matrix["mapping_contract"], EVIDENCE_CONTRACT_KEYS, "mapping_contract")

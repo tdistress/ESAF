@@ -577,6 +577,11 @@ class Soc2EvidenceManifestContractTests(unittest.TestCase):
                 self.assertIn("participant", error)
                 self.assertNotIn("Traceback", error)
 
+    def test_malformed_matrix_gate_is_reported_without_cli_traceback(self):
+        malformed = copy.deepcopy(self.fixture.matrix)
+        del malformed["gates"][4]["status"]
+        self.assert_cli_validation_error(malformed, "gate")
+
     def test_same_reviewer_identity_across_roles_fails(self):
         bad = copy.deepcopy(self.fixture.manifest)
         bad["review"]["attestations"][1]["identity"] = bad["review"]["attestations"][0]["identity"]
