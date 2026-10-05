@@ -29,6 +29,7 @@ ATTESTATION_KEYS = {"identity", "role", "qualification", "authorized_source_acce
 INPUT_KEYS = {"category", "path", "sha256"}
 REVIEWER_ROLES = {"inventory_and_specification", "security_and_overclaiming"}
 INPUT_CATEGORIES = {"source", "inventory", "probe"}
+CONFLICT_DISPOSITIONS = {"none", "resolved", "mitigated"}
 SUBJECT_PATHS = {"matrix.json", DEFAULT_MATRIX.as_posix(), MANIFEST_PATH, DEFAULT_OUTPUT.relative_to(ROOT).as_posix()}
 SHA = re.compile(r"^[0-9a-f]{64}$")
 COMMIT = re.compile(r"^[0-9a-f]{40}$")
@@ -226,7 +227,7 @@ def _normalized_input_path(value, root, category):
     normalized = posixpath.normpath(value)
     if normalized in SUBJECT_PATHS or normalized.endswith(("mapping-readiness-matrix.json", "evidence-manifest.json", "mapping-go-no-go-review.md")):
         raise ValueError("forbidden evidence input dependency path")
-    allowed = {"source": ("inputs/", "source/", "evidence/source/"), "inventory": ("inputs/", "inventory/", "evidence/inventory/"), "probe": ("inputs/", "probe/", "evidence/probe/")}
+    allowed = {"source": ("source/",), "inventory": ("inventory/",), "probe": ("probe/",)}
     if category not in INPUT_CATEGORIES or not normalized.startswith(allowed[category]):
         raise ValueError("evidence input path is outside its category allowlist")
     resolved = (root / normalized).resolve()
@@ -307,8 +308,8 @@ def validate_manifest(manifest, matrix, *, repository_root=ROOT, mapper_identity
             identities.add(identity)
             if att["authorized_source_access"] is not True or att["independence"] is not True:
                 raise ValueError("reviewer access and independence must be affirmative")
-            if not isinstance(att["conflict_disposition"], str) or not att["conflict_disposition"].strip() or att["conflict_disposition"].casefold() in {"unresolved", "unknown"}:
-                raise ValueError("reviewer conflict disposition must be explicit and resolved")
+            if not isinstance(att["conflict_disposition"], str) or att["conflict_disposition"] not in CONFLICT_DISPOSITIONS:
+                raise ValueError("reviewer conflict disposition must be an allowed resolved state")
             try:
                 date.fromisoformat(att["review_date"])
             except (TypeError, ValueError) as exc:

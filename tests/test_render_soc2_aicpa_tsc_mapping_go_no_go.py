@@ -94,9 +94,9 @@ class SyntheticManifestFixture:
     def __init__(self, root, *, positive=True, ready_sources=False):
         self.root = Path(root)
         for relative, payload in {
-            "inputs/oracle.json": b'{"synthetic": "oracle"}\n',
-            "inputs/inventory.json": b'{"synthetic": "inventory"}\n',
-            "inputs/probe.json": b'{"synthetic": "probe"}\n',
+            "source/oracle.json": b'{"synthetic": "oracle"}\n',
+            "inventory/inventory.json": b'{"synthetic": "inventory"}\n',
+            "probe/probe.json": b'{"synthetic": "probe"}\n',
         }.items():
             path = self.root / relative
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -104,9 +104,9 @@ class SyntheticManifestFixture:
         self.inputs = [
             {"category": category, "path": relative, "sha256": _sha256(self.root / relative)}
             for category, relative in (
-                ("source", "inputs/oracle.json"),
-                ("inventory", "inputs/inventory.json"),
-                ("probe", "inputs/probe.json"),
+                ("source", "source/oracle.json"),
+                ("inventory", "inventory/inventory.json"),
+                ("probe", "probe/probe.json"),
             )
         ] if positive else []
         self.feasibility = {
@@ -247,6 +247,17 @@ class Soc2EvidenceManifestContractTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "input.*digest|digest.*input"):
             self.validate_manifest()
 
+    def test_input_category_cannot_reference_another_category_root(self):
+        generic = self.fixture.root / "inputs/inventory.json"
+        generic.parent.mkdir(parents=True, exist_ok=True)
+        generic.write_bytes((self.fixture.root / "inventory/inventory.json").read_bytes())
+        bad = copy.deepcopy(self.fixture.manifest)
+        bad["evidence_inputs"][0]["path"] = "inputs/inventory.json"
+        bad["evidence_inputs"][0]["sha256"] = _sha256(generic)
+        bad["evidence_inputs"].pop(1)
+        with self.assertRaisesRegex(ValueError, "category allowlist"):
+            self.validate_manifest(bad)
+
     def test_stale_matrix_pinned_manifest_digest_fails(self):
         self.fixture.matrix["mapping_contract"]["evidence_manifest"]["sha256"] = "0" * 64
         with self.assertRaisesRegex(ValueError, "manifest.*digest|digest.*manifest"):
@@ -270,7 +281,7 @@ class Soc2EvidenceManifestContractTests(unittest.TestCase):
             self.validate_manifest(bad)
 
     def test_duplicate_normalized_paths_fail(self):
-        self.fixture.manifest["evidence_inputs"].append({**self.fixture.inputs[0], "path": "inputs/./oracle.json"})
+        self.fixture.manifest["evidence_inputs"].append({**self.fixture.inputs[0], "path": "source/./oracle.json"})
         with self.assertRaisesRegex(ValueError, "duplicate|normalized"):
             self.validate_manifest()
 
@@ -315,6 +326,14 @@ class Soc2EvidenceManifestContractTests(unittest.TestCase):
                 bad = copy.deepcopy(self.fixture.manifest)
                 del bad["review"]["attestations"][0][key]
                 with self.assertRaises(ValueError):
+                    self.validate_manifest(bad)
+
+    def test_pending_or_open_conflict_disposition_fails(self):
+        for value in ("pending", "open"):
+            with self.subTest(value=value):
+                bad = copy.deepcopy(self.fixture.manifest)
+                bad["review"]["attestations"][0]["conflict_disposition"] = value
+                with self.assertRaisesRegex(ValueError, "conflict disposition"):
                     self.validate_manifest(bad)
         inadequate_values = (
             ("qualification", "   "),
