@@ -1050,12 +1050,17 @@ class AssessmentAuditChecklistStarterTests(unittest.TestCase):
 
 
 class IntegratedAssessmentArtifactTests(unittest.TestCase):
-    overview = ROOT / "assessment" / "integrated-assessment-overview.example.md"
+    overview = ROOT / "assessment" / "integrated-assessment.example.md"
     api_result_id = "ASR-ENG3-API100"
     api_evidence_id = "EVD-ENG3-API100-GATEWAY"
     mod_evidence_id = "EVD-SAMP3-MOD100-REGISTRY"
 
     def test_integrated_summit_assessment_artifact_graph_is_linked_and_valid(self) -> None:
+        external_claim_pattern = (
+            r"(?i)\b(?:complies?\s+with|compliant\s+with|certified\s+(?:to|against)|"
+            r"conforms?\s+to|aligned\s+with|meets?|satisfies|mapped\s+to)\s+"
+            r"(?:NIST|ISO|SOC|EU AI Act)\b"
+        )
         workbook = ROOT / "assessment" / "workbook" / "engagement3-vignette.example.md"
         audit = ROOT / "assessment" / "audit-checklist" / "sampling3-vignette.example.md"
         governance = ROOT / "templates" / "examples" / "governance-thread3.example.md"
@@ -1077,20 +1082,22 @@ class IntegratedAssessmentArtifactTests(unittest.TestCase):
                 self.assertRegex(text, r"(?im)\bfictional\b")
                 self.assertRegex(text, r"(?im)\bDraft\b")
                 self.assertIsNone(re.search(r"(?i)\bshall\b", text))
-                self.assertNotRegex(
-                    text,
-                    r"(?i)\b(?:complies?\s+with|compliant\s+with|certified\s+(?:to|against)|conforms?\s+to|aligned\s+with|meets?|satisfies|mapped\s+to)\s+(?:NIST|ISO|SOC|EU AI Act)\b",
-                )
+                self.assertNotRegex(text, external_claim_pattern)
 
         for index in (
             ROOT / "assessment" / "README.md",
             ROOT / "assessment" / "workbook" / "README.md",
+            ROOT / "assessment" / "workbook" / "examples" / "README.md",
             ROOT / "assessment" / "audit-checklist" / "README.md",
             ROOT / "assessment" / "evidence-catalog" / "README.md",
             ROOT / "templates" / "README.md",
         ):
             with self.subTest(index=str(index.relative_to(ROOT))):
-                self.assertIn(self.overview.name, index.read_text(encoding="utf-8"))
+                self.assertRegex(
+                    index.read_text(encoding="utf-8"),
+                    rf"\[[^\]]+\]\([^)]*{re.escape(self.overview.name)}(?:#[^)]*)?\)",
+                    msg=f"{index} must contain a Markdown link to {self.overview.name}",
+                )
 
         result_records = list(
             (ROOT / "assessment" / "audit-checklist" / "examples").glob("*.json")
@@ -1162,6 +1169,7 @@ class IntegratedAssessmentArtifactTests(unittest.TestCase):
                 self.assertEqual(errors, [], msg="; ".join(error.message for error in errors))
                 self.assertRegex(json.dumps(document), r"(?i)fictional")
                 self.assertIsNone(re.search(r"(?i)\bshall\b", json.dumps(document)))
+                self.assertNotRegex(json.dumps(document), external_claim_pattern)
                 if schema_name != "evidence-record":
                     self.assertEqual(document.get("status"), "draft")
                 self.assertEqual(
