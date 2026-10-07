@@ -1079,7 +1079,7 @@ class IntegratedAssessmentArtifactTests(unittest.TestCase):
                 self.assertIsNone(re.search(r"(?i)\bshall\b", text))
                 self.assertNotRegex(
                     text,
-                    r"(?i)\b(?:complies? with|certified to|conforms? to)\s+(?:NIST|ISO|SOC|EU AI Act)",
+                    r"(?i)\b(?:complies?\s+with|compliant\s+with|certified\s+(?:to|against)|conforms?\s+to|aligned\s+with|meets?|satisfies|mapped\s+to)\s+(?:NIST|ISO|SOC|EU AI Act)\b",
                 )
 
         for index in (
@@ -1115,7 +1115,19 @@ class IntegratedAssessmentArtifactTests(unittest.TestCase):
         ]
         self.assertEqual(len(mod_evidence), 1, "MOD-100 evidence must resolve to one filled record")
 
+        api_evidence = [
+            (path, document)
+            for path, document in evidence_documents
+            if document.get("evidence_id") == self.api_evidence_id
+        ]
+        self.assertEqual(
+            len(api_evidence),
+            1,
+            "API-100 must resolve to exactly one canonical evidence record",
+        )
+
         linked_documents = []
+        api_maturity_documents = []
         for document in json_records:
             if document.name.endswith("assessment-result.example.json"):
                 record = json.loads(document.read_text(encoding="utf-8"))
@@ -1125,11 +1137,13 @@ class IntegratedAssessmentArtifactTests(unittest.TestCase):
                 record = json.loads(document.read_text(encoding="utf-8"))
                 if self.api_result_id in record.get("basis_refs", []):
                     linked_documents.append(("maturity-assessment", document, record))
-        linked_documents.extend(
-            ("evidence-record", path, record)
-            for path, record in evidence_documents
-            if record.get("evidence_id") == self.api_evidence_id
+                    api_maturity_documents.append((document, record))
+        self.assertGreaterEqual(
+            len(api_maturity_documents),
+            1,
+            "canonical API-100 result must have a linked maturity assessment",
         )
+        linked_documents.extend(("evidence-record", path, record) for path, record in api_evidence)
         linked_documents.extend(("evidence-record", *item) for item in mod_evidence)
         mod_results = [
             (path, json.loads(path.read_text(encoding="utf-8")))
