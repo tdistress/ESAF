@@ -14,6 +14,12 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class V018ReleaseGateContractTests(unittest.TestCase):
+    def test_published_readiness_frontmatter_has_a_text_date(self):
+        from tools.v018_draft_release_gates import load_readiness_document, RECORD_RELATIVE
+        record, _ = load_readiness_document(ROOT / RECORD_RELATIVE)
+        self.assertIsInstance(record['publication']['date'], str)
+        self.assertEqual([], validate_record(ROOT, record))
+
     def test_transition_baseline_record_is_bounded_and_explicit(self):
         from tools.v018_draft_release_gates import load_readiness_document, RECORD_RELATIVE
         record, _ = load_readiness_document(ROOT / RECORD_RELATIVE)

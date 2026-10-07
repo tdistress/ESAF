@@ -12,7 +12,7 @@ publication:
   condition: annotated_tag_targets_validated_closure_candidate
   tag_object: db85ce06edbe5e6cbf5bcc29ae106360d2e1d4f7
   tagged_commit: abfccc4dda553a669d02dace9bde80b97ee3d789
-  date: 2026-10-07
+  date: '2026-10-07'
   evidence:
   - https://github.com/tdistress/ESAF/tree/v0.18-draft
   - https://github.com/tdistress/ESAF/issues/224#issuecomment-6046454303
