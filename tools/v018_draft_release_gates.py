@@ -140,10 +140,13 @@ def validate_baseline_anchor(root: Path, baseline_ref: str) -> list[str]:
 
 def validate_baseline_from_record(root: Path, record: dict) -> list[str]:
     """Validate the record's bound baseline for its current release phase."""
+    phase = record.get("phase")
+    if not isinstance(phase, str):
+        return ["phase shall be a string before record-bound baseline validation"]
     baseline_ref = record.get("base_sha")
     if not isinstance(baseline_ref, str) or not SHA_RE.fullmatch(baseline_ref):
         return ["readiness record base_sha shall be an exact 40-character SHA"]
-    if record.get("phase") in PREVIOUS_PHASE or record.get("phase") == "published":
+    if phase in PREVIOUS_PHASE:
         return validate_transition(root, baseline_ref, record)
     return validate_baseline_anchor(root, baseline_ref)
 
@@ -151,6 +154,8 @@ def validate_baseline_from_record(root: Path, record: dict) -> list[str]:
 def validate_transition(root: Path, baseline_ref: str, record: dict) -> list[str]:
     errors: list[str] = []
     phase = record.get("phase")
+    if not isinstance(phase, str):
+        return ["phase shall be a string before baseline transition validation"]
     expected = PREVIOUS_PHASE.get(phase)
     if not expected and phase != "published": return [f"phase {phase!r} does not support baseline-ref"]
     try:
@@ -223,16 +228,18 @@ def main(argv: Sequence[str] | None = None) -> int:
         if args.baseline_ref_from_record:
             errors.extend(validate_baseline_from_record(root, record))
             baseline_ref = None
+        phase = record.get("phase")
+        phase_requires_baseline = isinstance(phase, str) and phase in PREVIOUS_PHASE
         cursor = 0
         for heading in HEADINGS:
             pos = body.find(heading, cursor)
             if pos < 0: errors.append(f"readiness body is missing required heading: {heading}")
             else: cursor = pos + len(heading)
-        if record.get("phase") in PREVIOUS_PHASE and not baseline_ref and not args.baseline_ref_from_record:
+        if phase_requires_baseline and not baseline_ref and not args.baseline_ref_from_record:
             errors.append("baseline-ref is required for a phase transition")
-        elif baseline_ref and record.get("phase") in PREVIOUS_PHASE:
+        elif baseline_ref and phase_requires_baseline:
             errors.extend(validate_transition(root, baseline_ref, record))
-        elif baseline_ref:
+        elif baseline_ref and isinstance(phase, str):
             errors.extend(validate_baseline_anchor(root, baseline_ref))
     except (OSError, ValueError, yaml.YAMLError) as exc:
         errors = [f"release record could not be validated: {exc}"]

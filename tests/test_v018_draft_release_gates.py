@@ -75,7 +75,7 @@ class V018ReleaseGateContractTests(unittest.TestCase):
         self.assertTrue(any('standards_mapping' in error for error in validate_record(ROOT, candidate)))
 
     def test_malformed_phase_type_fails_without_exception(self):
-        from tools.v018_draft_release_gates import load_readiness_document, RECORD_RELATIVE
+        from tools.v018_draft_release_gates import load_readiness_document, RECORD_RELATIVE, validate_baseline_from_record
         record, _ = load_readiness_document(ROOT / RECORD_RELATIVE)
         for malformed_phase in ([], {}, 18, None):
             with self.subTest(phase=malformed_phase):
@@ -83,6 +83,25 @@ class V018ReleaseGateContractTests(unittest.TestCase):
                 candidate['phase'] = malformed_phase
                 errors = validate_record(ROOT, candidate)
                 self.assertTrue(any('phase shall be evidence_candidate' in error for error in errors))
+                self.assertTrue(any('phase shall be a string' in error for error in validate_baseline_from_record(ROOT, candidate)))
+                self.assertTrue(any('phase shall be a string' in error for error in validate_transition(ROOT, 'HEAD', candidate)))
+
+    def test_cli_rejects_malformed_phase_with_both_baseline_modes(self):
+        import contextlib
+        import io
+        from unittest.mock import patch
+        from tools.v018_draft_release_gates import load_readiness_document, main, RECORD_RELATIVE
+        source, body = load_readiness_document(ROOT / RECORD_RELATIVE)
+        for malformed_phase in ([], {}):
+            for baseline_args in (['--baseline-ref-from-record'], ['--baseline-ref', 'HEAD']):
+                with self.subTest(phase=malformed_phase, baseline_args=baseline_args):
+                    candidate = deepcopy(source)
+                    candidate['phase'] = malformed_phase
+                    stderr = io.StringIO()
+                    with patch('tools.v018_draft_release_gates.load_readiness_document', return_value=(candidate, body)), patch('tools.v018_draft_release_gates.validate_candidate_binding', return_value=[]), contextlib.redirect_stderr(stderr):
+                        result = main(['--check', *baseline_args])
+                    self.assertEqual(1, result)
+                    self.assertIn('phase shall be', stderr.getvalue())
 
     def test_published_publication_evidence_must_be_a_list(self):
         from tools.v018_draft_release_gates import load_readiness_document, RECORD_RELATIVE, PHASE_GATE_STATES
