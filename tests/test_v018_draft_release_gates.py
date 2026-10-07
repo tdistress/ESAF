@@ -7,7 +7,7 @@ import tempfile
 import unittest
 import yaml
 
-from tools.v018_draft_release_gates import GATE_IDS, validate_record, validate_transition, validate_candidate_binding, PHASE_GATE_STATES
+from tools.v018_draft_release_gates import GATE_IDS, validate_record, validate_transition, validate_candidate_binding, validate_baseline_from_record, PHASE_GATE_STATES
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -111,6 +111,21 @@ class V018ReleaseGateContractTests(unittest.TestCase):
             self.assertEqual([], validate_candidate_binding(repo, committed_text))
             record_path.write_text(committed_text + 'uncommitted edit\n', encoding='utf-8')
             self.assertTrue(any('differs from committed HEAD' in error for error in validate_candidate_binding(repo, record_path.read_text(encoding='utf-8'))))
+
+    def test_record_bound_evidence_candidate_baseline_resolves_exact_head_commit(self):
+        with tempfile.TemporaryDirectory() as directory:
+            repo = Path(directory)
+            subprocess.run(['git', 'init', '-q'], cwd=repo, check=True)
+            subprocess.run(['git', 'config', 'user.email', 'release-test@example.invalid'], cwd=repo, check=True)
+            subprocess.run(['git', 'config', 'user.name', 'Release Test'], cwd=repo, check=True)
+            (repo / 'state.txt').write_text('evidence candidate\n', encoding='utf-8')
+            subprocess.run(['git', 'add', 'state.txt'], cwd=repo, check=True)
+            subprocess.run(['git', 'commit', '-qm', 'evidence candidate'], cwd=repo, check=True)
+            base_sha = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo, text=True).strip()
+            (repo / 'state.txt').write_text('candidate head\n', encoding='utf-8')
+            subprocess.run(['git', 'commit', '-qam', 'candidate head'], cwd=repo, check=True)
+            record = {'phase': 'evidence_candidate', 'base_sha': base_sha}
+            self.assertEqual([], validate_baseline_from_record(repo, record))
 
     def test_published_record_can_follow_annotated_tag_target(self):
         from tools.v018_draft_release_gates import load_readiness_document, RECORD_RELATIVE

@@ -122,7 +122,7 @@ def validate_baseline_anchor(root: Path, baseline_ref: str) -> list[str]:
     """Verify the evidence-candidate base is an exact existing ancestor SHA."""
     try:
         resolved = _git(root, "rev-parse", "--verify", f"{baseline_ref}^{{commit}}")
-        head = _git(root, "rev-parse", "--verify", "HEAD^{{commit}}")
+        head = _git(root, "rev-parse", "--verify", "HEAD^{commit}")
     except subprocess.CalledProcessError as exc:
         return [f"baseline/candidate SHA could not be resolved: {exc}"]
     errors = []
@@ -135,6 +135,16 @@ def validate_baseline_anchor(root: Path, baseline_ref: str) -> list[str]:
     if ancestry.returncode != 0:
         errors.append("base_sha shall be an ancestor of candidate HEAD")
     return errors
+
+
+def validate_baseline_from_record(root: Path, record: dict) -> list[str]:
+    """Validate the record's bound baseline for its current release phase."""
+    baseline_ref = record.get("base_sha")
+    if not isinstance(baseline_ref, str) or not SHA_RE.fullmatch(baseline_ref):
+        return ["readiness record base_sha shall be an exact 40-character SHA"]
+    if record.get("phase") in PREVIOUS_PHASE or record.get("phase") == "published":
+        return validate_transition(root, baseline_ref, record)
+    return validate_baseline_anchor(root, baseline_ref)
 
 
 def validate_transition(root: Path, baseline_ref: str, record: dict) -> list[str]:
@@ -210,17 +220,14 @@ def main(argv: Sequence[str] | None = None) -> int:
         errors = [*validate_candidate_binding(root, working_text), *validate_record(root, record)]
         baseline_ref = args.baseline_ref
         if args.baseline_ref_from_record:
-            source_base = record.get("base_sha")
-            if not isinstance(source_base, str) or not SHA_RE.fullmatch(source_base):
-                errors.append("readiness record base_sha shall be an exact 40-character SHA")
-            else:
-                baseline_ref = source_base
+            errors.extend(validate_baseline_from_record(root, record))
+            baseline_ref = None
         cursor = 0
         for heading in HEADINGS:
             pos = body.find(heading, cursor)
             if pos < 0: errors.append(f"readiness body is missing required heading: {heading}")
             else: cursor = pos + len(heading)
-        if record.get("phase") in PREVIOUS_PHASE and not baseline_ref:
+        if record.get("phase") in PREVIOUS_PHASE and not baseline_ref and not args.baseline_ref_from_record:
             errors.append("baseline-ref is required for a phase transition")
         elif baseline_ref and record.get("phase") in PREVIOUS_PHASE:
             errors.extend(validate_transition(root, baseline_ref, record))
