@@ -1049,5 +1049,129 @@ class AssessmentAuditChecklistStarterTests(unittest.TestCase):
                 )
 
 
+class IntegratedAssessmentArtifactTests(unittest.TestCase):
+    overview = ROOT / "assessment" / "integrated-assessment-overview.example.md"
+    api_result_id = "ASR-ENG3-API100"
+    api_evidence_id = "EVD-ENG3-API100-GATEWAY"
+    mod_evidence_id = "EVD-SAMP3-MOD100-REGISTRY"
+
+    def test_integrated_summit_assessment_artifact_graph_is_linked_and_valid(self) -> None:
+        workbook = ROOT / "assessment" / "workbook" / "engagement3-vignette.example.md"
+        audit = ROOT / "assessment" / "audit-checklist" / "sampling3-vignette.example.md"
+        governance = ROOT / "templates" / "examples" / "governance-thread3.example.md"
+        overview = (
+            self.overview.read_text(encoding="utf-8")
+            if self.overview.is_file()
+            else ""
+        )
+        narratives = {
+            "overview": overview,
+            "workbook": workbook.read_text(encoding="utf-8"),
+            "audit": audit.read_text(encoding="utf-8"),
+            "governance": governance.read_text(encoding="utf-8"),
+        }
+        for label, text in narratives.items():
+            with self.subTest(narrative=label):
+                self.assertIn(self.api_result_id, text)
+                self.assertIn(self.api_evidence_id, text)
+                self.assertRegex(text, r"(?im)\bfictional\b")
+                self.assertRegex(text, r"(?im)\bDraft\b")
+                self.assertIsNone(re.search(r"(?i)\bshall\b", text))
+                self.assertNotRegex(
+                    text,
+                    r"(?i)\b(?:complies? with|certified to|conforms? to)\s+(?:NIST|ISO|SOC|EU AI Act)",
+                )
+
+        for index in (
+            ROOT / "assessment" / "README.md",
+            ROOT / "assessment" / "workbook" / "README.md",
+            ROOT / "assessment" / "audit-checklist" / "README.md",
+            ROOT / "assessment" / "evidence-catalog" / "README.md",
+            ROOT / "templates" / "README.md",
+        ):
+            with self.subTest(index=str(index.relative_to(ROOT))):
+                self.assertIn(self.overview.name, index.read_text(encoding="utf-8"))
+
+        result_records = list(
+            (ROOT / "assessment" / "audit-checklist" / "examples").glob("*.json")
+        )
+        schema_validators = {
+            name: Draft202012Validator(
+                json.loads((SCHEMA_ROOT / f"{name}.schema.json").read_text(encoding="utf-8")),
+                format_checker=ASSESSMENT_FORMAT_CHECKER,
+            )
+            for name in SCHEMA_NAMES
+        }
+        json_records = list((ROOT / "assessment").rglob("*.json"))
+        evidence_documents = [
+            (path, json.loads(path.read_text(encoding="utf-8")))
+            for path in json_records
+            if path.name.endswith("evidence-record.example.json")
+        ]
+        mod_evidence = [
+            (path, document)
+            for path, document in evidence_documents
+            if document.get("evidence_id") == self.mod_evidence_id
+        ]
+        self.assertEqual(len(mod_evidence), 1, "MOD-100 evidence must resolve to one filled record")
+
+        linked_documents = []
+        for document in json_records:
+            if document.name.endswith("assessment-result.example.json"):
+                record = json.loads(document.read_text(encoding="utf-8"))
+                if record.get("result_id") == self.api_result_id:
+                    linked_documents.append(("assessment-result", document, record))
+            elif document.name.endswith("maturity-assessment.example.json"):
+                record = json.loads(document.read_text(encoding="utf-8"))
+                if self.api_result_id in record.get("basis_refs", []):
+                    linked_documents.append(("maturity-assessment", document, record))
+        linked_documents.extend(
+            ("evidence-record", path, record)
+            for path, record in evidence_documents
+            if record.get("evidence_id") == self.api_evidence_id
+        )
+        linked_documents.extend(("evidence-record", *item) for item in mod_evidence)
+        mod_results = [
+            (path, json.loads(path.read_text(encoding="utf-8")))
+            for path in result_records
+            if json.loads(path.read_text(encoding="utf-8")).get("result_id")
+            == "ASR-SAMP3-MOD100"
+        ]
+        self.assertEqual(len(mod_results), 1)
+        linked_documents.extend(
+            ("assessment-result", path, record) for path, record in mod_results
+        )
+        self.assertGreaterEqual(len(linked_documents), 4)
+        for schema_name, path, document in linked_documents:
+            with self.subTest(document=str(path.relative_to(ROOT))):
+                errors = list(schema_validators[schema_name].iter_errors(document))
+                self.assertEqual(errors, [], msg="; ".join(error.message for error in errors))
+                self.assertRegex(json.dumps(document), r"(?i)fictional")
+                self.assertIsNone(re.search(r"(?i)\bshall\b", json.dumps(document)))
+                if schema_name != "evidence-record":
+                    self.assertEqual(document.get("status"), "draft")
+                self.assertEqual(
+                    document.get("traceability", {}).get("external_or_profile_ids", []),
+                    [],
+                )
+        api_results = [item for item in linked_documents if item[0] == "assessment-result"]
+        self.assertEqual(len(api_results), 1)
+        self.assertIn(self.api_evidence_id, api_results[0][2].get("evidence_refs", []))
+        self.assertIn(self.mod_evidence_id, mod_results[0][1].get("evidence_refs", []))
+        api_records = [
+            path
+            for path in result_records
+            if "API-100"
+            in json.loads(path.read_text(encoding="utf-8"))
+            .get("assessment_scope", {})
+            .get("requirement_ids", [])
+        ]
+        self.assertEqual(
+            len(api_records),
+            0,
+            "audit examples must not duplicate the canonical API-100 JSON result",
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
