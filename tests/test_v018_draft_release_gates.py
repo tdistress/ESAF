@@ -14,16 +14,23 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class V018ReleaseGateContractTests(unittest.TestCase):
-    def test_initial_record_is_bounded_and_explicit(self):
+    def test_transition_baseline_record_is_bounded_and_explicit(self):
         from tools.v018_draft_release_gates import load_readiness_document, RECORD_RELATIVE
         record, _ = load_readiness_document(ROOT / RECORD_RELATIVE)
-        self.assertEqual('evidence_candidate', record['phase'])
-        self.assertEqual('v0.18-draft', record['release'])
-        self.assertEqual('v0.18-draft', record['milestone'])
-        self.assertEqual('not_applicable', record['gates']['standards_mapping']['state'])
+        result = subprocess.run(
+            ['git', 'show', f"{record['base_sha']}:{RECORD_RELATIVE}"],
+            cwd=ROOT, check=True, capture_output=True, text=True,
+        )
+        baseline_text = result.stdout
+        end = baseline_text.index('\n---\n', 4)
+        baseline = yaml.safe_load(baseline_text[4:end])
+        self.assertEqual('evidence_candidate', baseline['phase'])
+        self.assertEqual('v0.18-draft', baseline['release'])
+        self.assertEqual('v0.18-draft', baseline['milestone'])
+        self.assertEqual('not_applicable', baseline['gates']['standards_mapping']['state'])
         self.assertNotIn('qualified_crosswalk_review', GATE_IDS)
-        self.assertTrue(all(item['state'] == ('not_applicable' if gate == 'standards_mapping' else 'open') for gate, item in record['gates'].items()))
-        self.assertEqual([], validate_record(ROOT, record))
+        self.assertTrue(all(item['state'] == ('not_applicable' if gate == 'standards_mapping' else 'open') for gate, item in baseline['gates'].items()))
+        self.assertEqual([], validate_record(ROOT, baseline))
 
     def test_rejects_premature_version_advancement_and_missing_ordinary_gate(self):
         from tools.v018_draft_release_gates import load_readiness_document, RECORD_RELATIVE
