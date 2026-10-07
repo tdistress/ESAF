@@ -67,6 +67,25 @@ class V018ReleaseGateContractTests(unittest.TestCase):
         candidate['gates']['standards_mapping'] = 'not-a-gate-object'
         self.assertTrue(any('standards_mapping' in error for error in validate_record(ROOT, candidate)))
 
+    def test_published_publication_evidence_must_be_a_list(self):
+        from tools.v018_draft_release_gates import load_readiness_document, RECORD_RELATIVE, PHASE_GATE_STATES
+        record, _ = load_readiness_document(ROOT / RECORD_RELATIVE)
+        record = deepcopy(record)
+        record['phase'] = 'published'
+        record['gates'] = {
+            gate: {'state': state, 'evidence': [] if gate == 'standards_mapping' else ['https://github.com/tdistress/ESAF/actions/runs/1']}
+            for gate, state in PHASE_GATE_STATES['published'].items()
+        }
+        record['publication'] = {
+            'condition': 'annotated_tag_targets_validated_closure_candidate',
+            'tag_object': 'a' * 40,
+            'tagged_commit': 'b' * 40,
+            'date': '2026-10-07',
+            'evidence': 17,
+        }
+        errors = validate_record(ROOT, record)
+        self.assertTrue(any('published publication evidence shall be a list' in error for error in errors))
+
     def test_candidate_binding_requires_committed_readiness_but_allows_unrelated_dirty_files(self):
         from tools.v018_draft_release_gates import RECORD_RELATIVE
         with tempfile.TemporaryDirectory() as directory:

@@ -85,8 +85,13 @@ def validate_record(root: Path, record: dict) -> list[str]:
             else:
                 try: date.fromisoformat(publication["date"])
                 except ValueError: errors.append("published date shall be YYYY-MM-DD")
-            if not publication.get("evidence"): errors.append("published publication evidence is required")
-            elif any(not isinstance(url, str) or not url.startswith("https://") for url in publication["evidence"]): errors.append("published publication evidence shall use HTTPS locators")
+            publication_evidence = publication.get("evidence")
+            if not isinstance(publication_evidence, list):
+                errors.append("published publication evidence shall be a list")
+            elif not publication_evidence:
+                errors.append("published publication evidence is required")
+            elif any(not isinstance(url, str) or not url.startswith("https://") for url in publication_evidence):
+                errors.append("published publication evidence shall use HTTPS locators")
     return errors
 
 
