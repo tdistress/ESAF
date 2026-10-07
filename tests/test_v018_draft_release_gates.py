@@ -93,3 +93,6 @@ class V018ReleaseGateContractTests(unittest.TestCase):
             stale = deepcopy(published)
             stale['publication']['tag_object'] = 'f' * 40
             self.assertTrue(any('tag object is stale' in error for error in validate_transition(repo, closure_sha, stale)))
+            stale_base = deepcopy(published)
+            stale_base['base_sha'] = 'f' * 40
+            self.assertTrue(any('base_sha shall equal the exact baseline' in error for error in validate_transition(repo, closure_sha, stale_base)))
