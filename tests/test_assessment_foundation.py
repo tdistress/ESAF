@@ -1058,7 +1058,7 @@ class IntegratedAssessmentArtifactTests(unittest.TestCase):
     def test_integrated_summit_assessment_artifact_graph_is_linked_and_valid(self) -> None:
         external_claim_pattern = (
             r"(?i)\b(?:complies?\s+with|compliant\s+with|certified\s+(?:to|against)|"
-            r"conforms?\s+to|aligned\s+with|meets?|satisfies|mapped\s+to)\s+"
+            r"conforms?\s+to|aligned\s+with|in\s+alignment\s+with|meets?|satisfies|mapped\s+to)\s+"
             r"(?:NIST|ISO|SOC|EU AI Act)\b"
         )
         workbook = ROOT / "assessment" / "workbook" / "engagement3-vignette.example.md"
@@ -1178,7 +1178,15 @@ class IntegratedAssessmentArtifactTests(unittest.TestCase):
                 )
         api_results = [item for item in linked_documents if item[0] == "assessment-result"]
         self.assertEqual(len(api_results), 1)
+        self.assertIn(
+            "API-100",
+            api_results[0][2].get("assessment_scope", {}).get("requirement_ids", []),
+        )
         self.assertIn(self.api_evidence_id, api_results[0][2].get("evidence_refs", []))
+        self.assertIn(
+            "MOD-100",
+            mod_results[0][1].get("assessment_scope", {}).get("requirement_ids", []),
+        )
         self.assertIn(self.mod_evidence_id, mod_results[0][1].get("evidence_refs", []))
         api_records = [
             path
