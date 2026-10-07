@@ -2,7 +2,9 @@
 
 **Status:** Working Draft
 
-**Version:** 0.18-draft closure candidate (unpublished)
+**Version:** 0.17-draft
+
+**Next Release Candidate:** v0.18-draft closure candidate (unpublished)
 
 ## 0.18-draft delivery sequence
 

@@ -5,7 +5,7 @@
 The `v0.18-draft` closure candidate covers one fictional Summit Analytics
 `CAP-140` integrated ESAF-1500 assessment case. The candidate is prepared for
 exact-SHA technical, editorial, terminology, cross-reference/rendering, and
-governance review. Those reviews must be completed against the final exact
+governance review. Those reviews shall be completed against the final exact
 candidate SHA before merge. `ready` in the readiness record means candidate
 materials and validation are ready for those reviews; it does not attest that
 review has already occurred. Issue [#224](https://github.com/tdistress/ESAF/issues/224)

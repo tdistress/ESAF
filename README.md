@@ -3,11 +3,12 @@
 > An open enterprise standard for the secure governance, architecture, adoption, and operation of artificial intelligence.
 
 ![Status](https://img.shields.io/badge/status-Working%20Draft-blue)
-![Version](https://img.shields.io/badge/version-0.18--draft%20closure%20candidate-orange)
+![Version](https://img.shields.io/badge/version-0.17--draft-orange)
 
-The `v0.18-draft` closure candidate is undergoing exact-candidate review and
-publication validation. Publication remains conditional on successful review,
-merge, post-merge validation, and creation of the annotated `v0.18-draft` tag.
+Next Release Candidate: **v0.18-draft closure candidate (unpublished)**. It is
+undergoing exact-candidate review and publication validation. Publication
+remains conditional on successful review, merge, post-merge validation, and
+creation of the annotated `v0.18-draft` tag.
 
 ## Vision
 

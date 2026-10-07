@@ -9,16 +9,12 @@ is a tagged Working Draft. Version 0.11-draft is a tagged Working Draft. Version
 Working Draft. Version 0.13-draft is a tagged Working Draft. Version 0.14-draft is a tagged
 Working Draft. Version 0.15-draft is a tagged Working Draft. Version 0.16-draft is a tagged
 Working Draft. Version 0.17-draft is a tagged
-Working Draft. Version 0.18-draft is an unpublished closure candidate.
+Working Draft.
 
-## 0.18-draft - closure candidate (unpublished)
-
-### Pending publication
-
-- Prepared one integrated Summit Analytics `CAP-140` assessment case for
-  exact-candidate review and publication validation. Publication remains
-  conditional on required reviews, merge, post-merge validation, and the
-  annotated `v0.18-draft` tag.
+Next Release Candidate: `v0.18-draft` closure candidate (unpublished). It
+covers one integrated Summit Analytics `CAP-140` assessment case. Publication
+is conditional on exact-candidate review, merge, post-merge validation, and
+the annotated `v0.18-draft` tag.
 
 ## 0.17-draft - 2026-09-16
 
