@@ -97,7 +97,7 @@ EXPECTED_COMMAND_ARGV = {
     "v015-draft-release-gates": ("python", "tools/v015_draft_release_gates.py", "--check", "--baseline-ref", "{base}"),
     "v016-draft-release-gates": ("python", "tools/v016_draft_release_gates.py", "--check", "--baseline-ref", "{base}"),
     "v017-draft-release-gates": ("python", "tools/v017_draft_release_gates.py", "--check", "--baseline-ref", "{base}"),
-    "v018-draft-release-gates": ("python", "tools/v018_draft_release_gates.py", "--check", "--baseline-ref", "{base}"),
+    "v018-draft-release-gates": ("python", "tools/v018_draft_release_gates.py", "--check", "--baseline-ref", "{v018_base}"),
 }
 FORBIDDEN_GENERIC_COMMAND_IDS = (
     "qualified-review",
@@ -132,7 +132,7 @@ class PlanValidationTests(unittest.TestCase):
             ),
         )
 
-    def git_diff_for(self, output: bytes, *, resolved: tuple[str, str] = ("a" * 40, "b" * 40)):
+    def git_diff_for(self, output: bytes, *, resolved: tuple[str, str] = ("a" * 40, "b" * 40), v018_base: str = "a" * 40):
         resolves = iter(resolved)
         def runner(argv, **_kwargs):
             if argv == ["git", "rev-parse", "--verify", "HEAD^{commit}"]:
@@ -144,8 +144,14 @@ class PlanValidationTests(unittest.TestCase):
                 ["git", "status", "--porcelain=v1", "--untracked-files=all"],
             ):
                 return subprocess.CompletedProcess(argv, 0, b"", b"")
-            if argv == ["git", "merge-base", "--is-ancestor", resolved[0], resolved[1]]:
+            if argv[:3] == ["git", "merge-base", "--is-ancestor"] and argv[-1] == resolved[1]:
                 return subprocess.CompletedProcess(argv, 0, b"", b"")
+            if argv[:2] == ["git", "show"] and argv[2].endswith(":docs/superpowers/reviews/2026-10-07-v018-draft-publication-readiness.md"):
+                record = f"---\nbase_sha: {v018_base}\n---\n".encode()
+                return subprocess.CompletedProcess(argv, 0, record, b"")
+            if argv[:3] == ["git", "cat-file", "-e"]:
+                valid = argv[3] == f"{'a' * 40}^{{commit}}"
+                return subprocess.CompletedProcess(argv, 0 if valid else 1, b"", b"")
             return subprocess.CompletedProcess(argv, 0, output, b"")
         return runner
 
@@ -297,6 +303,12 @@ class PlanValidationTests(unittest.TestCase):
                 return subprocess.CompletedProcess(argv, 0, b"M\0.github/workflows/check.yml\0", b"")
             if argv == ["git", "status", "--porcelain=v1", "--untracked-files=all"]:
                 return subprocess.CompletedProcess(argv, 0, b"?? user-artifact.txt\0", b"")
+            if argv[:2] == ["git", "show"] and argv[2].endswith(":docs/superpowers/reviews/2026-10-07-v018-draft-publication-readiness.md"):
+                return subprocess.CompletedProcess(argv, 0, f"---\nbase_sha: {base}\n---\n".encode(), b"")
+            if argv == ["git", "cat-file", "-e", f"{base}^{{commit}}"]:
+                return subprocess.CompletedProcess(argv, 0, b"", b"")
+            if argv[:3] == ["git", "merge-base", "--is-ancestor"] and argv[-1] == candidate:
+                return subprocess.CompletedProcess(argv, 0, b"", b"")
             raise AssertionError(argv)
 
         with self.assertRaisesRegex(ValueError, "untracked"):
@@ -367,6 +379,10 @@ class PlanValidationTests(unittest.TestCase):
             commands["links"],
         )
         self.assertEqual(
+            ("python", "tools/v018_draft_release_gates.py", "--check", "--baseline-ref", "a" * 40),
+            commands["v018-draft-release-gates"],
+        )
+        self.assertEqual(
             (
                 "python",
                 "tools/verify_qualified_review_hot_path_equivalence.py",
@@ -429,6 +445,19 @@ class PlanValidationTests(unittest.TestCase):
         cli_commands = {command["id"]: tuple(command["argv"]) for command in json.loads(stream.getvalue())["commands"]}
         self.assertEqual(set(commands), set(cli_commands))
         self.assertEqual(commands["release-gates"], cli_commands["release-gates"])
+
+    def test_v018_publication_route_fails_closed_on_invalid_record_base_sha(self) -> None:
+        for bad_sha in ("not-a-sha", "a" * 39, "f" * 40):
+            with self.subTest(bad_sha=bad_sha):
+                with self.assertRaisesRegex(ValueError, "base_sha|does not resolve"):
+                    plan_validation(
+                        ROOT,
+                        base="base",
+                        candidate="candidate",
+                        git_runner=self.git_diff_for(
+                            b"M\0.github/workflows/check.yml\0", v018_base=bad_sha
+                        ),
+                    )
 
     def test_committed_catalog_routes_ordinary_docs_and_qualified_review_to_standard(self) -> None:
         ordinary_docs = plan_validation(

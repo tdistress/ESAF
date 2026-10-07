@@ -118,6 +118,25 @@ def validate_candidate_binding(root: Path, working_text: str) -> list[str]:
     return []
 
 
+def validate_baseline_anchor(root: Path, baseline_ref: str) -> list[str]:
+    """Verify the evidence-candidate base is an exact existing ancestor SHA."""
+    try:
+        resolved = _git(root, "rev-parse", "--verify", f"{baseline_ref}^{{commit}}")
+        head = _git(root, "rev-parse", "--verify", "HEAD^{{commit}}")
+    except subprocess.CalledProcessError as exc:
+        return [f"baseline/candidate SHA could not be resolved: {exc}"]
+    errors = []
+    if not SHA_RE.fullmatch(baseline_ref) or resolved != baseline_ref:
+        errors.append("base_sha shall resolve to the exact recorded 40-character SHA")
+    ancestry = subprocess.run(
+        ["git", "merge-base", "--is-ancestor", baseline_ref, head],
+        cwd=root, capture_output=True,
+    )
+    if ancestry.returncode != 0:
+        errors.append("base_sha shall be an ancestor of candidate HEAD")
+    return errors
+
+
 def validate_transition(root: Path, baseline_ref: str, record: dict) -> list[str]:
     errors: list[str] = []
     phase = record.get("phase")
@@ -131,6 +150,12 @@ def validate_transition(root: Path, baseline_ref: str, record: dict) -> list[str
     except (subprocess.CalledProcessError, ValueError) as exc:
         return [f"baseline/candidate SHA could not be resolved: {exc}"]
     if not SHA_RE.fullmatch(base_sha) or not SHA_RE.fullmatch(head_sha): errors.append("baseline and candidate shall be exact commit SHAs")
+    ancestry = subprocess.run(
+        ["git", "merge-base", "--is-ancestor", base_sha, head_sha],
+        cwd=root, capture_output=True,
+    )
+    if ancestry.returncode != 0:
+        errors.append("exact baseline SHA shall be an ancestor of candidate HEAD")
     if phase == "published":
         if baseline.get("phase") not in {"closure_candidate", "published"}:
             errors.append("published shall transition only from closure_candidate or published")
@@ -174,22 +199,33 @@ def _frontmatter(text: str) -> tuple[dict, str]:
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true", required=True)
-    parser.add_argument("--baseline-ref")
+    baseline = parser.add_mutually_exclusive_group()
+    baseline.add_argument("--baseline-ref")
+    baseline.add_argument("--baseline-ref-from-record", action="store_true")
     args = parser.parse_args(argv)
     root = Path(__file__).resolve().parents[1]
     try:
         record, body = load_readiness_document(root / RECORD_RELATIVE)
         working_text = (root / RECORD_RELATIVE).read_text(encoding="utf-8")
         errors = [*validate_candidate_binding(root, working_text), *validate_record(root, record)]
+        baseline_ref = args.baseline_ref
+        if args.baseline_ref_from_record:
+            source_base = record.get("base_sha")
+            if not isinstance(source_base, str) or not SHA_RE.fullmatch(source_base):
+                errors.append("readiness record base_sha shall be an exact 40-character SHA")
+            else:
+                baseline_ref = source_base
         cursor = 0
         for heading in HEADINGS:
             pos = body.find(heading, cursor)
             if pos < 0: errors.append(f"readiness body is missing required heading: {heading}")
             else: cursor = pos + len(heading)
-        if record.get("phase") in PREVIOUS_PHASE and not args.baseline_ref:
+        if record.get("phase") in PREVIOUS_PHASE and not baseline_ref:
             errors.append("baseline-ref is required for a phase transition")
-        elif args.baseline_ref and record.get("phase") in PREVIOUS_PHASE:
-            errors.extend(validate_transition(root, args.baseline_ref, record))
+        elif baseline_ref and record.get("phase") in PREVIOUS_PHASE:
+            errors.extend(validate_transition(root, baseline_ref, record))
+        elif baseline_ref:
+            errors.extend(validate_baseline_anchor(root, baseline_ref))
     except (OSError, ValueError, yaml.YAMLError) as exc:
         errors = [f"release record could not be validated: {exc}"]
     for error in errors: print(error, file=sys.stderr)

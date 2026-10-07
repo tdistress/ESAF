@@ -369,15 +369,8 @@ jobs:
       - name: Validate v0.17-draft release record on workflow dispatch
         if: github.event_name == 'workflow_dispatch'
         run: python tools/v017_draft_release_gates.py --check --baseline-ref "HEAD^"
-      - name: Validate v0.18-draft release record on pull request
-        if: github.event_name == 'pull_request'
-        run: python tools/v018_draft_release_gates.py --check --baseline-ref "${{ github.event.pull_request.base.sha }}"
-      - name: Validate v0.18-draft release record on protected-branch push
-        if: github.event_name == 'push'
-        run: python tools/v018_draft_release_gates.py --check --baseline-ref "${{ github.event.before }}"
-      - name: Validate v0.18-draft release record on workflow dispatch
-        if: github.event_name == 'workflow_dispatch'
-        run: python tools/v018_draft_release_gates.py --check --baseline-ref "HEAD^"
+      - name: Validate v0.18-draft release record against tracked baseline
+        run: python tools/v018_draft_release_gates.py --check --baseline-ref-from-record
       - name: Render and validate the v0.5-beta Mermaid baseline
         env:
           ESAF_MERMAID_PUPPETEER_CONFIG: tools/mermaid-puppeteer-ci.json
