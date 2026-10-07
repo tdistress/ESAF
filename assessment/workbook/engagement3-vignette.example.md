@@ -4,6 +4,10 @@
 **Issue:** [#207](https://github.com/tdistress/ESAF/issues/207)
 **Subject control:** `API-100` Enterprise AI Gateway
 
+This vignette is part of the integrated fictional `CAP-140` engagement described
+in the [integrated assessment overview](../integrated-assessment.example.md),
+which also links the sampled MOD-100 Draft result.
+
 This fictional third walkthrough shows how an assessor can use the ESAF-1500
 workbook pack for a gateway-control engagement. It is informative only. It
 does not assess a real organization and does not establish certification,
@@ -17,9 +21,9 @@ compliance, equivalence, endorsement, assurance, or production readiness.
 | Purpose | Examine whether fictional CAP-140 production traffic routes through an approved AI gateway with required policy-enforcement capabilities |
 | Subject | Fictional Summit Analytics workforce-research assistant (`CAP-140`) |
 | In-scope control | `API-100` |
-| Explicit exclusions | Emergency restriction Test depth (`API-100-A3`) and external-provider contract depth (`API-140`) |
-| Assessment period | 2026-09-01 to 2026-09-15 |
-| Population / sample | Complete examination of the fictional gateway configuration package for `CAP-140` |
+| Explicit exclusions | Emergency restriction Test depth (`API-100-A3`), production bypass testing, and external-provider contract depth (`API-140`) |
+| Assessment period | 2026-09-01 to 2026-09-18 |
+| Population / sample | Complete examination of the fictional gateway configuration package and one staging bypass attempt for `CAP-140` |
 | Assessor | Morgan Ellis, Independent assessor, Fictional Contour Assurance LLP |
 | Independence | Illustrative only; not a real independence attestation |
 | Kickoff limitation | Configuration export alone cannot prove runtime enforcement without corroborating Test evidence |
@@ -33,10 +37,12 @@ compliance, equivalence, endorsement, assurance, or production readiness.
    routing and allowlist package, recording it as
    [`examples/engagement3-evidence-record.example.json`](examples/engagement3-evidence-record.example.json)
    (`EVD-ENG3-API100-GATEWAY`).
-3. **Execute API-100-A1 (Examine).** The assessor checks that fictional CAP-140
-   traffic routes through approved control points with identity, authorization,
-   model routing, logging, and limits, capturing method detail in the draft
-   result.
+3. **Execute API-100-A1 (Examine) and API-100-A2 (Test).** The assessor checks
+   that fictional CAP-140 traffic routes through approved control points with
+   identity, authorization, model routing, logging, and limits, then performs one
+   bypass attempt against
+   a staging mirror. The staging call is blocked and logged; no production test
+   or separate staging evidence record is included.
 4. **Record determination and finding.** Required routing capabilities are
    present, but the fictional emergency model-restriction switch lacks an
    executable Test harness in this sample. The draft result
