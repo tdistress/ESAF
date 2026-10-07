@@ -5,6 +5,11 @@
 ![Status](https://img.shields.io/badge/status-Working%20Draft-blue)
 ![Version](https://img.shields.io/badge/version-0.17--draft-orange)
 
+Next Release Candidate: **v0.18-draft closure candidate (unpublished)**. It is
+undergoing exact-candidate review and publication validation. Publication
+remains conditional on successful review, merge, post-merge validation, and
+creation of the annotated `v0.18-draft` tag.
+
 ## Vision
 
 Artificial intelligence is becoming foundational to modern enterprises, but organizations still lack a single vendor-neutral standard connecting governance, cybersecurity, architecture, risk, operations, assurance, and business adoption.

@@ -8,6 +8,7 @@
 | v0.4-alpha | Initial reference architectures |
 | v0.5-beta | Priority crosswalks and industry profiles |
 | v0.9-rc1 | Editorially complete release candidate |
+| v0.18-draft | One integrated ESAF-1500 assessment case and ordinary exact-candidate publication gates |
 | v1.0 | First approved publication |
 
 ## v0.5-beta
@@ -917,3 +918,74 @@
   lifecycle state without their own evidence;
 - a certification or accreditation scheme; or
 - redesigning `v1.0`.
+
+## v0.18-draft
+
+### Entry state
+
+- `v0.17-draft` was published on 2026-09-16 and its publication evidence is
+  closed.
+- PR #222 merged on 2026-10-07 as `04f7b6c058dd776d51d5cba37a808dda555a4511`;
+  its SOC 2 readiness outcome remains `HOLD`.
+- Existing ESAF-1500 schemas and ESAF-1100 procedures remain authoritative for
+  the examples.
+- The scope remains the fictional Summit Analytics `CAP-140` engagement and
+  sampled controls `API-100` and `MOD-100`.
+
+### Required workstreams
+
+1. **Integrated assessment case.** Reconcile workbook, evidence, audit,
+   maturity, and governance examples into one discoverable fictional case.
+   Use one canonical API-100 evidence/result identity, add the MOD-100
+   registry evidence record, preserve distinct procedures and limitations,
+   and synchronize artifact links and indexes.
+2. **Ordinary publication closure.** Validate and review the exact candidate,
+   resolve Critical and Important findings, publish the annotated
+   `v0.18-draft` tag after required gates pass, and synchronize Working Draft
+   status surfaces with candidate-bound evidence.
+
+The implementation and publication queue is tracked in the GitHub
+[`v0.18-draft` milestone](https://github.com/tdistress/ESAF/milestone/12),
+with [Issue #223](https://github.com/tdistress/ESAF/issues/223) for the
+integrated case and [Issue #224](https://github.com/tdistress/ESAF/issues/224)
+for publication closure.
+
+### Exit criteria
+
+`v0.18-draft` is complete only when:
+
+- the project planning files and GitHub milestone/issues describe the same
+  approved, bounded scope;
+- a discoverable overview links to the workbook, evidence, audit, maturity,
+  and governance artifacts;
+- API-100 has one canonical evidence and result identity, with distinct
+  procedures and limitations retained, and MOD-100 has a filled evidence
+  record matching its result;
+- identifiers, links, schemas, fictional labeling, and Draft status are
+  consistent across the case;
+- maturity remains separate and the case makes no capability-wide,
+  enterprise-wide, framework-compliance, certification, equivalence,
+  endorsement, or assurance claim;
+- applicable validations, full tests, technical/editorial/governance reviews,
+  and publication checks pass on the exact candidate with no unresolved
+  Critical or Important findings; and
+- the annotated `v0.18-draft` publication and Working Draft status surfaces
+  are synchronized.
+
+### Non-goals
+
+`v0.18-draft` does not require:
+
+- a qualified external crosswalk verifier, independent standards mapper, or
+  external framework reviewer;
+- SOC 2, HITRUST, CIS Controls, or other external framework readiness,
+  inventory, mapping, or publication work; Issues #60 and #219 remain
+  separately gated and are not prerequisites;
+- changing any crosswalk `HOLD` or `GO` decision, creating external mappings,
+  or claiming external compliance;
+- new normative requirements, schemas, controls, procedures, assessment
+  criteria, maturity semantics, identifier schemes, or lifecycle states;
+- a complete assessment library or all-controls implementation; or
+- a general Phase 6 breadth-deepen beyond what is needed for this single case;
+- final assessment results, approved lifecycle states, or claims about a real
+  organization.

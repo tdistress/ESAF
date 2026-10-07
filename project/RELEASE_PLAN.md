@@ -1,5 +1,22 @@
 # Release Plan
 
+## 0.18-draft closure candidate
+
+The `v0.18-draft` closure candidate covers one fictional Summit Analytics
+`CAP-140` integrated ESAF-1500 assessment case. The candidate is prepared for
+exact-SHA technical, editorial, terminology, cross-reference/rendering, and
+governance review. Those reviews shall be completed against the final exact
+candidate SHA before merge. `ready` in the readiness record means candidate
+materials and validation are ready for those reviews; it does not attest that
+review has already occurred. Issue [#224](https://github.com/tdistress/ESAF/issues/224)
+tracks the work and pending evidence.
+
+Publication remains conditional on successful exact-SHA reviews, merge,
+post-merge validation, and creation of an annotated `v0.18-draft` tag targeting
+the validated closure-candidate commit. The post-merge gate remains open; the
+tag object, tagged commit, publication date, and publication evidence remain
+unset. No standard or Draft artifact lifecycle state advances in this release.
+
 Each release shall complete the following gates:
 
 1. Scope and milestone approved.

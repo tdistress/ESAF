@@ -14,7 +14,8 @@ from collections.abc import Callable, Sequence
 
 TIERS = ("quick", "standard", "publication")
 COMMIT_ID = re.compile(r"^[0-9a-f]{40,64}$")
-COMMAND_PLACEHOLDERS = {"{base}", "{candidate}"}
+COMMAND_PLACEHOLDERS = {"{base}", "{candidate}", "{v018_base}"}
+V018_READINESS_RECORD = "docs/superpowers/reviews/2026-10-07-v018-draft-publication-readiness.md"
 
 
 @dataclass(frozen=True)
@@ -106,6 +107,10 @@ def validate_policy(policy: ValidationPolicy) -> ValidationManifest:
             raise ValueError(f"policy command {identifier!r} argv must contain non-empty strings")
         if any(item.startswith("{") or item.endswith("}") for item in argv if item not in COMMAND_PLACEHOLDERS):
             raise ValueError(f"policy command {identifier!r} has an invalid argv placeholder")
+        if "{v018_base}" in argv and identifier != "v018-draft-release-gates":
+            raise ValueError("v0.18 baseline placeholder is reserved for its release gate")
+        if identifier == "v018-draft-release-gates" and "{v018_base}" not in argv:
+            raise ValueError("v0.18 release gate shall bind its base from the candidate readiness record")
         if tier not in TIERS or not isinstance(duration, str) or not duration:
             raise ValueError(f"policy command {identifier!r} has invalid tier or duration")
         identifiers.add(identifier)
@@ -184,6 +189,7 @@ COMMAND_CATALOG = (
     ValidationCommand("v015-draft-release-gates", ("python", "tools/v015_draft_release_gates.py", "--check", "--baseline-ref", "{base}"), "publication", "candidate freeze"),
     ValidationCommand("v016-draft-release-gates", ("python", "tools/v016_draft_release_gates.py", "--check", "--baseline-ref", "{base}"), "publication", "candidate freeze"),
     ValidationCommand("v017-draft-release-gates", ("python", "tools/v017_draft_release_gates.py", "--check", "--baseline-ref", "{base}"), "publication", "candidate freeze"),
+    ValidationCommand("v018-draft-release-gates", ("python", "tools/v018_draft_release_gates.py", "--check", "--baseline-ref", "{v018_base}"), "publication", "candidate freeze"),
 )
 
 ROUTING_RULES = (
@@ -218,6 +224,7 @@ PUBLICATION_COMMAND_IDS = (
     "v015-draft-release-gates",
     "v016-draft-release-gates",
     "v017-draft-release-gates",
+    "v018-draft-release-gates",
 )
 PROOF_COMMAND_IDS = ("qualified-review-equivalence",)
 REVIEWED_POLICY = ValidationPolicy(COMMAND_CATALOG, ROUTING_RULES)
@@ -325,10 +332,41 @@ def _matches(rule: ValidationRule, path: str) -> bool:
 
 
 def _bind_commands(
-    commands: tuple[ValidationCommand, ...], *, base: str, candidate: str
+    commands: tuple[ValidationCommand, ...], *, root: Path, base: str,
+    candidate: str, runner: Callable[..., object]
 ) -> tuple[ValidationCommand, ...]:
-    """Bind the only supported comparison placeholders in fixed catalog argv."""
+    """Bind catalog refs, sourcing the v0.18 baseline from its candidate record."""
     bindings = {"{base}": base, "{candidate}": candidate}
+    if any(command.identifier == "v018-draft-release-gates" for command in commands):
+        result = runner(
+            ["git", "show", f"{candidate}:{V018_READINESS_RECORD}"],
+            cwd=root, check=False, capture_output=True,
+        )
+        output = getattr(result, "stdout", None)
+        if getattr(result, "returncode", None) != 0 or not isinstance(output, bytes):
+            raise ValueError("could not load v0.18 readiness record from candidate")
+        try:
+            text = output.decode("utf-8", errors="strict")
+        except UnicodeDecodeError as error:
+            raise ValueError("v0.18 readiness record is not valid UTF-8") from error
+        frontmatter = text.split("\n---\n", 1)[0] if text.startswith("---\n") else ""
+        matches = re.findall(r"(?m)^base_sha: ([0-9a-f]{40})$", frontmatter)
+        if len(matches) != 1:
+            raise ValueError("candidate v0.18 readiness record shall contain one exact base_sha")
+        v018_base = matches[0]
+        existence = runner(
+            ["git", "cat-file", "-e", f"{v018_base}^{{commit}}"],
+            cwd=root, check=False, capture_output=True,
+        )
+        if getattr(existence, "returncode", None) != 0:
+            raise ValueError("candidate v0.18 base_sha does not resolve to a commit")
+        ancestry = runner(
+            ["git", "merge-base", "--is-ancestor", v018_base, candidate],
+            cwd=root, check=False, capture_output=True,
+        )
+        if getattr(ancestry, "returncode", None) != 0:
+            raise ValueError("candidate v0.18 base_sha is not an ancestor of candidate")
+        bindings["{v018_base}"] = v018_base
     return tuple(
         ValidationCommand(
             command.identifier,
@@ -381,7 +419,8 @@ def plan_validation(root: Path, *, base: str, candidate: str, git_runner: Callab
             command_ids.extend(rule.standard)
     if escalation:
         commands = _bind_commands(
-            _publication_commands(manifest), base=resolved_base, candidate=resolved_candidate
+            _publication_commands(manifest), root=root, base=resolved_base,
+            candidate=resolved_candidate, runner=runner
         )
         tiers = ("publication",)
         selected_reasons = tuple(dict.fromkeys(escalation))
@@ -389,8 +428,9 @@ def plan_validation(root: Path, *, base: str, candidate: str, git_runner: Callab
         selected = set(command_ids)
         commands = _bind_commands(
             tuple(command for command in manifest.commands if command.identifier in selected),
-            base=resolved_base,
+            root=root, base=resolved_base,
             candidate=resolved_candidate,
+            runner=runner,
         )
         tiers = tuple(tier for tier in TIERS if any(command.tier == tier for command in commands))
         if not commands:
@@ -441,7 +481,9 @@ def main(argv: Sequence[str] | None = None, *, root: Path | None = None, git_run
             if arguments.tier == "publication":
                 manifest = validate_policy(REVIEWED_POLICY)
                 commands = _bind_commands(
-                    _publication_commands(manifest), base=plan.base, candidate=plan.candidate
+                    _publication_commands(manifest), root=root or Path.cwd(),
+                    base=plan.base, candidate=plan.candidate,
+                    runner=git_runner or subprocess.run,
                 )
                 if plan.selected_tiers != ("publication",):
                     _require_no_untracked_files(root or Path.cwd(), git_runner or subprocess.run)

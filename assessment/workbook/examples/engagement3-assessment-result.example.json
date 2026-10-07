@@ -15,12 +15,12 @@
     "requirement_ids": [
       "API-100"
     ],
-    "boundary": "Production AI gateway routing, allowlist, identity propagation, and logging for CAP-140 during the engagement period.",
+    "boundary": "Fictional CAP-140 production AI gateway routing, allowlist, identity propagation, logging, and one staging bypass Test during the engagement period.",
     "exclusions": [
       "Emergency restriction Test under API-100-A3 and external-provider contract depth under API-140."
     ],
     "population": "Fictional API-100 gateway configuration package for CAP-140.",
-    "sample": "Complete examination of the fictional gateway configuration export."
+    "sample": "Complete examination of the fictional API-100 gateway configuration export and one fictional staging bypass attempt."
   },
   "methods": [
     {
@@ -29,18 +29,25 @@
       "object": "Fictional CAP-140 gateway configuration EVD-ENG3-API100-GATEWAY.",
       "expected_result": "Gateway routes CAP-140 traffic through approved control points with identity, authorization, model routing, logging, and limits.",
       "actual_work": "Examined the fictional routing map, allowlist, identity-propagation settings, logging sinks, and rate-limit policy for CAP-140."
+    },
+    {
+      "method": "Test",
+      "procedure": "API-100-A2 - Attempt unapproved direct provider access and verify detection or prevention.",
+      "object": "Fictional staging mirror and bypass harness for CAP-140; no production bypass Test was performed.",
+      "expected_result": "Unapproved direct provider calls are blocked or detected.",
+      "actual_work": "Executed one fictional bypass attempt against the staging mirror; the call was blocked and logged. The staging result was not independently represented by a separate evidence record in this example."
     }
   ],
   "time_boundary": {
     "assessment_start": "2026-09-15T09:00:00Z",
-    "assessment_end": "2026-09-16T17:00:00Z",
-    "result_date": "2026-09-16T17:30:00Z"
+    "assessment_end": "2026-09-18T17:00:00Z",
+    "result_date": "2026-09-18T17:30:00Z"
   },
   "evidence_refs": [
     "EVD-ENG3-API100-GATEWAY"
   ],
   "determination": "partially_satisfied",
-  "determination_rationale": "The fictional gateway routes CAP-140 through approved control points with identity and logging, but emergency restriction runbooks referenced by the allowlist lack an executable Test harness in this sample, recorded as a draft finding.",
+  "determination_rationale": "The fictional gateway routes CAP-140 through approved control points and blocked one staging bypass attempt, but the sample lacks an executable emergency-restriction exercise and production bypass testing; these remain open limitations and the result stays Draft.",
   "design_effectiveness": "partially_effective",
   "operating_effectiveness": "not_assessed",
   "findings": [
@@ -70,7 +77,7 @@
   ],
   "limitations": [
     "This fictional draft result is a workbook teaching example and makes no compliance claim.",
-    "Operating effectiveness and bypass Tests were not assessed in this workbook vignette."
+    "The API-100-A2 bypass Test used one staging mirror and was not run against production; the example does not include a separate evidence record for that staging Test."
   ],
   "traceability": {
     "esaf_requirement_ids": [
@@ -81,9 +88,9 @@
   "change_history": [
     {
       "version": "0.1.0-draft",
-      "date": "2026-09-16T17:30:00Z",
+      "date": "2026-09-18T17:30:00Z",
       "author": "Morgan Ellis",
-      "description": "Created the fictional draft workbook engagement result for API-100."
+      "description": "Reconciled the fictional API-100-A1 examination and API-100-A2 staging Test into the canonical workbook result; the emergency-restriction finding remains open."
     }
   ],
   "example_notice": "Fictional non-authoritative example; no organization, ESAF control, profile, or external framework has been assessed."

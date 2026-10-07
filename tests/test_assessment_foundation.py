@@ -1002,7 +1002,6 @@ class AssessmentAuditChecklistStarterTests(unittest.TestCase):
         vignette_path = self.checklist_root / "sampling3-vignette.example.md"
         example_root = self.checklist_root / "examples"
         filled_results = (
-            example_root / "sampling3-api100-assessment-result.example.json",
             example_root / "sampling3-mod100-assessment-result.example.json",
         )
         self.assertTrue(vignette_path.is_file(), msg=f"missing {vignette_path}")
@@ -1015,6 +1014,11 @@ class AssessmentAuditChecklistStarterTests(unittest.TestCase):
         self.assertIn("#207", readme)
         self.assertIn("sampling3-vignette.example.md", readme)
         self.assertIn("sampling3-vignette.example.md", checklist)
+        self.assertIn("ASR-ENG3-API100", vignette)
+        self.assertIn(
+            "../workbook/examples/engagement3-assessment-result.example.json",
+            vignette,
+        )
         for control_id in ("API-100", "MOD-100"):
             with self.subTest(control_id=control_id):
                 self.assertIn(control_id, vignette)
@@ -1047,6 +1051,197 @@ class AssessmentAuditChecklistStarterTests(unittest.TestCase):
                 self.assertTrue(
                     str(document.get("result_id", "")).startswith("ASR-SAMP3-")
                 )
+
+
+class IntegratedAssessmentArtifactTests(unittest.TestCase):
+    overview = ROOT / "assessment" / "integrated-assessment.example.md"
+    api_result_id = "ASR-ENG3-API100"
+    api_evidence_id = "EVD-ENG3-API100-GATEWAY"
+    mod_evidence_id = "EVD-SAMP3-MOD100-REGISTRY"
+
+    def test_integrated_summit_assessment_artifact_graph_is_linked_and_valid(self) -> None:
+        external_claim_pattern = (
+            r"(?i)\b(?:complies?\s+with|compliant\s+with|certified\s+(?:to|against)|"
+            r"conforms?\s+to|aligned\s+with|in\s+alignment\s+with|meets?|satisfies|mapped\s+to|"
+            r"equivalent\s+to|equivalence\s+(?:to|with)|endorsed\s+by|"
+            r"(?:endorsement|assurance)\s+(?:by|under|to|of)|"
+            r"assured\s+by)\s+(?:NIST|ISO|SOC|EU AI Act)\b|"
+            r"\b(?:capability-wide|enterprise-wide)\s+(?:compliance|certification|conformance|"
+            r"assurance|coverage|approval|effectiveness|control|claim|result|outcome)\b"
+        )
+        workbook = ROOT / "assessment" / "workbook" / "engagement3-vignette.example.md"
+        audit = ROOT / "assessment" / "audit-checklist" / "sampling3-vignette.example.md"
+        governance = ROOT / "templates" / "examples" / "governance-thread3.example.md"
+        overview = (
+            self.overview.read_text(encoding="utf-8")
+            if self.overview.is_file()
+            else ""
+        )
+        narratives = {
+            "overview": overview,
+            "workbook": workbook.read_text(encoding="utf-8"),
+            "audit": audit.read_text(encoding="utf-8"),
+            "governance": governance.read_text(encoding="utf-8"),
+        }
+        for label, text in narratives.items():
+            with self.subTest(narrative=label):
+                self.assertIn(self.api_result_id, text)
+                self.assertIn(self.api_evidence_id, text)
+                self.assertIn("CAP-140", text)
+                self.assertIn("API-100", text)
+                self.assertIn("MOD-100", text)
+                self.assertRegex(text, r"(?im)\bfictional\b")
+                self.assertRegex(text, r"(?im)\bDraft\b")
+                self.assertIsNone(re.search(r"(?i)\bshall\b", text))
+                self.assertNotRegex(text, external_claim_pattern)
+
+        for index in (
+            ROOT / "assessment" / "README.md",
+            ROOT / "assessment" / "workbook" / "README.md",
+            ROOT / "assessment" / "workbook" / "examples" / "README.md",
+            ROOT / "assessment" / "audit-checklist" / "README.md",
+            ROOT / "assessment" / "evidence-catalog" / "README.md",
+            ROOT / "templates" / "README.md",
+        ):
+            with self.subTest(index=str(index.relative_to(ROOT))):
+                self.assertRegex(
+                    index.read_text(encoding="utf-8"),
+                    rf"\[[^\]]+\]\([^)]*{re.escape(self.overview.name)}(?:#[^)]*)?\)",
+                    msg=f"{index} must contain a Markdown link to {self.overview.name}",
+                )
+
+        result_records = list(
+            (ROOT / "assessment" / "audit-checklist" / "examples").glob("*.json")
+        )
+        schema_validators = {
+            name: Draft202012Validator(
+                json.loads((SCHEMA_ROOT / f"{name}.schema.json").read_text(encoding="utf-8")),
+                format_checker=ASSESSMENT_FORMAT_CHECKER,
+            )
+            for name in SCHEMA_NAMES
+        }
+        json_records = list((ROOT / "assessment").rglob("*.json"))
+        evidence_documents = [
+            (path, json.loads(path.read_text(encoding="utf-8")))
+            for path in json_records
+            if path.name.endswith("evidence-record.example.json")
+        ]
+        mod_evidence = [
+            (path, document)
+            for path, document in evidence_documents
+            if document.get("evidence_id") == self.mod_evidence_id
+        ]
+        self.assertEqual(len(mod_evidence), 1, "MOD-100 evidence must resolve to one filled record")
+
+        api_evidence = [
+            (path, document)
+            for path, document in evidence_documents
+            if document.get("evidence_id") == self.api_evidence_id
+        ]
+        self.assertEqual(
+            len(api_evidence),
+            1,
+            "API-100 must resolve to exactly one canonical evidence record",
+        )
+
+        linked_documents = []
+        api_maturity_documents = []
+        for document in json_records:
+            if document.name.endswith("assessment-result.example.json"):
+                record = json.loads(document.read_text(encoding="utf-8"))
+                if record.get("result_id") == self.api_result_id:
+                    linked_documents.append(("assessment-result", document, record))
+            elif document.name.endswith("maturity-assessment.example.json"):
+                record = json.loads(document.read_text(encoding="utf-8"))
+                if self.api_result_id in record.get("basis_refs", []):
+                    linked_documents.append(("maturity-assessment", document, record))
+                    api_maturity_documents.append((document, record))
+        self.assertGreaterEqual(
+            len(api_maturity_documents),
+            1,
+            "canonical API-100 result must have a linked maturity assessment",
+        )
+        linked_documents.extend(("evidence-record", path, record) for path, record in api_evidence)
+        linked_documents.extend(("evidence-record", *item) for item in mod_evidence)
+        mod_results = [
+            (path, json.loads(path.read_text(encoding="utf-8")))
+            for path in result_records
+            if json.loads(path.read_text(encoding="utf-8")).get("result_id")
+            == "ASR-SAMP3-MOD100"
+        ]
+        self.assertEqual(len(mod_results), 1)
+        linked_documents.extend(
+            ("assessment-result", path, record) for path, record in mod_results
+        )
+        self.assertGreaterEqual(len(linked_documents), 4)
+        for schema_name, path, document in linked_documents:
+            with self.subTest(document=str(path.relative_to(ROOT))):
+                errors = list(schema_validators[schema_name].iter_errors(document))
+                self.assertEqual(errors, [], msg="; ".join(error.message for error in errors))
+                self.assertRegex(json.dumps(document), r"(?i)fictional")
+                self.assertIsNone(re.search(r"(?i)\bshall\b", json.dumps(document)))
+                self.assertNotRegex(json.dumps(document), external_claim_pattern)
+                if schema_name != "evidence-record":
+                    self.assertEqual(document.get("status"), "draft")
+                self.assertEqual(
+                    document.get("traceability", {}).get("external_or_profile_ids", []),
+                    [],
+                )
+                if schema_name == "evidence-record":
+                    self.assertIn("CAP-140", json.dumps(document))
+                    self.assertIn(
+                        "API-100"
+                        if document.get("evidence_id") == self.api_evidence_id
+                        else "MOD-100",
+                        json.dumps(document),
+                    )
+                if schema_name == "assessment-result":
+                    scope = document["assessment_scope"]
+                    self.assertIn("CAP-140", scope["subject"])
+                    self.assertIn("CAP-140", scope["population"])
+                    expected_control = (
+                        "API-100"
+                        if document["result_id"] == self.api_result_id
+                        else "MOD-100"
+                    )
+                    self.assertIn(expected_control, scope["sample"])
+                elif schema_name == "maturity-assessment":
+                    self.assertIn("CAP-140", document["scope"])
+                    self.assertIn("API-100", document["scope"])
+                    self.assertIn(self.api_result_id, document.get("basis_refs", []))
+                    self.assertIn(self.api_evidence_id, document.get("basis_refs", []))
+        assessment_results = [
+            item for item in linked_documents if item[0] == "assessment-result"
+        ]
+        api_results = [
+            item
+            for item in assessment_results
+            if item[2].get("result_id") == self.api_result_id
+        ]
+        self.assertEqual(len(api_results), 1)
+        self.assertIn(
+            "API-100",
+            api_results[0][2].get("assessment_scope", {}).get("requirement_ids", []),
+        )
+        self.assertIn(self.api_evidence_id, api_results[0][2].get("evidence_refs", []))
+        self.assertIn(
+            "MOD-100",
+            mod_results[0][1].get("assessment_scope", {}).get("requirement_ids", []),
+        )
+        self.assertIn(self.mod_evidence_id, mod_results[0][1].get("evidence_refs", []))
+        api_records = [
+            path
+            for path in result_records
+            if "API-100"
+            in json.loads(path.read_text(encoding="utf-8"))
+            .get("assessment_scope", {})
+            .get("requirement_ids", [])
+        ]
+        self.assertEqual(
+            len(api_records),
+            0,
+            "audit examples must not duplicate the canonical API-100 JSON result",
+        )
 
 
 if __name__ == "__main__":

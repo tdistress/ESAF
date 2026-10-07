@@ -6,6 +6,10 @@
 [#183](https://github.com/tdistress/ESAF/issues/183) second deepen;
 [#207](https://github.com/tdistress/ESAF/issues/207) third deepen
 
+The [integrated Summit Analytics assessment](../integrated-assessment.example.md)
+shows how evidence records connect to workbook and audit results while this
+catalog retains reusable evidence-type demonstrations.
+
 This directory is a non-normative Draft catalog of ESAF-1500 evidence types,
 shared contract fields, quality attributes, per-type good-enough versus common
 failure notes, and a small set of fictional filled evidence records. It reuses

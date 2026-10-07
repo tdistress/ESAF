@@ -3,9 +3,10 @@
   "schema_version": "0.1.0",
   "maturity_id": "MAT-ENG3-API100",
   "status": "draft",
-  "scope": "Fictional Summit Analytics API-100 gateway practice for CAP-140 during the workbook engagement period.",
+  "scope": "Fictional Summit Analytics API-100 gateway practice for CAP-140 during integrated engagement ENG-SA-2026-09-API100; no MOD-100 maturity is assessed.",
   "exclusions": [
-    "Maturity of enterprise-wide gateway practice outside CAP-140."
+    "Maturity of enterprise-wide gateway practice outside CAP-140.",
+    "MOD-100 and any maturity roll-up across the integrated engagement."
   ],
   "assessor": {
     "name": "Morgan Ellis",
@@ -51,7 +52,7 @@
       "version": "0.1.0-draft",
       "date": "2026-09-16T18:00:00Z",
       "author": "Morgan Ellis",
-      "description": "Created the fictional draft workbook maturity assessment for API-100."
+      "description": "Retained a separate, bounded fictional draft maturity assessment for API-100 within the integrated engagement."
     }
   ],
   "example_notice": "Fictional non-authoritative example; no organization, ESAF control, profile, or external framework has been assessed."

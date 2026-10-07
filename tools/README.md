@@ -378,6 +378,33 @@ phase baseline:
 python tools/v017_draft_release_gates.py --check --baseline-ref <baseline-sha>
 ```
 
+Validate the current v0.18-draft readiness record without changing files:
+
+```shell
+python tools/v018_draft_release_gates.py --check
+```
+
+For `closure_candidate` and `published` transitions, pass the exact prior-phase
+commit as `--baseline-ref`, or let the validator read the exact baseline SHA
+from the committed readiness record with `--baseline-ref-from-record`. The
+planner binds only the v0.18 command to the baseline SHA in the candidate's
+committed readiness record and verifies that it resolves to a commit. After
+publication, the check also verifies that the annotated tag still targets the
+recorded closure-candidate commit.
+The readiness record itself must match its committed `HEAD` version; commit
+readiness edits before checking. Unrelated dirty or untracked files do not
+change the candidate binding.
+
+```shell
+python tools/v018_draft_release_gates.py --check --baseline-ref <baseline-sha>
+```
+
+CI uses the record-bound form:
+
+```shell
+python tools/v018_draft_release_gates.py --check --baseline-ref-from-record
+```
+
 `tools/release_gates.py` and `tools/v05_beta_release_gates.py` remain frozen
 historical validators.
 

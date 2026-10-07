@@ -7,8 +7,11 @@ evidence handoff.
 
 This fictional third cross-template thread links a risk entry and a related
 retirement path for the same fictional capability family, with an assessment
-workbook handoff. It is informative only and does not establish certification,
-compliance, equivalence, endorsement, assurance, or production readiness.
+workbook handoff. It is part of the integrated fictional case in the
+[assessment overview](../../assessment/integrated-assessment.example.md). The
+API-100 result and related records remain Draft. It is informative only and
+does not establish certification, compliance, equivalence, endorsement,
+assurance, or production readiness.
 
 ## Scenario
 
@@ -23,7 +26,7 @@ evidence captured in the third workbook vignette.
 |---|---|---|---|
 | 1 | [Risk assessment](risk-assessment.example.md) | `RSK-SA-2026-041` dual-run routing residual risk | ESAF-1000 §9 risk treatment; RSK family practice |
 | 2 | [Retirement record](retirement-record.example.md) | `RET-SA-2026-041` legacy sidecar retirement | ESAF-1300 retirement gate; OPS-150 |
-| 3 | Workbook evidence (informative) | `EVD-ENG3-API100-GATEWAY` gateway configuration | API-100 evidence cited in retirement verification |
+| 3 | Workbook evidence and result (informative) | `EVD-ENG3-API100-GATEWAY`; `ASR-ENG3-API100` | Canonical API-100 evidence/result cited for risk and retirement follow-up |
 
 ## Risk assessment excerpt
 
@@ -34,7 +37,7 @@ evidence captured in the third workbook vignette.
 | Risk statement | Dual-run legacy sidecar may accept unapproved direct provider calls during cutover |
 | Inherent rating | Medium |
 | Treatment | Retire sidecar after gateway allowlist verification |
-| Linked evidence | `EVD-ENG3-API100-GATEWAY`, draft workbook result `ASR-ENG3-API100` |
+| Linked assessment | Integrated case [`assessment/integrated-assessment.example.md`](../../assessment/integrated-assessment.example.md); canonical evidence `EVD-ENG3-API100-GATEWAY`; Draft result `ASR-ENG3-API100` |
 | Review date | 2026-09-20 |
 
 See the filled [risk-assessment.example.md](risk-assessment.example.md) for
@@ -48,7 +51,7 @@ field coverage on a separate fictional risk entry.
 | Capability ID / version | `CAP-140-SIDECAR` / `legacy-route-v1` |
 | Retirement trigger | Gateway cutover complete; dual-run window expired |
 | Linked risk | `RSK-SA-2026-041` |
-| Verification evidence | `EVD-ENG3-API100-GATEWAY` traffic-zero and route-revoke checks |
+| Verification evidence | Fictional traffic-zero and route-revoke checks, with `EVD-ENG3-API100-GATEWAY` as configuration context; these governance checks are distinct from assessment evidence and do not close its finding |
 | Planned retirement date | 2026-09-22 |
 
 See the filled [retirement-record.example.md](retirement-record.example.md) for
@@ -60,8 +63,11 @@ Implementation teams should capture gateway configuration and routing evidence
 close to retirement verification, using ESAF-1500 identifier patterns such as
 `EVD-ENG3-API100-GATEWAY`. The third workbook vignette at
 [`assessment/workbook/engagement3-vignette.example.md`](../../assessment/workbook/engagement3-vignette.example.md)
-shows how assessors record such evidence without treating draft results as
-final determinations.
+and its canonical result `ASR-ENG3-API100` show the assessment record. Risk
+treatment and sidecar retirement verification are separate governance
+decisions; neither converts the Draft result to final, resolves the open
+emergency-restriction finding, nor implies control satisfaction. The integrated
+overview also links the bounded MOD-100 Draft result `ASR-SAMP3-MOD100`.
 
 The second cross-template thread remains at
 [governance-thread.example.md](governance-thread.example.md).
