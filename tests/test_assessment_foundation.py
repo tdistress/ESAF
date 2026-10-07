@@ -1205,6 +1205,7 @@ class IntegratedAssessmentArtifactTests(unittest.TestCase):
                     self.assertIn("CAP-140", document["scope"])
                     self.assertIn("API-100", document["scope"])
                     self.assertIn(self.api_result_id, document.get("basis_refs", []))
+                    self.assertIn(self.api_evidence_id, document.get("basis_refs", []))
         api_results = [item for item in linked_documents if item[0] == "assessment-result"]
         self.assertEqual(len(api_results), 1)
         self.assertIn(
