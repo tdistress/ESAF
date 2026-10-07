@@ -1058,8 +1058,12 @@ class IntegratedAssessmentArtifactTests(unittest.TestCase):
     def test_integrated_summit_assessment_artifact_graph_is_linked_and_valid(self) -> None:
         external_claim_pattern = (
             r"(?i)\b(?:complies?\s+with|compliant\s+with|certified\s+(?:to|against)|"
-            r"conforms?\s+to|aligned\s+with|in\s+alignment\s+with|meets?|satisfies|mapped\s+to)\s+"
-            r"(?:NIST|ISO|SOC|EU AI Act)\b"
+            r"conforms?\s+to|aligned\s+with|in\s+alignment\s+with|meets?|satisfies|mapped\s+to|"
+            r"equivalent\s+to|equivalence\s+(?:to|with)|endorsed\s+by|"
+            r"(?:endorsement|assurance)\s+(?:by|under|to|of)|"
+            r"assured\s+by)\s+(?:NIST|ISO|SOC|EU AI Act)\b|"
+            r"\b(?:capability-wide|enterprise-wide)\s+(?:compliance|certification|conformance|"
+            r"assurance|coverage|approval|effectiveness|control|claim|result|outcome)\b"
         )
         workbook = ROOT / "assessment" / "workbook" / "engagement3-vignette.example.md"
         audit = ROOT / "assessment" / "audit-checklist" / "sampling3-vignette.example.md"
@@ -1079,6 +1083,9 @@ class IntegratedAssessmentArtifactTests(unittest.TestCase):
             with self.subTest(narrative=label):
                 self.assertIn(self.api_result_id, text)
                 self.assertIn(self.api_evidence_id, text)
+                self.assertIn("CAP-140", text)
+                self.assertIn("API-100", text)
+                self.assertIn("MOD-100", text)
                 self.assertRegex(text, r"(?im)\bfictional\b")
                 self.assertRegex(text, r"(?im)\bDraft\b")
                 self.assertIsNone(re.search(r"(?i)\bshall\b", text))
@@ -1176,6 +1183,28 @@ class IntegratedAssessmentArtifactTests(unittest.TestCase):
                     document.get("traceability", {}).get("external_or_profile_ids", []),
                     [],
                 )
+                if schema_name == "evidence-record":
+                    self.assertIn("CAP-140", json.dumps(document))
+                    self.assertIn(
+                        "API-100"
+                        if document.get("evidence_id") == self.api_evidence_id
+                        else "MOD-100",
+                        json.dumps(document),
+                    )
+                if schema_name == "assessment-result":
+                    scope = document["assessment_scope"]
+                    self.assertIn("CAP-140", scope["subject"])
+                    self.assertIn("CAP-140", scope["population"])
+                    expected_control = (
+                        "API-100"
+                        if document["result_id"] == self.api_result_id
+                        else "MOD-100"
+                    )
+                    self.assertIn(expected_control, scope["sample"])
+                elif schema_name == "maturity-assessment":
+                    self.assertIn("CAP-140", document["scope"])
+                    self.assertIn("API-100", document["scope"])
+                    self.assertIn(self.api_result_id, document.get("basis_refs", []))
         api_results = [item for item in linked_documents if item[0] == "assessment-result"]
         self.assertEqual(len(api_results), 1)
         self.assertIn(
