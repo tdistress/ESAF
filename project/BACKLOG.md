@@ -191,6 +191,20 @@ readiness remain tracked separately and do not stop later engineering work.
 - [Issue 208](https://github.com/tdistress/ESAF/issues/208): Close the
   v0.17-draft publication gates
 
+## Post-v0.17 scheduled queue
+
+These initiatives define the bounded `v0.18-draft` milestone and are tracked in
+the [GitHub milestone](https://github.com/tdistress/ESAF/milestone/12). SOC 2
+and HITRUST readiness remain separately gated; Issues #219 and #60 are not
+prerequisites or exit criteria.
+
+- [Issue 223](https://github.com/tdistress/ESAF/issues/223): Integrate Summit
+  Analytics CAP-140 assessment examples across workbook, evidence, audit,
+  maturity, and governance artifacts.
+- [Issue 224](https://github.com/tdistress/ESAF/issues/224): Close ordinary
+  exact-candidate `v0.18-draft` publication gates and synchronize Working
+  Draft status surfaces.
+
 ## Completed workstreams
 
 - The ESAF-1300, ESAF-1400, and ESAF-1700 0.2.0 breadth deepen is complete,

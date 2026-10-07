@@ -4,6 +4,29 @@
 
 **Version:** 0.17-draft
 
+## 0.18-draft delivery sequence
+
+The next milestone is `v0.18-draft`, defined after publication of
+`v0.17-draft` on 2026-09-16 and PR #222's merge on 2026-10-07. It delivers one
+fictional, integrated Summit Analytics `CAP-140` ESAF-1500 assessment case:
+reconcile the workbook and audit examples for sampled `API-100` and `MOD-100`,
+complete the MOD-100 registry evidence record, and connect scope, evidence,
+results, bounded maturity, limitations, risk, and governance follow-up through
+a discoverable overview. Then complete ordinary technical, editorial,
+governance, validation, and exact-candidate publication gates; publish the
+annotated tag only after those gates pass and synchronize Working Draft status
+surfaces. The work is tracked in the
+[`v0.18-draft` GitHub milestone](https://github.com/tdistress/ESAF/milestone/12)
+through [Issue #223](https://github.com/tdistress/ESAF/issues/223) and
+[Issue #224](https://github.com/tdistress/ESAF/issues/224).
+
+The case remains fictional, illustrative, and Draft. It does not claim
+capability-wide or enterprise-wide coverage, external-framework compliance,
+certification, equivalence, endorsement, or assurance. No qualified external
+crosswalk verifier or framework-readiness work is required. SOC 2 Issue #219
+and HITRUST Issue #60 remain separately gated and are not prerequisites.
+`VERSION.md` remains `0.17-draft` until the `v0.18-draft` publication closes.
+
 ## 0.17-draft delivery sequence
 
 The `v0.17-draft` Working Draft was published on 2026-09-16 through the
