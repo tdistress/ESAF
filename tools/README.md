@@ -378,6 +378,20 @@ phase baseline:
 python tools/v017_draft_release_gates.py --check --baseline-ref <baseline-sha>
 ```
 
+Validate the current v0.18-draft readiness record without changing files:
+
+```shell
+python tools/v018_draft_release_gates.py --check
+```
+
+For `closure_candidate` and `published` transitions, pass the exact prior-phase
+commit as `--baseline-ref`; after publication the check also verifies that the
+annotated tag still targets the recorded closure-candidate commit.
+
+```shell
+python tools/v018_draft_release_gates.py --check --baseline-ref <baseline-sha>
+```
+
 `tools/release_gates.py` and `tools/v05_beta_release_gates.py` remain frozen
 historical validators.
 
