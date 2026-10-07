@@ -1,10 +1,10 @@
 ---
 release: v0.18-draft
-phase: evidence_candidate
+phase: closure_candidate
 tag: v0.18-draft
 milestone: v0.18-draft
 issue: 224
-base_sha: 04f7b6c058dd776d51d5cba37a808dda555a4511
+base_sha: 836659e97a4b7d1deb01f164407f59dd6e240b15
 version_advanced: false
 deliverable: one_fictional_summit_analytics_cap140_integrated_assessment_case
 qualified_crosswalk_review_required: false
@@ -15,15 +15,15 @@ publication:
   date: null
   evidence: []
 gates:
-  scope: {state: open, evidence: []}
-  integrated_case: {state: open, evidence: []}
-  technical: {state: open, evidence: []}
-  editorial: {state: open, evidence: []}
-  terminology: {state: open, evidence: []}
-  cross_reference_rendering: {state: open, evidence: []}
+  scope: {state: ready, evidence: [https://github.com/tdistress/ESAF/issues/224]}
+  integrated_case: {state: ready, evidence: [https://github.com/tdistress/ESAF/issues/224]}
+  technical: {state: ready, evidence: [https://github.com/tdistress/ESAF/issues/224]}
+  editorial: {state: ready, evidence: [https://github.com/tdistress/ESAF/issues/224]}
+  terminology: {state: ready, evidence: [https://github.com/tdistress/ESAF/issues/224]}
+  cross_reference_rendering: {state: ready, evidence: [https://github.com/tdistress/ESAF/issues/224]}
   standards_mapping: {state: not_applicable, evidence: []}
-  repository_validation: {state: open, evidence: []}
-  governance: {state: open, evidence: []}
+  repository_validation: {state: ready, evidence: [https://github.com/tdistress/ESAF/issues/224]}
+  governance: {state: ready, evidence: [https://github.com/tdistress/ESAF/issues/224]}
   post_merge: {state: open, evidence: []}
 ---
 
@@ -49,11 +49,14 @@ gate is ready or closed.
 
 ## Lifecycle boundary
 
-The initial phase is `evidence_candidate`; all gates are open and no version
-surface is advanced. Progression is `evidence_candidate` to `closure_candidate`
-to `published`. Closure-candidate evidence records ordinary review and
-validation results before merge. Publication is recorded only after the
-annotated `v0.18-draft` tag exists and all post-merge checks pass.
+The evidence phase is `evidence_candidate`; progression is `evidence_candidate`
+to `closure_candidate` to `published`. In the closure-candidate phase, `ready`
+means the candidate and evidence package are prepared for exact-SHA review; it
+does not claim that technical, editorial, terminology, cross-reference/rendering,
+or governance review has already occurred. Those reviews must be completed on
+the final exact candidate before merge. Issue #224 is the HTTPS tracker for
+those pending reviews and candidate evidence. Publication is recorded only
+after the annotated `v0.18-draft` tag exists and all post-merge checks pass.
 
 ## Publication evidence
 

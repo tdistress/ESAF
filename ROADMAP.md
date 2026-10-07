@@ -2,7 +2,7 @@
 
 **Status:** Working Draft
 
-**Version:** 0.17-draft
+**Version:** 0.18-draft closure candidate (unpublished)
 
 ## 0.18-draft delivery sequence
 
@@ -25,7 +25,8 @@ capability-wide or enterprise-wide coverage, external-framework compliance,
 certification, equivalence, endorsement, or assurance. No qualified external
 crosswalk verifier or framework-readiness work is required. SOC 2 Issue #219
 and HITRUST Issue #60 remain separately gated and are not prerequisites.
-`VERSION.md` remains `0.17-draft` until the `v0.18-draft` publication closes.
+The `v0.18-draft` closure candidate is pending exact-candidate review and
+publication validation; it does not represent a published release.
 
 ## 0.17-draft delivery sequence
 
