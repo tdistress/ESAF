@@ -51,12 +51,13 @@ def validate_record(root: Path, record: dict) -> list[str]:
     if record.get("deliverable") != "one_fictional_summit_analytics_cap140_integrated_assessment_case": errors.append("deliverable shall identify the single integrated assessment case")
     if record.get("qualified_crosswalk_review_required") is not False: errors.append("qualified crosswalk review shall not be required")
     phase = record.get("phase")
-    if phase not in PHASE_GATE_STATES: errors.append("phase shall be evidence_candidate, closure_candidate, or published")
+    if not isinstance(phase, str) or phase not in PHASE_GATE_STATES:
+        errors.append("phase shall be evidence_candidate, closure_candidate, or published")
     gates = record.get("gates")
     if not isinstance(gates, dict) or set(gates) != set(GATE_IDS):
         errors.append("gates shall contain the exact mandatory gate identifiers")
         return errors
-    states = PHASE_GATE_STATES.get(phase, {})
+    states = PHASE_GATE_STATES.get(phase, {}) if isinstance(phase, str) else {}
     for gate in GATE_IDS:
         item = gates[gate]
         if not isinstance(item, dict) or item.get("state") != states.get(gate):
