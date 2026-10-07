@@ -1,7 +1,8 @@
 # Integrated assessment example: Summit Analytics CAP-140
 
-**Status:** Informative fictional Draft example  
-**Engagement ID:** `ENG-SA-2026-09-API100`  
+**Status:** Informative fictional Draft example
+
+**Engagement ID:** `ENG-SA-2026-09-API100`
 **Assessment period:** 2026-09-01 through 2026-09-18
 
 This overview connects the existing Summit Analytics workbook, audit-sampling,
