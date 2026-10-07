@@ -14,6 +14,12 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class V018ReleaseGateContractTests(unittest.TestCase):
+    def test_published_readiness_frontmatter_has_a_text_date(self):
+        from tools.v018_draft_release_gates import load_readiness_document, RECORD_RELATIVE
+        record, _ = load_readiness_document(ROOT / RECORD_RELATIVE)
+        self.assertIsInstance(record['publication']['date'], str)
+        self.assertEqual([], validate_record(ROOT, record))
+
     def test_transition_baseline_record_is_bounded_and_explicit(self):
         from tools.v018_draft_release_gates import load_readiness_document, RECORD_RELATIVE
         record, _ = load_readiness_document(ROOT / RECORD_RELATIVE)
@@ -24,12 +30,12 @@ class V018ReleaseGateContractTests(unittest.TestCase):
         baseline_text = result.stdout
         end = baseline_text.index('\n---\n', 4)
         baseline = yaml.safe_load(baseline_text[4:end])
-        self.assertEqual('evidence_candidate', baseline['phase'])
+        self.assertEqual('closure_candidate', baseline['phase'])
         self.assertEqual('v0.18-draft', baseline['release'])
         self.assertEqual('v0.18-draft', baseline['milestone'])
         self.assertEqual('not_applicable', baseline['gates']['standards_mapping']['state'])
         self.assertNotIn('qualified_crosswalk_review', GATE_IDS)
-        self.assertTrue(all(item['state'] == ('not_applicable' if gate == 'standards_mapping' else 'open') for gate, item in baseline['gates'].items()))
+        self.assertTrue(all(item['state'] == state for gate, state in PHASE_GATE_STATES['closure_candidate'].items() for item in [baseline['gates'][gate]]))
         self.assertEqual([], validate_record(ROOT, baseline))
 
     def test_rejects_premature_version_advancement_and_missing_ordinary_gate(self):
@@ -37,7 +43,7 @@ class V018ReleaseGateContractTests(unittest.TestCase):
         record, _ = load_readiness_document(ROOT / RECORD_RELATIVE)
         record = deepcopy(record)
         record['version_advanced'] = True
-        record['gates']['technical']['state'] = 'closed'
+        record['gates']['technical']['state'] = 'ready'
         errors = validate_record(ROOT, record)
         self.assertTrue(any('version_advanced shall remain false' in e for e in errors))
         self.assertTrue(any('technical' in e for e in errors))

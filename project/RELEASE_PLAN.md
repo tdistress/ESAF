@@ -1,21 +1,24 @@
 # Release Plan
 
-## 0.18-draft closure candidate
+## 0.18-draft publication
 
-The `v0.18-draft` closure candidate covers one fictional Summit Analytics
-`CAP-140` integrated ESAF-1500 assessment case. The candidate is prepared for
-exact-SHA technical, editorial, terminology, cross-reference/rendering, and
-governance review. Those reviews shall be completed against the final exact
-candidate SHA before merge. `ready` in the readiness record means candidate
-materials and validation are ready for those reviews; it does not attest that
-review has already occurred. Issue [#224](https://github.com/tdistress/ESAF/issues/224)
-tracks the work and pending evidence.
+The published `v0.18-draft` covers one fictional Summit Analytics `CAP-140`
+integrated ESAF-1500 assessment case. Exact-SHA technical, editorial,
+terminology, cross-reference/rendering, and governance reviews passed on PR
+[#225](https://github.com/tdistress/ESAF/pull/225), which merged as validated
+closure-candidate commit `abfccc4dda553a669d02dace9bde80b97ee3d789`.
+Issue [#224](https://github.com/tdistress/ESAF/issues/224) records the work
+and evidence.
 
-Publication remains conditional on successful exact-SHA reviews, merge,
-post-merge validation, and creation of an annotated `v0.18-draft` tag targeting
-the validated closure-candidate commit. The post-merge gate remains open; the
-tag object, tagged commit, publication date, and publication evidence remain
-unset. No standard or Draft artifact lifecycle state advances in this release.
+The annotated `v0.18-draft` Working Draft tag was published on 2026-10-07.
+Tag object `db85ce06edbe5e6cbf5bcc29ae106360d2e1d4f7` peels to validated
+closure-candidate commit `abfccc4dda553a669d02dace9bde80b97ee3d789`.
+Protected-branch repository validation and CodeQL checks passed on that merge
+commit, and the post-merge readiness gate is closed. See [Issue #224 post-merge
+evidence](https://github.com/tdistress/ESAF/issues/224#issuecomment-6046454303)
+and the [protected-branch validation run](https://github.com/tdistress/ESAF/actions/runs/37682822057).
+No normative standard or Draft artifact lifecycle state advances in this
+repository Working Draft publication.
 
 Each release shall complete the following gates:
 

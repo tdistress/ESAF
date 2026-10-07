@@ -198,14 +198,19 @@ the [GitHub milestone](https://github.com/tdistress/ESAF/milestone/12). SOC 2
 and HITRUST readiness remain separately gated; Issues #219 and #60 are not
 prerequisites or exit criteria.
 
-- [Issue 223](https://github.com/tdistress/ESAF/issues/223): Integrate Summit
-  Analytics CAP-140 assessment examples across workbook, evidence, audit,
-  maturity, and governance artifacts.
-- [Issue 224](https://github.com/tdistress/ESAF/issues/224): Close ordinary
-  exact-candidate `v0.18-draft` publication gates and synchronize Working
-  Draft status surfaces.
+The `v0.18-draft` work below is complete; its GitHub issues and milestone are
+closed after publication evidence and status synchronization are verified.
 
 ## Completed workstreams
+
+- [Issue 223](https://github.com/tdistress/ESAF/issues/223) and [Issue
+  224](https://github.com/tdistress/ESAF/issues/224): published `v0.18-draft`
+  after completing the integrated Summit Analytics CAP-140 assessment case,
+  exact-candidate reviews, and post-merge validation. Annotated tag
+  `v0.18-draft` (object
+  `db85ce06edbe5e6cbf5bcc29ae106360d2e1d4f7`) targets validated commit
+  `abfccc4dda553a669d02dace9bde80b97ee3d789`; the tracker and milestone
+  closure is recorded after the published-status change lands.
 
 - The ESAF-1300, ESAF-1400, and ESAF-1700 0.2.0 breadth deepen is complete,
   including the non-normative packs under `examples/esaf-1300/`,

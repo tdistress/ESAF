@@ -1,30 +1,33 @@
 ---
 release: v0.18-draft
-phase: closure_candidate
+phase: published
 tag: v0.18-draft
 milestone: v0.18-draft
 issue: 224
-base_sha: 836659e97a4b7d1deb01f164407f59dd6e240b15
+base_sha: abfccc4dda553a669d02dace9bde80b97ee3d789
 version_advanced: false
 deliverable: one_fictional_summit_analytics_cap140_integrated_assessment_case
 qualified_crosswalk_review_required: false
 publication:
   condition: annotated_tag_targets_validated_closure_candidate
-  tag_object: null
-  tagged_commit: null
-  date: null
-  evidence: []
+  tag_object: db85ce06edbe5e6cbf5bcc29ae106360d2e1d4f7
+  tagged_commit: abfccc4dda553a669d02dace9bde80b97ee3d789
+  date: '2026-10-07'
+  evidence:
+  - https://github.com/tdistress/ESAF/tree/v0.18-draft
+  - https://github.com/tdistress/ESAF/issues/224#issuecomment-6046454303
+  - https://github.com/tdistress/ESAF/actions/runs/37682822057
 gates:
-  scope: {state: ready, evidence: [https://github.com/tdistress/ESAF/issues/224]}
-  integrated_case: {state: ready, evidence: [https://github.com/tdistress/ESAF/issues/224]}
-  technical: {state: ready, evidence: [https://github.com/tdistress/ESAF/issues/224]}
-  editorial: {state: ready, evidence: [https://github.com/tdistress/ESAF/issues/224]}
-  terminology: {state: ready, evidence: [https://github.com/tdistress/ESAF/issues/224]}
-  cross_reference_rendering: {state: ready, evidence: [https://github.com/tdistress/ESAF/issues/224]}
+  scope: {state: closed, evidence: [https://github.com/tdistress/ESAF/issues/224]}
+  integrated_case: {state: closed, evidence: [https://github.com/tdistress/ESAF/issues/223, https://github.com/tdistress/ESAF/pull/225]}
+  technical: {state: closed, evidence: [https://github.com/tdistress/ESAF/issues/224, https://github.com/tdistress/ESAF/pull/225]}
+  editorial: {state: closed, evidence: [https://github.com/tdistress/ESAF/issues/224, https://github.com/tdistress/ESAF/pull/225]}
+  terminology: {state: closed, evidence: [https://github.com/tdistress/ESAF/issues/224, https://github.com/tdistress/ESAF/pull/225]}
+  cross_reference_rendering: {state: closed, evidence: [https://github.com/tdistress/ESAF/issues/224, https://github.com/tdistress/ESAF/pull/225]}
   standards_mapping: {state: not_applicable, evidence: []}
-  repository_validation: {state: ready, evidence: [https://github.com/tdistress/ESAF/issues/224]}
-  governance: {state: ready, evidence: [https://github.com/tdistress/ESAF/issues/224]}
-  post_merge: {state: open, evidence: []}
+  repository_validation: {state: closed, evidence: [https://github.com/tdistress/ESAF/actions/runs/37682822057, https://github.com/tdistress/ESAF/pull/225]}
+  governance: {state: closed, evidence: [https://github.com/tdistress/ESAF/issues/224, https://github.com/tdistress/ESAF/pull/225]}
+  post_merge: {state: closed, evidence: [https://github.com/tdistress/ESAF/issues/224#issuecomment-6046454303, https://github.com/tdistress/ESAF/actions/runs/37682822057, https://github.com/tdistress/ESAF/actions/runs/37682821035]}
 ---
 
 # v0.18-draft publication readiness
@@ -54,15 +57,20 @@ to `closure_candidate` to `published`. In the closure-candidate phase, `ready`
 means the candidate and evidence package are prepared for exact-SHA review; it
 does not claim that technical, editorial, terminology, cross-reference/rendering,
 or governance review has already occurred. Those reviews must be completed on
-the final exact candidate before merge. Issue #224 is the HTTPS tracker for
-those pending reviews and candidate evidence. Publication is recorded only
-after the annotated `v0.18-draft` tag exists and all post-merge checks pass.
+the final exact candidate before merge. Issue #224 records the completed
+reviews, publication work, and post-merge evidence. The annotated tag and
+published record are bound to the validated closure-candidate merge commit.
 
 ## Publication evidence
 
-The annotated tag shall target the exact validated closure-candidate commit.
-The later published-record commit records the tag object, tagged commit,
-publication date, and evidence; it is not required to be the tag target.
-Published-to-published maintenance shall preserve immutable tag identity and
-closed gate truth. No Draft artifact lifecycle state or standard version is
-advanced by this repository Working Draft publication.
+The annotated `v0.18-draft` tag object is
+`db85ce06edbe5e6cbf5bcc29ae106360d2e1d4f7`; it peels to validated
+closure-candidate commit `abfccc4dda553a669d02dace9bde80b97ee3d789`.
+Publication evidence includes [the tag](https://github.com/tdistress/ESAF/tree/v0.18-draft),
+[post-merge validation](https://github.com/tdistress/ESAF/issues/224#issuecomment-6046454303),
+and [protected-branch checks](https://github.com/tdistress/ESAF/actions/runs/37682822057).
+The later published-record commit records this immutable tag identity and does
+not change the tag target. Published-to-published maintenance shall preserve
+the tag identity and closed gate truth. No Draft artifact lifecycle state or
+normative standard version is advanced by this repository Working Draft
+publication.
