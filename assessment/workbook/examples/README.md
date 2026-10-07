@@ -1,5 +1,9 @@
 # Workbook filled examples (informative)
 
+The [integrated Summit Analytics assessment](../../integrated-assessment.example.md)
+connects the third engagement's canonical API-100 workbook records with the
+separately audit-owned MOD-100 result and its workbook evidence record.
+
 Draft fictional filled records for
 [ESAF-1500 workbook](../ESAF-1500-workbook.md) vignettes. These files are
 informative only and do not establish certification, compliance, or control
@@ -22,6 +26,10 @@ satisfaction.
 | [engagement2-maturity-assessment.example.json](engagement2-maturity-assessment.example.json) | Second-vignette fictional draft maturity assessment |
 
 ## Third engagement deepen
+
+The shared case also uses
+[engagement3-mod100-evidence-record.example.json](engagement3-mod100-evidence-record.example.json)
+as evidence for the separately audit-owned MOD-100 result.
 
 | File | Role |
 |---|---|

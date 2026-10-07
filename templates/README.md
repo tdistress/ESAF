@@ -6,6 +6,12 @@
 [#183](https://github.com/tdistress/ESAF/issues/183) second deepen;
 [#207](https://github.com/tdistress/ESAF/issues/207) third deepen
 
+The [integrated Summit Analytics assessment](
+../assessment/integrated-assessment.example.md)
+links the fictional governance thread to a bounded assessment, risk follow-up,
+and retirement planning. Risk treatment and retirement remain distinct
+lifecycle decisions with separate records and rationale.
+
 Reusable, non-normative governance and implementation templates for operators.
 These starters and filled fictional examples illustrate record shapes already
 implied by ESAF-1000 Appendix A, ESAF-1300, and ESAF-1400. They do not add

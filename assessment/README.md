@@ -15,6 +15,10 @@ starters.
   [fictional assessment-result example](examples/assessment-result.example.json),
   and [fictional maturity-assessment example](examples/maturity-assessment.example.json)
   demonstrate the contracts without assessing an organization or control.
+- [Integrated Summit Analytics assessment](integrated-assessment.example.md) is
+  the shared fictional CAP-140 case connecting the workbook, audit checklist,
+  evidence catalog, and governance thread. Its API-100 result is workbook-owned;
+  its MOD-100 result is audit-owned.
 - [Draft assessment workbook](workbook/README.md) provides operator guidance,
   schema-conforming worksheet stubs, and fictional worked engagement vignettes
   with filled worksheet trios bound to ESAF-1500 and ESAF-1100 assessment

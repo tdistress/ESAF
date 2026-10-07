@@ -23,7 +23,7 @@ certification, compliance, or control satisfaction.
 
 | File | Control sample |
 |---|---|
-| [sampling3-api100-assessment-result.example.json](sampling3-api100-assessment-result.example.json) | API-100 |
+| [Canonical workbook API-100 result](../../workbook/examples/engagement3-assessment-result.example.json) | API-100, referenced by the audit vignette |
 | [sampling3-mod100-assessment-result.example.json](sampling3-mod100-assessment-result.example.json) | MOD-100 |
 
 Names, identifiers, dates, and findings in filled examples are fictional.

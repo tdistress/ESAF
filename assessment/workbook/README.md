@@ -6,6 +6,12 @@
 [#183](https://github.com/tdistress/ESAF/issues/183) second deepen;
 [#207](https://github.com/tdistress/ESAF/issues/207) third deepen
 
+The shared fictional CAP-140 case is documented in the
+[integrated assessment overview](../integrated-assessment.example.md). It links
+this workbook's canonical API-100 evidence, assessment result, and maturity
+assessment to the audit-owned MOD-100 result, evidence catalog examples, and
+governance follow-up.
+
 This directory is a non-normative operator workbook for recording assessments
 against existing ESAF-1500 contracts and ESAF-1100 control assessment
 procedures. It does not replace [ESAF-1500](../ESAF-1500.md).
@@ -17,7 +23,8 @@ procedures. It does not replace [ESAF-1500](../ESAF-1500.md).
 | [ESAF-1500-workbook.md](ESAF-1500-workbook.md) | Draft operator guide |
 | [engagement-vignette.example.md](engagement-vignette.example.md) | Fictional GOV-100 worked engagement narrative |
 | [engagement2-vignette.example.md](engagement2-vignette.example.md) | Fictional RSK-110 worked engagement narrative |
-| [engagement3-vignette.example.md](engagement3-vignette.example.md) | Fictional API-100 worked engagement narrative |
+| [engagement3-vignette.example.md](engagement3-vignette.example.md) | Fictional API-100 worked engagement narrative; canonical integrated-case result |
+| [examples/engagement3-mod100-evidence-record.example.json](examples/engagement3-mod100-evidence-record.example.json) | Integrated-case MOD-100 evidence used by the audit-owned result |
 | [worksheets/evidence-record.worksheet.json](worksheets/evidence-record.worksheet.json) | Blank evidence-record worksheet |
 | [worksheets/assessment-result.worksheet.json](worksheets/assessment-result.worksheet.json) | Blank assessment-result worksheet |
 | [worksheets/maturity-assessment.worksheet.json](worksheets/maturity-assessment.worksheet.json) | Blank maturity-assessment worksheet |
