@@ -6,6 +6,14 @@
 
 The decision is mechanically derived from the closed readiness matrix.
 
+## Evidence manifest
+
+- Manifest: `docs/superpowers/specs/2026-10-05-soc2-aicpa-tsc-evidence-manifest.json`
+- Pinned SHA-256: `a761cdcc368bba34d5e74d22a55bad2ce82993f6b67bf66bba29ee795d3a24c0`
+- Feasibility: `not_evidenced`
+- Review: `not_completed`
+- Evidence subject SHA-256: `efdaae7a3252cba3eba73119e973f19c76e69ae474d7d35e32811852ab5214b3`
+
 ## Directional question
 
 > Does exact normative ESAF control requirement text directly support, partially support, or establish a prerequisite for the outcome required by one authorized, publishable AICPA Trust Services Criteria outcome, with each relationship's conditions, expected evidence, and known gaps recorded independently, without implying AICPA approval, SOC 2 compliance, assessment, equivalence, certification, authorization, or endorsement?

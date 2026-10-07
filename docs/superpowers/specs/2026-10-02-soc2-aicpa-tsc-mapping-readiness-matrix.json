@@ -17,7 +17,11 @@
     "scope": "complete_publication",
     "granularity": "finest_authorized_publishable_criterion_identifier",
     "directional_question": "Does exact normative ESAF control requirement text directly support, partially support, or establish a prerequisite for the outcome required by one authorized, publishable AICPA Trust Services Criteria outcome, with each relationship's conditions, expected evidence, and known gaps recorded independently, without implying AICPA approval, SOC 2 compliance, assessment, equivalence, certification, authorization, or endorsement?",
-    "positive_feasibility_probe": false
+    "evidence_manifest": {
+      "path": "docs/superpowers/specs/2026-10-05-soc2-aicpa-tsc-evidence-manifest.json",
+      "sha256": "a761cdcc368bba34d5e74d22a55bad2ce82993f6b67bf66bba29ee795d3a24c0"
+    },
+    "mapper_identity": "unassigned"
   },
   "review_findings": {
     "open_critical": 0,

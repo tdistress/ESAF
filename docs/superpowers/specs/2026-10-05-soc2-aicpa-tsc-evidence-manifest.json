@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0.0",
+  "feasibility": {
+    "blocker_ids": [
+      "SOC2-TSC-READINESS-B004"
+    ],
+    "method": "No feasibility probe was performed because authorized criteria outcomes and publishable granularity are unavailable.",
+    "rationale": "Semantic and normative feasibility is not evidenced; the matrix remains blocked at B004.",
+    "scope": "No source-derived outcomes or ESAF control requirements were assessed.",
+    "status": "not_evidenced"
+  },
+  "evidence_inputs": [],
+  "evidence_subject_sha256": "efdaae7a3252cba3eba73119e973f19c76e69ae474d7d35e32811852ab5214b3",
+  "review": {
+    "attestations": [],
+    "blocker_ids": [
+      "SOC2-TSC-READINESS-B005"
+    ],
+    "rationale": "Independent review was not completed because reviewer readiness remains blocked at B005.",
+    "status": "not_completed",
+    "participants": []
+  }
+}
