@@ -32,6 +32,8 @@ endorsement, or assurance outcome.
    [`EVD-ENG3-API100-GATEWAY`](workbook/examples/engagement3-evidence-record.example.json).
    The MOD-100 registry artifact is
    [`EVD-SAMP3-MOD100-REGISTRY`](workbook/examples/engagement3-mod100-evidence-record.example.json).
+   For evidence-type-specific good-enough and common-failure guidance, see the
+   [ESAF-1500 evidence catalog](evidence-catalog/ESAF-1500-evidence-catalog.md).
    Procedure-level Test and Interview work is described in the results; the
    staging Test has no separate evidence-record example.
 2. **Record API-100 work once.** The workbook's
