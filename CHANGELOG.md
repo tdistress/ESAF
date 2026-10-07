@@ -8,13 +8,31 @@ Working Draft. Version 0.9-rc1 is a tagged Working Draft. Version 0.10-draft
 is a tagged Working Draft. Version 0.11-draft is a tagged Working Draft. Version 0.12-draft is a tagged
 Working Draft. Version 0.13-draft is a tagged Working Draft. Version 0.14-draft is a tagged
 Working Draft. Version 0.15-draft is a tagged Working Draft. Version 0.16-draft is a tagged
-Working Draft. Version 0.17-draft is a tagged
-Working Draft.
+Working Draft. Version 0.17-draft is a tagged Working Draft. Version 0.18-draft
+is the current tagged Working Draft.
 
-Next Release Candidate: `v0.18-draft` closure candidate (unpublished). It
-covers one integrated Summit Analytics `CAP-140` assessment case. Publication
-is conditional on exact-candidate review, merge, post-merge validation, and
-the annotated `v0.18-draft` tag.
+## 0.18-draft - 2026-10-07
+
+### Changed
+
+- Published the integrated Summit Analytics `CAP-140` ESAF-1500 assessment
+  case through annotated tag `v0.18-draft`, targeting validated commit
+  `abfccc4dda553a669d02dace9bde80b97ee3d789` (tag object
+  `db85ce06edbe5e6cbf5bcc29ae106360d2e1d4f7`). The example connects sampled
+  `API-100` and `MOD-100` evidence, results, bounded maturity, limitations,
+  risk, and governance follow-up. It makes no normative standard or Draft
+  artifact lifecycle change.
+
+### Carried forward
+
+- Retained Draft architecture patterns ARC-P100 Enterprise AI platform and gateway,
+  ARC-P110 Enterprise copilot, ARC-P120 Retrieval-augmented generation,
+  ARC-P130 Agentic and multi-agent AI, ARC-P140 Private model deployment,
+  ARC-P150 AI integration services, and ARC-P160 AI observability.
+- Retained the Cyber Essentials v3.3 snapshot without changing its mapping.
+- Retained the Cyber Essentials Plus v3.2 `esaf_to_external` snapshot and
+  Cyber Essentials Plus v3.2 `external_to_esaf` snapshot without changing
+  either external mapping decision.
 
 ## 0.17-draft - 2026-09-16
 

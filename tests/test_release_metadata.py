@@ -1138,23 +1138,20 @@ class ReleaseMetadataTests(unittest.TestCase):
             "README version badge must match VERSION.md",
         )
 
-    def test_closure_candidate_does_not_advance_published_version_surfaces(self) -> None:
-        self.assertEqual("0.17-draft", current_version())
-        expected_candidate = "v0.18-draft closure candidate (unpublished)"
+    def test_published_version_surfaces_match_v018_tag(self) -> None:
+        self.assertEqual("0.18-draft", current_version())
         version_text = read_repository_file("VERSION.md")
         readme = read_repository_file("README.md")
         roadmap = read_repository_file("ROADMAP.md")
-        self.assertIn(f"Next Release Candidate: **{expected_candidate}**", version_text)
-        self.assertIn(f"Next Release Candidate: **{expected_candidate}**", readme)
-        self.assertIn(f"**Next Release Candidate:** {expected_candidate}", roadmap)
+        self.assertIn("Current Version: **0.18-draft**", version_text)
+        self.assertIn("Current Working Draft: **v0.18-draft**", readme)
+        self.assertIn("**Latest Working Draft:** v0.18-draft, published 2026-10-07", roadmap)
+        self.assertIn("db85ce06edbe5e6cbf5bcc29ae106360d2e1d4f7", version_text)
 
-    def test_changelog_candidate_note_does_not_create_a_release_heading(self) -> None:
+    def test_changelog_records_published_v018_release(self) -> None:
         changelog = read_repository_file("CHANGELOG.md")
-        self.assertNotRegex(changelog, r"(?m)^## 0\.18-draft\b")
-        self.assertIn(
-            "Next Release Candidate: `v0.18-draft` closure candidate (unpublished)",
-            changelog,
-        )
+        self.assertRegex(changelog, r"(?m)^## 0\.18-draft - 2026-10-07$")
+        self.assertIn("through annotated tag `v0.18-draft`", changelog)
 
     def test_roadmap_matches_current_version(self) -> None:
         version = current_version()

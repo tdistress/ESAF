@@ -921,6 +921,10 @@
 
 ## v0.18-draft
 
+**Status:** Published 2026-10-07 through annotated tag `v0.18-draft`
+(tag object `db85ce06edbe5e6cbf5bcc29ae106360d2e1d4f7`), targeting validated
+commit `abfccc4dda553a669d02dace9bde80b97ee3d789`.
+
 ### Entry state
 
 - `v0.17-draft` was published on 2026-09-16 and its publication evidence is
@@ -971,6 +975,10 @@ for publication closure.
   Critical or Important findings; and
 - the annotated `v0.18-draft` publication and Working Draft status surfaces
   are synchronized.
+
+Publication validation and status synchronization are recorded in [Issue
+#224](https://github.com/tdistress/ESAF/issues/224). The integrated case is
+tracked in [Issue #223](https://github.com/tdistress/ESAF/issues/223).
 
 ### Non-goals
 

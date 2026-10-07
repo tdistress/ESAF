@@ -3,12 +3,11 @@
 > An open enterprise standard for the secure governance, architecture, adoption, and operation of artificial intelligence.
 
 ![Status](https://img.shields.io/badge/status-Working%20Draft-blue)
-![Version](https://img.shields.io/badge/version-0.17--draft-orange)
+![Version](https://img.shields.io/badge/version-0.18--draft-orange)
 
-Next Release Candidate: **v0.18-draft closure candidate (unpublished)**. It is
-undergoing exact-candidate review and publication validation. Publication
-remains conditional on successful review, merge, post-merge validation, and
-creation of the annotated `v0.18-draft` tag.
+Current Working Draft: **v0.18-draft**, published 2026-10-07 through the
+annotated [`v0.18-draft` tag](https://github.com/tdistress/ESAF/tree/v0.18-draft)
+at validated commit `abfccc4dda553a669d02dace9bde80b97ee3d789`.
 
 ## Vision
 
