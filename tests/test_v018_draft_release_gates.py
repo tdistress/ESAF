@@ -7,7 +7,7 @@ import tempfile
 import unittest
 import yaml
 
-from tools.v018_draft_release_gates import GATE_IDS, validate_record, validate_transition, PHASE_GATE_STATES
+from tools.v018_draft_release_gates import GATE_IDS, validate_record, validate_transition, validate_candidate_binding, PHASE_GATE_STATES
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -56,6 +56,36 @@ class V018ReleaseGateContractTests(unittest.TestCase):
         errors = validate_record(ROOT, record)
         self.assertTrue(any('technical evidence is required' in error for error in errors))
 
+    def test_malformed_gates_and_standards_mapping_fail_without_exception(self):
+        from tools.v018_draft_release_gates import load_readiness_document, RECORD_RELATIVE
+        record, _ = load_readiness_document(ROOT / RECORD_RELATIVE)
+        for malformed in (None, [], 'not-a-gate-map'):
+            candidate = deepcopy(record)
+            candidate['gates'] = malformed
+            self.assertTrue(validate_record(ROOT, candidate))
+        candidate = deepcopy(record)
+        candidate['gates']['standards_mapping'] = 'not-a-gate-object'
+        self.assertTrue(any('standards_mapping' in error for error in validate_record(ROOT, candidate)))
+
+    def test_candidate_binding_requires_committed_readiness_but_allows_unrelated_dirty_files(self):
+        from tools.v018_draft_release_gates import RECORD_RELATIVE
+        with tempfile.TemporaryDirectory() as directory:
+            repo = Path(directory)
+            subprocess.run(['git', 'init', '-q'], cwd=repo, check=True)
+            subprocess.run(['git', 'config', 'user.email', 'release-test@example.invalid'], cwd=repo, check=True)
+            subprocess.run(['git', 'config', 'user.name', 'Release Test'], cwd=repo, check=True)
+            record_path = repo / RECORD_RELATIVE
+            record_path.parent.mkdir(parents=True)
+            committed_text = '---\nphase: evidence_candidate\n---\n'
+            record_path.write_text(committed_text, encoding='utf-8')
+            subprocess.run(['git', 'add', str(record_path.relative_to(repo))], cwd=repo, check=True)
+            subprocess.run(['git', 'commit', '-qm', 'candidate'], cwd=repo, check=True)
+            self.assertEqual([], validate_candidate_binding(repo, committed_text))
+            (repo / 'unrelated.tmp').write_text('unrelated dirty artifact', encoding='utf-8')
+            self.assertEqual([], validate_candidate_binding(repo, committed_text))
+            record_path.write_text(committed_text + 'uncommitted edit\n', encoding='utf-8')
+            self.assertTrue(any('differs from committed HEAD' in error for error in validate_candidate_binding(repo, record_path.read_text(encoding='utf-8'))))
+
     def test_published_record_can_follow_annotated_tag_target(self):
         from tools.v018_draft_release_gates import load_readiness_document, RECORD_RELATIVE
         record, _ = load_readiness_document(ROOT / RECORD_RELATIVE)
@@ -90,9 +120,29 @@ class V018ReleaseGateContractTests(unittest.TestCase):
             save(published)
             self.assertNotEqual(closure_sha, subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo, text=True).strip())
             self.assertEqual([], validate_transition(repo, closure_sha, published))
+            wrong_target = deepcopy(published)
+            wrong_target['publication']['tagged_commit'] = 'f' * 40
+            self.assertTrue(any('equal the exact closure_candidate baseline SHA' in error for error in validate_transition(repo, closure_sha, wrong_target)))
             stale = deepcopy(published)
             stale['publication']['tag_object'] = 'f' * 40
             self.assertTrue(any('tag object is stale' in error for error in validate_transition(repo, closure_sha, stale)))
             stale_base = deepcopy(published)
             stale_base['base_sha'] = 'f' * 40
             self.assertTrue(any('base_sha shall equal the exact baseline' in error for error in validate_transition(repo, closure_sha, stale_base)))
+            published_sha = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=repo, text=True).strip()
+            (repo / 'unrelated.txt').write_text('maintenance', encoding='utf-8')
+            subprocess.run(['git', 'add', 'unrelated.txt'], cwd=repo, check=True)
+            subprocess.run(['git', 'commit', '-qm', 'published maintenance'], cwd=repo, check=True)
+            maintenance = deepcopy(published)
+            maintenance['base_sha'] = published_sha
+            self.assertEqual([], validate_transition(repo, published_sha, maintenance))
+            mutated = deepcopy(maintenance)
+            mutated['publication']['date'] = '2026-10-08'
+            self.assertTrue(any('identity and closed gate truth' in error for error in validate_transition(repo, published_sha, mutated)))
+            mutated_gate = deepcopy(maintenance)
+            mutated_gate['gates']['technical']['evidence'] = ['https://github.com/tdistress/ESAF/issues/changed']
+            self.assertTrue(any('identity and closed gate truth' in error for error in validate_transition(repo, published_sha, mutated_gate)))
+            regressed = deepcopy(maintenance)
+            regressed['phase'] = 'closure_candidate'
+            regressed['gates'] = closure['gates']
+            self.assertTrue(any('transition only from evidence_candidate' in error for error in validate_transition(repo, published_sha, regressed)))

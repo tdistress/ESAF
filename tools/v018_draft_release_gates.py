@@ -68,7 +68,8 @@ def validate_record(root: Path, record: dict) -> list[str]:
             errors.append(f"{gate} evidence is required")
         elif any(not isinstance(url, str) or not url.startswith("https://") for url in evidence):
             errors.append(f"{gate} evidence shall use HTTPS locators")
-    if gates["standards_mapping"].get("state") != "not_applicable":
+    standards_mapping = gates.get("standards_mapping")
+    if isinstance(standards_mapping, dict) and standards_mapping.get("state") != "not_applicable":
         errors.append("standards_mapping shall be explicitly not_applicable for this mapping-neutral milestone")
     publication = record.get("publication")
     if not isinstance(publication, dict): errors.append("publication shall be a mapping")
@@ -94,11 +95,29 @@ def _git(root: Path, *args: str) -> str:
     return result.stdout.strip()
 
 
+def validate_candidate_binding(root: Path, working_text: str) -> list[str]:
+    """Bind readiness content to HEAD; unrelated dirty files are permitted."""
+    try:
+        result = subprocess.run(
+            ["git", "show", f"HEAD:{RECORD_RELATIVE}"], cwd=root,
+            capture_output=True, check=True,
+        )
+        committed = result.stdout.decode("utf-8")
+        candidate_sha = _git(root, "rev-parse", "--verify", "HEAD^{commit}")
+    except subprocess.CalledProcessError as exc:
+        return [f"candidate HEAD readiness record could not be resolved: {exc}"]
+    if not SHA_RE.fullmatch(candidate_sha):
+        return ["candidate HEAD shall resolve to an exact commit SHA"]
+    if committed != working_text:
+        return ["working-tree readiness record differs from committed HEAD; commit it before validation"]
+    return []
+
+
 def validate_transition(root: Path, baseline_ref: str, record: dict) -> list[str]:
     errors: list[str] = []
     phase = record.get("phase")
     expected = PREVIOUS_PHASE.get(phase)
-    if not expected: return [f"phase {phase!r} does not support baseline-ref"]
+    if not expected and phase != "published": return [f"phase {phase!r} does not support baseline-ref"]
     try:
         base_sha = _git(root, "rev-parse", "--verify", f"{baseline_ref}^{{commit}}")
         baseline_text = _git(root, "show", f"{base_sha}:{RECORD_RELATIVE}")
@@ -107,13 +126,23 @@ def validate_transition(root: Path, baseline_ref: str, record: dict) -> list[str
     except (subprocess.CalledProcessError, ValueError) as exc:
         return [f"baseline/candidate SHA could not be resolved: {exc}"]
     if not SHA_RE.fullmatch(base_sha) or not SHA_RE.fullmatch(head_sha): errors.append("baseline and candidate shall be exact commit SHAs")
-    if baseline.get("phase") != expected: errors.append(f"{phase} shall transition only from {expected}")
+    if phase == "published":
+        if baseline.get("phase") not in {"closure_candidate", "published"}:
+            errors.append("published shall transition only from closure_candidate or published")
+    elif expected and baseline.get("phase") != expected:
+        errors.append(f"{phase} shall transition only from {expected}")
     if record.get("base_sha") != base_sha: errors.append("base_sha shall equal the exact baseline commit SHA")
     if phase == "published" and baseline.get("phase") == "published":
         if baseline.get("publication") != record.get("publication") or baseline.get("gates") != record.get("gates"):
             errors.append("published publication identity and closed gate truth shall remain unchanged")
+    if phase == "published" and baseline.get("phase") == "closure_candidate":
+        publication = record.get("publication")
+        if isinstance(publication, dict) and publication.get("tagged_commit") != base_sha:
+            errors.append("first published tagged_commit shall equal the exact closure_candidate baseline SHA")
     if phase == "published":
         publication = record.get("publication", {})
+        if not isinstance(publication, dict):
+            return errors + ["publication shall be a mapping"]
         try:
             tag_object = _git(root, "rev-parse", "--verify", f"refs/tags/{TAG}")
             tagged_commit = _git(root, "rev-parse", "--verify", f"refs/tags/{TAG}^{{commit}}")
@@ -145,7 +174,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     root = Path(__file__).resolve().parents[1]
     try:
         record, body = load_readiness_document(root / RECORD_RELATIVE)
-        errors = validate_record(root, record)
+        working_text = (root / RECORD_RELATIVE).read_text(encoding="utf-8")
+        errors = [*validate_candidate_binding(root, working_text), *validate_record(root, record)]
         cursor = 0
         for heading in HEADINGS:
             pos = body.find(heading, cursor)

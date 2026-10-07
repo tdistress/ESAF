@@ -387,6 +387,9 @@ python tools/v018_draft_release_gates.py --check
 For `closure_candidate` and `published` transitions, pass the exact prior-phase
 commit as `--baseline-ref`; after publication the check also verifies that the
 annotated tag still targets the recorded closure-candidate commit.
+The readiness record itself must match its committed `HEAD` version; commit
+readiness edits before checking. Unrelated dirty or untracked files do not
+change the candidate binding.
 
 ```shell
 python tools/v018_draft_release_gates.py --check --baseline-ref <baseline-sha>
