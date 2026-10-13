@@ -72,6 +72,67 @@ def text() -> str:
 
 
 class AssessmentFoundationTests(unittest.TestCase):
+    def test_api100_follow_up_is_linked_and_bounded(self) -> None:
+        action_path = ROOT / "assessment/follow-up/api100-remediation.example.md"
+        evidence_path = ROOT / "assessment/examples/api100-follow-up-evidence-record.example.json"
+        result_path = ROOT / "assessment/examples/api100-follow-up-assessment-result.example.json"
+        self.assertTrue(
+            all(path.is_file() for path in (action_path, evidence_path, result_path)),
+            "the API-100 follow-up package shall include its narrative and both records",
+        )
+        if not all(path.is_file() for path in (action_path, evidence_path, result_path)):
+            return
+
+        action = action_path.read_text(encoding="utf-8")
+        evidence = json.loads(evidence_path.read_text(encoding="utf-8"))
+        result = json.loads(result_path.read_text(encoding="utf-8"))
+        original_path = ROOT / "assessment/workbook/examples/engagement3-assessment-result.example.json"
+        original = json.loads(original_path.read_text(encoding="utf-8"))
+        for name, document in (
+            ("evidence-record", evidence),
+            ("assessment-result", result),
+        ):
+            schema = json.loads(
+                (SCHEMA_ROOT / f"{name}.schema.json").read_text(encoding="utf-8")
+            )
+            errors = list(
+                Draft202012Validator(
+                    schema, format_checker=ASSESSMENT_FORMAT_CHECKER
+                ).iter_errors(document)
+            )
+            self.assertEqual(errors, [], msg="; ".join(error.message for error in errors))
+
+        self.assertIn("ASR-ENG3-API100", action)
+        self.assertIn("FND-ENG3-API100-EMERGENCY", action)
+        self.assertIn(result["result_id"], action)
+        self.assertIn(result["findings"][0]["finding_id"], action)
+        overview = (ROOT / "assessment/integrated-assessment.example.md").read_text(encoding="utf-8")
+        self.assertIn("follow-up", overview.casefold())
+        self.assertIn("follow-up/api100-remediation.example.md", overview)
+        self.assertNotEqual(
+            "FND-ENG3-API100-EMERGENCY", result["findings"][0]["finding_id"]
+        )
+        self.assertEqual(result["evidence_refs"], [evidence["evidence_id"]])
+        self.assertEqual(evidence["traceability"]["result_refs"], [result["result_id"]])
+        self.assertEqual(result["traceability"]["esaf_requirement_ids"], ["API-100"])
+        self.assertIn("API-100-A3", result["methods"][0]["procedure"])
+        self.assertEqual(result["status"], "draft")
+        self.assertEqual(result["findings"][0]["status"], "resolved")
+        self.assertEqual(result["operating_effectiveness"], "not_assessed")
+        self.assertIn("one controlled restriction exercise", evidence["population"]["sample"].casefold())
+        self.assertIn("production", result["limitations"][2].casefold())
+        self.assertIn("sustained", result["limitations"][2].casefold())
+        self.assertIn("API-100-A1", action)
+        self.assertIn("API-100-A2", action)
+        self.assertEqual(original["result_id"], "ASR-ENG3-API100")
+        self.assertEqual(original["determination"], "partially_satisfied")
+        self.assertEqual(original["operating_effectiveness"], "not_assessed")
+        self.assertEqual(original["findings"][0]["finding_id"], "FND-ENG3-API100-EMERGENCY")
+        self.assertEqual(original["findings"][0]["status"], "open")
+        self.assertIn("does not revise", " ".join(result["limitations"]).casefold())
+        self.assertIn("fictional", action.casefold())
+        self.assertIn("does not", action.casefold())
+
     def test_normative_standard_exists_with_required_sections(self) -> None:
         document = text()
         for heading in REQUIRED_HEADINGS:

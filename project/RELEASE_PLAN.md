@@ -1,5 +1,24 @@
 # Release Plan
 
+## 0.19-draft planned publication
+
+The bounded v0.19-draft candidate extends the fictional Summit Analytics
+`CAP-140` assessment with one API-100-A3 staging follow-up, a new evidence
+record, a separate Draft result, and an explicit link to the original
+emergency-restriction finding. It preserves the original result and all
+existing ESAF-1500 and ESAF-1100 contracts. No external mapping or qualified
+crosswalk verifier is required; SOC 2 (#219) and HITRUST (#60) remain outside
+the milestone.
+
+The work is tracked in [Issue #227](https://github.com/tdistress/ESAF/issues/227)
+and [Issue #228](https://github.com/tdistress/ESAF/issues/228) under the
+[`v0.19-draft` milestone](https://github.com/tdistress/ESAF/milestone/13).
+Publication is pending. The readiness record and its dedicated validator
+shall bind the candidate and base SHAs, phase transitions, annotated tag, and
+published-status synchronization. The tagged commit shall be the validated
+closure-candidate merge commit; the later published-status commit shall
+preserve that tag identity.
+
 ## 0.18-draft publication
 
 The published `v0.18-draft` covers one fictional Summit Analytics `CAP-140`

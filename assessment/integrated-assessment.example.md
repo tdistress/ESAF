@@ -56,14 +56,33 @@ endorsement, or assurance outcome.
    canonical API-100 evidence and result. Governance action does not change the
    result's Draft status or determination.
 
+## Bounded API-100 follow-up
+
+The original [`ASR-ENG3-API100`](workbook/examples/engagement3-assessment-result.example.json)
+records `FND-ENG3-API100-EMERGENCY` as open at the original result date. A later
+fictional action and one API-100-A3 staging Test are documented in the
+[remediation follow-up](follow-up/api100-remediation.example.md), with its own
+[evidence record](examples/api100-follow-up-evidence-record.example.json) and
+[Draft assessment result](examples/api100-follow-up-assessment-result.example.json).
+The follow-up result uses the distinct
+`FND-ENG4-API100-A3-VERIFICATION` identifier because findings are nested within
+one result. It records resolution of the specific test gap linked to the
+original finding while preserving the original record unchanged.
+
+The follow-up determination remains `partially_satisfied`; operating
+effectiveness remains `not_assessed`. Only one staging restriction exercise
+was tested. Production behavior, recovery, bypass paths, API-100-A1, API-100-A2,
+and sustained operation remain outside the follow-up.
+
 ## Outcome and limitations
 
 The API-100 result is `partially_satisfied` and remains Draft. The fictional
 gateway routes through approved control points, and one staging bypass call
-was blocked and logged. The minor emergency-restriction finding remains open;
-no production bypass Test or emergency-restriction exercise is included.
-Configuration and staging observations do not establish production operating
-effectiveness.
+was blocked and logged. At that result's date, the minor emergency-restriction
+finding remained open; the later API-100-A3 follow-up records a separate,
+bounded disposition and does not revise the original result. Neither the
+original staging bypass Test nor the follow-up restriction exercise establishes
+production operating effectiveness.
 
 The MOD-100 result records a `satisfied` determination for the sampled alias,
 but remains Draft. Its single-alias reconciliation and owner interview do not

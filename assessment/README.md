@@ -19,6 +19,10 @@ starters.
   the shared fictional CAP-140 case connecting the workbook, audit checklist,
   evidence catalog, and governance thread. Its API-100 result is workbook-owned;
   its MOD-100 result is audit-owned.
+- [API-100 remediation follow-up](follow-up/api100-remediation.example.md)
+  adds one fictional owner action and one bounded API-100-A3 staging exercise.
+  Its separate Draft result links to the original open finding without
+  changing the historical assessment result.
 - [Draft assessment workbook](workbook/README.md) provides operator guidance,
   schema-conforming worksheet stubs, and fictional worked engagement vignettes
   with filled worksheet trios bound to ESAF-1500 and ESAF-1100 assessment

@@ -30,6 +30,10 @@ satisfaction.
 The shared case also uses
 [engagement3-mod100-evidence-record.example.json](engagement3-mod100-evidence-record.example.json)
 as evidence for the separately audit-owned MOD-100 result.
+The later
+[API-100 remediation follow-up](../../follow-up/api100-remediation.example.md)
+records a distinct API-100-A3 reassessment while leaving the third engagement's
+original result unchanged.
 
 | File | Role |
 |---|---|

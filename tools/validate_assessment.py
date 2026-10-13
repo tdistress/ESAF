@@ -826,7 +826,11 @@ def main() -> int:
         for error in errors:
             print(f"- {error}", file=sys.stderr)
         return 1
-    print("Successfully validated 3 assessment schemas and 3 tracked examples.")
+    example_count = len(list((ROOT / "assessment" / "examples").glob("*.example.json")))
+    print(
+        f"Successfully validated {len(SCHEMA_NAMES)} assessment schemas and "
+        f"{example_count} tracked examples."
+    )
     return 0
 
 

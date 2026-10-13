@@ -1,0 +1,94 @@
+{
+  "$schema": "../schema/evidence-record.schema.json",
+  "schema_version": "0.1.0",
+  "evidence_id": "EVD-ENG4-API100-RESTRICTION",
+  "title": "Fictional API-100 emergency-restriction exercise record",
+  "description": "A fictional record of one staging exercise of the CAP-140 emergency model-restriction function after the owner action described in the API-100 remediation example.",
+  "evidence_type": "technical_test",
+  "source": {
+    "identity": "Fictional Summit Analytics staging restriction harness",
+    "locator": "example://summit/cap-140/restriction-exercise/run-2026-10-12"
+  },
+  "custodian": {
+    "name": "Jordan Hale",
+    "role": "AI platform engineer",
+    "organization": "Fictional Summit Analytics"
+  },
+  "collected_at": "2026-10-12T15:00:00Z",
+  "collection_method": "Observed one controlled Test in a fictional staging mirror and retained the harness output and operator record.",
+  "scope": {
+    "description": "One API-100-A3 emergency-restriction exercise for the fictional CAP-140 staging gateway; no production environment or other API-100 procedure was tested."
+  },
+  "period": {
+    "start": "2026-10-12T14:30:00Z",
+    "end": "2026-10-12T14:45:00Z"
+  },
+  "population": {
+    "description": "The fictional CAP-140 staging gateway emergency model-restriction path.",
+    "sample": "One controlled restriction exercise against the staging mirror using the approved test model alias.",
+    "selection_rationale": "The sample directly tests the emergency-restriction function associated with API-100-A3 and the open condition documented in FND-ENG3-API100-EMERGENCY."
+  },
+  "quality": {
+    "relevance": {
+      "rating": "adequate",
+      "rationale": "The retained run record directly documents the one staging restriction exercise used for the bounded API-100-A3 follow-up."
+    },
+    "reliability": {
+      "rating": "limited",
+      "rationale": "The fictional harness output is owner-retained and no independent production telemetry was collected."
+    },
+    "completeness": {
+      "rating": "limited",
+      "rationale": "The record covers one staging exercise only and excludes production, recovery timing, bypass paths, and other gateway procedures."
+    },
+    "timeliness": {
+      "rating": "adequate",
+      "rationale": "The record is represented as collected at the time of the fictional follow-up exercise."
+    },
+    "attribution": {
+      "rating": "adequate",
+      "rationale": "The fictional run record identifies the staging harness and collection time, with separate custodian and assessor metadata."
+    },
+    "integrity": {
+      "rating": "limited",
+      "rationale": "The illustrative digest demonstrates the record field only and does not establish real-world integrity assurance."
+    },
+    "traceability": {
+      "rating": "adequate",
+      "rationale": "The record references API-100, API-100-A3, and the follow-up result that consumes it."
+    },
+    "sufficiency": "limited",
+    "evaluated_by": {
+      "name": "Morgan Ellis",
+      "role": "Independent assessor",
+      "organization": "Fictional Contour Assurance LLP"
+    },
+    "evaluated_at": "2026-10-12T16:00:00Z",
+    "sufficiency_rationale": "The record is sufficient only to illustrate the result of one bounded staging exercise; it cannot establish production operation, repeated performance, or broader API-100 effectiveness."
+  },
+  "integrity": {
+    "digest_algorithm": "sha-256",
+    "digest": "6666666666666666666666666666666666666666666666666666666666666666"
+  },
+  "limitations": [
+    "This is fictional, non-authoritative example evidence.",
+    "The exercise used one staging mirror and one test alias; no production restriction, recovery, or bypass path was tested.",
+    "The illustrative digest does not establish real-world integrity assurance."
+  ],
+  "retention": {
+    "authority": "Fictional Summit Analytics records schedule",
+    "end_condition": "Retain until the fictional assessment archive period ends."
+  },
+  "traceability": {
+    "requirement_refs": [
+      "API-100"
+    ],
+    "procedure_refs": [
+      "API-100-A3"
+    ],
+    "result_refs": [
+      "ASR-ENG4-API100-A3"
+    ]
+  },
+  "example_notice": "Fictional non-authoritative example; no organization, ESAF control, profile, or external framework has been assessed."
+}

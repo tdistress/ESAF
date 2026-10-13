@@ -1,0 +1,91 @@
+{
+  "$schema": "../schema/assessment-result.schema.json",
+  "schema_version": "0.1.0",
+  "result_id": "ASR-ENG4-API100-A3",
+  "status": "draft",
+  "title": "Fictional draft follow-up assessment of API-100-A3 for Summit Analytics CAP-140",
+  "assessor": {
+    "name": "Morgan Ellis",
+    "role": "Independent assessor",
+    "organization": "Fictional Contour Assurance LLP",
+    "independence_statement": "This fictional assessor is presented only to illustrate a bounded follow-up record and has no operational ownership of the fictional CAP-140 gateway."
+  },
+  "assessment_scope": {
+    "subject": "Fictional Summit Analytics workforce-research assistant CAP-140",
+    "requirement_ids": [
+      "API-100"
+    ],
+    "boundary": "One follow-up API-100-A3 emergency-restriction exercise on the fictional CAP-140 staging gateway after completion of the owner action linked to ASR-ENG3-API100 and FND-ENG3-API100-EMERGENCY.",
+    "exclusions": [
+      "Production restriction and recovery behavior, production bypass paths, repeated operation over time, and API-100-A1 and API-100-A2 were not reassessed."
+    ],
+    "population": "The fictional CAP-140 staging gateway emergency model-restriction path.",
+    "sample": "One controlled staging restriction exercise using the approved fictional test model alias; this is not a statistical sample."
+  },
+  "methods": [
+    {
+      "method": "Test",
+      "procedure": "API-100-A3 - Test: Exercise emergency provider or model restriction.",
+      "object": "Fictional CAP-140 staging gateway and restriction harness, evidence EVD-ENG4-API100-RESTRICTION.",
+      "expected_result": "The emergency restriction blocks new requests to the selected model alias, records the action, and returns the gateway to the approved restricted state.",
+      "actual_work": "Executed one controlled staging exercise. The selected alias was blocked, the event was logged, and a subsequent request remained blocked. No production request or recovery process was exercised."
+    }
+  ],
+  "time_boundary": {
+    "assessment_start": "2026-10-12T14:30:00Z",
+    "assessment_end": "2026-10-12T16:00:00Z",
+    "result_date": "2026-10-12T16:30:00Z"
+  },
+  "evidence_refs": [
+    "EVD-ENG4-API100-RESTRICTION"
+  ],
+  "determination": "partially_satisfied",
+  "determination_rationale": "The follow-up Test supports that the emergency-restriction function operated in one staging exercise and resolves the specific condition associated with original finding FND-ENG3-API100-EMERGENCY for this bounded test. API-100-A1, API-100-A2, production operation, and sustained operating effectiveness were not reassessed, so the result does not determine API-100 satisfied.",
+  "design_effectiveness": "partially_effective",
+  "operating_effectiveness": "not_assessed",
+  "findings": [
+    {
+      "finding_id": "FND-ENG4-API100-A3-VERIFICATION",
+      "severity": "minor",
+      "status": "resolved",
+      "affected_requirement_ids": [
+        "API-100"
+      ],
+      "statement": "This follow-up finding records verification of the emergency-restriction condition first documented in FND-ENG3-API100-EMERGENCY; it is a distinct finding because ESAF findings are nested within one assessment result.",
+      "evidence_refs": [
+        "EVD-ENG4-API100-RESTRICTION"
+      ],
+      "owner": {
+        "name": "Jordan Hale",
+        "role": "AI platform engineer",
+        "organization": "Fictional Summit Analytics"
+      },
+      "disposition": {
+        "action": "The fictional owner added a staging exercise harness and completed one emergency-restriction exercise; the assessor verified the limited result under API-100-A3.",
+        "rationale": "The follow-up evidence supports resolution of the specific emergency-restriction exercise gap described by original finding FND-ENG3-API100-EMERGENCY within the staging sample. The original result remains unchanged, and broader control effectiveness is not established."
+      },
+      "identified_at": "2026-10-12T14:30:00Z",
+      "disposition_at": "2026-10-12T16:00:00Z"
+    }
+  ],
+  "limitations": [
+    "This is a fictional follow-up result and remains Draft.",
+    "The follow-up does not revise the original ASR-ENG3-API100 result or reassess its original period.",
+    "One staging exercise does not establish production operation, sustained operating effectiveness, capability-wide effectiveness, certification, compliance, equivalence, endorsement, or assurance."
+  ],
+  "traceability": {
+    "esaf_requirement_ids": [
+      "API-100"
+    ],
+    "external_or_profile_ids": []
+  },
+  "change_history": [
+    {
+      "version": "0.1.0-draft",
+      "date": "2026-10-12T16:30:00Z",
+      "author": "Morgan Ellis",
+      "description": "Recorded one bounded API-100-A3 staging follow-up linked to original finding FND-ENG3-API100-EMERGENCY; the original assessment result remains unchanged."
+    }
+  ],
+  "example_notice": "Fictional non-authoritative example; no organization, ESAF control, profile, or external framework has been assessed."
+}
