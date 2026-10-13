@@ -593,7 +593,10 @@ class Esaf1600FoundationTests(unittest.TestCase):
             "tests/test_v017_draft_release_gates.py",
             "tools/v018_draft_release_gates.py",
             "tests/test_v018_draft_release_gates.py",
+            "tools/v019_draft_release_gates.py",
+            "tests/test_v019_draft_release_gates.py",
             "docs/superpowers/reviews/2026-10-07-v018-draft-publication-readiness.md",
+            "docs/superpowers/reviews/2026-10-13-v019-draft-publication-readiness.md",
             "docs/superpowers/reviews/2026-09-05-v010-draft-publication-readiness.md",
             "docs/superpowers/reviews/2026-09-07-v012-draft-publication-readiness.md",
             "docs/superpowers/reviews/2026-09-07-v013-draft-publication-readiness.md",
@@ -1118,6 +1121,14 @@ class Esaf1600FoundationTests(unittest.TestCase):
             "run": "python tools/v018_draft_release_gates.py --check --baseline-ref-from-record",
         })
 
+        v019_draft = unique_step(
+            "Validate v0.19-draft release record against tracked baseline"
+        )
+        self.assertEqual(v019_draft, {
+            "name": "Validate v0.19-draft release record against tracked baseline",
+            "run": "python tools/v019_draft_release_gates.py --check --baseline-ref-from-record",
+        })
+
         release_gate_runs = [
             (step["run"], step.get("if", ""))
             for step in steps
@@ -1293,6 +1304,11 @@ class Esaf1600FoundationTests(unittest.TestCase):
                 ),
                 (
                     "python tools/v018_draft_release_gates.py --check "
+                    "--baseline-ref-from-record",
+                    "",
+                ),
+                (
+                    "python tools/v019_draft_release_gates.py --check "
                     "--baseline-ref-from-record",
                     "",
                 ),

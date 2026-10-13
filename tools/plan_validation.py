@@ -14,8 +14,9 @@ from collections.abc import Callable, Sequence
 
 TIERS = ("quick", "standard", "publication")
 COMMIT_ID = re.compile(r"^[0-9a-f]{40,64}$")
-COMMAND_PLACEHOLDERS = {"{base}", "{candidate}", "{v018_base}"}
+COMMAND_PLACEHOLDERS = {"{base}", "{candidate}", "{v018_base}", "{v019_base}"}
 V018_READINESS_RECORD = "docs/superpowers/reviews/2026-10-07-v018-draft-publication-readiness.md"
+V019_READINESS_RECORD = "docs/superpowers/reviews/2026-10-13-v019-draft-publication-readiness.md"
 
 
 @dataclass(frozen=True)
@@ -111,6 +112,10 @@ def validate_policy(policy: ValidationPolicy) -> ValidationManifest:
             raise ValueError("v0.18 baseline placeholder is reserved for its release gate")
         if identifier == "v018-draft-release-gates" and "{v018_base}" not in argv:
             raise ValueError("v0.18 release gate shall bind its base from the candidate readiness record")
+        if "{v019_base}" in argv and identifier != "v019-draft-release-gates":
+            raise ValueError("v0.19 baseline placeholder is reserved for its release gate")
+        if identifier == "v019-draft-release-gates" and "{v019_base}" not in argv:
+            raise ValueError("v0.19 release gate shall bind its base from the candidate readiness record")
         if tier not in TIERS or not isinstance(duration, str) or not duration:
             raise ValueError(f"policy command {identifier!r} has invalid tier or duration")
         identifiers.add(identifier)
@@ -190,6 +195,7 @@ COMMAND_CATALOG = (
     ValidationCommand("v016-draft-release-gates", ("python", "tools/v016_draft_release_gates.py", "--check", "--baseline-ref", "{base}"), "publication", "candidate freeze"),
     ValidationCommand("v017-draft-release-gates", ("python", "tools/v017_draft_release_gates.py", "--check", "--baseline-ref", "{base}"), "publication", "candidate freeze"),
     ValidationCommand("v018-draft-release-gates", ("python", "tools/v018_draft_release_gates.py", "--check", "--baseline-ref", "{v018_base}"), "publication", "candidate freeze"),
+    ValidationCommand("v019-draft-release-gates", ("python", "tools/v019_draft_release_gates.py", "--check", "--baseline-ref", "{v019_base}"), "publication", "candidate freeze"),
 )
 
 ROUTING_RULES = (
@@ -225,6 +231,7 @@ PUBLICATION_COMMAND_IDS = (
     "v016-draft-release-gates",
     "v017-draft-release-gates",
     "v018-draft-release-gates",
+    "v019-draft-release-gates",
 )
 PROOF_COMMAND_IDS = ("qualified-review-equivalence",)
 REVIEWED_POLICY = ValidationPolicy(COMMAND_CATALOG, ROUTING_RULES)
@@ -335,38 +342,43 @@ def _bind_commands(
     commands: tuple[ValidationCommand, ...], *, root: Path, base: str,
     candidate: str, runner: Callable[..., object]
 ) -> tuple[ValidationCommand, ...]:
-    """Bind catalog refs, sourcing the v0.18 baseline from its candidate record."""
+    """Bind catalog refs, sourcing release baselines from candidate records."""
     bindings = {"{base}": base, "{candidate}": candidate}
-    if any(command.identifier == "v018-draft-release-gates" for command in commands):
+    for release, command_id, record_path, placeholder in (
+        ("v0.18", "v018", V018_READINESS_RECORD, "{v018_base}"),
+        ("v0.19", "v019", V019_READINESS_RECORD, "{v019_base}"),
+    ):
+        if not any(command.identifier == f"{command_id}-draft-release-gates" for command in commands):
+            continue
         result = runner(
-            ["git", "show", f"{candidate}:{V018_READINESS_RECORD}"],
+            ["git", "show", f"{candidate}:{record_path}"],
             cwd=root, check=False, capture_output=True,
         )
         output = getattr(result, "stdout", None)
         if getattr(result, "returncode", None) != 0 or not isinstance(output, bytes):
-            raise ValueError("could not load v0.18 readiness record from candidate")
+            raise ValueError(f"could not load {release} readiness record from candidate")
         try:
             text = output.decode("utf-8", errors="strict")
         except UnicodeDecodeError as error:
-            raise ValueError("v0.18 readiness record is not valid UTF-8") from error
+            raise ValueError(f"{release} readiness record is not valid UTF-8") from error
         frontmatter = text.split("\n---\n", 1)[0] if text.startswith("---\n") else ""
         matches = re.findall(r"(?m)^base_sha: ([0-9a-f]{40})$", frontmatter)
         if len(matches) != 1:
-            raise ValueError("candidate v0.18 readiness record shall contain one exact base_sha")
-        v018_base = matches[0]
+            raise ValueError(f"candidate {release} readiness record shall contain one exact base_sha")
+        release_base = matches[0]
         existence = runner(
-            ["git", "cat-file", "-e", f"{v018_base}^{{commit}}"],
+            ["git", "cat-file", "-e", f"{release_base}^{{commit}}"],
             cwd=root, check=False, capture_output=True,
         )
         if getattr(existence, "returncode", None) != 0:
-            raise ValueError("candidate v0.18 base_sha does not resolve to a commit")
+            raise ValueError(f"candidate {release} base_sha does not resolve to a commit")
         ancestry = runner(
-            ["git", "merge-base", "--is-ancestor", v018_base, candidate],
+            ["git", "merge-base", "--is-ancestor", release_base, candidate],
             cwd=root, check=False, capture_output=True,
         )
         if getattr(ancestry, "returncode", None) != 0:
-            raise ValueError("candidate v0.18 base_sha is not an ancestor of candidate")
-        bindings["{v018_base}"] = v018_base
+            raise ValueError(f"candidate {release} base_sha is not an ancestor of candidate")
+        bindings[placeholder] = release_base
     return tuple(
         ValidationCommand(
             command.identifier,

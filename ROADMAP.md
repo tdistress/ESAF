@@ -6,6 +6,25 @@
 
 **Latest Working Draft:** v0.18-draft, published 2026-10-07
 
+## 0.19-draft planned effort
+
+The bounded v0.19-draft effort extends the fictional Summit Analytics CAP-140
+assessment with one API-100 emergency-restriction remediation and follow-up
+Test, using existing ESAF-1500 records and API-100-A3. The original assessment
+result remains unchanged; the follow-up is separately recorded, Draft, and
+limited to one staging exercise. A dedicated exact-candidate readiness gate
+will bind the release phases and tag identity. Work is tracked in the
+[`v0.19-draft` milestone](https://github.com/tdistress/ESAF/milestone/13),
+through [Issue #227](https://github.com/tdistress/ESAF/issues/227) for the case
+and [Issue #228](https://github.com/tdistress/ESAF/issues/228) for publication
+gates.
+
+The effort creates no external mapping, new normative requirement, or
+assessment schema. No qualified external crosswalk verifier is required. SOC
+2 #219 and HITRUST #60 remain separately gated and are not prerequisites.
+v0.18-draft remains the current published Working Draft until v0.19's exact
+candidate passes its gates and publication is recorded.
+
 ## 0.18-draft delivery sequence
 
 The `v0.18-draft` milestone followed publication of `v0.17-draft` on

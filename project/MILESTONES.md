@@ -9,6 +9,7 @@
 | v0.5-beta | Priority crosswalks and industry profiles |
 | v0.9-rc1 | Editorially complete release candidate |
 | v0.18-draft | One integrated ESAF-1500 assessment case and ordinary exact-candidate publication gates |
+| v0.19-draft | One API-100 assessment follow-up cycle and exact-candidate publication gates |
 | v1.0 | First approved publication |
 
 ## v0.5-beta
@@ -997,3 +998,72 @@ tracked in [Issue #223](https://github.com/tdistress/ESAF/issues/223).
 - a general Phase 6 breadth-deepen beyond what is needed for this single case;
 - final assessment results, approved lifecycle states, or claims about a real
   organization.
+
+## v0.19-draft
+
+**Status:** In progress; v0.18-draft remains the current published Working Draft.
+
+### Entry state
+
+- v0.18-draft is published and its publication evidence is closed.
+- The Summit Analytics CAP-140 API-100 result and its open emergency-restriction
+  finding remain historical and unchanged.
+- SOC 2 (#219) and HITRUST (#60) remain separately gated; neither is a
+  prerequisite or exit criterion.
+
+### Required workstreams
+
+1. **API-100 assessment follow-through.** Extend the fictional CAP-140 case
+   with one owner action, one API-100-A3 staging Test evidence record, and a
+   distinct Draft follow-up assessment result and finding ID. Explicitly link
+   the follow-up to original finding `FND-ENG3-API100-EMERGENCY`; preserve the
+   original result; and retain limitations on production behavior, sustained
+   effectiveness, and other API-100 procedures.
+2. **Exact-candidate release gate.** Add a v0.19-specific readiness record and
+   validator wired into the planner and CI. Enforce evidence-candidate,
+   closure-candidate, published, and published-to-published phases; exact base
+   and candidate binding; annotated-tag identity; and immutable publication
+   identity on status maintenance.
+3. **Ordinary publication closure.** Complete technical, editorial,
+   terminology, cross-reference/rendering, repository-validation, and
+   governance gates on the exact closure candidate; rerun SHA-bound checks on
+   the merged main commit; publish the annotated tag to that validated commit;
+   then synchronize published status while preserving the tag target.
+
+The implementation queue is tracked in the
+[`v0.19-draft` GitHub milestone](https://github.com/tdistress/ESAF/milestone/13),
+with [Issue #227](https://github.com/tdistress/ESAF/issues/227) for the
+follow-up case and [Issue #228](https://github.com/tdistress/ESAF/issues/228)
+for publication closure.
+
+### Exit criteria
+
+`v0.19-draft` is complete only when:
+
+- the original assessment result remains unchanged and a separate Draft
+  follow-up result is schema-valid and traceable to its evidence, API-100-A3,
+  and the original finding;
+- the follow-up is limited to one fictional staging exercise and makes no
+  production, sustained-effectiveness, capability-wide, compliance,
+  certification, equivalence, endorsement, or assurance claim;
+- the v0.19 readiness validator and deterministic phase/tag regression tests
+  pass through candidate closure and published-to-published status
+  synchronization;
+- technical, editorial, terminology, cross-reference/rendering, repository,
+  and governance gates pass on the exact candidate with Critical and Important
+  findings resolved;
+- SHA-bound post-merge validation passes, the annotated v0.19-draft tag points
+  to the validated closure-candidate merge commit, and published status
+  surfaces record that exact tag identity; and
+- the readiness record and GitHub issues accurately record publication
+  evidence, and milestone issues are closed only after their exit criteria are
+  evidenced.
+
+### Non-goals
+
+- SOC 2 readiness or mapping (Issue #219) and HITRUST readiness or mapping
+  (Issue #60);
+- external framework sources, mappings, or qualified crosswalk review;
+- new normative requirements, assessment schemas, identifier types, maturity
+  semantics, or a generalized remediation model; and
+- changing or replacing the original ASR-ENG3-API100 assessment result.

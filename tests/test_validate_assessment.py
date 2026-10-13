@@ -692,7 +692,7 @@ class AssessmentValidationTests(unittest.TestCase):
         self.assertEqual(completed.returncode, 0, completed.stderr)
         self.assertEqual(
             completed.stdout.strip(),
-            "Successfully validated 3 assessment schemas and 3 tracked examples.",
+            "Successfully validated 3 assessment schemas and 5 tracked examples.",
         )
 
 

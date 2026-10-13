@@ -405,6 +405,18 @@ CI uses the record-bound form:
 python tools/v018_draft_release_gates.py --check --baseline-ref-from-record
 ```
 
+The v0.19-draft readiness record binds the API-100 assessment follow-up cycle.
+Its publication gate is included in the reviewed planner catalog and CI:
+
+```shell
+python tools/v019_draft_release_gates.py --check --baseline-ref-from-record
+```
+
+During the evidence-candidate phase, the record binds the exact base commit.
+Closure and publication transitions require the exact prior-phase commit. The
+annotated tag must target the validated closure candidate, and published-to-
+published maintenance preserves publication identity and closed gate truth.
+
 `tools/release_gates.py` and `tools/v05_beta_release_gates.py` remain frozen
 historical validators.
 
