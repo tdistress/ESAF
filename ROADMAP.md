@@ -2,28 +2,32 @@
 
 **Status:** Working Draft
 
-**Version:** 0.18-draft
+**Version:** 0.19-draft
 
-**Latest Working Draft:** v0.18-draft, published 2026-10-07
+**Latest Working Draft:** v0.19-draft, published 2026-10-14
 
-## 0.19-draft planned effort
+## 0.19-draft publication
 
-The bounded v0.19-draft effort extends the fictional Summit Analytics CAP-140
+The bounded v0.19-draft extends the fictional Summit Analytics CAP-140
 assessment with one API-100 emergency-restriction remediation and follow-up
 Test, using existing ESAF-1500 records and API-100-A3. The original assessment
-result remains unchanged; the follow-up is separately recorded, Draft, and
-limited to one staging exercise. A dedicated exact-candidate readiness gate
-will bind the release phases and tag identity. Work is tracked in the
+result remains unchanged; the separate follow-up result is Draft and limited
+to one staging exercise. The annotated [`v0.19-draft` tag](https://github.com/tdistress/ESAF/tree/v0.19-draft)
+(object `a6f3af304d62084b0cf121967b02ffc6f14d723b`) targets validated
+closure-candidate commit `f97b0cea8fd77e2ece0c7a14665ae7a2b4469193`.
+Publication evidence and status synchronization are recorded in the
 [`v0.19-draft` milestone](https://github.com/tdistress/ESAF/milestone/13),
 through [Issue #227](https://github.com/tdistress/ESAF/issues/227) for the case
 and [Issue #228](https://github.com/tdistress/ESAF/issues/228) for publication
-gates.
+gates; exact-candidate reviews and closure evidence are linked from [PR #231](https://github.com/tdistress/ESAF/pull/231).
 
 The effort creates no external mapping, new normative requirement, or
-assessment schema. No qualified external crosswalk verifier is required. SOC
-2 #219 and HITRUST #60 remain separately gated and are not prerequisites.
-v0.18-draft remains the current published Working Draft until v0.19's exact
-candidate passes its gates and publication is recorded.
+assessment schema. It claims no production behavior or sustained effectiveness
+beyond the bounded staging exercise. No qualified external crosswalk verifier
+is required. SOC 2 #219 and HITRUST #60 remain separately gated and are not
+prerequisites. Repository validation and CodeQL passed on the tagged merge
+commit; no normative standard version or Draft artifact lifecycle state
+advanced.
 
 ## 0.18-draft delivery sequence
 

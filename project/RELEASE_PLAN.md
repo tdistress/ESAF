@@ -1,6 +1,6 @@
 # Release Plan
 
-## 0.19-draft planned publication
+## 0.19-draft publication
 
 The bounded v0.19-draft candidate extends the fictional Summit Analytics
 `CAP-140` assessment with one API-100-A3 staging follow-up, a new evidence
@@ -13,11 +13,34 @@ the milestone.
 The work is tracked in [Issue #227](https://github.com/tdistress/ESAF/issues/227)
 and [Issue #228](https://github.com/tdistress/ESAF/issues/228) under the
 [`v0.19-draft` milestone](https://github.com/tdistress/ESAF/milestone/13).
-Publication is pending. The readiness record and its dedicated validator
-shall bind the candidate and base SHAs, phase transitions, annotated tag, and
-published-status synchronization. The tagged commit shall be the validated
-closure-candidate merge commit; the later published-status commit shall
-preserve that tag identity.
+The annotated `v0.19-draft` Working Draft tag was published on 2026-10-14.
+Tag object `a6f3af304d62084b0cf121967b02ffc6f14d723b` peels to validated
+closure-candidate commit `f97b0cea8fd77e2ece0c7a14665ae7a2b4469193`. Exact-head
+technical, editorial, terminology, and cross-reference/rendering reviews
+passed on PR [#231](https://github.com/tdistress/ESAF/pull/231) with no
+actionable findings. Steering Committee publication approval for the bounded
+scope is recorded at
+https://github.com/tdistress/ESAF/issues/228#issuecomment-6174437831.
+Protected-branch Repository validation and CodeQL passed
+on the closure-candidate merge commit, and the candidate-bound equivalence
+proof passed with 15 methods and 28 cases.
+
+The published readiness record preserves the tag identity. Publication
+evidence does not advance normative requirements or Draft artifact lifecycle
+states. SOC 2 (#219) and HITRUST (#60) remain separately gated and outside this
+milestone.
+
+| Gate | State | Evidence |
+|---|---|---|
+| Scope | Closed | https://github.com/tdistress/ESAF/issues/228 |
+| Integrated case | Closed | https://github.com/tdistress/ESAF/pull/229 |
+| Technical | Closed | https://github.com/tdistress/ESAF/pull/231 |
+| Editorial and terminology | Closed | https://github.com/tdistress/ESAF/pull/231 |
+| Cross-reference and rendering | Closed | https://github.com/tdistress/ESAF/pull/231 |
+| Repository validation | Closed | https://github.com/tdistress/ESAF/actions/runs/38590392020 |
+| Governance | Closed | https://github.com/tdistress/ESAF/issues/228#issuecomment-6174437831 |
+| Post-merge validation | Closed | https://github.com/tdistress/ESAF/actions/runs/38590392020 |
+| Standards mapping | Not applicable | No external mapping was added. |
 
 ## 0.18-draft publication
 

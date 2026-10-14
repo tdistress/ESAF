@@ -9,7 +9,29 @@ is a tagged Working Draft. Version 0.11-draft is a tagged Working Draft. Version
 Working Draft. Version 0.13-draft is a tagged Working Draft. Version 0.14-draft is a tagged
 Working Draft. Version 0.15-draft is a tagged Working Draft. Version 0.16-draft is a tagged
 Working Draft. Version 0.17-draft is a tagged Working Draft. Version 0.18-draft
-is the current tagged Working Draft.
+is a tagged Working Draft. Version 0.19-draft is the current tagged Working Draft.
+
+## 0.19-draft - 2026-10-14
+
+### Changed
+
+- Published the bounded fictional API-100 assessment follow-up through
+  annotated tag `v0.19-draft`, targeting validated closure-candidate commit
+  `f97b0cea8fd77e2ece0c7a14665ae7a2b4469193` (tag object
+  `a6f3af304d62084b0cf121967b02ffc6f14d723b`). The follow-up records one
+  API-100-A3 staging exercise, preserves the original assessment result, and
+  adds no normative standard or Draft artifact lifecycle change.
+
+### Carried forward
+
+- Retained Draft architecture patterns ARC-P100 Enterprise AI platform and gateway,
+  ARC-P110 Enterprise copilot, ARC-P120 Retrieval-augmented generation,
+  ARC-P130 Agentic and multi-agent AI, ARC-P140 Private model deployment,
+  ARC-P150 AI integration services, and ARC-P160 AI observability.
+- Retained the Cyber Essentials v3.3 snapshot without changing its mapping.
+- Retained the Cyber Essentials Plus v3.2 `esaf_to_external` snapshot and
+  Cyber Essentials Plus v3.2 `external_to_esaf` snapshot without changing
+  either external mapping decision.
 
 ## 0.18-draft - 2026-10-07
 

@@ -1138,15 +1138,26 @@ class ReleaseMetadataTests(unittest.TestCase):
             "README version badge must match VERSION.md",
         )
 
-    def test_published_version_surfaces_match_v018_tag(self) -> None:
-        self.assertEqual("0.18-draft", current_version())
+    def test_published_version_surfaces_match_v019_tag(self) -> None:
+        self.assertEqual("0.19-draft", current_version())
         version_text = read_repository_file("VERSION.md")
         readme = read_repository_file("README.md")
         roadmap = read_repository_file("ROADMAP.md")
-        self.assertIn("Current Version: **0.18-draft**", version_text)
-        self.assertIn("Current Working Draft: **v0.18-draft**", readme)
-        self.assertIn("**Latest Working Draft:** v0.18-draft, published 2026-10-07", roadmap)
-        self.assertIn("db85ce06edbe5e6cbf5bcc29ae106360d2e1d4f7", version_text)
+        tag_object = "a6f3af304d62084b0cf121967b02ffc6f14d723b"
+        tagged_commit = "f97b0cea8fd77e2ece0c7a14665ae7a2b4469193"
+        self.assertIn("Current Version: **0.19-draft**", version_text)
+        self.assertIn("Current Working Draft: **v0.19-draft**", readme)
+        self.assertIn("**Latest Working Draft:** v0.19-draft, published 2026-10-14", roadmap)
+        self.assertIn(tag_object, version_text)
+        self.assertIn(tagged_commit, version_text)
+        self.assertIn(tag_object, readme)
+        self.assertIn(tagged_commit, readme)
+        record = load_front_matter(
+            ROOT / "docs/superpowers/reviews/2026-10-13-v019-draft-publication-readiness.md"
+        )
+        self.assertEqual("published", record["phase"])
+        self.assertEqual(tag_object, record["publication"]["tag_object"])
+        self.assertEqual(tagged_commit, record["publication"]["tagged_commit"])
 
     def test_changelog_records_published_v018_release(self) -> None:
         changelog = read_repository_file("CHANGELOG.md")

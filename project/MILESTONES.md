@@ -1001,7 +1001,9 @@ tracked in [Issue #223](https://github.com/tdistress/ESAF/issues/223).
 
 ## v0.19-draft
 
-**Status:** In progress; v0.18-draft remains the current published Working Draft.
+**Status:** Published 2026-10-14 through annotated tag `v0.19-draft`
+(tag object `a6f3af304d62084b0cf121967b02ffc6f14d723b`), targeting validated
+closure-candidate commit `f97b0cea8fd77e2ece0c7a14665ae7a2b4469193`.
 
 ### Entry state
 
@@ -1011,34 +1013,51 @@ tracked in [Issue #223](https://github.com/tdistress/ESAF/issues/223).
 - SOC 2 (#219) and HITRUST (#60) remain separately gated; neither is a
   prerequisite or exit criterion.
 
-### Required workstreams
+### Delivered workstreams
 
-1. **API-100 assessment follow-through.** Extend the fictional CAP-140 case
+1. **API-100 assessment follow-through.** Extended the fictional CAP-140 case
    with one owner action, one API-100-A3 staging Test evidence record, and a
-   distinct Draft follow-up assessment result and finding ID. Explicitly link
-   the follow-up to original finding `FND-ENG3-API100-EMERGENCY`; preserve the
-   original result; and retain limitations on production behavior, sustained
-   effectiveness, and other API-100 procedures.
-2. **Exact-candidate release gate.** Add a v0.19-specific readiness record and
-   validator wired into the planner and CI. Enforce evidence-candidate,
-   closure-candidate, published, and published-to-published phases; exact base
-   and candidate binding; annotated-tag identity; and immutable publication
-   identity on status maintenance.
-3. **Ordinary publication closure.** Complete technical, editorial,
-   terminology, cross-reference/rendering, repository-validation, and
-   governance gates on the exact closure candidate; rerun SHA-bound checks on
-   the merged main commit; publish the annotated tag to that validated commit;
-   then synchronize published status while preserving the tag target.
+   distinct Draft follow-up assessment result and finding ID. The follow-up is
+   explicitly linked to original finding `FND-ENG3-API100-EMERGENCY`; the
+   original result and limitations on production behavior, sustained
+   effectiveness, and other API-100 procedures are preserved.
+2. **Exact-candidate release gate.** Added a v0.19-specific readiness record
+   and validator wired into the planner and CI. It enforces
+   evidence-candidate, closure-candidate, published, and
+   published-to-published phases; exact base and candidate binding;
+   annotated-tag identity; and immutable publication identity on status
+   maintenance.
+3. **Ordinary publication closure.** Technical, editorial, terminology,
+   cross-reference/rendering, repository-validation, and governance reviews
+   were recorded for the closure candidate; SHA-bound checks passed on the
+   merged main commit; the annotated tag was published to that validated
+   commit; and published status was synchronized while preserving the tag
+   target.
 
-The implementation queue is tracked in the
+The completed work was tracked in the
 [`v0.19-draft` GitHub milestone](https://github.com/tdistress/ESAF/milestone/13),
 with [Issue #227](https://github.com/tdistress/ESAF/issues/227) for the
 follow-up case and [Issue #228](https://github.com/tdistress/ESAF/issues/228)
 for publication closure.
 
+### Publication evidence
+
+Exact-head technical, editorial, terminology, and cross-reference/rendering
+reviews passed on PR [#231](https://github.com/tdistress/ESAF/pull/231) with no
+actionable findings. Steering Committee approval for the bounded publication
+scope is recorded at
+https://github.com/tdistress/ESAF/issues/228#issuecomment-6174437831.
+Protected-branch Repository validation and
+CodeQL passed on the closure-candidate merge commit at
+https://github.com/tdistress/ESAF/actions/runs/38590392020 and
+https://github.com/tdistress/ESAF/actions/runs/38590390738. The candidate-bound
+equivalence proof passed with 15 methods and 28 cases. The published readiness
+record binds the tag object and target commit; no normative standard version
+or Draft artifact lifecycle state advanced.
+
 ### Exit criteria
 
-`v0.19-draft` is complete only when:
+The v0.19-draft publication evidence meets these criteria:
 
 - the original assessment result remains unchanged and a separate Draft
   follow-up result is schema-valid and traceable to its evidence, API-100-A3,
