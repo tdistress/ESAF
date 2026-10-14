@@ -1055,9 +1055,9 @@ equivalence proof passed with 15 methods and 28 cases. The published readiness
 record binds the tag object and target commit; no normative standard version
 or Draft artifact lifecycle state advanced.
 
-### Completed exit criteria
+### Exit criteria
 
-The `v0.19-draft` milestone is complete. It met these criteria:
+The v0.19-draft publication evidence meets these criteria:
 
 - the original assessment result remains unchanged and a separate Draft
   follow-up result is schema-valid and traceable to its evidence, API-100-A3,
