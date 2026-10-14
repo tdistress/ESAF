@@ -182,6 +182,72 @@ class V019ReleaseGateContractTests(unittest.TestCase):
         self.assertEqual(1, result)
         self.assertIn("shall not reopen a prior v0.19 readiness phase", stderr.getvalue())
 
+    def test_evidence_candidate_allows_later_maintenance_commit_with_same_phase(self):
+        repo = init_repo()
+        (repo / "baseline.txt").write_text("baseline\n", encoding="utf-8")
+        git(repo, "add", "baseline.txt")
+        subprocess.run(["git", "commit", "-qm", "baseline"], cwd=repo, check=True)
+        baseline = git(repo, "rev-parse", "HEAD^{commit}")
+        save_commit(repo, readiness("evidence_candidate", baseline), "evidence candidate")
+        (repo / "maintenance.txt").write_text("same phase maintenance\n", encoding="utf-8")
+        git(repo, "add", "maintenance.txt")
+        subprocess.run(["git", "commit", "-qm", "maintenance"], cwd=repo, check=True)
+
+        self.assertEqual([], validate_evidence_candidate_baseline(repo, baseline))
+
+    def test_closure_candidate_cannot_reopen_after_published_using_old_baseline(self):
+        repo = init_repo()
+        evidence_sha = save_commit(repo, readiness("evidence_candidate", "0" * 40), "evidence candidate")
+        closure = readiness("closure_candidate", evidence_sha)
+        closure_sha = save_commit(repo, closure, "closure candidate")
+        git(repo, "tag", "-a", "v0.19-draft", "-m", "v0.19-draft")
+        tag_object = git(repo, "rev-parse", "refs/tags/v0.19-draft")
+        published = readiness("published", closure_sha)
+        published["gates"] = {
+            gate: {
+                "state": state,
+                "evidence": [] if gate == "standards_mapping" else ["https://example.invalid/closed"],
+            }
+            for gate, state in PHASE_GATE_STATES["published"].items()
+        }
+        published["publication"].update({
+            "tag_object": tag_object,
+            "tagged_commit": closure_sha,
+            "date": "2026-10-13",
+            "evidence": ["https://example.invalid/publication"],
+        })
+        published_sha = save_commit(repo, published, "published")
+        regressed = readiness("closure_candidate", evidence_sha)
+        save_commit(repo, regressed, "invalid closure regression")
+
+        errors = validate_baseline_from_record(repo, regressed)
+
+        self.assertTrue(any("lifecycle phase history" in error for error in errors))
+        regressed_sha = git(repo, "rev-parse", "HEAD^{commit}")
+
+        git(repo, "tag", "-f", "-a", "v0.19-draft", "-m", "v0.19-draft re-entry", regressed_sha)
+        retargeted_tag_object = git(repo, "rev-parse", "refs/tags/v0.19-draft")
+        republished = readiness("published", regressed_sha)
+        republished["gates"] = {
+            gate: {
+                "state": state,
+                "evidence": [] if gate == "standards_mapping" else ["https://example.invalid/closed"],
+            }
+            for gate, state in PHASE_GATE_STATES["published"].items()
+        }
+        republished["publication"].update({
+            "tag_object": retargeted_tag_object,
+            "tagged_commit": regressed_sha,
+            "date": "2026-10-14",
+            "evidence": ["https://example.invalid/republished"],
+        })
+        save_commit(repo, republished, "invalid published re-entry")
+
+        errors = validate_baseline_from_record(repo, republished)
+
+        self.assertTrue(any("lifecycle phase history" in error for error in errors))
+        self.assertNotEqual(evidence_sha, published_sha)
+
 
 if __name__ == "__main__":
     unittest.main()

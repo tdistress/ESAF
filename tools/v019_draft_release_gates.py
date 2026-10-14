@@ -156,6 +156,7 @@ def validate_baseline_from_record(root: Path, record: dict) -> list[str]:
 def validate_evidence_candidate_baseline(root: Path, baseline_ref: str) -> list[str]:
     """Require evidence candidates to have no prior advanced readiness phase."""
     errors = validate_baseline_anchor(root, baseline_ref)
+    errors.extend(validate_lifecycle_history(root, "evidence_candidate"))
     try:
         base_sha = _git(root, "rev-parse", "--verify", f"{baseline_ref}^{{commit}}")
         baseline_paths = _git(root, "ls-tree", "-r", "--name-only", base_sha, "--", RECORD_RELATIVE)
@@ -164,11 +165,37 @@ def validate_evidence_candidate_baseline(root: Path, baseline_ref: str) -> list[
             baseline, _ = _frontmatter(baseline_text)
             if baseline.get("phase") != "evidence_candidate":
                 errors.append("evidence_candidate shall not reopen a prior v0.19 readiness phase")
-        if _git(root, "log", "--format=%H", f"{base_sha}..HEAD^", "--", RECORD_RELATIVE):
-            errors.append("evidence_candidate shall not reopen a prior v0.19 readiness phase")
     except (subprocess.CalledProcessError, ValueError) as exc:
         errors.append(f"evidence-candidate baseline readiness record is invalid: {exc}")
     return errors
+
+
+def validate_lifecycle_history(root: Path, phase: str) -> list[str]:
+    """Require one monotonic phase path while allowing same-phase updates."""
+    try:
+        commits = _git(root, "log", "--first-parent", "--format=%H", "HEAD", "--", RECORD_RELATIVE).splitlines()
+        phases = []
+        for commit in commits:
+            text = _git(root, "show", f"{commit}:{RECORD_RELATIVE}")
+            prior, _ = _frontmatter(text)
+            historical_phase = prior.get("phase")
+            if not isinstance(historical_phase, str):
+                return ["v0.19 lifecycle phase history contains an invalid phase"]
+            if not phases or phases[-1] != historical_phase:
+                phases.append(historical_phase)
+    except (subprocess.CalledProcessError, ValueError, yaml.YAMLError) as exc:
+        return [f"v0.19 lifecycle history could not be validated: {exc}"]
+
+    expected_history = {
+        "evidence_candidate": ["evidence_candidate"],
+        "closure_candidate": ["closure_candidate", "evidence_candidate"],
+        "published": ["published", "closure_candidate", "evidence_candidate"],
+    }.get(phase)
+    if expected_history is not None and phases == expected_history:
+        return []
+    if phase == "evidence_candidate":
+        return ["evidence_candidate shall not reopen a prior v0.19 readiness phase"]
+    return [f"v0.19 lifecycle phase history shall follow {expected_history!r}; observed {phases!r}"]
 
 
 def validate_transition(root: Path, baseline_ref: str, record: dict) -> list[str]:
@@ -176,6 +203,7 @@ def validate_transition(root: Path, baseline_ref: str, record: dict) -> list[str
     phase = record.get("phase")
     if not isinstance(phase, str):
         return ["phase shall be a string before baseline transition validation"]
+    errors.extend(validate_lifecycle_history(root, phase))
     expected = PREVIOUS_PHASE.get(phase)
     if not expected and phase != "published": return [f"phase {phase!r} does not support baseline-ref"]
     try:
