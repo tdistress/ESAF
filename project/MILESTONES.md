@@ -1042,9 +1042,12 @@ for publication closure.
 
 ### Publication evidence
 
-Exact-head technical, editorial, terminology, cross-reference/rendering, and
-governance reviews passed on PR [#231](https://github.com/tdistress/ESAF/pull/231)
-with no actionable findings. Protected-branch Repository validation and
+Exact-head technical, editorial, terminology, and cross-reference/rendering
+reviews passed on PR [#231](https://github.com/tdistress/ESAF/pull/231) with no
+actionable findings. Steering Committee approval for the bounded publication
+scope is recorded at
+https://github.com/tdistress/ESAF/issues/228#issuecomment-6174437831.
+Protected-branch Repository validation and
 CodeQL passed on the closure-candidate merge commit at
 https://github.com/tdistress/ESAF/actions/runs/38590392020 and
 https://github.com/tdistress/ESAF/actions/runs/38590390738. The candidate-bound

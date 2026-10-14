@@ -16,9 +16,12 @@ and [Issue #228](https://github.com/tdistress/ESAF/issues/228) under the
 The annotated `v0.19-draft` Working Draft tag was published on 2026-10-14.
 Tag object `a6f3af304d62084b0cf121967b02ffc6f14d723b` peels to validated
 closure-candidate commit `f97b0cea8fd77e2ece0c7a14665ae7a2b4469193`. Exact-head
-technical, editorial, terminology, cross-reference/rendering, and governance
-reviews passed on PR [#231](https://github.com/tdistress/ESAF/pull/231) with no
-actionable findings. Protected-branch Repository validation and CodeQL passed
+technical, editorial, terminology, and cross-reference/rendering reviews
+passed on PR [#231](https://github.com/tdistress/ESAF/pull/231) with no
+actionable findings. Steering Committee publication approval for the bounded
+scope is recorded at
+https://github.com/tdistress/ESAF/issues/228#issuecomment-6174437831.
+Protected-branch Repository validation and CodeQL passed
 on the closure-candidate merge commit, and the candidate-bound equivalence
 proof passed with 15 methods and 28 cases.
 
@@ -35,7 +38,7 @@ milestone.
 | Editorial and terminology | Closed | https://github.com/tdistress/ESAF/pull/231 |
 | Cross-reference and rendering | Closed | https://github.com/tdistress/ESAF/pull/231 |
 | Repository validation | Closed | https://github.com/tdistress/ESAF/actions/runs/38590392020 |
-| Governance | Closed | https://github.com/tdistress/ESAF/pull/231 |
+| Governance | Closed | https://github.com/tdistress/ESAF/issues/228#issuecomment-6174437831 |
 | Post-merge validation | Closed | https://github.com/tdistress/ESAF/actions/runs/38590392020 |
 | Standards mapping | Not applicable | No external mapping was added. |
 
