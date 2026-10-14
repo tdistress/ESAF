@@ -1,10 +1,10 @@
 ---
 release: v0.19-draft
-phase: evidence_candidate
+phase: closure_candidate
 tag: v0.19-draft
 milestone: v0.19-draft
 issue: 228
-base_sha: c95028df31a23306427a3839f0b11bd57c4e2227
+base_sha: 2a0e74c54dc3c8af7f594f4dad75e3d49f48c7a3
 version_advanced: false
 deliverable: one_fictional_api100_assessment_follow_up_cycle
 qualified_crosswalk_review_required: false
@@ -15,15 +15,15 @@ publication:
   date: null
   evidence: []
 gates:
-  scope: {state: open, evidence: []}
-  integrated_case: {state: open, evidence: []}
-  technical: {state: open, evidence: []}
-  editorial: {state: open, evidence: []}
-  terminology: {state: open, evidence: []}
-  cross_reference_rendering: {state: open, evidence: []}
+  scope: {state: ready, evidence: [https://github.com/tdistress/ESAF/issues/228, https://github.com/tdistress/ESAF/issues/227]}
+  integrated_case: {state: ready, evidence: [https://github.com/tdistress/ESAF/pull/229, https://github.com/tdistress/ESAF/blob/2a0e74c54dc3c8af7f594f4dad75e3d49f48c7a3/assessment/integrated-assessment.example.md]}
+  technical: {state: ready, evidence: [https://github.com/tdistress/ESAF/pull/229, https://github.com/tdistress/ESAF/pull/230, https://github.com/tdistress/ESAF/blob/2a0e74c54dc3c8af7f594f4dad75e3d49f48c7a3/tools/v019_draft_release_gates.py]}
+  editorial: {state: ready, evidence: [https://github.com/tdistress/ESAF/pull/229, https://github.com/tdistress/ESAF/blob/2a0e74c54dc3c8af7f594f4dad75e3d49f48c7a3/assessment/follow-up/api100-remediation.example.md]}
+  terminology: {state: ready, evidence: [https://github.com/tdistress/ESAF/pull/229, https://github.com/tdistress/ESAF/blob/2a0e74c54dc3c8af7f594f4dad75e3d49f48c7a3/assessment/integrated-assessment.example.md]}
+  cross_reference_rendering: {state: ready, evidence: [https://github.com/tdistress/ESAF/pull/229, https://github.com/tdistress/ESAF/blob/2a0e74c54dc3c8af7f594f4dad75e3d49f48c7a3/assessment/README.md]}
   standards_mapping: {state: not_applicable, evidence: []}
-  repository_validation: {state: open, evidence: []}
-  governance: {state: open, evidence: []}
+  repository_validation: {state: ready, evidence: [https://github.com/tdistress/ESAF/actions/runs/38584845952, https://github.com/tdistress/ESAF/pull/230]}
+  governance: {state: ready, evidence: [https://github.com/tdistress/ESAF/issues/228, https://github.com/tdistress/ESAF/pull/229]}
   post_merge: {state: open, evidence: []}
 ---
 
