@@ -156,6 +156,7 @@ def validate_baseline_from_record(root: Path, record: dict) -> list[str]:
 def validate_evidence_candidate_baseline(root: Path, baseline_ref: str) -> list[str]:
     """Require evidence candidates to have no prior advanced readiness phase."""
     errors = validate_baseline_anchor(root, baseline_ref)
+    errors.extend(validate_lifecycle_history(root, "evidence_candidate"))
     try:
         base_sha = _git(root, "rev-parse", "--verify", f"{baseline_ref}^{{commit}}")
         baseline_paths = _git(root, "ls-tree", "-r", "--name-only", base_sha, "--", RECORD_RELATIVE)
@@ -171,11 +172,41 @@ def validate_evidence_candidate_baseline(root: Path, baseline_ref: str) -> list[
     return errors
 
 
+def validate_lifecycle_history(root: Path, phase: str) -> list[str]:
+    """Reject phase changes that skip or reopen the most recent lifecycle phase."""
+    try:
+        commits = _git(root, "log", "--first-parent", "--format=%H", "HEAD", "--", RECORD_RELATIVE).splitlines()
+        prior_phase = None
+        for commit in commits:
+            text = _git(root, "show", f"{commit}:{RECORD_RELATIVE}")
+            prior, _ = _frontmatter(text)
+            historical_phase = prior.get("phase")
+            if historical_phase == phase:
+                continue
+            prior_phase = historical_phase
+            break
+    except (subprocess.CalledProcessError, ValueError, yaml.YAMLError) as exc:
+        return [f"v0.19 lifecycle history could not be validated: {exc}"]
+
+    if phase == "evidence_candidate":
+        if prior_phase is not None:
+            return ["evidence_candidate shall not reopen a prior v0.19 readiness phase"]
+        return []
+    expected = PREVIOUS_PHASE.get(phase)
+    if phase == "published":
+        if prior_phase in {"closure_candidate", "published"}:
+            return []
+    elif prior_phase == expected:
+        return []
+    return [f"{phase} shall follow the immediately preceding v0.19 readiness phase {expected!r}; observed {prior_phase!r}"]
+
+
 def validate_transition(root: Path, baseline_ref: str, record: dict) -> list[str]:
     errors: list[str] = []
     phase = record.get("phase")
     if not isinstance(phase, str):
         return ["phase shall be a string before baseline transition validation"]
+    errors.extend(validate_lifecycle_history(root, phase))
     expected = PREVIOUS_PHASE.get(phase)
     if not expected and phase != "published": return [f"phase {phase!r} does not support baseline-ref"]
     try:
