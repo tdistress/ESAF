@@ -209,7 +209,30 @@ class V019ReleaseGateContractTests(unittest.TestCase):
 
         errors = validate_baseline_from_record(repo, regressed)
 
-        self.assertTrue(any("immediately preceding v0.19 readiness phase" in error for error in errors))
+        self.assertTrue(any("lifecycle phase history" in error for error in errors))
+        regressed_sha = git(repo, "rev-parse", "HEAD^{commit}")
+
+        git(repo, "tag", "-f", "-a", "v0.19-draft", "-m", "v0.19-draft re-entry", regressed_sha)
+        retargeted_tag_object = git(repo, "rev-parse", "refs/tags/v0.19-draft")
+        republished = readiness("published", regressed_sha)
+        republished["gates"] = {
+            gate: {
+                "state": state,
+                "evidence": [] if gate == "standards_mapping" else ["https://example.invalid/closed"],
+            }
+            for gate, state in PHASE_GATE_STATES["published"].items()
+        }
+        republished["publication"].update({
+            "tag_object": retargeted_tag_object,
+            "tagged_commit": regressed_sha,
+            "date": "2026-10-14",
+            "evidence": ["https://example.invalid/republished"],
+        })
+        save_commit(repo, republished, "invalid published re-entry")
+
+        errors = validate_baseline_from_record(repo, republished)
+
+        self.assertTrue(any("lifecycle phase history" in error for error in errors))
         self.assertNotEqual(evidence_sha, published_sha)
 
 

@@ -173,32 +173,31 @@ def validate_evidence_candidate_baseline(root: Path, baseline_ref: str) -> list[
 
 
 def validate_lifecycle_history(root: Path, phase: str) -> list[str]:
-    """Reject phase changes that skip or reopen the most recent lifecycle phase."""
+    """Require one monotonic phase path while allowing same-phase updates."""
     try:
         commits = _git(root, "log", "--first-parent", "--format=%H", "HEAD", "--", RECORD_RELATIVE).splitlines()
-        prior_phase = None
+        phases = []
         for commit in commits:
             text = _git(root, "show", f"{commit}:{RECORD_RELATIVE}")
             prior, _ = _frontmatter(text)
             historical_phase = prior.get("phase")
-            if historical_phase == phase:
-                continue
-            prior_phase = historical_phase
-            break
+            if not isinstance(historical_phase, str):
+                return ["v0.19 lifecycle phase history contains an invalid phase"]
+            if not phases or phases[-1] != historical_phase:
+                phases.append(historical_phase)
     except (subprocess.CalledProcessError, ValueError, yaml.YAMLError) as exc:
         return [f"v0.19 lifecycle history could not be validated: {exc}"]
 
+    expected_history = {
+        "evidence_candidate": ["evidence_candidate"],
+        "closure_candidate": ["closure_candidate", "evidence_candidate"],
+        "published": ["published", "closure_candidate", "evidence_candidate"],
+    }.get(phase)
+    if expected_history is not None and phases == expected_history:
+        return []
     if phase == "evidence_candidate":
-        if prior_phase is not None:
-            return ["evidence_candidate shall not reopen a prior v0.19 readiness phase"]
-        return []
-    expected = PREVIOUS_PHASE.get(phase)
-    if phase == "published":
-        if prior_phase in {"closure_candidate", "published"}:
-            return []
-    elif prior_phase == expected:
-        return []
-    return [f"{phase} shall follow the immediately preceding v0.19 readiness phase {expected!r}; observed {prior_phase!r}"]
+        return ["evidence_candidate shall not reopen a prior v0.19 readiness phase"]
+    return [f"v0.19 lifecycle phase history shall follow {expected_history!r}; observed {phases!r}"]
 
 
 def validate_transition(root: Path, baseline_ref: str, record: dict) -> list[str]:
