@@ -182,6 +182,19 @@ class V019ReleaseGateContractTests(unittest.TestCase):
         self.assertEqual(1, result)
         self.assertIn("shall not reopen a prior v0.19 readiness phase", stderr.getvalue())
 
+    def test_evidence_candidate_allows_later_maintenance_commit_with_same_phase(self):
+        repo = init_repo()
+        (repo / "baseline.txt").write_text("baseline\n", encoding="utf-8")
+        git(repo, "add", "baseline.txt")
+        subprocess.run(["git", "commit", "-qm", "baseline"], cwd=repo, check=True)
+        baseline = git(repo, "rev-parse", "HEAD^{commit}")
+        save_commit(repo, readiness("evidence_candidate", baseline), "evidence candidate")
+        (repo / "maintenance.txt").write_text("same phase maintenance\n", encoding="utf-8")
+        git(repo, "add", "maintenance.txt")
+        subprocess.run(["git", "commit", "-qm", "maintenance"], cwd=repo, check=True)
+
+        self.assertEqual([], validate_evidence_candidate_baseline(repo, baseline))
+
     def test_closure_candidate_cannot_reopen_after_published_using_old_baseline(self):
         repo = init_repo()
         evidence_sha = save_commit(repo, readiness("evidence_candidate", "0" * 40), "evidence candidate")

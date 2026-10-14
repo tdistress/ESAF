@@ -165,8 +165,6 @@ def validate_evidence_candidate_baseline(root: Path, baseline_ref: str) -> list[
             baseline, _ = _frontmatter(baseline_text)
             if baseline.get("phase") != "evidence_candidate":
                 errors.append("evidence_candidate shall not reopen a prior v0.19 readiness phase")
-        if _git(root, "log", "--format=%H", f"{base_sha}..HEAD^", "--", RECORD_RELATIVE):
-            errors.append("evidence_candidate shall not reopen a prior v0.19 readiness phase")
     except (subprocess.CalledProcessError, ValueError) as exc:
         errors.append(f"evidence-candidate baseline readiness record is invalid: {exc}")
     return errors
