@@ -201,20 +201,17 @@ prerequisites or exit criteria.
 The `v0.18-draft` work below is complete; its GitHub issues and milestone are
 closed after publication evidence and status synchronization are verified.
 
-## Post-v0.18 scheduled queue
-
-These initiatives define the bounded `v0.19-draft` milestone and are tracked
-in the [GitHub milestone](https://github.com/tdistress/ESAF/milestone/13).
-SOC 2 and HITRUST readiness remain separately gated; Issues #219 and #60 are
-not prerequisites or exit criteria.
-
-- [Issue 227](https://github.com/tdistress/ESAF/issues/227): Add one fictional
-  API-100-A3 assessment follow-up cycle to the integrated CAP-140 case while
-  preserving the original assessment result.
-- [Issue 228](https://github.com/tdistress/ESAF/issues/228): Close exact-
-  candidate v0.19-draft publication gates and synchronize status surfaces.
-
 ## Completed workstreams
+
+- [Issue #227](https://github.com/tdistress/ESAF/issues/227) and [Issue
+  #228](https://github.com/tdistress/ESAF/issues/228): published
+  `v0.19-draft` after completing the bounded fictional API-100-A3 assessment
+  follow-up, exact-candidate reviews, repository validation, and post-merge
+  checks. Annotated tag `v0.19-draft` (object
+  `a6f3af304d62084b0cf121967b02ffc6f14d723b`) targets validated
+  closure-candidate commit `f97b0cea8fd77e2ece0c7a14665ae7a2b4469193`.
+  SOC 2 (#219) and HITRUST (#60) remain separately gated and outside this
+  milestone.
 
 - [Issue 223](https://github.com/tdistress/ESAF/issues/223) and [Issue
   224](https://github.com/tdistress/ESAF/issues/224): published `v0.18-draft`

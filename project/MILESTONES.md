@@ -1001,7 +1001,9 @@ tracked in [Issue #223](https://github.com/tdistress/ESAF/issues/223).
 
 ## v0.19-draft
 
-**Status:** In progress; v0.18-draft remains the current published Working Draft.
+**Status:** Published 2026-10-14 through annotated tag `v0.19-draft`
+(tag object `a6f3af304d62084b0cf121967b02ffc6f14d723b`), targeting validated
+closure-candidate commit `f97b0cea8fd77e2ece0c7a14665ae7a2b4469193`.
 
 ### Entry state
 
@@ -1035,6 +1037,18 @@ The implementation queue is tracked in the
 with [Issue #227](https://github.com/tdistress/ESAF/issues/227) for the
 follow-up case and [Issue #228](https://github.com/tdistress/ESAF/issues/228)
 for publication closure.
+
+### Publication evidence
+
+Exact-head technical, editorial, terminology, cross-reference/rendering, and
+governance reviews passed on PR [#231](https://github.com/tdistress/ESAF/pull/231)
+with no actionable findings. Protected-branch Repository validation and
+CodeQL passed on the closure-candidate merge commit at
+https://github.com/tdistress/ESAF/actions/runs/38590392020 and
+https://github.com/tdistress/ESAF/actions/runs/38590390738. The candidate-bound
+equivalence proof passed with 15 methods and 28 cases. The published readiness
+record binds the tag object and target commit; no normative standard version
+or Draft artifact lifecycle state advanced.
 
 ### Exit criteria
 
