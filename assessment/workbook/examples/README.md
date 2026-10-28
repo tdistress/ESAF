@@ -35,6 +35,11 @@ The later
 records a distinct API-100-A3 reassessment while leaving the third engagement's
 original result unchanged.
 
+The [inconclusive API-100 follow-up](../../follow-up/api100-inconclusive-follow-up.example.md)
+adds a separate Draft result for an attempted staging exercise with incomplete
+event evidence. It keeps the finding open and does not change either earlier
+result.
+
 | File | Role |
 |---|---|
 | [engagement3-evidence-record.example.json](engagement3-evidence-record.example.json) | Third-vignette fictional evidence record |

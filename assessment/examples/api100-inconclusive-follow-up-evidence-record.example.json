@@ -1,0 +1,95 @@
+{
+  "$schema": "../schema/evidence-record.schema.json",
+  "schema_version": "0.1.0",
+  "evidence_id": "EVD-ENG5-API100-RESTRICTION",
+  "title": "Fictional API-100 emergency-restriction follow-up record with incomplete event trail",
+  "description": "A fictional record of an inconclusive staging exercise of the CAP-140 emergency model-restriction function; the retained event trail is incomplete.",
+  "evidence_type": "technical_test",
+  "source": {
+    "identity": "Fictional Summit Analytics staging restriction harness",
+    "locator": "example://summit/cap-140/restriction-exercise/run-2026-10-26"
+  },
+  "custodian": {
+    "name": "Jordan Hale",
+    "role": "AI platform engineer",
+    "organization": "Fictional Summit Analytics"
+  },
+  "collected_at": "2026-10-26T15:00:00Z",
+  "collection_method": "Reviewed one controlled staging exercise and the available harness output; the event trail was incomplete, so the attempted staging test is inconclusive.",
+  "scope": {
+    "description": "One attempted API-100-A3 emergency-restriction exercise for the fictional CAP-140 staging gateway; the event trail does not permit a conclusion about whether the restriction operated as intended."
+  },
+  "period": {
+    "start": "2026-10-26T14:30:00Z",
+    "end": "2026-10-26T14:45:00Z"
+  },
+  "population": {
+    "description": "The fictional CAP-140 staging gateway emergency model-restriction path.",
+    "sample": "One attempted staging restriction exercise using the fictional approved test model alias; its event trail is incomplete.",
+    "selection_rationale": "The attempted sample concerns API-100-A3 and the historical condition documented in FND-ENG3-API100-EMERGENCY; incomplete events prevent a finding of success or failure."
+  },
+  "quality": {
+    "relevance": {
+      "rating": "adequate",
+      "rationale": "The available record concerns the one attempted staging exercise relevant to the bounded API-100-A3 follow-up, but cannot establish its outcome."
+    },
+    "reliability": {
+      "rating": "limited",
+      "rationale": "The fictional owner-retained harness output has an incomplete event trail and no independent production telemetry."
+    },
+    "completeness": {
+      "rating": "inadequate",
+      "rationale": "Required event details for the attempted restriction sequence are missing, preventing determination of the exercise outcome."
+    },
+    "timeliness": {
+      "rating": "adequate",
+      "rationale": "The record is represented as collected at the time of the fictional follow-up exercise."
+    },
+    "attribution": {
+      "rating": "adequate",
+      "rationale": "The fictional record identifies the staging harness and collection time, with separate custodian and assessor metadata."
+    },
+    "integrity": {
+      "rating": "limited",
+      "rationale": "The illustrative digest demonstrates the record field only and does not establish real-world integrity assurance."
+    },
+    "traceability": {
+      "rating": "adequate",
+      "rationale": "The record references API-100, API-100-A3, and the follow-up result that consumes it."
+    },
+    "sufficiency": "insufficient",
+    "evaluated_by": {
+      "name": "Morgan Ellis",
+      "role": "Independent assessor",
+      "organization": "Fictional Contour Assurance LLP"
+    },
+    "evaluated_at": "2026-10-26T16:00:00Z",
+    "sufficiency_rationale": "The incomplete event trail is insufficient to determine whether the attempted restriction succeeded or failed; no control conclusion can be drawn."
+  },
+  "integrity": {
+    "digest_algorithm": "sha-256",
+    "digest": "7777777777777777777777777777777777777777777777777777777777777777"
+  },
+  "limitations": [
+    "This is fictional, non-authoritative example evidence.",
+    "The attempted staging exercise has an incomplete event trail; its outcome is inconclusive and does not establish control failure or success.",
+    "No production restriction, recovery, bypass path, or repeated operation was assessed.",
+    "The illustrative digest does not establish real-world integrity assurance."
+  ],
+  "retention": {
+    "authority": "Fictional Summit Analytics records schedule",
+    "end_condition": "Retain until the fictional assessment archive period ends."
+  },
+  "traceability": {
+    "requirement_refs": [
+      "API-100"
+    ],
+    "procedure_refs": [
+      "API-100-A3"
+    ],
+    "result_refs": [
+      "ASR-ENG5-API100-A3-INCONCLUSIVE"
+    ]
+  },
+  "example_notice": "Fictional non-authoritative example; no organization, ESAF control, profile, or external framework has been assessed."
+}

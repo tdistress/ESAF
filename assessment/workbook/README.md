@@ -64,6 +64,10 @@ fictional API-100 walkthrough, each with a filled worksheet trio under
 [`worksheets/evidence-record.worksheet.json`](worksheets/evidence-record.worksheet.json)
 remain the reusable starting point.
 
+The separate [API-100 inconclusive follow-up](../follow-up/api100-inconclusive-follow-up.example.md)
+shows how an incomplete event trail is recorded without revising the original
+assessment or claiming a control outcome.
+
 ## Nonclaims
 
 This workbook is Draft material only. Completing worksheets does not establish

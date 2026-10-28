@@ -23,6 +23,11 @@ starters.
   adds one fictional owner action and one bounded API-100-A3 staging exercise.
   Its separate Draft result links to the original open finding without
   changing the historical assessment result.
+- [API-100 inconclusive follow-up](follow-up/api100-inconclusive-follow-up.example.md)
+  shows one attempted staging exercise whose incomplete event trail supports
+  no control determination. Its distinct Draft result remains `not_assessed`
+  with an open finding, and a separate governance risk review records the next
+  evidence-capture action without accepting the risk or closing the finding.
 - [Draft assessment workbook](workbook/README.md) provides operator guidance,
   schema-conforming worksheet stubs, and fictional worked engagement vignettes
   with filled worksheet trios bound to ESAF-1500 and ESAF-1100 assessment

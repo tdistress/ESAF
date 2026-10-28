@@ -74,6 +74,20 @@ effectiveness remains `not_assessed`. Only one staging restriction exercise
 was tested. Production behavior, recovery, bypass paths, API-100-A1, API-100-A2,
 and sustained operation remain outside the follow-up.
 
+## Inconclusive follow-up
+
+A separate later staging attempt is documented in the
+[inconclusive follow-up narrative](follow-up/api100-inconclusive-follow-up.example.md),
+with its own [evidence record](examples/api100-inconclusive-follow-up-evidence-record.example.json)
+and [Draft assessment result](examples/api100-inconclusive-follow-up-assessment-result.example.json).
+The harness did not retain a complete event trail, so the attempted test
+supports neither a successful nor failed control outcome. The new result uses
+`not_assessed` and leaves its own finding open. Its narrative links to the
+original API-100 finding and the v0.19 follow-up without revising either result.
+The separate [governance thread](../templates/examples/governance-thread4.example.md)
+records an evidence-capture action and review trigger; it does not accept the
+risk or close the assessment finding.
+
 ## Outcome and limitations
 
 The API-100 result is `partially_satisfied` and remains Draft. The fictional
