@@ -73,6 +73,34 @@ class AssessmentValidationTests(unittest.TestCase):
     def test_valid_foundation_has_no_errors(self) -> None:
         self.assertEqual(validate(self.root), [])
 
+    def test_inconclusive_api100_followup_preserves_open_finding(self) -> None:
+        result = self.load("api100-inconclusive-follow-up-assessment-result")
+        evidence = self.load("api100-inconclusive-follow-up-evidence-record")
+
+        self.assertEqual(result["status"], "draft")
+        self.assertEqual(result["determination"], "not_assessed")
+        self.assertEqual(result["design_effectiveness"], "not_assessed")
+        self.assertEqual(result["operating_effectiveness"], "not_assessed")
+        self.assertTrue(result["scope_exclusion_rationale"])
+        self.assertEqual(
+            result["evidence_refs"], ["EVD-ENG5-API100-RESTRICTION"]
+        )
+
+        finding = result["findings"][0]
+        self.assertEqual(finding["status"], "open")
+        self.assertIn("FND-ENG3-API100-EMERGENCY", finding["statement"])
+        self.assertIn(
+            "FND-ENG3-API100-EMERGENCY",
+            finding["disposition"]["rationale"],
+        )
+        self.assertEqual(
+            finding["evidence_refs"], ["EVD-ENG5-API100-RESTRICTION"]
+        )
+        self.assertEqual(
+            evidence["traceability"]["result_refs"],
+            ["ASR-ENG5-API100-A3-INCONCLUSIVE"],
+        )
+
     def test_profile_reuse_does_not_change_assessment_claim_classifier(self) -> None:
         self.assertEqual(
             list(
@@ -692,7 +720,7 @@ class AssessmentValidationTests(unittest.TestCase):
         self.assertEqual(completed.returncode, 0, completed.stderr)
         self.assertEqual(
             completed.stdout.strip(),
-            "Successfully validated 3 assessment schemas and 5 tracked examples.",
+            "Successfully validated 3 assessment schemas and 7 tracked examples.",
         )
 
 
