@@ -32,6 +32,7 @@ normative requirements.
 | Retirement record example | Retirement | [examples/retirement-record.example.md](examples/retirement-record.example.md) |
 | Governance thread example | Cross-template | [examples/governance-thread.example.md](examples/governance-thread.example.md) |
 | Governance thread example 3 | Cross-template | [examples/governance-thread3.example.md](examples/governance-thread3.example.md) |
+| Governance thread example 4 | Cross-template | [examples/governance-thread4.example.md](examples/governance-thread4.example.md) |
 
 Related publications:
 

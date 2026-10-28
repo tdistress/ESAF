@@ -1,0 +1,92 @@
+{
+  "$schema": "../schema/assessment-result.schema.json",
+  "schema_version": "0.1.0",
+  "result_id": "ASR-ENG5-API100-A3-INCONCLUSIVE",
+  "status": "draft",
+  "title": "Fictional draft inconclusive follow-up assessment of API-100-A3 for Summit Analytics CAP-140",
+  "assessor": {
+    "name": "Morgan Ellis",
+    "role": "Independent assessor",
+    "organization": "Fictional Contour Assurance LLP",
+    "independence_statement": "This fictional assessor is presented only to illustrate a bounded follow-up record and has no operational ownership of the fictional CAP-140 gateway."
+  },
+  "assessment_scope": {
+    "subject": "Fictional Summit Analytics workforce-research assistant CAP-140",
+    "requirement_ids": [
+      "API-100"
+    ],
+    "boundary": "One attempted API-100-A3 emergency-restriction exercise on the fictional CAP-140 staging gateway; incomplete event records prevent an outcome determination. Historical context includes ASR-ENG3-API100, FND-ENG3-API100-EMERGENCY, and the v0.19 follow-up ASR-ENG4-API100-A3.",
+    "exclusions": [
+      "Production restriction and recovery behavior, production bypass paths, repeated operation over time, API-100-A1 and API-100-A2, and a determination of the attempted staging exercise outcome were not assessed."
+    ],
+    "population": "The fictional CAP-140 staging gateway emergency model-restriction path.",
+    "sample": "One attempted staging restriction exercise using the fictional test model alias; incomplete events make the result inconclusive and this is not a statistical sample."
+  },
+  "methods": [
+    {
+      "method": "Test",
+      "procedure": "API-100-A3 - Test: Exercise emergency provider or model restriction.",
+      "object": "Fictional CAP-140 staging gateway and restriction harness, evidence EVD-ENG5-API100-RESTRICTION.",
+      "expected_result": "A complete event trail would show whether the emergency restriction blocked new requests to the selected model alias and recorded the action.",
+      "actual_work": "Reviewed the available record for one attempted staging exercise. The event trail is incomplete and does not establish whether the restriction succeeded or failed; no conclusion about control performance was reached."
+    }
+  ],
+  "time_boundary": {
+    "assessment_start": "2026-10-26T14:30:00Z",
+    "assessment_end": "2026-10-26T16:00:00Z",
+    "result_date": "2026-10-26T16:30:00Z"
+  },
+  "evidence_refs": [
+    "EVD-ENG5-API100-RESTRICTION"
+  ],
+  "determination": "not_assessed",
+  "determination_rationale": "The attempted staging exercise is inconclusive because its event trail is incomplete. The evidence supports neither a conclusion of successful operation nor control failure. This follow-up does not revise historical ASR-ENG3-API100 or the v0.19 follow-up ASR-ENG4-API100-A3.",
+  "design_effectiveness": "not_assessed",
+  "operating_effectiveness": "not_assessed",
+  "findings": [
+    {
+      "finding_id": "FND-ENG5-API100-A3-INCONCLUSIVE",
+      "severity": "minor",
+      "status": "open",
+      "affected_requirement_ids": [
+        "API-100"
+      ],
+      "statement": "The available evidence does not permit a conclusion about the attempted API-100-A3 staging restriction exercise because its event trail is incomplete. This distinct open finding carries forward the unresolved historical context of FND-ENG3-API100-EMERGENCY without asserting control failure or success.",
+      "evidence_refs": [
+        "EVD-ENG5-API100-RESTRICTION"
+      ],
+      "owner": {
+        "name": "Jordan Hale",
+        "role": "AI platform engineer",
+        "organization": "Fictional Summit Analytics"
+      },
+      "disposition": {
+        "action": "Retain the finding as open pending complete, reviewable event records for a future bounded follow-up.",
+        "rationale": "The incomplete trail leaves the attempted test inconclusive. It neither demonstrates that the restriction worked nor that the control failed; historical FND-ENG3-API100-EMERGENCY remains unresolved by this evidence."
+      },
+      "identified_at": "2026-10-26T16:00:00Z"
+    }
+  ],
+  "limitations": [
+    "This is a fictional follow-up result and remains Draft.",
+    "The attempted staging test is inconclusive because its event trail is incomplete; no control failure or success is inferred.",
+    "This result does not revise historical ASR-ENG3-API100 or the v0.19 follow-up ASR-ENG4-API100-A3.",
+    "Production operation, sustained effectiveness, capability-wide effectiveness, certification, compliance, equivalence, endorsement, and assurance are not established."
+  ],
+  "traceability": {
+    "esaf_requirement_ids": [
+      "API-100"
+    ],
+    "external_or_profile_ids": []
+  },
+  "change_history": [
+    {
+      "version": "0.1.0-draft",
+      "date": "2026-10-26T16:30:00Z",
+      "author": "Morgan Ellis",
+      "description": "Recorded an inconclusive API-100-A3 follow-up with incomplete staging event records; historical assessment results remain unchanged."
+    }
+  ],
+  "example_notice": "Fictional non-authoritative example; no organization, ESAF control, profile, or external framework has been assessed.",
+  "scope_exclusion_rationale": "A complete event trail is unavailable for the attempted test, and production operation, recovery, bypass paths, repeated operation, API-100-A1, and API-100-A2 are outside this bounded follow-up; therefore determination and effectiveness are not assessed."
+}
