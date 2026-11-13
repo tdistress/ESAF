@@ -201,6 +201,20 @@ prerequisites or exit criteria.
 The `v0.18-draft` work below is complete; its GitHub issues and milestone are
 closed after publication evidence and status synchronization are verified.
 
+## Post-v0.19 scheduled queue
+
+These initiatives define the bounded `v0.20-draft` milestone and are tracked in
+the [GitHub milestone](https://github.com/tdistress/ESAF/milestone/14). SOC 2
+and HITRUST readiness remain separately gated; Issues #219 and #60 are not
+prerequisites or exit criteria.
+
+- [Issue #234](https://github.com/tdistress/ESAF/issues/234): Add one bounded
+  API-100-A3 follow-up with a complete staging event trail and a separate
+  Draft reassessment that resolves only its own scoped finding.
+- [Issue #235](https://github.com/tdistress/ESAF/issues/235): Close the
+  v0.20-draft publication gates after exact-candidate review, validation,
+  governance approval, and SHA-bound post-merge checks.
+
 ## Completed workstreams
 
 - [Issue #227](https://github.com/tdistress/ESAF/issues/227) and [Issue

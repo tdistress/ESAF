@@ -1,0 +1,95 @@
+{
+  "$schema": "../schema/evidence-record.schema.json",
+  "schema_version": "0.1.0",
+  "evidence_id": "EVD-ENG6-API100-RESTRICTION",
+  "title": "Fictional API-100 emergency-restriction follow-up with complete staging event trail",
+  "description": "A fictional record of one API-100-A3 staging exercise. Ordered events on 2026-10-30 UTC: 14:30:00 baseline request req-6301 to summit-test-7; 14:34:00 restriction command cmd-6302; 14:34:01 restriction_applied event evt-6303; 14:34:06 blocked request req-6304; 14:34:07 request_blocked event evt-6305; 14:35:00 owner exports the event sequence.",
+  "evidence_type": "technical_test",
+  "source": {
+    "identity": "Fictional Summit Analytics staging restriction harness",
+    "locator": "example://summit/cap-140/restriction-exercise/run-2026-10-30"
+  },
+  "custodian": {
+    "name": "Jordan Hale",
+    "role": "AI platform engineer",
+    "organization": "Fictional Summit Analytics"
+  },
+  "collected_at": "2026-10-30T15:00:00Z",
+  "collection_method": "Executed one controlled staging restriction exercise and retained the ordered request, restriction command, response, and event-log entries with timestamps and test-alias attribution.",
+  "scope": {
+    "description": "One later API-100-A3 emergency-restriction exercise for the fictional CAP-140 staging gateway after the incomplete event trail recorded in ASR-ENG5-API100-A3-INCONCLUSIVE."
+  },
+  "period": {
+    "start": "2026-10-30T14:30:00Z",
+    "end": "2026-10-30T14:45:00Z"
+  },
+  "population": {
+    "description": "The fictional CAP-140 staging gateway emergency model-restriction path.",
+    "sample": "One controlled staging exercise using the fictional approved test model alias `summit-test-7`; this is not a statistical sample.",
+    "selection_rationale": "The single exercise is limited to API-100-A3 and the event-capture gap recorded in FND-ENG5-API100-A3-INCONCLUSIVE; it does not represent production or repeated operation."
+  },
+  "quality": {
+    "relevance": {
+      "rating": "adequate",
+      "rationale": "The retained event trail records the one staging exercise within the bounded API-100-A3 follow-up."
+    },
+    "reliability": {
+      "rating": "adequate",
+      "rationale": "The fictional owner-retained harness record identifies the test alias and preserves ordered event entries with timestamps for assessor review."
+    },
+    "completeness": {
+      "rating": "adequate",
+      "rationale": "The record contains the initiating request, restriction command, restriction response, subsequent blocked request, and corresponding event entries for the single exercise."
+    },
+    "timeliness": {
+      "rating": "adequate",
+      "rationale": "The record is represented as collected immediately after the fictional staging exercise."
+    },
+    "attribution": {
+      "rating": "adequate",
+      "rationale": "The staging harness, test alias, collection time, fictional custodian, and independent assessor are identified."
+    },
+    "integrity": {
+      "rating": "limited",
+      "rationale": "The illustrative digest demonstrates the record field only and does not establish real-world integrity assurance."
+    },
+    "traceability": {
+      "rating": "adequate",
+      "rationale": "The record references API-100, API-100-A3, and the distinct follow-up result that consumes it."
+    },
+    "sufficiency": "sufficient",
+    "evaluated_by": {
+      "name": "Morgan Ellis",
+      "role": "Independent assessor",
+      "organization": "Fictional Contour Assurance LLP"
+    },
+    "evaluated_at": "2026-10-30T16:00:00Z",
+    "sufficiency_rationale": "For this one staging exercise, the complete event trail records the restriction action and confirms that a subsequent request using the selected alias was blocked. It supports only the bounded API-100-A3 reassessment and does not establish production or sustained effectiveness."
+  },
+  "integrity": {
+    "digest_algorithm": "sha-256",
+    "digest": "8888888888888888888888888888888888888888888888888888888888888888"
+  },
+  "limitations": [
+    "This is fictional, non-authoritative example evidence.",
+    "The complete event trail covers one staging exercise and does not represent production behavior or repeated operation.",
+    "No production recovery behavior, API-100-A1, or API-100-A2 procedure was assessed.",
+    "The illustrative digest does not establish real-world integrity assurance."
+  ],
+  "retention": {
+    "authority": "Fictional Summit Analytics records schedule",
+    "end_condition": "Retain until the fictional assessment archive period ends."
+  },
+  "traceability": {
+    "requirement_refs": [
+      "API-100"
+    ],
+    "procedure_refs": [
+      "API-100-A3"
+    ],
+    "result_refs": [
+      "ASR-ENG6-API100-A3-FOLLOWUP"
+    ]
+  },
+  "example_notice": "Fictional non-authoritative example; no organization, ESAF control, profile, or external framework has been assessed."
+}
