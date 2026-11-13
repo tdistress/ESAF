@@ -24,7 +24,7 @@
 
 **Files:** `tests/test_validate_assessment.py`
 
-- [ ] Add a focused test checking Draft status, bounded determination and effectiveness fields, an own resolved finding, narrative linkage to the prior inconclusive result/finding, and evidence/result cross-references.
+- [ ] Add a focused test checking Draft status, bounded determination and effectiveness fields, an own resolved finding, the prior finding's preserved historical open status, and evidence/result cross-references.
 - [ ] Run `PYTHONDONTWRITEBYTECODE=1 python -m unittest tests.test_validate_assessment.AssessmentValidationTests.test_evidence_complete_api100_followup_resolves_only_scoped_finding -v` and confirm it fails because the new records do not exist.
 
 ## Task 2: Add evidence and reassessment records

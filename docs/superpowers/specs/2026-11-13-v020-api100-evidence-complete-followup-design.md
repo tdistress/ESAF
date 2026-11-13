@@ -18,7 +18,9 @@ identifier patterns. The result may record `partially_satisfied` and
 `partially_effective` for the single API-100-A3 exercise, with
 `operating_effectiveness` remaining `not_assessed`. It will own a distinct
 finding ID and resolve only that finding's bounded evidence-capture gap. It
-will not revise any earlier result.
+will not revise any earlier result. The earlier inconclusive finding remains
+`open` in its historical record; the new result records the later bounded
+resolution disposition with its own nested finding ID.
 
 ## Scope
 
@@ -54,7 +56,8 @@ will not revise any earlier result.
   cross-references resolve.
 - The new result remains Draft, is linked to the evidence and prior
   inconclusive result, uses bounded outcome fields, and resolves only its own
-  distinct follow-up finding.
+  distinct follow-up finding while the historical finding status remains
+  unchanged.
 - The prior inconclusive result and all earlier records remain unchanged.
 - The narrative and indexes make record chronology and limits clear.
 - Milestone and release-plan text match the GitHub milestone and issues.
