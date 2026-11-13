@@ -101,6 +101,43 @@ class AssessmentValidationTests(unittest.TestCase):
             ["ASR-ENG5-API100-A3-INCONCLUSIVE"],
         )
 
+    def test_evidence_complete_api100_followup_resolves_only_scoped_finding(self) -> None:
+        result = self.load("api100-evidence-complete-follow-up-assessment-result")
+        evidence = self.load("api100-evidence-complete-follow-up-evidence-record")
+        prior_result = self.load("api100-inconclusive-follow-up-assessment-result")
+
+        self.assertEqual(result["status"], "draft")
+        self.assertEqual(result["determination"], "partially_satisfied")
+        self.assertEqual(result["design_effectiveness"], "partially_effective")
+        self.assertEqual(result["operating_effectiveness"], "not_assessed")
+        self.assertEqual(result["evidence_refs"], ["EVD-ENG6-API100-RESTRICTION"])
+        self.assertEqual(prior_result["result_id"], "ASR-ENG5-API100-A3-INCONCLUSIVE")
+        self.assertEqual(prior_result["findings"][0]["status"], "open")
+
+        finding = result["findings"][0]
+        self.assertNotEqual(finding["finding_id"], "FND-ENG5-API100-A3-INCONCLUSIVE")
+        self.assertEqual(finding["status"], "resolved")
+        self.assertIn("ASR-ENG5-API100-A3-INCONCLUSIVE", result["determination_rationale"])
+        self.assertIn("FND-ENG5-API100-A3-INCONCLUSIVE", finding["statement"])
+        self.assertIn(
+            "FND-ENG5-API100-A3-INCONCLUSIVE",
+            finding["disposition"]["rationale"],
+        )
+        self.assertEqual(
+            evidence["traceability"]["result_refs"],
+            ["ASR-ENG6-API100-A3-FOLLOWUP"],
+        )
+        narrative = (
+            REPO
+            / "assessment/follow-up/api100-evidence-complete-follow-up.example.md"
+        ).read_text(encoding="utf-8")
+        self.assertIn("2026-10-30 14:34:00", narrative)
+        self.assertIn("2026-10-30 14:34:06", narrative)
+        self.assertIn("ASR-ENG5-API100-A3-INCONCLUSIVE", narrative)
+        self.assertIn("FND-ENG5-API100-A3-INCONCLUSIVE", narrative)
+        self.assertIn("ASR-ENG6-API100-A3-FOLLOWUP", narrative)
+        self.assertIn("production", narrative.lower())
+
     def test_profile_reuse_does_not_change_assessment_claim_classifier(self) -> None:
         self.assertEqual(
             list(
@@ -720,7 +757,7 @@ class AssessmentValidationTests(unittest.TestCase):
         self.assertEqual(completed.returncode, 0, completed.stderr)
         self.assertEqual(
             completed.stdout.strip(),
-            "Successfully validated 3 assessment schemas and 7 tracked examples.",
+            "Successfully validated 3 assessment schemas and 9 tracked examples.",
         )
 
 

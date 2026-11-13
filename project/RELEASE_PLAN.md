@@ -1,5 +1,31 @@
 # Release Plan
 
+## 0.20-draft planned publication
+
+The planned bounded v0.20-draft candidate extends the fictional Summit
+Analytics `CAP-140` API-100 sequence with one later API-100-A3 staging exercise
+whose event trail is complete, plus a separate Draft reassessment. The new
+result may resolve only its own scoped evidence-capture finding. Earlier
+results remain unchanged; production, recovery, repeated or sustained
+effectiveness, API-100-A1/A2, and external mapping work remain out of scope.
+
+The work is tracked in [Issue #234](https://github.com/tdistress/ESAF/issues/234)
+and [Issue #235](https://github.com/tdistress/ESAF/issues/235) under the
+[`v0.20-draft` milestone](https://github.com/tdistress/ESAF/milestone/14).
+Publication gates, tag identity, and status synchronization remain open until
+the exact candidate is reviewed and validated. The current published Working
+Draft remains `v0.19-draft`; SOC 2 (#219) and HITRUST (#60) remain separately
+gated and outside this milestone.
+
+| Gate | State | Evidence |
+|---|---|---|
+| Scope and milestone | Planned | [Issue #234](https://github.com/tdistress/ESAF/issues/234) |
+| Assessment follow-up | Open | [Issue #234](https://github.com/tdistress/ESAF/issues/234) |
+| Technical, editorial, terminology, and cross-reference review | Open | [Issue #235](https://github.com/tdistress/ESAF/issues/235) |
+| Repository and post-merge validation | Open | [Issue #235](https://github.com/tdistress/ESAF/issues/235) |
+| Governance and publication approval | Open | [Issue #235](https://github.com/tdistress/ESAF/issues/235) |
+| Standards mapping | Not applicable | No external mapping is in scope. |
+
 ## 0.19-draft publication
 
 The bounded v0.19-draft candidate extends the fictional Summit Analytics

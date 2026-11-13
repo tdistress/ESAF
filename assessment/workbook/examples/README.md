@@ -40,6 +40,11 @@ adds a separate Draft result for an attempted staging exercise with incomplete
 event evidence. It keeps the finding open and does not change either earlier
 result.
 
+The later [evidence-complete API-100 follow-up](../../follow-up/api100-evidence-complete-follow-up.example.md)
+adds a separate Draft result linked to one complete staging event trail. It
+resolves only its distinct API-100-A3 follow-up finding and does not change the
+inconclusive or earlier results.
+
 | File | Role |
 |---|---|
 | [engagement3-evidence-record.example.json](engagement3-evidence-record.example.json) | Third-vignette fictional evidence record |

@@ -28,6 +28,11 @@ starters.
   no control determination. Its distinct Draft result remains `not_assessed`
   with an open finding, and a separate governance risk review records the next
   evidence-capture action without accepting the risk or closing the finding.
+- [API-100 evidence-complete follow-up](follow-up/api100-evidence-complete-follow-up.example.md)
+  shows one later staging exercise with a complete event trail and a distinct
+  Draft reassessment that resolves only its own bounded evidence-capture
+  finding. Earlier results remain unchanged, and production and sustained
+  effectiveness remain unassessed.
 - [Draft assessment workbook](workbook/README.md) provides operator guidance,
   schema-conforming worksheet stubs, and fictional worked engagement vignettes
   with filled worksheet trios bound to ESAF-1500 and ESAF-1100 assessment

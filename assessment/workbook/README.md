@@ -68,6 +68,11 @@ The separate [API-100 inconclusive follow-up](../follow-up/api100-inconclusive-f
 shows how an incomplete event trail is recorded without revising the original
 assessment or claiming a control outcome.
 
+The later [API-100 evidence-complete follow-up](../follow-up/api100-evidence-complete-follow-up.example.md)
+shows a distinct reassessment based on one complete staging event trail. It
+resolves only its own bounded finding and preserves the inconclusive and
+historical results unchanged.
+
 ## Nonclaims
 
 This workbook is Draft material only. Completing worksheets does not establish

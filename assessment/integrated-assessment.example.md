@@ -88,6 +88,18 @@ The separate [governance thread](../templates/examples/governance-thread4.exampl
 records an evidence-capture action and review trigger; it does not accept the
 risk or close the assessment finding.
 
+## Evidence-complete follow-up
+
+A later fictional staging exercise is recorded in the
+[evidence-complete follow-up narrative](follow-up/api100-evidence-complete-follow-up.example.md),
+with a separate [evidence record](examples/api100-evidence-complete-follow-up-evidence-record.example.json)
+and [Draft assessment result](examples/api100-evidence-complete-follow-up-assessment-result.example.json).
+Its complete event trail supports one bounded API-100-A3 staging outcome and
+resolves only the distinct follow-up finding for that evidence-capture gap.
+The inconclusive result and all earlier assessment results remain unchanged.
+Production behavior, recovery, repeated operation, sustained effectiveness,
+API-100-A1, and API-100-A2 remain outside scope.
+
 ## Outcome and limitations
 
 The API-100 result is `partially_satisfied` and remains Draft. The fictional

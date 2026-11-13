@@ -1086,3 +1086,65 @@ The v0.19-draft publication evidence meets these criteria:
 - new normative requirements, assessment schemas, identifier types, maturity
   semantics, or a generalized remediation model; and
 - changing or replacing the original ASR-ENG3-API100 assessment result.
+
+## v0.20-draft
+
+**Status:** Planned. The current published Working Draft remains `v0.19-draft`.
+
+### Entry state
+
+- v0.19-draft is published and its publication evidence is closed.
+- The fictional CAP-140 sequence contains the unchanged historical API-100
+  result, one bounded v0.19 staging follow-up, and one later inconclusive
+  follow-up with its own open finding.
+- SOC 2 (#219) and HITRUST (#60) remain separately gated; neither is a
+  prerequisite or exit criterion.
+
+### Required workstreams
+
+1. **Evidence-complete API-100-A3 follow-up.** Record one later fictional
+   staging exercise with a complete event trail and a distinct Draft
+   reassessment. The result may resolve only its own API-100-A3 evidence-capture
+   finding. All earlier results remain unchanged; production and sustained
+   effectiveness remain outside scope.
+2. **Exact-candidate publication closure.** Complete technical, editorial,
+   terminology, cross-reference, repository, and governance gates; bind the
+   annotated `v0.20-draft` tag to the validated closure candidate; and
+   synchronize published status surfaces only after merge.
+
+The work is tracked in the
+[`v0.20-draft` GitHub milestone](https://github.com/tdistress/ESAF/milestone/14),
+with [Issue #234](https://github.com/tdistress/ESAF/issues/234) for the
+assessment follow-up and [Issue #235](https://github.com/tdistress/ESAF/issues/235)
+for publication closure.
+
+### Exit criteria
+
+`v0.20-draft` is complete only when:
+
+- one later staging exercise has a complete, attributable event trail and a
+  schema-valid separate Draft result that resolves only its distinct bounded
+  follow-up finding;
+- all prior API-100 results and findings remain unchanged;
+- the result makes no production, recovery, sustained-effectiveness,
+  capability-wide, API-100-A1/A2, compliance, certification, equivalence,
+  endorsement, or assurance claim;
+- technical, editorial, terminology, cross-reference/rendering, repository,
+  and governance gates pass on the exact candidate with Critical and Important
+  findings resolved;
+- SHA-bound post-merge validation passes, the annotated `v0.20-draft` tag
+  points to the validated closure-candidate merge commit, and published
+  status surfaces record that exact tag identity; and
+- readiness evidence and GitHub issues accurately record publication, with
+  milestone issues closed only after their criteria are evidenced.
+
+### Non-goals
+
+- SOC 2 readiness or mapping (Issue #219) and HITRUST readiness or mapping
+  (Issue #60);
+- external framework sources, mappings, or qualified crosswalk review;
+- changes to normative requirements, controls, procedures, schemas,
+  identifier rules, maturity semantics, or artifact lifecycle states;
+- production, recovery, repeated-sample, sustained-effectiveness, or
+  capability-wide assessment; and
+- changing or replacing any historical API-100 result or finding.
